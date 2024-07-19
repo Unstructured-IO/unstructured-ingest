@@ -1,0 +1,60 @@
+[tool.black]
+line-length = 100
+extend_exclude = """
+(
+    .venv
+    | venv
+    | .python_packages
+    | build
+    | migrations
+)
+"""
+
+
+[tool.ruff]
+line-length = 100
+exclude= [
+    ".venv",
+    "venv",
+    ".python_packages",
+    "build",
+    "migrations"
+]
+
+[tool.ruff.lint]
+select = [
+    "C4",       # -- flake8-comprehensions --
+    "COM",      # -- flake8-commas --
+    "E",        # -- pycodestyle errors --
+    "F",        # -- pyflakes --
+    "I",        # -- isort (imports) --
+    "PLR0402",  # -- Name compared with itself like `foo == foo` --
+    "PT",       # -- flake8-pytest-style --
+    "SIM",      # -- flake8-simplify --
+    "UP015",    # -- redundant `open()` mode parameter (like "r" is default) --
+    "UP018",    # -- Unnecessary {literal_type} call like `str("abc")`. (rewrite as a literal) --
+    "UP032",    # -- Use f-string instead of `.format()` call --
+    "UP034",    # -- Avoid extraneous parentheses --
+]
+ignore = [
+    "COM812",   # -- over aggressively insists on trailing commas where not desireable --
+    "PT005",    # -- flags mock fixtures with names intentionally matching private method name --
+    "PT011",    # -- pytest.raises({exc}) too broad, use match param or more specific exception --
+    "PT012",    # -- pytest.raises() block should contain a single simple statement --
+    "SIM117",   # -- merge `with` statements for context managers that have same scope --
+]
+
+[tool.autoflake]
+expand_star_imports=true
+ignore_pass_statements=false
+recursive=true
+quiet=true
+remove_all_unused_imports=true
+remove_unused_variables=true
+exclude= [
+    ".venv",
+    "venv",
+    ".python_packages",
+    "build",
+    "migrations"
+]

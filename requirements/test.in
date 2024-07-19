@@ -1,0 +1,2 @@
+-c ./common/constraints.txt
+pytest
