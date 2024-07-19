@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
-    needs: [ setup, lint ]
+    needs: [ lint ]
     steps:
       # actions/checkout MUST come before auth
       - uses: 'actions/checkout@v4'

@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest-m
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
-    needs: [setup, lint]
+    needs: [ setup ]
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest-m
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
-    needs: [setup, lint]
+    needs: [ setup ]
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
