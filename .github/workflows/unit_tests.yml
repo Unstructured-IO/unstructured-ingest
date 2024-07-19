@@ -78,7 +78,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Validate --help
         run: |
-          source .venv/bin/activate
           make install-base
           ./test_e2e/test-help.sh
 
@@ -119,5 +118,4 @@ jobs:
         run: |
           make install-base
           make install-test
-          source .venv/bin/activate
           make unit-test
