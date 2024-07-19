@@ -1,5 +1,6 @@
 PACKAGE_NAME := unstructured_ingest
 PIP_VERSION := 23.2.1
+ARCH := $(shell uname -m)
 
 ###########
 # INSTALL #
@@ -28,6 +29,10 @@ install-all-connectors:
 .PHONY: install-all-deps
 install-all-deps:
 	find requirements -type f -name "*.txt" ! -name "constraints.txt" -exec pip install -r '{}' ';'
+
+.PHONY: install-pandoc
+install-pandoc:
+	ARCH=${ARCH} ./scripts/install-pandoc.sh
 
 ###########
 #  TIDY   #
