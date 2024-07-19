@@ -8,6 +8,10 @@ on:
   merge_group:
     branches: [ main ]
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 
 jobs:
   lint:
@@ -25,7 +29,7 @@ jobs:
       - name: Lint
         run: |
           make install-lint
-          make check
+          make check-python
 
   shellcheck:
     runs-on: ubuntu-latest
