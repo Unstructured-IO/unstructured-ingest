@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import List, Union
 
 from setuptools import find_packages, setup
-from unstructured.__version__ import __version__
+from unstructured_ingest.__version__ import __version__
 
 
 def load_requirements(file: Union[str, Path]) -> List[str]:
