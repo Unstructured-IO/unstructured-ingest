@@ -16,13 +16,5 @@ pushd ./common || exit
 find . -type f -name "*.in" -print -exec pip-compile --upgrade '{}' ';'
 popd || exit
 
-pushd ./local_partition || exit
-find . -type f -name "*.in" -print -exec pip-compile --upgrade '{}' ';'
-popd || exit
-
-pushd ./connectors || exit
-find . -type f -name "*.in" -print -exec pip-compile --upgrade '{}' ';'
-popd || exit
-
-find . -type f -name "*.in" -maxdepth 1 -print -exec pip-compile --upgrade '{}' ';'
+find . -type f -name "*.in" ! -name "base.in" -exec pip-compile --upgrade '{}' ';'
 popd || exit
