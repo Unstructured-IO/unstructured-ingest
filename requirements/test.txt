@@ -4,8 +4,12 @@
 #
 #    pip-compile test.in
 #
+cffi==1.16.0
+    # via cryptography
 coverage[toml]==7.6.0
     # via pytest-cov
+cryptography==42.0.8
+    # via -r test.in
 exceptiongroup==1.2.2
     # via pytest
 iniconfig==2.0.0
@@ -14,6 +18,8 @@ packaging==24.1
     # via pytest
 pluggy==1.5.0
     # via pytest
+pycparser==2.22
+    # via cffi
 pytest==8.2.2
     # via
     #   -r test.in
