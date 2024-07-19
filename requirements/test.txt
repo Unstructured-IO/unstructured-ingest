@@ -12,6 +12,8 @@ cryptography==42.0.8
     # via -r test.in
 exceptiongroup==1.2.2
     # via pytest
+fsspec==2024.6.1
+    # via -r test.in
 iniconfig==2.0.0
     # via pytest
 packaging==24.1
