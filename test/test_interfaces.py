@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Dict
@@ -19,12 +18,12 @@ from unstructured_ingest.interfaces import (
     ReadConfig,
 )
 
-DIRECTORY = pathlib.Path(__file__).parent.resolve()
-EXAMPLE_DOCS_DIRECTORY = os.path.join(DIRECTORY, "../..", "example-docs")
+DIRECTORY = pathlib.Path(__file__).parent.parent.resolve()
+EXAMPLE_DOCS_DIRECTORY = DIRECTORY / "example-docs"
 TEST_DOWNLOAD_DIR = "/tmp"
 TEST_OUTPUT_DIR = "/tmp"
 TEST_ID = "test"
-TEST_FILE_PATH = os.path.join(EXAMPLE_DOCS_DIRECTORY, "book-war-and-peace-1p.txt")
+TEST_FILE_PATH = str(EXAMPLE_DOCS_DIRECTORY / "book-war-and-peace-1p.txt")
 
 
 @dataclass

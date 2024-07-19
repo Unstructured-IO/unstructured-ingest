@@ -4,6 +4,8 @@
 #
 #    pip-compile test.in
 #
+coverage[toml]==7.6.0
+    # via pytest-cov
 exceptiongroup==1.2.2
     # via pytest
 iniconfig==2.0.0
@@ -13,6 +15,15 @@ packaging==24.1
 pluggy==1.5.0
     # via pytest
 pytest==8.2.2
+    # via
+    #   -r test.in
+    #   pytest-cov
+    #   pytest-mock
+pytest-cov==5.0.0
+    # via -r test.in
+pytest-mock==3.14.0
     # via -r test.in
 tomli==2.0.1
-    # via pytest
+    # via
+    #   coverage
+    #   pytest

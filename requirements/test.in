@@ -1,2 +1,4 @@
 -c ./common/constraints.txt
 pytest
+pytest-cov
+pytest-mock

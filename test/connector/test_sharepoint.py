@@ -31,11 +31,11 @@ def test_datetime_handling_in_update_source_metadata(
 
     # Patch the SharePoint interaction methods to use the mock response
     mocker.patch(
-        "unstructured.ingest.connector.sharepoint.SharepointIngestDoc._fetch_file",
+        "unstructured_ingest.connector.sharepoint.SharepointIngestDoc._fetch_file",
         return_value=mock_sharepoint_response,
     )
     mocker.patch(
-        "unstructured.ingest.connector.sharepoint.SharepointIngestDoc._fetch_page",
+        "unstructured_ingest.connector.sharepoint.SharepointIngestDoc._fetch_page",
         return_value=None,
     )
 
