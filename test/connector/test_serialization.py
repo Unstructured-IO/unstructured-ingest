@@ -6,8 +6,8 @@ from unstructured_ingest.connector.registry import (
 from unstructured_ingest.interfaces import ProcessorConfig, ReadConfig
 
 doc = LocalIngestDoc(
-    path="test_unstructured_ingest/example-docs/layout-parser-paper.pdf",
-    connector_config=SimpleLocalConfig(input_path="test_unstructured_ingest/example-docs/"),
+    path="test_e2e/example-docs/layout-parser-paper.pdf",
+    connector_config=SimpleLocalConfig(input_path="test_e2e/example-docs/"),
     processor_config=ProcessorConfig(),
     read_config=ReadConfig(),
 )
@@ -33,8 +33,8 @@ def test_registry_from_dict():
 
 def test_source_metadata_serialization():
     doc = LocalIngestDoc(
-        path="test_unstructured_ingest/example-docs/layout-parser-paper.pdf",
-        connector_config=SimpleLocalConfig(input_path="test_unstructured_ingest/example-docs/"),
+        path="test_e2e/example-docs/layout-parser-paper.pdf",
+        connector_config=SimpleLocalConfig(input_path="test_e2e/example-docs/"),
         processor_config=ProcessorConfig(),
         read_config=ReadConfig(),
     )

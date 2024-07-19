@@ -75,8 +75,8 @@ for test in "${all_tests[@]}"; do
     continue
   fi
   echo "--------- RUNNING SCRIPT $test ---------"
-  echo "Running ./test_unstructured_ingest/$test"
-  ./test_unstructured_ingest/dest/"$test"
+  echo "Running ./test_e2e/$test"
+  ./test_e2e/dest/"$test"
   rc=$?
   if [[ $rc -eq 8 ]]; then
     echo "$test (skipped due to missing env var)" | tee -a "$SKIPPED_FILES_LOG"
