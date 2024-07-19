@@ -16,9 +16,9 @@ from unstructured_ingest.interfaces import (
     SourceMetadata,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils import (
+from unstructured_ingest.utils.data_prep import validate_date_args
+from unstructured_ingest.utils.dep_check import (
     requires_dependencies,
-    validate_date_args,
 )
 
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")

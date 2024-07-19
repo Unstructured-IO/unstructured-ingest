@@ -25,13 +25,13 @@ from unstructured_ingest.interfaces import (
     WriteConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils import (
-    requires_dependencies,
-)
 from unstructured_ingest.utils.compression import (
     TAR_FILE_EXT,
     ZIP_FILE_EXT,
     CompressionSourceConnectorMixin,
+)
+from unstructured_ingest.utils.dep_check import (
+    requires_dependencies,
 )
 
 SUPPORTED_REMOTE_FSSPEC_PROTOCOLS = [

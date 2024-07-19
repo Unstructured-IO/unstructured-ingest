@@ -45,29 +45,27 @@ def load_requirements(file: Union[str, Path]) -> List[str]:
     return list({r for r in requirements if r})
 
 
-csv_reqs = load_requirements("requirements/extra-csv.in")
-doc_reqs = load_requirements("requirements/extra-docx.in")
-docx_reqs = load_requirements("requirements/extra-docx.in")
-epub_reqs = load_requirements("requirements/extra-epub.in")
-image_reqs = load_requirements("requirements/extra-pdf-image.in")
-markdown_reqs = load_requirements("requirements/extra-markdown.in")
-msg_reqs = load_requirements("requirements/extra-msg.in")
-odt_reqs = load_requirements("requirements/extra-odt.in")
-org_reqs = load_requirements("requirements/extra-pandoc.in")
-pdf_reqs = load_requirements("requirements/extra-pdf-image.in")
-ppt_reqs = load_requirements("requirements/extra-pptx.in")
-pptx_reqs = load_requirements("requirements/extra-pptx.in")
-rtf_reqs = load_requirements("requirements/extra-pandoc.in")
-rst_reqs = load_requirements("requirements/extra-pandoc.in")
-tsv_reqs = load_requirements("requirements/extra-csv.in")
-xlsx_reqs = load_requirements("requirements/extra-xlsx.in")
+csv_reqs = load_requirements("requirements/local_partition/csv.in")
+doc_reqs = load_requirements("requirements/local_partition/docx.in")
+docx_reqs = load_requirements("requirements/local_partition/docx.in")
+epub_reqs = load_requirements("requirements/local_partition/epub.in")
+markdown_reqs = load_requirements("requirements/local_partition/markdown.in")
+msg_reqs = load_requirements("requirements/local_partition/msg.in")
+odt_reqs = load_requirements("requirements/local_partition/odt.in")
+org_reqs = load_requirements("requirements/local_partition/pandoc.in")
+pdf_reqs = load_requirements("requirements/local_partition/pdf.in")
+ppt_reqs = load_requirements("requirements/local_partition/pptx.in")
+pptx_reqs = load_requirements("requirements/local_partition/pptx.in")
+rtf_reqs = load_requirements("requirements/local_partition/pandoc.in")
+rst_reqs = load_requirements("requirements/local_partition/pandoc.in")
+tsv_reqs = load_requirements("requirements/local_partition/csv.in")
+xlsx_reqs = load_requirements("requirements/local_partition/xlsx.in")
 
 all_doc_reqs = list(
     set(
         csv_reqs
         + docx_reqs
         + epub_reqs
-        + image_reqs
         + markdown_reqs
         + msg_reqs
         + odt_reqs
@@ -115,12 +113,10 @@ setup(
     requires=load_requirements("requirements/common/base.in"),
     extras_require={
         # Document specific extra requirements
-        "all-docs": all_doc_reqs,
         "csv": csv_reqs,
         "doc": doc_reqs,
         "docx": docx_reqs,
         "epub": epub_reqs,
-        "image": image_reqs,
         "md": markdown_reqs,
         "msg": msg_reqs,
         "odt": odt_reqs,
@@ -174,7 +170,7 @@ setup(
         # Legacy extra requirements
         "huggingface": load_requirements("requirements/huggingface.in"),
         "local-inference": all_doc_reqs,
-        "paddleocr": load_requirements("requirements/extra-paddleocr.in"),
+        "paddleocr": load_requirements("requirements/local_partition/paddleocr.in"),
         "embed-huggingface": load_requirements("requirements/embed-huggingface.in"),
         "embed-octoai": load_requirements("requirements/embed-octoai.in"),
         "embed-vertexai": load_requirements("requirements/embed-vertexai.in"),

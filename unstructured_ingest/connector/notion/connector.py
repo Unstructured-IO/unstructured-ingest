@@ -17,7 +17,7 @@ from unstructured_ingest.interfaces import (
     SourceConnectorCleanupMixin,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils import (
+from unstructured_ingest.utils.dep_check import (
     requires_dependencies,
 )
 

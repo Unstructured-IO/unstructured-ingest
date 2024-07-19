@@ -1,6 +1,9 @@
 import itertools
 import json
+from datetime import datetime
 from typing import Any, Optional, Sequence, cast
+
+DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
 
 def batch_generator(iterable, batch_size=100):
@@ -77,3 +80,33 @@ def flatten_dict(
             flattened_dict[new_key] = value
 
     return flattened_dict
+
+
+def validate_date_args(date: Optional[str] = None) -> bool:
+    """Validate whether the provided date string satisfies any of the supported date formats.
+
+    Used by unstructured/ingest/connector/biomed.py
+
+    Returns `True` if the date string satisfies any of the supported formats, otherwise raises
+    `ValueError`.
+
+    Supported Date Formats:
+        - 'YYYY-MM-DD'
+        - 'YYYY-MM-DDTHH:MM:SS'
+        - 'YYYY-MM-DD+HH:MM:SS'
+        - 'YYYY-MM-DDTHH:MM:SS±HHMM'
+    """
+    if not date:
+        raise ValueError("The argument date is None.")
+
+    for format in DATE_FORMATS:
+        try:
+            datetime.strptime(date, format)
+            return True
+        except ValueError:
+            pass
+
+    raise ValueError(
+        f"The argument {date} does not satisfy the format:"
+        f" YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD+HH:MM:SS or YYYY-MM-DDTHH:MM:SS±HHMM",
+    )
