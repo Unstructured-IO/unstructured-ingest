@@ -21,43 +21,43 @@ DATABRICKS_VOLUME_PATH="databricks-volumes-test-output-$RANDOM_SUFFIX"
 source "$SCRIPT_DIR"/cleanup.sh
 
 function cleanup() {
-	python "$SCRIPT_DIR"/python/test-databricks-volumes.py cleanup \
-		--host "$DATABRICKS_HOST" \
-		--username "$DATABRICKS_USERNAME" \
-		--password "$DATABRICKS_PASSWORD" \
-		--volume "$DATABRICKS_VOLUME" \
-		--catalog "$DATABRICKS_CATALOG" \
-		--volume-path "$DATABRICKS_VOLUME_PATH"
+  python "$SCRIPT_DIR"/python/test-databricks-volumes.py cleanup \
+    --host "$DATABRICKS_HOST" \
+    --username "$DATABRICKS_USERNAME" \
+    --password "$DATABRICKS_PASSWORD" \
+    --volume "$DATABRICKS_VOLUME" \
+    --catalog "$DATABRICKS_CATALOG" \
+    --volume-path "$DATABRICKS_VOLUME_PATH"
 
-	cleanup_dir "$DESTINATION_PATH"
-	cleanup_dir "$OUTPUT_DIR"
-	cleanup_dir "$WORK_DIR"
-	if [ "$CI" == "true" ]; then
-		cleanup_dir "$DOWNLOAD_DIR"
-	fi
+  cleanup_dir "$DESTINATION_PATH"
+  cleanup_dir "$OUTPUT_DIR"
+  cleanup_dir "$WORK_DIR"
+  if [ "$CI" == "true" ]; then
+    cleanup_dir "$DOWNLOAD_DIR"
+  fi
 }
 
 trap cleanup EXIT
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-	local \
-	--output-dir "$OUTPUT_DIR" \
-	--strategy fast \
-	--verbose \
-	--input-path example-docs/pdf/fake-memo.pdf \
-	--work-dir "$WORK_DIR" \
-	databricks-volumes \
-	--host "$DATABRICKS_HOST" \
-	--username "$DATABRICKS_USERNAME" \
-	--password "$DATABRICKS_PASSWORD" \
-	--volume "$DATABRICKS_VOLUME" \
-	--catalog "$DATABRICKS_CATALOG" \
-	--volume-path "$DATABRICKS_VOLUME_PATH"
+  local \
+  --output-dir "$OUTPUT_DIR" \
+  --strategy fast \
+  --verbose \
+  --input-path example-docs/pdf/fake-memo.pdf \
+  --work-dir "$WORK_DIR" \
+  databricks-volumes \
+  --host "$DATABRICKS_HOST" \
+  --username "$DATABRICKS_USERNAME" \
+  --password "$DATABRICKS_PASSWORD" \
+  --volume "$DATABRICKS_VOLUME" \
+  --catalog "$DATABRICKS_CATALOG" \
+  --volume-path "$DATABRICKS_VOLUME_PATH"
 
 python "$SCRIPT_DIR"/python/test-databricks-volumes.py test \
-	--host "$DATABRICKS_HOST" \
-	--username "$DATABRICKS_USERNAME" \
-	--password "$DATABRICKS_PASSWORD" \
-	--volume "$DATABRICKS_VOLUME" \
-	--catalog "$DATABRICKS_CATALOG" \
-	--volume-path "$DATABRICKS_VOLUME_PATH"
+  --host "$DATABRICKS_HOST" \
+  --username "$DATABRICKS_USERNAME" \
+  --password "$DATABRICKS_PASSWORD" \
+  --volume "$DATABRICKS_VOLUME" \
+  --catalog "$DATABRICKS_CATALOG" \
+  --volume-path "$DATABRICKS_VOLUME_PATH"

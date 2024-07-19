@@ -38,7 +38,7 @@ tidy: tidy-black tidy-ruff tidy-autoflake tidy-shell
 
 .PHONY: tidy_shell
 tidy-shell:
-	shfmt -l -w .
+	shfmt -i 2 -l -w .
 
 .PHONY: tidy-ruff
 tidy-ruff:
@@ -80,7 +80,7 @@ check-autoflake:
 
 .PHONY: check-shell
 check-shell:
-	shfmt -d .
+	shfmt -i 2 -d .
 
 .PHONY: check-version
 check-version:
