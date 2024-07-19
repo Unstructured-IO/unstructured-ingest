@@ -21,11 +21,17 @@ attrs==23.2.0
 cachetools==5.4.0
     # via google-auth
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 dataclasses-json==0.6.7
-    # via langchain-community
+    # via
+    #   -c ./../common/base.txt
+    #   langchain-community
 docstring-parser==0.16
     # via google-cloud-aiplatform
 frozenlist==1.4.1
@@ -86,6 +92,7 @@ grpcio-status==1.62.2
     # via google-api-core
 idna==3.7
     # via
+    #   -c ./../common/base.txt
     #   requests
     #   yarl
 jsonpatch==1.33
@@ -114,15 +121,20 @@ langsmith==0.1.92
     #   langchain-community
     #   langchain-core
 marshmallow==3.21.3
-    # via dataclasses-json
+    # via
+    #   -c ./../common/base.txt
+    #   dataclasses-json
 multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
 mypy-extensions==1.0.0
-    # via typing-inspect
+    # via
+    #   -c ./../common/base.txt
+    #   typing-inspect
 numpy==1.26.4
     # via
+    #   -c ./../common/base.txt
     #   langchain
     #   langchain-community
     #   shapely
@@ -130,6 +142,7 @@ orjson==3.10.6
     # via langsmith
 packaging==24.1
     # via
+    #   -c ./../common/base.txt
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
     #   langchain-core
@@ -173,6 +186,7 @@ pyyaml==6.0.1
     #   langchain-core
 requests==2.32.3
     # via
+    #   -c ./../common/base.txt
     #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-storage
@@ -198,13 +212,18 @@ tenacity==8.5.0
     #   langchain-core
 typing-extensions==4.12.2
     # via
+    #   -c ./../common/base.txt
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
     #   typing-inspect
 typing-inspect==0.9.0
-    # via dataclasses-json
+    # via
+    #   -c ./../common/base.txt
+    #   dataclasses-json
 urllib3==2.2.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 yarl==1.9.4
     # via aiohttp

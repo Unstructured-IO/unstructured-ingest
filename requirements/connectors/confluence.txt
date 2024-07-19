@@ -7,15 +7,23 @@
 atlassian-python-api==3.41.14
     # via -r ./confluence.in
 beautifulsoup4==4.12.3
-    # via atlassian-python-api
+    # via
+    #   -c ./../common/base.txt
+    #   atlassian-python-api
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 deprecated==1.2.14
     # via atlassian-python-api
 idna==3.7
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 jmespath==1.0.1
     # via atlassian-python-api
 oauthlib==3.2.2
@@ -24,6 +32,7 @@ oauthlib==3.2.2
     #   requests-oauthlib
 requests==2.32.3
     # via
+    #   -c ./../common/base.txt
     #   atlassian-python-api
     #   requests-oauthlib
 requests-oauthlib==2.0.0
@@ -33,8 +42,14 @@ six==1.16.0
     #   -c ./../common/base.txt
     #   atlassian-python-api
 soupsieve==2.5
-    # via beautifulsoup4
+    # via
+    #   -c ./../common/base.txt
+    #   beautifulsoup4
 urllib3==2.2.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 wrapt==1.16.0
-    # via deprecated
+    # via
+    #   -c ./../common/base.txt
+    #   deprecated

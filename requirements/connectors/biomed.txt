@@ -5,8 +5,12 @@
 #    pip-compile ./biomed.in
 #
 beautifulsoup4==4.12.3
-    # via bs4
+    # via
+    #   -c ./../common/base.txt
+    #   bs4
 bs4==0.0.2
     # via -r ./biomed.in
 soupsieve==2.5
-    # via beautifulsoup4
+    # via
+    #   -c ./../common/base.txt
+    #   beautifulsoup4

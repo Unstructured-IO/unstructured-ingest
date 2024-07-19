@@ -7,11 +7,17 @@
 annotated-types==0.7.0
     # via pydantic
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 idna==3.7
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 inflection==0.5.1
     # via pyairtable
 pyairtable==2.3.3
@@ -21,13 +27,17 @@ pydantic==2.8.2
 pydantic-core==2.20.1
     # via pydantic
 requests==2.32.3
-    # via pyairtable
+    # via
+    #   -c ./../common/base.txt
+    #   pyairtable
 typing-extensions==4.12.2
     # via
+    #   -c ./../common/base.txt
     #   pyairtable
     #   pydantic
     #   pydantic-core
 urllib3==2.2.2
     # via
+    #   -c ./../common/base.txt
     #   pyairtable
     #   requests

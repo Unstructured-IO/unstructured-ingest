@@ -9,9 +9,6 @@ PIP_VERSION := 23.2.1
 pip-compile:
 	./scripts/pip-compile.sh
 
-.PHONY: install
-install: install-lint install-test install-all-deps
-
 .PHONY: install-lint
 install-lint:
 	pip install -r requirements/lint.txt
@@ -19,6 +16,14 @@ install-lint:
 .PHONY: install-test
 install-test:
 	pip install -r requirements/test.txt
+
+.PHONY: install-base
+install-base:
+	pip install -r requirements/common/base.txt
+
+.PHONY: install-all-connectors
+install-all-connectors:
+	find requirements/connectors -type f -name "*.txt" -exec pip install -r '{}' ';'
 
 .PHONY: install-all-deps
 install-all-deps:

@@ -13,7 +13,9 @@ async-timeout==4.0.3
 attrs==23.2.0
     # via aiohttp
 certifi==2024.7.4
-    # via elastic-transport
+    # via
+    #   -c ./../common/base.txt
+    #   elastic-transport
 elastic-transport==8.13.1
     # via elasticsearch
 elasticsearch[async]==8.14.0
@@ -23,12 +25,16 @@ frozenlist==1.4.1
     #   aiohttp
     #   aiosignal
 idna==3.7
-    # via yarl
+    # via
+    #   -c ./../common/base.txt
+    #   yarl
 multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
 urllib3==2.2.2
-    # via elastic-transport
+    # via
+    #   -c ./../common/base.txt
+    #   elastic-transport
 yarl==1.9.4
     # via aiohttp

@@ -7,15 +7,23 @@
 build==1.2.1
     # via singlestoredb
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 idna==3.7
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 importlib-metadata==8.0.0
     # via build
 packaging==24.1
-    # via build
+    # via
+    #   -c ./../common/base.txt
+    #   build
 parsimonious==0.10.0
     # via singlestoredb
 pyjwt==2.8.0
@@ -23,9 +31,13 @@ pyjwt==2.8.0
 pyproject-hooks==1.1.0
     # via build
 regex==2024.5.15
-    # via parsimonious
+    # via
+    #   -c ./../common/base.txt
+    #   parsimonious
 requests==2.32.3
-    # via singlestoredb
+    # via
+    #   -c ./../common/base.txt
+    #   singlestoredb
 singlestoredb==1.5.0
     # via -r ./singlestore.in
 sqlparams==6.0.1
@@ -35,7 +47,9 @@ tomli==2.0.1
     #   build
     #   singlestoredb
 urllib3==2.2.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 wheel==0.43.0
     # via singlestoredb
 zipp==3.19.2

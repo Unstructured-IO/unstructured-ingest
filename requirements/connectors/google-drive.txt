@@ -7,9 +7,13 @@
 cachetools==5.4.0
     # via google-auth
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 google-api-core==2.19.1
     # via google-api-python-client
 google-api-python-client==2.137.0
@@ -28,7 +32,9 @@ httplib2==0.22.0
     #   google-api-python-client
     #   google-auth-httplib2
 idna==3.7
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 proto-plus==1.24.0
     # via google-api-core
 protobuf==5.27.2
@@ -45,10 +51,14 @@ pyasn1-modules==0.4.0
 pyparsing==3.1.2
     # via httplib2
 requests==2.32.3
-    # via google-api-core
+    # via
+    #   -c ./../common/base.txt
+    #   google-api-core
 rsa==4.9
     # via google-auth
 uritemplate==4.1.1
     # via google-api-python-client
 urllib3==2.2.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests

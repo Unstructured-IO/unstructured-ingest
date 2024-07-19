@@ -32,7 +32,6 @@ runs:
         python${{ inputs.python-version }} -m pip install --upgrade virtualenv
         python${{ inputs.python-version }} -m venv .venv
         source .venv/bin/activate
-        [ ! -d "$NLTK_DATA" ] && mkdir "$NLTK_DATA"
         if [ "${{ inputs.python-version == '3.12' }}" == "true" ]; then
           python -m ensurepip --upgrade
           python -m pip install --upgrade setuptools

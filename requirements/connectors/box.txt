@@ -11,11 +11,15 @@ boxfs==0.3.0
 boxsdk[jwt]==3.11.0
     # via boxfs
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 cryptography==42.0.8
     # via boxsdk
 fsspec==2024.6.1
@@ -23,7 +27,9 @@ fsspec==2024.6.1
     #   -r ./box.in
     #   boxfs
 idna==3.7
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 pycparser==2.22
     # via cffi
 pyjwt==2.8.0
@@ -34,15 +40,19 @@ python-dateutil==2.9.0.post0
     #   boxsdk
 requests==2.32.3
     # via
+    #   -c ./../common/base.txt
     #   boxsdk
     #   requests-toolbelt
 requests-toolbelt==1.0.0
-    # via boxsdk
+    # via
+    #   -c ./../common/base.txt
+    #   boxsdk
 six==1.16.0
     # via
     #   -c ./../common/base.txt
     #   python-dateutil
 urllib3==2.2.2
     # via
+    #   -c ./../common/base.txt
     #   boxsdk
     #   requests

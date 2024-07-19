@@ -5,18 +5,29 @@
 #    pip-compile ./gitlab.in
 #
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 idna==3.7
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 python-gitlab==4.8.0
     # via -r ./gitlab.in
 requests==2.32.3
     # via
+    #   -c ./../common/base.txt
     #   python-gitlab
     #   requests-toolbelt
 requests-toolbelt==1.0.0
-    # via python-gitlab
+    # via
+    #   -c ./../common/base.txt
+    #   python-gitlab
 urllib3==2.2.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests

@@ -7,13 +7,18 @@
 annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
-    # via httpx
+    # via
+    #   -c ./../common/base.txt
+    #   httpx
 certifi==2024.7.4
     # via
+    #   -c ./../common/base.txt
     #   httpcore
     #   httpx
 exceptiongroup==1.2.2
-    # via anyio
+    # via
+    #   -c ./../common/base.txt
+    #   anyio
 grpcio==1.65.1
     # via
     #   grpcio-tools
@@ -21,23 +26,32 @@ grpcio==1.65.1
 grpcio-tools==1.65.1
     # via qdrant-client
 h11==0.14.0
-    # via httpcore
+    # via
+    #   -c ./../common/base.txt
+    #   httpcore
 h2==4.1.0
     # via httpx
 hpack==4.0.0
     # via h2
 httpcore==1.0.5
-    # via httpx
+    # via
+    #   -c ./../common/base.txt
+    #   httpx
 httpx[http2]==0.27.0
-    # via qdrant-client
+    # via
+    #   -c ./../common/base.txt
+    #   qdrant-client
 hyperframe==6.0.1
     # via h2
 idna==3.7
     # via
+    #   -c ./../common/base.txt
     #   anyio
     #   httpx
-numpy==2.0.0
-    # via qdrant-client
+numpy==1.26.4
+    # via
+    #   -c ./../common/base.txt
+    #   qdrant-client
 portalocker==2.10.1
     # via qdrant-client
 protobuf==5.27.2
@@ -50,15 +64,19 @@ qdrant-client==1.10.1
     # via -r ./qdrant.in
 sniffio==1.3.1
     # via
+    #   -c ./../common/base.txt
     #   anyio
     #   httpx
 typing-extensions==4.12.2
     # via
+    #   -c ./../common/base.txt
     #   anyio
     #   pydantic
     #   pydantic-core
 urllib3==2.2.2
-    # via qdrant-client
+    # via
+    #   -c ./../common/base.txt
+    #   qdrant-client
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

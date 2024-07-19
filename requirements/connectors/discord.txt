@@ -19,7 +19,9 @@ frozenlist==1.4.1
     #   aiohttp
     #   aiosignal
 idna==3.7
-    # via yarl
+    # via
+    #   -c ./../common/base.txt
+    #   yarl
 multidict==6.0.5
     # via
     #   aiohttp

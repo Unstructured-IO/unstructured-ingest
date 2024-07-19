@@ -21,15 +21,20 @@ async-timeout==4.0.3
 attrs==23.2.0
     # via aiohttp
 certifi==2024.7.4
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
 idna==3.7
     # via
+    #   -c ./../common/base.txt
     #   requests
     #   yarl
 jsonpatch==1.33
@@ -57,12 +62,15 @@ multidict==6.0.5
     #   yarl
 numpy==1.26.4
     # via
+    #   -c ./../common/base.txt
     #   langchain
     #   voyageai
 orjson==3.10.6
     # via langsmith
 packaging==24.1
-    # via langchain-core
+    # via
+    #   -c ./../common/base.txt
+    #   langchain-core
 pydantic==2.8.2
     # via
     #   langchain
@@ -76,6 +84,7 @@ pyyaml==6.0.1
     #   langchain-core
 requests==2.32.3
     # via
+    #   -c ./../common/base.txt
     #   langchain
     #   langsmith
     #   voyageai
@@ -88,11 +97,14 @@ tenacity==8.5.0
     #   voyageai
 typing-extensions==4.12.2
     # via
+    #   -c ./../common/base.txt
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
 urllib3==2.2.2
-    # via requests
+    # via
+    #   -c ./../common/base.txt
+    #   requests
 voyageai==0.2.3
     # via langchain-voyageai
 yarl==1.9.4

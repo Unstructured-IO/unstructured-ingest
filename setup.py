@@ -112,6 +112,7 @@ setup(
     entry_points={
         "console_scripts": ["unstructured-ingest=unstructured_ingest.main:main"],
     },
+    requires=load_requirements("requirements/common/base.in"),
     extras_require={
         # Document specific extra requirements
         "all-docs": all_doc_reqs,
