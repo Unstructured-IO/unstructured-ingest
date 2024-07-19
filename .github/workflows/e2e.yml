@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           check-only: 'true'
 
-  test_ingest_src:
+  test_src:
     strategy:
       matrix:
         python-version: ["3.9","3.10"]
@@ -109,10 +109,10 @@ jobs:
         sudo apt-get install -y tesseract-ocr-kor
         sudo apt-get install diffstat
         tesseract --version
-        ./test_unstructured_ingest/test-ingest-src.sh
+        ./test_e2e/test-src.sh
 
 
-  test_ingest_dest:
+  test_dest:
     environment: ci
     strategy:
       matrix:
@@ -181,4 +181,4 @@ jobs:
         sudo apt-get install -y tesseract-ocr-kor
         sudo apt-get install diffstat
         tesseract --version
-        ./test_unstructured_ingest/test-ingest-dest.sh
+        ./test_e2e/test-dest.sh
