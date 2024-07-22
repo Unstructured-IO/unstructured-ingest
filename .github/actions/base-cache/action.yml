@@ -17,12 +17,11 @@ runs:
       with:
         path: |
           .venv
-          nltk_data
         key: unstructured-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('requirements/**/*.txt') }}
         lookup-only: ${{ inputs.check-only }}
     - name: Set up Python ${{ inputs.python-version }}
       if: steps.virtualenv-cache-restore.outputs.cache-hit != 'true'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
     - name: Setup virtual environment (no cache hit)
@@ -45,6 +44,6 @@ runs:
       with:
         path: |
           .venv
-        key: unstructured-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('requirements/**/*.txt') }}
+        key: ${{ steps.virtualenv-cache-restore.outputs.cache-primary-key }}
 
 

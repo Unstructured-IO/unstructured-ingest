@@ -34,6 +34,12 @@ install-all-deps:
 install-pandoc:
 	ARCH=${ARCH} ./scripts/install-pandoc.sh
 
+.PHONY: install-ci
+install-ci:
+	pip install -r requirements/common/pdf.txt
+	pip install -r requirements/common/docx.txt
+	pip install -r requirements/common/pptx.txt
+
 ###########
 #  TIDY   #
 ###########
