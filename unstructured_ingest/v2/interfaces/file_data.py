@@ -1,16 +1,10 @@
 import json
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from dataclasses_json import DataClassJsonMixin
 from unstructured.documents.elements import DataSourceMetadata
-
-
-class IndexDocType(str, Enum):
-    BATCH = "batch"
-    FILE = "file"
 
 
 @dataclass
@@ -33,7 +27,7 @@ class FileData(DataClassJsonMixin):
     identifier: str
     connector_type: str
     source_identifiers: Optional[SourceIdentifiers] = None
-    doc_type: IndexDocType = field(default=IndexDocType.FILE)
+    doc_type: Literal["file", "batch"] = field(default="file")
     metadata: DataSourceMetadata = field(default_factory=DataSourceMetadata)
     additional_metadata: dict[str, Any] = field(default_factory=dict)
     reprocess: bool = False

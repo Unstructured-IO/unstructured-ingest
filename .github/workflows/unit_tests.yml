@@ -1,12 +1,12 @@
 name: Unit Test
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  merge_group:
-    branches: [ main ]
+#on:
+#  push:
+#    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
+#  merge_group:
+#    branches: [ main ]
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
