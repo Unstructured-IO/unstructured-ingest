@@ -36,9 +36,9 @@ install-pandoc:
 
 .PHONY: install-ci
 install-ci:
-	pip install -r requirements/common/pdf.txt
-	pip install -r requirements/common/docx.txt
-	pip install -r requirements/common/pptx.txt
+	pip install -r requirements/local_partition/pdf.txt
+	pip install -r requirements/local_partition/docx.txt
+	pip install -r requirements/local_partition/pptx.txt
 
 ###########
 #  TIDY   #
