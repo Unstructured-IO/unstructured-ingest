@@ -97,8 +97,7 @@ class SensitiveFormatter(Formatter):
         try:
             return redact_jsons(s)
         except Exception as e:
-            logger.error(f"failed to redact text {s}: {e}")
-            raise e
+            raise Exception(f"failed to redact text {s}: {e}") from e
 
 
 def remove_root_handlers(logger: Logger) -> None:
