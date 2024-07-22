@@ -94,7 +94,11 @@ def redact_jsons(s: str) -> str:
 class SensitiveFormatter(Formatter):
     def format(self, record):
         s = super().format(record=record)
-        return redact_jsons(s)
+        try:
+            return redact_jsons(s)
+        except Exception as e:
+            logger.error(f"failed to redact text {s}: {e}")
+            raise e
 
 
 def remove_root_handlers(logger: Logger) -> None:
