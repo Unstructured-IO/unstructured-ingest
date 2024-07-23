@@ -13,7 +13,7 @@
       "filetype": "text/html",
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/fake-html-cp1252.html"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
         "permissions_data": [
           {
@@ -37,7 +37,7 @@
       "filetype": "text/html",
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/fake-html-cp1252.html"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
         "permissions_data": [
           {
@@ -61,7 +61,7 @@
       "filetype": "text/html",
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/fake-html-cp1252.html"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
         "permissions_data": [
           {
@@ -85,7 +85,7 @@
       "filetype": "text/html",
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/fake-html-cp1252.html"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
         "permissions_data": [
           {

@@ -13,8 +13,7 @@
         "version": "180263070579038859328651626981788275889",
         "record_locator": {
           "protocol": "gs",
-          "remote_file_path": "gs://utic-test-ingest-fixtures/",
-          "file_id": "utic-test-ingest-fixtures/nested-1/fake-text.txt/1687304893301804"
+          "remote_file_path": "gs://utic-test-ingest-fixtures/"
         },
         "date_created": "1687304893.303",
         "date_modified": "1687304893.303"
@@ -35,8 +34,7 @@
         "version": "180263070579038859328651626981788275889",
         "record_locator": {
           "protocol": "gs",
-          "remote_file_path": "gs://utic-test-ingest-fixtures/",
-          "file_id": "utic-test-ingest-fixtures/nested-1/fake-text.txt/1687304893301804"
+          "remote_file_path": "gs://utic-test-ingest-fixtures/"
         },
         "date_created": "1687304893.303",
         "date_modified": "1687304893.303"
@@ -57,8 +55,7 @@
         "version": "180263070579038859328651626981788275889",
         "record_locator": {
           "protocol": "gs",
-          "remote_file_path": "gs://utic-test-ingest-fixtures/",
-          "file_id": "utic-test-ingest-fixtures/nested-1/fake-text.txt/1687304893301804"
+          "remote_file_path": "gs://utic-test-ingest-fixtures/"
         },
         "date_created": "1687304893.303",
         "date_modified": "1687304893.303"
@@ -79,8 +76,7 @@
         "version": "180263070579038859328651626981788275889",
         "record_locator": {
           "protocol": "gs",
-          "remote_file_path": "gs://utic-test-ingest-fixtures/",
-          "file_id": "utic-test-ingest-fixtures/nested-1/fake-text.txt/1687304893301804"
+          "remote_file_path": "gs://utic-test-ingest-fixtures/"
         },
         "date_created": "1687304893.303",
         "date_modified": "1687304893.303"
@@ -101,8 +97,7 @@
         "version": "180263070579038859328651626981788275889",
         "record_locator": {
           "protocol": "gs",
-          "remote_file_path": "gs://utic-test-ingest-fixtures/",
-          "file_id": "utic-test-ingest-fixtures/nested-1/fake-text.txt/1687304893301804"
+          "remote_file_path": "gs://utic-test-ingest-fixtures/"
         },
         "date_created": "1687304893.303",
         "date_modified": "1687304893.303"
@@ -123,8 +118,7 @@
         "version": "180263070579038859328651626981788275889",
         "record_locator": {
           "protocol": "gs",
-          "remote_file_path": "gs://utic-test-ingest-fixtures/",
-          "file_id": "utic-test-ingest-fixtures/nested-1/fake-text.txt/1687304893301804"
+          "remote_file_path": "gs://utic-test-ingest-fixtures/"
         },
         "date_created": "1687304893.303",
         "date_modified": "1687304893.303"
