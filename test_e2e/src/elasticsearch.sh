@@ -17,12 +17,12 @@ CI=${CI:-"false"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC1091
-source "SCRIPT_DIR"/env_setup/elasticsearch/common/es-dest-ingest-test-creds.env
+source "$SCRIPT_DIR"/env_setup/elasticsearch/common/es-dest-ingest-test-creds.env
 
 function cleanup() {
   # Kill the container so the script can be repeatedly run using the same ports
   echo "Stopping Elasticsearch Docker container"
-  docker-compose -f "SCRIPT_DIR"/env_setup/elasticsearch/common/docker-compose.yaml down --remove-orphans -v
+  docker-compose -f "$SCRIPT_DIR"/env_setup/elasticsearch/common/docker-compose.yaml down --remove-orphans -v
 
   cleanup_dir "$OUTPUT_DIR"
   cleanup_dir "$WORK_DIR"
@@ -34,7 +34,7 @@ function cleanup() {
 trap cleanup EXIT
 
 # shellcheck source=/dev/null
-"SCRIPT_DIR"/env_setup/elasticsearch/source_connector/create-fill-and-check-es.sh
+"$SCRIPT_DIR"/env_setup/elasticsearch/source_connector/create-fill-and-check-es.sh
 wait
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
