@@ -39,6 +39,7 @@ install-ci:
 	pip install -r requirements/local_partition/pdf.txt
 	pip install -r requirements/local_partition/docx.txt
 	pip install -r requirements/local_partition/pptx.txt
+	pip install -r requirements/local_partition/xlsx.txt
 
 ###########
 #  TIDY   #
