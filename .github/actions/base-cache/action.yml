@@ -36,7 +36,6 @@ runs:
           python -m pip install --upgrade setuptools
         fi
         make install-base
-        make install-all-connectors
         make install-ci
     - name: Save Cache
       if: steps.virtualenv-cache-restore.outputs.cache-hit != 'true'

@@ -26,6 +26,10 @@ install-base:
 install-all-connectors:
 	find requirements/connectors -type f -name "*.txt" -exec pip install -r '{}' ';'
 
+.PHONY: install-all-embedders
+install-all-embedders:
+	find requirements/embed -type f -name "*.txt" -exec pip install -r '{}' ';'
+
 .PHONY: install-all-deps
 install-all-deps:
 	find requirements -type f -name "*.txt" ! -name "constraints.txt" -exec pip install -r '{}' ';'
@@ -35,7 +39,7 @@ install-pandoc:
 	ARCH=${ARCH} ./scripts/install-pandoc.sh
 
 .PHONY: install-ci
-install-ci:
+install-ci: install-all-connectors install-all-embedders
 	pip install -r requirements/local_partition/pdf.txt
 	pip install -r requirements/local_partition/docx.txt
 	pip install -r requirements/local_partition/pptx.txt
