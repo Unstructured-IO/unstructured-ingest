@@ -41,6 +41,7 @@ install-ci:
 	pip install -r requirements/local_partition/pptx.txt
 	pip install -r requirements/local_partition/xlsx.txt
 	pip install -r requirements/embed/huggingface.txt
+	pip insatll -r requirements/embed/aws-bedrock.txt
 
 ###########
 #  TIDY   #

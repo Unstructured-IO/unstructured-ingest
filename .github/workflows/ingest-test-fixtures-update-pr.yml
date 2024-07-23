@@ -97,7 +97,6 @@ jobs:
           sudo apt-get install -y tesseract-ocr
           sudo apt-get install -y tesseract-ocr-kor
           tesseract --version
-          make install-ci
           ./test_e2e/test-src.sh
 
       - name: Save branch name to environment file
