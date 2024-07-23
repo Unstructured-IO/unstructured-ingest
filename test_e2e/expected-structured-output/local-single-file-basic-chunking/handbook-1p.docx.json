@@ -6,7 +6,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -27,7 +27,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJztlU1v2jAYx79K5PMgifNm71Z1leilIAqnFkWO/RiiJnbkOBsd4rvPhtK1E4dt0qQx7RQ/74//P1l52CFooAVly1qgjwFKODBKuIRIZAXJc8oqwDxNMkllFgmGPgSoBcsEs8zl75A/lL0eDIeD3YFp676vterLl6SHHWq18OEkiQnZr1wPA1wbUTaaM6vNsZLZjV8h3OgWQjMoBSb8os1TOKjemoHbwYB4b8CWtV0DI6F5H26YEpXWT6O4GzvHFu33bpKsG7DPnR+PWNc1tZvotgs/KzHWHaht20htWmb7kZay5uBKB6/I2M0WndEc3HXUum3Gp4gXYQNMgCml1tZ9TgM6U7fMPPuEhqn1wNbQewUQqDVa+XUsbK3PXN4HCzP0FiCYvOztq06NJof2yFX8SEgKSgkTaSogo1lW0IRgUeTuUFQVJvzyCEHbbVhffwVRenVKrpV19z0Kdz25mi1u5kGMVmdSLVsf06pD+A+xPoPSeTvnKdXQVuDVid/C/b70G6SL2jZwjmhFRERFlnIBmJBIFEwkNM8hYhHnVVX9Y0Rv7xbz6afl9eJ2endJUN/t/VNckyzPCEtlgYXDWUkc5RyqnCcYA5X48rj+LShe31fwOOAoToJfZsNzwAWN3W8uTomgKc6KIk5S8GYS0/Q/m99lczV+tLPlfDa9vzlDYvUNQ4PhWg=="
+      "orig_elements": "eJztlV1v2jAUhv9K5OsBifPp3VVdJXpTEKVXLYr8cQxRYztynI0O8d9nQ9m6iYtN2qQx7Sr28fl4/T6y8rhD0IIC7epGoPcRSjlQUnEJscjLqigIZYB5luaSyDwWFL2LkAJHBXXU5+9QWNS9GSyHw74Dq5q+b4zu69ekxx1SRoTjNE2qar/yPSxwY0XdGk6dscdK6jZBwmRjFEzsoDXYySdjnyeD7p0duBssiFGj19C7szHYUtW1MBKG95MN1YIZ8zxKurEPbNF+7+fKpgX30gUxiHZd2/j5XuvkoxZj04HeqlYaq6jrR0bKhoMvHYI/Y69EdNZw8JfTa9WOTyfBkg1QAbaWxjj/OQ3obKOofQkJLdXrgXqVwQ8Eeo1WQY6DrQuZD/fR0g69A4imr7pD1anR9NAe+YofeUlBSEVFlgnISZ6XJK2wKAu/KBnDFb90XqC6De2bzyDq4FXNjXb+9kcbr6dX8+XNIkrQ6kyqo+tjGjsc/yHyZ8D6aOcjtR4Ug+BV8hb1N9FvAC8b18I5vqwSMRF5xgXgqopFSUVKigJiGnPOGPun+d7eLRezDw/Xy9vZ3SUh/k73T1FO8yKvaCZLLDxcJnFccGAFTzEGIvGlU/5bwHx9e9HTgOMkjX6ZFC8AlyTxv8ckqwTJcF6WSZpB2KYJyf6T+j2krsZPbv6wmM/ub85wWX0Bl5H8gA=="
     }
   },
   {
@@ -37,7 +37,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -50,7 +50,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA=="
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY="
     }
   },
   {
@@ -60,7 +60,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -73,7 +73,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -84,7 +84,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -97,7 +97,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -108,7 +108,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -121,7 +121,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -132,7 +132,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -145,7 +145,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -156,7 +156,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -169,7 +169,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -180,7 +180,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -193,7 +193,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -204,7 +204,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -217,7 +217,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJx1VNtu2zAM/RXCTymQOnHTdtn2tgLFnoail6etCGSJjoXKkiFRuaDov490krVdWiCIbfF2eHio388FOuzQ08Ka4hsUyjSzy+qinmE9PTPTaXN2oefn83M01Vx/xaYYQ9EhKaNIsf9zIS+LFHLUOHz3GDubkg0+LfZOv5+LLhgxz2bVfP7yyDki6hDNwgWtKMRdpKJWIEza0OEkZu8xTtYhPk2yTxSzphzRvP/Ajep6h6cm6DRplTd1CE+nVV/ywaZ4eeFKjXVI2x6H7vreWa7I6CYrb8rQo990rgmxU5ROQ9NYjRyahZGSa5s+Bo3cjl92rjxYhASn/DKrJSZpsEC/LKStnk8WPnc1Sk+V1CfckNS+bxEevCU0cEeKMMF9zIkQgVEF6ykB44eUmcGVTWxPxAdcGWjnuHPoAicJ8chbK/nP3mAE3aqe+FnNIDRAlhxCVQ3vRyiueDQlwNkcHsq78qqEP3k6VV/gYn45qk/YIsB/7qkdA882c7BK0KtIkpJnDyaT/Vf9o1RjQG6ndja17BcYolPRNhIkkPqQrEzlY4gHom5iWEbVwWj/cgIcIe778mHNMfUW1BF1QGHniLVwNwbN6rG718CGOHQjOaznH3PHcMcDxZ/C+Y8aMIFtPhD0HMwqYRhNdm5IooPIlFCA0bBvh06dWn8HS5DakJ0Z4muEnHYccye5TjzAzLEsU3C4VA6kgIq6HXIrr9w22bTHc9R6xw/J2ajOOqsirC21nMLhSnlBG1hAsq8HSD+Uf4q5J70dxDGGa+Sxctnb7HDweuNxIwtieBlhNJhPhLUtyGI7qF/9ohh3jIpSpW8GzKJ8L5XZWTX+REB8elVel7dvTsvLkToZzUSld8fLwpjQa5YnL6URBTTBubBmyEoTLzrc254HbngaokQjs6fWpteR1pmEEYYryWQ2mnniCFYPdOwll9e2lPvgcMX8UjHyBbPCe9n7l8e/SDHcqA==",
+      "orig_elements": "eJx1VF1v2zoM/SuEn1IgdeJm7bLtbQWGPV0Ma/e0OwS0RMdCZcmQqKZB0f9+SSe5+0gHBIkifh0eHur7c0WeBgq8cbZ6DxXabnXTXLcrapdXdrnsrq7N+s36Ddlmbd5RV82hGojRIqP4P1d62ORYkqHp/0hpcDm7GPLm6PT9uRqiVfNq1azXLz8kRyITk934aJBjOkQi9wph0ceBFqmEQGmxi+lhUULmVAyXRPbShS1lfvWOnnAYPV3aaPKix2DbGB8um7GWi6fq5UXqds4T70eaeh1H76S+YF08BlvHkcLT4LuYBuR8GbvOGZLQovzUgsSOKRqS5sJ28PXJopR4DNuCAkLbrShsK21ylJtNKENL2mGj9ZmeWGvf9wTfgmOycMfIlOE+lcxEIKiiC5xB8EMuwuejy2LPLBdSGfjgeHAYoiSJ6czboH6XYCmB6XFk+W1WEDtgx56gaabzGYpbGVQNcLWGb/VdfVvDv2W5xLdwvb6ZtRdiUeCfj9TOQSZdJBgzjJhYU4oSwBZ2/1d/LdUcZFzYepd78YsC0WNynQYppDFmp1N5HeKJqC8pbhMOMDseLkAi1P1YPu4kpt0DnlEHHA+O1Cp3czAiInc4RjGkqRvN4YJ8hDuBO58o/iucP6gBG8UWIsMowaISgdEV76ckJqpMmRQYT9t36tTj7gM4htzH4u0U3xKUfOBYOiltlgEWiRWZgqctetACmEw/5caAfp9dPuI5a32QH83Z4eC8wwQ7x72k8PSIQdFGEZBu7wnSRwwPqYxs9pM45vCJZKxS9mvxNHn94vFFF8TKTsJsMl8oa3vQNffQ/vRLajwwqkrVvgWwiPJ3qayumvlfBCS3t/Wn+usvt/XNDC9mK1Xp3fmyCCYKRuQpS2lVAV30Pu4EMhqWRYd7N8rArUxDlWh19ty7/HOkbWFlROBqMp2NEZ4kQtQDg3jpU7av9T04PTH/YErywDzSve79y4//ACLD4hY=",
       "is_continuation": true
     }
   },
@@ -228,7 +228,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -241,7 +241,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJyVUk1v2zAM/SuEz4kTN82S7Lb1slMPa3vqikCW6FioLHkSlcQo8t9HOmnRFcWA3SR+vffI9/hSoMMOPW2tKb5CsVrUmy96szArtVk3G1NfXS+XV2p53SyWq3o9LyZQdEjKKFJc/1LIY5tCjhrHf4+xsynZ4NP2UvT4UnTBSHqxqNbr0xPPiKhDNFsXtKIQz52KWqEwa0OHs5i9xzg7hPg8yz5RzJpyRPP3B4+q6x1OTdBp1ipv6hCep1VfcuBYnE6M1FiHNPQCX6i+d5YRmd1s700ZevTHzjUhdorSNDSN1citWTZSMrbpY9DIcvyuc+VrRpbglN9ltcMkAgv0u0Jk9RzZ+tzVKJoqwSc8kmDfBmp5DFgP/Ejw48IWUhuyM1Aj6DBqQwMUAI86J+RahERcK72cTIQITQwdV7P0QcIHSy0o58BkspjAdn1IPKUexvbvyj/H3JMe4IbvADwMfmaHaQKyfwfx/JE4S8aYIDRjp+a7Uglw/xmJC28fyDZnoAdviWHvSBGzuL/UHVr0uMc4lvA+91bc8QrxtgYW3/BxKJ3lSO4dOyb2P9x4v0pzhSdVO94Xd7/bT0KSEKN8PMYE6kzgEUddwGZOwXPnIE+xCS9pkDEDZM+0mA1ziQfLl7JMgb2Fhkl9YzAmRZnNPUDEBiN6Laf5eP0xJ/f+5FITqCp4KO/KmxJ+5flcraCaV8DsE/4uJ/+iIBZ9df2tipE9v8d7seLp6Q+7i2fd"
+      "orig_elements": "eJyVkk1v2zAMhv8K4XPixE2zJLttvezUw9qeuiKQJToWKkueRCUxivz3kU46FEUwYDeJn89L8vmtQIcdetpaU3yFYrWoN1/0ZmFWarNuNqa+uV0ub9TytlksV/V6Xkyg6JCUUaQ4/q2QxzaFHDWO/x5jZ1OywaftJej5reiCEfdiUa3XpxeuEVGHaLYuaEUhnjMVtYIwa0OHs5i9xzg7hPg6yz5RzJpyRDO1foeJrtrwqLre4dQEnWat8qYO4XVa9SUbjsXpxH0b65CGXmAK1ffOcn9mne29KUOP/ti5JsROUZqGprEaOTXLfEomMX0MGlmc33WufPfISJzyu6wYQuQW6HeFiOzZsvW5q1EUVtKf8EjS+z5Qy2XAeuBHgh8XWkhtyM5AjaDDKBENUAA86pyQYxEScazksjMRIjQxdBzN0gcxHyy1oJwDk8liAtv1IXGVehjTvyv/GnNPeoA73gpwMfiZHaYJyDYcxPNH7CwZY4LQjJmat0wlwOM1iAu3D2Sbc6Mnb4nbPpAipni8xB1a9LjHOIbwPPdWbuW9xd8xsPiGl0PpLEd8H+gY7H/YeL5Kc4QnVTueF2d/mE9CEhN3+byMCdSZwCOOuoBPOwXPmYM85Ux4SIOUGSB7xmIaZokHy5uyjMC3hYahvnEzhqLMpz5AxAYjei2r+bz90Sf7vrKpCVQVPJUP5V0Jv/J8rlZQzStg+oS/y8m/EORE36/+XsXIN7/HRznF08sfzrttSw=="
     }
   },
   {
@@ -251,7 +251,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -264,7 +264,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJyVUk1v2zAM/SuEz4kTN82S7Lb1slMPa3vqikCW6FioLHkSlcQo8t9HOmnRFcWA3SR+vffI9/hSoMMOPW2tKb5CsVrUmy96szArtVk3G1NfXS+XV2p53SyWq3o9LyZQdEjKKFJc/1LIY5tCjhrHf4+xsynZ4NP2UvT4UnTBSHqxqNbr0xPPiKhDNFsXtKIQz52KWqEwa0OHs5i9xzg7hPg8yz5RzJpyRPP3B4+q6x1OTdBp1ipv6hCep1VfcuBYnE6M1FiHNPQCX6i+d5YRmd1s700ZevTHzjUhdorSNDSN1citWTZSMrbpY9DIcvyuc+VrRpbglN9ltcMkAgv0u0Jk9RzZ+tzVKJoqwSc8kmDfBmp5DFgP/Ejw48IWUhuyM1Aj6DBqQwMUAI86J+RahERcK72cTIQITQwdV7P0QcIHSy0o58BkspjAdn1IPKUexvbvyj/H3JMe4IbvADwMfmaHaQKyfwfx/JE4S8aYIDRjp+a7Uglw/xmJC28fyDZnoAdviWHvSBGzuL/UHVr0uMc4lvA+91bc8QrxtgYW3/BxKJ3lSO4dOyb2P9x4v0pzhSdVO94Xd7/bT0KSEKN8PMYE6kzgEUddwGZOwXPnIE+xCS9pkDEDZM+0mA1ziQfLl7JMgb2Fhkl9YzAmRZnNPUDEBiN6Laf5eP0xJ/f+5FITqCp4KO/KmxJ+5flcraCaV8DsE/4uJ/+iIBZ9df2tipE9v8d7seLp6Q+7i2fd",
+      "orig_elements": "eJyVkk1v2zAMhv8K4XPixE2zJLttvezUw9qeuiKQJToWKkueRCUxivz3kU46FEUwYDeJn89L8vmtQIcdetpaU3yFYrWoN1/0ZmFWarNuNqa+uV0ub9TytlksV/V6Xkyg6JCUUaQ4/q2QxzaFHDWO/x5jZ1OywaftJej5reiCEfdiUa3XpxeuEVGHaLYuaEUhnjMVtYIwa0OHs5i9xzg7hPg6yz5RzJpyRDO1foeJrtrwqLre4dQEnWat8qYO4XVa9SUbjsXpxH0b65CGXmAK1ffOcn9mne29KUOP/ti5JsROUZqGprEaOTXLfEomMX0MGlmc33WufPfISJzyu6wYQuQW6HeFiOzZsvW5q1EUVtKf8EjS+z5Qy2XAeuBHgh8XWkhtyM5AjaDDKBENUAA86pyQYxEScazksjMRIjQxdBzN0gcxHyy1oJwDk8liAtv1IXGVehjTvyv/GnNPeoA73gpwMfiZHaYJyDYcxPNH7CwZY4LQjJmat0wlwOM1iAu3D2Sbc6Mnb4nbPpAipni8xB1a9LjHOIbwPPdWbuW9xd8xsPiGl0PpLEd8H+gY7H/YeL5Kc4QnVTueF2d/mE9CEhN3+byMCdSZwCOOuoBPOwXPmYM85Ux4SIOUGSB7xmIaZokHy5uyjMC3hYahvnEzhqLMpz5AxAYjei2r+bz90Sf7vrKpCVQVPJUP5V0Jv/J8rlZQzStg+oS/y8m/EORE36/+XsXIN7/HRznF08sfzrttSw==",
       "is_continuation": true
     }
   },
@@ -275,7 +275,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -288,7 +288,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJyVUk1v2zAM/SuEz4kTN82S7Lb1slMPa3vqikCW6FioLHkSlcQo8t9HOmnRFcWA3SR+vffI9/hSoMMOPW2tKb5CsVrUmy96szArtVk3G1NfXS+XV2p53SyWq3o9LyZQdEjKKFJc/1LIY5tCjhrHf4+xsynZ4NP2UvT4UnTBSHqxqNbr0xPPiKhDNFsXtKIQz52KWqEwa0OHs5i9xzg7hPg8yz5RzJpyRPP3B4+q6x1OTdBp1ipv6hCep1VfcuBYnE6M1FiHNPQCX6i+d5YRmd1s700ZevTHzjUhdorSNDSN1citWTZSMrbpY9DIcvyuc+VrRpbglN9ltcMkAgv0u0Jk9RzZ+tzVKJoqwSc8kmDfBmp5DFgP/Ejw48IWUhuyM1Aj6DBqQwMUAI86J+RahERcK72cTIQITQwdV7P0QcIHSy0o58BkspjAdn1IPKUexvbvyj/H3JMe4IbvADwMfmaHaQKyfwfx/JE4S8aYIDRjp+a7Uglw/xmJC28fyDZnoAdviWHvSBGzuL/UHVr0uMc4lvA+91bc8QrxtgYW3/BxKJ3lSO4dOyb2P9x4v0pzhSdVO94Xd7/bT0KSEKN8PMYE6kzgEUddwGZOwXPnIE+xCS9pkDEDZM+0mA1ziQfLl7JMgb2Fhkl9YzAmRZnNPUDEBiN6Laf5eP0xJ/f+5FITqCp4KO/KmxJ+5flcraCaV8DsE/4uJ/+iIBZ9df2tipE9v8d7seLp6Q+7i2fd",
+      "orig_elements": "eJyVkk1v2zAMhv8K4XPixE2zJLttvezUw9qeuiKQJToWKkueRCUxivz3kU46FEUwYDeJn89L8vmtQIcdetpaU3yFYrWoN1/0ZmFWarNuNqa+uV0ub9TytlksV/V6Xkyg6JCUUaQ4/q2QxzaFHDWO/x5jZ1OywaftJej5reiCEfdiUa3XpxeuEVGHaLYuaEUhnjMVtYIwa0OHs5i9xzg7hPg6yz5RzJpyRDO1foeJrtrwqLre4dQEnWat8qYO4XVa9SUbjsXpxH0b65CGXmAK1ffOcn9mne29KUOP/ti5JsROUZqGprEaOTXLfEomMX0MGlmc33WufPfISJzyu6wYQuQW6HeFiOzZsvW5q1EUVtKf8EjS+z5Qy2XAeuBHgh8XWkhtyM5AjaDDKBENUAA86pyQYxEScazksjMRIjQxdBzN0gcxHyy1oJwDk8liAtv1IXGVehjTvyv/GnNPeoA73gpwMfiZHaYJyDYcxPNH7CwZY4LQjJmat0wlwOM1iAu3D2Sbc6Mnb4nbPpAipni8xB1a9LjHOIbwPPdWbuW9xd8xsPiGl0PpLEd8H+gY7H/YeL5Kc4QnVTueF2d/mE9CEhN3+byMCdSZwCOOuoBPOwXPmYM85Ux4SIOUGSB7xmIaZokHy5uyjMC3hYahvnEzhqLMpz5AxAYjei2r+bz90Sf7vrKpCVQVPJUP5V0Jv/J8rlZQzStg+oS/y8m/EORE36/+XsXIN7/HRznF08sfzrttSw==",
       "is_continuation": true
     }
   },
@@ -299,7 +299,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -312,7 +312,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJyVUk1v2zAM/SuEz4kTN82S7Lb1slMPa3vqikCW6FioLHkSlcQo8t9HOmnRFcWA3SR+vffI9/hSoMMOPW2tKb5CsVrUmy96szArtVk3G1NfXS+XV2p53SyWq3o9LyZQdEjKKFJc/1LIY5tCjhrHf4+xsynZ4NP2UvT4UnTBSHqxqNbr0xPPiKhDNFsXtKIQz52KWqEwa0OHs5i9xzg7hPg8yz5RzJpyRPP3B4+q6x1OTdBp1ipv6hCep1VfcuBYnE6M1FiHNPQCX6i+d5YRmd1s700ZevTHzjUhdorSNDSN1citWTZSMrbpY9DIcvyuc+VrRpbglN9ltcMkAgv0u0Jk9RzZ+tzVKJoqwSc8kmDfBmp5DFgP/Ejw48IWUhuyM1Aj6DBqQwMUAI86J+RahERcK72cTIQITQwdV7P0QcIHSy0o58BkspjAdn1IPKUexvbvyj/H3JMe4IbvADwMfmaHaQKyfwfx/JE4S8aYIDRjp+a7Uglw/xmJC28fyDZnoAdviWHvSBGzuL/UHVr0uMc4lvA+91bc8QrxtgYW3/BxKJ3lSO4dOyb2P9x4v0pzhSdVO94Xd7/bT0KSEKN8PMYE6kzgEUddwGZOwXPnIE+xCS9pkDEDZM+0mA1ziQfLl7JMgb2Fhkl9YzAmRZnNPUDEBiN6Laf5eP0xJ/f+5FITqCp4KO/KmxJ+5flcraCaV8DsE/4uJ/+iIBZ9df2tipE9v8d7seLp6Q+7i2fd",
+      "orig_elements": "eJyVkk1v2zAMhv8K4XPixE2zJLttvezUw9qeuiKQJToWKkueRCUxivz3kU46FEUwYDeJn89L8vmtQIcdetpaU3yFYrWoN1/0ZmFWarNuNqa+uV0ub9TytlksV/V6Xkyg6JCUUaQ4/q2QxzaFHDWO/x5jZ1OywaftJej5reiCEfdiUa3XpxeuEVGHaLYuaEUhnjMVtYIwa0OHs5i9xzg7hPg6yz5RzJpyRDO1foeJrtrwqLre4dQEnWat8qYO4XVa9SUbjsXpxH0b65CGXmAK1ffOcn9mne29KUOP/ti5JsROUZqGprEaOTXLfEomMX0MGlmc33WufPfISJzyu6wYQuQW6HeFiOzZsvW5q1EUVtKf8EjS+z5Qy2XAeuBHgh8XWkhtyM5AjaDDKBENUAA86pyQYxEScazksjMRIjQxdBzN0gcxHyy1oJwDk8liAtv1IXGVehjTvyv/GnNPeoA73gpwMfiZHaYJyDYcxPNH7CwZY4LQjJmat0wlwOM1iAu3D2Sbc6Mnb4nbPpAipni8xB1a9LjHOIbwPPdWbuW9xd8xsPiGl0PpLEd8H+gY7H/YeL5Kc4QnVTueF2d/mE9CEhN3+byMCdSZwCOOuoBPOwXPmYM85Ux4SIOUGSB7xmIaZokHy5uyjMC3hYahvnEzhqLMpz5AxAYjei2r+bz90Sf7vrKpCVQVPJUP5V0Jv/J8rlZQzStg+oS/y8m/EORE36/+XsXIN7/HRznF08sfzrttSw==",
       "is_continuation": true
     }
   },
@@ -323,7 +323,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -336,7 +336,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJyVUk1v2zAM/SuEz4kTN82S7Lb1slMPa3vqikCW6FioLHkSlcQo8t9HOmnRFcWA3SR+vffI9/hSoMMOPW2tKb5CsVrUmy96szArtVk3G1NfXS+XV2p53SyWq3o9LyZQdEjKKFJc/1LIY5tCjhrHf4+xsynZ4NP2UvT4UnTBSHqxqNbr0xPPiKhDNFsXtKIQz52KWqEwa0OHs5i9xzg7hPg8yz5RzJpyRPP3B4+q6x1OTdBp1ipv6hCep1VfcuBYnE6M1FiHNPQCX6i+d5YRmd1s700ZevTHzjUhdorSNDSN1citWTZSMrbpY9DIcvyuc+VrRpbglN9ltcMkAgv0u0Jk9RzZ+tzVKJoqwSc8kmDfBmp5DFgP/Ejw48IWUhuyM1Aj6DBqQwMUAI86J+RahERcK72cTIQITQwdV7P0QcIHSy0o58BkspjAdn1IPKUexvbvyj/H3JMe4IbvADwMfmaHaQKyfwfx/JE4S8aYIDRjp+a7Uglw/xmJC28fyDZnoAdviWHvSBGzuL/UHVr0uMc4lvA+91bc8QrxtgYW3/BxKJ3lSO4dOyb2P9x4v0pzhSdVO94Xd7/bT0KSEKN8PMYE6kzgEUddwGZOwXPnIE+xCS9pkDEDZM+0mA1ziQfLl7JMgb2Fhkl9YzAmRZnNPUDEBiN6Laf5eP0xJ/f+5FITqCp4KO/KmxJ+5flcraCaV8DsE/4uJ/+iIBZ9df2tipE9v8d7seLp6Q+7i2fd",
+      "orig_elements": "eJyVkk1v2zAMhv8K4XPixE2zJLttvezUw9qeuiKQJToWKkueRCUxivz3kU46FEUwYDeJn89L8vmtQIcdetpaU3yFYrWoN1/0ZmFWarNuNqa+uV0ub9TytlksV/V6Xkyg6JCUUaQ4/q2QxzaFHDWO/x5jZ1OywaftJej5reiCEfdiUa3XpxeuEVGHaLYuaEUhnjMVtYIwa0OHs5i9xzg7hPg6yz5RzJpyRDO1foeJrtrwqLre4dQEnWat8qYO4XVa9SUbjsXpxH0b65CGXmAK1ffOcn9mne29KUOP/ti5JsROUZqGprEaOTXLfEomMX0MGlmc33WufPfISJzyu6wYQuQW6HeFiOzZsvW5q1EUVtKf8EjS+z5Qy2XAeuBHgh8XWkhtyM5AjaDDKBENUAA86pyQYxEScazksjMRIjQxdBzN0gcxHyy1oJwDk8liAtv1IXGVehjTvyv/GnNPeoA73gpwMfiZHaYJyDYcxPNH7CwZY4LQjJmat0wlwOM1iAu3D2Sbc6Mnb4nbPpAipni8xB1a9LjHOIbwPPdWbuW9xd8xsPiGl0PpLEd8H+gY7H/YeL5Kc4QnVTueF2d/mE9CEhN3+byMCdSZwCOOuoBPOwXPmYM85Ux4SIOUGSB7xmIaZokHy5uyjMC3hYahvnEzhqLMpz5AxAYjei2r+bz90Sf7vrKpCVQVPJUP5V0Jv/J8rlZQzStg+oS/y8m/EORE36/+XsXIN7/HRznF08sfzrttSw==",
       "is_continuation": true
     }
   },
@@ -347,7 +347,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -360,7 +360,7 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJztUsmO2zAM/RVB58ZLYidxjz3NaVCg6WkwMGiLsoVYCyQ6TRHk30u1GWBaoH8wN1Hk01vEl5vEBS066o2Sn4VEPNTVfoBKbZvq0FVNpSuNXdvVGnYwNPKTkBYJFBDw/E3mQ5/8Gkf8XQeM1qRkvEv9Y+jlJq1Xub3b1cfj/ZXfiDj6qPrFj0A+/kECzVlCOXuLZVydw1j+8PFcri5RXEdaI6q/C7yCDQtulB9TOYNTg/fnTR0KvrjK+52ZtFmQfoZMLyGExTAjqysvThU+oLvaRftogdLGa21GZOiaEymYW4XoR2Q7brJL8dbJISzgphUmTNmgRDfJbCvwTe9WO2D2VGd+witl7tNsknh6SBTKYxLOkxgjAqEApUyWBYuIZpopCZjAsFVBM4pEjGMNgp0nQhQ+iu/OECrxjRiexOnRME5ouHDba+EZGkWASAZTkUW/5fAMMXIKFzxlcazy3zXoukrtj1V7GLb7o1aNbrbNoBpox6FtVbf7WIP/r8H7T38f+lce+8K/fZb3118ujDSv"
+      "orig_elements": "eJztkstu2zAQRX+F4LrWw5Zsq8uusgoK1F0FgTAShxJh8QFy5Low/O8dtg4QFF30A7Ij58E593JebhIXtOioN0p+FhLxUFf7ASq1bapDVzWVrjR2bVdr2MHQyE9CWiRQQMD1N5kPffJrHPH3PWC0JiXjXeofRS83ab3K6d2uPh7vr/xGxNFH1S9+BPLxTyfQnBHK2Vss4+ocxvKHj+dydYniOtIaUW2MmzDRP2N4BRsW3Cg/pnIGpwbvz5s6FBy4yvud52qzIP0MGUZCCIvh+cxaXpwqfEB3tYv20QKljdfajMita/anYBIVoh+RxbnJLsVbJluygJtWYIgsV6KbZBYZONK71Q6YFdZ5PuGV8uzTbJJ4eiAK5TEJ50mMEYFQgFImY8EioplmSgImMKxY0IwiEfcxg2ADEiEKH8V3ZwiV+EbcnsTpkTBOaLhw2mvhuTWKAJEMpiJDv/nwDDGyCxc8ZTim/Hspuq5S+2PVHobt/qhVo5ttM6gG2nFoW9XtPpbif5fi/Qq8/4KvXPaF//4s76+/AEX6P4s="
     }
   },
   {
@@ -370,7 +370,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -383,7 +383,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxVkMtOwzAQRX8l8pompGmlhB2IIJAQldp0VarIsSdpVNtj+QFBVf4dG+iC3bzPvXO4EBAgQbl25OQuIauCccp51RXLjlf5ii0L3lddWZXlmt2uC3KTEAmOcupomL+QGLQWvWHwk2swcrR2RGXbv6HDhUjksV0UeVnOx3DDAEPDW4GMOjS/m9SdooTshBIy45UCk32iOWdeWWc8c94A/5/ARKUWsODIbHaiineI50Wu01CYyDwHUj8KcF864gnVWoyBGNRlH4qnqEFNUvRoJHV2gX0/MgirPn4kDWyuDTIIdtQgRXrtxCcIqgZPB7DRIAE1kGhLh0qrvOwgelpGvoPJRfZD+u62m9c62TwlzXOd7N9emvox2TX3Tb1Lmu1+19R1vHwV24xOAJmP32EBjeE="
+      "orig_elements": "eJxtkMlOwzAURX/F8poktGmlhB2IIJAQldp0VarIsV9Sq57kAYKq/Ds20B07+77hnvsOFwwCJCjfcYbvEF6VlBHG6r5c9qxerOiyZEPdV3VVrentusQ3CEvwhBFPYv8Fp0fndLAUfv4GrOTOca1c99d0uGCpWSqX5aKq5mPcYYFqyzqhKfHa/k4Sf0oIxUlLKGxQCmzxqe25CMp5G6gPFljG1QjO/6vBRKQRkDFNXXEiivVan7OFyaMw4XmOvgMX4L9MgsHEGMGjf2QtPhTLtQE1STFoK4l3mR4GTiGOhnSfPJIwYzWFGE6NUuTXSjqJIGoMJEKkuBjUiFNIE5VOBdlDSrhM/h4mn7wf8ne/3bw2aPOE2ucG7d9e2uYR7dr7ttmhdrvftU2TNl9hW+4F4Pn4Dea8k08="
     }
   },
   {
@@ -393,7 +393,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -406,7 +406,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxdUkuP2jAQ/iujnCEQKIXtrVXPPVTcVivk2BPiEnussc1DiP/eccL2sZfI8cx8L8/rvcIBHfp0sKb6AlXT7Zpd15hta5abpVo2643qupfPq+W2+4SrTTWDymFSRiUl/feqHA6RMmsc/wOyszFa8vHwbHq9V45MKa/XzW73eBMMRk1sDgNplYinSZX6ImHRk8MFZ++RFxfi0yL7mDjrlBnN/z94VS4MODek46JX3rREp3kTarm4Vo+HMHV2wHQLhb5SIQxWGEXd4uxNTQH91Q0dsVMpzqnrrEYZzSWRWrhNYNIodvzRDfV7pYQwKH/M6oixGKzQH6tiK8jNwWfXYvG0KvwJr6lw73uEb8qfOIekb/ATCyt81Qmog+ZluwNGR2c0kKSz/dv5K5sjQsfkxgpjDBKube1gk8UIggNG3RLJB5Rx1ltJaDRZoLWKGGuA79hK0nEGWoKz01ECE0zLBoLiEexiUy8gZ+SIYH1CoUsREo3cEnxMiHCRa9DkNbIfBas01rXsQZrBpbe6h8B4tpTjIKpCoAJmRsaYZUnONj6tPkFljPJgwFMC60Y9aiizRgIoj4al2zKwPfYiScWnTsVFuDidZExoNexJ6kbkxzIX/+gV2yOgoI9q/k3sLDlnr0t0UxTWf3yNeBN4NyXQ2k72XpSZuqzE+5b9UDyB7cvTP95+AzyBOSk="
+      "orig_elements": "eJxtU0tv2zAM/iuEz40Tt+ua7rZh5x2G3ooikCU65mqJgkTlgSL/fZSdbsPQi2Hz8b0kP781OKHHIDtyzRdoumHbbYfOPfRuc78xm+7u3gzD4+fbzcPwCW/vmxtoPIpxRozOvzX1ZZe5JIvzd8TkKWfikHfXoee3xrOr7bu7bru9vChGQsvJ7Sa2Rjgtm0bGKmE9ssd1KiFgWh85va5LyJKKlZLQrSjsMcuHNTwZHydcObZ5PZrgeubXVRdbLZyay0V5B5pQzrGKaUyMEym/al0fgms5Yjj5aeDkjeQVDwNZ1NVS82lViYuJLaq5sPdT+96pkUwm7ItREdVug2HfVJNRK7tQfI/V4W3lFzxJ5X4aEb6Z8JpKFHuGn1hZ4asV4AG6x4ctJPR8QAeik/3fyV/F7RGGxH7uJMxRo6aeJhLCDIoDzpyF9QHGeQqkQc0mK7Q1GXML8B17zT3fgNX8aHnVwBSTkoNo0gx2JBkV5IApI1AQVDrJIDxza/5ZEOGoZbAcLKYwCzYy963eCrmB40h2hJjwQFzypKpi5ArmZsZc9MocKF+tXkF1jcvkILAA+VmPmequ0wDqoWGdpgSJ9qNKMvmq06QqXJ0uMha0Fp5Y+07l57qX/+hV2zOgos9q/k3soDmXYGt0SxQU/j+NfFZ4vyTQ06B/gSpzbb0S77fsh0kL2FM9+svLb0KuPpc="
     }
   },
   {
@@ -416,7 +416,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -429,7 +429,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxdUkuP2jAQ/iujnCEQKIXtrVXPPVTcVivk2BPiEnussc1DiP/eccL2sZfI8cx8L8/rvcIBHfp0sKb6AlXT7Zpd15hta5abpVo2643qupfPq+W2+4SrTTWDymFSRiUl/feqHA6RMmsc/wOyszFa8vHwbHq9V45MKa/XzW73eBMMRk1sDgNplYinSZX6ImHRk8MFZ++RFxfi0yL7mDjrlBnN/z94VS4MODek46JX3rREp3kTarm4Vo+HMHV2wHQLhb5SIQxWGEXd4uxNTQH91Q0dsVMpzqnrrEYZzSWRWrhNYNIodvzRDfV7pYQwKH/M6oixGKzQH6tiK8jNwWfXYvG0KvwJr6lw73uEb8qfOIekb/ATCyt81Qmog+ZluwNGR2c0kKSz/dv5K5sjQsfkxgpjDBKube1gk8UIggNG3RLJB5Rx1ltJaDRZoLWKGGuA79hK0nEGWoKz01ECE0zLBoLiEexiUy8gZ+SIYH1CoUsREo3cEnxMiHCRa9DkNbIfBas01rXsQZrBpbe6h8B4tpTjIKpCoAJmRsaYZUnONj6tPkFljPJgwFMC60Y9aiizRgIoj4al2zKwPfYiScWnTsVFuDidZExoNexJ6kbkxzIX/+gV2yOgoI9q/k3sLDlnr0t0UxTWf3yNeBN4NyXQ2k72XpSZuqzE+5b9UDyB7cvTP95+AzyBOSk=",
+      "orig_elements": "eJxtU0tv2zAM/iuEz40Tt+ua7rZh5x2G3ooikCU65mqJgkTlgSL/fZSdbsPQi2Hz8b0kP781OKHHIDtyzRdoumHbbYfOPfRuc78xm+7u3gzD4+fbzcPwCW/vmxtoPIpxRozOvzX1ZZe5JIvzd8TkKWfikHfXoee3xrOr7bu7bru9vChGQsvJ7Sa2Rjgtm0bGKmE9ssd1KiFgWh85va5LyJKKlZLQrSjsMcuHNTwZHydcObZ5PZrgeubXVRdbLZyay0V5B5pQzrGKaUyMEym/al0fgms5Yjj5aeDkjeQVDwNZ1NVS82lViYuJLaq5sPdT+96pkUwm7ItREdVug2HfVJNRK7tQfI/V4W3lFzxJ5X4aEb6Z8JpKFHuGn1hZ4asV4AG6x4ctJPR8QAeik/3fyV/F7RGGxH7uJMxRo6aeJhLCDIoDzpyF9QHGeQqkQc0mK7Q1GXML8B17zT3fgNX8aHnVwBSTkoNo0gx2JBkV5IApI1AQVDrJIDxza/5ZEOGoZbAcLKYwCzYy963eCrmB40h2hJjwQFzypKpi5ArmZsZc9MocKF+tXkF1jcvkILAA+VmPmequ0wDqoWGdpgSJ9qNKMvmq06QqXJ0uMha0Fp5Y+07l57qX/+hV2zOgos9q/k3soDmXYGt0SxQU/j+NfFZ4vyTQ06B/gSpzbb0S77fsh0kL2FM9+svLb0KuPpc=",
       "is_continuation": true
     }
   },
@@ -440,7 +440,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -453,7 +453,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxdUkuP2jAQ/iujnCEQKIXtrVXPPVTcVivk2BPiEnussc1DiP/eccL2sZfI8cx8L8/rvcIBHfp0sKb6AlXT7Zpd15hta5abpVo2643qupfPq+W2+4SrTTWDymFSRiUl/feqHA6RMmsc/wOyszFa8vHwbHq9V45MKa/XzW73eBMMRk1sDgNplYinSZX6ImHRk8MFZ++RFxfi0yL7mDjrlBnN/z94VS4MODek46JX3rREp3kTarm4Vo+HMHV2wHQLhb5SIQxWGEXd4uxNTQH91Q0dsVMpzqnrrEYZzSWRWrhNYNIodvzRDfV7pYQwKH/M6oixGKzQH6tiK8jNwWfXYvG0KvwJr6lw73uEb8qfOIekb/ATCyt81Qmog+ZluwNGR2c0kKSz/dv5K5sjQsfkxgpjDBKube1gk8UIggNG3RLJB5Rx1ltJaDRZoLWKGGuA79hK0nEGWoKz01ECE0zLBoLiEexiUy8gZ+SIYH1CoUsREo3cEnxMiHCRa9DkNbIfBas01rXsQZrBpbe6h8B4tpTjIKpCoAJmRsaYZUnONj6tPkFljPJgwFMC60Y9aiizRgIoj4al2zKwPfYiScWnTsVFuDidZExoNexJ6kbkxzIX/+gV2yOgoI9q/k3sLDlnr0t0UxTWf3yNeBN4NyXQ2k72XpSZuqzE+5b9UDyB7cvTP95+AzyBOSk=",
+      "orig_elements": "eJxtU0tv2zAM/iuEz40Tt+ua7rZh5x2G3ooikCU65mqJgkTlgSL/fZSdbsPQi2Hz8b0kP781OKHHIDtyzRdoumHbbYfOPfRuc78xm+7u3gzD4+fbzcPwCW/vmxtoPIpxRozOvzX1ZZe5JIvzd8TkKWfikHfXoee3xrOr7bu7bru9vChGQsvJ7Sa2Rjgtm0bGKmE9ssd1KiFgWh85va5LyJKKlZLQrSjsMcuHNTwZHydcObZ5PZrgeubXVRdbLZyay0V5B5pQzrGKaUyMEym/al0fgms5Yjj5aeDkjeQVDwNZ1NVS82lViYuJLaq5sPdT+96pkUwm7ItREdVug2HfVJNRK7tQfI/V4W3lFzxJ5X4aEb6Z8JpKFHuGn1hZ4asV4AG6x4ctJPR8QAeik/3fyV/F7RGGxH7uJMxRo6aeJhLCDIoDzpyF9QHGeQqkQc0mK7Q1GXML8B17zT3fgNX8aHnVwBSTkoNo0gx2JBkV5IApI1AQVDrJIDxza/5ZEOGoZbAcLKYwCzYy963eCrmB40h2hJjwQFzypKpi5ArmZsZc9MocKF+tXkF1jcvkILAA+VmPmequ0wDqoWGdpgSJ9qNKMvmq06QqXJ0uMha0Fp5Y+07l57qX/+hV2zOgos9q/k3soDmXYGt0SxQU/j+NfFZ4vyTQ06B/gSpzbb0S77fsh0kL2FM9+svLb0KuPpc=",
       "is_continuation": true
     }
   },
@@ -464,7 +464,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -477,7 +477,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxdUkuP2jAQ/iujnCEQKIXtrVXPPVTcVivk2BPiEnussc1DiP/eccL2sZfI8cx8L8/rvcIBHfp0sKb6AlXT7Zpd15hta5abpVo2643qupfPq+W2+4SrTTWDymFSRiUl/feqHA6RMmsc/wOyszFa8vHwbHq9V45MKa/XzW73eBMMRk1sDgNplYinSZX6ImHRk8MFZ++RFxfi0yL7mDjrlBnN/z94VS4MODek46JX3rREp3kTarm4Vo+HMHV2wHQLhb5SIQxWGEXd4uxNTQH91Q0dsVMpzqnrrEYZzSWRWrhNYNIodvzRDfV7pYQwKH/M6oixGKzQH6tiK8jNwWfXYvG0KvwJr6lw73uEb8qfOIekb/ATCyt81Qmog+ZluwNGR2c0kKSz/dv5K5sjQsfkxgpjDBKube1gk8UIggNG3RLJB5Rx1ltJaDRZoLWKGGuA79hK0nEGWoKz01ECE0zLBoLiEexiUy8gZ+SIYH1CoUsREo3cEnxMiHCRa9DkNbIfBas01rXsQZrBpbe6h8B4tpTjIKpCoAJmRsaYZUnONj6tPkFljPJgwFMC60Y9aiizRgIoj4al2zKwPfYiScWnTsVFuDidZExoNexJ6kbkxzIX/+gV2yOgoI9q/k3sLDlnr0t0UxTWf3yNeBN4NyXQ2k72XpSZuqzE+5b9UDyB7cvTP95+AzyBOSk=",
+      "orig_elements": "eJxtU0tv2zAM/iuEz40Tt+ua7rZh5x2G3ooikCU65mqJgkTlgSL/fZSdbsPQi2Hz8b0kP781OKHHIDtyzRdoumHbbYfOPfRuc78xm+7u3gzD4+fbzcPwCW/vmxtoPIpxRozOvzX1ZZe5JIvzd8TkKWfikHfXoee3xrOr7bu7bru9vChGQsvJ7Sa2Rjgtm0bGKmE9ssd1KiFgWh85va5LyJKKlZLQrSjsMcuHNTwZHydcObZ5PZrgeubXVRdbLZyay0V5B5pQzrGKaUyMEym/al0fgms5Yjj5aeDkjeQVDwNZ1NVS82lViYuJLaq5sPdT+96pkUwm7ItREdVug2HfVJNRK7tQfI/V4W3lFzxJ5X4aEb6Z8JpKFHuGn1hZ4asV4AG6x4ctJPR8QAeik/3fyV/F7RGGxH7uJMxRo6aeJhLCDIoDzpyF9QHGeQqkQc0mK7Q1GXML8B17zT3fgNX8aHnVwBSTkoNo0gx2JBkV5IApI1AQVDrJIDxza/5ZEOGoZbAcLKYwCzYy963eCrmB40h2hJjwQFzypKpi5ArmZsZc9MocKF+tXkF1jcvkILAA+VmPmequ0wDqoWGdpgSJ9qNKMvmq06QqXJ0uMha0Fp5Y+07l57qX/+hV2zOgos9q/k3soDmXYGt0SxQU/j+NfFZ4vyTQ06B/gSpzbb0S77fsh0kL2FM9+svLb0KuPpc=",
       "is_continuation": true
     }
   },
@@ -488,7 +488,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -501,7 +501,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Uslu2zAQ/ZWBzrXkJXGj3gr0UBRoUaDuKQ2MMTmSiIgLyKEXGP73DiXn0AC9cdb33jw+XysayZLjvdHVJ6gO2zU+rB63qt1i93H9uGy3a922m1YvSW83D9UHqCwxamSU/mtVHvvkc1Q0xYGiNSkZ79L+3vR8razXpbzZrJ6ebi+yI5LyUe9Hr5B9nCeRh0KhGbylJmbnKDYnH1+b7BLHrDhH0v8GdEYbRlpor1IzoNMH718Xq1BL4lzdboLUmZH4Egp8hSGMRhCFXXN0uvaB3NmOnY8WOS181xlFMprLRWrB1iF6RSLH9Xas3yrlCCO6PmNPqQisyPVVkRUks3fZHqhoWhd8pjMX7O/oLoDaGmdEgHA4EnTZqUImQaFAcbyA3G96azhcgAcCJbdlOFEkCCMKPTgZHoybil8oYOTCCXwH33JiESCV6HM/zOORJr2lXuKf0fcRbQ3w2XrXT7n/skJR3juBZD81/naGJfrFyJRgFwWPaOY27QnBGzfTES8gZVFzNOkOrwYMTBFWG+B5NNUNwG4wCb7evQN5y/fJgpKdluZpb+bBR8OXdyL+5PVy1SYgh4dRLIIkxLJQq6FY9Ob6D4yzsl2x4vbyFyplDUI="
+      "orig_elements": "eJx1kslu2zAQhl9loHMteUncqLcCPRQFWhSoe0oDY0yOJCLiAnLoBYbfvUPJuRTpjZyF//fP8Pla0UiWHO+Nrj5Bddiu8WH1uFXtFruP68dlu13rtt20ekl6u3moPkBliVEjo9Rfq3LYJ5+joukeKFqTkvEu7e9Fz9fKel3Sm83q6en2Im9EUj7q/egVso9zJ/JQEJrBW2pido5ic/LxtckuccyKcyS9MK6nxO/G6Iw2jLTQXqVmQKcP3r8uVqGWwLm63US3MyPxJRSYCkMYjegLa3N0uvaB3NmOnY8WOS181xlF0prLfGoh0SF6RWLO9Xas3zJlJCO6PqNAFLsVub4qJoNE9i7bAxWH66LPdOai/R3dBVBb44z4EIYjQZedKjAJCgLF8QIyzems4XABHgiUTJrhRJEgjCh4cDI8GDclv1DAyIUJfAffcmIxIJnocz/M7ZEmvyVf7j+j7yPaGuCz9a6fYv+lQnHeO5FkPxX+dobl9ouRKcEuih7RzDa9E4I3bsaRXUDK4uZo0l1eDRiYIqw2wHNrqhuA3WASfL3vDuQsnymLSnZaiqd3Mw8+Gr78Y+JPXi9XbQJyeBhlRZAELAtaDWVFb1v/gXF2tiuruL38BcwrErA="
     }
   },
   {
@@ -511,7 +511,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -524,7 +524,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Uslu2zAQ/ZWBzrXkJXGj3gr0UBRoUaDuKQ2MMTmSiIgLyKEXGP73DiXn0AC9cdb33jw+XysayZLjvdHVJ6gO2zU+rB63qt1i93H9uGy3a922m1YvSW83D9UHqCwxamSU/mtVHvvkc1Q0xYGiNSkZ79L+3vR8razXpbzZrJ6ebi+yI5LyUe9Hr5B9nCeRh0KhGbylJmbnKDYnH1+b7BLHrDhH0v8GdEYbRlpor1IzoNMH718Xq1BL4lzdboLUmZH4Egp8hSGMRhCFXXN0uvaB3NmOnY8WOS181xlFMprLRWrB1iF6RSLH9Xas3yrlCCO6PmNPqQisyPVVkRUks3fZHqhoWhd8pjMX7O/oLoDaGmdEgHA4EnTZqUImQaFAcbyA3G96azhcgAcCJbdlOFEkCCMKPTgZHoybil8oYOTCCXwH33JiESCV6HM/zOORJr2lXuKf0fcRbQ3w2XrXT7n/skJR3juBZD81/naGJfrFyJRgFwWPaOY27QnBGzfTES8gZVFzNOkOrwYMTBFWG+B5NNUNwG4wCb7evQN5y/fJgpKdluZpb+bBR8OXdyL+5PVy1SYgh4dRLIIkxLJQq6FY9Ob6D4yzsl2x4vbyFyplDUI=",
+      "orig_elements": "eJx1kslu2zAQhl9loHMteUncqLcCPRQFWhSoe0oDY0yOJCLiAnLoBYbfvUPJuRTpjZyF//fP8Pla0UiWHO+Nrj5Bddiu8WH1uFXtFruP68dlu13rtt20ekl6u3moPkBliVEjo9Rfq3LYJ5+joukeKFqTkvEu7e9Fz9fKel3Sm83q6en2Im9EUj7q/egVso9zJ/JQEJrBW2pido5ic/LxtckuccyKcyS9MK6nxO/G6Iw2jLTQXqVmQKcP3r8uVqGWwLm63US3MyPxJRSYCkMYjegLa3N0uvaB3NmOnY8WOS181xlF0prLfGoh0SF6RWLO9Xas3zJlJCO6PqNAFLsVub4qJoNE9i7bAxWH66LPdOai/R3dBVBb44z4EIYjQZedKjAJCgLF8QIyzems4XABHgiUTJrhRJEgjCh4cDI8GDclv1DAyIUJfAffcmIxIJnocz/M7ZEmvyVf7j+j7yPaGuCz9a6fYv+lQnHeO5FkPxX+dobl9ouRKcEuih7RzDa9E4I3bsaRXUDK4uZo0l1eDRiYIqw2wHNrqhuA3WASfL3vDuQsnymLSnZaiqd3Mw8+Gr78Y+JPXi9XbQJyeBhlRZAELAtaDWVFb1v/gXF2tiuruL38BcwrErA=",
       "is_continuation": true
     }
   },
@@ -535,7 +535,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -548,7 +548,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Uslu2zAQ/ZWBzrXkJXGj3gr0UBRoUaDuKQ2MMTmSiIgLyKEXGP73DiXn0AC9cdb33jw+XysayZLjvdHVJ6gO2zU+rB63qt1i93H9uGy3a922m1YvSW83D9UHqCwxamSU/mtVHvvkc1Q0xYGiNSkZ79L+3vR8razXpbzZrJ6ebi+yI5LyUe9Hr5B9nCeRh0KhGbylJmbnKDYnH1+b7BLHrDhH0v8GdEYbRlpor1IzoNMH718Xq1BL4lzdboLUmZH4Egp8hSGMRhCFXXN0uvaB3NmOnY8WOS181xlFMprLRWrB1iF6RSLH9Xas3yrlCCO6PmNPqQisyPVVkRUks3fZHqhoWhd8pjMX7O/oLoDaGmdEgHA4EnTZqUImQaFAcbyA3G96azhcgAcCJbdlOFEkCCMKPTgZHoybil8oYOTCCXwH33JiESCV6HM/zOORJr2lXuKf0fcRbQ3w2XrXT7n/skJR3juBZD81/naGJfrFyJRgFwWPaOY27QnBGzfTES8gZVFzNOkOrwYMTBFWG+B5NNUNwG4wCb7evQN5y/fJgpKdluZpb+bBR8OXdyL+5PVy1SYgh4dRLIIkxLJQq6FY9Ob6D4yzsl2x4vbyFyplDUI=",
+      "orig_elements": "eJx1kslu2zAQhl9loHMteUncqLcCPRQFWhSoe0oDY0yOJCLiAnLoBYbfvUPJuRTpjZyF//fP8Pla0UiWHO+Nrj5Bddiu8WH1uFXtFruP68dlu13rtt20ekl6u3moPkBliVEjo9Rfq3LYJ5+joukeKFqTkvEu7e9Fz9fKel3Sm83q6en2Im9EUj7q/egVso9zJ/JQEJrBW2pido5ic/LxtckuccyKcyS9MK6nxO/G6Iw2jLTQXqVmQKcP3r8uVqGWwLm63US3MyPxJRSYCkMYjegLa3N0uvaB3NmOnY8WOS181xlF0prLfGoh0SF6RWLO9Xas3zJlJCO6PqNAFLsVub4qJoNE9i7bAxWH66LPdOai/R3dBVBb44z4EIYjQZedKjAJCgLF8QIyzems4XABHgiUTJrhRJEgjCh4cDI8GDclv1DAyIUJfAffcmIxIJnocz/M7ZEmvyVf7j+j7yPaGuCz9a6fYv+lQnHeO5FkPxX+dobl9ouRKcEuih7RzDa9E4I3bsaRXUDK4uZo0l1eDRiYIqw2wHNrqhuA3WASfL3vDuQsnymLSnZaiqd3Mw8+Gr78Y+JPXi9XbQJyeBhlRZAELAtaDWVFb1v/gXF2tiuruL38BcwrErA=",
       "is_continuation": true
     }
   },
@@ -559,7 +559,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -572,7 +572,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxVkMtuwjAQRX8l8rokDZRHukOFVmxAgrCoAEVOPAkRtsfyo02F8u+1oSy689yZ8bl3DlcCHARIW7SMvEbkJcvSYZqNR1NaZiU8jwHGFDJIKWMTOp2Qp4gIsJRRS/38lYRHYdDpCm61Ai1aY1qUpvgbOlyJQBbao1E6m/Un/4eGCjUrOFbUor5vUnsOFpIzCki0kxJ08o36kjhprHaVdRrY/wI6KhSHAcPKJGcqWYl4GaQq9kJH+t6T6paD/VEBT6hSvPVE7y75kixGBbITvEYtqDUDrOu2Ar/qwkViz2ZKYwU+jmwEjx+dcAROZeNoAyYEJCAbEmIprxTSiRJCpmHgW+hsYL/FR7vL5/k+32w/o8U+Xy130eY9mkdeXS9W648o3+53+XJ5vAEenvPWciD96RdNTpBK"
+      "orig_elements": "eJxtkMtuwjAQRX8l8rpJGijQdIcKrdiABGFRAYocexIs/JIfbSqUf69Ny647z50Z33PncEXAQYB0NaPoJUFPZVmMinIynuGmbOBxAjDBUEKBKZ3i2RQ9JEiAwxQ7HOavKD5qq7whcKs1GMGsZUra+m/ocEVC0dgej4vn5+EU/jBAlKE1VwQ7ZX43sTtHhPysBOTGSwkm/1LmkntpnfHEeQM0ZbID6/7VoMdCc0ipIjY/Y0kbpS5pobMg9GgYgm/LOLhvHWEQ1pqz4B9Y809JM6VB9oK3ygjsbKralhEIqz7eJwskVBtFIISTneDZvRNPwrHsPA4QMS4C2aEYUgelll40EBOOor+D3kXv1+zodtW82leb7Uey2Fer5S7ZvCXzJKjrxWr9nlTb/a5aLo83gztzxRwHNJx+APknlbg="
     }
   },
   {
@@ -582,7 +582,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -595,7 +595,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Ustu2zAQ/JWFTi1gU/IjttprgAK99NA4pzQwVuTKJsyHwIdrw/C/d6nUQFK4Jz52Z3ZmyJdLRYYsubTVqvoK1bz9slbLvuuWs4VcN/jQrtu2b5oW16uVbOfVBCpLCRUm5P5LVTbb6HOQNJ4HClbHqL2L279NL5fKelXKi8Wsba+vzBFI+qC2xktMPrwhMe2LhHrvLdUhO0eh/u3Doc4uppBlyoHUxwOd0A6GpsrLWO/Rqc77w3Q2CL44VdcrT+q1oXQeyvgKh8Fonsjq6qNTwg/kTtb0PlhMcer7XktiaC6JCJ6thuAlsR23s0bcKiUEg26XcUexGKzI7apia+Cbrcu2o+JpXuYnOqUye7MniIklMhewg5iIYI8REHqtstQYzhAoDpyc7rTR6QzJQ2JYh+4Q8pDkGYgpEgmAu3Q6gvWBGISOeS3xXunY5VAcAItjW//BWl6gI+AHjN6hMWfQ7ujNkRRvRh23Vo4tjCEy1/d+LN2T4gPzSX7MCNlhZ6j4YWiJewSpnDQXGfnReLn0PRv4l3Vyf9YoXVtLSnM4LBzVUUcam5+dTuzgqcQWYfOGYN3zFp7Fk3gU8Cs3Da7hoV196j5PSuFRfBM/3xXEkisssec8nSyT7zUtuEmUr3H7bT8wlJiOtClf4Pr6B/mZL3k="
+      "orig_elements": "eJx1Ustu2zAQ/JUFTy1gU34lVnsNUKCXHhrnlAbGilzZhPkQ+HBtGP73LpUaaAv3JGp3Z3ZmyNeLIEuOfN4aLT6DWLSf1nrVd91qvlTrGT6067btZ7MW14+Pql2ICQhHGTVm5PmLqIdtCiUqGv8His6kZIJP299Drxfhgq7t5XLettc35oikQtRbGxTmEN+RmPdVQrMPjppYvKfY/Azx0BSfciwql0h6avyOUr5boxO6wdJUB5WaPXrdhXCYzgfJhZO4Xnlvbyzl81DFCBwGa3g/a22OXsswkD8524foMKdp6HujiKGl5iNZiR5iUMTm/M5ZeevUSCz6XUEWUe0K8jtRTQ5c2friOqoOF3V/plOuuzd7gpRZInMBG0mZCPaYAKE3uiiD8QyR0sA5ms5Yk8+QA2SGdegPsQxZnYFNYyYJcJfOJHAhEoPQM68jPmuTuhKrA2BxbOs/WMcf6Aj4OlPwaO0ZjD8GeyTNh1HHbZRji2OIzPW1H1v3pITIfIqvNkHx2Fmqfhha4x5BumTDTUb+bbwWQ88G/mWd3N81SjfOkTYcDgtHfTSJxuEXbzI7eK6xJdi8I1j3ooUX+SyfJPwosxmu4aF9/NB9nNTGk/wiv//RkCvusMSe8/Sqbr43tOQhWZ/G7bV9w1hjOtKmPoHr2y8nVTTn"
     }
   },
   {
@@ -605,7 +605,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -618,7 +618,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Ustu2zAQ/JWFTi1gU/IjttprgAK99NA4pzQwVuTKJsyHwIdrw/C/d6nUQFK4Jz52Z3ZmyJdLRYYsubTVqvoK1bz9slbLvuuWs4VcN/jQrtu2b5oW16uVbOfVBCpLCRUm5P5LVTbb6HOQNJ4HClbHqL2L279NL5fKelXKi8Wsba+vzBFI+qC2xktMPrwhMe2LhHrvLdUhO0eh/u3Doc4uppBlyoHUxwOd0A6GpsrLWO/Rqc77w3Q2CL44VdcrT+q1oXQeyvgKh8Fonsjq6qNTwg/kTtb0PlhMcer7XktiaC6JCJ6thuAlsR23s0bcKiUEg26XcUexGKzI7apia+Cbrcu2o+JpXuYnOqUye7MniIklMhewg5iIYI8REHqtstQYzhAoDpyc7rTR6QzJQ2JYh+4Q8pDkGYgpEgmAu3Q6gvWBGISOeS3xXunY5VAcAItjW//BWl6gI+AHjN6hMWfQ7ujNkRRvRh23Vo4tjCEy1/d+LN2T4gPzSX7MCNlhZ6j4YWiJewSpnDQXGfnReLn0PRv4l3Vyf9YoXVtLSnM4LBzVUUcam5+dTuzgqcQWYfOGYN3zFp7Fk3gU8Cs3Da7hoV196j5PSuFRfBM/3xXEkisssec8nSyT7zUtuEmUr3H7bT8wlJiOtClf4Pr6B/mZL3k=",
+      "orig_elements": "eJx1Ustu2zAQ/JUFTy1gU34lVnsNUKCXHhrnlAbGilzZhPkQ+HBtGP73LpUaaAv3JGp3Z3ZmyNeLIEuOfN4aLT6DWLSf1nrVd91qvlTrGT6067btZ7MW14+Pql2ICQhHGTVm5PmLqIdtCiUqGv8His6kZIJP299Drxfhgq7t5XLettc35oikQtRbGxTmEN+RmPdVQrMPjppYvKfY/Azx0BSfciwql0h6avyOUr5boxO6wdJUB5WaPXrdhXCYzgfJhZO4Xnlvbyzl81DFCBwGa3g/a22OXsswkD8524foMKdp6HujiKGl5iNZiR5iUMTm/M5ZeevUSCz6XUEWUe0K8jtRTQ5c2friOqoOF3V/plOuuzd7gpRZInMBG0mZCPaYAKE3uiiD8QyR0sA5ms5Yk8+QA2SGdegPsQxZnYFNYyYJcJfOJHAhEoPQM68jPmuTuhKrA2BxbOs/WMcf6Aj4OlPwaO0ZjD8GeyTNh1HHbZRji2OIzPW1H1v3pITIfIqvNkHx2Fmqfhha4x5BumTDTUb+bbwWQ88G/mWd3N81SjfOkTYcDgtHfTSJxuEXbzI7eK6xJdi8I1j3ooUX+SyfJPwosxmu4aF9/NB9nNTGk/wiv//RkCvusMSe8/Sqbr43tOQhWZ/G7bV9w1hjOtKmPoHr2y8nVTTn",
       "is_continuation": true
     }
   },
@@ -629,7 +629,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -642,7 +642,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Ustu2zAQ/JWFTi1gU/IjttprgAK99NA4pzQwVuTKJsyHwIdrw/C/d6nUQFK4Jz52Z3ZmyJdLRYYsubTVqvoK1bz9slbLvuuWs4VcN/jQrtu2b5oW16uVbOfVBCpLCRUm5P5LVTbb6HOQNJ4HClbHqL2L279NL5fKelXKi8Wsba+vzBFI+qC2xktMPrwhMe2LhHrvLdUhO0eh/u3Doc4uppBlyoHUxwOd0A6GpsrLWO/Rqc77w3Q2CL44VdcrT+q1oXQeyvgKh8Fonsjq6qNTwg/kTtb0PlhMcer7XktiaC6JCJ6thuAlsR23s0bcKiUEg26XcUexGKzI7apia+Cbrcu2o+JpXuYnOqUye7MniIklMhewg5iIYI8REHqtstQYzhAoDpyc7rTR6QzJQ2JYh+4Q8pDkGYgpEgmAu3Q6gvWBGISOeS3xXunY5VAcAItjW//BWl6gI+AHjN6hMWfQ7ujNkRRvRh23Vo4tjCEy1/d+LN2T4gPzSX7MCNlhZ6j4YWiJewSpnDQXGfnReLn0PRv4l3Vyf9YoXVtLSnM4LBzVUUcam5+dTuzgqcQWYfOGYN3zFp7Fk3gU8Cs3Da7hoV196j5PSuFRfBM/3xXEkisssec8nSyT7zUtuEmUr3H7bT8wlJiOtClf4Pr6B/mZL3k=",
+      "orig_elements": "eJx1Ustu2zAQ/JUFTy1gU34lVnsNUKCXHhrnlAbGilzZhPkQ+HBtGP73LpUaaAv3JGp3Z3ZmyNeLIEuOfN4aLT6DWLSf1nrVd91qvlTrGT6067btZ7MW14+Pql2ICQhHGTVm5PmLqIdtCiUqGv8His6kZIJP299Drxfhgq7t5XLettc35oikQtRbGxTmEN+RmPdVQrMPjppYvKfY/Azx0BSfciwql0h6avyOUr5boxO6wdJUB5WaPXrdhXCYzgfJhZO4Xnlvbyzl81DFCBwGa3g/a22OXsswkD8524foMKdp6HujiKGl5iNZiR5iUMTm/M5ZeevUSCz6XUEWUe0K8jtRTQ5c2friOqoOF3V/plOuuzd7gpRZInMBG0mZCPaYAKE3uiiD8QyR0sA5ms5Yk8+QA2SGdegPsQxZnYFNYyYJcJfOJHAhEoPQM68jPmuTuhKrA2BxbOs/WMcf6Aj4OlPwaO0ZjD8GeyTNh1HHbZRji2OIzPW1H1v3pITIfIqvNkHx2Fmqfhha4x5BumTDTUb+bbwWQ88G/mWd3N81SjfOkTYcDgtHfTSJxuEXbzI7eK6xJdi8I1j3ooUX+SyfJPwosxmu4aF9/NB9nNTGk/wiv//RkCvusMSe8/Sqbr43tOQhWZ/G7bV9w1hjOtKmPoHr2y8nVTTn",
       "is_continuation": true
     }
   },
@@ -653,7 +653,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -666,7 +666,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJx1Ustu2zAQ/JWFTi1gU/IjttprgAK99NA4pzQwVuTKJsyHwIdrw/C/d6nUQFK4Jz52Z3ZmyJdLRYYsubTVqvoK1bz9slbLvuuWs4VcN/jQrtu2b5oW16uVbOfVBCpLCRUm5P5LVTbb6HOQNJ4HClbHqL2L279NL5fKelXKi8Wsba+vzBFI+qC2xktMPrwhMe2LhHrvLdUhO0eh/u3Doc4uppBlyoHUxwOd0A6GpsrLWO/Rqc77w3Q2CL44VdcrT+q1oXQeyvgKh8Fonsjq6qNTwg/kTtb0PlhMcer7XktiaC6JCJ6thuAlsR23s0bcKiUEg26XcUexGKzI7apia+Cbrcu2o+JpXuYnOqUye7MniIklMhewg5iIYI8REHqtstQYzhAoDpyc7rTR6QzJQ2JYh+4Q8pDkGYgpEgmAu3Q6gvWBGISOeS3xXunY5VAcAItjW//BWl6gI+AHjN6hMWfQ7ujNkRRvRh23Vo4tjCEy1/d+LN2T4gPzSX7MCNlhZ6j4YWiJewSpnDQXGfnReLn0PRv4l3Vyf9YoXVtLSnM4LBzVUUcam5+dTuzgqcQWYfOGYN3zFp7Fk3gU8Cs3Da7hoV196j5PSuFRfBM/3xXEkisssec8nSyT7zUtuEmUr3H7bT8wlJiOtClf4Pr6B/mZL3k=",
+      "orig_elements": "eJx1Ustu2zAQ/JUFTy1gU34lVnsNUKCXHhrnlAbGilzZhPkQ+HBtGP73LpUaaAv3JGp3Z3ZmyNeLIEuOfN4aLT6DWLSf1nrVd91qvlTrGT6067btZ7MW14+Pql2ICQhHGTVm5PmLqIdtCiUqGv8His6kZIJP299Drxfhgq7t5XLettc35oikQtRbGxTmEN+RmPdVQrMPjppYvKfY/Azx0BSfciwql0h6avyOUr5boxO6wdJUB5WaPXrdhXCYzgfJhZO4Xnlvbyzl81DFCBwGa3g/a22OXsswkD8524foMKdp6HujiKGl5iNZiR5iUMTm/M5ZeevUSCz6XUEWUe0K8jtRTQ5c2friOqoOF3V/plOuuzd7gpRZInMBG0mZCPaYAKE3uiiD8QyR0sA5ms5Yk8+QA2SGdegPsQxZnYFNYyYJcJfOJHAhEoPQM68jPmuTuhKrA2BxbOs/WMcf6Aj4OlPwaO0ZjD8GeyTNh1HHbZRji2OIzPW1H1v3pITIfIqvNkHx2Fmqfhha4x5BumTDTUb+bbwWQ88G/mWd3N81SjfOkTYcDgtHfTSJxuEXbzI7eK6xJdi8I1j3ooUX+SyfJPwosxmu4aF9/NB9nNTGk/wiv//RkCvusMSe8/Sqbr43tOQhWZ/G7bV9w1hjOtKmPoHr2y8nVTTn",
       "is_continuation": true
     }
   },
@@ -677,7 +677,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -690,7 +690,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxtUcluGzEM/RVizvFsDupxbkUvPfXS9JQEhmbE8QiRREGiYgeG/72UY3cBchNFPr6FT6cKLTr0vDO6eoBq+2Xu7/uxHVGNQ4/rWbfzZrvGzTAOw3buqzuoHLLSipXMn6ry2CXKccJLHTA6k5Ihn3bXoadT5UiX9nrdDcP5RXZEnCjqnaVJMcUPpOKlSGgWctjE7D3G5kDxtck+ccwT54j6/wKPygWLK01Tahbl9Uj0uupCLR/H6nwWptlY5PdQ6CsVgjXCKOqaN69rCuiPzs4UneK0onk2Ewo0l0Rq4dYh0oRix++drW+dEoJVfp/VHlMxWKHfV8VWkJ+dz27E4qkv/IxHLtxfLS+U9wvwYhJ8v2oFeXtiMJ7Ra9TABCOCgomKMUZIrDhLRu8QccaIfsI72XFpeC3CQOJIjPic+7bbJgjROCXjf4E6s8EEKgoIGcQuL8IIXQe/6p/1txqec9uqDXTrtr+Dw2Km0pcLBYqKBTr+ww5J7gM0X0RcV0s1LSowRtjc9CQhyl5/SrRp72uAxwXTnxXCZ7MWb2Pmi9QSizXO8CWVD88zWUsHMf1QbnA76w8VRaZ5w8eS9fnlNxE8+1s="
+      "orig_elements": "eJxtUTtvGzEM/ivEzfG9HNTnbEGXTl2aTklg6E48nxBJFCQqdmD4v5dy7LZDNonkx+/B51OFFh163hldPUC1/Tb39/3YjqjGocf1rNt5s13jZhiHYTv31R1UDllpxUrmT1V57BLlOOHlHzA6k5Ihn3bXoedT5UiX9nrdDcP5VXZEnCjqnaVJMcVPpOKlSGgWctjE7D3G5kDxrck+ccwT54h6ZfweE39Zw6NyweJK05SaRXk9Er2tulBL4Vidz8I7G4v8EYqYSoVgjfCL1ubd65oC+qOzM0WnOK1ons2EAs0ln1qU6BBpQjHn987Wt06JxCq/z0pEFLsV+n1VTAap7Hx2IxaHfeFnPHLhfrS8UN4vwItJ8OOqFeTticF4Rq9RAxOMCAomKsYYIbHiLIl9QMQZI/oJ72THpeG1CANJJTHiS+7bbpsgROOUjP8D6swGE6goIGQQu7wII3Qd/K5/1d9reMltqzbQrdv+Dg6LmUpf7hUoKhbo+B87JLkW0HwRcV0tv2lRgTHC5qYnCVH2+kuiTXtfAzwtmP6uED6btXgbM1+klliscYYvqXx6nslaOojph3KD21l/qigyzTs+lazPr38AFYQA2A=="
     }
   },
   {
@@ -700,7 +700,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -713,7 +713,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxtUcluGzEM/RVizvFsDupxbkUvPfXS9JQEhmbE8QiRREGiYgeG/72UY3cBchNFPr6FT6cKLTr0vDO6eoBq+2Xu7/uxHVGNQ4/rWbfzZrvGzTAOw3buqzuoHLLSipXMn6ry2CXKccJLHTA6k5Ihn3bXoadT5UiX9nrdDcP5RXZEnCjqnaVJMcUPpOKlSGgWctjE7D3G5kDxtck+ccwT54j6/wKPygWLK01Tahbl9Uj0uupCLR/H6nwWptlY5PdQ6CsVgjXCKOqaN69rCuiPzs4UneK0onk2Ewo0l0Rq4dYh0oRix++drW+dEoJVfp/VHlMxWKHfV8VWkJ+dz27E4qkv/IxHLtxfLS+U9wvwYhJ8v2oFeXtiMJ7Ra9TABCOCgomKMUZIrDhLRu8QccaIfsI72XFpeC3CQOJIjPic+7bbJgjROCXjf4E6s8EEKgoIGcQuL8IIXQe/6p/1txqec9uqDXTrtr+Dw2Km0pcLBYqKBTr+ww5J7gM0X0RcV0s1LSowRtjc9CQhyl5/SrRp72uAxwXTnxXCZ7MWb2Pmi9QSizXO8CWVD88zWUsHMf1QbnA76w8VRaZ5w8eS9fnlNxE8+1s=",
+      "orig_elements": "eJxtUTtvGzEM/ivEzfG9HNTnbEGXTl2aTklg6E48nxBJFCQqdmD4v5dy7LZDNonkx+/B51OFFh163hldPUC1/Tb39/3YjqjGocf1rNt5s13jZhiHYTv31R1UDllpxUrmT1V57BLlOOHlHzA6k5Ihn3bXoedT5UiX9nrdDcP5VXZEnCjqnaVJMcVPpOKlSGgWctjE7D3G5kDxrck+ccwT54h6ZfweE39Zw6NyweJK05SaRXk9Er2tulBL4Vidz8I7G4v8EYqYSoVgjfCL1ubd65oC+qOzM0WnOK1ons2EAs0ln1qU6BBpQjHn987Wt06JxCq/z0pEFLsV+n1VTAap7Hx2IxaHfeFnPHLhfrS8UN4vwItJ8OOqFeTticF4Rq9RAxOMCAomKsYYIbHiLIl9QMQZI/oJ72THpeG1CANJJTHiS+7bbpsgROOUjP8D6swGE6goIGQQu7wII3Qd/K5/1d9reMltqzbQrdv+Dg6LmUpf7hUoKhbo+B87JLkW0HwRcV0tv2lRgTHC5qYnCVH2+kuiTXtfAzwtmP6uED6btXgbM1+klliscYYvqXx6nslaOojph3KD21l/qigyzTs+lazPr38AFYQA2A==",
       "is_continuation": true
     }
   },
@@ -724,7 +724,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -737,7 +737,7 @@
         "eng"
       ],
       "page_number": 2,
-      "orig_elements": "eJxtUcluGzEM/RVizvFsDupxbkUvPfXS9JQEhmbE8QiRREGiYgeG/72UY3cBchNFPr6FT6cKLTr0vDO6eoBq+2Xu7/uxHVGNQ4/rWbfzZrvGzTAOw3buqzuoHLLSipXMn6ry2CXKccJLHTA6k5Ihn3bXoadT5UiX9nrdDcP5RXZEnCjqnaVJMcUPpOKlSGgWctjE7D3G5kDxtck+ccwT54j6/wKPygWLK01Tahbl9Uj0uupCLR/H6nwWptlY5PdQ6CsVgjXCKOqaN69rCuiPzs4UneK0onk2Ewo0l0Rq4dYh0oRix++drW+dEoJVfp/VHlMxWKHfV8VWkJ+dz27E4qkv/IxHLtxfLS+U9wvwYhJ8v2oFeXtiMJ7Ra9TABCOCgomKMUZIrDhLRu8QccaIfsI72XFpeC3CQOJIjPic+7bbJgjROCXjf4E6s8EEKgoIGcQuL8IIXQe/6p/1txqec9uqDXTrtr+Dw2Km0pcLBYqKBTr+ww5J7gM0X0RcV0s1LSowRtjc9CQhyl5/SrRp72uAxwXTnxXCZ7MWb2Pmi9QSizXO8CWVD88zWUsHMf1QbnA76w8VRaZ5w8eS9fnlNxE8+1s=",
+      "orig_elements": "eJxtUTtvGzEM/ivEzfG9HNTnbEGXTl2aTklg6E48nxBJFCQqdmD4v5dy7LZDNonkx+/B51OFFh163hldPUC1/Tb39/3YjqjGocf1rNt5s13jZhiHYTv31R1UDllpxUrmT1V57BLlOOHlHzA6k5Ihn3bXoedT5UiX9nrdDcP5VXZEnCjqnaVJMcVPpOKlSGgWctjE7D3G5kDxrck+ccwT54h6ZfweE39Zw6NyweJK05SaRXk9Er2tulBL4Vidz8I7G4v8EYqYSoVgjfCL1ubd65oC+qOzM0WnOK1ons2EAs0ln1qU6BBpQjHn987Wt06JxCq/z0pEFLsV+n1VTAap7Hx2IxaHfeFnPHLhfrS8UN4vwItJ8OOqFeTticF4Rq9RAxOMCAomKsYYIbHiLIl9QMQZI/oJ72THpeG1CANJJTHiS+7bbpsgROOUjP8D6swGE6goIGQQu7wII3Qd/K5/1d9reMltqzbQrdv+Dg6LmUpf7hUoKhbo+B87JLkW0HwRcV0tv2lRgTHC5qYnCVH2+kuiTXtfAzwtmP6uED6btXgbM1+klliscYYvqXx6nslaOojph3KD21l/qigyzTs+lazPr38AFYQA2A==",
       "is_continuation": true
     }
   },
@@ -748,7 +748,7 @@
     "metadata": {
       "data_source": {
         "record_locator": {
-          "path": "/home/runner/work/unstructured/unstructured/example-docs/handbook-1p.docx"
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/handbook-1p.docx"
         },
         "permissions_data": [
           {
@@ -760,7 +760,7 @@
       "languages": [
         "eng"
       ],
-      "orig_elements": "eJxVUEtuwyAQvUrEurbjpFGcbCv1ElFkjWFsowCDBmgdRb57IW0WXcEw78e7PAQatOhir5U4b8S7OnXbA5yOshskSnnctcOhha4dcbcd9kq8bYTFCAoiZPxDlEsfKLHE5+yRrQ5Bkwv9H+jyEJZUWe/3bdet16zBKIlVb0hCJP5lQpxLhGYmiw0n55Cbb+Jbk1yInGRMjOr/gAtYb7BSJEMzg1MD0a1qfZ0fFrGu2WnUBuPdF3sB3hudHXO65supmjy6xZqR2EIMFY2jlpipqTRSZ2/lmSTm77jJmvq1KSXMCAq5H4liPl4GnrUFvheAATclmDCUBgS6SVxLnIhLLMgP8nfW0/wUe9E/n2pivf4An2aN4g=="
+      "orig_elements": "eJxtUEtuwyAQvUrEurbjpFGcbCv1ElFkjWFsowCDBmgdRb57IW12XQEz78e7PAQatOhir5U4b8S7OnXbA5yOshskSnnctcOhha4dcbcd9kq8bYTFCAoiZPxDlEsfKLHE59sjWx2CJhf6P9DlISypst7v265br1mDURKr3pCESPzLhDiXCM1MFhtOziE338S3JrkQOcmYGFWl3YQh/jvDBaw3WCmSoZnBqYHoVrW+zoNFrGv2HbXBePcljADvjc7+OWvz5VRNHt1izUhsIYaKxlFLzNRU+qlzEuWZJObPucma+rUplcwICrkfiWI+XgaetQW+F4ABNyXIKUsfAt0kriVOxCUW5Af5O+tpfoq96J9PNbFefwDl45NQ"
     }
   }
 ]
