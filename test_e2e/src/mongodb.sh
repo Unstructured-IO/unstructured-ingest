@@ -25,7 +25,7 @@ fi
 # astra dependencies.
 # ref: https://pymongo.readthedocs.io/en/stable/installation.html
 pip uninstall -y bson pymongo
-make install-ingest-mongodb
+pip install -r requirements/connectors/mongodb.txt
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   mongodb \

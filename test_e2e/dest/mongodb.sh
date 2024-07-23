@@ -39,7 +39,7 @@ trap cleanup EXIT
 # astra dependencies.
 # ref: https://pymongo.readthedocs.io/en/stable/installation.html
 pip uninstall -y bson pymongo
-make install-ingest-mongodb
+pip install -r requirements/connectors/mongodb.txt
 
 python "$SCRIPT_DIR"/python/test-ingest-mongodb.py \
   --uri "$MONGODB_URI" \
