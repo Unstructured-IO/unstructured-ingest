@@ -1,4 +1,4 @@
 -c ../common/constraints.txt
 -c ../common/base.txt
 
-unstructured[markdown]
+unstructured[md]

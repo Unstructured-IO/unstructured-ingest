@@ -41,7 +41,7 @@ fi
 
 # Make sure valid json
 echo "Checking valid json at file $BOX_APP_CONFIG_PATH"
-cat "$BOX_APP_CONFIG_PATH" | jq 'keys'
+jq 'keys' < "$BOX_APP_CONFIG_PATH"
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \

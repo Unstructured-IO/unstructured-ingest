@@ -44,6 +44,7 @@ install-ci: install-all-connectors install-all-embedders
 	pip install -r requirements/local_partition/docx.txt
 	pip install -r requirements/local_partition/pptx.txt
 	pip install -r requirements/local_partition/xlsx.txt
+	pip install -r requirements/local_partition/xlsx.txt
 
 ###########
 #  TIDY   #
