@@ -5,11 +5,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
-from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
-from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import (
+from unstructured.ingest.enhanced_dataclass import enhanced_field
+from unstructured.ingest.error import DestinationConnectionError
+from unstructured.ingest.utils.data_prep import batch_generator
+from unstructured.ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     UploadContent,
@@ -18,10 +17,12 @@ from unstructured_ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
 )
-from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
+from unstructured.ingest.v2.logger import logger
+from unstructured.ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured.staging.base import flatten_dict
+from unstructured.utils import requires_dependencies
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
@@ -44,6 +45,7 @@ class PineconeConnectionConfig(ConnectionConfig):
     @requires_dependencies(["pinecone"], extras="pinecone")
     def get_index(self) -> "PineconeIndex":
         from pinecone import Pinecone
+
         from unstructured import __version__ as unstructured_version
 
         pc = Pinecone(
@@ -127,7 +129,7 @@ class PineconeUploader(Uploader):
 
     @requires_dependencies(["pinecone"], extras="pinecone")
     def upsert_batch(self, batch):
-        from pinecone.core.client.exceptions import PineconeApiException
+        from pinecone.exceptions import PineconeApiException
 
         try:
             index = self.connection_config.get_index()
