@@ -2,8 +2,6 @@ name: Ingest Test Fixtures Update PR
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [ main ]
 
 env:
   PYTHON_VERSION: "3.10"
