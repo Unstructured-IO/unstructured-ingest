@@ -35,13 +35,13 @@ fi
 if [ -z "$BOX_APP_CONFIG_PATH" ]; then
   # Create temporary service key file
   BOX_APP_CONFIG_PATH=$(mktemp)
-  echo "$BOX_APP_CONFIG" > "$BOX_APP_CONFIG_PATH"
+  echo "$BOX_APP_CONFIG" >"$BOX_APP_CONFIG_PATH"
 
 fi
 
 # Make sure valid json
 echo "Checking valid json at file $BOX_APP_CONFIG_PATH"
-jq 'keys' < "$BOX_APP_CONFIG_PATH"
+jq 'keys' <"$BOX_APP_CONFIG_PATH"
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
