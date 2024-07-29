@@ -81,7 +81,7 @@ tidy-autoflake:
 check: check-python check-shell
 
 .PHONY: check-python
-check-python: check-black check-flake8 check-ruff check-autoflake
+check-python: check-black check-flake8 check-ruff check-autoflake check-version
 
 .PHONY: check-black
 check-black:
