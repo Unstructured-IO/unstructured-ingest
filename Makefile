@@ -18,6 +18,10 @@ install-lint:
 install-test:
 	pip install -r requirements/test.txt
 
+.PHONY: install-release
+install-release:
+	pip install -r requirements/release.txt
+
 .PHONY: install-base
 install-base:
 	pip install -r requirements/common/base.txt
