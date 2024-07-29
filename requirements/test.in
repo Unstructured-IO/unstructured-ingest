@@ -1,0 +1,8 @@
+-c ./common/constraints.txt
+pytest
+pytest-cov
+pytest-mock
+
+# Connector specific deps
+cryptography
+fsspec

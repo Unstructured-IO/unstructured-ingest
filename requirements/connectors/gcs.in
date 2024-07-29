@@ -1,0 +1,6 @@
+-c ../common/constraints.txt
+-c ../common/base.txt
+
+gcsfs
+fsspec
+bs4

@@ -1,0 +1,6 @@
+-c ../common/constraints.txt
+-c ../common/base.txt
+
+huggingface
+langchain-community
+sentence_transformers
