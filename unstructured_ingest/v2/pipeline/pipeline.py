@@ -109,6 +109,7 @@ class Pipeline:
     def run(self):
         try:
             start_time = time()
+            self._run_prechecks()
             self._run()
             logger.info(f"Finished ingest process in {time() - start_time}s")
         finally:
@@ -129,6 +130,27 @@ class Pipeline:
                 flat.append(r)
         final = [f for f in flat if f]
         return final or None
+
+    def _run_prechecks(self):
+        steps = [self.indexer_step, self.downloader_step, self.partitioner_step, self.uploader_step]
+        if self.chunker_step:
+            steps.append(self.chunker_step)
+        if self.embedder_step:
+            steps.append(self.embedder_step)
+        if self.uncompress_step:
+            steps.append(self.uncompress_step)
+        if self.stager_step:
+            steps.append(self.stager_step)
+        failures = {}
+        for step in steps:
+            try:
+                step.process.precheck()
+            except Exception as e:
+                failures[step.process.__class__.__name__] = f"[{type(e).__name__}] {e}"
+        if failures:
+            for k, v in failures.items():
+                logger.error(f"Step precheck failure: {k}: {v}")
+            raise PipelineError("Precheck failed")
 
     def _run(self):
         logger.info(

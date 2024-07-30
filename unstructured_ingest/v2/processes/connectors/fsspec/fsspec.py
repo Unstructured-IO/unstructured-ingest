@@ -119,7 +119,7 @@ class FsspecIndexer(Indexer):
         logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
         return False
 
-    def check_connection(self):
+    def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
         try:
