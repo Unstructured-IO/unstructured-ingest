@@ -18,6 +18,10 @@ install-lint:
 install-test:
 	pip install -r requirements/test.txt
 
+.PHONY: install-release
+install-release:
+	pip install -r requirements/release.txt
+
 .PHONY: install-base
 install-base:
 	pip install -r requirements/common/base.txt
@@ -77,7 +81,7 @@ tidy-autoflake:
 check: check-python check-shell
 
 .PHONY: check-python
-check-python: check-black check-flake8 check-ruff check-autoflake
+check-python: check-black check-flake8 check-ruff check-autoflake check-version
 
 .PHONY: check-black
 check-black:
