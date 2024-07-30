@@ -13,8 +13,8 @@ from unstructured_ingest.v2.processes.connectors.local import (
 )
 from unstructured_ingest.v2.processes.connectors.sql import (
     DatabaseType,
-    SimpleSqlConfig,
     SQLAccessConfig,
+    SQLConnectionConfig,
     SQLUploaderConfig,
     SQLUploadStagerConfig,
 )
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # sqlite test first
     Pipeline.from_configs(
-        destination_connection_config=SimpleSqlConfig(
+        destination_connection_config=SQLConnectionConfig(
             db_type=DatabaseType.SQLITE,
             database=SQLITE_DB,
             access_config=SQLAccessConfig(),
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # now, pg with pgvector
     Pipeline.from_configs(
-        destination_connection_config=SimpleSqlConfig(
+        destination_connection_config=SQLConnectionConfig(
             db_type=DatabaseType.POSTGRESQL,
             database="elements",
             host="localhost",

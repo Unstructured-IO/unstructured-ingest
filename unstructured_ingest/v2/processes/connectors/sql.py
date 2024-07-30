@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -26,6 +26,11 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
+if TYPE_CHECKING:
+    from sqlite3 import Connection as SqliteConnection
+
+    from psycopg2.extensions import connection as PostgresConnection
+
 CONNECTOR_TYPE = "sql"
 ELEMENTS_TABLE_NAME = "elements"
 
@@ -42,7 +47,7 @@ class DatabaseType(str, enum.Enum):
 
 
 @dataclass
-class SimpleSqlConfig(ConnectionConfig):
+class SQLConnectionConfig(ConnectionConfig):
     db_type: DatabaseType = (
         # required default value here because of parent class
         DatabaseType.SQLITE
@@ -186,32 +191,32 @@ class SQLUploaderConfig(UploaderConfig):
 class SQLUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: SQLUploaderConfig
-    connection_config: SimpleSqlConfig
+    connection_config: SQLConnectionConfig
 
     def precheck(self) -> None:
         try:
-            with self.connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT 1;")
+            cursor = self.connection().cursor()
+            cursor.execute("SELECT 1;")
+            cursor.close()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @property
-    def connection(self):
+    def connection(self) -> Callable[[], Union["SqliteConnection", "PostgresConnection"]]:
         if self.connection_config.db_type == DatabaseType.POSTGRESQL:
             return self._make_psycopg_connection
         elif self.connection_config.db_type == DatabaseType.SQLITE:
             return self._make_sqlite_connection
         raise ValueError(f"Unsupported database {self.connection_config.db_type} connection.")
 
-    def _make_sqlite_connection(self):
+    def _make_sqlite_connection(self) -> "SqliteConnection":
         from sqlite3 import connect
 
         return connect(database=self.connection_config.database)
 
     @requires_dependencies(["psycopg2"], extras="postgres")
-    def _make_psycopg_connection(self):
+    def _make_psycopg_connection(self) -> "PostgresConnection":
         from psycopg2 import connect
 
         return connect(
@@ -271,7 +276,7 @@ class SQLUploader(Uploader):
 
 
 sql_destination_entry = DestinationRegistryEntry(
-    connection_config=SimpleSqlConfig,
+    connection_config=SQLConnectionConfig,
     uploader=SQLUploader,
     uploader_config=SQLUploaderConfig,
     upload_stager=SQLUploadStager,
