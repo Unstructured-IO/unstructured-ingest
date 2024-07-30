@@ -4,45 +4,59 @@
 #
 #    pip-compile milvus.in
 #
-certifi==2024.7.4
-    # via
-    #   -c ../base.txt
-    #   -c ../deps/constraints.txt
-    #   requests
-charset-normalizer==3.3.2
-    # via
-    #   -c ../base.txt
-    #   requests
-grpcio==1.64.1
-    # via
-    #   -r milvus.in
-    #   grpcio-tools
-    #   pymilvus
-grpcio-tools==1.62.2
+environs==9.5.0
     # via pymilvus
-idna==3.7
+grpcio==1.63.0
+    # via pymilvus
+marshmallow==3.21.3
     # via
-    #   -c ../base.txt
-    #   requests
-mmh3==4.1.0
-    # via -r milvus.in
+    #   -c ../common/base.txt
+    #   environs
+milvus-lite==2.4.8
+    # via pymilvus
+numpy==1.26.4
+    # via
+    #   -c ../common/base.txt
+    #   pandas
+packaging==23.2
+    # via
+    #   -c ../common/base.txt
+    #   -c ../common/constraints.txt
+    #   marshmallow
+pandas==2.2.2
+    # via
+    #   -c ../common/base.txt
+    #   pymilvus
 protobuf==4.23.4
     # via
-    #   -c ../deps/constraints.txt
-    #   grpcio-tools
-pymilvus==1.1.0
-    # via -r milvus.in
-requests==2.32.3
-    # via
-    #   -c ../base.txt
+    #   -c ../common/constraints.txt
     #   pymilvus
+pymilvus==2.4.4
+    # via -r milvus.in
+python-dateutil==2.9.0.post0
+    # via
+    #   -c ../common/base.txt
+    #   pandas
+python-dotenv==1.0.1
+    # via environs
+pytz==2024.1
+    # via
+    #   -c ../common/base.txt
+    #   pandas
+six==1.16.0
+    # via
+    #   -c ../common/base.txt
+    #   python-dateutil
+tqdm==4.66.4
+    # via
+    #   -c ../common/base.txt
+    #   milvus-lite
+tzdata==2024.1
+    # via
+    #   -c ../common/base.txt
+    #   pandas
 ujson==5.10.0
     # via pymilvus
-urllib3==1.26.19
-    # via
-    #   -c ../base.txt
-    #   -c ../deps/constraints.txt
-    #   requests
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
