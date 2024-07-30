@@ -5,7 +5,7 @@ from logging import Formatter, Logger, StreamHandler, getLevelName, getLogger
 from typing import Any, Callable
 
 log_level = os.getenv("INGEST_LOG_LEVEL", "INFO")
-LOGGER_NAME = "unstructured.ingest.v2"
+LOGGER_NAME = "unstructured_ingest.v2"
 
 
 def default_is_data_sensitive(k: str, v: Any) -> bool:

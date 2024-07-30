@@ -38,6 +38,7 @@ all_tests=(
   'singlestore.sh'
   'weaviate.sh'
   'databricks-volumes.sh'
+  'milvus.sh'
 )
 
 full_python_matrix_tests=(

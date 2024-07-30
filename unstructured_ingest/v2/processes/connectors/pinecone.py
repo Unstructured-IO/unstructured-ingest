@@ -5,10 +5,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured.ingest.v2.logger import logger
-from unstructured.ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-)
 from unstructured.staging.base import flatten_dict
 from unstructured.utils import requires_dependencies
 
@@ -23,6 +19,10 @@ from unstructured_ingest.v2.interfaces import (
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
+)
+from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
 )
 
 if TYPE_CHECKING:

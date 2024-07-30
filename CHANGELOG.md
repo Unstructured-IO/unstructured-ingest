@@ -1,3 +1,13 @@
+## 0.0.1-dev0
+
+### Enhancements
+
+### Features
+
+* **Add Milvus destination connector** Adds support storing artifacts in Milvus vector database.
+
+### Fixes
+
 ## 0.0.0
 
 ### Enhancements
