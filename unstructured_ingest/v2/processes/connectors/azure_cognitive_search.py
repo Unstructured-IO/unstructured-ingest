@@ -175,6 +175,14 @@ class AzureCognitiveSearchUploader(Uploader):
                 ),
             )
 
+    def precheck(self) -> None:
+        try:
+            client = self.connection_config.generate_client()
+            client.get_document_count()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
+
     def write_dict_wrapper(self, elements_dict):
         return self.write_dict(elements_dict=elements_dict)
 

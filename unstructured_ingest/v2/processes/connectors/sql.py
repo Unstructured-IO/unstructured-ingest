@@ -11,6 +11,7 @@ import pandas as pd
 from dateutil import parser
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -186,6 +187,15 @@ class SQLUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: SQLUploaderConfig
     connection_config: SimpleSqlConfig
+
+    def precheck(self) -> None:
+        try:
+            with self.connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1;")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @property
     def connection(self):

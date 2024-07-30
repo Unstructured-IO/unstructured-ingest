@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from dateutil import parser
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -156,15 +157,21 @@ class WeaviateUploaderConfig(UploaderConfig):
 class WeaviateUploader(Uploader):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
-    client: Optional["Client"] = field(init=False)
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["weaviate"], extras="weaviate")
-    def __post_init__(self):
+    def get_client(self) -> "Client":
         from weaviate import Client
 
         auth = self._resolve_auth_method()
-        self.client = Client(url=self.connection_config.host_url, auth_client_secret=auth)
+        return Client(url=self.connection_config.host_url, auth_client_secret=auth)
+
+    def precheck(self) -> None:
+        try:
+            self.get_client()
+        except Exception as e:
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["weaviate"], extras="weaviate")
     def _resolve_auth_method(self):
@@ -215,8 +222,9 @@ class WeaviateUploader(Uploader):
             f"at {self.connection_config.host_url}",
         )
 
-        self.client.batch.configure(batch_size=self.upload_config.batch_size)
-        with self.client.batch as b:
+        client = self.get_client()
+        client.batch.configure(batch_size=self.upload_config.batch_size)
+        with client.batch as b:
             for e in elements_dict:
                 vector = e.pop("embeddings", None)
                 b.add_data_object(

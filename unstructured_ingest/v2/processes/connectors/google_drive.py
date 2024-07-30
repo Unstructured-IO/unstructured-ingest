@@ -9,7 +9,10 @@ from unstructured.documents.elements import DataSourceMetadata
 from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
-from unstructured_ingest.error import SourceConnectionNetworkError
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 from unstructured_ingest.v2.interfaces import (
@@ -120,6 +123,13 @@ class GoogleDriveIndexer(Indexer):
             "webContentLink",
         ]
     )
+
+    def precheck(self) -> None:
+        try:
+            self.connection_config.get_files_service()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
     @staticmethod
     def is_dir(record: dict) -> bool:

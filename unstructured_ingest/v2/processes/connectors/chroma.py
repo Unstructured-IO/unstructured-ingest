@@ -111,10 +111,13 @@ class ChromaUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: ChromaUploaderConfig
     connection_config: ChromaConnectionConfig
-    client: Optional["Client"] = field(init=False)
 
-    def __post_init__(self):
-        self.client = self.create_client()
+    def precheck(self) -> None:
+        try:
+            self.create_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["chromadb"], extras="chroma")
     def create_client(self) -> "Client":
@@ -187,10 +190,9 @@ class ChromaUploader(Uploader):
             f"collection {self.connection_config.collection_name} "
             f"at {self.connection_config.host}",
         )
+        client = self.create_client()
 
-        collection = self.client.get_or_create_collection(
-            name=self.connection_config.collection_name
-        )
+        collection = client.get_or_create_collection(name=self.connection_config.collection_name)
         for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
             self.upsert_batch(collection, self.prepare_chroma_list(chunk))
 

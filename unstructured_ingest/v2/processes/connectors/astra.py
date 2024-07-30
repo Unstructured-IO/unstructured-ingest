@@ -7,6 +7,7 @@ from unstructured import __name__ as integration_name
 from unstructured.__version__ import __version__ as integration_version
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -93,6 +94,13 @@ class AstraUploader(Uploader):
     connection_config: AstraConnectionConfig
     upload_config: AstraUploaderConfig
     connector_type: str = CONNECTOR_TYPE
+
+    def precheck(self) -> None:
+        try:
+            self.get_collection()
+        except Exception as e:
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["astrapy"], extras="astra")
     def get_collection(self) -> "AstraDBCollection":

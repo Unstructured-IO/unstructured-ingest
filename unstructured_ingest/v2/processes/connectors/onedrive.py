@@ -87,6 +87,18 @@ class OnedriveIndexer(Indexer):
     connection_config: OnedriveConnectionConfig
     index_config: OnedriveIndexerConfig
 
+    def precheck(self) -> None:
+        try:
+            token_resp: dict = self.connection_config.get_token()
+            if error := token_resp.get("error"):
+                raise SourceConnectionError(
+                    "{} ({})".format(error, token_resp.get("error_description"))
+                )
+            self.connection_config.get_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
+
     def list_objects(self, folder, recursive) -> list["DriveItem"]:
         drive_items = folder.children.get().execute_query()
         files = [d for d in drive_items if d.is_file]

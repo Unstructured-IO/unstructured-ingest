@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -11,6 +12,7 @@ from unstructured_ingest.v2.interfaces import (
     Uploader,
     UploaderConfig,
 )
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
@@ -77,6 +79,13 @@ class DatabricksVolumesUploader(Uploader):
         self.client = WorkspaceClient(
             host=self.connection_config.host, **self.connection_config.access_config.to_dict()
         )
+
+    def precheck(self) -> None:
+        try:
+            assert self.client.current_user.me().active
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
         for content in contents:

@@ -123,9 +123,12 @@ class PineconeUploader(Uploader):
     connection_config: PineconeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @DestinationConnectionError.wrap
-    def check_connection(self):
-        _ = self.connection_config.get_index()
+    def precheck(self):
+        try:
+            self.connection_config.get_index()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["pinecone"], extras="pinecone")
     def upsert_batch(self, batch):

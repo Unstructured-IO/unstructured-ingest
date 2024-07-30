@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from unstructured.__version__ import __version__ as unstructured_version
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -85,11 +86,15 @@ class MongoDBUploaderConfig(UploaderConfig):
 class MongoDBUploader(Uploader):
     upload_config: MongoDBUploaderConfig
     connection_config: MongoDBConnectionConfig
-    client: Optional["MongoClient"] = field(init=False)
     connector_type: str = CONNECTOR_TYPE
 
-    def __post_init__(self):
-        self.client = self.create_client()
+    def precheck(self) -> None:
+        try:
+            client = self.create_client()
+            client.admin.command("ping")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["pymongo"], extras="mongodb")
     def create_client(self) -> "MongoClient":
@@ -123,7 +128,8 @@ class MongoDBUploader(Uploader):
             f"collection {self.connection_config.collection} "
             f"at {self.connection_config.host}",
         )
-        db = self.client[self.connection_config.database]
+        client = self.create_client()
+        db = client[self.connection_config.database]
         collection = db[self.connection_config.collection]
         for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
             collection.insert_many(chunk)
