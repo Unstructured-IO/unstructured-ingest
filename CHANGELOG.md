@@ -1,8 +1,9 @@
-## 0.0.2-dev0
+## 0.0.2-dev1
 
 ### Enhancements
 
 * **Use uuid for s3 identifiers** Update unique id to use uuid derived from file path rather than the filepath itself.
+* **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality. 
 
 ## 0.0.1
 
