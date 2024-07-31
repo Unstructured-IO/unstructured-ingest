@@ -126,6 +126,8 @@ class PipelineStep(ABC):
             logger.info(
                 f"Calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
             )
+        else:
+            logger.info(f"Calling {self.__class__.__name__} with no inputs")
         if self.context.async_supported and self.process.is_async():
             return self.process_async(iterable=iterable)
         if self.context.mp_supported:
@@ -146,8 +148,6 @@ class PipelineStep(ABC):
             logger.error(f"Exception raised while running {self.identifier}", exc_info=e)
             if "file_data_path" in kwargs:
                 self.context.status[kwargs["file_data_path"]] = {self.identifier: str(e)}
-            else:
-                self.context.status[self.identifier] = {"step_error": str(e)}
             if self.context.raise_on_error:
                 raise e
             return None
@@ -160,8 +160,6 @@ class PipelineStep(ABC):
             logger.error(f"Exception raised while running {self.identifier}", exc_info=e)
             if "file_data_path" in kwargs:
                 self.context.status[kwargs["file_data_path"]] = {self.identifier: str(e)}
-            else:
-                self.context.status[self.identifier] = {"step_error": str(e)}
             if self.context.raise_on_error:
                 raise e
             return None
