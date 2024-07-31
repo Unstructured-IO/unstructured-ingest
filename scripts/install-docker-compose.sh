@@ -3,8 +3,14 @@
 set -euo pipefail
 
 DOCKER_ARCH=${ARCH}
+if [ "${ARCH}" = "x86_64" ]; then
+  TARGETARCH="amd64"
+elif [ "${ARCH}" = "arm64" ] || [ "${ARCH}" = "aarch64" ]; then
+  TARGETARCH="arm64"
+fi
 TARGETOS=linux
 DOCKER_VERSION=26.1.3
+BUILDX_VERSION=0.14.0
 
 curl -fLo docker.tgz https://download.docker.com/${TARGETOS}/static/stable/${DOCKER_ARCH}/docker-${DOCKER_VERSION}.tgz
 tar zxvf docker.tgz
