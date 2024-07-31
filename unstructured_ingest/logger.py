@@ -3,7 +3,7 @@ import json
 import logging
 import typing as t
 
-logger = logging.getLogger("unstructured.ingest")
+logger = logging.getLogger("unstructured_ingest")
 
 
 def default_is_data_sensitive(k: str, v: t.Any) -> bool:
@@ -119,7 +119,7 @@ def ingest_log_streaming_init(level: int) -> None:
 
 def make_default_logger(level: int) -> logging.Logger:
     """Return a custom logger."""
-    logger = logging.getLogger("unstructured.ingest")
+    logger = logging.getLogger("unstructured_ingest")
     handler = logging.StreamHandler()
     handler.name = "ingest_log_handler"
     formatter = SensitiveFormatter("%(asctime)s %(processName)-10s %(levelname)-8s %(message)s")

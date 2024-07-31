@@ -102,6 +102,7 @@ connectors_reqs = {
     "hubspot": load_requirements("requirements/connectors/hubspot.in"),
     "jira": load_requirements("requirements/connectors/jira.in"),
     "kafka": load_requirements("requirements/connectors/kafka.in"),
+    "milvus": load_requirements("requirements/connectors/milvus.in"),
     "mongodb": load_requirements("requirements/connectors/mongodb.in"),
     "notion": load_requirements("requirements/connectors/notion.in"),
     "onedrive": load_requirements("requirements/connectors/onedrive.in"),
