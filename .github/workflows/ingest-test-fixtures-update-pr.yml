@@ -22,7 +22,7 @@ jobs:
           check-only: 'true'
 
   update-fixtures-and-pr:
-    runs-on: self-hosted-xlarge
+    runs-on: ubuntu-latest-m
     needs: [setup]
     steps:
       # actions/checkout MUST come before auth
@@ -38,6 +38,9 @@ jobs:
         uses: ./.github/actions/base-cache
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Setup docker Compose
+        run: |
+          make install-docker-compose
       - name: Update test fixtures
         env:
           AIRTABLE_PERSONAL_ACCESS_TOKEN: ${{ secrets.AIRTABLE_PERSONAL_ACCESS_TOKEN }}
@@ -87,6 +90,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libmagic-dev poppler-utils libreoffice
           make install-pandoc
+          sudo add-apt-repository -y ppa:alex-p/tesseract-ocr5
+          sudo apt-get install -y tesseract-ocr
+          sudo apt-get install -y tesseract-ocr-kor
+          tesseract --version
           ./test_e2e/test-src.sh
 
       - name: Save branch name to environment file
