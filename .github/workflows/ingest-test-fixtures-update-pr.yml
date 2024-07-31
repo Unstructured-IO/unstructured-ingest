@@ -38,11 +38,9 @@ jobs:
         uses: ./.github/actions/base-cache
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Setup docker-compose
+      - name: Setup docker compose
         run: |
-          apt-get install docker-compose-plugin
-      - name: Check docker compose version
-        run: |
+          sudo apt-get install docker-compose-plugin
           docker compose version
       - name: Update test fixtures
         env:
