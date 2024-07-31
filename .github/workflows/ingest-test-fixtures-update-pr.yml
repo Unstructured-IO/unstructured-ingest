@@ -41,6 +41,7 @@ jobs:
       - name: Setup docker Compose
         run: |
           sudo make install-docker-compose
+          docker compose version
       - name: Update test fixtures
         env:
           AIRTABLE_PERSONAL_ACCESS_TOKEN: ${{ secrets.AIRTABLE_PERSONAL_ACCESS_TOKEN }}
