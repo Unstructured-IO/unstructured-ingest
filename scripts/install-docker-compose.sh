@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-if [ "${ARCH}" = "amd64" ]; then
-  export DOCKER_ARCH=x86_64
-elif [ "${ARCH}" = "arm64" ]; then
-  export DOCKER_ARCH=aarch64
-fi
+
+DOCKER_ARCH=${ARCH}
 TARGETOS=linux
 DOCKER_VERSION=26.1.3
 
