@@ -1,16 +1,15 @@
 import io
 import os
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
 from unstructured.documents.elements import DataSourceMetadata
 from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
+from unstructured.utils import requires_dependencies
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionNetworkError
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -271,11 +270,6 @@ class GoogleDriveDownloader(Downloader):
         default_factory=lambda: GoogleDriveDownloaderConfig()
     )
     connector_type: str = CONNECTOR_TYPE
-
-    def get_download_path(self, file_data: FileData) -> Path:
-        rel_path = file_data.source_identifiers.relative_path
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        return self.download_dir / Path(rel_path)
 
     @SourceConnectionNetworkError.wrap
     def _get_content(self, downloader: "MediaIoBaseDownload") -> bool:

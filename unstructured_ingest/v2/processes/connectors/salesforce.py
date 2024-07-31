@@ -19,10 +19,10 @@ from typing import TYPE_CHECKING, Any, Generator, Type
 
 from dateutil import parser
 from unstructured.documents.elements import DataSourceMetadata
+from unstructured.utils import requires_dependencies
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionNetworkError
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -206,11 +206,6 @@ class SalesforceDownloader(Downloader):
         default_factory=lambda: SalesforceDownloaderConfig()
     )
     connector_type: str = CONNECTOR_TYPE
-
-    def get_download_path(self, file_data: FileData) -> Path:
-        rel_path = file_data.source_identifiers.relative_path
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        return self.download_dir / Path(rel_path)
 
     def _xml_for_record(self, record: OrderedDict) -> str:
         """Creates partitionable xml file from a record"""

@@ -1,6 +1,12 @@
-## 0.0.1
+## 0.0.2-dev0
 
 ### Enhancements
+
+### Features
+
+* **Filter Step** Support dedicated step as part of the pipeline to filter documents.
+
+## 0.0.1
 
 ### Features
 
@@ -11,8 +17,6 @@
 * **Remove old repo references** Any mention of the repo this project came from was removed. 
 
 ## 0.0.0
-
-### Enhancements
 
 ### Features
 
