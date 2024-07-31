@@ -5,7 +5,6 @@ from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 from uuid import UUID
 
-import unstructured.ingest.connector.notion.types.blocks as notion_blocks
 from htmlBuilder.attributes import Style, Type
 from htmlBuilder.tags import (
     Body,
@@ -23,6 +22,7 @@ from htmlBuilder.tags import (
 )
 from notion_client.errors import APIResponseError
 
+import unstructured_ingest.connector.notion.types.blocks as notion_blocks
 from unstructured_ingest.connector.notion.client import Client
 from unstructured_ingest.connector.notion.interfaces import BlockBase
 from unstructured_ingest.connector.notion.types.block import Block

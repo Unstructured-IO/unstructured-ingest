@@ -6,9 +6,12 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pandas as pd
 from dateutil import parser
-from unstructured.ingest.enhanced_dataclass import enhanced_field
-from unstructured.ingest.error import WriteError
-from unstructured.ingest.v2.interfaces import (
+
+from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.error import WriteError
+from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
@@ -18,12 +21,10 @@ from unstructured.ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
 )
-from unstructured.ingest.v2.logger import logger
-from unstructured.ingest.v2.processes.connector_registry import (
+from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
-from unstructured.staging.base import flatten_dict
-from unstructured.utils import requires_dependencies
 
 if TYPE_CHECKING:
     from pymilvus import MilvusClient
