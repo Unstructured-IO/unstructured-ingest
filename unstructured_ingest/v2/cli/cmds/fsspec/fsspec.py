@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import click
 
 from unstructured_ingest.v2.cli.interfaces import CliConfig
-from unstructured_ingest.v2.cli.utils import DelimitedString
 
 
 @dataclass
@@ -14,7 +13,7 @@ class FsspecCliDownloadConfig(CliConfig):
             click.Option(
                 ["--download-dir"],
                 help="Where files are downloaded to, defaults to a location at"
-                "`$HOME/.cache/unstructured_ingest/<connector name>/<SHA256>`.",
+                "`$HOME/.cache/unstructured/ingest/<connector name>/<SHA256>`.",
             ),
         ]
 
@@ -64,13 +63,6 @@ class FsspecCliIndexerConfig(FsspecCliFileConfig):
                     default=False,
                     help="Recursively download files in their respective folders "
                     "otherwise stop at the files in provided folder level.",
-                ),
-                click.Option(
-                    ["--file-glob"],
-                    default=None,
-                    type=DelimitedString(),
-                    help="A comma-separated list of file globs to limit which types of "
-                    "local files are accepted, e.g. '*.html,*.txt'",
                 ),
             ]
         )
