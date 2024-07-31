@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
-from unstructured.documents.elements import DataSourceMetadata
 from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 from unstructured.utils import requires_dependencies
 
@@ -17,6 +16,7 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -154,7 +154,7 @@ class GoogleDriveIndexer(Indexer):
             connector_type=CONNECTOR_TYPE,
             identifier=file_id,
             source_identifiers=source_identifiers,
-            metadata=DataSourceMetadata(
+            metadata=FileDataSourceMetadata(
                 url=url,
                 version=version,
                 date_created=str(date_created_dt.timestamp()),

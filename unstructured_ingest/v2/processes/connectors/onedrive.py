@@ -5,7 +5,6 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
-from unstructured.documents.elements import DataSourceMetadata
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
@@ -17,6 +16,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -136,7 +136,7 @@ class OnedriveIndexer(Indexer):
             source_identifiers=SourceIdentifiers(
                 fullpath=server_path, filename=drive_item.name, rel_path=rel_path
             ),
-            metadata=DataSourceMetadata(
+            metadata=FileDataSourceMetadata(
                 url=drive_item.parent_reference.path + "/" + drive_item.name,
                 version=drive_item.etag,
                 date_modified=str(date_modified_dt.timestamp()) if date_modified_dt else None,

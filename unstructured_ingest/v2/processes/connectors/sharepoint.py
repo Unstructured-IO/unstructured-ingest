@@ -6,7 +6,6 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import quote
 
-from unstructured.documents.elements import DataSourceMetadata
 from unstructured.utils import requires_dependencies
 
 from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
@@ -18,6 +17,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -187,7 +187,7 @@ class SharepointIndexer(Indexer):
                 fullpath=file_path,
                 rel_path=file_path.replace(self.index_config.path, ""),
             ),
-            metadata=DataSourceMetadata(
+            metadata=FileDataSourceMetadata(
                 url=url,
                 version=version,
                 date_modified=str(date_modified_dt.timestamp()) if date_modified_dt else None,
@@ -222,7 +222,7 @@ class SharepointIndexer(Indexer):
                 fullpath=fullpath,
                 rel_path=rel_path,
             ),
-            metadata=DataSourceMetadata(
+            metadata=FileDataSourceMetadata(
                 url=absolute_url,
                 version=f"{file.major_version}.{file.minor_version}",
                 date_modified=str(date_modified_dt.timestamp()) if date_modified_dt else None,
