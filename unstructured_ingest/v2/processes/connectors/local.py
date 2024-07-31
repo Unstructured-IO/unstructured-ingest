@@ -6,8 +6,6 @@ from pathlib import Path
 from time import time
 from typing import Any, Generator, Optional
 
-from unstructured.documents.elements import DataSourceMetadata
-
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -15,6 +13,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -73,7 +72,7 @@ class LocalIndexer(Indexer):
             )
         )
 
-    def get_file_metadata(self, path: Path) -> DataSourceMetadata:
+    def get_file_metadata(self, path: Path) -> FileDataSourceMetadata:
         stats = path.stat()
         try:
             date_modified = str(stats.st_mtime)
@@ -93,7 +92,7 @@ class LocalIndexer(Indexer):
         except Exception as e:
             logger.warning(f"Couldn't detect file mode: {e}")
             permissions_data = None
-        return DataSourceMetadata(
+        return FileDataSourceMetadata(
             date_modified=date_modified,
             date_created=date_created,
             date_processed=str(time()),

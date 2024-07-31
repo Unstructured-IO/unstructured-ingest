@@ -19,7 +19,7 @@ source "$SCRIPT_DIR"/env_setup/elasticsearch/common/es-dest-ingest-test-creds.en
 function cleanup {
   # Index cleanup
   echo "Stopping Elasticsearch Docker container"
-  docker-compose -f "$SCRIPT_DIR"/env_setup/elasticsearch/common/docker-compose.yaml down --remove-orphans -v
+  docker compose-f "$SCRIPT_DIR"/env_setup/elasticsearch/common/docker-compose.yaml down --remove-orphans -v
 
   # Local file cleanup
   cleanup_dir "$WORK_DIR"

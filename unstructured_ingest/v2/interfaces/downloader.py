@@ -30,8 +30,12 @@ class Downloader(BaseProcess, BaseConnector, ABC):
     connector_type: str
     download_config: DownloaderConfigT
 
-    def get_download_path(self, file_data: FileData) -> Path:
+    def get_download_path(self, file_data: FileData) -> Optional[Path]:
+        if not file_data.source_identifiers:
+            return None
         rel_path = file_data.source_identifiers.relative_path
+        if not rel_path:
+            return None
         rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
         return self.download_dir / Path(rel_path)
 

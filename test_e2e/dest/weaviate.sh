@@ -17,7 +17,7 @@ source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
   # Index cleanup
   echo "Stopping Weaviate Docker container"
-  docker-compose -f "$SCRIPT_DIR"/env_setup/weaviate/docker-compose.yml down --remove-orphans -v
+  docker compose-f "$SCRIPT_DIR"/env_setup/weaviate/docker-compose.yml down --remove-orphans -v
 
   # Local file cleanup
   cleanup_dir "$WORK_DIR"
