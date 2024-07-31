@@ -39,7 +39,7 @@ echo "Creating milvus instance"
 docker compose -f "$SCRIPT_DIR"/env_setup/milvus/docker-compose.yml up -d --wait-timeout 60
 "$SCRIPT_DIR"/env_setup/milvus/create_collection.py --db-name $DB_NAME
 
-PYTHONPATH=. ./unstructured/ingest/main.py \
+PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
   --num-processes "$max_processes" \
   --output-dir "$OUTPUT_DIR" \
