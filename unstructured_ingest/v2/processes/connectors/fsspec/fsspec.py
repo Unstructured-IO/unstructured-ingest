@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
+from uuid import NAMESPACE_DNS, uuid5
 
 from unstructured.documents.elements import DataSourceMetadata
 
@@ -211,7 +212,7 @@ class FsspecIndexer(Indexer):
             # to get a valid relative path
             rel_path = file.replace(self.index_config.path_without_protocol, "").lstrip("/")
             yield FileData(
-                identifier=file,
+                identifier=str(uuid5(NAMESPACE_DNS, file)),
                 connector_type=self.connector_type,
                 source_identifiers=SourceIdentifiers(
                     filename=Path(file).name,

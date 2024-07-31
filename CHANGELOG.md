@@ -1,3 +1,9 @@
+## 0.0.2-dev0
+
+### Enhancements
+
+* **Use uuid for s3 identifiers** Update unique id to use uuid derived from file path rather than the filepath itself.
+
 ## 0.0.1
 
 ### Enhancements
