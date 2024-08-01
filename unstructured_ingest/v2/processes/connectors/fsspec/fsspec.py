@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
+from uuid import NAMESPACE_DNS, uuid5
 
 from unstructured.documents.elements import DataSourceMetadata
 
@@ -210,8 +211,11 @@ class FsspecIndexer(Indexer):
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
             rel_path = file.replace(self.index_config.path_without_protocol, "").lstrip("/")
+
+            additional_metadata = self.sterilize_info(path=file)
+            additional_metadata["original_file_path"] = file
             yield FileData(
-                identifier=file,
+                identifier=str(uuid5(NAMESPACE_DNS, file)),
                 connector_type=self.connector_type,
                 source_identifiers=SourceIdentifiers(
                     filename=Path(file).name,
@@ -219,7 +223,7 @@ class FsspecIndexer(Indexer):
                     fullpath=file,
                 ),
                 metadata=self.get_metadata(path=file),
-                additional_metadata=self.sterilize_info(path=file),
+                additional_metadata=additional_metadata,
             )
 
 
@@ -262,7 +266,8 @@ class FsspecDownloader(Downloader):
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            self.fs.get(rpath=file_data.identifier, lpath=download_path.as_posix())
+            rpath = file_data.additional_metadata["original_file_path"]
+            self.fs.get(rpath=rpath, lpath=download_path.as_posix())
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
@@ -272,7 +277,8 @@ class FsspecDownloader(Downloader):
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            await self.fs.get(rpath=file_data.identifier, lpath=download_path.as_posix())
+            rpath = file_data.additional_metadata["original_file_path"]
+            await self.fs.get(rpath=rpath, lpath=download_path.as_posix())
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
