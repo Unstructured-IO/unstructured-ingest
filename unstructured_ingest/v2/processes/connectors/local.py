@@ -62,8 +62,8 @@ class LocalIndexer(Indexer):
         if input_path.is_file():
             return [Path(s) for s in glob.glob(f"{self.index_config.path}")]
         if self.index_config.recursive:
-            return list(input_path.rglob())
-        return list(input_path.glob())
+            return list(input_path.rglob("*"))
+        return list(input_path.glob("*"))
 
     def get_file_metadata(self, path: Path) -> FileDataSourceMetadata:
         stats = path.stat()
@@ -85,12 +85,20 @@ class LocalIndexer(Indexer):
         except Exception as e:
             logger.warning(f"Couldn't detect file mode: {e}")
             permissions_data = None
+
+        try:
+            filesize_bytes = stats.st_size
+        except Exception as e:
+            logger.warning(f"Couldn't detect file size: {e}")
+            filesize_bytes = None
+
         return FileDataSourceMetadata(
             date_modified=date_modified,
             date_created=date_created,
             date_processed=str(time()),
             permissions_data=permissions_data,
             record_locator={"path": str(path.resolve())},
+            filesize_bytes=filesize_bytes,
         )
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
