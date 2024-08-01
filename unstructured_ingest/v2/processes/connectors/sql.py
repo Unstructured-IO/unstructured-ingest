@@ -140,7 +140,7 @@ class SQLUploadStager(UploadStager):
         **kwargs: Any,
     ) -> Path:
         with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
+            elements_contents: list[dict] = json.load(elements_file)
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -157,7 +157,7 @@ class SQLUploadStager(UploadStager):
             data["id"] = str(uuid.uuid4())
 
             # remove extraneous, not supported columns
-            [data.pop(column) for column in data if column not in _COLUMNS]
+            data = {k: v for k, v in data.items() if k in _COLUMNS}
 
             output.append(data)
 
