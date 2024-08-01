@@ -25,7 +25,7 @@ function cleanup {
   cleanup_dir "$OUTPUT_DIR"
 
   echo "Stopping local Kafka instance"
-  docker compose-f "$SCRIPT_DIR"/env_setup/kafka/docker-compose.yml down --remove-orphans -v
+  docker compose -f "$SCRIPT_DIR"/env_setup/kafka/docker-compose.yml down --remove-orphans -v
 }
 
 trap cleanup EXIT
