@@ -17,7 +17,7 @@ DATABASE_TYPE="pgvector"
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
   echo "Stopping SQL DB Docker container"
-  docker-compose -f "$SCRIPT_DIR"/env_setup/sql/docker-compose-"$DATABASE_TYPE".yaml down --remove-orphans -v
+  docker compose -f "$SCRIPT_DIR"/env_setup/sql/docker-compose-"$DATABASE_TYPE".yaml down --remove-orphans -v
   # Local file cleanup
   cleanup_dir "$WORK_DIR"
   cleanup_dir "$OUTPUT_DIR"

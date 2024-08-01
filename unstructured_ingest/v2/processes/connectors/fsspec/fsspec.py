@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import contextlib
-import fnmatch
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
 from uuid import NAMESPACE_DNS, uuid5
-
-from unstructured.documents.elements import DataSourceMetadata
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
@@ -20,6 +17,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -74,7 +72,6 @@ class FileConfig(Base):
 @dataclass
 class FsspecIndexerConfig(FileConfig, IndexerConfig):
     recursive: bool = False
-    file_glob: Optional[list[str]] = None
 
 
 @dataclass
@@ -108,16 +105,6 @@ class FsspecIndexer(Indexer):
         return get_filesystem_class(self.index_config.protocol)(
             **self.connection_config.get_access_config(),
         )
-
-    def does_path_match_glob(self, path: str) -> bool:
-        if self.index_config.file_glob is None:
-            return True
-        patterns = self.index_config.file_glob
-        for pattern in patterns:
-            if fnmatch.filter([path], pattern):
-                return True
-        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
-        return False
 
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
@@ -157,10 +144,10 @@ class FsspecIndexer(Indexer):
             else:
                 raise TypeError(f"unhandled response type from find: {type(found)}")
 
-    def get_metadata(self, path: str) -> DataSourceMetadata:
+    def get_metadata(self, path: str) -> FileDataSourceMetadata:
         date_created = None
         date_modified = None
-
+        file_size = None
         try:
             created: Optional[Any] = self.fs.created(path)
             if created:
@@ -180,6 +167,8 @@ class FsspecIndexer(Indexer):
                     date_modified = str(modified)
         except NotImplementedError:
             pass
+        with contextlib.suppress(AttributeError):
+            file_size = self.fs.size(path)
 
         version = self.fs.checksum(path)
         metadata: dict[str, str] = {}
@@ -189,15 +178,19 @@ class FsspecIndexer(Indexer):
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,
         }
+        file_stat = self.fs.stat(path=path)
+        if file_id := file_stat.get("id"):
+            record_locator["file_id"] = file_id
         if metadata:
             record_locator["metadata"] = metadata
-        return DataSourceMetadata(
+        return FileDataSourceMetadata(
             date_created=date_created,
             date_modified=date_modified,
             date_processed=str(time()),
             version=str(version),
             url=f"{self.index_config.protocol}://{path}",
             record_locator=record_locator,
+            filesize_bytes=file_size,
         )
 
     def sterilize_info(self, path) -> dict:
@@ -205,8 +198,7 @@ class FsspecIndexer(Indexer):
         return sterilize_dict(data=info)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        raw_files = self.list_files()
-        files = [f for f in raw_files if self.does_path_match_glob(f)]
+        files = self.list_files()
         for file in files:
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
@@ -253,13 +245,6 @@ class FsspecDownloader(Downloader):
 
         return get_filesystem_class(self.protocol)(
             **self.connection_config.get_access_config(),
-        )
-
-    def get_download_path(self, file_data: FileData) -> Path:
-        return (
-            self.download_dir / Path(file_data.source_identifiers.relative_path)
-            if self.download_config
-            else Path(file_data.source_identifiers.rel_path)
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:

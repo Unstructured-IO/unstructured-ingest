@@ -1,12 +1,9 @@
 import glob
-import itertools
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
-
-from unstructured.documents.elements import DataSourceMetadata
+from typing import Any, Generator
 
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -15,6 +12,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -45,7 +43,6 @@ class LocalConnectionConfig(ConnectionConfig):
 class LocalIndexerConfig(IndexerConfig):
     input_path: str
     recursive: bool = False
-    file_glob: Optional[list[str]] = None
 
     @property
     def path(self) -> Path:
@@ -64,16 +61,11 @@ class LocalIndexer(Indexer):
         input_path = self.index_config.path
         if input_path.is_file():
             return [Path(s) for s in glob.glob(f"{self.index_config.path}")]
-        glob_fn = input_path.rglob if self.index_config.recursive else input_path.glob
-        if not self.index_config.file_glob:
-            return list(glob_fn("*"))
-        return list(
-            itertools.chain.from_iterable(
-                glob_fn(pattern) for pattern in self.index_config.file_glob
-            )
-        )
+        if self.index_config.recursive:
+            return list(input_path.rglob("*"))
+        return list(input_path.glob("*"))
 
-    def get_file_metadata(self, path: Path) -> DataSourceMetadata:
+    def get_file_metadata(self, path: Path) -> FileDataSourceMetadata:
         stats = path.stat()
         try:
             date_modified = str(stats.st_mtime)
@@ -93,12 +85,20 @@ class LocalIndexer(Indexer):
         except Exception as e:
             logger.warning(f"Couldn't detect file mode: {e}")
             permissions_data = None
-        return DataSourceMetadata(
+
+        try:
+            filesize_bytes = stats.st_size
+        except Exception as e:
+            logger.warning(f"Couldn't detect file size: {e}")
+            filesize_bytes = None
+
+        return FileDataSourceMetadata(
             date_modified=date_modified,
             date_created=date_created,
             date_processed=str(time()),
             permissions_data=permissions_data,
             record_locator={"path": str(path.resolve())},
+            filesize_bytes=filesize_bytes,
         )
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:

@@ -7,8 +7,6 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from unstructured.documents.elements import DataSourceMetadata
-
 from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -24,6 +22,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     UploadContent,
@@ -176,7 +175,7 @@ class ElasticsearchIndexer(Indexer):
             yield FileData(
                 identifier=identified,
                 connector_type=CONNECTOR_TYPE,
-                metadata=DataSourceMetadata(
+                metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
                     date_processed=str(time()),
                 ),
@@ -242,7 +241,7 @@ class ElasticsearchDownloader(Downloader):
             file_data=FileData(
                 identifier=filename_id,
                 connector_type=CONNECTOR_TYPE,
-                metadata=DataSourceMetadata(
+                metadata=FileDataSourceMetadata(
                     version=str(result["_version"]) if "_version" in result else None,
                     date_processed=str(time()),
                     record_locator={

@@ -17,7 +17,7 @@ source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
   # Index cleanup
   echo "Stopping OpenSearch Docker container"
-  docker-compose -f "$SCRIPT_DIR"/env_setup/opensearch/common/docker-compose.yaml down --remove-orphans -v
+  docker compose -f "$SCRIPT_DIR"/env_setup/opensearch/common/docker-compose.yaml down --remove-orphans -v
 
   # Local file cleanup
   cleanup_dir "$WORK_DIR"

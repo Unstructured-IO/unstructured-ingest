@@ -6,8 +6,6 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import quote
 
-from unstructured.documents.elements import DataSourceMetadata
-
 from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -18,6 +16,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -195,7 +194,7 @@ class SharepointIndexer(Indexer):
                 fullpath=file_path,
                 rel_path=file_path.replace(self.index_config.path, ""),
             ),
-            metadata=DataSourceMetadata(
+            metadata=FileDataSourceMetadata(
                 url=url,
                 version=version,
                 date_modified=str(date_modified_dt.timestamp()) if date_modified_dt else None,
@@ -230,7 +229,7 @@ class SharepointIndexer(Indexer):
                 fullpath=fullpath,
                 rel_path=rel_path,
             ),
-            metadata=DataSourceMetadata(
+            metadata=FileDataSourceMetadata(
                 url=absolute_url,
                 version=f"{file.major_version}.{file.minor_version}",
                 date_modified=str(date_modified_dt.timestamp()) if date_modified_dt else None,
@@ -348,10 +347,9 @@ class SharepointDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def get_download_path(self, file_data: FileData) -> Path:
+        download_path = super().get_download_path(file_data=file_data)
+
         content_type = file_data.additional_metadata.get("sharepoint_content_type")
-        rel_path = file_data.source_identifiers.fullpath
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        download_path = self.download_dir / Path(rel_path)
         if content_type == SharepointContentType.SITEPAGE.value:
             # Update output extension to html if site page
             download_path = download_path.with_suffix(".html")

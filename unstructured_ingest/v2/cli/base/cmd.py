@@ -24,6 +24,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.local import LocalUploader, LocalUploaderConfig
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.v2.processes.filter import Filterer, FiltererConfig
 from unstructured_ingest.v2.processes.partitioner import Partitioner, PartitionerConfig
 
 CommandT = TypeVar("CommandT", bound=click.Command)
@@ -75,6 +76,8 @@ class BaseCmd(ABC):
         }
         if chunker := self.get_chunker(options=source_options):
             pipeline_kwargs["chunker"] = chunker
+        if filterer := self.get_filterer(options=source_options):
+            pipeline_kwargs["filterer"] = filterer
         if embedder := self.get_embeder(options=source_options):
             pipeline_kwargs["embedder"] = embedder
         if dest:
@@ -104,6 +107,13 @@ class BaseCmd(ABC):
         if not chunker_config.chunking_strategy:
             return None
         return Chunker(config=chunker_config)
+
+    @staticmethod
+    def get_filterer(options: dict[str, Any]) -> Optional[Filterer]:
+        filterer_configs = extract_config(flat_data=options, config=FiltererConfig)
+        if not filterer_configs.to_dict():
+            return None
+        return Filterer(config=filterer_configs)
 
     @staticmethod
     def get_embeder(options: dict[str, Any]) -> Optional[Embedder]:
