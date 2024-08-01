@@ -92,7 +92,7 @@ class PipelineStep(ABC):
 
         if iterable:
             if len(iterable) == 1:
-                return [self.process_serially(iterable)]
+                return self.process_serially(iterable)
             if self.context.num_processes == 1:
                 return self.process_serially(iterable)
             with mp.Pool(
