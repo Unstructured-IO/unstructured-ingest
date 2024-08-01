@@ -8,6 +8,9 @@ class BaseProcess(ABC):
     def is_async(self) -> bool:
         return False
 
+    def precheck(self) -> None:
+        pass
+
     @abstractmethod
     def run(self, **kwargs: Any) -> Any:
         pass

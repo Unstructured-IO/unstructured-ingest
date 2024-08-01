@@ -9,7 +9,7 @@ from urllib.parse import quote
 from unstructured.documents.elements import DataSourceMetadata
 
 from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
-from unstructured_ingest.error import SourceConnectionNetworkError
+from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -133,6 +133,14 @@ class SharepointIndexerConfig(IndexerConfig):
 class SharepointIndexer(Indexer):
     connection_config: SharepointConnectionConfig
     index_config: SharepointIndexerConfig = field(default_factory=lambda: SharepointIndexerConfig())
+
+    def precheck(self) -> None:
+        try:
+            site_client = self.connection_config.get_client()
+            site_client.site_pages.pages.get().execute_query()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
     def list_files(self, folder: "Folder", recursive: bool = False) -> list["File"]:
         if not recursive:

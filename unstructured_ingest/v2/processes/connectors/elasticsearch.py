@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from unstructured.documents.elements import DataSourceMetadata
 
 from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -121,11 +125,14 @@ class ElasticsearchIndexerConfig(IndexerConfig):
 class ElasticsearchIndexer(Indexer):
     connection_config: ElasticsearchConnectionConfig
     index_config: ElasticsearchIndexerConfig
-    client: "ElasticsearchClient" = field(init=False)
     connector_type: str = CONNECTOR_TYPE
 
-    def __post_init__(self):
-        self.client = self.connection_config.get_client()
+    def precheck(self) -> None:
+        try:
+            self.connection_config.get_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_scan(self):
@@ -138,8 +145,9 @@ class ElasticsearchIndexer(Indexer):
         scan = self.load_scan()
 
         scan_query: dict = {"stored_fields": [], "query": {"match_all": {}}}
+        client = self.connection_config.get_client()
         hits = scan(
-            self.client,
+            client,
             query=scan_query,
             scroll="1m",
             index=self.index_config.index_name,
@@ -338,6 +346,13 @@ class ElasticsearchUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: ElasticsearchUploaderConfig
     connection_config: ElasticsearchConnectionConfig
+
+    def precheck(self) -> None:
+        try:
+            self.connection_config.get_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_parallel_bulk(self):

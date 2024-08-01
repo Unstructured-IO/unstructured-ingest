@@ -21,7 +21,7 @@ from dateutil import parser
 from unstructured.documents.elements import DataSourceMetadata
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
-from unstructured_ingest.error import SourceConnectionNetworkError
+from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -131,6 +131,13 @@ class SalesforceIndexer(Indexer):
         for record_type in self.index_config.categories:
             if record_type not in ACCEPTED_CATEGORIES:
                 raise ValueError(f"{record_type} not currently an accepted Salesforce category")
+
+    def precheck(self) -> None:
+        try:
+            self.connection_config.get_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
     def get_file_extension(self, record_type) -> str:
         if record_type == "EmailMessage":
