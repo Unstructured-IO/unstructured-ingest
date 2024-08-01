@@ -62,7 +62,8 @@
             "deleted": false,
             "pendingOwner": false
           }
-        ]
+        ],
+        "filesize_bytes": 6201
       }
     }
   },
@@ -129,7 +130,8 @@
             "deleted": false,
             "pendingOwner": false
           }
-        ]
+        ],
+        "filesize_bytes": 6201
       }
     }
   }
