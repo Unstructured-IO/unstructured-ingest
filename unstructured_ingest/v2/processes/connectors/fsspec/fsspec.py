@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import fnmatch
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -73,7 +72,6 @@ class FileConfig(Base):
 @dataclass
 class FsspecIndexerConfig(FileConfig, IndexerConfig):
     recursive: bool = False
-    file_glob: Optional[list[str]] = None
 
 
 @dataclass
@@ -107,16 +105,6 @@ class FsspecIndexer(Indexer):
         return get_filesystem_class(self.index_config.protocol)(
             **self.connection_config.get_access_config(),
         )
-
-    def does_path_match_glob(self, path: str) -> bool:
-        if self.index_config.file_glob is None:
-            return True
-        patterns = self.index_config.file_glob
-        for pattern in patterns:
-            if fnmatch.filter([path], pattern):
-                return True
-        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
-        return False
 
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
@@ -210,8 +198,7 @@ class FsspecIndexer(Indexer):
         return sterilize_dict(data=info)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        raw_files = self.list_files()
-        files = [f for f in raw_files if self.does_path_match_glob(f)]
+        files = self.list_files()
         for file in files:
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
