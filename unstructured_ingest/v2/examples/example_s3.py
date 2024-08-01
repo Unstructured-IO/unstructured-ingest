@@ -33,5 +33,5 @@ if __name__ == "__main__":
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
         embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
         uploader_config=LocalUploaderConfig(output_dir=str(output_path.resolve())),
-        filterer_config=FiltererConfig(file_glob=["utic-dev-tech-fixtures/small-pdf-set/p*"]),
+        filterer_config=FiltererConfig(max_file_size=900000),
     ).run()
