@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -19,7 +20,6 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
-from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from couchbase.cluster import Cluster
