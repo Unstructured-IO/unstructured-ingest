@@ -4,6 +4,7 @@ import click
 
 from unstructured_ingest.v2.cli.base import DestCmd, SrcCmd
 from unstructured_ingest.v2.cli.interfaces import CliConfig
+from unstructured_ingest.v2.cli.utils import DelimitedString
 from unstructured_ingest.v2.processes.connectors.couchbase import CONNECTOR_TYPE
 
 
@@ -90,7 +91,7 @@ couchbase_dest_cmd = DestCmd(
 
 
 @dataclass
-class CouchbaseCliReadConfig(CliConfig):
+class CouchbaseCliIndexerConfig(CliConfig):
     @staticmethod
     def get_cli_options() -> list[click.Option]:
         options = [
@@ -104,8 +105,30 @@ class CouchbaseCliReadConfig(CliConfig):
         return options
 
 
+@dataclass
+class CouchbaseCliDownloaderConfig(CliConfig):
+    @staticmethod
+    def get_cli_options() -> list[click.Option]:
+        options = [
+            click.Option(
+                ["--download-dir"],
+                help="Where files are downloaded to, defaults to a location at"
+                     "`$HOME/.cache/unstructured/ingest/<connector name>/<SHA256>`.",
+            ),
+            click.Option(
+                ["--fields"],
+                type=DelimitedString(),
+                default=[],
+                help="If provided, will limit the fields returned by Couchbase "
+                     "to this comma-delimited list",
+            ),
+        ]
+        return options
+
+
 couchbase_src_cmd = SrcCmd(
     cmd_name=CONNECTOR_TYPE,
     connection_config=CouchbaseCliConnectionConfig,
-    indexer_config=CouchbaseCliReadConfig,
+    indexer_config=CouchbaseCliIndexerConfig,
+    downloader_config=CouchbaseCliDownloaderConfig,
 )

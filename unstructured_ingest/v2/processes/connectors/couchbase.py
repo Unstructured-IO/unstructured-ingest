@@ -13,11 +13,11 @@ from unstructured_ingest.v2.interfaces import (
     Uploader,
     UploaderConfig,
     UploadStager,
-    UploadStagerConfig,
+    UploadStagerConfig, IndexerConfig, Indexer, DownloaderConfig, Downloader
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
+    DestinationRegistryEntry, SourceRegistryEntry
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 

@@ -5,7 +5,7 @@ import click
 from .astra import astra_dest_cmd
 from .azure_cognitive_search import azure_cognitive_search_dest_cmd
 from .chroma import chroma_dest_cmd
-from .couchbase import couchbase_dest_cmd
+from .couchbase import couchbase_dest_cmd, couchbase_src_cmd
 from .databricks_volumes import databricks_volumes_dest_cmd
 from .elasticsearch import elasticsearch_dest_cmd, elasticsearch_src_cmd
 from .fsspec.azure import azure_dest_cmd, azure_src_cmd
@@ -30,6 +30,7 @@ from .weaviate import weaviate_dest_cmd
 src_cmds = [
     azure_src_cmd,
     box_src_cmd,
+    couchbase_src_cmd,
     dropbox_src_cmd,
     elasticsearch_src_cmd,
     gcs_src_cmd,
