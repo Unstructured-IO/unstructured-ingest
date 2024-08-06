@@ -1,10 +1,13 @@
+import hashlib
 import json
+import time
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, List, Generator
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -14,7 +17,14 @@ from unstructured_ingest.v2.interfaces import (
     Uploader,
     UploaderConfig,
     UploadStager,
-    UploadStagerConfig, IndexerConfig, Indexer, DownloaderConfig, Downloader
+    UploadStagerConfig, IndexerConfig, Indexer, DownloaderConfig, Downloader, FileDataSourceMetadata,
+    DownloadResponse, download_responses,
+
+)
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -27,6 +37,30 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
 
+def connect_to_couchbase(access_config):
+    from datetime import timedelta
+
+    from couchbase.auth import PasswordAuthenticator
+    from couchbase.cluster import Cluster
+    from couchbase.options import ClusterOptions
+
+    connection_string = username = password = None
+    try:
+        if access_config.connection_string is not None:
+            connection_string = access_config.connection_string
+        if access_config.username is not None:
+            username = access_config.username
+        if access_config.password is not None:
+            password = access_config.password
+    except Exception as e:
+        raise f"please provide connection string, username and password : {e}"
+
+    auth = PasswordAuthenticator(username, password)
+    options = ClusterOptions(auth)
+    options.apply_profile("wan_development")
+    cluster = Cluster(connection_string, options)
+    cluster.wait_until_ready(timedelta(seconds=5))
+    return cluster
 
 @dataclass
 class CouchbaseAccessConfig(AccessConfig):
@@ -88,34 +122,11 @@ class CouchbaseUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     def __post_init__(self):
-        self.cluster = self.connect_to_couchbase()
+        self.cluster = self.get_cluster()
 
     @requires_dependencies(["couchbase"], extras="couchbase")
-    def connect_to_couchbase(self) -> "Cluster":
-        from datetime import timedelta
-
-        from couchbase.auth import PasswordAuthenticator
-        from couchbase.cluster import Cluster
-        from couchbase.options import ClusterOptions
-
-        connection_string = username = password = None
-        access_conf = self.connection_config.access_config
-        try:
-            if access_conf.connection_string is not None:
-                connection_string = access_conf.connection_string
-            if access_conf.username is not None:
-                username = access_conf.username
-            if access_conf.password is not None:
-                password = access_conf.password
-        except Exception as e:
-            raise f"please provide connection string, username and password : {e}"
-
-        auth = PasswordAuthenticator(username, password)
-        options = ClusterOptions(auth)
-        options.apply_profile("wan_development")
-        cluster = Cluster(connection_string, options)
-        cluster.wait_until_ready(timedelta(seconds=5))
-        return cluster
+    def get_cluster(self) -> "Cluster":
+        return connect_to_couchbase(self.connection_config.access_config)
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
         elements_dict = []
@@ -148,10 +159,196 @@ class CouchbaseUploader(Uploader):
             collection.upsert_multi({doc_id: doc for doc in chunk for doc_id, doc in doc.items()})
 
 
+@dataclass
+class CouchbaseIndexerConfig(IndexerConfig):
+    batch_size: int = 100
+
+
+@dataclass
+class CouchbaseIndexer(Indexer):
+    connection_config: CouchbaseConnectionConfig
+    index_config: CouchbaseIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
+    cluster: Optional["Cluster"] = field(init=False, default=None)
+
+    def __post_init__(self):
+        try:
+            self.cluster = self.get_cluster()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
+
+    @requires_dependencies(["couchbase"], extras="couchbase")
+    def get_cluster(self) -> "Cluster":
+        return connect_to_couchbase(self.connection_config.access_config)
+
+    @requires_dependencies(["couchbase"], extras="couchbase")
+    def _get_doc_ids(self) -> List[str]:
+        query = (
+            f"SELECT META(d).id "
+            f"FROM `{self.connection_config.bucket}`."
+            f"`{self.connection_config.scope}`."
+            f"`{self.connection_config.collection}` as d"
+        )
+
+        max_attempts = 5
+        attempts = 0
+        while attempts < max_attempts:
+            try:
+                result = self.cluster.query(query)
+                document_ids = [row["id"] for row in result]
+                return document_ids
+            except Exception as e:
+                attempts += 1
+                time.sleep(3)
+                if attempts == max_attempts:
+                    raise SourceConnectionError(f"failed to get document ids: {e}")
+
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        ids = self._get_doc_ids()
+
+        id_batches = [
+            ids[i * self.connection_config.batch_size: (i + 1) * self.connection_config.batch_size]
+            for i in range(
+                (len(ids) + self.connection_config.batch_size - 1)
+                // self.connection_config.batch_size
+            )
+        ]
+        for batch in id_batches:
+            # Make sure the hash is always a positive number to create identified
+            identified = str(hash(batch) + sys.maxsize + 1)
+            yield FileData(
+                identifier=identified,
+                connector_type=CONNECTOR_TYPE,
+                metadata=FileDataSourceMetadata(
+                    url=f"{self.connection_config.access_config.connection_string}/{self.connection_config.bucket}",
+                    date_processed=str(time.time()),
+                ),
+                additional_metadata={
+                    "ids": list(batch),
+                    "bucket": self.connection_config.bucket,
+                },
+            )
+
+
+@dataclass
+class CouchbaseDownloaderConfig(DownloaderConfig):
+    fields: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CouchbaseDownloader(Downloader):
+    connection_config: CouchbaseConnectionConfig
+    download_config: CouchbaseDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
+
+    def is_async(self) -> bool:
+        return True
+
+    def get_identifier(self, bucket: str, record_id: str) -> str:
+        f = f"{bucket}-{record_id}"
+        if self.download_config.fields:
+            f = "{}-{}".format(
+                f,
+                hashlib.sha256(",".join(self.download_config.fields).encode()).hexdigest()[:8],
+            )
+        return f
+
+    def map_cb_results(self, cb_results: dict) -> str:
+        doc_body = cb_results
+        flattened_dict = flatten_dict(dictionary=doc_body)
+        str_values = [str(value) for value in flattened_dict.values()]
+        concatenated_values = "\n".join(str_values)
+        return concatenated_values
+
+    def generate_download_response(
+        self, result: dict, bucket: str, file_data: FileData
+    ) -> DownloadResponse:
+        record_id = result["id"]
+        filename_id = self.get_identifier(bucket=bucket, record_id=record_id)
+        filename = f"{filename_id}.txt"
+        download_path = self.download_dir / Path(filename)
+        logger.debug(
+            f"Downloading results from bucket {bucket} and id {record_id} to {download_path}"
+        )
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(download_path, "w", encoding="utf8") as f:
+                f.write(self.map_cb_results(cb_results=result))
+        except Exception as e:
+            logger.error(
+                f"failed to download from bucket {bucket} "
+                f"and id {record_id} to {download_path}: {e}",
+                exc_info=True,
+            )
+            raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
+        return DownloadResponse(
+            file_data=FileData(
+                identifier=filename_id,
+                connector_type=CONNECTOR_TYPE,
+                metadata=FileDataSourceMetadata(
+                    version=None,
+                    date_processed=str(time()),
+                    record_locator={
+                        "connection_string": self.connection_config.access_config.connection_string,
+                        "bucket": bucket,
+                        "document_id": record_id,
+                    },
+                ),
+            ),
+            path=download_path,
+        )
+
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        raise NotImplementedError()
+
+    @requires_dependencies(["couchbase"], extras="couchbase")
+    def load_async(self):
+        from couchbase.cluster import Cluster, ClusterOptions
+        from couchbase.auth import PasswordAuthenticator
+        from couchbase.options import QueryOptions
+
+        return Cluster, ClusterOptions, PasswordAuthenticator, QueryOptions
+
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        Cluster, ClusterOptions, PasswordAuthenticator, QueryOptions = self.load_async()
+
+        bucket_name: str = file_data.additional_metadata["bucket"]
+        ids: list[str] = file_data.additional_metadata["ids"]
+
+        cluster = Cluster(
+            self.connection_config.access_config.connection_string,
+            ClusterOptions(PasswordAuthenticator(
+                self.connection_config.access_config.username,
+                self.connection_config.access_config.password
+            ))
+        )
+        bucket = cluster.bucket(bucket_name)
+        collection = bucket.default_collection()
+
+        download_responses = []
+        for doc_id in ids:
+            result = await collection.get(doc_id)
+            download_responses.append(
+                self.generate_download_response(
+                    result=result.content_as[dict], bucket=bucket_name, file_data=file_data
+                )
+            )
+        return download_responses
+
+
 couchbase_destination_entry = DestinationRegistryEntry(
     connection_config=CouchbaseConnectionConfig,
     uploader=CouchbaseUploader,
     uploader_config=CouchbaseUploaderConfig,
     upload_stager=CouchbaseUploadStager,
     upload_stager_config=CouchbaseUploadStagerConfig,
+)
+
+couchbase_source_entry = SourceRegistryEntry(
+    connection_config=CouchbaseConnectionConfig,
+    indexer=CouchbaseIndexer,
+    indexer_config=CouchbaseIndexerConfig,
+    downloader=CouchbaseDownloader,
+    downloader_config=CouchbaseDownloaderConfig,
 )
