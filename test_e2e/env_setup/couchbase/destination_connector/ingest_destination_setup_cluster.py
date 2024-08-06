@@ -40,9 +40,7 @@ def setup_cluster(cluster_config: ClusterConfig):
 
     # Create Primary Index
     cluster.query(
-        "Create primary index on `{}`.`{}`.`{}`".format(
-            cluster_config.bucket_name, cluster_config.scope_name, cluster_config.collection_name
-        )
+        f"Create primary index on `{cluster_config.bucket_name}`.`{cluster_config.scope_name}`.`{cluster_config.collection_name}`"
     )
 
     index_definition = {
