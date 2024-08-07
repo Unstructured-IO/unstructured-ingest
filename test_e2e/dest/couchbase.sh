@@ -29,10 +29,8 @@ function cleanup() {
 
    # Remove docker container
   echo "Stopping Couchbase Docker container"
-  docker-compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
+  docker compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
 
-  # Kill couchbase background process
-  pgrep -f couchbase-dest | xargs kill
   cleanup_dir "$OUTPUT_DIR"
   cleanup_dir "$WORK_DIR"
   if [ "$CI" == "true" ]; then
@@ -87,6 +85,7 @@ python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
   --collection "$DESTINATION_CB_COLLECTION" \
   check --expected-docs 3
 
+# shellcheck disable=SC2012
 stage_file=$(ls -1 "$WORK_DIR"/upload_stage | head -n 1)
 
 python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
