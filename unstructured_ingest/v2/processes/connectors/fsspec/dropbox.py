@@ -58,6 +58,10 @@ class DropboxIndexer(FsspecIndexer):
             self.index_config.path_without_protocol = "/" + self.index_config.path_without_protocol
 
     @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
+    def precheck(self) -> None:
+        super().precheck()
+
+    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         return super().run(**kwargs)
 
@@ -105,6 +109,10 @@ class DropboxUploader(FsspecUploader):
     @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
     def __post_init__(self):
         super().__post_init__()
+
+    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
+    def precheck(self) -> None:
+        super().precheck()
 
     @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:

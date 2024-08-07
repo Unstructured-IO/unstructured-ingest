@@ -70,6 +70,10 @@ class BoxIndexer(FsspecIndexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         return super().run(**kwargs)
 
+    @requires_dependencies(["boxfs"], extras="box")
+    def precheck(self) -> None:
+        super().precheck()
+
 
 @dataclass
 class BoxDownloaderConfig(FsspecDownloaderConfig):
@@ -106,6 +110,10 @@ class BoxUploader(FsspecUploader):
     @requires_dependencies(["boxfs"], extras="box")
     def __post_init__(self):
         super().__post_init__()
+
+    @requires_dependencies(["boxfs"], extras="box")
+    def precheck(self) -> None:
+        super().precheck()
 
     @requires_dependencies(["boxfs"], extras="box")
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:

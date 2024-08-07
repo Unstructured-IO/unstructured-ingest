@@ -311,7 +311,8 @@ class FsspecUploader(Uploader):
             fs = get_filesystem_class(self.upload_config.protocol)(
                 **self.connection_config.get_access_config(),
             )
-            fs.ls(path=self.upload_config.path_without_protocol, detail=False)
+            root_dir = self.upload_config.path_without_protocol.split("/")[0]
+            fs.ls(path=root_dir, detail=False)
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
