@@ -143,11 +143,6 @@ class OpensearchUploaderConfig(ElasticsearchUploaderConfig):
 
 
 @dataclass
-class OpensearchUploaderConfig(ElasticsearchUploaderConfig):
-    pass
-
-
-@dataclass
 class OpenSearchUploader(ElasticsearchUploader):
     connection_config: OpenSearchConnectionConfig
     upload_config: OpensearchUploaderConfig
