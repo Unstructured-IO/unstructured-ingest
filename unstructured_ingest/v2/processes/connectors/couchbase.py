@@ -4,14 +4,12 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     UploadContent,
     Uploader,
     UploaderConfig,
@@ -52,7 +50,9 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         # verify if required fields are present
         required_fields = ["connection_string", "username", "password"]
         for cb_field in required_fields:
-            if (not getattr(self.access_config, cb_field)) or getattr(self.access_config, cb_field) == "":
+            if (not getattr(self.access_config, cb_field)) or getattr(
+                self.access_config, cb_field
+            ) == "":
                 raise ValueError(f"Missing field in couchbase access config: {cb_field}")
 
 
@@ -68,11 +68,11 @@ class CouchbaseUploadStager(UploadStager):
     )
 
     def run(
-            self,
-            elements_filepath: Path,
-            output_dir: Path,
-            output_filename: str,
-            **kwargs: Any,
+        self,
+        elements_filepath: Path,
+        output_dir: Path,
+        output_filename: str,
+        **kwargs: Any,
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)

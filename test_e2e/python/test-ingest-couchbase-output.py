@@ -83,7 +83,7 @@ def check(ctx, expected_docs):
 @click.pass_context
 def check_vector(ctx, output_json):
     json_content = json.load(output_json)
-    key_0 = next(iter(json_content[0])) # Get the first key
+    key_0 = next(iter(json_content[0]))  # Get the first key
     exact_embedding = json_content[0][key_0]["embedding"]
     exact_text = json_content[0][key_0]["text"]
 
