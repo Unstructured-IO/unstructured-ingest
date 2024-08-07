@@ -72,6 +72,7 @@ class CouchbaseUploadStager(UploadStager):
             elements_filepath: Path,
             output_dir: Path,
             output_filename: str,
+            **kwargs: Any,
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
