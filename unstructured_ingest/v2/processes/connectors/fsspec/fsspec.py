@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
 from uuid import NAMESPACE_DNS, uuid5
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -299,6 +303,18 @@ class FsspecUploader(Uploader):
                 f"{self.__class__.__name__}.__init__() "
                 f"missing 1 required positional argument: 'upload_config'"
             )
+
+    def precheck(self) -> None:
+        from fsspec import get_filesystem_class
+
+        try:
+            fs = get_filesystem_class(self.upload_config.protocol)(
+                **self.connection_config.get_access_config(),
+            )
+            fs.ls(path=self.upload_config.path_without_protocol, detail=False)
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def get_upload_path(self, file_data: FileData) -> Path:
         upload_path = (
