@@ -1,8 +1,9 @@
-## 0.0.3-dev0
+## 0.0.3-dev1
 
 ### Enhancements
 
 * **Improve documentation** Update the README's.
+* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones. 
 
 ## 0.0.2
 
