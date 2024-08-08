@@ -80,6 +80,10 @@ class GcsIndexer(FsspecIndexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         return super().run(**kwargs)
 
+    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
+    def precheck(self) -> None:
+        super().precheck()
+
 
 @dataclass
 class GcsDownloaderConfig(FsspecDownloaderConfig):
@@ -116,6 +120,10 @@ class GcsUploader(FsspecUploader):
     @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
     def __post_init__(self):
         super().__post_init__()
+
+    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
+    def precheck(self) -> None:
+        super().precheck()
 
     @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:

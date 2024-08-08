@@ -111,6 +111,10 @@ class S3Indexer(FsspecIndexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         return super().run(**kwargs)
 
+    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
+    def precheck(self) -> None:
+        super().precheck()
+
 
 @dataclass
 class S3DownloaderConfig(FsspecDownloaderConfig):
@@ -143,6 +147,10 @@ class S3Uploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: S3ConnectionConfig
     upload_config: S3UploaderConfig = field(default=None)
+
+    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
+    def precheck(self) -> None:
+        super().precheck()
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
     def __post_init__(self):

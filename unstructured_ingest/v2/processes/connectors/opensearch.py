@@ -101,8 +101,14 @@ class OpenSearchConnectionConfig(ConnectionConfig):
 
 
 @dataclass
+class OpensearchIndexerConfig(ElasticsearchIndexerConfig):
+    pass
+
+
+@dataclass
 class OpenSearchIndexer(ElasticsearchIndexer):
     connection_config: OpenSearchConnectionConfig
+    index_config: OpensearchIndexerConfig
     client: "OpenSearch" = field(init=False)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -113,8 +119,14 @@ class OpenSearchIndexer(ElasticsearchIndexer):
 
 
 @dataclass
+class OpensearchDownloaderConfig(ElasticsearchDownloaderConfig):
+    pass
+
+
+@dataclass
 class OpenSearchDownloader(ElasticsearchDownloader):
     connection_config: OpenSearchConnectionConfig
+    download_config: OpensearchDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -126,8 +138,14 @@ class OpenSearchDownloader(ElasticsearchDownloader):
 
 
 @dataclass
+class OpensearchUploaderConfig(ElasticsearchUploaderConfig):
+    pass
+
+
+@dataclass
 class OpenSearchUploader(ElasticsearchUploader):
     connection_config: OpenSearchConnectionConfig
+    upload_config: OpensearchUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -137,19 +155,29 @@ class OpenSearchUploader(ElasticsearchUploader):
         return parallel_bulk
 
 
+@dataclass
+class OpensearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
+    pass
+
+
+@dataclass
+class OpensearchUploadStager(ElasticsearchUploadStager):
+    upload_stager_config: OpensearchUploadStagerConfig
+
+
 opensearch_source_entry = SourceRegistryEntry(
     connection_config=OpenSearchConnectionConfig,
     indexer=OpenSearchIndexer,
-    indexer_config=ElasticsearchIndexerConfig,
+    indexer_config=OpensearchIndexerConfig,
     downloader=OpenSearchDownloader,
-    downloader_config=ElasticsearchDownloaderConfig,
+    downloader_config=OpensearchDownloaderConfig,
 )
 
 
 opensearch_destination_entry = DestinationRegistryEntry(
     connection_config=OpenSearchConnectionConfig,
-    upload_stager_config=ElasticsearchUploadStagerConfig,
-    upload_stager=ElasticsearchUploadStager,
-    uploader_config=ElasticsearchUploaderConfig,
+    upload_stager_config=OpensearchUploadStagerConfig,
+    upload_stager=OpensearchUploadStager,
+    uploader_config=OpensearchUploaderConfig,
     uploader=OpenSearchUploader,
 )

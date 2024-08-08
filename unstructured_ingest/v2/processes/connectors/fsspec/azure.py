@@ -75,6 +75,10 @@ class AzureIndexer(FsspecIndexer):
     index_config: AzureIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
+    def precheck(self) -> None:
+        super().precheck()
+
     def sterilize_info(self, path) -> dict:
         info = self.fs.info(path=path)
         return sterilize_dict(data=info, default=azure_json_serial)
@@ -119,6 +123,10 @@ class AzureUploader(FsspecUploader):
     @requires_dependencies(["adlfs", "fsspec"], extras="azure")
     def __post_init__(self):
         super().__post_init__()
+
+    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
+    def precheck(self) -> None:
+        super().precheck()
 
     @requires_dependencies(["adlfs", "fsspec"], extras="azure")
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
