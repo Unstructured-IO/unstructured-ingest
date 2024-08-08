@@ -17,7 +17,7 @@ CI=${CI:-"false"}
 source "$SCRIPT_DIR"/env_setup/couchbase/common/constants.env
 
 # Check if all necessary environment variables are set
-if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ];  then
+if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ]; then
   echo "Error: One or more environment variables are not set. Please set CB_CONN_STR, CB_USERNAME, CB_PASSWORD, and CB_BUCKET"
   exit 1
 fi
@@ -27,7 +27,7 @@ source "$SCRIPT_DIR"/cleanup.sh
 
 function cleanup() {
 
-   # Remove docker container
+  # Remove docker container
   echo "Stopping Couchbase Docker container"
   docker compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
 
@@ -68,7 +68,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --chunk-multipage-sections \
   --embedding-provider "langchain-huggingface" \
   couchbase \
- --connection-string "$CB_CONN_STR" \
+  --connection-string "$CB_CONN_STR" \
   --bucket "$CB_BUCKET" \
   --username "$CB_USERNAME" \
   --password "$CB_PASSWORD" \
