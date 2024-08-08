@@ -30,21 +30,17 @@ SERVER_API_VERSION = "1"
 
 @dataclass
 class CouchbaseAccessConfig(AccessConfig):
-    connection_string: Optional[str] = None
-    username: Optional[str] = None
-    password: str = enhanced_field(sensitive=True, default=None)
-
-    def __post_init__(self):
-        if not self.connection_string and not (self.username and self.password):
-            raise ValueError("Either connection string or username and password must be set")
+    password: str
 
 
 @dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
-    access_config: CouchbaseAccessConfig = enhanced_field(default_factory=CouchbaseAccessConfig)
-    bucket: Optional[str] = None
-    scope: Optional[str] = None
-    collection: Optional[str] = None
+    connection_string: str
+    username: str
+    bucket: str
+    scope: str
+    collection: str
+    access_config: CouchbaseAccessConfig = enhanced_field(default_factory=CouchbaseAccessConfig, sensitive=True)
     batch_size: int = 50
     connector_type: str = CONNECTOR_TYPE
 
