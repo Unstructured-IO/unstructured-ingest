@@ -35,11 +35,11 @@ class CouchbaseAccessConfig(AccessConfig):
 
 @dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
-    connection_string: str
     username: str
     bucket: str
-    scope: str
-    collection: str
+    connection_string: str = "couchbase://localhost"
+    scope: str = "_default"
+    collection: str = "_default"
     access_config: CouchbaseAccessConfig = enhanced_field(default_factory=CouchbaseAccessConfig, sensitive=True)
     batch_size: int = 50
     connector_type: str = CONNECTOR_TYPE
