@@ -36,14 +36,12 @@ class CouchbaseAccessConfig(AccessConfig):
 
     def __post_init__(self):
         if not self.connection_string and not (self.username and self.password):
-            raise ValueError(f"Either connection string or username and password must be set")
+            raise ValueError("Either connection string or username and password must be set")
 
 
 @dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
-    access_config: CouchbaseAccessConfig = enhanced_field(
-        default_factory=CouchbaseAccessConfig
-    )
+    access_config: CouchbaseAccessConfig = enhanced_field(default_factory=CouchbaseAccessConfig)
     bucket: Optional[str] = None
     scope: Optional[str] = None
     collection: Optional[str] = None
