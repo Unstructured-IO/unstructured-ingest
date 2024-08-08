@@ -32,28 +32,23 @@ SERVER_API_VERSION = "1"
 class CouchbaseAccessConfig(AccessConfig):
     connection_string: Optional[str] = None
     username: Optional[str] = None
-    password: Optional[str] = None
+    password: str = enhanced_field(sensitive=True, default=None)
+
+    def __post_init__(self):
+        if not self.connection_string and not (self.username and self.password):
+            raise ValueError(f"Either connection string or username and password must be set")
 
 
 @dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
     access_config: CouchbaseAccessConfig = enhanced_field(
-        sensitive=True, default_factory=CouchbaseAccessConfig
+        default_factory=CouchbaseAccessConfig
     )
     bucket: Optional[str] = None
     scope: Optional[str] = None
     collection: Optional[str] = None
     batch_size: int = 50
     connector_type: str = CONNECTOR_TYPE
-
-    def __post_init__(self):
-        # verify if required fields are present
-        required_fields = ["connection_string", "username", "password"]
-        for cb_field in required_fields:
-            if (not getattr(self.access_config, cb_field)) or getattr(
-                self.access_config, cb_field
-            ) == "":
-                raise ValueError(f"Missing field in couchbase access config: {cb_field}")
 
 
 @dataclass
