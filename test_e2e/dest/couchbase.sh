@@ -14,6 +14,7 @@ DESTINATION_CB_SCOPE="_default"
 DESTINATION_CB_COLLECTION="_default"
 CI=${CI:-"false"}
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR"/env_setup/couchbase/common/constants.env
 
 # Check if all necessary environment variables are set
