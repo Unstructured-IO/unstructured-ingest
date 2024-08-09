@@ -113,14 +113,14 @@ class CouchbaseCliDownloaderConfig(CliConfig):
             click.Option(
                 ["--download-dir"],
                 help="Where files are downloaded to, defaults to a location at"
-                     "`$HOME/.cache/unstructured/ingest/<connector name>/<SHA256>`.",
+                "`$HOME/.cache/unstructured/ingest/<connector name>/<SHA256>`.",
             ),
             click.Option(
                 ["--fields"],
                 type=DelimitedString(),
                 default=[],
                 help="If provided, will limit the fields returned by Couchbase "
-                     "to this comma-delimited list",
+                "to this comma-delimited list",
             ),
         ]
         return options
