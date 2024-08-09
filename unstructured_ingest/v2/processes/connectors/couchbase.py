@@ -312,9 +312,8 @@ class CouchbaseDownloader(Downloader):
     def load_async(self):
         from couchbase.auth import PasswordAuthenticator
         from couchbase.cluster import Cluster, ClusterOptions
-        from couchbase.options import QueryOptions
 
-        return Cluster, ClusterOptions, PasswordAuthenticator, QueryOptions
+        return Cluster, ClusterOptions, PasswordAuthenticator
 
     async def process_doc_id(self, doc_id, collection, bucket_name, file_data):
         result = collection.get(doc_id)
@@ -331,7 +330,7 @@ class CouchbaseDownloader(Downloader):
             return await asyncio.gather(*tasks)
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        Cluster, ClusterOptions, PasswordAuthenticator, QueryOptions = self.load_async()
+        Cluster, ClusterOptions, PasswordAuthenticator = self.load_async()
 
         bucket_name: str = file_data.additional_metadata["bucket"]
         ids: list[str] = file_data.additional_metadata["ids"]
@@ -347,15 +346,8 @@ class CouchbaseDownloader(Downloader):
         bucket = cluster.bucket(bucket_name)
         collection = bucket.default_collection()
 
-        download_responses = await self.process_all_doc_ids(ids, collection, bucket_name, file_data)
-        # for doc_id in ids:
-        #     result = await collection.get(doc_id)
-        #     download_responses.append(
-        #         self.generate_download_response(
-        #             result=result.content_as[dict], bucket=bucket_name, file_data=file_data
-        #         )
-        #     )
-        return list(download_responses)
+        download_resp = await self.process_all_doc_ids(ids, collection, bucket_name, file_data)
+        return list(download_resp)
 
 
 couchbase_destination_entry = DestinationRegistryEntry(
