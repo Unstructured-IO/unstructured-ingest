@@ -3,8 +3,10 @@ import json
 import time
 import sys
 from dataclasses import dataclass, field
+from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, List, Generator
+from datetime import timedelta
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
@@ -12,7 +14,6 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     UploadContent,
     Uploader,
     UploaderConfig,
@@ -37,9 +38,8 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
 
+@requires_dependencies(["couchbase"], extras="couchbase")
 def connect_to_couchbase(access_config):
-    from datetime import timedelta
-
     from couchbase.auth import PasswordAuthenticator
     from couchbase.cluster import Cluster
     from couchbase.options import ClusterOptions
@@ -64,19 +64,19 @@ def connect_to_couchbase(access_config):
 
 @dataclass
 class CouchbaseAccessConfig(AccessConfig):
-    connection_string: str = enhanced_field(sensitive=True)
-    username: str = enhanced_field(sensitive=True)
-    password: str = enhanced_field(sensitive=True)
+    password: str
 
 
 @dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
+    username: str
+    bucket: str
+    connection_string: str = "couchbase://localhost"
+    scope: str = "_default"
+    collection: str = "_default"
     access_config: CouchbaseAccessConfig = enhanced_field(
-        sensitive=True, default_factory=CouchbaseAccessConfig
+        default_factory=CouchbaseAccessConfig, sensitive=True
     )
-    bucket: Optional[str] = None
-    scope: Optional[str] = None
-    collection: Optional[str] = None
     batch_size: int = 50
     connector_type: str = CONNECTOR_TYPE
 
@@ -95,7 +95,6 @@ class CouchbaseUploadStager(UploadStager):
     def run(
         self,
         elements_filepath: Path,
-        file_data: FileData,
         output_dir: Path,
         output_filename: str,
         **kwargs: Any,
@@ -103,9 +102,21 @@ class CouchbaseUploadStager(UploadStager):
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
 
+        output_elements = []
+        for element in elements_contents:
+            new_doc = {
+                element["element_id"]: {
+                    "embedding": element.get("embeddings", None),
+                    "text": element.get("text", None),
+                    "metadata": element.get("metadata", None),
+                    "type": element.get("type", None),
+                }
+            }
+            output_elements.append(new_doc)
+
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         with open(output_path, "w") as output_file:
-            json.dump(elements_contents, output_file)
+            json.dump(output_elements, output_file)
         return output_path
 
 
@@ -129,33 +140,21 @@ class CouchbaseUploader(Uploader):
         return connect_to_couchbase(self.connection_config.access_config)
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        elements_dict = []
+        elements = []
         for content in contents:
             with open(content.path) as elements_file:
-                elements = json.load(elements_file)
-                # Modify the elements to match the expected couchbase format
-                for element in elements:
-                    new_doc = {
-                        element.pop("element_id", None): {
-                            "embedding": element.pop("embeddings", None),
-                            "text": element.pop("text", None),
-                            "metadata": element.pop("metadata", None),
-                            "type": element.pop("type", None),
-                        }
-                    }
-                    elements_dict.append(new_doc)
+                elements.extend(json.load(elements_file))
 
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(elements)} objects to destination "
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.access_config.connection_string}",
         )
-
         bucket = self.cluster.bucket(self.connection_config.bucket)
         scope = bucket.scope(self.connection_config.scope)
         collection = scope.collection(self.connection_config.collection)
 
-        for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+        for chunk in batch_generator(elements, self.upload_config.batch_size):
             collection.upsert_multi({doc_id: doc for doc in chunk for doc_id, doc in doc.items()})
 
 
