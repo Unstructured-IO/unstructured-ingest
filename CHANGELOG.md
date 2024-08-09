@@ -1,3 +1,12 @@
+## 0.0.4-dev0
+
+### Enhancements
+
+### Features
+
+### Fixes
+* **Fix TypeError** Avoid raising TypeError when getting date_modified and date_created metadata for onedrive connector
+
 ## 0.0.3
 
 ### Enhancements
