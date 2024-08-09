@@ -91,6 +91,7 @@ connectors_reqs = {
     "chroma": load_requirements("requirements/connectors/chroma.in"),
     "clarifai": load_requirements("requirements/connectors/clarifai.in"),
     "confluence": load_requirements("requirements/connectors/confluence.in"),
+    "couchbase": load_requirements("requirements/connectors/couchbase.in"),
     "delta-table": load_requirements("requirements/connectors/delta-table.in"),
     "discord": load_requirements("requirements/connectors/discord.in"),
     "dropbox": load_requirements("requirements/connectors/dropbox.in"),

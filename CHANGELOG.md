@@ -1,3 +1,10 @@
+## 0.0.4-dev0
+
+### Enhancements
+
+* **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
+
+
 ## 0.0.3
 
 ### Enhancements
