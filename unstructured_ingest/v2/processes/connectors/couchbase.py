@@ -74,11 +74,9 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     connection_string: str = "couchbase://localhost"
     scope: str = "_default"
     collection: str = "_default"
-    access_config: CouchbaseAccessConfig = enhanced_field(
-        default_factory=CouchbaseAccessConfig, sensitive=True
-    )
     batch_size: int = 50
     connector_type: str = CONNECTOR_TYPE
+    access_config: CouchbaseAccessConfig = enhanced_field(sensitive=True)
 
 
 @dataclass
@@ -127,8 +125,8 @@ class CouchbaseUploaderConfig(UploaderConfig):
 
 @dataclass
 class CouchbaseUploader(Uploader):
-    upload_config: CouchbaseUploaderConfig
     connection_config: CouchbaseConnectionConfig
+    upload_config: CouchbaseUploaderConfig
     cluster: Optional["Cluster"] = field(init=False, default=None)
     connector_type: str = CONNECTOR_TYPE
 
@@ -148,7 +146,7 @@ class CouchbaseUploader(Uploader):
         logger.info(
             f"writing {len(elements)} objects to destination "
             f"bucket, {self.connection_config.bucket} "
-            f"at {self.connection_config.access_config.connection_string}",
+            f"at {self.connection_config.connection_string}",
         )
         bucket = self.cluster.bucket(self.connection_config.bucket)
         scope = bucket.scope(self.connection_config.scope)
