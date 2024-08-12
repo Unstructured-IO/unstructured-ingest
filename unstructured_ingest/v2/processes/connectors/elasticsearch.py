@@ -93,8 +93,12 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
         client_input = ElasticsearchClientInput(**client_input_kwargs)
         logger.debug(f"Elasticsearch client inputs mapped to: {client_input.dict()}")
         client_kwargs = client_input.dict()
-        client_kwargs["basic_auth"] = client_input.basic_auth.get_secret_value()
-        client_kwargs["api_key"] = client_input.api_key.get_secret_value()
+        client_kwargs["basic_auth"] = (
+            client_input.basic_auth.get_secret_value() if client_input.basic_auth else None
+        )
+        client_kwargs["api_key"] = (
+            client_input.api_key.get_secret_value() if client_input.api_key else None
+        )
         client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
         return client_kwargs
 
