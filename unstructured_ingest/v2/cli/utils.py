@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Optional, Type, TypeVar
 
 import click
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Secret
 
 
 def conform_click_options(options: dict):
@@ -108,12 +108,26 @@ BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
 def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
     fields = config.model_fields
-    if "access_config" in fields:
-        flat_data["access_configs"] = flat_data
+    config.model_config = ConfigDict(extra="ignore")
+    data = {k: v for k, v in flat_data.items() if k in fields}
+    if access_config := fields.get("access_config"):
+        access_config_type = access_config.annotation
+        # Check if raw type is wrapped by a secret
+        if (
+            hasattr(access_config_type, "__origin__")
+            and hasattr(access_config_type, "__args__")
+            and access_config_type.__origin__ is Secret
+        ):
+            ac_subtypes = access_config_type.__args__
+            ac_fields = ac_subtypes[0].model_fields
+        elif isinstance(access_config_type, BaseModel):
+            ac_fields = access_config_type.model_fields
+        else:
+            raise TypeError(f"Unrecognized access_config type: {access_config_type}")
+        data["access_config"] = {k: v for k, v in flat_data.items() if k in ac_fields}
 
-    print(flat_data)
-
-    return config.model_validate(obj=flat_data, strict=False)
+    print(data)
+    return config.model_validate(obj=data)
 
 
 class Group(click.Group):

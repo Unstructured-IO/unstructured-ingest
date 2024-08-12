@@ -9,7 +9,6 @@ from unstructured_ingest.v2.interfaces import FileData, download_responses
 from unstructured_ingest.v2.interfaces.downloader import Downloader
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 
 DownloaderT = TypeVar("DownloaderT", bound=Downloader)
 
@@ -30,15 +29,9 @@ class DownloadStep(PipelineStep):
         return f"{self.identifier} ({self.process.__class__.__name__})"
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.download_config.to_dict(redact_sensitive=True))
-            if self.process.download_config
-            else None
-        )
+        config = self.process.download_config.json() if self.process.download_config else None
         connection_config = (
-            sterilize_dict(self.process.connection_config.to_dict(redact_sensitive=True))
-            if self.process.connection_config
-            else None
+            self.process.connection_config.json() if self.process.connection_config else None
         )
         logger.info(
             f"Created {self.identifier} with configs: {config}, "
@@ -180,9 +173,15 @@ class DownloadStep(PipelineStep):
         return str(filepath)
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        hashable_string = json.dumps(
-            sterilize_dict(self.process.download_config.to_dict()), sort_keys=True
-        )
+        download_config_dict = self.process.download_config.dict()
+        connection_config_dict = self.process.connection_config.dict()
+        if access_config := self.process.connection_config.access_config:
+            connection_config_dict["access_config"] = access_config.get_secret_value().dict()
+        hashable_dict = {
+            "download_config": download_config_dict,
+            "connection_config": connection_config_dict,
+        }
+        hashable_string = json.dumps(hashable_dict, sort_keys=True)
         if extras:
             hashable_string += "".join(extras)
         return hashlib.sha256(hashable_string.encode()).hexdigest()[:12]

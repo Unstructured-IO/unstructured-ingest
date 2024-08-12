@@ -1,6 +1,5 @@
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypedDict, TypeVar, Union
 
@@ -11,7 +10,6 @@ from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
 class DownloaderConfig(BaseModel):
     download_dir: Optional[Path] = None
 

@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "databricks_volumes"
 
 
-@dataclass
 class DatabricksVolumesAccessConfig(AccessConfig):
     account_id: Optional[str] = None
     username: Optional[str] = None

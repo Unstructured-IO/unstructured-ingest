@@ -7,7 +7,6 @@ from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.uploader import UploadContent, Uploader
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep, iterable_input, timed
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 
 STEP_ID = "upload"
 
@@ -26,15 +25,9 @@ class UploadStep(PipelineStep):
         return f"{self.identifier} ({self.process.__class__.__name__})"
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.upload_config.to_dict(redact_sensitive=True))
-            if self.process.upload_config
-            else None
-        )
+        config = self.process.upload_config.json() if self.process.upload_config else None
         connection_config = (
-            sterilize_dict(self.process.connection_config.to_dict(redact_sensitive=True))
-            if self.process.connection_config
-            else None
+            self.process.connection_config.json() if self.process.connection_config else None
         )
         logger.info(
             f"Created {self.identifier} with configs: {config}, "

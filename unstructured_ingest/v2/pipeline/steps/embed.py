@@ -10,7 +10,6 @@ from unstructured.staging.base import elements_to_dicts
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 from unstructured_ingest.v2.processes.embedder import Embedder
 
 STEP_ID = "embed"
@@ -30,11 +29,7 @@ class EmbedStep(PipelineStep):
         return f"{self.identifier} ({self.process.config.embedding_provider})"
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.config.to_dict(redact_sensitive=True))
-            if self.process.config
-            else None
-        )
+        config = self.process.config.json() if self.process.config else None
         logger.info(f"Created {self.identifier} with configs: {config}")
 
     def should_embed(self, filepath: Path, file_data: FileData) -> bool:

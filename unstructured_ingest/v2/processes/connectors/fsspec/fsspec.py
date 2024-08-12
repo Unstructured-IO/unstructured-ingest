@@ -8,7 +8,7 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
 from uuid import NAMESPACE_DNS, uuid5
 
-from pydantic import BaseModel, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -41,9 +41,9 @@ CONNECTOR_TYPE = "fsspec"
 
 class FileConfig(BaseModel):
     remote_url: str
-    protocol: str = field(init=False)
-    path_without_protocol: str = field(init=False)
-    supported_protocols: list[str] = field(
+    protocol: str = Field(init=False)
+    path_without_protocol: str = Field(init=False)
+    supported_protocols: list[str] = Field(
         default_factory=lambda: [
             "s3",
             "s3a",
@@ -57,15 +57,11 @@ class FileConfig(BaseModel):
         ]
     )
 
-    def model_post_init(self, __context: Any) -> None:
-        super().model_post_init(__context)
-        self.protocol, self.path_without_protocol = self.remote_url.split("://")
-        if self.protocol not in self.supported_protocols:
-            raise ValueError(
-                "Protocol {} not supported yet, only {} are supported.".format(
-                    self.protocol, ", ".join(self.supported_protocols)
-                ),
-            )
+    def __init__(self, **data):
+        protocol, path_without_protocol = data["remote_url"].split("://")
+        data["protocol"] = protocol
+        data["path_without_protocol"] = path_without_protocol
+        super().__init__(**data)
 
 
 class FsspecIndexerConfig(FileConfig, IndexerConfig):

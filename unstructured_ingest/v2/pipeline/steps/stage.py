@@ -9,7 +9,6 @@ from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.upload_stager import UploadStager
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 
 STEP_ID = "upload_stage"
 
@@ -29,9 +28,7 @@ class UploadStageStep(PipelineStep):
 
     def __post_init__(self):
         config = (
-            sterilize_dict(self.process.upload_stager_config.to_dict(redact_sensitive=True))
-            if self.process.upload_stager_config
-            else None
+            self.process.upload_stager_config.json() if self.process.upload_stager_config else None
         )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created {self.identifier} with configs: {config}")
