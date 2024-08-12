@@ -5,7 +5,7 @@ from pathlib import Path
 from time import time
 from typing import Any, Generator
 
-from pydantic import Field
+from pydantic import Field, Secret
 
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -35,8 +35,13 @@ class LocalAccessConfig(AccessConfig):
     pass
 
 
+SecretLocalAccessConfig = Secret[LocalAccessConfig]
+
+
 class LocalConnectionConfig(ConnectionConfig):
-    access_config: LocalAccessConfig = Field(default_factory=LocalAccessConfig)
+    access_config: SecretLocalAccessConfig = Field(
+        default_factory=lambda: SecretLocalAccessConfig(secret_value=LocalAccessConfig())
+    )
 
 
 class LocalIndexerConfig(IndexerConfig):
