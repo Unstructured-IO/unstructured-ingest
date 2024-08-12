@@ -46,8 +46,6 @@ class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
 
-        print(f"DEBUGGING: ACCESS CONFIG: {self.access_config.get_secret_value().dict()}")
-
         return SearchClient(
             endpoint=self.endpoint,
             index_name=self.index,
