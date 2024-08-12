@@ -109,7 +109,6 @@ class AzureDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class AzureUploaderConfig(FsspecUploaderConfig):
     pass
 

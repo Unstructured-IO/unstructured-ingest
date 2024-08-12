@@ -96,7 +96,6 @@ class SalesforceAccessConfig(AccessConfig):
         raise ValueError("private_key does not contain PEM private key or path")
 
 
-@dataclass
 class SalesforceConnectionConfig(ConnectionConfig):
     username: str
     access_config: Secret[SalesforceAccessConfig]

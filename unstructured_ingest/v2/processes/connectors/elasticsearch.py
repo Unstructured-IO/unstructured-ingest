@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "elasticsearch"
 
 
-@dataclass
 class ElasticsearchAccessConfig(AccessConfig):
     password: Optional[str] = None
     es_api_key: Optional[str] = None
@@ -61,7 +60,6 @@ class ElasticsearchClientInput(BaseModel):
     api_key: Optional[SecretStr] = None
 
 
-@dataclass
 class ElasticsearchConnectionConfig(ConnectionConfig):
     hosts: Optional[list[str]] = None
     username: Optional[str] = None
@@ -113,7 +111,6 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
 
-@dataclass
 class ElasticsearchIndexerConfig(IndexerConfig):
     index_name: str
     batch_size: int = 100
@@ -185,7 +182,6 @@ class ElasticsearchIndexer(Indexer):
             )
 
 
-@dataclass
 class ElasticsearchDownloaderConfig(DownloaderConfig):
     fields: list[str] = field(default_factory=list)
 
@@ -291,7 +287,6 @@ class ElasticsearchDownloader(Downloader):
         return download_responses
 
 
-@dataclass
 class ElasticsearchUploadStagerConfig(UploadStagerConfig):
     index_name: str
 
@@ -332,7 +327,6 @@ class ElasticsearchUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class ElasticsearchUploaderConfig(UploaderConfig):
     index_name: str
     batch_size_bytes: int = 15_000_000

@@ -37,7 +37,6 @@ class BoxAccessConfig(FsspecAccessConfig):
 SecretBoxAccessConfig = Secret[BoxAccessConfig]
 
 
-@dataclass
 class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"])
     access_config: SecretBoxAccessConfig = Field(

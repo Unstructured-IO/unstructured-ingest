@@ -38,7 +38,6 @@ class DropboxAccessConfig(FsspecAccessConfig):
 SecretDropboxAccessConfig = Secret[DropboxAccessConfig]
 
 
-@dataclass
 class DropboxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["dropbox"])
     access_config: SecretDropboxAccessConfig = Field(
@@ -74,7 +73,6 @@ class DropboxIndexer(FsspecIndexer):
         return sterilize_dict(data=info)
 
 
-@dataclass
 class DropboxDownloaderConfig(FsspecDownloaderConfig):
     pass
 
@@ -97,7 +95,6 @@ class DropboxDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class DropboxUploaderConfig(FsspecUploaderConfig):
     pass
 

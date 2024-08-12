@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from googleapiclient.http import MediaIoBaseDownload
 
 
-@dataclass
 class GoogleDriveAccessConfig(AccessConfig):
     service_account_key: Union[str, dict]
 
@@ -86,7 +85,6 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
             raise ValueError("The provided API key is invalid.")
 
 
-@dataclass
 class GoogleDriveIndexerConfig(IndexerConfig):
     extensions: Optional[list[str]] = None
     recursive: bool = False
@@ -268,7 +266,6 @@ class GoogleDriveIndexer(Indexer):
             yield f
 
 
-@dataclass
 class GoogleDriveDownloaderConfig(DownloaderConfig):
     pass
 

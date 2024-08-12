@@ -99,7 +99,6 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         return OpenSearch(**self.get_client_kwargs())
 
 
-@dataclass
 class OpensearchIndexerConfig(ElasticsearchIndexerConfig):
     pass
 

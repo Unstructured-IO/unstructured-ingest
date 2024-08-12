@@ -45,7 +45,6 @@ class S3AccessConfig(FsspecAccessConfig):
 SecretS3AccessConfig = Secret[S3AccessConfig]
 
 
-@dataclass
 class S3ConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["s3", "s3a"])
     access_config: SecretS3AccessConfig = Field(

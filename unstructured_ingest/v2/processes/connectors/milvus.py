@@ -131,7 +131,6 @@ class MilvusUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class MilvusUploaderConfig(UploaderConfig):
     collection_name: str
     num_of_processes: int = 4
