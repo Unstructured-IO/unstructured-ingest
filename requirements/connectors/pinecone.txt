@@ -9,17 +9,15 @@ certifi==2024.7.4
     #   -c ./connectors/../common/base.txt
     #   -c ./connectors/../common/constraints.txt
     #   pinecone-client
-pinecone-client==5.0.0
-    # via
-    #   -r ./connectors/pinecone.in
-    #   pinecone-plugin-inference
-pinecone-plugin-inference==1.0.2
+pinecone-client==5.0.1
+    # via -r ./connectors/pinecone.in
+pinecone-plugin-inference==1.0.3
     # via pinecone-client
 pinecone-plugin-interface==0.0.7
     # via
     #   pinecone-client
     #   pinecone-plugin-inference
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   -c ./connectors/../common/base.txt
     #   pinecone-client

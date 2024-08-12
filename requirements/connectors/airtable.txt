@@ -5,7 +5,9 @@
 #    pip-compile ./connectors/airtable.in
 #
 annotated-types==0.7.0
-    # via pydantic
+    # via
+    #   -c ./connectors/../common/base.txt
+    #   pydantic
 certifi==2024.7.4
     # via
     #   -c ./connectors/../common/base.txt
@@ -24,9 +26,13 @@ inflection==0.5.1
 pyairtable==2.3.3
     # via -r ./connectors/airtable.in
 pydantic==2.8.2
-    # via pyairtable
+    # via
+    #   -c ./connectors/../common/base.txt
+    #   pyairtable
 pydantic-core==2.20.1
-    # via pydantic
+    # via
+    #   -c ./connectors/../common/base.txt
+    #   pydantic
 requests==2.32.3
     # via
     #   -c ./connectors/../common/base.txt
