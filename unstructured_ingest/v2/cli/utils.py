@@ -109,7 +109,8 @@ BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
     fields = config.model_fields
     config.model_config = ConfigDict(extra="ignore")
-    data = {k: v for k, v in flat_data.items() if k in fields}
+    field_names = [v.alias or k for k, v in fields.items()]
+    data = {k: v for k, v in flat_data.items() if k in field_names}
     if access_config := fields.get("access_config"):
         access_config_type = access_config.annotation
         # Check if raw type is wrapped by a secret
@@ -124,9 +125,8 @@ def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
             ac_fields = access_config_type.model_fields
         else:
             raise TypeError(f"Unrecognized access_config type: {access_config_type}")
-        data["access_config"] = {k: v for k, v in flat_data.items() if k in ac_fields}
-
-    print(data)
+        ac_field_names = [v.alias or k for k, v in ac_fields.items()]
+        data["access_config"] = {k: v for k, v in flat_data.items() if k in ac_field_names}
     return config.model_validate(obj=data)
 
 

@@ -2,9 +2,9 @@ import json
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from pydantic import Secret
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.data_prep import batch_generator
@@ -33,7 +33,7 @@ CONNECTOR_TYPE = "azure_cognitive_search"
 
 
 class AzureCognitiveSearchAccessConfig(AccessConfig):
-    azure_cognitive_search_key: Optional[str] = None
+    azure_cognitive_search_key: str = Field(alias="key")
 
 
 class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
@@ -45,6 +45,8 @@ class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
     def generate_client(self) -> "SearchClient":
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
+
+        print(f"DEBUGGING: ACCESS CONFIG: {self.access_config.get_secret_value().dict()}")
 
         return SearchClient(
             endpoint=self.endpoint,
