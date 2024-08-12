@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from pydantic import BaseModel, Secret, SecretStr
 
@@ -57,7 +57,7 @@ class ElasticsearchClientInput(BaseModel):
     cloud_id: Optional[str] = None
     ca_certs: Optional[str] = None
     basic_auth: Optional[Secret[tuple[str, str]]] = None
-    api_key: Optional[SecretStr] = None
+    api_key: Optional[Union[Secret[tuple[str, str]], SecretStr]] = None
 
 
 class ElasticsearchConnectionConfig(ConnectionConfig):
@@ -72,26 +72,29 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
         # Update auth related fields to conform to what the SDK expects based on the
         # supported methods:
         # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html
-        client_input = ElasticsearchClientInput()
+        client_input_kwargs: dict[str, Any] = {}
         access_config = self.access_config.get_secret_value()
         if self.hosts:
-            client_input.hosts = self.hosts
+            client_input_kwargs["hosts"] = self.hosts
         if self.cloud_id:
-            client_input.cloud_id = self.cloud_id
+            client_input_kwargs["cloud_id"] = self.cloud_id
         if self.ca_certs:
-            client_input.ca_certs = self.ca_certs
+            client_input_kwargs["ca_certs"] = self.ca_certs
         if access_config.password and (
             self.cloud_id or self.ca_certs or access_config.ssl_assert_fingerprint
         ):
-            client_input.basic_auth = ("elastic", access_config.password)
+            client_input_kwargs["basic_auth"] = ("elastic", access_config.password)
         elif not self.cloud_id and self.username and access_config.password:
-            client_input.basic_auth = (self.username, access_config.password)
+            client_input_kwargs["basic_auth"] = (self.username, access_config.password)
         elif access_config.es_api_key and self.api_key_id:
-            client_input.api_key = (self.api_key_id, access_config.es_api_key)
+            client_input_kwargs["api_key"] = (self.api_key_id, access_config.es_api_key)
         elif access_config.es_api_key:
-            client_input.api_key = access_config.es_api_key
+            client_input_kwargs["api_key"] = access_config.es_api_key
+        client_input = ElasticsearchClientInput(**client_input_kwargs)
         logger.debug(f"Elasticsearch client inputs mapped to: {client_input.dict()}")
-        client_kwargs = client_input.to_dict(redact_sensitive=False)
+        client_kwargs = client_input.dict()
+        client_kwargs["basic_auth"] = client_input.basic_auth.get_secret_value()
+        client_kwargs["api_key"] = client_input.api_key.get_secret_value()
         client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
         return client_kwargs
 
