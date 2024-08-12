@@ -20,7 +20,7 @@ all_tests=(
   's3.sh'
   's3-minio.sh'
   's3-filter.sh'
-  'astra.sh'
+  'astradb.sh'
   'azure.sh'
   'biomed-api.sh'
   'biomed-path.sh'

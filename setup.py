@@ -81,7 +81,7 @@ all_doc_reqs = list(
 )
 connectors_reqs = {
     "airtable": load_requirements("requirements/connectors/airtable.in"),
-    "astra": load_requirements("requirements/connectors/astra.in"),
+    "astradb": load_requirements("requirements/connectors/astradb.in"),
     "azure": load_requirements("requirements/connectors/azure.in"),
     "azure-cognitive-search": load_requirements(
         "requirements/connectors/azure-cognitive-search.in",

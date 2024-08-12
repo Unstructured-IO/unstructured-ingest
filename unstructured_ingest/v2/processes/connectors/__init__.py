@@ -6,8 +6,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
     add_source_entry,
 )
 
-from .astra import CONNECTOR_TYPE as ASTRA_CONNECTOR_TYPE
-from .astra import astra_destination_entry
+from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
+from .astradb import astra_db_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
@@ -41,7 +41,7 @@ from .sql import sql_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
-add_destination_entry(destination_type=ASTRA_CONNECTOR_TYPE, entry=astra_destination_entry)
+add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
 
 add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_destination_entry)
 
