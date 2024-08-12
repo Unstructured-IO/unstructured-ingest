@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
+from pydantic import BaseModel, Secret
+
 from unstructured_ingest.error import (
     DestinationConnectionError,
 )
@@ -35,9 +36,8 @@ CONNECTOR_TYPE = "opensearch"
 heavily on the Elasticsearch connector code, inheriting the functionality as much as possible."""
 
 
-@dataclass
 class OpenSearchAccessConfig(AccessConfig):
-    password: Optional[str] = enhanced_field(default=None, sensitive=True)
+    password: Optional[str] = None
     use_ssl: bool = False
     verify_certs: bool = False
     ssl_show_warn: bool = False
@@ -46,9 +46,8 @@ class OpenSearchAccessConfig(AccessConfig):
     client_key: Optional[str] = None
 
 
-@dataclass
-class OpenSearchClientInput(EnhancedDataClassJsonMixin):
-    http_auth: Optional[tuple[str, str]] = enhanced_field(sensitive=True, default=None)
+class OpenSearchClientInput(BaseModel):
+    http_auth: Secret[Optional[tuple[str, str]]] = None
     hosts: Optional[list[str]] = None
     use_ssl: bool = False
     verify_certs: bool = False
@@ -58,37 +57,37 @@ class OpenSearchClientInput(EnhancedDataClassJsonMixin):
     client_key: Optional[str] = None
 
 
-@dataclass
 class OpenSearchConnectionConfig(ConnectionConfig):
     hosts: Optional[list[str]] = None
     username: Optional[str] = None
-    access_config: OpenSearchAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[OpenSearchAccessConfig]
 
     def get_client_kwargs(self) -> dict:
         # Update auth related fields to conform to what the SDK expects based on the
         # supported methods:
         # https://github.com/opensearch-project/opensearch-py/blob/main/opensearchpy/client/__init__.py
-        client_input = OpenSearchClientInput()
+        access_config = self.access_config.get_secret_value()
+        client_input_kwargs = {}
         if self.hosts:
-            client_input.hosts = self.hosts
-        if self.access_config.use_ssl:
-            client_input.use_ssl = self.access_config.use_ssl
-        if self.access_config.verify_certs:
-            client_input.verify_certs = self.access_config.verify_certs
-        if self.access_config.ssl_show_warn:
-            client_input.ssl_show_warn = self.access_config.ssl_show_warn
-        if self.access_config.ca_certs:
-            client_input.ca_certs = self.access_config.ca_certs
-        if self.access_config.client_cert:
-            client_input.client_cert = self.access_config.client_cert
-        if self.access_config.client_key:
-            client_input.client_key = self.access_config.client_key
-        if self.username and self.access_config.password:
-            client_input.http_auth = (self.username, self.access_config.password)
-        logger.debug(
-            f"OpenSearch client inputs mapped to: {client_input.to_dict(redact_sensitive=True)}"
-        )
-        client_kwargs = client_input.to_dict(redact_sensitive=False)
+            client_input_kwargs["hosts"] = self.hosts
+        if access_config.use_ssl:
+            client_input_kwargs["use_ssl"] = access_config.use_ssl
+        if access_config.verify_certs:
+            client_input_kwargs["verify_certs"] = access_config.verify_certs
+        if access_config.ssl_show_warn:
+            client_input_kwargs["ssl_show_warn"] = access_config.ssl_show_warn
+        if access_config.ca_certs:
+            client_input_kwargs["ca_certs"] = access_config.ca_certs
+        if access_config.client_cert:
+            client_input_kwargs["client_cert"] = access_config.client_cert
+        if access_config.client_key:
+            client_input_kwargs["client_key"] = access_config.client_key
+        if self.username and access_config.password:
+            client_input_kwargs["http_auth"] = (self.username, access_config.password)
+        client_input = OpenSearchClientInput(**client_input_kwargs)
+        logger.debug(f"OpenSearch client inputs mapped to: {client_input.dict()}")
+        client_kwargs = client_input.dict()
+        client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()
         client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
         return client_kwargs
 
@@ -118,7 +117,6 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         return scan
 
 
-@dataclass
 class OpensearchDownloaderConfig(ElasticsearchDownloaderConfig):
     pass
 
@@ -137,7 +135,6 @@ class OpenSearchDownloader(ElasticsearchDownloader):
         return AsyncOpenSearch, async_scan
 
 
-@dataclass
 class OpensearchUploaderConfig(ElasticsearchUploaderConfig):
     pass
 
@@ -155,7 +152,6 @@ class OpenSearchUploader(ElasticsearchUploader):
         return parallel_bulk
 
 
-@dataclass
 class OpensearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
     pass
 

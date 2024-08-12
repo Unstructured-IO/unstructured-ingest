@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from pydantic import Field, Secret
 from unstructured.staging.base import flatten_dict
 from unstructured.utils import requires_dependencies
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.v2.interfaces import (
@@ -32,16 +32,19 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "pinecone"
 
 
-@dataclass
 class PineconeAccessConfig(AccessConfig):
-    api_key: Optional[str] = enhanced_field(default=None, overload_name="pinecone_api_key")
+    pinecone_api_key: Optional[str] = None
 
 
-@dataclass
+SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
+
+
 class PineconeConnectionConfig(ConnectionConfig):
     index_name: str
     environment: str
-    access_config: PineconeAccessConfig = enhanced_field(sensitive=True)
+    access_config: SecretPineconeAccessConfig = Field(
+        default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
+    )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
     def get_index(self) -> "PineconeIndex":
@@ -49,7 +52,7 @@ class PineconeConnectionConfig(ConnectionConfig):
         from unstructured import __version__ as unstructured_version
 
         pc = Pinecone(
-            api_key=self.access_config.api_key,
+            api_key=self.access_config.get_secret_value().pinecone_api_key,
             source_tag=f"unstructured=={unstructured_version}",
         )
 
@@ -58,12 +61,10 @@ class PineconeConnectionConfig(ConnectionConfig):
         return index
 
 
-@dataclass
 class PineconeUploadStagerConfig(UploadStagerConfig):
     pass
 
 
-@dataclass
 class PineconeUploaderConfig(UploaderConfig):
     batch_size: int = 100
     num_of_processes: int = 4

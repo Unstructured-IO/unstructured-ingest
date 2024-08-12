@@ -3,18 +3,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+from pydantic import BaseModel, SecretStr
 from unstructured.documents.elements import Element
 from unstructured.embed.interfaces import BaseEmbeddingEncoder
 from unstructured.staging.base import elements_from_json
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
-class EmbedderConfig(EnhancedDataClassJsonMixin):
+class EmbedderConfig(BaseModel):
     embedding_provider: Optional[str] = None
-    embedding_api_key: Optional[str] = enhanced_field(default=None, sensitive=True)
+    embedding_api_key: Optional[SecretStr] = None
     embedding_model_name: Optional[str] = None
     embedding_aws_access_key_id: Optional[str] = None
     embedding_aws_secret_access_key: Optional[str] = None

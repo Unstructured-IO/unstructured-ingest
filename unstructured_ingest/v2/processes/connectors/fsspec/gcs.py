@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional, Union
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
@@ -26,17 +27,15 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 CONNECTOR_TYPE = "gcs"
 
 
-@dataclass
 class GcsIndexerConfig(FsspecIndexerConfig):
     pass
 
 
-@dataclass
 class GcsAccessConfig(FsspecAccessConfig):
     service_account_key: Optional[str] = None
     token: Union[str, dict, None] = field(init=False, default=None)
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         ALLOWED_AUTH_VALUES = "google_default", "cache", "anon", "browser", "cloud"
 
         # Case: null value
@@ -61,11 +60,13 @@ class GcsAccessConfig(FsspecAccessConfig):
         raise ValueError("Invalid auth token value")
 
 
-@dataclass
+SecretGcsAccessConfig = Secret[GcsAccessConfig]
+
+
 class GcsConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["gs", "gcs"])
-    access_config: GcsAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: GcsAccessConfig()
+    access_config: SecretGcsAccessConfig = Field(
+        default_factory=lambda: SecretGcsAccessConfig(secret_value=GcsAccessConfig())
     )
     connector_type: str = CONNECTOR_TYPE
 
@@ -85,7 +86,6 @@ class GcsIndexer(FsspecIndexer):
         super().precheck()
 
 
-@dataclass
 class GcsDownloaderConfig(FsspecDownloaderConfig):
     pass
 
@@ -106,7 +106,6 @@ class GcsDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class GcsUploaderConfig(FsspecUploaderConfig):
     pass
 

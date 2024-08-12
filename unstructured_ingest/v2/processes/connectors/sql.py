@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 import numpy as np
 import pandas as pd
 from dateutil import parser
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -35,7 +35,6 @@ CONNECTOR_TYPE = "sql"
 ELEMENTS_TABLE_NAME = "elements"
 
 
-@dataclass
 class SQLAccessConfig(AccessConfig):
     username: Optional[str] = None
     password: Optional[str] = None
@@ -46,7 +45,9 @@ class DatabaseType(str, enum.Enum):
     POSTGRESQL = "postgresql"
 
 
-@dataclass
+SecreteSQLAccessConfig = Secret[SQLAccessConfig]
+
+
 class SQLConnectionConfig(ConnectionConfig):
     db_type: DatabaseType = (
         # required default value here because of parent class
@@ -55,7 +56,9 @@ class SQLConnectionConfig(ConnectionConfig):
     database: Optional[str] = None
     host: Optional[str] = None
     port: Optional[int] = 5432
-    access_config: Optional[SQLAccessConfig] = enhanced_field(default=None, sensitive=True)
+    access_config: SecreteSQLAccessConfig = Field(
+        default_factory=lambda: SecreteSQLAccessConfig(secret_value=SQLAccessConfig())
+    )
     connector_type: str = CONNECTOR_TYPE
 
     def __post_init__(self):
@@ -66,7 +69,6 @@ class SQLConnectionConfig(ConnectionConfig):
             )
 
 
-@dataclass
 class SQLUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -182,7 +184,6 @@ class SQLUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class SQLUploaderConfig(UploaderConfig):
     batch_size: int = 50
 
@@ -219,9 +220,10 @@ class SQLUploader(Uploader):
     def _make_psycopg_connection(self) -> "PostgresConnection":
         from psycopg2 import connect
 
+        access_config = self.connection_config.access_config.get_secret_value()
         return connect(
-            user=self.connection_config.access_config.username,
-            password=self.connection_config.access_config.password,
+            user=access_config.username,
+            password=access_config.password,
             dbname=self.connection_config.database,
             host=self.connection_config.host,
             port=self.connection_config.port,

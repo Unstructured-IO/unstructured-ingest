@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any, Generator, Optional
 from urllib.parse import urlparse
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -27,10 +28,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 CONNECTOR_TYPE = "sftp"
 
 
-@dataclass
 class SftpIndexerConfig(FsspecIndexerConfig):
-    def __post_init__(self):
-        super().__post_init__()
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
         _, ext = os.path.splitext(self.remote_url)
         parsed_url = urlparse(self.remote_url)
         if ext:
@@ -39,15 +40,13 @@ class SftpIndexerConfig(FsspecIndexerConfig):
             self.path_without_protocol = parsed_url.path.lstrip("/")
 
 
-@dataclass
 class SftpAccessConfig(FsspecAccessConfig):
     password: str
 
 
-@dataclass
 class SftpConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["sftp"])
-    access_config: SftpAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[SftpAccessConfig]
     connector_type: str = CONNECTOR_TYPE
     username: Optional[str] = None
     host: Optional[str] = None
@@ -62,7 +61,7 @@ class SftpConnectionConfig(FsspecConnectionConfig):
             "port": self.port,
             "look_for_keys": self.look_for_keys,
             "allow_agent": self.allow_agent,
-            "password": self.access_config.password,
+            "password": self.access_config.get_secret_value().password,
         }
         return access_config
 
@@ -96,7 +95,6 @@ class SftpIndexer(FsspecIndexer):
         super().precheck()
 
 
-@dataclass
 class SftpDownloaderConfig(FsspecDownloaderConfig):
     remote_url: Optional[str] = None
 
@@ -131,7 +129,6 @@ class SftpDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class SftpUploaderConfig(FsspecUploaderConfig):
     pass
 

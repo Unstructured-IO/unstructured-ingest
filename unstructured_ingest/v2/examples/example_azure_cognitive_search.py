@@ -43,7 +43,9 @@ if __name__ == "__main__":
             embedding_provider="langchain-openai", embedding_api_key=os.getenv("OPENAI_API_KEY")
         ),
         destination_connection_config=AzureCognitiveSearchConnectionConfig(
-            access_config=AzureCognitiveSearchAccessConfig(key=os.getenv("AZURE_SEARCH_API_KEY")),
+            access_config=AzureCognitiveSearchAccessConfig(
+                azure_cognitive_search_key=os.getenv("AZURE_SEARCH_API_KEY")
+            ),
             index=os.getenv("AZURE_SEARCH_INDEX"),
             endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
         ),

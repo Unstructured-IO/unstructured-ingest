@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -26,21 +27,22 @@ from unstructured_ingest.v2.processes.connectors.fsspec.utils import sterilize_d
 CONNECTOR_TYPE = "dropbox"
 
 
-@dataclass
 class DropboxIndexerConfig(FsspecIndexerConfig):
     pass
 
 
-@dataclass
 class DropboxAccessConfig(FsspecAccessConfig):
     token: Optional[str] = None
+
+
+SecretDropboxAccessConfig = Secret[DropboxAccessConfig]
 
 
 @dataclass
 class DropboxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["dropbox"])
-    access_config: DropboxAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: DropboxAccessConfig()
+    access_config: SecretDropboxAccessConfig = Field(
+        default_factory=lambda: SecretDropboxAccessConfig(secret_value=DropboxAccessConfig())
     )
     connector_type: str = CONNECTOR_TYPE
 

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pandas as pd
 from dateutil import parser
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import WriteError
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -32,24 +32,26 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "milvus"
 
 
-@dataclass
 class MilvusAccessConfig(AccessConfig):
     password: Optional[str] = None
     token: Optional[str] = None
 
 
-@dataclass
+SecretMilvusAccessConfig = Secret[MilvusAccessConfig]
+
+
 class MilvusConnectionConfig(ConnectionConfig):
-    access_config: MilvusAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: MilvusAccessConfig()
+    access_config: SecretMilvusAccessConfig = Field(
+        default_factory=lambda: SecretMilvusAccessConfig(secret_value=MilvusAccessConfig())
     )
     uri: Optional[str] = None
     user: Optional[str] = None
     db_name: Optional[str] = None
 
     def get_connection_kwargs(self) -> dict[str, Any]:
-        access_config_dict = self.access_config.to_dict()
-        connection_config_dict = self.to_dict()
+        access_config = self.access_config.get_secret_value()
+        access_config_dict = access_config.dict()
+        connection_config_dict = self.dict()
         connection_config_dict.pop("access_config", None)
         connection_config_dict.update(access_config_dict)
         # Drop any that were not set explicitly
@@ -63,7 +65,6 @@ class MilvusConnectionConfig(ConnectionConfig):
         return MilvusClient(**self.get_connection_kwargs())
 
 
-@dataclass
 class MilvusUploadStagerConfig(UploadStagerConfig):
     pass
 

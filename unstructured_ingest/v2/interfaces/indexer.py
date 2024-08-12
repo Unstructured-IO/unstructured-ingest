@@ -1,15 +1,14 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any, Generator, Optional, TypeVar
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel
+
 from unstructured_ingest.v2.interfaces.connector import BaseConnector
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
-class IndexerConfig(EnhancedDataClassJsonMixin):
+class IndexerConfig(BaseModel):
     pass
 
 

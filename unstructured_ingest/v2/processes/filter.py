@@ -3,14 +3,14 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel
+
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
 
-@dataclass
-class FiltererConfig(EnhancedDataClassJsonMixin):
+class FiltererConfig(BaseModel):
     file_glob: Optional[list[str]] = None
     max_file_size: Optional[int] = None
 

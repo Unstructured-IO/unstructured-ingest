@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dateutil import parser
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "weaviate"
 
 
-@dataclass
 class WeaviateAccessConfig(AccessConfig):
     access_token: Optional[str] = None
     api_key: Optional[str] = None
@@ -38,11 +37,15 @@ class WeaviateAccessConfig(AccessConfig):
     password: Optional[str] = None
 
 
-@dataclass
+SecretWeaviateAccessConfig = Secret[WeaviateAccessConfig]
+
+
 class WeaviateConnectionConfig(ConnectionConfig):
     host_url: str
     class_name: str
-    access_config: WeaviateAccessConfig = enhanced_field(sensitive=True)
+    access_config: SecretWeaviateAccessConfig = Field(
+        default_factory=lambda: SecretWeaviateAccessConfig(secret_value=WeaviateAccessConfig())
+    )
     username: Optional[str] = None
     anonymous: bool = False
     scope: Optional[list[str]] = None
@@ -50,7 +53,6 @@ class WeaviateConnectionConfig(ConnectionConfig):
     connector_type: str = CONNECTOR_TYPE
 
 
-@dataclass
 class WeaviateUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -148,7 +150,6 @@ class WeaviateUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class WeaviateUploaderConfig(UploaderConfig):
     batch_size: int = 100
 

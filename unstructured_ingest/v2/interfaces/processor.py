@@ -1,24 +1,24 @@
 import os
 from asyncio import Semaphore
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel, ConfigDict, Field
 
 DEFAULT_WORK_DIR = str((Path.home() / ".cache" / "unstructured" / "ingest" / "pipeline").resolve())
 
 
-@dataclass
-class ProcessorConfig(EnhancedDataClassJsonMixin):
+class ProcessorConfig(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     reprocess: bool = False
     verbose: bool = False
     tqdm: bool = False
-    work_dir: str = field(default_factory=lambda: DEFAULT_WORK_DIR)
+    work_dir: str = Field(default_factory=lambda: DEFAULT_WORK_DIR)
     num_processes: int = 2
     max_connections: Optional[int] = None
     raise_on_error: bool = False
-    disable_parallelism: bool = field(
+    disable_parallelism: bool = Field(
         default_factory=lambda: os.getenv("INGEST_DISABLE_PARALLELISM", "false").lower() == "true"
     )
     preserve_downloads: bool = False
@@ -28,10 +28,10 @@ class ProcessorConfig(EnhancedDataClassJsonMixin):
     uncompress: bool = False
 
     # Used to keep track of state in pipeline
-    status: dict = field(default_factory=dict)
-    semaphore: Optional[Semaphore] = field(init=False, default=None)
+    status: dict = Field(default_factory=dict)
+    semaphore: Optional[Semaphore] = Field(init=False, default=None)
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         if self.max_connections is not None:
             self.semaphore = Semaphore(self.max_connections)
 

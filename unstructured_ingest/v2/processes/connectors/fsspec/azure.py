@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -36,35 +37,35 @@ def azure_json_serial(obj):
     return json_serial(obj)
 
 
-@dataclass
 class AzureIndexerConfig(FsspecIndexerConfig):
     pass
 
 
-@dataclass
 class AzureAccessConfig(FsspecAccessConfig):
     account_name: Optional[str] = None
     account_key: Optional[str] = None
     connection_string: Optional[str] = None
     sas_token: Optional[str] = None
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         if self.connection_string is None and self.account_name is None:
             raise ValueError("either connection_string or account_name must be set")
 
 
-@dataclass
+SecretAzureAccessConfig = Secret[AzureAccessConfig]
+
+
 class AzureConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["az"])
-    access_config: AzureAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: AzureAccessConfig()
+    access_config: SecretAzureAccessConfig = Field(
+        default_factory=lambda: SecretAzureAccessConfig(secret_value=AzureAccessConfig())
     )
     connector_type: str = CONNECTOR_TYPE
 
     def get_access_config(self) -> dict[str, Any]:
         # Avoid injecting None by filtering out k,v pairs where the value is None
         access_configs: dict[str, Any] = {
-            k: v for k, v in self.access_config.to_dict().items() if v
+            k: v for k, v in self.access_config.get_secret_value().dict().items() if v
         }
         return access_configs
 
@@ -88,7 +89,6 @@ class AzureIndexer(FsspecIndexer):
         return super().run(**kwargs)
 
 
-@dataclass
 class AzureDownloaderConfig(FsspecDownloaderConfig):
     pass
 

@@ -8,7 +8,8 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
 from uuid import NAMESPACE_DNS, uuid5
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import BaseModel, Secret
+
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
@@ -38,13 +39,7 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "fsspec"
 
 
-class Base(object):
-    def __post_init__(self):
-        pass
-
-
-@dataclass
-class FileConfig(Base):
+class FileConfig(BaseModel):
     remote_url: str
     protocol: str = field(init=False)
     path_without_protocol: str = field(init=False)
@@ -62,8 +57,8 @@ class FileConfig(Base):
         ]
     )
 
-    def __post_init__(self):
-        super().__post_init__()
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
         self.protocol, self.path_without_protocol = self.remote_url.split("://")
         if self.protocol not in self.supported_protocols:
             raise ValueError(
@@ -73,22 +68,16 @@ class FileConfig(Base):
             )
 
 
-@dataclass
 class FsspecIndexerConfig(FileConfig, IndexerConfig):
     recursive: bool = False
 
 
-@dataclass
 class FsspecAccessConfig(AccessConfig):
     pass
 
 
-FsspecAccessConfigT = TypeVar("FsspecAccessConfigT", bound=FsspecAccessConfig)
-
-
-@dataclass
 class FsspecConnectionConfig(ConnectionConfig):
-    access_config: FsspecAccessConfigT = enhanced_field(sensitive=True, default=None)
+    access_config: Secret[FsspecAccessConfig]
     connector_type: str = CONNECTOR_TYPE
 
 
@@ -223,7 +212,6 @@ class FsspecIndexer(Indexer):
             )
 
 
-@dataclass
 class FsspecDownloaderConfig(DownloaderConfig):
     pass
 
@@ -274,7 +262,6 @@ class FsspecDownloader(Downloader):
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
-@dataclass
 class FsspecUploaderConfig(FileConfig, UploaderConfig):
     overwrite: bool = False
 

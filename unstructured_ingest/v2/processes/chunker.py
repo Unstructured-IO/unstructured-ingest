@@ -3,21 +3,20 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Optional
 
+from pydantic import BaseModel, SecretStr
 from unstructured.chunking import dispatch
 from unstructured.documents.elements import Element, assign_and_map_hash_ids
 from unstructured.staging.base import dict_to_elements, elements_from_json
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
 
-@dataclass
-class ChunkerConfig(EnhancedDataClassJsonMixin):
+class ChunkerConfig(BaseModel):
     chunking_strategy: Optional[str] = None
     chunking_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
     chunk_by_api: bool = False
-    chunk_api_key: Optional[str] = enhanced_field(default=None, sensitive=True)
+    chunk_api_key: Optional[SecretStr] = None
 
     chunk_combine_text_under_n_chars: Optional[int] = None
     chunk_include_orig_elements: Optional[bool] = None

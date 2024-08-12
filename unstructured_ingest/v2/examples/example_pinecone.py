@@ -39,7 +39,7 @@ if __name__ == "__main__":
         embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
         destination_connection_config=PineconeConnectionConfig(
             # You'll need to set PINECONE_API_KEY environment variable to run this example
-            access_config=PineconeAccessConfig(api_key=os.getenv("PINECONE_API_KEY")),
+            access_config=PineconeAccessConfig(pinecone_api_key=os.getenv("PINECONE_API_KEY")),
             index_name=os.getenv(
                 "PINECONE_INDEX",
                 default="your index name here. e.g. my-index,"
