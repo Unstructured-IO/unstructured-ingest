@@ -6,6 +6,7 @@ from typing import Generator, Optional, TypeVar
 from unstructured_ingest.v2.interfaces.indexer import Indexer
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
+from unstructured_ingest.v2.utils import serialize_base_model
 
 IndexerT = TypeVar("IndexerT", bound=Indexer)
 
@@ -48,10 +49,8 @@ class IndexStep(PipelineStep):
                 continue
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        index_config_dict = self.process.index_config.dict()
-        connection_config_dict = self.process.connection_config.dict()
-        if access_config := self.process.connection_config.access_config:
-            connection_config_dict["access_config"] = access_config.get_secret_value().dict()
+        index_config_dict = serialize_base_model(model=self.process.index_config)
+        connection_config_dict = serialize_base_model(model=self.process.connection_config)
         hashable_dict = {
             "index_config": index_config_dict,
             "connection_config": connection_config_dict,

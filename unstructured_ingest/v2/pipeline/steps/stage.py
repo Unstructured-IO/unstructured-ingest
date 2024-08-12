@@ -9,6 +9,7 @@ from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.upload_stager import UploadStager
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
+from unstructured_ingest.v2.utils import serialize_base_model
 
 STEP_ID = "upload_stage"
 
@@ -54,7 +55,9 @@ class UploadStageStep(PipelineStep):
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
         hashable_string = json.dumps(
-            self.process.upload_stager_config.dict(), sort_keys=True, ensure_ascii=True
+            serialize_base_model(model=self.process.upload_stager_config),
+            sort_keys=True,
+            ensure_ascii=True,
         )
         if extras:
             hashable_string += "".join(extras)

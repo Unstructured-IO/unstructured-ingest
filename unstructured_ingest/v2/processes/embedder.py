@@ -16,7 +16,7 @@ class EmbedderConfig(BaseModel):
     embedding_api_key: Optional[SecretStr] = None
     embedding_model_name: Optional[str] = None
     embedding_aws_access_key_id: Optional[str] = None
-    embedding_aws_secret_access_key: Optional[str] = None
+    embedding_aws_secret_access_key: Optional[SecretStr] = None
     embedding_aws_region: Optional[str] = None
 
     def get_embedder(self) -> BaseEmbeddingEncoder:
@@ -47,7 +47,7 @@ class EmbedderConfig(BaseModel):
             return BedrockEmbeddingEncoder(
                 config=BedrockEmbeddingConfig(
                     aws_access_key_id=self.embedding_aws_access_key_id,
-                    aws_secret_access_key=self.embedding_aws_secret_access_key,
+                    aws_secret_access_key=self.embedding_aws_secret_access_key.get_secret_value(),
                     region_name=self.embedding_aws_region,
                 )
             )

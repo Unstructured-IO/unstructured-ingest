@@ -11,6 +11,7 @@ from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.processes.embedder import Embedder
+from unstructured_ingest.v2.utils import serialize_base_model
 
 STEP_ID = "embed"
 
@@ -71,7 +72,8 @@ class EmbedStep(PipelineStep):
         return EmbedStepResponse(file_data_path=file_data_path, path=str(output_filepath))
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        hashable_string = json.dumps(self.process.config.dict(), sort_keys=True, ensure_ascii=True)
+        embedder_config_dict = serialize_base_model(model=self.process.config)
+        hashable_string = json.dumps(embedder_config_dict, sort_keys=True, ensure_ascii=True)
         if extras:
             hashable_string += "".join(extras)
         return hashlib.sha256(hashable_string.encode()).hexdigest()[:12]

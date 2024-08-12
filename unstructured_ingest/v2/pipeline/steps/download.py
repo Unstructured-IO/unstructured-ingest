@@ -9,6 +9,7 @@ from unstructured_ingest.v2.interfaces import FileData, download_responses
 from unstructured_ingest.v2.interfaces.downloader import Downloader
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
+from unstructured_ingest.v2.utils import serialize_base_model
 
 DownloaderT = TypeVar("DownloaderT", bound=Downloader)
 
@@ -173,10 +174,8 @@ class DownloadStep(PipelineStep):
         return str(filepath)
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        download_config_dict = self.process.download_config.dict()
-        connection_config_dict = self.process.connection_config.dict()
-        if access_config := self.process.connection_config.access_config:
-            connection_config_dict["access_config"] = access_config.get_secret_value().dict()
+        download_config_dict = serialize_base_model(model=self.process.download_config)
+        connection_config_dict = serialize_base_model(model=self.process.connection_config)
         hashable_dict = {
             "download_config": download_config_dict,
             "connection_config": connection_config_dict,
