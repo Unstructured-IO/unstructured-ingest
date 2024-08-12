@@ -58,11 +58,11 @@ class DatabricksVolumesUploaderConfig(UploaderConfig):
     catalog: str
     volume_path: Optional[str] = None
     overwrite: bool = False
-    schema: str = "default"
+    databricks_schema: str = Field(default="default", alias="schema")
 
     @property
     def path(self) -> str:
-        path = f"/Volumes/{self.catalog}/{self.schema}/{self.volume}"
+        path = f"/Volumes/{self.catalog}/{self.databricks_schema}/{self.volume}"
         if self.volume_path:
             path = f"{path}/{self.volume_path}"
         return path

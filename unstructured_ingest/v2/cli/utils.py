@@ -120,7 +120,7 @@ def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
         ):
             ac_subtypes = access_config_type.__args__
             ac_fields = ac_subtypes[0].model_fields
-        elif isinstance(access_config_type, BaseModel):
+        elif issubclass(access_config_type, BaseModel):
             ac_fields = access_config_type.model_fields
         else:
             raise TypeError(f"Unrecognized access_config type: {access_config_type}")
