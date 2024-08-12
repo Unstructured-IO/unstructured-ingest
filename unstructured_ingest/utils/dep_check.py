@@ -33,7 +33,7 @@ def requires_dependencies(
                 raise ImportError(
                     f"Following dependencies are missing: {', '.join(missing_deps)}. "
                     + (
-                        f"""Please install them using `pip install "unstructured[{extras}]"`."""
+                        f"""Please install them using `pip install "unstructured-ingest[{extras}]"`."""
                         if extras
                         else f"Please install them using `pip install {' '.join(missing_deps)}`."
                     ),

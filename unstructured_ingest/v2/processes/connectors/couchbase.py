@@ -4,7 +4,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Secret
+
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -28,12 +29,10 @@ CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
 
 
-@dataclass
 class CouchbaseAccessConfig(AccessConfig):
     password: str
 
 
-@dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
     username: str
     bucket: str
@@ -42,10 +41,9 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     collection: str = "_default"
     batch_size: int = 50
     connector_type: str = CONNECTOR_TYPE
-    access_config: CouchbaseAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[CouchbaseAccessConfig]
 
 
-@dataclass
 class CouchbaseUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -84,7 +82,6 @@ class CouchbaseUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class CouchbaseUploaderConfig(UploaderConfig):
     batch_size: int = 50
 
