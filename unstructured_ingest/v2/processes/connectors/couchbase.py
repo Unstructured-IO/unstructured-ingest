@@ -2,10 +2,11 @@ import json
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Secret
 
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -90,14 +91,7 @@ class CouchbaseUploaderConfig(UploaderConfig):
 class CouchbaseUploader(Uploader):
     connection_config: CouchbaseConnectionConfig
     upload_config: CouchbaseUploaderConfig
-    cluster: Optional["Cluster"] = field(init=False, default=None)
     connector_type: str = CONNECTOR_TYPE
-
-    def __post_init__(self):
-        try:
-            self.cluster = self.connect_to_couchbase()
-        except Exception as e:
-            logger.error(f"Error connecting to couchbase: {e}")
 
     @requires_dependencies(["couchbase"], extras="couchbase")
     def connect_to_couchbase(self) -> "Cluster":
@@ -107,7 +101,7 @@ class CouchbaseUploader(Uploader):
 
         connection_string = self.connection_config.connection_string
         username = self.connection_config.username
-        password = self.connection_config.access_config.password
+        password = self.connection_config.access_config.get_secret_value().password
 
         auth = PasswordAuthenticator(username, password)
         options = ClusterOptions(auth)
@@ -115,6 +109,13 @@ class CouchbaseUploader(Uploader):
         cluster = Cluster(connection_string, options)
         cluster.wait_until_ready(timedelta(seconds=5))
         return cluster
+
+    def precheck(self) -> None:
+        try:
+            self.connect_to_couchbase()
+        except Exception as e:
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
         elements = []
@@ -127,7 +128,8 @@ class CouchbaseUploader(Uploader):
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.connection_string}",
         )
-        bucket = self.cluster.bucket(self.connection_config.bucket)
+        cluster = self.connect_to_couchbase()
+        bucket = cluster.bucket(self.connection_config.bucket)
         scope = bucket.scope(self.connection_config.scope)
         collection = scope.collection(self.connection_config.collection)
 

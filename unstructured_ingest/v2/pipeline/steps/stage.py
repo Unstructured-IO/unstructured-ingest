@@ -54,7 +54,7 @@ class UploadStageStep(PipelineStep):
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
         hashable_string = json.dumps(
-            self.process.upload_stager_config.to_dict(), sort_keys=True, ensure_ascii=True
+            self.process.upload_stager_config.dict(), sort_keys=True, ensure_ascii=True
         )
         if extras:
             hashable_string += "".join(extras)

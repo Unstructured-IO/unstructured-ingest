@@ -72,9 +72,7 @@ class ChunkStep(PipelineStep):
         return ChunkStepResponse(file_data_path=file_data_path, path=str(output_filepath))
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        hashable_string = json.dumps(
-            self.process.config.to_dict(), sort_keys=True, ensure_ascii=True
-        )
+        hashable_string = json.dumps(self.process.config.dict(), sort_keys=True, ensure_ascii=True)
         if extras:
             hashable_string += "".join(extras)
         return hashlib.sha256(hashable_string.encode()).hexdigest()[:12]
