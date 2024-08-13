@@ -15,8 +15,6 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
 )
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
-
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -33,6 +31,7 @@ from unstructured_ingest.v2.interfaces import (
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
+    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -247,6 +246,14 @@ class CouchbaseDownloader(Downloader):
     download_config: CouchbaseDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["couchbase"], extras="couchbase")
+    def get_cluster(self) -> "Cluster":
+        return connect_to_couchbase(
+            self.connection_config.connection_string,
+            self.connection_config.username,
+            self.connection_config.access_config.password,
+        )
+
     def is_async(self) -> bool:
         return True
 
@@ -309,13 +316,6 @@ class CouchbaseDownloader(Downloader):
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError()
 
-    @requires_dependencies(["couchbase"], extras="couchbase")
-    def load_async(self):
-        from couchbase.auth import PasswordAuthenticator
-        from couchbase.cluster import Cluster, ClusterOptions
-
-        return Cluster, ClusterOptions, PasswordAuthenticator
-
     async def process_doc_id(self, doc_id, collection, bucket_name, file_data):
         result = collection.get(doc_id)
         return self.generate_download_response(
@@ -331,21 +331,14 @@ class CouchbaseDownloader(Downloader):
             return await asyncio.gather(*tasks)
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        Cluster, ClusterOptions, PasswordAuthenticator = self.load_async()
 
         bucket_name: str = file_data.additional_metadata["bucket"]
         ids: list[str] = file_data.additional_metadata["ids"]
 
-        cluster = Cluster(
-            self.connection_config.connection_string,
-            ClusterOptions(
-                PasswordAuthenticator(
-                    self.connection_config.username, self.connection_config.access_config.password
-                )
-            ),
-        )
+        cluster = self.get_cluster()
         bucket = cluster.bucket(bucket_name)
-        collection = bucket.default_collection()
+        scope = bucket.scope(self.connection_config.scope)
+        collection = scope.collection(self.connection_config.collection)
 
         download_resp = await self.process_all_doc_ids(ids, collection, bucket_name, file_data)
         return list(download_resp)
