@@ -91,6 +91,10 @@ class SftpIndexer(FsspecIndexer):
             file.identifier = new_identifier
             yield file
 
+    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
+    def precheck(self) -> None:
+        super().precheck()
+
 
 @dataclass
 class SftpDownloaderConfig(FsspecDownloaderConfig):
@@ -141,6 +145,10 @@ class SftpUploader(FsspecUploader):
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def __post_init__(self):
         super().__post_init__()
+
+    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
+    def precheck(self) -> None:
+        super().precheck()
 
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:

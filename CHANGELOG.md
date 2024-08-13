@@ -1,3 +1,18 @@
+## 0.0.4-dev0
+
+### Enhancements
+
+* **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
+
+
+## 0.0.3
+
+### Enhancements
+
+* **Improve documentation** Update the README's.
+* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones. 
+* **Add missing fsspec destination precheck** check connection in precheck for all fsspec-based destination connectors
+
 ## 0.0.2
 
 ### Enhancements

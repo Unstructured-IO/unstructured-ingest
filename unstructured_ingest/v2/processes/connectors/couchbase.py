@@ -15,6 +15,8 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
 )
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -31,7 +33,6 @@ from unstructured_ingest.v2.interfaces import (
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
