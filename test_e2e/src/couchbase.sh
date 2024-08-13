@@ -12,8 +12,10 @@ DOWNLOAD_DIR=$SCRIPT_DIR/download/$OUTPUT_FOLDER_NAME
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 CI=${CI:-"false"}
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR"/env_setup/couchbase/common/constants.env
 
 # Check if all necessary environment variables are set
@@ -25,7 +27,7 @@ fi
 function cleanup() {
   # Remove docker container
   echo "Stopping Couchbase Docker container"
-  docker-compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
+  docker compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
 
   cleanup_dir "$DESTINATION_PATH"
   cleanup_dir "$OUTPUT_DIR"
