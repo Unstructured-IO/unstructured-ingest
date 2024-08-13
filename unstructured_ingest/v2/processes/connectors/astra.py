@@ -3,10 +3,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from pydantic import Secret
 from unstructured import __name__ as integration_name
 from unstructured.__version__ import __version__ as integration_version
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -31,19 +31,16 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "astra"
 
 
-@dataclass
 class AstraAccessConfig(AccessConfig):
     token: str
     api_endpoint: str
 
 
-@dataclass
 class AstraConnectionConfig(ConnectionConfig):
     connection_type: str = CONNECTOR_TYPE
-    access_config: AstraAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[AstraAccessConfig]
 
 
-@dataclass
 class AstraUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -80,7 +77,6 @@ class AstraUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class AstraUploaderConfig(UploaderConfig):
     collection_name: str
     embedding_dimension: int
@@ -116,9 +112,10 @@ class AstraUploader(Uploader):
 
         # Build the Astra DB object.
         # caller_name/version for AstraDB tracking
+        access_configs = self.connection_config.access_config.get_secret_value()
         astra_db = AstraDB(
-            api_endpoint=self.connection_config.access_config.api_endpoint,
-            token=self.connection_config.access_config.token,
+            api_endpoint=access_configs.api_endpoint,
+            token=access_configs.token,
             namespace=self.upload_config.namespace,
             caller_name=integration_name,
             caller_version=integration_version,

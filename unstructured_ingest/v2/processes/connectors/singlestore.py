@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Optional
 import numpy as np
 import pandas as pd
 from dateutil import parser
+from pydantic import Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.table import convert_to_pandas_dataframe
@@ -33,18 +33,16 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "singlestore"
 
 
-@dataclass
 class SingleStoreAccessConfig(AccessConfig):
     password: Optional[str] = None
 
 
-@dataclass
 class SingleStoreConnectionConfig(ConnectionConfig):
     host: Optional[str] = None
     port: Optional[int] = None
     user: Optional[str] = None
     database: Optional[str] = None
-    access_config: SingleStoreAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[SingleStoreAccessConfig]
 
     @requires_dependencies(["singlestoredb"], extras="singlestore")
     def get_connection(self) -> "Connection":
@@ -55,12 +53,11 @@ class SingleStoreConnectionConfig(ConnectionConfig):
             port=self.port,
             database=self.database,
             user=self.user,
-            password=self.access_config.password,
+            password=self.access_config.get_secret_value().password,
         )
         return conn
 
 
-@dataclass
 class SingleStoreUploadStagerConfig(UploadStagerConfig):
     drop_empty_cols: bool = False
 
@@ -112,7 +109,6 @@ class SingleStoreUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class SingleStoreUploaderConfig(UploaderConfig):
     table_name: str
     batch_size: int = 100

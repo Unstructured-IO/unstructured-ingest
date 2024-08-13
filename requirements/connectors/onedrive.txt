@@ -15,7 +15,7 @@ certifi==2024.7.4
     #   -c ./connectors/../common/base.txt
     #   -c ./connectors/../common/constraints.txt
     #   requests
-cffi==1.16.0
+cffi==1.17.0
     # via cryptography
 charset-normalizer==3.3.2
     # via
@@ -39,7 +39,7 @@ office365-rest-python-client==2.4.2
     #   -r ./connectors/onedrive.in
 pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.8.0
+pyjwt[crypto]==2.9.0
     # via msal
 pytz==2024.1
     # via

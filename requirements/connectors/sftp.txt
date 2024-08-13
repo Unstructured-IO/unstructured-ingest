@@ -4,9 +4,9 @@
 #
 #    pip-compile ./connectors/sftp.in
 #
-bcrypt==4.1.3
+bcrypt==4.2.0
     # via paramiko
-cffi==1.16.0
+cffi==1.17.0
     # via
     #   cryptography
     #   pynacl
@@ -16,7 +16,7 @@ fsspec==2024.5.0
     # via
     #   -c ./connectors/../common/constraints.txt
     #   -r ./connectors/sftp.in
-paramiko==3.4.0
+paramiko==3.4.1
     # via -r ./connectors/sftp.in
 pycparser==2.22
     # via cffi

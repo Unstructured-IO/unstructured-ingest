@@ -29,7 +29,7 @@ certifi==2024.7.4
     #   httpx
     #   requests
     #   unstructured-client
-cffi==1.16.0
+cffi==1.17.0
     # via cryptography
 chardet==5.2.0
     # via
@@ -94,21 +94,21 @@ fsspec==2024.5.0
     #   torch
 google-api-core[grpc]==2.19.1
     # via google-cloud-vision
-google-auth==2.32.0
+google-auth==2.33.0
     # via
     #   google-api-core
     #   google-cloud-vision
-google-cloud-vision==3.7.3
+google-cloud-vision==3.7.4
     # via unstructured
 googleapis-common-protos==1.63.2
     # via
     #   google-api-core
     #   grpcio-status
-grpcio==1.65.1
+grpcio==1.65.4
     # via
     #   google-api-core
     #   grpcio-status
-grpcio-status==1.62.2
+grpcio-status==1.62.3
     # via google-api-core
 h11==0.14.0
     # via
@@ -122,7 +122,7 @@ httpx==0.27.0
     # via
     #   -c ./local_partition/../common/base.txt
     #   unstructured-client
-huggingface-hub==0.24.0
+huggingface-hub==0.24.5
     # via
     #   timm
     #   tokenizers
@@ -159,7 +159,7 @@ langdetect==1.0.9
     #   unstructured
 layoutparser==0.3.4
     # via unstructured-inference
-lxml==5.2.2
+lxml==5.3.0
     # via
     #   -c ./local_partition/../common/base.txt
     #   pikepdf
@@ -192,6 +192,7 @@ networkx==3.2.1
 nltk==3.8.1
     # via
     #   -c ./local_partition/../common/base.txt
+    #   -c ./local_partition/../common/constraints.txt
     #   unstructured
 numpy==1.26.4
     # via
@@ -210,7 +211,7 @@ numpy==1.26.4
     #   unstructured
 omegaconf==2.3.0
     # via effdet
-onnx==1.16.1
+onnx==1.16.2
     # via
     #   unstructured
     #   unstructured-inference
@@ -250,9 +251,9 @@ pdfminer-six==20231228
     # via
     #   pdfplumber
     #   unstructured
-pdfplumber==0.11.2
+pdfplumber==0.11.3
     # via layoutparser
-pikepdf==9.0.0
+pikepdf==9.1.1
     # via unstructured
 pillow==10.4.0
     # via
@@ -265,7 +266,7 @@ pillow==10.4.0
     #   pytesseract
     #   torchvision
     #   unstructured-pytesseract
-pillow-heif==0.17.0
+pillow-heif==0.18.0
     # via unstructured
 portalocker==2.10.1
     # via iopath
@@ -332,19 +333,19 @@ pytz==2024.1
     # via
     #   -c ./local_partition/../common/base.txt
     #   pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   huggingface-hub
     #   layoutparser
     #   omegaconf
     #   timm
     #   transformers
-rapidfuzz==3.9.4
+rapidfuzz==3.9.6
     # via
     #   -c ./local_partition/../common/base.txt
     #   unstructured
     #   unstructured-inference
-regex==2024.5.15
+regex==2024.7.24
     # via
     #   -c ./local_partition/../common/base.txt
     #   nltk
@@ -364,7 +365,7 @@ requests-toolbelt==1.0.0
     #   unstructured-client
 rsa==4.9
     # via google-auth
-safetensors==0.4.3
+safetensors==0.4.4
     # via
     #   timm
     #   transformers
@@ -387,7 +388,7 @@ soupsieve==2.5
     # via
     #   -c ./local_partition/../common/base.txt
     #   beautifulsoup4
-sympy==1.13.1
+sympy==1.13.2
     # via
     #   onnxruntime
     #   torch
@@ -395,24 +396,24 @@ tabulate==0.9.0
     # via
     #   -c ./local_partition/../common/base.txt
     #   unstructured
-timm==1.0.7
+timm==1.0.8
     # via
     #   effdet
     #   unstructured-inference
 tokenizers==0.19.1
     # via transformers
-torch==2.3.1
+torch==2.4.0
     # via
     #   -c ./local_partition/../common/constraints.txt
     #   effdet
     #   timm
     #   torchvision
     #   unstructured-inference
-torchvision==0.18.1
+torchvision==0.19.0
     # via
     #   effdet
     #   timm
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   -c ./local_partition/../common/base.txt
     #   huggingface-hub
@@ -420,7 +421,7 @@ tqdm==4.66.4
     #   nltk
     #   transformers
     #   unstructured
-transformers==4.42.4
+transformers==4.44.0
     # via unstructured-inference
 typing-extensions==4.12.2
     # via
@@ -442,11 +443,11 @@ tzdata==2024.1
     # via
     #   -c ./local_partition/../common/base.txt
     #   pandas
-unstructured[image]==0.15.0
+unstructured[image]==0.15.1
     # via
     #   -c ./local_partition/../common/base.txt
     #   -r ./local_partition/image.in
-unstructured-client==0.24.1
+unstructured-client==0.25.4
     # via
     #   -c ./local_partition/../common/base.txt
     #   -c ./local_partition/../common/constraints.txt
@@ -469,5 +470,5 @@ wrapt==1.16.0
     #   -c ./local_partition/../common/constraints.txt
     #   deprecated
     #   unstructured
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-resources

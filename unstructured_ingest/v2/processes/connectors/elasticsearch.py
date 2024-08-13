@@ -5,9 +5,10 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
+from pydantic import BaseModel, Secret, SecretStr
+
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
@@ -44,57 +45,60 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "elasticsearch"
 
 
-@dataclass
 class ElasticsearchAccessConfig(AccessConfig):
     password: Optional[str] = None
-    api_key: Optional[str] = enhanced_field(default=None, overload_name="es_api_key")
+    es_api_key: Optional[str] = None
     bearer_auth: Optional[str] = None
     ssl_assert_fingerprint: Optional[str] = None
 
 
-@dataclass
-class ElasticsearchClientInput(EnhancedDataClassJsonMixin):
+class ElasticsearchClientInput(BaseModel):
     hosts: Optional[list[str]] = None
     cloud_id: Optional[str] = None
     ca_certs: Optional[str] = None
-    basic_auth: Optional[tuple[str, str]] = enhanced_field(sensitive=True, default=None)
-    api_key: Optional[str] = enhanced_field(sensitive=True, default=None)
+    basic_auth: Optional[Secret[tuple[str, str]]] = None
+    api_key: Optional[Union[Secret[tuple[str, str]], SecretStr]] = None
 
 
-@dataclass
 class ElasticsearchConnectionConfig(ConnectionConfig):
     hosts: Optional[list[str]] = None
     username: Optional[str] = None
     cloud_id: Optional[str] = None
     api_key_id: Optional[str] = None
     ca_certs: Optional[str] = None
-    access_config: ElasticsearchAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[ElasticsearchAccessConfig]
 
     def get_client_kwargs(self) -> dict:
         # Update auth related fields to conform to what the SDK expects based on the
         # supported methods:
         # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html
-        client_input = ElasticsearchClientInput()
+        client_input_kwargs: dict[str, Any] = {}
+        access_config = self.access_config.get_secret_value()
         if self.hosts:
-            client_input.hosts = self.hosts
+            client_input_kwargs["hosts"] = self.hosts
         if self.cloud_id:
-            client_input.cloud_id = self.cloud_id
+            client_input_kwargs["cloud_id"] = self.cloud_id
         if self.ca_certs:
-            client_input.ca_certs = self.ca_certs
-        if self.access_config.password and (
-            self.cloud_id or self.ca_certs or self.access_config.ssl_assert_fingerprint
+            client_input_kwargs["ca_certs"] = self.ca_certs
+        if access_config.password and (
+            self.cloud_id or self.ca_certs or access_config.ssl_assert_fingerprint
         ):
-            client_input.basic_auth = ("elastic", self.access_config.password)
-        elif not self.cloud_id and self.username and self.access_config.password:
-            client_input.basic_auth = (self.username, self.access_config.password)
-        elif self.access_config.api_key and self.api_key_id:
-            client_input.api_key = (self.api_key_id, self.access_config.api_key)
-        elif self.access_config.api_key:
-            client_input.api_key = self.access_config.api_key
-        logger.debug(
-            f"Elasticsearch client inputs mapped to: {client_input.to_dict(redact_sensitive=True)}"
+            client_input_kwargs["basic_auth"] = ("elastic", access_config.password)
+        elif not self.cloud_id and self.username and access_config.password:
+            client_input_kwargs["basic_auth"] = (self.username, access_config.password)
+        elif access_config.es_api_key and self.api_key_id:
+            client_input_kwargs["api_key"] = (self.api_key_id, access_config.es_api_key)
+        elif access_config.es_api_key:
+            client_input_kwargs["api_key"] = access_config.es_api_key
+        client_input = ElasticsearchClientInput(**client_input_kwargs)
+        logger.debug(f"Elasticsearch client inputs mapped to: {client_input.dict()}")
+        client_kwargs = client_input.dict()
+        client_kwargs["basic_auth"] = (
+            client_input.basic_auth.get_secret_value() if client_input.basic_auth else None
         )
-        client_kwargs = client_input.to_dict(redact_sensitive=False)
+        client_kwargs["api_key"] = (
+            client_input.api_key.get_secret_value() if client_input.api_key else None
+        )
         client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
         return client_kwargs
 
@@ -114,7 +118,6 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
 
-@dataclass
 class ElasticsearchIndexerConfig(IndexerConfig):
     index_name: str
     batch_size: int = 100
@@ -186,7 +189,6 @@ class ElasticsearchIndexer(Indexer):
             )
 
 
-@dataclass
 class ElasticsearchDownloaderConfig(DownloaderConfig):
     fields: list[str] = field(default_factory=list)
 
@@ -292,7 +294,6 @@ class ElasticsearchDownloader(Downloader):
         return download_responses
 
 
-@dataclass
 class ElasticsearchUploadStagerConfig(UploadStagerConfig):
     index_name: str
 
@@ -333,7 +334,6 @@ class ElasticsearchUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class ElasticsearchUploaderConfig(UploaderConfig):
     index_name: str
     batch_size_bytes: int = 15_000_000

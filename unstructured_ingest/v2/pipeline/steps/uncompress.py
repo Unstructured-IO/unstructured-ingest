@@ -5,7 +5,6 @@ from typing import Callable, TypedDict
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 from unstructured_ingest.v2.processes.uncompress import Uncompressor
 
 STEP_ID = "uncompress"
@@ -21,11 +20,7 @@ class UncompressStep(PipelineStep):
     identifier: str = STEP_ID
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.config.to_dict(redact_sensitive=True))
-            if self.process.config
-            else None
-        )
+        config = self.process.config.json() if self.process.config else None
         logger.info(f"Created {self.identifier} with configs: {config}")
 
     def _run(self, path: str, file_data_path: str) -> list[UncompressStepResponse]:

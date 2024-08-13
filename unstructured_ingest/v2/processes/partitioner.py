@@ -1,14 +1,13 @@
 import asyncio
 from abc import ABC
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from pydantic import BaseModel, Field, SecretStr
 from unstructured.documents.elements import DataSourceMetadata
 from unstructured.staging.base import elements_to_dicts, flatten_dict
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
-from unstructured_ingest.enhanced_dataclass.dataclasses import enhanced_field
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -17,25 +16,24 @@ if TYPE_CHECKING:
     from unstructured_client.models.shared import PartitionParameters
 
 
-@dataclass
-class PartitionerConfig(EnhancedDataClassJsonMixin):
+class PartitionerConfig(BaseModel):
     strategy: str = "auto"
     ocr_languages: Optional[list[str]] = None
     encoding: Optional[str] = None
     additional_partition_args: Optional[dict[str, Any]] = None
     skip_infer_table_types: Optional[list[str]] = None
-    fields_include: list[str] = field(
+    fields_include: list[str] = Field(
         default_factory=lambda: ["element_id", "text", "type", "metadata", "embeddings"],
     )
     flatten_metadata: bool = False
-    metadata_exclude: list[str] = field(default_factory=list)
-    metadata_include: list[str] = field(default_factory=list)
+    metadata_exclude: list[str] = Field(default_factory=list)
+    metadata_include: list[str] = Field(default_factory=list)
     partition_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
     partition_by_api: bool = False
-    api_key: Optional[str] = enhanced_field(default=None, sensitive=True)
+    api_key: Optional[SecretStr] = None
     hi_res_model_name: Optional[str] = None
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         if self.metadata_exclude and self.metadata_include:
             raise ValueError(
                 "metadata_exclude and metadata_include are "
@@ -145,7 +143,8 @@ class Partitioner(BaseProcess, ABC):
 
         logger.debug(f"partitioning file {filename} with metadata: {metadata.to_dict()}")
         client = UnstructuredClient(
-            server_url=self.config.partition_endpoint, api_key_auth=self.config.api_key
+            server_url=self.config.partition_endpoint,
+            api_key_auth=self.config.api_key.get_secret_value(),
         )
         partition_params = self.create_partition_parameters(filename=filename)
         resp = await self.call_api(client=client, request=partition_params)

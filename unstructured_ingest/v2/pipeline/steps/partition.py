@@ -8,8 +8,8 @@ from typing import Callable, Optional, TypedDict
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 from unstructured_ingest.v2.processes.partitioner import Partitioner
+from unstructured_ingest.v2.utils import serialize_base_model_json
 
 STEP_ID = "partition"
 
@@ -28,7 +28,7 @@ class PartitionStep(PipelineStep):
         return f"{self.identifier} ({self.process.config.strategy})"
 
     def __post_init__(self):
-        config = sterilize_dict(self.process.config.to_dict(redact_sensitive=True))
+        config = self.process.config.json()
         logger.info(f"Created {self.identifier} with configs: {config}")
 
     def should_partition(self, filepath: Path, file_data: FileData) -> bool:
@@ -70,8 +70,8 @@ class PartitionStep(PipelineStep):
         return PartitionStepResponse(file_data_path=file_data_path, path=str(output_filepath))
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        hashable_string = json.dumps(
-            self.process.config.to_dict(), sort_keys=True, ensure_ascii=True
+        hashable_string = serialize_base_model_json(
+            model=self.process.config, sort_keys=True, ensure_ascii=True
         )
         if extras:
             hashable_string += "".join(extras)

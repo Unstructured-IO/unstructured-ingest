@@ -1,10 +1,11 @@
 import json
-import typing as t
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -24,23 +25,21 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from azure.search.documents import SearchClient
 
 
 CONNECTOR_TYPE = "azure_cognitive_search"
 
 
-@dataclass
 class AzureCognitiveSearchAccessConfig(AccessConfig):
-    key: t.Optional[str] = enhanced_field(default=None, overload_name="azure_cognitive_search_key")
+    azure_cognitive_search_key: str = Field(alias="key")
 
 
-@dataclass
 class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
     endpoint: str
     index: str
-    access_config: AzureCognitiveSearchAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[AzureCognitiveSearchAccessConfig]
 
     @requires_dependencies(["azure.search", "azure.core"], extras="azure-cognitive-search")
     def generate_client(self) -> "SearchClient":
@@ -50,16 +49,16 @@ class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
         return SearchClient(
             endpoint=self.endpoint,
             index_name=self.index,
-            credential=AzureKeyCredential(self.access_config.key),
+            credential=AzureKeyCredential(
+                self.access_config.get_secret_value().azure_cognitive_search_key
+            ),
         )
 
 
-@dataclass
 class AzureCognitiveSearchUploadStagerConfig(UploadStagerConfig):
     pass
 
 
-@dataclass
 class AzureCognitiveSearchUploaderConfig(UploaderConfig):
     batch_size: int = 100
 
@@ -122,7 +121,7 @@ class AzureCognitiveSearchUploadStager(UploadStager):
         elements_filepath: Path,
         output_dir: Path,
         output_filename: str,
-        **kwargs: t.Any,
+        **kwargs: Any,
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
@@ -143,7 +142,7 @@ class AzureCognitiveSearchUploader(Uploader):
 
     @DestinationConnectionError.wrap
     @requires_dependencies(["azure"], extras="azure-cognitive-search")
-    def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
+    def write_dict(self, *args, elements_dict: list[dict[str, Any]], **kwargs) -> None:
         import azure.core.exceptions
 
         logger.info(
@@ -169,7 +168,8 @@ class AzureCognitiveSearchUploader(Uploader):
             raise WriteError(
                 ", ".join(
                     [
-                        f"{error.key}: [{error.status_code}] {error.error_message}"
+                        f"{error.azure_cognitive_search_key}: "
+                        f"[{error.status_code}] {error.error_message}"
                         for error in errors
                     ],
                 ),
@@ -186,7 +186,7 @@ class AzureCognitiveSearchUploader(Uploader):
     def write_dict_wrapper(self, elements_dict):
         return self.write_dict(elements_dict=elements_dict)
 
-    def run(self, contents: list[UploadContent], **kwargs: t.Any) -> None:
+    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
 
         elements_dict = []
         for content in contents:

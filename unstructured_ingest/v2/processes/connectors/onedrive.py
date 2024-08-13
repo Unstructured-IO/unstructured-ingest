@@ -5,8 +5,8 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
+from pydantic import Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -35,18 +35,16 @@ CONNECTOR_TYPE = "onedrive"
 MAX_MB_SIZE = 512_000_000
 
 
-@dataclass
 class OnedriveAccessConfig(AccessConfig):
     client_cred: str
 
 
-@dataclass
 class OnedriveConnectionConfig(ConnectionConfig):
     client_id: str
     user_pname: str
     tenant: str = field(repr=False)
     authority_url: Optional[str] = field(repr=False, default="https://login.microsoftonline.com")
-    access_config: OnedriveAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[OnedriveAccessConfig]
 
     @requires_dependencies(["msal"], extras="onedrive")
     def get_token(self):
@@ -56,7 +54,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
             app = ConfidentialClientApplication(
                 authority=f"{self.authority_url}/{self.tenant}",
                 client_id=self.client_id,
-                client_credential=self.access_config.client_cred,
+                client_credential=self.access_config.get_secret_value().client_cred,
             )
             token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
         except ValueError as exc:
@@ -76,7 +74,6 @@ class OnedriveConnectionConfig(ConnectionConfig):
         return client
 
 
-@dataclass
 class OnedriveIndexerConfig(IndexerConfig):
     path: Optional[str] = field(default="")
     recursive: bool = False
@@ -171,7 +168,6 @@ class OnedriveIndexer(Indexer):
             yield file_data
 
 
-@dataclass
 class OnedriveDownloaderConfig(DownloaderConfig):
     pass
 

@@ -1,17 +1,16 @@
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypedDict, TypeVar, Union
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel
+
 from unstructured_ingest.v2.interfaces.connector import BaseConnector
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
-class DownloaderConfig(EnhancedDataClassJsonMixin):
+class DownloaderConfig(BaseModel):
     download_dir: Optional[Path] = None
 
 

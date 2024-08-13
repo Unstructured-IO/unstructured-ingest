@@ -4,18 +4,18 @@
 #
 #    pip-compile ./connectors/box.in
 #
-attrs==23.2.0
+attrs==24.2.0
     # via boxsdk
 boxfs==0.3.0
     # via -r ./connectors/box.in
-boxsdk[jwt]==3.11.0
+boxsdk[jwt]==3.12.0
     # via boxfs
 certifi==2024.7.4
     # via
     #   -c ./connectors/../common/base.txt
     #   -c ./connectors/../common/constraints.txt
     #   requests
-cffi==1.16.0
+cffi==1.17.0
     # via cryptography
 charset-normalizer==3.3.2
     # via
@@ -34,7 +34,7 @@ idna==3.7
     #   requests
 pycparser==2.22
     # via cffi
-pyjwt==2.8.0
+pyjwt==2.9.0
     # via boxsdk
 python-dateutil==2.9.0.post0
     # via

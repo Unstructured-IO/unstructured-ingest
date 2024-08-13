@@ -3,11 +3,11 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from dateutil import parser
+from pydantic import Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -32,16 +32,14 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "chroma"
 
 
-@dataclass
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[Dict[str, str]] = None
-    headers: Optional[Dict[str, str]] = None
+    settings: Optional[dict[str, str]] = None
+    headers: Optional[dict[str, str]] = None
 
 
-@dataclass
 class ChromaConnectionConfig(ConnectionConfig):
     collection_name: str
-    access_config: ChromaAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[ChromaAccessConfig]
     path: Optional[str] = None
     tenant: Optional[str] = "default_tenant"
     database: Optional[str] = "default_database"
@@ -51,7 +49,6 @@ class ChromaConnectionConfig(ConnectionConfig):
     connector_type: str = CONNECTOR_TYPE
 
 
-@dataclass
 class ChromaUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -101,7 +98,6 @@ class ChromaUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class ChromaUploaderConfig(UploaderConfig):
     batch_size: int = 100
 
@@ -123,10 +119,11 @@ class ChromaUploader(Uploader):
     def create_client(self) -> "Client":
         import chromadb
 
+        access_config = self.connection_config.access_config.get_secret_value()
         if self.connection_config.path:
             return chromadb.PersistentClient(
                 path=self.connection_config.path,
-                settings=self.connection_config.access_config.settings,
+                settings=access_config.settings,
                 tenant=self.connection_config.tenant,
                 database=self.connection_config.database,
             )
@@ -136,8 +133,8 @@ class ChromaUploader(Uploader):
                 host=self.connection_config.host,
                 port=self.connection_config.port,
                 ssl=self.connection_config.ssl,
-                headers=self.connection_config.access_config.headers,
-                settings=self.connection_config.access_config.settings,
+                headers=access_config.headers,
+                settings=access_config.settings,
                 tenant=self.connection_config.tenant,
                 database=self.connection_config.database,
             )

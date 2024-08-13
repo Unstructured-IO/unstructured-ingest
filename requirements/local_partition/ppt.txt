@@ -90,7 +90,7 @@ langdetect==1.0.9
     # via
     #   -c ./local_partition/../common/base.txt
     #   unstructured
-lxml==5.2.2
+lxml==5.3.0
     # via
     #   -c ./local_partition/../common/base.txt
     #   python-pptx
@@ -112,6 +112,7 @@ nest-asyncio==1.6.0
 nltk==3.8.1
     # via
     #   -c ./local_partition/../common/base.txt
+    #   -c ./local_partition/../common/constraints.txt
     #   unstructured
 numpy==1.26.4
     # via
@@ -151,11 +152,11 @@ python-magic==0.4.27
     #   unstructured
 python-pptx==0.6.23
     # via unstructured
-rapidfuzz==3.9.4
+rapidfuzz==3.9.6
     # via
     #   -c ./local_partition/../common/base.txt
     #   unstructured
-regex==2024.5.15
+regex==2024.7.24
     # via
     #   -c ./local_partition/../common/base.txt
     #   nltk
@@ -188,7 +189,7 @@ tabulate==0.9.0
     # via
     #   -c ./local_partition/../common/base.txt
     #   unstructured
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   -c ./local_partition/../common/base.txt
     #   nltk
@@ -206,11 +207,11 @@ typing-inspect==0.9.0
     #   -c ./local_partition/../common/base.txt
     #   dataclasses-json
     #   unstructured-client
-unstructured[ppt]==0.15.0
+unstructured[ppt]==0.15.1
     # via
     #   -c ./local_partition/../common/base.txt
     #   -r ./local_partition/ppt.in
-unstructured-client==0.24.1
+unstructured-client==0.25.4
     # via
     #   -c ./local_partition/../common/base.txt
     #   -c ./local_partition/../common/constraints.txt

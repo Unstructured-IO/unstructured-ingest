@@ -1,8 +1,9 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "databricks_volumes"
 
 
-@dataclass
 class DatabricksVolumesAccessConfig(AccessConfig):
     account_id: Optional[str] = None
     username: Optional[str] = None
@@ -41,25 +41,28 @@ class DatabricksVolumesAccessConfig(AccessConfig):
     google_service_account: Optional[str] = None
 
 
-@dataclass
+SecretDatabricksVolumesAccessConfig = Secret[DatabricksVolumesAccessConfig]
+
+
 class DatabricksVolumesConnectionConfig(ConnectionConfig):
-    access_config: DatabricksVolumesAccessConfig = enhanced_field(
-        default_factory=DatabricksVolumesAccessConfig, sensitive=True
+    access_config: SecretDatabricksVolumesAccessConfig = Field(
+        default_factory=lambda: SecretDatabricksVolumesAccessConfig(
+            secret_value=DatabricksVolumesAccessConfig()
+        )
     )
     host: Optional[str] = None
 
 
-@dataclass
 class DatabricksVolumesUploaderConfig(UploaderConfig):
     volume: str
     catalog: str
     volume_path: Optional[str] = None
     overwrite: bool = False
-    schema: str = "default"
+    databricks_schema: str = Field(default="default", alias="schema")
 
     @property
     def path(self) -> str:
-        path = f"/Volumes/{self.catalog}/{self.schema}/{self.volume}"
+        path = f"/Volumes/{self.catalog}/{self.databricks_schema}/{self.volume}"
         if self.volume_path:
             path = f"{path}/{self.volume_path}"
         return path
@@ -70,19 +73,19 @@ class DatabricksVolumesUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: DatabricksVolumesUploaderConfig
     connection_config: DatabricksVolumesConnectionConfig
-    client: Optional["WorkspaceClient"] = field(init=False, default=None)
 
     @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
-    def __post_init__(self) -> "WorkspaceClient":
+    def get_client(self) -> "WorkspaceClient":
         from databricks.sdk import WorkspaceClient
 
-        self.client = WorkspaceClient(
-            host=self.connection_config.host, **self.connection_config.access_config.to_dict()
+        return WorkspaceClient(
+            host=self.connection_config.host,
+            **self.connection_config.access_config.get_secret_value().dict(),
         )
 
     def precheck(self) -> None:
         try:
-            assert self.client.current_user.me().active
+            assert self.get_client().current_user.me().active
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -91,7 +94,7 @@ class DatabricksVolumesUploader(Uploader):
         for content in contents:
             with open(content.path, "rb") as elements_file:
                 output_path = os.path.join(self.upload_config.path, content.path.name)
-                self.client.files.upload(
+                self.get_client().files.upload(
                     file_path=output_path,
                     contents=elements_file,
                     overwrite=self.upload_config.overwrite,

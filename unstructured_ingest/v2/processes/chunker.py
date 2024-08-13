@@ -3,21 +3,20 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Optional
 
+from pydantic import BaseModel, SecretStr
 from unstructured.chunking import dispatch
 from unstructured.documents.elements import Element, assign_and_map_hash_ids
 from unstructured.staging.base import dict_to_elements, elements_from_json
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
 
-@dataclass
-class ChunkerConfig(EnhancedDataClassJsonMixin):
+class ChunkerConfig(BaseModel):
     chunking_strategy: Optional[str] = None
     chunking_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
     chunk_by_api: bool = False
-    chunk_api_key: Optional[str] = enhanced_field(default=None, sensitive=True)
+    chunk_api_key: Optional[SecretStr] = None
 
     chunk_combine_text_under_n_chars: Optional[int] = None
     chunk_include_orig_elements: Optional[bool] = None
@@ -68,7 +67,7 @@ class Chunker(BaseProcess, ABC):
         from unstructured_client.models.shared import Files, PartitionParameters
 
         client = UnstructuredClient(
-            api_key_auth=self.config.chunk_api_key,
+            api_key_auth=self.config.chunk_api_key.get_secret_value(),
             server_url=self.config.chunking_endpoint,
         )
         partition_request = self.config.to_chunking_kwargs()
@@ -89,7 +88,7 @@ class Chunker(BaseProcess, ABC):
                 file_name=str(elements_filepath.resolve()),
             )
             filtered_partition_request["files"] = files
-        partition_params = PartitionParameters(**filtered_partition_request)
+            partition_params = PartitionParameters(**filtered_partition_request)
         resp = client.general.partition(partition_params)
         elements_raw = resp.elements or []
         elements = dict_to_elements(elements_raw)

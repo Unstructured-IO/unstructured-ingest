@@ -4,9 +4,9 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
+from pydantic import Secret
 from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
@@ -37,15 +37,13 @@ if TYPE_CHECKING:
     from googleapiclient.http import MediaIoBaseDownload
 
 
-@dataclass
 class GoogleDriveAccessConfig(AccessConfig):
     service_account_key: Union[str, dict]
 
 
-@dataclass
 class GoogleDriveConnectionConfig(ConnectionConfig):
     drive_id: str
-    access_config: GoogleDriveAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[GoogleDriveAccessConfig]
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
     def get_files_service(self) -> "GoogleAPIResource":
@@ -56,14 +54,15 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
 
         # Service account key can be a dict or a file path(str)
         # But the dict may come in as a string
-        if isinstance(self.access_config.service_account_key, str):
-            key_path = json_to_dict(self.access_config.service_account_key)
-        elif isinstance(self.access_config.service_account_key, dict):
-            key_path = self.access_config.service_account_key
+        access_config = self.access_config.get_secret_value()
+        if isinstance(access_config.service_account_key, str):
+            key_path = json_to_dict(access_config.service_account_key)
+        elif isinstance(access_config.service_account_key, dict):
+            key_path = access_config.service_account_key
         else:
             raise TypeError(
                 f"access_config.service_account_key must be "
-                f"str or dict, got: {type(self.access_config.service_account_key)}"
+                f"str or dict, got: {type(access_config.service_account_key)}"
             )
 
         try:
@@ -86,7 +85,6 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
             raise ValueError("The provided API key is invalid.")
 
 
-@dataclass
 class GoogleDriveIndexerConfig(IndexerConfig):
     extensions: Optional[list[str]] = None
     recursive: bool = False
@@ -268,7 +266,6 @@ class GoogleDriveIndexer(Indexer):
             yield f
 
 
-@dataclass
 class GoogleDriveDownloaderConfig(DownloaderConfig):
     pass
 
