@@ -1,8 +1,10 @@
 import json
+from datetime import datetime
 from inspect import isclass
+from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel
 from pydantic.types import _SecretBase
 
 
@@ -10,7 +12,7 @@ def is_secret(value: Any) -> bool:
     # Case Secret[int]
     if hasattr(value, "__origin__") and hasattr(value, "__args__"):
         origin = value.__origin__
-        return isclass(value) and issubclass(origin, _SecretBase)
+        return isclass(origin) and issubclass(origin, _SecretBase)
     # Case SecretStr
     return isclass(value) and issubclass(value, _SecretBase)
 
@@ -30,16 +32,14 @@ def serialize_base_model(model: BaseModel) -> dict:
 
 
 def serialize_base_model_json(model: BaseModel, **json_kwargs) -> str:
-    model_fields = model.model_fields
-    model_secret_fields = {k: v for k, v in model_fields.items() if is_secret(v.annotation)}
+    model_dict = serialize_base_model(model=model)
 
-    class CustomBaseModel(type(model)):
-        @field_serializer(*model_secret_fields.keys(), when_used="json")
-        def dump_secret(self, v):
-            return v.get_secret_value()
-
-    custom_model = CustomBaseModel.model_validate(obj=model.dict())
+    def json_serial(obj):
+        if isinstance(obj, Path):
+            return obj.as_posix()
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError("Type %s not serializable" % type(obj))
 
     # Support json dumps kwargs such as sort_keys
-    custom_model_dict = json.loads(custom_model.json())
-    return json.dumps(custom_model_dict, **json_kwargs)
+    return json.dumps(model_dict, default=json_serial, **json_kwargs)
