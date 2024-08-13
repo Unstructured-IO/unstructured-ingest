@@ -22,7 +22,7 @@ class EmbedderConfig(BaseModel):
     def get_embedder(self) -> BaseEmbeddingEncoder:
         kwargs: dict[str, Any] = {}
         if self.embedding_api_key:
-            kwargs["api_key"] = self.embedding_api_key
+            kwargs["api_key"] = self.embedding_api_key.get_secret_value()
         if self.embedding_model_name:
             kwargs["model_name"] = self.embedding_model_name
         # TODO make this more dynamic to map to encoder configs

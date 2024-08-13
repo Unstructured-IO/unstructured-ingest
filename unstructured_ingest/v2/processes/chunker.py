@@ -67,7 +67,7 @@ class Chunker(BaseProcess, ABC):
         from unstructured_client.models.shared import Files, PartitionParameters
 
         client = UnstructuredClient(
-            api_key_auth=self.config.chunk_api_key,
+            api_key_auth=self.config.chunk_api_key.get_secret_value(),
             server_url=self.config.chunking_endpoint,
         )
         partition_request = self.config.to_chunking_kwargs()
@@ -88,7 +88,7 @@ class Chunker(BaseProcess, ABC):
                 file_name=str(elements_filepath.resolve()),
             )
             filtered_partition_request["files"] = files
-        partition_params = PartitionParameters(**filtered_partition_request)
+            partition_params = PartitionParameters(**filtered_partition_request)
         resp = client.general.partition(partition_params)
         elements_raw = resp.elements or []
         elements = dict_to_elements(elements_raw)
