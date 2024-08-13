@@ -1,3 +1,5 @@
+import json
+from inspect import isclass
 from typing import Any
 
 from pydantic import BaseModel, field_serializer
@@ -5,11 +7,12 @@ from pydantic.types import _SecretBase
 
 
 def is_secret(value: Any) -> bool:
-    return (
-        hasattr(value, "__origin__")
-        and hasattr(value, "__args__")
-        and issubclass(value.__origin__, _SecretBase)
-    ) or issubclass(value, _SecretBase)
+    # Case Secret[int]
+    if hasattr(value, "__origin__") and hasattr(value, "__args__"):
+        origin = value.__origin__
+        return isclass(value) and issubclass(origin, _SecretBase)
+    # Case SecretStr
+    return isclass(value) and issubclass(value, _SecretBase)
 
 
 def serialize_base_model(model: BaseModel) -> dict:
@@ -37,4 +40,6 @@ def serialize_base_model_json(model: BaseModel, **json_kwargs) -> str:
 
     custom_model = CustomBaseModel.model_validate(obj=model.dict())
 
-    print(custom_model.json(**json_kwargs))
+    # Support json dumps kwargs such as sort_keys
+    custom_model_dict = json.loads(custom_model.json())
+    return json.dumps(custom_model_dict, **json_kwargs)
