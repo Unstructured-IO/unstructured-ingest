@@ -143,7 +143,8 @@ class Partitioner(BaseProcess, ABC):
 
         logger.debug(f"partitioning file {filename} with metadata: {metadata.to_dict()}")
         client = UnstructuredClient(
-            server_url=self.config.partition_endpoint, api_key_auth=self.config.api_key
+            server_url=self.config.partition_endpoint,
+            api_key_auth=self.config.api_key.get_secret_value(),
         )
         partition_params = self.create_partition_parameters(filename=filename)
         resp = await self.call_api(client=client, request=partition_params)
