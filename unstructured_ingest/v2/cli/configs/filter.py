@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import click
 
 from unstructured_ingest.v2.cli.interfaces import CliConfig
-from unstructured_ingest.v2.cli.utils import DelimitedString
+from unstructured_ingest.v2.cli.utils.click import DelimitedString
 
 
 @dataclass

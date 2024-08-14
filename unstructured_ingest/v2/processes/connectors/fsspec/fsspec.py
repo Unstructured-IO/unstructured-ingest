@@ -40,10 +40,11 @@ CONNECTOR_TYPE = "fsspec"
 
 
 class FileConfig(BaseModel):
-    remote_url: str
+    remote_url: str = Field(description="Remote fsspec URL formatted as `protocol://dir/path`")
     protocol: str = Field(init=False)
     path_without_protocol: str = Field(init=False)
     supported_protocols: list[str] = Field(
+        init=False,
         default_factory=lambda: [
             "s3",
             "s3a",
@@ -54,7 +55,7 @@ class FileConfig(BaseModel):
             "box",
             "dropbox",
             "sftp",
-        ]
+        ],
     )
 
     def __init__(self, **data):
@@ -74,7 +75,7 @@ class FsspecAccessConfig(AccessConfig):
 
 class FsspecConnectionConfig(ConnectionConfig):
     access_config: Secret[FsspecAccessConfig]
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 
 FsspecIndexerConfigT = TypeVar("FsspecIndexerConfigT", bound=FsspecIndexerConfig)
@@ -85,7 +86,7 @@ FsspecConnectionConfigT = TypeVar("FsspecConnectionConfigT", bound=FsspecConnect
 class FsspecIndexer(Indexer):
     connection_config: FsspecConnectionConfigT
     index_config: FsspecIndexerConfigT
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @property
     def fs(self) -> "AbstractFileSystem":
@@ -259,7 +260,7 @@ class FsspecDownloader(Downloader):
 
 
 class FsspecUploaderConfig(FileConfig, UploaderConfig):
-    overwrite: bool = False
+    overwrite: bool = Field(default=False, description="If true, an existing file will be overwritten.")
 
 
 FsspecUploaderConfigT = TypeVar("FsspecUploaderConfigT", bound=FsspecUploaderConfig)

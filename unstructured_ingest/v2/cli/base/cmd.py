@@ -1,13 +1,15 @@
 import inspect
 from abc import ABC, abstractmethod
+from collections import Counter
 from dataclasses import dataclass, field, fields
 from typing import Any, Optional, Type, TypeVar
 
 import click
+from pydantic import BaseModel
 
 from unstructured_ingest.v2.cli.base.importer import import_from_string
-from unstructured_ingest.v2.cli.interfaces import CliConfig
-from unstructured_ingest.v2.cli.utils import extract_config
+from unstructured_ingest.v2.cli.utils.click import extract_config
+from unstructured_ingest.v2.cli.utils.model_conversion import options_from_base_model, post_check
 from unstructured_ingest.v2.interfaces import ProcessorConfig
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
@@ -15,6 +17,7 @@ from unstructured_ingest.v2.processes.chunker import Chunker, ChunkerConfig
 from unstructured_ingest.v2.processes.connector_registry import (
     DownloaderT,
     IndexerT,
+    RegistryEntry,
     UploaderT,
     UploadStager,
     UploadStagerConfig,
@@ -33,7 +36,52 @@ CommandT = TypeVar("CommandT", bound=click.Command)
 @dataclass
 class BaseCmd(ABC):
     cmd_name: str
-    default_configs: list[Type[CliConfig]] = field(default_factory=list)
+    registry_entry: RegistryEntry
+    default_configs: list[Type[BaseModel]] = field(default_factory=list)
+
+    @abstractmethod
+    def get_registry_options(self):
+        pass
+
+    def get_default_options(self) -> list[click.Option]:
+        options = []
+        for extra in self.default_configs:
+            options.extend(options_from_base_model(model=extra))
+        return options
+
+    @classmethod
+    def consolidate_options(cls, options: list[click.Option]) -> list[click.Option]:
+        option_names = [option.name for option in options]
+        duplicate_names = [name for name, count in Counter(option_names).items() if count > 1]
+        if not duplicate_names:
+            return options
+        consolidated_options = []
+        current_names = []
+        for option in options:
+            if option.name not in current_names:
+                current_names.append(option.name)
+                consolidated_options.append(option)
+                continue
+            existing_option = next(o for o in consolidated_options if o.name == option.name)
+            if existing_option.__dict__ == option.__dict__:
+                continue
+            option_diff = cls.get_options_diff(o1=option, o2=existing_option)
+            raise ValueError(
+                "Conflicting duplicate {} option defined: {}".format(
+                    option.name, " | ".join([f"{d[0]}: {d[1]}" for d in option_diff])
+                )
+            )
+        return consolidated_options
+
+    @staticmethod
+    def get_options_diff(o1: click.Option, o2: click.Option):
+        o1_dict = o1.__dict__
+        o2_dict = o2.__dict__
+        for d in [o1_dict, o2_dict]:
+            d["opts"] = ",".join(d["opts"])
+            d["secondary_opts"] = ",".join(d["secondary_opts"])
+        option_diff = set(o1_dict.items()) ^ set(o2_dict.items())
+        return option_diff
 
     @property
     def cmd_name_key(self):
@@ -47,15 +95,11 @@ class BaseCmd(ABC):
     def cmd(self, ctx: click.Context, **options) -> None:
         pass
 
-    def add_options(self, cmd: CommandT, extras: list[Type[CliConfig]]) -> CommandT:
-        configs = self.default_configs
-        # make sure what's unique to this cmd appears first
-        extras.extend(configs)
-        for config in extras:
-            try:
-                config.add_cli_options(cmd=cmd)
-            except ValueError as e:
-                raise ValueError(f"failed to set configs from {config.__name__}: {e}")
+    def add_options(self, cmd: CommandT) -> CommandT:
+        options = self.get_registry_options()
+        options.extend(self.get_default_options())
+        post_check(options)
+        cmd.params.extend(options)
         return cmd
 
     def get_pipline(

@@ -33,15 +33,15 @@ CONNECTOR_TYPE = "pinecone"
 
 
 class PineconeAccessConfig(AccessConfig):
-    pinecone_api_key: Optional[str] = None
+    pinecone_api_key: Optional[str] = Field(default=None, description="API key for Pinecone.", alias="api_key")
 
 
 SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
 
 
 class PineconeConnectionConfig(ConnectionConfig):
-    index_name: str
-    environment: str
+    index_name: str = Field(description="Name of the index to connect to.")
+    environment: str = Field(description="Environment to connect to.")
     access_config: SecretPineconeAccessConfig = Field(
         default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
     )
@@ -66,8 +66,8 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
 
 
 class PineconeUploaderConfig(UploaderConfig):
-    batch_size: int = 100
-    num_of_processes: int = 4
+    batch_size: int = Field(default=100, description="Number of records per batch")
+    num_of_processes: int = Field(default=4, description="Number of processes to use for uploading")
 
 
 @dataclass

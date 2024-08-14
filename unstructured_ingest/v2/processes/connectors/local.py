@@ -45,8 +45,14 @@ class LocalConnectionConfig(ConnectionConfig):
 
 
 class LocalIndexerConfig(IndexerConfig):
-    input_path: str
-    recursive: bool = False
+    input_path: Path = Field(
+        description="Path to the location in the local file system that will be processed."
+    )
+    recursive: bool = Field(
+        default=False,
+        description="Recursively download files in their respective folders "
+        "otherwise stop at the files in provided folder level.",
+    )
 
     @property
     def path(self) -> Path:
@@ -146,7 +152,9 @@ class LocalDownloader(Downloader):
 
 
 class LocalUploaderConfig(UploaderConfig):
-    output_dir: str = "structured-output"
+    output_dir: str = Field(
+        default="structured-output", description="Local path to write partitioned output to"
+    )
 
     @property
     def output_path(self) -> Path:

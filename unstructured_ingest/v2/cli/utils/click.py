@@ -26,7 +26,13 @@ class Dict(click.ParamType):
         ctx: Optional[click.Context] = None,
     ) -> Any:
         try:
-            return json.loads(value)
+            if isinstance(value, dict):
+                return value
+            if isinstance(value, Path) and value.is_file():
+                with value.open() as f:
+                    return json.load(f)
+            if isinstance(value, str):
+                return json.loads(value)
         except json.JSONDecodeError:
             self.fail(
                 gettext(
@@ -138,13 +144,11 @@ class Group(click.Group):
         This allows for subcommands to be called with the --help flag without breaking
         if parent command is missing any of its required parameters
         """
-
         try:
             return super().parse_args(ctx, args)
         except click.MissingParameter:
             if "--help" not in args:
                 raise
-
             # remove the required params so that help can display
             for param in self.params:
                 param.required = False

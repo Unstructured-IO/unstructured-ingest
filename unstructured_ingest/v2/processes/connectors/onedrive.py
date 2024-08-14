@@ -1,11 +1,11 @@
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
-from pydantic import Secret
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -36,14 +36,21 @@ MAX_MB_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
-    client_cred: str
+    client_cred: str = Field(description="Microsoft App client secret")
 
 
 class OnedriveConnectionConfig(ConnectionConfig):
-    client_id: str
-    user_pname: str
-    tenant: str = field(repr=False)
-    authority_url: Optional[str] = field(repr=False, default="https://login.microsoftonline.com")
+    client_id: str = Field(description="Microsoft app client ID")
+    user_pname: str = Field(description="User principal name, usually is your Azure AD email.")
+    tenant: str = Field(
+        repr=False, description="ID or domain name associated with your Azure AD instance"
+    )
+    authority_url: Optional[str] = Field(
+        repr=False,
+        default="https://login.microsoftonline.com",
+        examples=["https://login.microsoftonline.com"],
+        description="Authentication token provider for Microsoft apps",
+    )
     access_config: Secret[OnedriveAccessConfig]
 
     @requires_dependencies(["msal"], extras="onedrive")
@@ -75,7 +82,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
 
 
 class OnedriveIndexerConfig(IndexerConfig):
-    path: Optional[str] = field(default="")
+    path: Optional[str] = Field(default="")
     recursive: bool = False
 
 

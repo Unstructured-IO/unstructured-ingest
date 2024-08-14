@@ -31,7 +31,7 @@ CONNECTOR_TYPE = "weaviate"
 
 
 class WeaviateAccessConfig(AccessConfig):
-    access_token: Optional[str] = None
+    access_token: Optional[str] = Field(default=None, description="Used to create the bearer token.")
     api_key: Optional[str] = None
     client_secret: Optional[str] = None
     password: Optional[str] = None
@@ -41,16 +41,17 @@ SecretWeaviateAccessConfig = Secret[WeaviateAccessConfig]
 
 
 class WeaviateConnectionConfig(ConnectionConfig):
-    host_url: str
-    class_name: str
+    host_url: str = Field(description="Weaviate instance url")
+    class_name: str = Field(description="Name of the class to push the records into, e.g: Pdf-elements")
     access_config: SecretWeaviateAccessConfig = Field(
         default_factory=lambda: SecretWeaviateAccessConfig(secret_value=WeaviateAccessConfig())
     )
     username: Optional[str] = None
-    anonymous: bool = False
+    anonymous: bool = Field(default=False, description="if set, all auth values will be ignored")
     scope: Optional[list[str]] = None
-    refresh_token: Optional[str] = None
-    connector_type: str = CONNECTOR_TYPE
+    refresh_token: Optional[str] = Field(default=None, description="Will tie this value to the bearer token. If not provided, "
+                "the authentication will expire once the lifetime of the access token is up.")
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 
 class WeaviateUploadStagerConfig(UploadStagerConfig):
@@ -151,7 +152,7 @@ class WeaviateUploadStager(UploadStager):
 
 
 class WeaviateUploaderConfig(UploaderConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 @dataclass

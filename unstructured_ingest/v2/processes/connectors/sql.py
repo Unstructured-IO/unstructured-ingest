@@ -1,10 +1,9 @@
-import enum
 import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -33,36 +32,30 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "sql"
 ELEMENTS_TABLE_NAME = "elements"
+SQLITE_DB = "sqlite"
+POSTGRESQL_DB = "postgresql"
 
 
 class SQLAccessConfig(AccessConfig):
-    username: Optional[str] = None
-    password: Optional[str] = None
-
-
-class DatabaseType(str, enum.Enum):
-    SQLITE = "sqlite"
-    POSTGRESQL = "postgresql"
+    username: Optional[str] = Field(default=None, description="DB username")
+    password: Optional[str] = Field(default=None, description="DB password")
 
 
 SecreteSQLAccessConfig = Secret[SQLAccessConfig]
 
 
 class SQLConnectionConfig(ConnectionConfig):
-    db_type: DatabaseType = (
-        # required default value here because of parent class
-        DatabaseType.SQLITE
-    )
-    database: Optional[str] = None
-    host: Optional[str] = None
-    port: Optional[int] = 5432
+    db_type: Literal["sqlite", "postgresql"] = Field(default=SQLITE_DB, description="Type of the database backend")
+    database: Optional[str] = Field(default=None, description="Database name. For sqlite databases, this is the path to the .db file.")
+    host: Optional[str] = Field(default=None, description="DB host")
+    port: Optional[int] = Field(default=5432, description="DB host connection port")
     access_config: SecreteSQLAccessConfig = Field(
         default_factory=lambda: SecreteSQLAccessConfig(secret_value=SQLAccessConfig())
     )
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def __post_init__(self):
-        if (self.db_type == DatabaseType.SQLITE) and (self.database is None):
+        if (self.db_type == SQLITE_DB) and (self.database is None):
             raise ValueError(
                 "A sqlite connection requires a path to a *.db file "
                 "through the `database` argument"
@@ -185,7 +178,7 @@ class SQLUploadStager(UploadStager):
 
 
 class SQLUploaderConfig(UploaderConfig):
-    batch_size: int = 50
+    batch_size: int = Field(default=50, description="Number of records per batch")
 
 
 @dataclass
@@ -205,9 +198,9 @@ class SQLUploader(Uploader):
 
     @property
     def connection(self) -> Callable[[], Union["SqliteConnection", "PostgresConnection"]]:
-        if self.connection_config.db_type == DatabaseType.POSTGRESQL:
+        if self.connection_config.db_type == POSTGRESQL_DB:
             return self._make_psycopg_connection
-        elif self.connection_config.db_type == DatabaseType.SQLITE:
+        elif self.connection_config.db_type == SQLITE_DB:
             return self._make_sqlite_connection
         raise ValueError(f"Unsupported database {self.connection_config.db_type} connection.")
 
@@ -236,9 +229,7 @@ class SQLUploader(Uploader):
         for row in data:
             parsed = []
             for column_name, value in zip(columns, row):
-                if self.connection_config.db_type == DatabaseType.SQLITE and isinstance(
-                    value, (list, dict)
-                ):
+                if self.connection_config.db_type == SQLITE_DB and isinstance(value, (list, dict)):
                     value = json.dumps(value)
                 if column_name in _DATE_COLUMNS:
                     if value is None:
@@ -257,14 +248,14 @@ class SQLUploader(Uploader):
 
         columns = tuple(df.columns)
         stmt = f"INSERT INTO {ELEMENTS_TABLE_NAME} ({','.join(columns)}) \
-                VALUES({','.join(['?' if self.connection_config.db_type==DatabaseType.SQLITE else '%s' for x in columns])})"  # noqa E501
+                VALUES({','.join(['?' if self.connection_config.db_type==SQLITE_DB else '%s' for x in columns])})"  # noqa E501
 
         for rows in pd.read_json(
             content.path, orient="records", lines=True, chunksize=self.upload_config.batch_size
         ):
             with self.connection() as conn:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                if self.connection_config.db_type == DatabaseType.SQLITE:
+                if self.connection_config.db_type == SQLITE_DB:
                     conn.executemany(stmt, values)
                 else:
                     with conn.cursor() as cur:

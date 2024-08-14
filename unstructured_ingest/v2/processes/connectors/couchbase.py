@@ -4,7 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from pydantic import Secret
+from pydantic import Secret, Field
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
@@ -31,17 +31,16 @@ SERVER_API_VERSION = "1"
 
 
 class CouchbaseAccessConfig(AccessConfig):
-    password: str
+    password: str = Field(description="The password for the Couchbase server")
 
 
 class CouchbaseConnectionConfig(ConnectionConfig):
-    username: str
-    bucket: str
-    connection_string: str = "couchbase://localhost"
-    scope: str = "_default"
-    collection: str = "_default"
-    batch_size: int = 50
-    connector_type: str = CONNECTOR_TYPE
+    username: str = Field(description="The username for the Couchbase server")
+    bucket: str = Field(description="The bucket to connect to on the Couchbase server")
+    connection_string: str = Field(default="couchbase://localhost", description="The connection string of the Couchbase server")
+    scope: str = Field(default="_default", description="The scope to connect to on the Couchbase server")
+    collection: str = Field(default="_default", description="The collection to connect to on the Couchbase server")
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[CouchbaseAccessConfig]
 
 
@@ -84,7 +83,7 @@ class CouchbaseUploadStager(UploadStager):
 
 
 class CouchbaseUploaderConfig(UploaderConfig):
-    batch_size: int = 50
+    batch_size: int = Field(default=50, description="Number of documents to upload per batch")
 
 
 @dataclass

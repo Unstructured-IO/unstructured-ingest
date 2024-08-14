@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import Secret
+from pydantic import Field, Secret
 from unstructured import __name__ as integration_name
 from unstructured.__version__ import __version__ as integration_version
 
@@ -32,8 +32,8 @@ CONNECTOR_TYPE = "astra"
 
 
 class AstraAccessConfig(AccessConfig):
-    token: str
-    api_endpoint: str
+    token: str = Field(description="Astra DB Token with access to the database.")
+    api_endpoint: str = Field(description="The API endpoint for the Astra DB.")
 
 
 class AstraConnectionConfig(ConnectionConfig):
@@ -78,11 +78,21 @@ class AstraUploadStager(UploadStager):
 
 
 class AstraUploaderConfig(UploaderConfig):
-    collection_name: str
-    embedding_dimension: int
-    namespace: Optional[str] = None
-    requested_indexing_policy: Optional[dict[str, Any]] = None
-    batch_size: int = 20
+    collection_name: str = Field(
+        description="The name of the Astra DB collection. "
+        "Note that the collection name must only include letters, "
+        "numbers, and underscores."
+    )
+    embedding_dimension: int = Field(
+        default=384, description="The dimensionality of the embeddings"
+    )
+    namespace: Optional[str] = Field(default=None, description="The Astra DB connection namespace.")
+    requested_indexing_policy: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="The indexing policy to use for the collection.",
+        examples=['{"deny": ["metadata"]}'],
+    )
+    batch_size: int = Field(default=20, description="Number of records per batch")
 
 
 @dataclass

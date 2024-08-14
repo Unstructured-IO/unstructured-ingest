@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -37,13 +38,23 @@ heavily on the Elasticsearch connector code, inheriting the functionality as muc
 
 
 class OpenSearchAccessConfig(AccessConfig):
-    password: Optional[str] = None
-    use_ssl: bool = False
-    verify_certs: bool = False
-    ssl_show_warn: bool = False
-    ca_certs: Optional[str] = None
-    client_cert: Optional[str] = None
-    client_key: Optional[str] = None
+    password: Optional[str] = Field(default=None, description="password when using basic auth")
+    use_ssl: bool = Field(default=False, description="use ssl for the connection")
+    verify_certs: bool = Field(default=False, description="whether to verify SSL certificates")
+    ssl_show_warn: bool = Field(
+        default=False, description="show warning when verify certs is disabled"
+    )
+    ca_certs: Optional[Path] = Field(default=None, description="path to CA bundle")
+    client_cert: Optional[Path] = Field(
+        default=None,
+        description="path to the file containing the private key and the certificate,"
+        " or cert only if using client_key",
+    )
+    client_key: Optional[Path] = Field(
+        default=None,
+        description="path to the file containing the private key"
+        " if using separate cert and key files",
+    )
 
 
 class OpenSearchClientInput(BaseModel):
@@ -58,8 +69,12 @@ class OpenSearchClientInput(BaseModel):
 
 
 class OpenSearchConnectionConfig(ConnectionConfig):
-    hosts: Optional[list[str]] = None
-    username: Optional[str] = None
+    hosts: Optional[list[str]] = Field(
+        default=None,
+        description="List of the OpenSearch hosts to connect",
+        examples=["http://localhost:9200"],
+    )
+    username: Optional[str] = Field(default=None, description="username when using basic auth")
     access_config: Secret[OpenSearchAccessConfig]
 
     def get_client_kwargs(self) -> dict:
@@ -77,11 +92,11 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         if access_config.ssl_show_warn:
             client_input_kwargs["ssl_show_warn"] = access_config.ssl_show_warn
         if access_config.ca_certs:
-            client_input_kwargs["ca_certs"] = access_config.ca_certs
+            client_input_kwargs["ca_certs"] = str(access_config.ca_certs)
         if access_config.client_cert:
-            client_input_kwargs["client_cert"] = access_config.client_cert
+            client_input_kwargs["client_cert"] = str(access_config.client_cert)
         if access_config.client_key:
-            client_input_kwargs["client_key"] = access_config.client_key
+            client_input_kwargs["client_key"] = str(access_config.client_key)
         if self.username and access_config.password:
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
         client_input = OpenSearchClientInput(**client_input_kwargs)

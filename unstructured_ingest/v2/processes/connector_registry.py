@@ -1,3 +1,4 @@
+from abc import ABC
 from dataclasses import dataclass
 from typing import Optional, Type, TypeVar
 
@@ -25,7 +26,12 @@ UploaderT = TypeVar("UploaderT", bound=Uploader)
 
 
 @dataclass
-class SourceRegistryEntry:
+class RegistryEntry(ABC):
+    pass
+
+
+@dataclass
+class SourceRegistryEntry(RegistryEntry):
     indexer: Type[IndexerT]
     downloader: Type[DownloaderT]
 
@@ -44,7 +50,7 @@ def add_source_entry(source_type: str, entry: SourceRegistryEntry):
 
 
 @dataclass
-class DestinationRegistryEntry:
+class DestinationRegistryEntry(RegistryEntry):
     uploader: Type[UploaderT]
     upload_stager: Optional[Type[UploadStagerT]] = None
 

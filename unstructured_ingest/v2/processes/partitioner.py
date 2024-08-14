@@ -17,21 +17,61 @@ if TYPE_CHECKING:
 
 
 class PartitionerConfig(BaseModel):
-    strategy: str = "auto"
-    ocr_languages: Optional[list[str]] = None
-    encoding: Optional[str] = None
-    additional_partition_args: Optional[dict[str, Any]] = None
-    skip_infer_table_types: Optional[list[str]] = None
+    strategy: str = Field(
+        default="auto",
+        description="The method that will be used to process the documents. ",
+        examples=["fast", "hi_res", "auto"],
+    )
+    ocr_languages: Optional[list[str]] = Field(
+        default=None,
+        description="A list of language packs to specify which languages to use for OCR, "
+        "The appropriate Tesseract language pack needs to be installed.",
+        examples=["eng", "deu", "eng,deu"],
+    )
+    encoding: Optional[str] = Field(
+        default=None,
+        description="Text encoding to use when reading documents. By default the encoding is detected automatically.",
+    )
+    additional_partition_args: Optional[dict[str, Any]] = Field(
+        default=None, description="Additional values to pass through to partition()"
+    )
+    skip_infer_table_types: Optional[list[str]] = Field(
+        default=None, description="Optional list of document types to skip table extraction on"
+    )
     fields_include: list[str] = Field(
         default_factory=lambda: ["element_id", "text", "type", "metadata", "embeddings"],
+        description="If set, include the specified top-level fields in an element.",
     )
-    flatten_metadata: bool = False
-    metadata_exclude: list[str] = Field(default_factory=list)
-    metadata_include: list[str] = Field(default_factory=list)
-    partition_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
-    partition_by_api: bool = False
-    api_key: Optional[SecretStr] = None
-    hi_res_model_name: Optional[str] = None
+    flatten_metadata: bool = Field(
+        default=False,
+        description="Results in flattened json elements. "
+        "Specifically, the metadata key values are brought to "
+        "the top-level of the element, and the `metadata` key itself is removed.",
+    )
+    metadata_exclude: list[str] = Field(
+        default_factory=list,
+        description="If set, drop the specified metadata " "fields if they exist.",
+    )
+    metadata_include: list[str] = Field(
+        default_factory=list,
+        description="If set, include the specified metadata "
+        "fields if they exist and drop all other fields. ",
+    )
+    partition_endpoint: Optional[str] = Field(
+        default="https://api.unstructured.io/general/v0/general",
+        description="If partitioning via api, use the following host.",
+    )
+    partition_by_api: bool = Field(
+        default=False,
+        description="Use a remote API to partition the files."
+        " Otherwise, use the function from partition.auto",
+    )
+    api_key: Optional[SecretStr] = Field(
+        default=None, description="API Key for partition endpoint."
+    )
+    hi_res_model_name: Optional[str] = Field(
+        default=None, description="Model name for hi-res strategy."
+    )
 
     def model_post_init(self, __context: Any) -> None:
         if self.metadata_exclude and self.metadata_include:

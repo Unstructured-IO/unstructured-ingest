@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import numpy as np
 import pandas as pd
 from dateutil import parser
-from pydantic import Secret
+from pydantic import Secret, Field
 
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -34,14 +34,14 @@ CONNECTOR_TYPE = "singlestore"
 
 
 class SingleStoreAccessConfig(AccessConfig):
-    password: Optional[str] = None
+    password: Optional[str] = Field(default=None, description="SingleStore password")
 
 
 class SingleStoreConnectionConfig(ConnectionConfig):
-    host: Optional[str] = None
-    port: Optional[int] = None
-    user: Optional[str] = None
-    database: Optional[str] = None
+    host: Optional[str] = Field(default=None, description="SingleStore host")
+    port: Optional[int] = Field(default=None, description="SingleStore port")
+    user: Optional[str] = Field(default=None, description="SingleStore user")
+    database: Optional[str] = Field(default=None, description="SingleStore database")
     access_config: Secret[SingleStoreAccessConfig]
 
     @requires_dependencies(["singlestoredb"], extras="singlestore")
@@ -59,7 +59,7 @@ class SingleStoreConnectionConfig(ConnectionConfig):
 
 
 class SingleStoreUploadStagerConfig(UploadStagerConfig):
-    drop_empty_cols: bool = False
+    drop_empty_cols: bool = Field(default=False, description="Drop any columns that have no data")
 
 
 @dataclass
@@ -110,8 +110,8 @@ class SingleStoreUploadStager(UploadStager):
 
 
 class SingleStoreUploaderConfig(UploaderConfig):
-    table_name: str
-    batch_size: int = 100
+    table_name: str = Field(description="SingleStore table to write contents to")
+    batch_size: int = Field(default=100, description="Batch size when writing to SingleStore")
 
 
 @dataclass
