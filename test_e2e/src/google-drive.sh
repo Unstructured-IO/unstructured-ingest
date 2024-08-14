@@ -47,7 +47,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --drive-id 1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr \
-  --service-account-key "$GCP_INGEST_SERVICE_KEY_FILE" \
+  --service-account-key-path "$GCP_INGEST_SERVICE_KEY_FILE" \
   --recursive \
   --extensions "pdf,docx" \
   --work-dir "$WORK_DIR"

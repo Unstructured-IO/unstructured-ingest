@@ -21,7 +21,6 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
-    add_destination_entry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
 
@@ -33,12 +32,19 @@ CONNECTOR_TYPE = "azure_cognitive_search"
 
 
 class AzureCognitiveSearchAccessConfig(AccessConfig):
-    azure_cognitive_search_key: str = Field(alias="key")
+    azure_cognitive_search_key: str = Field(
+        alias="key", description="Credential that is used for authenticating to an Azure service"
+    )
 
 
 class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
-    endpoint: str
-    index: str
+    endpoint: str = Field(
+        description="The URL endpoint of an Azure AI (Cognitive) search service. "
+        "In the form of https://{{service_name}}.search.windows.net"
+    )
+    index: str = Field(
+        description="The name of the Azure AI (Cognitive) Search index to connect to."
+    )
     access_config: Secret[AzureCognitiveSearchAccessConfig]
 
     @requires_dependencies(["azure.search", "azure.core"], extras="azure-cognitive-search")
@@ -60,7 +66,7 @@ class AzureCognitiveSearchUploadStagerConfig(UploadStagerConfig):
 
 
 class AzureCognitiveSearchUploaderConfig(UploaderConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 @dataclass
@@ -207,13 +213,10 @@ class AzureCognitiveSearchUploader(Uploader):
             self.write_dict(elements_dict=chunk)  # noqa: E203
 
 
-add_destination_entry(
-    destination_type=CONNECTOR_TYPE,
-    entry=DestinationRegistryEntry(
-        connection_config=AzureCognitiveSearchConnectionConfig,
-        uploader=AzureCognitiveSearchUploader,
-        uploader_config=AzureCognitiveSearchUploaderConfig,
-        upload_stager=AzureCognitiveSearchUploadStager,
-        upload_stager_config=AzureCognitiveSearchUploadStagerConfig,
-    ),
+azure_cognitive_search_destination_entry = DestinationRegistryEntry(
+    connection_config=AzureCognitiveSearchConnectionConfig,
+    uploader=AzureCognitiveSearchUploader,
+    uploader_config=AzureCognitiveSearchUploaderConfig,
+    upload_stager=AzureCognitiveSearchUploadStager,
+    upload_stager_config=AzureCognitiveSearchUploadStagerConfig,
 )
