@@ -47,7 +47,9 @@ def get_range_from_metadata(metadata: list[Any]) -> _RangeDict:
 
 
 def is_boolean_flag(field_info: FieldInfo) -> bool:
-    return field_info.annotation is bool
+    annotation = field_info.annotation
+    raw_annotation = get_raw_type(annotation)
+    return raw_annotation is bool
 
 
 def get_raw_type(val: Any) -> Any:
