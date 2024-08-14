@@ -15,6 +15,7 @@ class ClusterConfig:
 
 
 def check_bucket_health(cluster_config: ClusterConfig, url: str):
+    print("checking bucket health")
     max_attempts = 20
     attempt = 0
 
@@ -51,6 +52,7 @@ def check_bucket_health(cluster_config: ClusterConfig, url: str):
 
 
 def check_fts_service_health(cluster_config: ClusterConfig, url: str):
+    print("Checking FTS service health")
     max_attempts = 20
     attempt = 0
 

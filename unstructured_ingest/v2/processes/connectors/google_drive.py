@@ -64,7 +64,8 @@ class GoogleDriveAccessConfig(AccessConfig):
                     "service_account_key and service_account_key_path "
                     "both provided and have different values"
                 )
-
+        if key_data:
+            return key_data
         return self.service_account_key
 
 
