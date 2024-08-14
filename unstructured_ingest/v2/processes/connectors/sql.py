@@ -45,8 +45,13 @@ SecreteSQLAccessConfig = Secret[SQLAccessConfig]
 
 
 class SQLConnectionConfig(ConnectionConfig):
-    db_type: Literal["sqlite", "postgresql"] = Field(default=SQLITE_DB, description="Type of the database backend")
-    database: Optional[str] = Field(default=None, description="Database name. For sqlite databases, this is the path to the .db file.")
+    db_type: Literal["sqlite", "postgresql"] = Field(
+        default=SQLITE_DB, description="Type of the database backend"
+    )
+    database: Optional[str] = Field(
+        default=None,
+        description="Database name. For sqlite databases, this is the path to the .db file.",
+    )
     host: Optional[str] = Field(default=None, description="DB host")
     port: Optional[int] = Field(default=5432, description="DB host connection port")
     access_config: SecreteSQLAccessConfig = Field(

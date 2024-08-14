@@ -61,7 +61,8 @@ class GoogleDriveAccessConfig(AccessConfig):
                 return key_data
             else:
                 raise ValueError(
-                    "service_account_key and service_account_key_path both provided and have different values"
+                    "service_account_key and service_account_key_path "
+                    "both provided and have different values"
                 )
 
         return self.service_account_key

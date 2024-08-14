@@ -33,19 +33,31 @@ CONNECTOR_TYPE = "chroma"
 
 
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[dict[str, str]] = Field(default=None, description="A dictionary of settings to communicate with the chroma server.")
-    headers: Optional[dict[str, str]] = Field(default=None, description="A dictionary of headers to send to the Chroma server.")
+    settings: Optional[dict[str, str]] = Field(
+        default=None, description="A dictionary of settings to communicate with the chroma server."
+    )
+    headers: Optional[dict[str, str]] = Field(
+        default=None, description="A dictionary of headers to send to the Chroma server."
+    )
 
 
 class ChromaConnectionConfig(ConnectionConfig):
     collection_name: str = Field(description="The name of the Chroma collection to write into.")
     access_config: Secret[ChromaAccessConfig]
-    path: Optional[str] = Field(default=None, description="Location where Chroma is persisted, if not connecting via http.")
-    tenant: Optional[str] = Field(default="default_tenant", description="The tenant to use for this client.")
-    database: Optional[str] = Field(default="default_database", description="The database to use for this client.")
+    path: Optional[str] = Field(
+        default=None, description="Location where Chroma is persisted, if not connecting via http."
+    )
+    tenant: Optional[str] = Field(
+        default="default_tenant", description="The tenant to use for this client."
+    )
+    database: Optional[str] = Field(
+        default="default_database", description="The database to use for this client."
+    )
     host: Optional[str] = Field(default=None, description="The hostname of the Chroma server.")
     port: Optional[int] = Field(default=None, description="The port of the Chroma server.")
-    ssl: bool = Field(default=False, description="Whether to use SSL to connect to the Chroma server.")
+    ssl: bool = Field(
+        default=False, description="Whether to use SSL to connect to the Chroma server."
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 

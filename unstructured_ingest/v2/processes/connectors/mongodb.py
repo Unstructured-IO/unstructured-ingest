@@ -42,8 +42,11 @@ class MongoDBConnectionConfig(ConnectionConfig):
     access_config: SecretMongoDBAccessConfig = Field(
         default_factory=lambda: SecretMongoDBAccessConfig(secret_value=MongoDBAccessConfig())
     )
-    host: Optional[str] = Field(default=None, description="hostname or IP address or Unix domain socket path of a single mongod or "
-                "mongos instance to connect to, or a list of hostnames")
+    host: Optional[str] = Field(
+        default=None,
+        description="hostname or IP address or Unix domain socket path of a single mongod or "
+        "mongos instance to connect to, or a list of hostnames",
+    )
     database: Optional[str] = Field(default=None, description="database name to connect to")
     collection: Optional[str] = Field(default=None, description="collection name to connect to")
     port: int = Field(default=27017)

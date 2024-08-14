@@ -29,14 +29,6 @@ class _RangeDict(TypedDict, total=False):
 
 
 def get_range_from_metadata(metadata: list[Any]) -> _RangeDict:
-    """Convert Pydantic numerical constraints to keyword argumetns compatible with `IntRange` and `FloatRange`.
-
-    Args:
-        metadata: list of Pydantic constraints
-
-    Returns:
-        a dictionary
-    """
     range_args: _RangeDict = {}
     for constraint in metadata:
         if isinstance(constraint, Le):

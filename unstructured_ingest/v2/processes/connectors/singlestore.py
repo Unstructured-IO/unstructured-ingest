@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import numpy as np
 import pandas as pd
 from dateutil import parser
-from pydantic import Secret, Field
+from pydantic import Field, Secret
 
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies

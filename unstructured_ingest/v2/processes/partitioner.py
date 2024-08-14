@@ -30,7 +30,8 @@ class PartitionerConfig(BaseModel):
     )
     encoding: Optional[str] = Field(
         default=None,
-        description="Text encoding to use when reading documents. By default the encoding is detected automatically.",
+        description="Text encoding to use when reading documents. "
+        "By default the encoding is detected automatically.",
     )
     additional_partition_args: Optional[dict[str, Any]] = Field(
         default=None, description="Additional values to pass through to partition()"

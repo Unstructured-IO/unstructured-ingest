@@ -33,7 +33,9 @@ CONNECTOR_TYPE = "pinecone"
 
 
 class PineconeAccessConfig(AccessConfig):
-    pinecone_api_key: Optional[str] = Field(default=None, description="API key for Pinecone.", alias="api_key")
+    pinecone_api_key: Optional[str] = Field(
+        default=None, description="API key for Pinecone.", alias="api_key"
+    )
 
 
 SecretPineconeAccessConfig = Secret[PineconeAccessConfig]

@@ -77,7 +77,7 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
     api_key_id: Optional[str] = Field(
         default=None,
         description="id associated with api key used for authentication: "
-        "https://www.elastic.co/guide/en/elasticsearch/reference/current/security-api-create-api-key.html",
+        "https://www.elastic.co/guide/en/elasticsearch/reference/current/security-api-create-api-key.html",  # noqa: E501
     )
     ca_certs: Optional[Path] = None
     access_config: Secret[ElasticsearchAccessConfig]
@@ -309,7 +309,9 @@ class ElasticsearchDownloader(Downloader):
 
 
 class ElasticsearchUploadStagerConfig(UploadStagerConfig):
-    index_name: str = Field(description="Name of the Elasticsearch index to pull data from, or upload data to.")
+    index_name: str = Field(
+        description="Name of the Elasticsearch index to pull data from, or upload data to."
+    )
 
 
 @dataclass
@@ -349,11 +351,18 @@ class ElasticsearchUploadStager(UploadStager):
 
 
 class ElasticsearchUploaderConfig(UploaderConfig):
-    index_name: str = Field(description="Name of the Elasticsearch index to pull data from, or upload data to.")
-    batch_size_bytes: int = Field(default=15_000_000, description="Size limit (in bytes) for each batch of items to be uploaded. Check"
-                " https://www.elastic.co/guide/en/elasticsearch/guide/current/bulk.html"
-                "#_how_big_is_too_big for more information.")
-    num_threads: int = Field(default=4, description="Number of threads to be used while uploading content")
+    index_name: str = Field(
+        description="Name of the Elasticsearch index to pull data from, or upload data to."
+    )
+    batch_size_bytes: int = Field(
+        default=15_000_000,
+        description="Size limit (in bytes) for each batch of items to be uploaded. Check"
+        " https://www.elastic.co/guide/en/elasticsearch/guide/current/bulk.html"
+        "#_how_big_is_too_big for more information.",
+    )
+    num_threads: int = Field(
+        default=4, description="Number of threads to be used while uploading content"
+    )
 
 
 @dataclass

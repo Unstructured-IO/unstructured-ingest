@@ -4,7 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from pydantic import Secret, Field
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
@@ -37,9 +37,15 @@ class CouchbaseAccessConfig(AccessConfig):
 class CouchbaseConnectionConfig(ConnectionConfig):
     username: str = Field(description="The username for the Couchbase server")
     bucket: str = Field(description="The bucket to connect to on the Couchbase server")
-    connection_string: str = Field(default="couchbase://localhost", description="The connection string of the Couchbase server")
-    scope: str = Field(default="_default", description="The scope to connect to on the Couchbase server")
-    collection: str = Field(default="_default", description="The collection to connect to on the Couchbase server")
+    connection_string: str = Field(
+        default="couchbase://localhost", description="The connection string of the Couchbase server"
+    )
+    scope: str = Field(
+        default="_default", description="The scope to connect to on the Couchbase server"
+    )
+    collection: str = Field(
+        default="_default", description="The collection to connect to on the Couchbase server"
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[CouchbaseAccessConfig]
 

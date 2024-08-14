@@ -13,7 +13,7 @@ from unstructured.staging.base import elements_from_json
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 EmbedderProvider = Enum(
-    "EmbedderProvider", {v: v for v in EMBEDDING_PROVIDER_TO_CLASS_MAP.keys()}, type=str
+    "EmbedderProvider", {v: v for v in EMBEDDING_PROVIDER_TO_CLASS_MAP}, type=str
 )
 
 

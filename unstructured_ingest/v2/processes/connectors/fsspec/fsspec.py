@@ -260,7 +260,9 @@ class FsspecDownloader(Downloader):
 
 
 class FsspecUploaderConfig(FileConfig, UploaderConfig):
-    overwrite: bool = Field(default=False, description="If true, an existing file will be overwritten.")
+    overwrite: bool = Field(
+        default=False, description="If true, an existing file will be overwritten."
+    )
 
 
 FsspecUploaderConfigT = TypeVar("FsspecUploaderConfigT", bound=FsspecUploaderConfig)
