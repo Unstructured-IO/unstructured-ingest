@@ -69,7 +69,7 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
 
 class PineconeUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
-    num_of_processes: int = Field(default=4, description="Number of processes to use for uploading")
+    num_processes: int = Field(default=4, description="Number of processes to use for uploading")
 
 
 @dataclass
@@ -157,18 +157,18 @@ class PineconeUploader(Uploader):
             f" index named {self.connection_config.index_name}"
             f" environment named {self.connection_config.environment}"
             f" with batch size {self.upload_config.batch_size}"
-            f" with {self.upload_config.num_of_processes} (number of) processes"
+            f" with {self.upload_config.num_processes} (number of) processes"
         )
 
         pinecone_batch_size = self.upload_config.batch_size
 
-        if self.upload_config.num_of_processes == 1:
+        if self.upload_config.num_processes == 1:
             for batch in batch_generator(elements_dict, pinecone_batch_size):
                 self.upsert_batch(batch)  # noqa: E203
 
         else:
             with mp.Pool(
-                processes=self.upload_config.num_of_processes,
+                processes=self.upload_config.num_processes,
             ) as pool:
                 pool.map(
                     self.upsert_batch, list(batch_generator(elements_dict, pinecone_batch_size))

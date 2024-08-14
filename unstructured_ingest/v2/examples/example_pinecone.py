@@ -52,5 +52,5 @@ if __name__ == "__main__":
             ),
         ),
         stager_config=PineconeUploadStagerConfig(),
-        uploader_config=PineconeUploaderConfig(batch_size=10, num_of_processes=2),
+        uploader_config=PineconeUploaderConfig(batch_size=10, num_processes=2),
     ).run()
