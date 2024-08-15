@@ -20,6 +20,8 @@ from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
+from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
+from .kdbai import kdbai_destination_entry
 from .local import CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE
 from .local import local_destination_entry, local_source_entry
 from .milvus import CONNECTOR_TYPE as MILVUS_CONNECTOR_TYPE
@@ -88,3 +90,5 @@ add_destination_entry(
     destination_type=AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE,
     entry=azure_cognitive_search_destination_entry,
 )
+
+add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)

@@ -1,6 +1,6 @@
 import json
 import uuid
-from dataclasses import field
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -29,6 +29,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
 if TYPE_CHECKING:
     from kdbai_client import Session, Table
 
+CONNECTOR_TYPE = "kdbai"
+
 
 class KdbaiAccessConfig(AccessConfig):
     api_key: str = Field()
@@ -51,6 +53,7 @@ class KdbaiUploadStagerConfig(UploadStagerConfig):
     pass
 
 
+@dataclass
 class KdbaiUploadStager(UploadStager):
     upload_stager_config: KdbaiUploadStagerConfig = field(default_factory=KdbaiUploadStagerConfig)
 
@@ -77,7 +80,6 @@ class KdbaiUploadStager(UploadStager):
                     "embedding": element.get("embedding"),
                     "metadata": flatten_dict(
                         dictionary=element.get("metadata"),
-                        separator="-",
                         flatten_lists=True,
                         remove_none=True,
                     ),
@@ -94,9 +96,11 @@ class KdbaiUploaderConfig(UploaderConfig):
     batch_size: int = 100
 
 
+@dataclass
 class KdbaiUploader(Uploader):
     connection_config: KdbaiConnectionConfig
     upload_config: KdbaiUploaderConfig
+    connector_type: str = field(default=CONNECTOR_TYPE, init=False)
 
     def precheck(self) -> None:
         try:
@@ -116,6 +120,10 @@ class KdbaiUploader(Uploader):
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
         df = pd.concat((pd.read_csv(content.path) for content in contents), ignore_index=True)
+        logger.debug(
+            f"uploading {len(df)} entries to {self.connection_config.endpoint} "
+            f"db in table {self.upload_config.table_name}"
+        )
         for _, batch_df in df.groupby(np.arange(len(df)) // self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
 

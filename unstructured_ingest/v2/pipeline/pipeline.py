@@ -188,22 +188,26 @@ class Pipeline:
         indices = self.indexer_step.run()
         indices_inputs = [{"file_data_path": i} for i in indices]
         if not indices_inputs:
+            logger.info("No files to process after indexer, exiting")
             return
 
         # Initial filtering on indexed content
         indices_inputs = self.apply_filter(records=indices_inputs)
         if not indices_inputs:
+            logger.info("No files to process after filtering indexed content, exiting")
             return
 
         # Download associated content to local file system
         downloaded_data = self.downloader_step(indices_inputs)
         downloaded_data = self.clean_results(results=downloaded_data)
         if not downloaded_data:
+            logger.info("No files to process after downloader, exiting")
             return
 
         # Post download filtering
         downloaded_data = self.apply_filter(records=downloaded_data)
         if not downloaded_data:
+            logger.info("No files to process after filtering downloaded content, exiting")
             return
 
         # Run uncompress if available
@@ -215,6 +219,7 @@ class Pipeline:
             # Post uncompress filtering
             downloaded_data = self.apply_filter(records=downloaded_data)
             if not downloaded_data:
+                logger.info("No files to process after filtering uncompressed content, exiting")
                 return
 
         if not downloaded_data:
@@ -224,6 +229,7 @@ class Pipeline:
         elements = self.partitioner_step(downloaded_data)
         elements = self.clean_results(results=elements)
         if not elements:
+            logger.info("No files to process after partitioning, exiting")
             return
 
         # Run element specific modifiers
@@ -231,6 +237,7 @@ class Pipeline:
             elements = step(elements) if step else elements
             elements = self.clean_results(results=elements)
             if not elements:
+                logger.info(f"No files to process after {step.__class__.__name__}, exiting")
                 return
 
         # Upload the final result
@@ -333,7 +340,7 @@ class Pipeline:
             )
         if len(destination_entry) != 1:
             raise ValueError(
-                "no entry found in source registry with matching uploader, "
+                "no entry found in destination registry with matching uploader, "
                 "stager and connection configs"
             )
 
