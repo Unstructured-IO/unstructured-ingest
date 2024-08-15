@@ -1,3 +1,4 @@
 -r ../common/base.in
 
 atlassian-python-api
+requests

@@ -122,6 +122,7 @@ connectors_reqs = {
     "weaviate": load_requirements("requirements/connectors/weaviate.in"),
     "databricks-volumes": load_requirements("requirements/connectors/databricks-volumes.in"),
     "singlestore": load_requirements("requirements/connectors/singlestore.in"),
+    "vectara": load_requirements("requirements/connectors/vectara.in"),
 }
 
 embed_reqs = {

@@ -4,8 +4,6 @@ import typing as t
 import uuid
 from dataclasses import dataclass, field
 
-import requests
-
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.interfaces import (
@@ -17,6 +15,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 
 BASE_URL = "https://api.vectara.io/v1"
 
@@ -95,6 +94,7 @@ class VectaraDestinationConnector(BaseDestinationConnector):
     def initialize(self):
         self.vectara()
 
+    @requires_dependencies(["requests"], extras="vectara")
     def _request(
         self,
         endpoint: str,
@@ -102,6 +102,8 @@ class VectaraDestinationConnector(BaseDestinationConnector):
         params: t.Mapping[str, t.Any] = None,
         data: t.Mapping[str, t.Any] = None,
     ):
+        import requests
+
         url = f"{BASE_URL}/{endpoint}"
 
         headers = {
@@ -119,7 +121,10 @@ class VectaraDestinationConnector(BaseDestinationConnector):
         return response.json()
 
     # Get Oauth2 JWT token
+    @requires_dependencies(["requests"], extras="vectara")
     def _get_jwt_token(self):
+        import requests
+
         """Connect to the server and get a JWT token."""
         token_endpoint = self.connector_config.token_url.format(self.connector_config.customer_id)
         headers = {
