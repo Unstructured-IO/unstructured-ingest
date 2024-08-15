@@ -2,3 +2,5 @@
 
 notion-client
 htmlBuilder
+httpx
+backoff

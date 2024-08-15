@@ -95,9 +95,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install local deps
+        run: |
+          pip install ".[cli]"
       - name: Validate --help
         run: |
-          pip install .
           unstructured-ingest --help
 
   test_ingest_unit:
