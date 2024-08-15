@@ -13,7 +13,7 @@ def id_to_hash(element: dict, sequence_number: int) -> str:
 
     Returns: new ID value
     """
-    filename = element["metadata"]["filename"]
+    filename = element["metadata"].get("filename")
     text = element["text"]
     page_number = element["metadata"].get("page_number")
     data = f"{filename}{text}{page_number}{sequence_number}"
@@ -24,7 +24,7 @@ def id_to_hash(element: dict, sequence_number: int) -> str:
 def assign_and_map_hash_ids(elements: list[dict]) -> list[dict]:
     # -- generate sequence number for each element on a page --
     elements = elements.copy()
-    page_numbers = [e.get("metadata", {}).get("page_number") for e in elements]
+    page_numbers = [e["metadata"].get("page_number") for e in elements]
     page_seq_pairs = [
         seq_on_page for page, group in groupby(page_numbers) for seq_on_page, _ in enumerate(group)
     ]
@@ -37,7 +37,7 @@ def assign_and_map_hash_ids(elements: list[dict]) -> list[dict]:
 
     # -- map old parent IDs to new ones --
     for e in elements:
-        parent_id = e.get("metadata", {}).get("parent_id")
+        parent_id = e["metadata"].get("parent_id")
         if not parent_id:
             continue
         e["metadata"]["parent_id"] = old_to_new_mapping[parent_id]
