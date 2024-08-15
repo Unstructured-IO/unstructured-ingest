@@ -5,6 +5,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
+    CONNECTOR_TYPE,
     S3ConnectionConfig,
     S3DownloaderConfig,
     S3IndexerConfig,
@@ -18,7 +19,7 @@ from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
 base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
-work_dir = base_path / "tmp_ingest"
+work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
 

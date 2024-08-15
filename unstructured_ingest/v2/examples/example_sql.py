@@ -12,6 +12,7 @@ from unstructured_ingest.v2.processes.connectors.local import (
     LocalIndexerConfig,
 )
 from unstructured_ingest.v2.processes.connectors.sql import (
+    CONNECTOR_TYPE,
     POSTGRESQL_DB,
     SQLITE_DB,
     SQLAccessConfig,
@@ -22,9 +23,9 @@ from unstructured_ingest.v2.processes.connectors.sql import (
 from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent.parent
+base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
-work_dir = base_path / "tmp_ingest"
+work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
 

@@ -114,14 +114,14 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         return OpenSearch(**self.get_client_kwargs())
 
 
-class OpensearchIndexerConfig(ElasticsearchIndexerConfig):
+class OpenSearchIndexerConfig(ElasticsearchIndexerConfig):
     pass
 
 
 @dataclass
 class OpenSearchIndexer(ElasticsearchIndexer):
     connection_config: OpenSearchConnectionConfig
-    index_config: OpensearchIndexerConfig
+    index_config: OpenSearchIndexerConfig
     client: "OpenSearch" = field(init=False)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -131,14 +131,14 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         return scan
 
 
-class OpensearchDownloaderConfig(ElasticsearchDownloaderConfig):
+class OpenSearchDownloaderConfig(ElasticsearchDownloaderConfig):
     pass
 
 
 @dataclass
 class OpenSearchDownloader(ElasticsearchDownloader):
     connection_config: OpenSearchConnectionConfig
-    download_config: OpensearchDownloaderConfig
+    download_config: OpenSearchDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -149,14 +149,14 @@ class OpenSearchDownloader(ElasticsearchDownloader):
         return AsyncOpenSearch, async_scan
 
 
-class OpensearchUploaderConfig(ElasticsearchUploaderConfig):
+class OpenSearchUploaderConfig(ElasticsearchUploaderConfig):
     pass
 
 
 @dataclass
 class OpenSearchUploader(ElasticsearchUploader):
     connection_config: OpenSearchConnectionConfig
-    upload_config: OpensearchUploaderConfig
+    upload_config: OpenSearchUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -166,28 +166,28 @@ class OpenSearchUploader(ElasticsearchUploader):
         return parallel_bulk
 
 
-class OpensearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
+class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
     pass
 
 
 @dataclass
-class OpensearchUploadStager(ElasticsearchUploadStager):
-    upload_stager_config: OpensearchUploadStagerConfig
+class OpenSearchUploadStager(ElasticsearchUploadStager):
+    upload_stager_config: OpenSearchUploadStagerConfig
 
 
 opensearch_source_entry = SourceRegistryEntry(
     connection_config=OpenSearchConnectionConfig,
     indexer=OpenSearchIndexer,
-    indexer_config=OpensearchIndexerConfig,
+    indexer_config=OpenSearchIndexerConfig,
     downloader=OpenSearchDownloader,
-    downloader_config=OpensearchDownloaderConfig,
+    downloader_config=OpenSearchDownloaderConfig,
 )
 
 
 opensearch_destination_entry = DestinationRegistryEntry(
     connection_config=OpenSearchConnectionConfig,
-    upload_stager_config=OpensearchUploadStagerConfig,
-    upload_stager=OpensearchUploadStager,
-    uploader_config=OpensearchUploaderConfig,
+    upload_stager_config=OpenSearchUploadStagerConfig,
+    upload_stager=OpenSearchUploadStager,
+    uploader_config=OpenSearchUploaderConfig,
     uploader=OpenSearchUploader,
 )
