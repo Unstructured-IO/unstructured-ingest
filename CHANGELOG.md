@@ -1,10 +1,11 @@
-## 0.0.4-dev2
+## 0.0.4-dev3
 
 ### Enhancements
 
 * **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
 * **Leverage pydantic base models** All user-supplied configs are now derived from pydantic base models to leverage better type checking and add built in support for sensitive fields.
 * **Autogenerate click options from base models** Leverage th pydantic base models for all configs to autogenerate teh cli options exposed when running ingest as a CLI.
+* **Add VoyageAI to V2 embedders**
 
 ## 0.0.3
 
