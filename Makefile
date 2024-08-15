@@ -14,6 +14,10 @@ pip-compile:
 install-lint:
 	pip install -r requirements/lint.txt
 
+.PHONY: install-cli
+install-cli:
+	pip install -r requirements/cli.txt
+
 .PHONY: install-test
 install-test:
 	pip install -r requirements/test.txt
@@ -47,7 +51,7 @@ install-docker-compose:
 	ARCH=${ARCH} ./scripts/install-docker-compose.sh
 
 .PHONY: install-ci
-install-ci: install-all-connectors install-all-embedders
+install-ci: install-all-connectors install-all-embedders install-cli
 	pip install -r requirements/local_partition/pdf.txt
 	pip install -r requirements/local_partition/docx.txt
 	pip install -r requirements/local_partition/pptx.txt
