@@ -20,7 +20,7 @@ install-cli:
 
 .PHONY: install-client
 install-client:
-	pip install -r requirements/client.txt
+	pip install -r requirements/remote/client.txt
 
 .PHONY: install-test
 install-test:

@@ -14,15 +14,16 @@ def id_to_hash(element: dict, sequence_number: int) -> str:
     Returns: new ID value
     """
     filename = element["metadata"]["filename"]
-    text = element["element"]
-    page_number = element["metadata"]["page_number"]
+    text = element["text"]
+    page_number = element["metadata"].get("page_number")
     data = f"{filename}{text}{page_number}{sequence_number}"
     element["_element_id"] = hashlib.sha256(data.encode()).hexdigest()[:32]
-    return element["id"]
+    return element["element_id"]
 
 
 def assign_and_map_hash_ids(elements: list[dict]) -> list[dict]:
     # -- generate sequence number for each element on a page --
+    elements = elements.copy()
     page_numbers = [e.get("metadata", {}).get("page_number") for e in elements]
     page_seq_pairs = [
         seq_on_page for page, group in groupby(page_numbers) for seq_on_page, _ in enumerate(group)
@@ -30,7 +31,7 @@ def assign_and_map_hash_ids(elements: list[dict]) -> list[dict]:
 
     # -- assign hash IDs to elements --
     old_to_new_mapping = {
-        element["id"]: id_to_hash(element=element, sequence_number=seq_on_page_counter)
+        element["element_id"]: id_to_hash(element=element, sequence_number=seq_on_page_counter)
         for element, seq_on_page_counter in zip(elements, page_seq_pairs)
     }
 
