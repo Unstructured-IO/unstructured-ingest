@@ -9,4 +9,4 @@ if ! python -c "import sys; assert sys.version_info.major == $major and sys.vers
 fi
 
 find ./requirements -type f -name "*.txt" ! -name "constraints.txt" -exec rm '{}' ';'
-find ./requirements -type f -name "*.in" ! -name "base.in" -exec pip-compile --upgrade '{}' ';'
+find ./requirements -type f -name "*.in" -exec pip-compile --upgrade '{}' ';'
