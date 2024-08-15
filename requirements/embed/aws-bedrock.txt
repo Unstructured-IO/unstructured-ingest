@@ -220,6 +220,7 @@ tenacity==8.5.0
     #   langchain-core
 tqdm==4.66.5
     # via
+    #   -r ./requirements/embed/../common/base.in
     #   nltk
     #   unstructured
 typing-extensions==4.12.2

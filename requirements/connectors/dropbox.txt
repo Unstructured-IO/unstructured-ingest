@@ -60,6 +60,8 @@ six==1.16.0
     #   stone
 stone==3.3.1
     # via dropbox
+tqdm==4.66.5
+    # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
     #   pydantic

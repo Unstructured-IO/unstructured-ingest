@@ -65,6 +65,8 @@ tomli==2.0.1
     # via
     #   build
     #   singlestoredb
+tqdm==4.66.5
+    # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
     #   pydantic

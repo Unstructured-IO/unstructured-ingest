@@ -128,6 +128,8 @@ six==1.16.0
     # via python-dateutil
 soupsieve==2.6
     # via beautifulsoup4
+tqdm==4.66.5
+    # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
     #   pydantic

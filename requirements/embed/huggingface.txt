@@ -219,6 +219,7 @@ torch==2.4.0
     #   sentence-transformers
 tqdm==4.66.5
     # via
+    #   -r ./requirements/embed/../common/base.in
     #   huggingface-hub
     #   nltk
     #   sentence-transformers

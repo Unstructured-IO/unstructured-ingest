@@ -72,6 +72,8 @@ s3fs==2024.5.0
     # via -r ./requirements/connectors/s3.in
 six==1.16.0
     # via python-dateutil
+tqdm==4.66.5
+    # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
     #   aioitertools

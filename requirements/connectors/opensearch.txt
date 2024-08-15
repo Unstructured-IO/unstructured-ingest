@@ -50,6 +50,8 @@ six==1.16.0
     # via
     #   opensearch-py
     #   python-dateutil
+tqdm==4.66.5
+    # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
     #   pydantic

@@ -178,7 +178,7 @@ onnx==1.16.2
     # via
     #   unstructured
     #   unstructured-inference
-onnxruntime==1.18.1
+onnxruntime==1.19.0
     # via unstructured-inference
 opencv-python==4.8.0.76
     # via
@@ -359,6 +359,7 @@ torchvision==0.19.0
     #   timm
 tqdm==4.66.5
     # via
+    #   -r ./requirements/local_partition/../common/base.in
     #   huggingface-hub
     #   iopath
     #   nltk
@@ -394,7 +395,7 @@ unstructured-client==0.25.5
     #   unstructured
 unstructured-inference==0.7.36
     # via unstructured
-unstructured-pytesseract==0.3.12
+unstructured-pytesseract==0.3.13
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
     #   unstructured

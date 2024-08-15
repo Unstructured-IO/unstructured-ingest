@@ -136,6 +136,7 @@ tabulate==0.9.0
     # via unstructured
 tqdm==4.66.5
     # via
+    #   -r ./requirements/local_partition/../common/base.in
     #   nltk
     #   unstructured
 typing-extensions==4.12.2

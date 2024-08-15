@@ -151,6 +151,7 @@ tiktoken==0.7.0
     # via -r ./requirements/embed/octoai.in
 tqdm==4.66.5
     # via
+    #   -r ./requirements/embed/../common/base.in
     #   nltk
     #   openai
     #   unstructured

@@ -51,7 +51,9 @@ pytz==2024.1
 six==1.16.0
     # via python-dateutil
 tqdm==4.66.5
-    # via milvus-lite
+    # via
+    #   -r ./requirements/connectors/../common/base.in
+    #   milvus-lite
 typing-extensions==4.12.2
     # via
     #   pydantic
