@@ -11,7 +11,6 @@ from pathlib import Path
 from dataclasses_json import DataClassJsonMixin
 
 from unstructured_ingest.error import SourceConnectionNetworkError
-from unstructured_ingest.ingest_backoff import RetryHandler
 from unstructured_ingest.interfaces import (
     BaseDestinationConnector,
     BaseSourceConnector,
@@ -21,6 +20,9 @@ from unstructured_ingest.interfaces import (
     RetryStrategyConfig,
 )
 from unstructured_ingest.logger import ingest_log_streaming_init, logger
+
+if t.TYPE_CHECKING:
+    from unstructured_ingest.ingest_backoff import RetryHandler
 
 
 @dataclass
@@ -146,9 +148,11 @@ class SourceNode(PipelineNode):
     retry_strategy_config: t.Optional[RetryStrategyConfig] = None
 
     @property
-    def retry_strategy(self) -> t.Optional[RetryHandler]:
+    def retry_strategy(self) -> t.Optional["RetryHandler"]:
         if retry_strategy_config := self.retry_strategy_config:
             import backoff
+
+            from unstructured_ingest.ingest_backoff import RetryHandler
 
             return RetryHandler(
                 backoff.expo,
