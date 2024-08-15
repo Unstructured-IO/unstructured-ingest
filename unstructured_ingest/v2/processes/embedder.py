@@ -85,7 +85,7 @@ class EmbedderConfig(BaseModel):
                 VoyageAIEmbeddingEncoder,
             )
 
-            return VoyageAIEmbeddingEncoder(config=VoyageAIEmbeddingConfig(**kwargs))     
+            return VoyageAIEmbeddingEncoder(config=VoyageAIEmbeddingConfig(**kwargs))
         else:
             raise ValueError(f"{self.embedding_provider} not a recognized encoder")
 
