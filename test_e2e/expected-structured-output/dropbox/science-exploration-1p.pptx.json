@@ -16,8 +16,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -38,8 +37,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -60,8 +58,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -82,8 +79,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -104,8 +100,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -126,8 +121,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -148,8 +142,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -170,8 +163,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -192,8 +184,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -214,8 +205,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -236,8 +226,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -258,8 +247,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   },
@@ -280,8 +268,7 @@
           "protocol": "dropbox",
           "remote_file_path": "dropbox://test-input/",
           "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
-        },
-        "filesize_bytes": 1235192
+        }
       }
     }
   }

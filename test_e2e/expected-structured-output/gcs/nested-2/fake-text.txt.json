@@ -17,8 +17,7 @@
           "file_id": "utic-test-ingest-fixtures/nested-2/fake-text.txt/1687304904189941"
         },
         "date_created": "1687304904.192",
-        "date_modified": "1687304904.192",
-        "filesize_bytes": 169
+        "date_modified": "1687304904.192"
       }
     }
   },
@@ -40,8 +39,7 @@
           "file_id": "utic-test-ingest-fixtures/nested-2/fake-text.txt/1687304904189941"
         },
         "date_created": "1687304904.192",
-        "date_modified": "1687304904.192",
-        "filesize_bytes": 169
+        "date_modified": "1687304904.192"
       }
     }
   },
@@ -63,8 +61,7 @@
           "file_id": "utic-test-ingest-fixtures/nested-2/fake-text.txt/1687304904189941"
         },
         "date_created": "1687304904.192",
-        "date_modified": "1687304904.192",
-        "filesize_bytes": 169
+        "date_modified": "1687304904.192"
       }
     }
   },
@@ -86,8 +83,7 @@
           "file_id": "utic-test-ingest-fixtures/nested-2/fake-text.txt/1687304904189941"
         },
         "date_created": "1687304904.192",
-        "date_modified": "1687304904.192",
-        "filesize_bytes": 169
+        "date_modified": "1687304904.192"
       }
     }
   },
@@ -109,8 +105,7 @@
           "file_id": "utic-test-ingest-fixtures/nested-2/fake-text.txt/1687304904189941"
         },
         "date_created": "1687304904.192",
-        "date_modified": "1687304904.192",
-        "filesize_bytes": 169
+        "date_modified": "1687304904.192"
       }
     }
   },
@@ -132,8 +127,7 @@
           "file_id": "utic-test-ingest-fixtures/nested-2/fake-text.txt/1687304904189941"
         },
         "date_created": "1687304904.192",
-        "date_modified": "1687304904.192",
-        "filesize_bytes": 169
+        "date_modified": "1687304904.192"
       }
     }
   }
