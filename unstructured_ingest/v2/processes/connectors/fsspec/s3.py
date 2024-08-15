@@ -6,8 +6,8 @@ from time import time
 from typing import Any, Generator, Optional
 
 from pydantic import Field, Secret
-from unstructured.utils import requires_dependencies
 
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     DownloadResponse,
     FileData,

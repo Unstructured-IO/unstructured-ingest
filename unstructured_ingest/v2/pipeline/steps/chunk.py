@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
-from unstructured.staging.base import elements_to_dicts
-
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
@@ -68,7 +66,7 @@ class ChunkStep(PipelineStep):
             chunked_content_raw = await fn(**fn_kwargs)
         self._save_output(
             output_filepath=str(output_filepath),
-            chunked_content=elements_to_dicts(chunked_content_raw),
+            chunked_content=chunked_content_raw,
         )
         return ChunkStepResponse(file_data_path=file_data_path, path=str(output_filepath))
 

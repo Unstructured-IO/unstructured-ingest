@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
-from unstructured.__version__ import __version__ as unstructured_version
 
+from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies

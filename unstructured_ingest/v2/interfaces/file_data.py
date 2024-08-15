@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 from dataclasses_json import DataClassJsonMixin
-from unstructured.documents.elements import DataSourceMetadata
 
 
 @dataclass
@@ -23,7 +22,14 @@ class SourceIdentifiers:
 
 
 @dataclass
-class FileDataSourceMetadata(DataSourceMetadata):
+class FileDataSourceMetadata(DataClassJsonMixin):
+    url: Optional[str] = None
+    version: Optional[str] = None
+    record_locator: Optional[dict[str, Any]] = None
+    date_created: Optional[str] = None
+    date_modified: Optional[str] = None
+    date_processed: Optional[str] = None
+    permissions_data: Optional[list[dict[str, Any]]] = None
     filesize_bytes: Optional[int] = None
 
 

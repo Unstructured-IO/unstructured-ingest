@@ -1,6 +1,5 @@
 -c constraints.txt
 
 python-dateutil
-unstructured
 pandas
 pydantic

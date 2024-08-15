@@ -1,26 +1,27 @@
 from abc import ABC
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import BaseModel, Field, SecretStr
-from unstructured.documents.elements import Element
-from unstructured.embed import EMBEDDING_PROVIDER_TO_CLASS_MAP
-from unstructured.embed.interfaces import BaseEmbeddingEncoder
-from unstructured.staging.base import elements_from_json
 
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
-EmbedderProvider = Enum(
-    "EmbedderProvider", {v: v for v in EMBEDDING_PROVIDER_TO_CLASS_MAP}, type=str
-)
+if TYPE_CHECKING:
+    from unstructured.embed.interfaces import BaseEmbeddingEncoder
 
 
 class EmbedderConfig(BaseModel):
-    embedding_provider: Optional[EmbedderProvider] = Field(
-        default=None, description="Type of the embedding class to be used."
-    )
+    embedding_provider: Optional[
+        Literal[
+            "langchain-openai",
+            "langchain-huggingface",
+            "langchain-aws-bedrock",
+            "langchain-vertexai",
+            "langchain-voyageai",
+            "octoai",
+        ]
+    ] = Field(default=None, description="Type of the embedding class to be used.")
     embedding_api_key: Optional[SecretStr] = Field(
         default=None,
         description="API key for the embedding model, for the case an API key is needed.",
@@ -40,7 +41,7 @@ class EmbedderConfig(BaseModel):
         default="us-west-2", description="AWS region used for AWS-based embedders, such as bedrock"
     )
 
-    def get_embedder(self) -> BaseEmbeddingEncoder:
+    def get_embedder(self) -> "BaseEmbeddingEncoder":
         kwargs: dict[str, Any] = {}
         if self.embedding_api_key:
             kwargs["api_key"] = self.embedding_api_key.get_secret_value()
@@ -87,10 +88,13 @@ class EmbedderConfig(BaseModel):
 class Embedder(BaseProcess, ABC):
     config: EmbedderConfig
 
-    def run(self, elements_filepath: Path, **kwargs: Any) -> list[Element]:
+    def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
+        from unstructured.staging.base import elements_from_json
+
         # TODO update base embedder classes to support async
         embedder = self.config.get_embedder()
         elements = elements_from_json(filename=str(elements_filepath))
         if not elements:
-            return elements
-        return embedder.embed_documents(elements=elements)
+            return [e.to_dict() for e in elements]
+        embedded_elements = embedder.embed_documents(elements=elements)
+        return [e.to_dict() for e in embedded_elements]

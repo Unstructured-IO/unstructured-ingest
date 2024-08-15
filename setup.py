@@ -151,7 +151,7 @@ docs_reqs = {
     "xlsx": xlsx_reqs,
 }
 
-extras_require = {}
+extras_require = {"remote": load_requirements("requirements/remote/client.in")}
 for d in [docs_reqs, connectors_reqs, embed_reqs]:
     extras_require.update(d)
 

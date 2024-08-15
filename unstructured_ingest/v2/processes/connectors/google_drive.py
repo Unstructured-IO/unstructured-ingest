@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
-from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 
 from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,

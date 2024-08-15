@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
-from unstructured.staging.base import flatten_dict
-from unstructured.utils import requires_dependencies
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -51,11 +50,12 @@ class PineconeConnectionConfig(ConnectionConfig):
     @requires_dependencies(["pinecone"], extras="pinecone")
     def get_index(self) -> "PineconeIndex":
         from pinecone import Pinecone
-        from unstructured import __version__ as unstructured_version
+
+        from unstructured_ingest import __version__ as unstructured_version
 
         pc = Pinecone(
             api_key=self.access_config.get_secret_value().pinecone_api_key,
-            source_tag=f"unstructured=={unstructured_version}",
+            source_tag=f"unstructured_ingest=={unstructured_version}",
         )
 
         index = pc.Index(self.index_name)
