@@ -33,8 +33,8 @@ CONNECTOR_TYPE = "milvus"
 
 
 class MilvusAccessConfig(AccessConfig):
-    password: Optional[str] = None
-    token: Optional[str] = None
+    password: Optional[str] = Field(default=None, description="Milvus password")
+    token: Optional[str] = Field(default=None, description="Milvus access token")
 
 
 SecretMilvusAccessConfig = Secret[MilvusAccessConfig]
@@ -44,9 +44,11 @@ class MilvusConnectionConfig(ConnectionConfig):
     access_config: SecretMilvusAccessConfig = Field(
         default_factory=lambda: SecretMilvusAccessConfig(secret_value=MilvusAccessConfig())
     )
-    uri: Optional[str] = None
-    user: Optional[str] = None
-    db_name: Optional[str] = None
+    uri: Optional[str] = Field(
+        default=None, description="Milvus uri", examples=["http://localhost:19530"]
+    )
+    user: Optional[str] = Field(default=None, description="Milvus user")
+    db_name: Optional[str] = Field(default=None, description="Milvus database name")
 
     def get_connection_kwargs(self) -> dict[str, Any]:
         access_config = self.access_config.get_secret_value()
@@ -132,8 +134,10 @@ class MilvusUploadStager(UploadStager):
 
 
 class MilvusUploaderConfig(UploaderConfig):
-    collection_name: str
-    num_of_processes: int = 4
+    collection_name: str = Field(description="Milvus collections to write to")
+    num_processes: int = Field(
+        default=4, description="number of processes to use when writing to support parallel writes"
+    )
 
 
 @dataclass
@@ -180,13 +184,13 @@ class MilvusUploader(Uploader):
         self.insert_results(data=data)
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        if self.upload_config.num_of_processes == 1:
+        if self.upload_config.num_processes == 1:
             for content in contents:
                 self.upload(content=content)
 
         else:
             with mp.Pool(
-                processes=self.upload_config.num_of_processes,
+                processes=self.upload_config.num_processes,
             ) as pool:
                 pool.map(self.upload, contents)
 

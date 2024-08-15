@@ -32,7 +32,7 @@ SERVER_API_VERSION = "1"
 
 
 class MongoDBAccessConfig(AccessConfig):
-    uri: Optional[str] = None
+    uri: Optional[str] = Field(default=None, description="URI to user when connecting")
 
 
 SecretMongoDBAccessConfig = Secret[MongoDBAccessConfig]
@@ -42,12 +42,15 @@ class MongoDBConnectionConfig(ConnectionConfig):
     access_config: SecretMongoDBAccessConfig = Field(
         default_factory=lambda: SecretMongoDBAccessConfig(secret_value=MongoDBAccessConfig())
     )
-    host: Optional[str] = None
-    database: Optional[str] = None
-    collection: Optional[str] = None
-    port: int = 27017
-    batch_size: int = 100
-    connector_type: str = CONNECTOR_TYPE
+    host: Optional[str] = Field(
+        default=None,
+        description="hostname or IP address or Unix domain socket path of a single mongod or "
+        "mongos instance to connect to, or a list of hostnames",
+    )
+    database: Optional[str] = Field(default=None, description="database name to connect to")
+    collection: Optional[str] = Field(default=None, description="collection name to connect to")
+    port: int = Field(default=27017)
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 
 class MongoDBUploadStagerConfig(UploadStagerConfig):
@@ -78,7 +81,7 @@ class MongoDBUploadStager(UploadStager):
 
 
 class MongoDBUploaderConfig(UploaderConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 @dataclass

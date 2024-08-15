@@ -7,7 +7,7 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
-from pydantic import BaseModel, Secret, SecretStr
+from pydantic import BaseModel, Field, Secret, SecretStr
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -46,26 +46,40 @@ CONNECTOR_TYPE = "elasticsearch"
 
 
 class ElasticsearchAccessConfig(AccessConfig):
-    password: Optional[str] = None
-    es_api_key: Optional[str] = None
-    bearer_auth: Optional[str] = None
-    ssl_assert_fingerprint: Optional[str] = None
+    password: Optional[str] = Field(
+        default=None, description="password when using basic auth or connecting to a cloud instance"
+    )
+    es_api_key: Optional[str] = Field(default=None, description="api key used for authentication")
+    bearer_auth: Optional[str] = Field(
+        default=None, description="bearer token used for HTTP bearer authentication"
+    )
+    ssl_assert_fingerprint: Optional[str] = Field(
+        default=None, description="SHA256 fingerprint value"
+    )
 
 
 class ElasticsearchClientInput(BaseModel):
     hosts: Optional[list[str]] = None
     cloud_id: Optional[str] = None
-    ca_certs: Optional[str] = None
+    ca_certs: Optional[Path] = None
     basic_auth: Optional[Secret[tuple[str, str]]] = None
     api_key: Optional[Union[Secret[tuple[str, str]], SecretStr]] = None
 
 
 class ElasticsearchConnectionConfig(ConnectionConfig):
-    hosts: Optional[list[str]] = None
-    username: Optional[str] = None
-    cloud_id: Optional[str] = None
-    api_key_id: Optional[str] = None
-    ca_certs: Optional[str] = None
+    hosts: Optional[list[str]] = Field(
+        default=None,
+        description="list of the Elasticsearch hosts to connect to",
+        examples=["http://localhost:9200"],
+    )
+    username: Optional[str] = Field(default=None, description="username when using basic auth")
+    cloud_id: Optional[str] = Field(default=None, description="id used to connect to Elastic Cloud")
+    api_key_id: Optional[str] = Field(
+        default=None,
+        description="id associated with api key used for authentication: "
+        "https://www.elastic.co/guide/en/elasticsearch/reference/current/security-api-create-api-key.html",  # noqa: E501
+    )
+    ca_certs: Optional[Path] = None
     access_config: Secret[ElasticsearchAccessConfig]
 
     def get_client_kwargs(self) -> dict:
@@ -295,7 +309,9 @@ class ElasticsearchDownloader(Downloader):
 
 
 class ElasticsearchUploadStagerConfig(UploadStagerConfig):
-    index_name: str
+    index_name: str = Field(
+        description="Name of the Elasticsearch index to pull data from, or upload data to."
+    )
 
 
 @dataclass
@@ -335,9 +351,18 @@ class ElasticsearchUploadStager(UploadStager):
 
 
 class ElasticsearchUploaderConfig(UploaderConfig):
-    index_name: str
-    batch_size_bytes: int = 15_000_000
-    num_threads: int = 4
+    index_name: str = Field(
+        description="Name of the Elasticsearch index to pull data from, or upload data to."
+    )
+    batch_size_bytes: int = Field(
+        default=15_000_000,
+        description="Size limit (in bytes) for each batch of items to be uploaded. Check"
+        " https://www.elastic.co/guide/en/elasticsearch/guide/current/bulk.html"
+        "#_how_big_is_too_big for more information.",
+    )
+    num_threads: int = Field(
+        default=4, description="Number of threads to be used while uploading content"
+    )
 
 
 @dataclass

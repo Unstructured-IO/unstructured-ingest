@@ -33,15 +33,17 @@ CONNECTOR_TYPE = "pinecone"
 
 
 class PineconeAccessConfig(AccessConfig):
-    pinecone_api_key: Optional[str] = None
+    pinecone_api_key: Optional[str] = Field(
+        default=None, description="API key for Pinecone.", alias="api_key"
+    )
 
 
 SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
 
 
 class PineconeConnectionConfig(ConnectionConfig):
-    index_name: str
-    environment: str
+    index_name: str = Field(description="Name of the index to connect to.")
+    environment: str = Field(description="Environment to connect to.")
     access_config: SecretPineconeAccessConfig = Field(
         default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
     )
@@ -66,8 +68,8 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
 
 
 class PineconeUploaderConfig(UploaderConfig):
-    batch_size: int = 100
-    num_of_processes: int = 4
+    batch_size: int = Field(default=100, description="Number of records per batch")
+    num_processes: int = Field(default=4, description="Number of processes to use for uploading")
 
 
 @dataclass
@@ -155,18 +157,18 @@ class PineconeUploader(Uploader):
             f" index named {self.connection_config.index_name}"
             f" environment named {self.connection_config.environment}"
             f" with batch size {self.upload_config.batch_size}"
-            f" with {self.upload_config.num_of_processes} (number of) processes"
+            f" with {self.upload_config.num_processes} (number of) processes"
         )
 
         pinecone_batch_size = self.upload_config.batch_size
 
-        if self.upload_config.num_of_processes == 1:
+        if self.upload_config.num_processes == 1:
             for batch in batch_generator(elements_dict, pinecone_batch_size):
                 self.upsert_batch(batch)  # noqa: E203
 
         else:
             with mp.Pool(
-                processes=self.upload_config.num_of_processes,
+                processes=self.upload_config.num_processes,
             ) as pool:
                 pool.map(
                     self.upsert_batch, list(batch_generator(elements_dict, pinecone_batch_size))

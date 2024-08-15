@@ -42,10 +42,34 @@ class AzureIndexerConfig(FsspecIndexerConfig):
 
 
 class AzureAccessConfig(FsspecAccessConfig):
-    account_name: Optional[str] = None
-    account_key: Optional[str] = None
-    connection_string: Optional[str] = None
-    sas_token: Optional[str] = None
+    account_name: Optional[str] = Field(
+        default=None,
+        description="The storage account name. This is used to authenticate "
+        "requests signed with an account key and to construct "
+        "the storage endpoint. It is required unless a connection "
+        "string is given, or if a custom domain is used with "
+        "anonymous authentication.",
+    )
+    account_key: Optional[str] = Field(
+        default=None,
+        description="The storage account key. This is used for shared key "
+        "authentication. If any of account key, sas token or "
+        "client_id are not specified, anonymous access will be used.",
+    )
+    connection_string: Optional[str] = Field(
+        default=None,
+        description="If specified, this will override all other parameters. See "
+        "http://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/ "  # noqa: E501
+        "for the connection string format.",
+    )
+    sas_token: Optional[str] = Field(
+        default=None,
+        description="A shared access signature token to use to authenticate "
+        "requests instead of the account key. If account key and "
+        "sas token are both specified, account key will be used "
+        "to sign. If any of account key, sas token or client_id "
+        "are not specified, anonymous access will be used.",
+    )
 
     def model_post_init(self, __context: Any) -> None:
         if self.connection_string is None and self.account_name is None:
@@ -56,11 +80,11 @@ SecretAzureAccessConfig = Secret[AzureAccessConfig]
 
 
 class AzureConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["az"])
+    supported_protocols: list[str] = field(default_factory=lambda: ["az"], init=False)
     access_config: SecretAzureAccessConfig = Field(
         default_factory=lambda: SecretAzureAccessConfig(secret_value=AzureAccessConfig())
     )
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
         # Avoid injecting None by filtering out k,v pairs where the value is None

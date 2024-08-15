@@ -31,18 +31,20 @@ class BoxIndexerConfig(FsspecIndexerConfig):
 
 
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Optional[str] = None
+    box_app_config: Optional[str] = Field(
+        default=None, description="Path to Box app credentials as json file."
+    )
 
 
 SecretBoxAccessConfig = Secret[BoxAccessConfig]
 
 
 class BoxConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["box"])
+    supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
     access_config: SecretBoxAccessConfig = Field(
         default_factory=lambda: SecretBoxAccessConfig(secret_value=BoxAccessConfig())
     )
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
         # Return access_kwargs with oauth. The oauth object can not be stored directly in the config

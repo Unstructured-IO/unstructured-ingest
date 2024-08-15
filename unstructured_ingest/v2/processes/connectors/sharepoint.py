@@ -56,22 +56,36 @@ class SharepointContentType(Enum):
 
 
 class SharepointAccessConfig(AccessConfig):
-    client_cred: str
+    client_cred: str = Field(description="Sharepoint app secret")
 
 
 class SharepointPermissionsConfig(BaseModel):
-    permissions_application_id: str
-    permissions_tenant: str
-    permissions_client_cred: SecretStr
+    permissions_application_id: str = Field(description="Microsoft Graph API application id")
+    permissions_tenant: str = Field(
+        description="url to get permissions data within tenant.",
+        examples=["https://contoso.onmicrosoft.com"],
+    )
+    permissions_client_cred: SecretStr = Field(
+        description="Microsoft Graph API application credentials"
+    )
     authority_url: Optional[SecretStr] = Field(
         repr=False,
         default_factory=lambda: SecretStr(secret_value="https://login.microsoftonline.com"),
+        description="Permissions authority url",
+        examples=["https://login.microsoftonline.com"],
     )
 
 
 class SharepointConnectionConfig(ConnectionConfig):
-    client_id: str
-    site: str
+    client_id: str = Field(description="Sharepoint app client ID")
+    site: str = Field(
+        description="Sharepoint site url. Process either base url e.g \
+                    https://[tenant].sharepoint.com  or relative sites \
+                    https://[tenant].sharepoint.com/sites/<site_name>. \
+                    To process all sites within the tenant pass a site url as \
+                    https://[tenant]-admin.sharepoint.com.\
+                    This requires the app to be registered at a tenant level"
+    )
     access_config: Secret[SharepointAccessConfig]
     permissions_config: Optional[SharepointPermissionsConfig] = None
 
@@ -124,11 +138,20 @@ class SharepointConnectionConfig(ConnectionConfig):
 
 
 class SharepointIndexerConfig(IndexerConfig):
-    path: Optional[str] = None
-    recursive: bool = False
-    omit_files: bool = False
-    omit_pages: bool = False
-    omit_lists: bool = False
+    path: Optional[str] = Field(
+        defaul=None,
+        description="Path from which to start parsing files. If the connector is to \
+                process all sites within the tenant this filter will be applied to \
+                all sites document libraries.",
+    )
+    recursive: bool = Field(
+        default=False,
+        description="Recursively download files in their respective folders "
+        "otherwise stop at the files in provided folder level.",
+    )
+    omit_files: bool = Field(default=False, description="Don't process files.")
+    omit_pages: bool = Field(default=False, description="Don't process site pages.")
+    omit_lists: bool = Field(default=False, description="Don't process lists.")
 
 
 @dataclass

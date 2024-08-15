@@ -3,8 +3,8 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, SecretStr
-from unstructured.chunking import dispatch
+from pydantic import BaseModel, Field, SecretStr
+from unstructured.chunking import CHUNK_MAX_CHARS_DEFAULT, CHUNK_MULTI_PAGE_DEFAULT, dispatch
 from unstructured.documents.elements import Element, assign_and_map_hash_ids
 from unstructured.staging.base import dict_to_elements, elements_from_json
 
@@ -13,18 +13,58 @@ from unstructured_ingest.v2.logger import logger
 
 
 class ChunkerConfig(BaseModel):
-    chunking_strategy: Optional[str] = None
-    chunking_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
-    chunk_by_api: bool = False
-    chunk_api_key: Optional[SecretStr] = None
+    chunking_strategy: Optional[str] = Field(
+        default=None, description="The rule-set to use to form chunks. Omit to disable chunking."
+    )
+    chunking_endpoint: Optional[str] = Field(
+        default="https://api.unstructured.io/general/v0/general",
+        description="If chunking via api, use the following host.",
+    )
+    chunk_by_api: bool = Field(default=False, description="Flag to use api for chunking")
+    chunk_api_key: Optional[SecretStr] = Field(
+        default=None, description="API Key for chunking endpoint."
+    )
 
-    chunk_combine_text_under_n_chars: Optional[int] = None
-    chunk_include_orig_elements: Optional[bool] = None
-    chunk_max_characters: Optional[int] = None
-    chunk_multipage_sections: Optional[bool] = None
-    chunk_new_after_n_chars: Optional[int] = None
-    chunk_overlap: Optional[int] = None
-    chunk_overlap_all: Optional[bool] = None
+    chunk_combine_text_under_n_chars: Optional[int] = Field(
+        default=None,
+        description="Combine consecutive chunks when the first does not exceed this length and"
+        " the second will fit without exceeding the hard-maximum length. Only"
+        " operative for 'by_title' chunking-strategy.",
+    )
+    chunk_include_orig_elements: Optional[bool] = Field(
+        default=None,
+        description="When chunking, add the original elements consolidated to form each chunk to"
+        " `.metadata.orig_elements` on that chunk.",
+    )
+    chunk_max_characters: int = Field(
+        default=CHUNK_MAX_CHARS_DEFAULT,
+        description="Hard maximum chunk length. No chunk will exceed this length. An oversized"
+        " element will be divided by text-splitting to fit this window.",
+    )
+    chunk_multipage_sections: bool = Field(
+        default=CHUNK_MULTI_PAGE_DEFAULT,
+        description="Ignore page boundaries when chunking such that elements from two different"
+        " pages can appear in the same chunk. Only operative for 'by_title'"
+        " chunking-strategy.",
+    )
+    chunk_new_after_n_chars: Optional[int] = Field(
+        default=None,
+        description="Soft-maximum chunk length. Another element will not be added to a chunk of"
+        " this length even when it would fit without exceeding the hard-maximum"
+        " length.",
+    )
+    chunk_overlap: Optional[int] = Field(
+        default=None,
+        description="Prefix chunk text with last overlap=N characters of prior chunk. Only"
+        " applies to oversized chunks divided by text-splitting. To apply overlap to"
+        " non-oversized chunks use the --overlap-all option.",
+    )
+    chunk_overlap_all: Optional[bool] = Field(
+        default=None,
+        description="Apply overlap to chunks formed from whole elements as well as those formed"
+        " by text-splitting oversized elements. Overlap length is take from --overlap"
+        " option value.",
+    )
 
     def to_chunking_kwargs(self) -> dict[str, Any]:
         return {

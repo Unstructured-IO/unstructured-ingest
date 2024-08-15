@@ -37,22 +37,36 @@ class S3IndexerConfig(FsspecIndexerConfig):
 
 
 class S3AccessConfig(FsspecAccessConfig):
-    key: Optional[str] = None
-    secret: Optional[str] = None
-    token: Optional[str] = None
+    key: Optional[str] = Field(
+        default=None,
+        description="If not anonymous, use this access key ID, if specified. Takes precedence "
+        "over `aws_access_key_id` in client_kwargs.",
+    )
+    secret: Optional[str] = Field(
+        default=None, description="If not anonymous, use this secret access key, if specified."
+    )
+    token: Optional[str] = Field(
+        default=None, description="If not anonymous, use this security token, if specified."
+    )
 
 
 SecretS3AccessConfig = Secret[S3AccessConfig]
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["s3", "s3a"])
+    supported_protocols: list[str] = field(default_factory=lambda: ["s3", "s3a"], init=False)
     access_config: SecretS3AccessConfig = Field(
         default_factory=lambda: SecretS3AccessConfig(secret_value=S3AccessConfig())
     )
-    endpoint_url: Optional[str] = None
-    anonymous: bool = False
-    connector_type: str = CONNECTOR_TYPE
+    endpoint_url: Optional[str] = Field(
+        default=None,
+        description="Use this endpoint_url, if specified. Needed for "
+        "connecting to non-AWS S3 buckets.",
+    )
+    anonymous: bool = Field(
+        default=False, description="Connect to s3 without local AWS credentials."
+    )
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
         access_configs: dict[str, Any] = {"anon": self.anonymous}

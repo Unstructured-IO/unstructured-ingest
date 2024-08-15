@@ -3,7 +3,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
@@ -11,8 +11,14 @@ from unstructured_ingest.v2.logger import logger
 
 
 class FiltererConfig(BaseModel):
-    file_glob: Optional[list[str]] = None
-    max_file_size: Optional[int] = None
+    file_glob: Optional[list[str]] = Field(
+        default=None,
+        description="file globs to limit which types of " "files are accepted",
+        examples=["*.pdf", "*.html"],
+    )
+    max_file_size: Optional[int] = Field(
+        default=None, description="Max file size to process in bytes"
+    )
 
 
 @dataclass

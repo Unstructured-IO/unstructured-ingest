@@ -1,23 +1,44 @@
 from abc import ABC
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 from unstructured.documents.elements import Element
+from unstructured.embed import EMBEDDING_PROVIDER_TO_CLASS_MAP
 from unstructured.embed.interfaces import BaseEmbeddingEncoder
 from unstructured.staging.base import elements_from_json
 
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
+EmbedderProvider = Enum(
+    "EmbedderProvider", {v: v for v in EMBEDDING_PROVIDER_TO_CLASS_MAP}, type=str
+)
+
 
 class EmbedderConfig(BaseModel):
-    embedding_provider: Optional[str] = None
-    embedding_api_key: Optional[SecretStr] = None
-    embedding_model_name: Optional[str] = None
-    embedding_aws_access_key_id: Optional[str] = None
-    embedding_aws_secret_access_key: Optional[SecretStr] = None
-    embedding_aws_region: Optional[str] = None
+    embedding_provider: Optional[EmbedderProvider] = Field(
+        default=None, description="Type of the embedding class to be used."
+    )
+    embedding_api_key: Optional[SecretStr] = Field(
+        default=None,
+        description="API key for the embedding model, for the case an API key is needed.",
+    )
+    embedding_model_name: Optional[str] = Field(
+        default=None,
+        description="Embedding model name, if needed. "
+        "Chooses a particular LLM between different options, to embed with it.",
+    )
+    embedding_aws_access_key_id: Optional[str] = Field(
+        default=None, description="AWS access key used for AWS-based embedders, such as bedrock"
+    )
+    embedding_aws_secret_access_key: Optional[SecretStr] = Field(
+        default=None, description="AWS secret key used for AWS-based embedders, such as bedrock"
+    )
+    embedding_aws_region: Optional[str] = Field(
+        default="us-west-2", description="AWS region used for AWS-based embedders, such as bedrock"
+    )
 
     def get_embedder(self) -> BaseEmbeddingEncoder:
         kwargs: dict[str, Any] = {}
