@@ -122,7 +122,8 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install limited dependencies
       run: |
-        pip install -r requirements/remote/client.txt
+        make install-client
+        make install-cli
     - name: Run test against remote API
       env:
         UNS_API_KEY: ${{ secrets.UNS_API_KEY }}

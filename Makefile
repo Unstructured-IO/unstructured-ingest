@@ -18,6 +18,10 @@ install-lint:
 install-cli:
 	pip install -r requirements/cli.txt
 
+.PHONY: install-client
+install-client:
+	pip install -r requirements/client.txt
+
 .PHONY: install-test
 install-test:
 	pip install -r requirements/test.txt
