@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
+from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -88,7 +89,6 @@ class Chunker(BaseProcess, ABC):
 
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured.chunking import dispatch
-        from unstructured.documents.elements import assign_and_map_hash_ids
         from unstructured.staging.base import elements_from_json
 
         elements = elements_from_json(filename=str(elements_filepath))
@@ -103,8 +103,9 @@ class Chunker(BaseProcess, ABC):
             )
             return [e.to_dict() for e in elements]
         chunked_elements = dispatch.chunk(elements=elements, **self.config.to_chunking_kwargs())
-        assign_and_map_hash_ids(chunked_elements)
-        return [e.to_dict() for e in chunked_elements]
+        chunked_elements_dicts = [e.to_dict() for e in chunked_elements]
+        assign_and_map_hash_ids(elements=chunked_elements_dicts)
+        return chunked_elements_dicts
 
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured_client import UnstructuredClient
@@ -135,5 +136,5 @@ class Chunker(BaseProcess, ABC):
             partition_params = PartitionParameters(**filtered_partition_request)
         resp = client.general.partition(partition_params)
         elements = resp.elements or []
-        # TODO: assign_and_map_hash_ids(elements) without depending on Unstructured
+        assign_and_map_hash_ids(elements=elements)
         return elements

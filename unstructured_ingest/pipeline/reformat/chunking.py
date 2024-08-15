@@ -5,16 +5,15 @@ import json
 import os.path
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-
-from unstructured.chunking import dispatch
-from unstructured.documents.elements import Element, assign_and_map_hash_ids
-from unstructured.partition.api import partition_via_api
-from unstructured.staging.base import elements_from_json, elements_to_dicts
+from typing import TYPE_CHECKING, Optional
 
 from unstructured_ingest.interfaces import ChunkingConfig, PartitionConfig
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import ReformatNode
+from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
+
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
 
 @dataclass
@@ -69,9 +68,9 @@ class Chunker(ReformatNode):
                 logger.info(f"chunking_strategy is None, skipping chunking for {filename_ext}")
                 return
 
-            assign_and_map_hash_ids(chunked_elements)
+            element_dicts = [e.to_dict() for e in chunked_elements]
+            assign_and_map_hash_ids(elements=element_dicts)
 
-            element_dicts = elements_to_dicts(chunked_elements)
             with open(json_path, "w", encoding="utf8") as output_f:
                 logger.info(f"writing chunking content to {json_path}")
                 json.dump(element_dicts, output_f, ensure_ascii=False, indent=2)
@@ -86,13 +85,16 @@ class Chunker(ReformatNode):
     def get_path(self) -> Path:
         return (Path(self.pipeline_context.work_dir) / "chunked").resolve()
 
-    def chunk(self, elements_json_file: str) -> Optional[list[Element]]:
+    def chunk(self, elements_json_file: str) -> Optional[list["Element"]]:
         """Called by Chunker.run() to properly execute the defined chunking_strategy."""
         # -- No chunking_strategy means no chunking --
         if self.chunking_config.chunking_strategy is None:
             return
         # -- Chunk locally for open-source chunking strategies, even when partitioning remotely --
         if self.chunking_config.chunking_strategy in ("basic", "by_title"):
+            from unstructured.chunking import dispatch
+            from unstructured.staging.base import elements_from_json
+
             return dispatch.chunk(
                 elements=elements_from_json(filename=elements_json_file),
                 chunking_strategy=self.chunking_config.chunking_strategy,
@@ -106,6 +108,8 @@ class Chunker(ReformatNode):
             )
         # -- Chunk remotely --
         if self.partition_config.partition_by_api:
+            from unstructured.partition.api import partition_via_api
+
             return partition_via_api(
                 filename=elements_json_file,
                 # -- (jennings) If api_key or api_url are None, partition_via_api will raise an
