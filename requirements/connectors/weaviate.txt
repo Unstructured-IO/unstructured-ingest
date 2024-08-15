@@ -24,6 +24,8 @@ charset-normalizer==3.3.2
     # via requests
 cryptography==43.0.0
     # via authlib
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 exceptiongroup==1.2.2
     # via anyio
 grpcio==1.65.4
@@ -46,8 +48,16 @@ idna==3.7
     #   anyio
     #   httpx
     #   requests
+marshmallow==3.21.3
+    # via dataclasses-json
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via pandas
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 protobuf==4.23.4
@@ -81,6 +91,9 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas
 urllib3==1.26.19

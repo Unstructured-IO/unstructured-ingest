@@ -3,3 +3,4 @@
 python-dateutil
 pandas
 pydantic
+dataclasses_json

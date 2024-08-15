@@ -6,10 +6,20 @@
 #
 annotated-types==0.7.0
     # via pydantic
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 dnspython==2.6.1
     # via pymongo
+marshmallow==3.21.3
+    # via dataclasses-json
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via pandas
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 pydantic==2.8.2
@@ -30,5 +40,8 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas

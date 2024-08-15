@@ -16,6 +16,8 @@ async-timeout==4.0.3
     # via aiohttp
 attrs==24.2.0
     # via aiohttp
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 discord-py==2.4.0
     # via -r ./requirements/connectors/discord.in
 frozenlist==1.4.1
@@ -24,12 +26,20 @@ frozenlist==1.4.1
     #   aiosignal
 idna==3.7
     # via yarl
+marshmallow==3.21.3
+    # via dataclasses-json
 multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via pandas
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 pydantic==2.8.2
@@ -48,6 +58,9 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas
 yarl==1.9.4

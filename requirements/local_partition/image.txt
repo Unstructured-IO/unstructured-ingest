@@ -46,6 +46,7 @@ cycler==0.12.1
     # via matplotlib
 dataclasses-json==0.6.7
     # via
+    #   -r ./requirements/local_partition/../common/base.in
     #   unstructured
     #   unstructured-client
 deepdiff==7.0.1

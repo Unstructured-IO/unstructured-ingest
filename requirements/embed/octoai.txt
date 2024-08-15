@@ -32,6 +32,7 @@ click==8.1.7
     # via nltk
 dataclasses-json==0.6.7
     # via
+    #   -r ./requirements/embed/../common/base.in
     #   unstructured
     #   unstructured-client
 deepdiff==7.0.1

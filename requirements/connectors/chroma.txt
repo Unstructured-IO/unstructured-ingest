@@ -41,6 +41,8 @@ click==8.1.7
     #   uvicorn
 coloredlogs==15.0.1
     # via onnxruntime
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
     # via
     #   opentelemetry-api
@@ -95,12 +97,16 @@ importlib-resources==6.4.2
     # via chromadb
 kubernetes==30.1.0
     # via chromadb
+marshmallow==3.21.3
+    # via dataclasses-json
 mmh3==4.1.0
     # via chromadb
 monotonic==1.6
     # via posthog
 mpmath==1.3.0
     # via sympy
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==1.26.4
     # via
     #   chroma-hnswlib
@@ -160,6 +166,7 @@ packaging==23.2
     #   -c ./requirements/connectors/../common/constraints.txt
     #   build
     #   huggingface-hub
+    #   marshmallow
     #   onnxruntime
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
@@ -252,7 +259,10 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   starlette
     #   typer
+    #   typing-inspect
     #   uvicorn
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas
 urllib3==1.26.19

@@ -22,7 +22,9 @@ charset-normalizer==3.3.2
     #   requests
     #   unstructured-client
 dataclasses-json==0.6.7
-    # via unstructured-client
+    # via
+    #   -r ./requirements/remote/../common/base.in
+    #   unstructured-client
 deepdiff==7.0.1
     # via unstructured-client
 exceptiongroup==1.2.2

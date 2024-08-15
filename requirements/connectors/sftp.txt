@@ -14,12 +14,22 @@ cffi==1.17.0
     #   pynacl
 cryptography==43.0.0
     # via paramiko
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 fsspec==2024.5.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   -r ./requirements/connectors/sftp.in
+marshmallow==3.21.3
+    # via dataclasses-json
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via pandas
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 paramiko==3.4.1
@@ -44,5 +54,8 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas

@@ -18,6 +18,8 @@ clarifai-grpc==10.7.2
     # via clarifai
 contextlib2==21.6.0
     # via schema
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 googleapis-common-protos==1.63.2
     # via clarifai-grpc
 grpcio==1.64.3
@@ -28,13 +30,21 @@ inquirerpy==0.3.4
     # via clarifai
 markdown-it-py==3.0.0
     # via rich
+marshmallow==3.21.3
+    # via dataclasses-json
 mdurl==0.1.2
     # via markdown-it-py
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via
     #   clarifai
     #   pandas
     #   tritonclient
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 pfzy==0.3.4
@@ -82,6 +92,9 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas
 urllib3==1.26.19

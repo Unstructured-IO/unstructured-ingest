@@ -13,14 +13,24 @@ certifi==2024.7.4
     #   requests
 charset-normalizer==3.3.2
     # via requests
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 events==0.5
     # via opensearch-py
 idna==3.7
     # via requests
+marshmallow==3.21.3
+    # via dataclasses-json
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via pandas
 opensearch-py==2.6.0
     # via -r ./requirements/connectors/opensearch.in
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 pydantic==2.8.2
@@ -44,6 +54,9 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas
 urllib3==1.26.19

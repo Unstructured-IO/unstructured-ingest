@@ -15,6 +15,8 @@ certifi==2024.7.4
     #   -c ./requirements/connectors/../common/constraints.txt
     #   httpcore
     #   httpx
+dataclasses-json==0.6.7
+    # via -r ./requirements/connectors/../common/base.in
 exceptiongroup==1.2.2
     # via anyio
 grpcio==1.65.4
@@ -39,10 +41,18 @@ idna==3.7
     # via
     #   anyio
     #   httpx
+marshmallow==3.21.3
+    # via dataclasses-json
+mypy-extensions==1.0.0
+    # via typing-inspect
 numpy==2.0.1
     # via
     #   pandas
     #   qdrant-client
+packaging==23.2
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 portalocker==2.10.1
@@ -75,6 +85,9 @@ typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2024.1
     # via pandas
 urllib3==1.26.19

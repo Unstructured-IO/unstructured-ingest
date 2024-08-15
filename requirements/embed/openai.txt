@@ -46,6 +46,7 @@ click==8.1.7
     # via nltk
 dataclasses-json==0.6.7
     # via
+    #   -r ./requirements/embed/../common/base.in
     #   langchain-community
     #   unstructured
     #   unstructured-client
