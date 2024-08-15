@@ -1,6 +1,5 @@
 from typing import Any, Generator, List, Optional, Tuple
 
-import backoff
 import httpx
 import notion_client.errors
 from notion_client import Client as NotionClient
@@ -29,6 +28,8 @@ retryable_exceptions = (
 
 def get_retry_handler(endpoint: Endpoint) -> Optional[RetryHandler]:
     if retry_strategy_config := getattr(endpoint, "retry_strategy_config"):
+        import backoff
+
         return RetryHandler(
             backoff.expo,
             retryable_exceptions,

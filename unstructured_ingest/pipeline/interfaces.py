@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from multiprocessing.managers import DictProxy
 from pathlib import Path
 
-import backoff
 from dataclasses_json import DataClassJsonMixin
 
 from unstructured_ingest.error import SourceConnectionNetworkError
@@ -149,6 +148,8 @@ class SourceNode(PipelineNode):
     @property
     def retry_strategy(self) -> t.Optional[RetryHandler]:
         if retry_strategy_config := self.retry_strategy_config:
+            import backoff
+
             return RetryHandler(
                 backoff.expo,
                 SourceConnectionNetworkError,
