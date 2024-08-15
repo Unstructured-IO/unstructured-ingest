@@ -109,7 +109,7 @@ python-iso639==2024.4.27
     # via unstructured
 python-magic==0.4.27
     # via unstructured
-python-pptx==1.0.2
+python-pptx==0.6.23
     # via unstructured
 pytz==2024.1
     # via pandas
@@ -147,7 +147,6 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   pypdf
-    #   python-pptx
     #   typing-inspect
     #   unstructured
     #   unstructured-client
@@ -157,7 +156,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured[pptx]==0.15.3
+unstructured[pptx]==0.15.1
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
     #   -r ./requirements/local_partition/pptx.in

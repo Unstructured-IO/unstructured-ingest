@@ -155,7 +155,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured[doc]==0.15.3
+unstructured[doc]==0.15.1
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
     #   -r ./requirements/local_partition/doc.in

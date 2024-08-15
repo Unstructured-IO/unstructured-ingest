@@ -169,7 +169,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured==0.15.3
+unstructured==0.15.1
     # via
     #   -c ./requirements/embed/../common/constraints.txt
     #   -r ./requirements/embed/./common/base.in
