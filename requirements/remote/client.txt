@@ -53,8 +53,10 @@ mypy-extensions==1.0.0
     #   unstructured-client
 nest-asyncio==1.6.0
     # via unstructured-client
-numpy==2.0.1
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/remote/../common/constraints.txt
+    #   pandas
 ordered-set==4.1.0
     # via deepdiff
 packaging==23.2

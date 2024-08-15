@@ -82,6 +82,7 @@ nltk==3.8.1
     #   unstructured
 numpy==1.26.4
     # via
+    #   -c ./requirements/local_partition/../common/constraints.txt
     #   pandas
     #   unstructured
 openpyxl==3.1.5

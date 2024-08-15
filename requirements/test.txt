@@ -88,7 +88,9 @@ nltk==3.8.1
     #   -c ./requirements/./common/constraints.txt
     #   unstructured
 numpy==1.26.4
-    # via unstructured
+    # via
+    #   -c ./requirements/./common/constraints.txt
+    #   unstructured
 ordered-set==4.1.0
     # via deepdiff
 packaging==23.2

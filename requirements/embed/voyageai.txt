@@ -122,6 +122,7 @@ nltk==3.8.1
     #   unstructured
 numpy==1.26.4
     # via
+    #   -c ./requirements/embed/../common/constraints.txt
     #   langchain
     #   pandas
     #   unstructured

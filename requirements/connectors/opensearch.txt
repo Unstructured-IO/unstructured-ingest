@@ -23,8 +23,10 @@ marshmallow==3.21.3
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==2.0.1
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   pandas
 opensearch-py==2.6.0
     # via -r ./requirements/connectors/opensearch.in
 packaging==23.2

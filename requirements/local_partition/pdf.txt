@@ -160,6 +160,7 @@ nltk==3.8.1
     #   unstructured
 numpy==1.26.4
     # via
+    #   -c ./requirements/local_partition/../common/constraints.txt
     #   contourpy
     #   layoutparser
     #   matplotlib

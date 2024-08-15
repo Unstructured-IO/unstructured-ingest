@@ -80,8 +80,10 @@ multidict==6.0.5
     #   yarl
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==2.0.1
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   pandas
 oauthlib==3.2.2
     # via requests-oauthlib
 packaging==23.2
