@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from unstructured.chunking import dispatch
 from unstructured.documents.elements import assign_and_map_hash_ids
 from unstructured.partition.auto import partition
@@ -13,12 +14,16 @@ project_root = test_file_path.parent.parent
 docs_path = project_root / "example-docs"
 
 
-def test_assign_and_map_hash_ids():
+@pytest.mark.parametrize(
+    "chunking_strategy",
+    ["basic", "by_title"],
+)
+def test_assign_and_map_hash_ids(chunking_strategy):
     # Make sure the new logic working on dict content matches the
     # results if using the unstructured version
     file_path = docs_path / "book-war-and-peace-1p.txt"
     elements = partition(filename=str(file_path.resolve()), strategy="fast")
-    chunked_elements = dispatch.chunk(elements=elements, chunking_strategy="basic")
+    chunked_elements = dispatch.chunk(elements=elements, chunking_strategy=chunking_strategy)
     chunked_elements_copy = chunked_elements.copy()
 
     hashed_chunked_elements = assign_and_map_hash_ids(chunked_elements)
