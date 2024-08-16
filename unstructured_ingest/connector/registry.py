@@ -2,7 +2,7 @@ import json
 from typing import Dict, Type, cast
 
 from unstructured_ingest.connector.airtable import AirtableIngestDoc
-from unstructured_ingest.connector.astra import AstraIngestDoc
+from unstructured_ingest.connector.astradb import AstraDBIngestDoc
 from unstructured_ingest.connector.biomed import BiomedIngestDoc
 from unstructured_ingest.connector.confluence import ConfluenceIngestDoc
 from unstructured_ingest.connector.delta_table import DeltaTableIngestDoc
@@ -46,7 +46,7 @@ from unstructured_ingest.interfaces import BaseIngestDoc
 
 INGEST_DOC_NAME_TO_CLASS: Dict[str, Type[EnhancedDataClassJsonMixin]] = {
     "airtable": AirtableIngestDoc,
-    "astra": AstraIngestDoc,
+    "astradb": AstraDBIngestDoc,
     "azure": AzureBlobStorageIngestDoc,
     "biomed": BiomedIngestDoc,
     "box": BoxIngestDoc,
