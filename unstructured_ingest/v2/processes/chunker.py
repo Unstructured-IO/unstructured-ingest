@@ -104,7 +104,7 @@ class Chunker(BaseProcess, ABC):
             return [e.to_dict() for e in elements]
         chunked_elements = dispatch.chunk(elements=elements, **self.config.to_chunking_kwargs())
         chunked_elements_dicts = [e.to_dict() for e in chunked_elements]
-        assign_and_map_hash_ids(elements=chunked_elements_dicts)
+        chunked_elements_dicts = assign_and_map_hash_ids(elements=chunked_elements_dicts)
         return chunked_elements_dicts
 
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
@@ -136,5 +136,5 @@ class Chunker(BaseProcess, ABC):
             partition_params = PartitionParameters(**filtered_partition_request)
         resp = client.general.partition(partition_params)
         elements = resp.elements or []
-        assign_and_map_hash_ids(elements=elements)
+        elements = assign_and_map_hash_ids(elements=elements)
         return elements
