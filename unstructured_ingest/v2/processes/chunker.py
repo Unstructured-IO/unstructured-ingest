@@ -6,6 +6,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -87,6 +88,7 @@ class Chunker(BaseProcess, ABC):
     def is_async(self) -> bool:
         return self.config.chunk_by_api
 
+    @requires_dependencies(dependencies=["unstructured"])
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured.chunking import dispatch
         from unstructured.staging.base import elements_from_json
@@ -107,6 +109,7 @@ class Chunker(BaseProcess, ABC):
         chunked_elements_dicts = assign_and_map_hash_ids(elements=chunked_elements_dicts)
         return chunked_elements_dicts
 
+    @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured_client import UnstructuredClient
         from unstructured_client.models.shared import Files, PartitionParameters

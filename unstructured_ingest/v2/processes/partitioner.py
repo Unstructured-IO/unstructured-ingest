@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -131,6 +132,7 @@ class Partitioner(BaseProcess, ABC):
                 elem.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
         return element_dicts
 
+    @requires_dependencies(dependencies=["unstructured"])
     def partition_locally(
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
@@ -182,6 +184,7 @@ class Partitioner(BaseProcess, ABC):
         partition_params = PartitionParameters(**filtered_partition_request)
         return partition_params
 
+    @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def partition_via_api(
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
