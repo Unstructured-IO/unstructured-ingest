@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 import click
 
 from unstructured_ingest.cli import dest, src
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.cli.cmds import dest as dest_v2
 from unstructured_ingest.v2.cli.cmds import src as src_v2
 
@@ -16,7 +15,6 @@ def ingest():
     pass
 
 
-@requires_dependencies(dependencies=["click"], extras="cli")
 def get_cmd() -> "Command":
     """Construct and return a Click command object representing the main command for the CLI.
 

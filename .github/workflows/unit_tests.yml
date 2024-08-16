@@ -96,7 +96,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install local deps
         run: |
-          pip install ".[cli]"
+          pip install .
       - name: Validate --help
         run: |
           unstructured-ingest --help
