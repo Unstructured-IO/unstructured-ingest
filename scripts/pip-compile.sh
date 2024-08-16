@@ -8,13 +8,5 @@ if ! python -c "import sys; assert sys.version_info.major == $major and sys.vers
   exit 1
 fi
 
-pushd ./requirements || exit
-
-find . -type f -name "*.txt" ! -name "constraints.txt" -exec rm '{}' ';'
-
-pushd ./common || exit
-find . -type f -name "*.in" -print -exec pip-compile --upgrade '{}' ';'
-popd || exit
-
-find . -type f -name "*.in" ! -name "base.in" -exec pip-compile --upgrade '{}' ';'
-popd || exit
+find ./requirements -type f -name "*.txt" ! -name "constraints.txt" -exec rm '{}' ';'
+find ./requirements -type f -name "*.in" -exec pip-compile --upgrade '{}' ';'

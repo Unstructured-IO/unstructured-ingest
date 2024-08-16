@@ -11,19 +11,20 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
 
 from dataclasses_json import DataClassJsonMixin
 from dataclasses_json.core import Json, _decode_dataclass
-from unstructured.documents.elements import DataSourceMetadata
-from unstructured.embed.interfaces import BaseEmbeddingEncoder, Element
-from unstructured.partition.api import partition_via_api
-from unstructured.staging.base import elements_to_dicts, flatten_dict
 
 from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
 from unstructured_ingest.enhanced_dataclass.core import _asdict
 from unstructured_ingest.error import PartitionError, SourceConnectionError
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import flatten_dict
+
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
+    from unstructured.embed.interfaces import BaseEmbeddingEncoder
 
 A = TypeVar("A", bound="DataClassJsonMixin")
 
@@ -195,7 +196,7 @@ class EmbeddingConfig(BaseConfig):
     aws_secret_access_key: Optional[str] = None
     aws_region: Optional[str] = None
 
-    def get_embedder(self) -> BaseEmbeddingEncoder:
+    def get_embedder(self) -> "BaseEmbeddingEncoder":
         kwargs: dict[str, Any] = {}
         if self.api_key:
             kwargs["api_key"] = self.api_key
@@ -551,7 +552,8 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
         self,
         partition_config: PartitionConfig,
         **partition_kwargs,
-    ) -> list[Element]:
+    ) -> list["Element"]:
+        from unstructured.documents.elements import DataSourceMetadata
         from unstructured.partition.auto import partition
 
         if not partition_config.partition_by_api:
@@ -570,6 +572,8 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
                 **partition_kwargs,
             )
         else:
+            from unstructured.partition.api import partition_via_api
+
             endpoint = partition_config.partition_endpoint
 
             logger.debug(f"Using remote partition ({endpoint})")
@@ -595,7 +599,7 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
         logger.info(f"Processing {self.filename}")
 
         elements = self.partition_file(partition_config=partition_config, **partition_kwargs)
-        element_dicts = elements_to_dicts(elements)
+        element_dicts = [e.to_dict() for e in elements]
 
         self.isd_elems_no_filename: list[dict[str, Any]] = []
         for elem in element_dicts:
@@ -736,7 +740,7 @@ class BaseDestinationConnector(BaseConnector, ABC):
         elements_dict_normalized = [self.normalize_dict(element_dict=d) for d in elements_dict]
         return self.write_dict(*args, elements_dict=elements_dict_normalized, **kwargs)
 
-    def write_elements(self, elements: list[Element], *args, **kwargs) -> None:
+    def write_elements(self, elements: list["Element"], *args, **kwargs) -> None:
         elements_dict = [e.to_dict() for e in elements]
         self.modify_and_write_dict(*args, elements_dict=elements_dict, **kwargs)
 

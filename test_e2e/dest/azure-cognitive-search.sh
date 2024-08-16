@@ -85,7 +85,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --chunk-new-after-n-chars 1500 \
   --chunk-max-characters 2500 \
   --chunk-multipage-sections \
-  --chunk-no-include-orig-elements \
+  --no-chunk-include-orig-elements \
   --embedding-provider "langchain-huggingface" \
   azure-cognitive-search \
   --key "$AZURE_SEARCH_API_KEY" \

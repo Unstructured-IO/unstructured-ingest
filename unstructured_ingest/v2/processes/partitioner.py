@@ -1,14 +1,13 @@
 import asyncio
 from abc import ABC
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured.documents.elements import DataSourceMetadata
-from unstructured.staging.base import elements_to_dicts, flatten_dict
+from pydantic import BaseModel, Field, SecretStr
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
-from unstructured_ingest.enhanced_dataclass.dataclasses import enhanced_field
+from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -17,25 +16,65 @@ if TYPE_CHECKING:
     from unstructured_client.models.shared import PartitionParameters
 
 
-@dataclass
-class PartitionerConfig(EnhancedDataClassJsonMixin):
-    strategy: str = "auto"
-    ocr_languages: Optional[list[str]] = None
-    encoding: Optional[str] = None
-    additional_partition_args: Optional[dict[str, Any]] = None
-    skip_infer_table_types: Optional[list[str]] = None
-    fields_include: list[str] = field(
-        default_factory=lambda: ["element_id", "text", "type", "metadata", "embeddings"],
+class PartitionerConfig(BaseModel):
+    strategy: str = Field(
+        default="auto",
+        description="The method that will be used to process the documents. ",
+        examples=["fast", "hi_res", "auto"],
     )
-    flatten_metadata: bool = False
-    metadata_exclude: list[str] = field(default_factory=list)
-    metadata_include: list[str] = field(default_factory=list)
-    partition_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
-    partition_by_api: bool = False
-    api_key: Optional[str] = enhanced_field(default=None, sensitive=True)
-    hi_res_model_name: Optional[str] = None
+    ocr_languages: Optional[list[str]] = Field(
+        default=None,
+        description="A list of language packs to specify which languages to use for OCR, "
+        "The appropriate Tesseract language pack needs to be installed.",
+        examples=["eng", "deu", "eng,deu"],
+    )
+    encoding: Optional[str] = Field(
+        default=None,
+        description="Text encoding to use when reading documents. "
+        "By default the encoding is detected automatically.",
+    )
+    additional_partition_args: Optional[dict[str, Any]] = Field(
+        default=None, description="Additional values to pass through to partition()"
+    )
+    skip_infer_table_types: Optional[list[str]] = Field(
+        default=None, description="Optional list of document types to skip table extraction on"
+    )
+    fields_include: list[str] = Field(
+        default_factory=lambda: ["element_id", "text", "type", "metadata", "embeddings"],
+        description="If set, include the specified top-level fields in an element.",
+    )
+    flatten_metadata: bool = Field(
+        default=False,
+        description="Results in flattened json elements. "
+        "Specifically, the metadata key values are brought to "
+        "the top-level of the element, and the `metadata` key itself is removed.",
+    )
+    metadata_exclude: list[str] = Field(
+        default_factory=list,
+        description="If set, drop the specified metadata " "fields if they exist.",
+    )
+    metadata_include: list[str] = Field(
+        default_factory=list,
+        description="If set, include the specified metadata "
+        "fields if they exist and drop all other fields. ",
+    )
+    partition_endpoint: Optional[str] = Field(
+        default="https://api.unstructured.io/general/v0/general",
+        description="If partitioning via api, use the following host.",
+    )
+    partition_by_api: bool = Field(
+        default=False,
+        description="Use a remote API to partition the files."
+        " Otherwise, use the function from partition.auto",
+    )
+    api_key: Optional[SecretStr] = Field(
+        default=None, description="API Key for partition endpoint."
+    )
+    hi_res_model_name: Optional[str] = Field(
+        default=None, description="Model name for hi-res strategy."
+    )
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         if self.metadata_exclude and self.metadata_include:
             raise ValueError(
                 "metadata_exclude and metadata_include are "
@@ -93,16 +132,23 @@ class Partitioner(BaseProcess, ABC):
                 elem.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
         return element_dicts
 
+    @requires_dependencies(dependencies=["unstructured"])
     def partition_locally(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
+        self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
+        from unstructured.documents.elements import DataSourceMetadata
         from unstructured.partition.auto import partition
+        from unstructured.staging.base import elements_to_dicts
+
+        @dataclass
+        class FileDataSourceMetadata(DataSourceMetadata):
+            filesize_bytes: Optional[int] = None
 
         logger.debug(f"Using local partition with kwargs: {self.config.to_partition_kwargs()}")
-        logger.debug(f"partitioning file {filename} with metadata {metadata.to_dict()}")
+        logger.debug(f"partitioning file {filename} with metadata {metadata}")
         elements = partition(
             filename=str(filename.resolve()),
-            data_source_metadata=metadata,
+            data_source_metadata=FileDataSourceMetadata.from_dict(metadata),
             **self.config.to_partition_kwargs(),
         )
         return self.postprocess(elements=elements_to_dicts(elements))
@@ -138,29 +184,29 @@ class Partitioner(BaseProcess, ABC):
         partition_params = PartitionParameters(**filtered_partition_request)
         return partition_params
 
+    @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def partition_via_api(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
+        self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
         from unstructured_client import UnstructuredClient
 
-        logger.debug(f"partitioning file {filename} with metadata: {metadata.to_dict()}")
+        logger.debug(f"partitioning file {filename} with metadata: {metadata}")
         client = UnstructuredClient(
-            server_url=self.config.partition_endpoint, api_key_auth=self.config.api_key
+            server_url=self.config.partition_endpoint,
+            api_key_auth=self.config.api_key.get_secret_value(),
         )
         partition_params = self.create_partition_parameters(filename=filename)
         resp = await self.call_api(client=client, request=partition_params)
         elements = resp.elements or []
         # Append the data source metadata the auto partition does for you
         for element in elements:
-            element["metadata"]["data_source"] = metadata.to_dict()
+            element["metadata"]["data_source"] = metadata
         return self.postprocess(elements=elements)
 
-    def run(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
-    ) -> list[dict]:
+    def run(self, filename: Path, metadata: Optional[dict] = None, **kwargs) -> list[dict]:
         return self.partition_locally(filename, metadata=metadata, **kwargs)
 
     async def run_async(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
+        self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
         return await self.partition_via_api(filename, metadata=metadata, **kwargs)

@@ -1,4 +1,4 @@
--c ../common/constraints.txt
--c ../common/base.txt
+-r ../common/base.in
 
 atlassian-python-api
+requests

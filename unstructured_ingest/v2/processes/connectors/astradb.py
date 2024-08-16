@@ -3,10 +3,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured import __name__ as integration_name
-from unstructured.__version__ import __version__ as integration_version
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest import __name__ as integration_name
+from unstructured_ingest.__version__ import __version__ as integration_version
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -33,14 +33,14 @@ CONNECTOR_TYPE = "astradb"
 
 @dataclass
 class AstraDBAccessConfig(AccessConfig):
-    token: str
-    api_endpoint: str
+    token: str = Field(description="Astra DB Token with access to the database.")
+    api_endpoint: str = Field(description="The API endpoint for the Astra DB.")
 
 
 @dataclass
 class AstraDBConnectionConfig(ConnectionConfig):
     connection_type: str = CONNECTOR_TYPE
-    access_config: AstraDBAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[AstraDBAccessConfig]
 
 
 @dataclass
@@ -80,14 +80,22 @@ class AstraDBUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class AstraDBUploaderConfig(UploaderConfig):
-    collection_name: str
-    embedding_dimension: int
-    namespace: Optional[str] = None
-    requested_indexing_policy: Optional[dict[str, Any]] = None
-    batch_size: int = 20
-
+    collection_name: str = Field(
+        description="The name of the Astra DB collection. "
+        "Note that the collection name must only include letters, "
+        "numbers, and underscores."
+    )
+    embedding_dimension: int = Field(
+        default=384, description="The dimensionality of the embeddings"
+    )
+    namespace: Optional[str] = Field(default=None, description="The Astra DB connection namespace.")
+    requested_indexing_policy: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="The indexing policy to use for the collection.",
+        examples=['{"deny": ["metadata"]}'],
+    )
+    batch_size: int = Field(default=20, description="Number of records per batch")
 
 @dataclass
 class AstraDBUploader(Uploader):
@@ -115,10 +123,11 @@ class AstraDBUploader(Uploader):
         options = {"indexing": requested_indexing_policy} if requested_indexing_policy else None
 
         # Build the Astra DB object.
-        # caller_name/version for Astra DB tracking
+        # caller_name/version for AstraDB tracking
+        access_configs = self.connection_config.access_config.get_secret_value()
         astra_db = AstraDB(
-            api_endpoint=self.connection_config.access_config.api_endpoint,
-            token=self.connection_config.access_config.token,
+            api_endpoint=access_configs.api_endpoint,
+            token=access_configs.token,
             namespace=self.upload_config.namespace,
             caller_name=integration_name,
             caller_version=integration_version,

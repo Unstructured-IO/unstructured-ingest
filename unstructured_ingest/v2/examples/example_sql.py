@@ -12,7 +12,9 @@ from unstructured_ingest.v2.processes.connectors.local import (
     LocalIndexerConfig,
 )
 from unstructured_ingest.v2.processes.connectors.sql import (
-    DatabaseType,
+    CONNECTOR_TYPE,
+    POSTGRESQL_DB,
+    SQLITE_DB,
     SQLAccessConfig,
     SQLConnectionConfig,
     SQLUploaderConfig,
@@ -21,13 +23,13 @@ from unstructured_ingest.v2.processes.connectors.sql import (
 from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent.parent
+base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
-work_dir = base_path / "tmp_ingest"
+work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
 
-SQLITE_DB = "test-sql-db.sqlite"
+SQLITE_DB_PATH = "test-sql-db.sqlite"
 
 if __name__ == "__main__":
     logger.info(f"Writing all content in: {work_dir.resolve()}")
@@ -68,8 +70,8 @@ if __name__ == "__main__":
     # sqlite test first
     Pipeline.from_configs(
         destination_connection_config=SQLConnectionConfig(
-            db_type=DatabaseType.SQLITE,
-            database=SQLITE_DB,
+            db_type=SQLITE_DB,
+            database=SQLITE_DB_PATH,
             access_config=SQLAccessConfig(),
         ),
         **configs,
@@ -78,7 +80,7 @@ if __name__ == "__main__":
     # now, pg with pgvector
     Pipeline.from_configs(
         destination_connection_config=SQLConnectionConfig(
-            db_type=DatabaseType.POSTGRESQL,
+            db_type=POSTGRESQL_DB,
             database="elements",
             host="localhost",
             port=5433,

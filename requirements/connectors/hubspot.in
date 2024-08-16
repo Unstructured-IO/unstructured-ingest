@@ -1,5 +1,4 @@
--c ../common/constraints.txt
--c ../common/base.txt
+-r ../common/base.in
 
 hubspot-api-client
 urllib3

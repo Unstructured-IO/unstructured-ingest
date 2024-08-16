@@ -1,18 +1,18 @@
 import io
-import os
+import json
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator, Optional, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
-from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.utils.string_and_date_utils import json_to_dict
+from unstructured_ingest.utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -37,46 +37,54 @@ if TYPE_CHECKING:
     from googleapiclient.http import MediaIoBaseDownload
 
 
-@dataclass
 class GoogleDriveAccessConfig(AccessConfig):
-    service_account_key: Union[str, dict]
+    service_account_key: Optional[dict] = Field(
+        default=None, description="Credentials values to use for authentication"
+    )
+    service_account_key_path: Optional[Path] = Field(
+        default=None, description="File path to credentials values to use for authentication"
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.service_account_key is None and self.service_account_key_path is None:
+            raise ValueError(
+                "either service_account_key or service_account_key_path must be provided"
+            )
+
+    def get_service_account_key(self) -> dict:
+        key_data = None
+        if self.service_account_key_path:
+            with self.service_account_key_path.open() as f:
+                key_data = json.load(f)
+        if key_data and self.service_account_key:
+            if key_data == self.service_account_key:
+                return key_data
+            else:
+                raise ValueError(
+                    "service_account_key and service_account_key_path "
+                    "both provided and have different values"
+                )
+        if key_data:
+            return key_data
+        return self.service_account_key
 
 
-@dataclass
 class GoogleDriveConnectionConfig(ConnectionConfig):
-    drive_id: str
-    access_config: GoogleDriveAccessConfig = enhanced_field(sensitive=True)
+    drive_id: str = Field(description="Google Drive File or Folder ID.")
+    access_config: Secret[GoogleDriveAccessConfig]
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
     def get_files_service(self) -> "GoogleAPIResource":
-        from google.auth import default, exceptions
+        from google.auth import exceptions
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
         from googleapiclient.errors import HttpError
 
-        # Service account key can be a dict or a file path(str)
-        # But the dict may come in as a string
-        if isinstance(self.access_config.service_account_key, str):
-            key_path = json_to_dict(self.access_config.service_account_key)
-        elif isinstance(self.access_config.service_account_key, dict):
-            key_path = self.access_config.service_account_key
-        else:
-            raise TypeError(
-                f"access_config.service_account_key must be "
-                f"str or dict, got: {type(self.access_config.service_account_key)}"
-            )
+        access_config = self.access_config.get_secret_value()
+        key_data = access_config.get_service_account_key()
 
         try:
-            if isinstance(key_path, dict):
-                creds = service_account.Credentials.from_service_account_info(key_path)
-            elif isinstance(key_path, str):
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
-                creds, _ = default()
-            else:
-                raise ValueError(
-                    f"key path not recognized as a dictionary or a file path: "
-                    f"[{type(key_path)}] {key_path}",
-                )
+            creds = service_account.Credentials.from_service_account_info(key_data)
             service = build("drive", "v3", credentials=creds)
             return service.files()
 
@@ -86,7 +94,6 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
             raise ValueError("The provided API key is invalid.")
 
 
-@dataclass
 class GoogleDriveIndexerConfig(IndexerConfig):
     extensions: Optional[list[str]] = None
     recursive: bool = False
@@ -268,7 +275,6 @@ class GoogleDriveIndexer(Indexer):
             yield f
 
 
-@dataclass
 class GoogleDriveDownloaderConfig(DownloaderConfig):
     pass
 

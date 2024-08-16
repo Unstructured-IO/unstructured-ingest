@@ -8,6 +8,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
 
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
 from .astradb import astra_db_destination_entry
+from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE
+from .azure_cognitive_search import azure_cognitive_search_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
@@ -81,3 +83,7 @@ add_destination_entry(
     destination_type=SINGLESTORE_CONNECTOR_TYPE, entry=singlestore_destination_entry
 )
 add_destination_entry(destination_type=MILVUS_CONNECTOR_TYPE, entry=milvus_destination_entry)
+add_destination_entry(
+    destination_type=AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE,
+    entry=azure_cognitive_search_destination_entry,
+)

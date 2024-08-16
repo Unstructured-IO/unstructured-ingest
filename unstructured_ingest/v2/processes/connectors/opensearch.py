@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
+from pydantic import BaseModel, Field, Secret
+
 from unstructured_ingest.error import (
     DestinationConnectionError,
 )
@@ -35,20 +37,28 @@ CONNECTOR_TYPE = "opensearch"
 heavily on the Elasticsearch connector code, inheriting the functionality as much as possible."""
 
 
-@dataclass
 class OpenSearchAccessConfig(AccessConfig):
-    password: Optional[str] = enhanced_field(default=None, sensitive=True)
-    use_ssl: bool = False
-    verify_certs: bool = False
-    ssl_show_warn: bool = False
-    ca_certs: Optional[str] = None
-    client_cert: Optional[str] = None
-    client_key: Optional[str] = None
+    password: Optional[str] = Field(default=None, description="password when using basic auth")
+    use_ssl: bool = Field(default=False, description="use ssl for the connection")
+    verify_certs: bool = Field(default=False, description="whether to verify SSL certificates")
+    ssl_show_warn: bool = Field(
+        default=False, description="show warning when verify certs is disabled"
+    )
+    ca_certs: Optional[Path] = Field(default=None, description="path to CA bundle")
+    client_cert: Optional[Path] = Field(
+        default=None,
+        description="path to the file containing the private key and the certificate,"
+        " or cert only if using client_key",
+    )
+    client_key: Optional[Path] = Field(
+        default=None,
+        description="path to the file containing the private key"
+        " if using separate cert and key files",
+    )
 
 
-@dataclass
-class OpenSearchClientInput(EnhancedDataClassJsonMixin):
-    http_auth: Optional[tuple[str, str]] = enhanced_field(sensitive=True, default=None)
+class OpenSearchClientInput(BaseModel):
+    http_auth: Secret[Optional[tuple[str, str]]] = None
     hosts: Optional[list[str]] = None
     use_ssl: bool = False
     verify_certs: bool = False
@@ -58,37 +68,41 @@ class OpenSearchClientInput(EnhancedDataClassJsonMixin):
     client_key: Optional[str] = None
 
 
-@dataclass
 class OpenSearchConnectionConfig(ConnectionConfig):
-    hosts: Optional[list[str]] = None
-    username: Optional[str] = None
-    access_config: OpenSearchAccessConfig = enhanced_field(sensitive=True)
+    hosts: Optional[list[str]] = Field(
+        default=None,
+        description="List of the OpenSearch hosts to connect",
+        examples=["http://localhost:9200"],
+    )
+    username: Optional[str] = Field(default=None, description="username when using basic auth")
+    access_config: Secret[OpenSearchAccessConfig]
 
     def get_client_kwargs(self) -> dict:
         # Update auth related fields to conform to what the SDK expects based on the
         # supported methods:
         # https://github.com/opensearch-project/opensearch-py/blob/main/opensearchpy/client/__init__.py
-        client_input = OpenSearchClientInput()
+        access_config = self.access_config.get_secret_value()
+        client_input_kwargs = {}
         if self.hosts:
-            client_input.hosts = self.hosts
-        if self.access_config.use_ssl:
-            client_input.use_ssl = self.access_config.use_ssl
-        if self.access_config.verify_certs:
-            client_input.verify_certs = self.access_config.verify_certs
-        if self.access_config.ssl_show_warn:
-            client_input.ssl_show_warn = self.access_config.ssl_show_warn
-        if self.access_config.ca_certs:
-            client_input.ca_certs = self.access_config.ca_certs
-        if self.access_config.client_cert:
-            client_input.client_cert = self.access_config.client_cert
-        if self.access_config.client_key:
-            client_input.client_key = self.access_config.client_key
-        if self.username and self.access_config.password:
-            client_input.http_auth = (self.username, self.access_config.password)
-        logger.debug(
-            f"OpenSearch client inputs mapped to: {client_input.to_dict(redact_sensitive=True)}"
-        )
-        client_kwargs = client_input.to_dict(redact_sensitive=False)
+            client_input_kwargs["hosts"] = self.hosts
+        if access_config.use_ssl:
+            client_input_kwargs["use_ssl"] = access_config.use_ssl
+        if access_config.verify_certs:
+            client_input_kwargs["verify_certs"] = access_config.verify_certs
+        if access_config.ssl_show_warn:
+            client_input_kwargs["ssl_show_warn"] = access_config.ssl_show_warn
+        if access_config.ca_certs:
+            client_input_kwargs["ca_certs"] = str(access_config.ca_certs)
+        if access_config.client_cert:
+            client_input_kwargs["client_cert"] = str(access_config.client_cert)
+        if access_config.client_key:
+            client_input_kwargs["client_key"] = str(access_config.client_key)
+        if self.username and access_config.password:
+            client_input_kwargs["http_auth"] = (self.username, access_config.password)
+        client_input = OpenSearchClientInput(**client_input_kwargs)
+        logger.debug(f"OpenSearch client inputs mapped to: {client_input.dict()}")
+        client_kwargs = client_input.dict()
+        client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()
         client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
         return client_kwargs
 
@@ -100,15 +114,14 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         return OpenSearch(**self.get_client_kwargs())
 
 
-@dataclass
-class OpensearchIndexerConfig(ElasticsearchIndexerConfig):
+class OpenSearchIndexerConfig(ElasticsearchIndexerConfig):
     pass
 
 
 @dataclass
 class OpenSearchIndexer(ElasticsearchIndexer):
     connection_config: OpenSearchConnectionConfig
-    index_config: OpensearchIndexerConfig
+    index_config: OpenSearchIndexerConfig
     client: "OpenSearch" = field(init=False)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -118,15 +131,14 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         return scan
 
 
-@dataclass
-class OpensearchDownloaderConfig(ElasticsearchDownloaderConfig):
+class OpenSearchDownloaderConfig(ElasticsearchDownloaderConfig):
     pass
 
 
 @dataclass
 class OpenSearchDownloader(ElasticsearchDownloader):
     connection_config: OpenSearchConnectionConfig
-    download_config: OpensearchDownloaderConfig
+    download_config: OpenSearchDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -137,15 +149,14 @@ class OpenSearchDownloader(ElasticsearchDownloader):
         return AsyncOpenSearch, async_scan
 
 
-@dataclass
-class OpensearchUploaderConfig(ElasticsearchUploaderConfig):
+class OpenSearchUploaderConfig(ElasticsearchUploaderConfig):
     pass
 
 
 @dataclass
 class OpenSearchUploader(ElasticsearchUploader):
     connection_config: OpenSearchConnectionConfig
-    upload_config: OpensearchUploaderConfig
+    upload_config: OpenSearchUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -155,29 +166,28 @@ class OpenSearchUploader(ElasticsearchUploader):
         return parallel_bulk
 
 
-@dataclass
-class OpensearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
+class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
     pass
 
 
 @dataclass
-class OpensearchUploadStager(ElasticsearchUploadStager):
-    upload_stager_config: OpensearchUploadStagerConfig
+class OpenSearchUploadStager(ElasticsearchUploadStager):
+    upload_stager_config: OpenSearchUploadStagerConfig
 
 
 opensearch_source_entry = SourceRegistryEntry(
     connection_config=OpenSearchConnectionConfig,
     indexer=OpenSearchIndexer,
-    indexer_config=OpensearchIndexerConfig,
+    indexer_config=OpenSearchIndexerConfig,
     downloader=OpenSearchDownloader,
-    downloader_config=OpensearchDownloaderConfig,
+    downloader_config=OpenSearchDownloaderConfig,
 )
 
 
 opensearch_destination_entry = DestinationRegistryEntry(
     connection_config=OpenSearchConnectionConfig,
-    upload_stager_config=OpensearchUploadStagerConfig,
-    upload_stager=OpensearchUploadStager,
-    uploader_config=OpensearchUploaderConfig,
+    upload_stager_config=OpenSearchUploadStagerConfig,
+    upload_stager=OpenSearchUploadStager,
+    uploader_config=OpenSearchUploaderConfig,
     uploader=OpenSearchUploader,
 )

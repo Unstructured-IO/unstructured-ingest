@@ -5,12 +5,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured.staging.base import flatten_dict
-from unstructured.utils import requires_dependencies
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -32,25 +31,31 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "pinecone"
 
 
-@dataclass
 class PineconeAccessConfig(AccessConfig):
-    api_key: Optional[str] = enhanced_field(default=None, overload_name="pinecone_api_key")
+    pinecone_api_key: Optional[str] = Field(
+        default=None, description="API key for Pinecone.", alias="api_key"
+    )
 
 
-@dataclass
+SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
+
+
 class PineconeConnectionConfig(ConnectionConfig):
-    index_name: str
-    environment: str
-    access_config: PineconeAccessConfig = enhanced_field(sensitive=True)
+    index_name: str = Field(description="Name of the index to connect to.")
+    environment: str = Field(description="Environment to connect to.")
+    access_config: SecretPineconeAccessConfig = Field(
+        default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
+    )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
     def get_index(self) -> "PineconeIndex":
         from pinecone import Pinecone
-        from unstructured import __version__ as unstructured_version
+
+        from unstructured_ingest import __version__ as unstructured_version
 
         pc = Pinecone(
-            api_key=self.access_config.api_key,
-            source_tag=f"unstructured=={unstructured_version}",
+            api_key=self.access_config.get_secret_value().pinecone_api_key,
+            source_tag=f"unstructured_ingest=={unstructured_version}",
         )
 
         index = pc.Index(self.index_name)
@@ -58,15 +63,13 @@ class PineconeConnectionConfig(ConnectionConfig):
         return index
 
 
-@dataclass
 class PineconeUploadStagerConfig(UploadStagerConfig):
     pass
 
 
-@dataclass
 class PineconeUploaderConfig(UploaderConfig):
-    batch_size: int = 100
-    num_of_processes: int = 4
+    batch_size: int = Field(default=100, description="Number of records per batch")
+    num_processes: int = Field(default=4, description="Number of processes to use for uploading")
 
 
 @dataclass
@@ -154,18 +157,18 @@ class PineconeUploader(Uploader):
             f" index named {self.connection_config.index_name}"
             f" environment named {self.connection_config.environment}"
             f" with batch size {self.upload_config.batch_size}"
-            f" with {self.upload_config.num_of_processes} (number of) processes"
+            f" with {self.upload_config.num_processes} (number of) processes"
         )
 
         pinecone_batch_size = self.upload_config.batch_size
 
-        if self.upload_config.num_of_processes == 1:
+        if self.upload_config.num_processes == 1:
             for batch in batch_generator(elements_dict, pinecone_batch_size):
                 self.upsert_batch(batch)  # noqa: E203
 
         else:
             with mp.Pool(
-                processes=self.upload_config.num_of_processes,
+                processes=self.upload_config.num_processes,
             ) as pool:
                 pool.map(
                     self.upsert_batch, list(batch_generator(elements_dict, pinecone_batch_size))

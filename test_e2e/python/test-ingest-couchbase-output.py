@@ -17,6 +17,7 @@ def get_client(username, password, connection_string) -> Cluster:
     auth = PasswordAuthenticator(username, password)
     options = ClusterOptions(auth)
     options.apply_profile("wan_development")
+    print(f"Creating client to {connection_string} with options {options}")
     cluster = Cluster(connection_string, options)
     cluster.wait_until_ready(timedelta(seconds=5))
     return cluster
@@ -66,6 +67,10 @@ def check(ctx, expected_docs):
     scope_name = ctx.parent.params["scope"]
     collection_name = ctx.parent.params["collection"]
 
+    print(
+        f"Checking that the number of docs match expected "
+        f"at {bucket_name}.{scope_name}.{collection_name}: {expected_docs}"
+    )
     # Tally up the embeddings
     query_result = cluster.query(f"Select * from {bucket_name}.{scope_name}.{collection_name}")
     docs = list(query_result)
@@ -73,9 +78,11 @@ def check(ctx, expected_docs):
 
     # Check that the assertion is true
     assert number_of_docs == expected_docs, (
-        f"Number of rows in generated table ({number_of_docs})"
+        f"Number of rows in generated table ({number_of_docs}) "
         f"doesn't match expected value: {expected_docs}"
     )
+
+    print("Number of docs matched expected")
 
 
 @cli.command()
@@ -87,7 +94,7 @@ def check_vector(ctx, output_json):
     exact_embedding = json_content[0][key_0]["embedding"]
     exact_text = json_content[0][key_0]["text"]
 
-    print("exact embedding:", len(exact_embedding), exact_embedding)
+    print("embedding length:", len(exact_embedding))
 
     cluster: Cluster = ctx.obj["cluster"]
     bucket_name = ctx.parent.params["bucket"]
@@ -132,6 +139,9 @@ def check_vector(ctx, output_json):
         assert not math.isclose(rows[1].score, 1, abs_tol=1e-4)
         assert rows[1].fields["text"] != exact_text
 
+    print("Embeddings check passed")
+
 
 if __name__ == "__main__":
+    print("Validating results")
     cli()

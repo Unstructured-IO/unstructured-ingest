@@ -1,18 +1,21 @@
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypedDict, TypeVar, Union
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel, Field
+
 from unstructured_ingest.v2.interfaces.connector import BaseConnector
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
-class DownloaderConfig(EnhancedDataClassJsonMixin):
-    download_dir: Optional[Path] = None
+class DownloaderConfig(BaseModel):
+    download_dir: Optional[Path] = Field(
+        default=None,
+        description="Where files are downloaded to, defaults to a location at"
+        "`$HOME/.cache/unstructured/ingest/<connector name>/<SHA256>`.",
+    )
 
 
 DownloaderConfigT = TypeVar("DownloaderConfigT", bound=DownloaderConfig)

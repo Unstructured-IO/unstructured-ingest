@@ -6,7 +6,7 @@ from typing import Generator, Optional, TypeVar
 from unstructured_ingest.v2.interfaces.indexer import Indexer
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
+from unstructured_ingest.v2.utils import serialize_base_model_json
 
 IndexerT = TypeVar("IndexerT", bound=Indexer)
 
@@ -22,15 +22,9 @@ class IndexStep(PipelineStep):
         return f"{self.identifier} ({self.process.__class__.__name__})"
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.index_config.to_dict(redact_sensitive=True))
-            if self.process.index_config
-            else None
-        )
+        config = self.process.index_config.json() if self.process.index_config else None
         connection_config = (
-            sterilize_dict(self.process.connection_config.to_dict(redact_sensitive=True))
-            if self.process.connection_config
-            else None
+            self.process.connection_config.json() if self.process.connection_config else None
         )
         logger.info(
             f"Created {self.identifier} with configs: {config}, "
@@ -55,7 +49,17 @@ class IndexStep(PipelineStep):
                 continue
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        hashable_string = json.dumps(self.process.index_config.to_dict())
+        index_config_dict = json.loads(
+            serialize_base_model_json(model=self.process.index_config, sort_keys=True)
+        )
+        connection_config_dict = json.loads(
+            serialize_base_model_json(model=self.process.connection_config, sort_keys=True)
+        )
+        hashable_dict = {
+            "index_config": index_config_dict,
+            "connection_config": connection_config_dict,
+        }
+        hashable_string = json.dumps(hashable_dict, sort_keys=True)
         if extras:
             hashable_string += "".join(extras)
         return hashlib.sha256(hashable_string.encode()).hexdigest()[:12]

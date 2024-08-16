@@ -15,7 +15,6 @@ from unstructured_ingest.v2.pipeline.steps.partition import Partitioner, Partiti
 from unstructured_ingest.v2.pipeline.steps.stage import UploadStager, UploadStageStep
 from unstructured_ingest.v2.pipeline.steps.uncompress import Uncompressor, UncompressStep
 from unstructured_ingest.v2.pipeline.steps.upload import Uploader, UploadStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connector_registry import (
     ConnectionConfig,
@@ -178,10 +177,7 @@ class Pipeline:
         return filtered_records
 
     def _run(self):
-        logger.info(
-            f"Running local pipline: {self} with configs: "
-            f"{sterilize_dict(self.context.to_dict(redact_sensitive=True))}"
-        )
+        logger.info(f"Running local pipline: {self} with configs: " f"{self.context.json()}")
         if self.context.mp_supported:
             manager = mp.Manager()
             self.context.status = manager.dict()
