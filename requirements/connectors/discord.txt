@@ -4,7 +4,7 @@
 #
 #    pip-compile ./requirements/connectors/discord.in
 #
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.6
     # via aiohttp
 aiohttp==3.10.3
     # via discord-py
@@ -16,6 +16,8 @@ async-timeout==4.0.3
     # via aiohttp
 attrs==24.2.0
     # via aiohttp
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 discord-py==2.4.0

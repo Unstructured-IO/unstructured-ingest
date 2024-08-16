@@ -4,7 +4,7 @@
 #
 #    pip-compile ./requirements/embed/openai.in
 #
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.6
     # via aiohttp
 aiohttp==3.10.3
     # via
@@ -43,7 +43,9 @@ charset-normalizer==3.3.2
     #   requests
     #   unstructured-client
 click==8.1.7
-    # via nltk
+    # via
+    #   -r ./requirements/embed/../common/base.in
+    #   nltk
 dataclasses-json==0.6.7
     # via
     #   -r ./requirements/embed/../common/base.in
@@ -136,7 +138,7 @@ numpy==1.26.4
     #   langchain-community
     #   pandas
     #   unstructured
-openai==1.40.7
+openai==1.40.8
     # via -r ./requirements/embed/openai.in
 ordered-set==4.1.0
     # via deepdiff

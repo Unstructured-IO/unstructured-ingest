@@ -5,3 +5,4 @@ pandas
 pydantic
 dataclasses_json
 tqdm
+click

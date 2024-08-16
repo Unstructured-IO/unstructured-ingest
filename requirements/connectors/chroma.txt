@@ -37,6 +37,7 @@ chromadb==0.5.5
     # via -r ./requirements/connectors/chroma.in
 click==8.1.7
     # via
+    #   -r ./requirements/connectors/../common/base.in
     #   typer
     #   uvicorn
 coloredlogs==15.0.1

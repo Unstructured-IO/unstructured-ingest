@@ -14,9 +14,6 @@ pip-compile:
 install-lint:
 	pip install -r requirements/lint.txt
 
-.PHONY: install-cli
-install-cli:
-	pip install -r requirements/cli.txt
 
 .PHONY: install-client
 install-client:

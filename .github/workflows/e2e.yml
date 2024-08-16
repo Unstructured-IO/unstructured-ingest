@@ -123,7 +123,7 @@ jobs:
     - name: Install limited dependencies
       run: |
         make install-client
-        make install-cli
+        make install-base
     - name: Run test against remote API
       env:
         UNS_API_KEY: ${{ secrets.UNS_API_KEY }}

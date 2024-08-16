@@ -79,7 +79,6 @@ jobs:
       - name: Validate --help
         run: |
           make install-base
-          make install-cli
           ./test_e2e/test-help.sh
 
   test_install_cli:
@@ -121,5 +120,4 @@ jobs:
         run: |
           make install-base
           make install-test
-          make install-cli
           make unit-test

@@ -14,6 +14,8 @@ certifi==2024.7.4
     #   requests
 charset-normalizer==3.3.2
     # via requests
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 idna==3.7

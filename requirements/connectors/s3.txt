@@ -6,7 +6,7 @@
 #
 aiobotocore==2.12.3
     # via s3fs
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.6
     # via aiohttp
 aiohttp==3.10.3
     # via
@@ -26,6 +26,8 @@ botocore==1.34.51
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   aiobotocore
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 frozenlist==1.4.1

@@ -17,6 +17,8 @@ certifi==2024.7.4
     #   -c ./requirements/connectors/../common/constraints.txt
     #   httpcore
     #   httpx
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 exceptiongroup==1.2.2

@@ -21,6 +21,8 @@ charset-normalizer==3.3.2
     # via
     #   requests
     #   unstructured-client
+click==8.1.7
+    # via -r ./requirements/remote/../common/base.in
 dataclasses-json==0.6.7
     # via
     #   -r ./requirements/remote/../common/base.in

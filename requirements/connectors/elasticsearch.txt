@@ -4,7 +4,7 @@
 #
 #    pip-compile ./requirements/connectors/elasticsearch.in
 #
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.6
     # via aiohttp
 aiohttp==3.10.3
     # via elasticsearch
@@ -20,6 +20,8 @@ certifi==2024.7.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   elastic-transport
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 elastic-transport==8.15.0

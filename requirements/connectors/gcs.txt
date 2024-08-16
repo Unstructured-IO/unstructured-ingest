@@ -4,7 +4,7 @@
 #
 #    pip-compile ./requirements/connectors/gcs.in
 #
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.6
     # via aiohttp
 aiohttp==3.10.3
     # via gcsfs
@@ -28,6 +28,8 @@ certifi==2024.7.4
     #   requests
 charset-normalizer==3.3.2
     # via requests
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 decorator==5.1.1

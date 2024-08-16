@@ -10,6 +10,8 @@ certifi==2024.7.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   hubspot-api-client
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 hubspot-api-client==9.0.0

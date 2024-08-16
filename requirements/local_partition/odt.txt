@@ -28,7 +28,9 @@ charset-normalizer==3.3.2
     #   requests
     #   unstructured-client
 click==8.1.7
-    # via nltk
+    # via
+    #   -r ./requirements/local_partition/../common/base.in
+    #   nltk
 dataclasses-json==0.6.7
     # via
     #   -r ./requirements/local_partition/../common/base.in

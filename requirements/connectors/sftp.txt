@@ -12,6 +12,8 @@ cffi==1.17.0
     # via
     #   cryptography
     #   pynacl
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 cryptography==43.0.0
     # via paramiko
 dataclasses-json==0.6.7

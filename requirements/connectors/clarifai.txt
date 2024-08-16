@@ -16,6 +16,8 @@ clarifai==10.7.0
     # via -r ./requirements/connectors/clarifai.in
 clarifai-grpc==10.7.2
     # via clarifai
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 contextlib2==21.6.0
     # via schema
 dataclasses-json==0.6.7

@@ -6,7 +6,7 @@
 #
 adlfs==2024.7.0
     # via -r ./requirements/connectors/azure.in
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.3.6
     # via aiohttp
 aiohttp==3.10.3
     # via adlfs
@@ -39,6 +39,8 @@ cffi==1.17.0
     #   cryptography
 charset-normalizer==3.3.2
     # via requests
+click==8.1.7
+    # via -r ./requirements/connectors/../common/base.in
 cryptography==43.0.0
     # via
     #   azure-identity
