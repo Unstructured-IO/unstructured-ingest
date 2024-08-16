@@ -138,11 +138,15 @@ class Partitioner(BaseProcess, ABC):
         from unstructured.partition.auto import partition
         from unstructured.staging.base import elements_to_dicts
 
+        @dataclass
+        class FileDataSourceMetadata(DataSourceMetadata):
+            filesize_bytes: Optional[int] = None
+
         logger.debug(f"Using local partition with kwargs: {self.config.to_partition_kwargs()}")
         logger.debug(f"partitioning file {filename} with metadata {metadata}")
         elements = partition(
             filename=str(filename.resolve()),
-            data_source_metadata=DataSourceMetadata.from_dict(metadata),
+            data_source_metadata=FileDataSourceMetadata.from_dict(metadata),
             **self.config.to_partition_kwargs(),
         )
         return self.postprocess(elements=elements_to_dicts(elements))
