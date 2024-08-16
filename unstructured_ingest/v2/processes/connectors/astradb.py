@@ -97,6 +97,7 @@ class AstraDBUploaderConfig(UploaderConfig):
     )
     batch_size: int = Field(default=20, description="Number of records per batch")
 
+
 @dataclass
 class AstraDBUploader(Uploader):
     connection_config: AstraDBConnectionConfig
