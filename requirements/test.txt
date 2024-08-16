@@ -84,9 +84,7 @@ mypy-extensions==1.0.0
 nest-asyncio==1.6.0
     # via unstructured-client
 nltk==3.8.1
-    # via
-    #   -c ./requirements/./common/constraints.txt
-    #   unstructured
+    # via unstructured
 numpy==1.26.4
     # via
     #   -c ./requirements/./common/constraints.txt
@@ -165,7 +163,7 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   unstructured-client
-unstructured==0.15.1
+unstructured==0.15.5
     # via
     #   -c ./requirements/./common/constraints.txt
     #   -r ./requirements/test.in

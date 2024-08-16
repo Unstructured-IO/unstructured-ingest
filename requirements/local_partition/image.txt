@@ -157,9 +157,7 @@ nest-asyncio==1.6.0
 networkx==3.2.1
     # via torch
 nltk==3.8.1
-    # via
-    #   -c ./requirements/local_partition/../common/constraints.txt
-    #   unstructured
+    # via unstructured
 numpy==1.26.4
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
@@ -198,7 +196,6 @@ packaging==23.2
     #   matplotlib
     #   onnxruntime
     #   pikepdf
-    #   pytesseract
     #   transformers
     #   unstructured-client
     #   unstructured-pytesseract
@@ -226,7 +223,6 @@ pillow==10.4.0
     #   pdfplumber
     #   pikepdf
     #   pillow-heif
-    #   pytesseract
     #   torchvision
     #   unstructured-pytesseract
 pillow-heif==0.18.0
@@ -275,8 +271,6 @@ pypdf==4.3.1
     #   unstructured-client
 pypdfium2==4.30.0
     # via pdfplumber
-pytesseract==0.3.13
-    # via unstructured
 python-dateutil==2.9.0.post0
     # via
     #   -r ./requirements/local_partition/../common/base.in
@@ -388,7 +382,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured[image]==0.15.1
+unstructured[image]==0.15.5
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
     #   -r ./requirements/local_partition/image.in

@@ -84,7 +84,7 @@ jsonpath-python==1.0.6
     # via unstructured-client
 jsonpointer==3.0.0
     # via jsonpatch
-langchain-core==0.2.32
+langchain-core==0.2.33
     # via langchain-huggingface
 langchain-huggingface==0.0.3
     # via -r ./requirements/embed/huggingface.in
@@ -111,9 +111,7 @@ nest-asyncio==1.6.0
 networkx==3.2.1
     # via torch
 nltk==3.8.1
-    # via
-    #   -c ./requirements/embed/../common/constraints.txt
-    #   unstructured
+    # via unstructured
 numpy==1.26.4
     # via
     #   -c ./requirements/embed/../common/constraints.txt
@@ -250,7 +248,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured==0.15.1
+unstructured==0.15.5
     # via
     #   -c ./requirements/embed/../common/constraints.txt
     #   -r ./requirements/embed/./common/base.in
