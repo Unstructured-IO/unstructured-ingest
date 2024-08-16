@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, SecretStr
-from unstructured.documents.elements import DataSourceMetadata
-from unstructured.staging.base import elements_to_dicts, flatten_dict
 
+from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -132,16 +132,23 @@ class Partitioner(BaseProcess, ABC):
                 elem.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
         return element_dicts
 
+    @requires_dependencies(dependencies=["unstructured"])
     def partition_locally(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
+        self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
+        from unstructured.documents.elements import DataSourceMetadata
         from unstructured.partition.auto import partition
+        from unstructured.staging.base import elements_to_dicts
+
+        @dataclass
+        class FileDataSourceMetadata(DataSourceMetadata):
+            filesize_bytes: Optional[int] = None
 
         logger.debug(f"Using local partition with kwargs: {self.config.to_partition_kwargs()}")
-        logger.debug(f"partitioning file {filename} with metadata {metadata.to_dict()}")
+        logger.debug(f"partitioning file {filename} with metadata {metadata}")
         elements = partition(
             filename=str(filename.resolve()),
-            data_source_metadata=metadata,
+            data_source_metadata=FileDataSourceMetadata.from_dict(metadata),
             **self.config.to_partition_kwargs(),
         )
         return self.postprocess(elements=elements_to_dicts(elements))
@@ -177,12 +184,13 @@ class Partitioner(BaseProcess, ABC):
         partition_params = PartitionParameters(**filtered_partition_request)
         return partition_params
 
+    @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def partition_via_api(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
+        self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
         from unstructured_client import UnstructuredClient
 
-        logger.debug(f"partitioning file {filename} with metadata: {metadata.to_dict()}")
+        logger.debug(f"partitioning file {filename} with metadata: {metadata}")
         client = UnstructuredClient(
             server_url=self.config.partition_endpoint,
             api_key_auth=self.config.api_key.get_secret_value(),
@@ -192,15 +200,13 @@ class Partitioner(BaseProcess, ABC):
         elements = resp.elements or []
         # Append the data source metadata the auto partition does for you
         for element in elements:
-            element["metadata"]["data_source"] = metadata.to_dict()
+            element["metadata"]["data_source"] = metadata
         return self.postprocess(elements=elements)
 
-    def run(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
-    ) -> list[dict]:
+    def run(self, filename: Path, metadata: Optional[dict] = None, **kwargs) -> list[dict]:
         return self.partition_locally(filename, metadata=metadata, **kwargs)
 
     async def run_async(
-        self, filename: Path, metadata: Optional[DataSourceMetadata] = None, **kwargs
+        self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
         return await self.partition_via_api(filename, metadata=metadata, **kwargs)

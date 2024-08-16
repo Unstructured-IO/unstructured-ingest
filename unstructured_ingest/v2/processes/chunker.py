@@ -4,12 +4,14 @@ from pathlib import Path
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field, SecretStr
-from unstructured.chunking import CHUNK_MAX_CHARS_DEFAULT, CHUNK_MULTI_PAGE_DEFAULT, dispatch
-from unstructured.documents.elements import Element, assign_and_map_hash_ids
-from unstructured.staging.base import dict_to_elements, elements_from_json
 
+from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
+
+CHUNK_MAX_CHARS_DEFAULT: int = 500
+CHUNK_MULTI_PAGE_DEFAULT: bool = True
 
 
 class ChunkerConfig(BaseModel):
@@ -86,10 +88,14 @@ class Chunker(BaseProcess, ABC):
     def is_async(self) -> bool:
         return self.config.chunk_by_api
 
-    def run(self, elements_filepath: Path, **kwargs: Any) -> list[Element]:
+    @requires_dependencies(dependencies=["unstructured"])
+    def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
+        from unstructured.chunking import dispatch
+        from unstructured.staging.base import elements_from_json
+
         elements = elements_from_json(filename=str(elements_filepath))
         if not elements:
-            return elements
+            return [e.to_dict() for e in elements]
         local_chunking_strategies = ("basic", "by_title")
         if self.config.chunking_strategy not in local_chunking_strategies:
             logger.warning(
@@ -97,12 +103,14 @@ class Chunker(BaseProcess, ABC):
                     self.config.chunking_strategy, ", ".join(local_chunking_strategies)
                 )
             )
-            return elements
+            return [e.to_dict() for e in elements]
         chunked_elements = dispatch.chunk(elements=elements, **self.config.to_chunking_kwargs())
-        assign_and_map_hash_ids(chunked_elements)
-        return chunked_elements
+        chunked_elements_dicts = [e.to_dict() for e in chunked_elements]
+        chunked_elements_dicts = assign_and_map_hash_ids(elements=chunked_elements_dicts)
+        return chunked_elements_dicts
 
-    async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[Element]:
+    @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
+    async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured_client import UnstructuredClient
         from unstructured_client.models.shared import Files, PartitionParameters
 
@@ -130,7 +138,6 @@ class Chunker(BaseProcess, ABC):
             filtered_partition_request["files"] = files
             partition_params = PartitionParameters(**filtered_partition_request)
         resp = client.general.partition(partition_params)
-        elements_raw = resp.elements or []
-        elements = dict_to_elements(elements_raw)
-        assign_and_map_hash_ids(elements)
+        elements = resp.elements or []
+        elements = assign_and_map_hash_ids(elements=elements)
         return elements

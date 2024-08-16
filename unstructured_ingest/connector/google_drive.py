@@ -7,8 +7,6 @@ from datetime import datetime
 from mimetypes import guess_extension
 from pathlib import Path
 
-from unstructured.file_utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
-
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.interfaces import (
@@ -25,6 +23,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 
 if t.TYPE_CHECKING:

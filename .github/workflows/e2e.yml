@@ -107,6 +107,30 @@ jobs:
         docker compose version
         ./test_e2e/test-src.sh
 
+  test_src_api:
+    runs-on: ubuntu-latest-m
+    needs: [ setup ]
+    steps:
+    # actions/checkout MUST come before auth
+    - uses: 'actions/checkout@v4'
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Install limited dependencies
+      run: |
+        make install-client
+        make install-base
+    - name: Run test against remote API
+      env:
+        UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
+      run: |
+        ./test_e2e/src/against-api.sh
+    
+
 
   test_dest:
     environment: ci

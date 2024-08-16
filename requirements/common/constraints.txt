@@ -63,3 +63,6 @@ langchain-community>=0.2.5
 importlib-metadata==7.1.0
 
 nltk==3.8.1
+
+unstructured==0.15.1
+numpy<2

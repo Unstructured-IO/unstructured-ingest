@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
-from unstructured.staging.base import elements_to_dicts
-
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
@@ -67,7 +65,7 @@ class EmbedStep(PipelineStep):
 
         self._save_output(
             output_filepath=str(output_filepath),
-            embedded_content=elements_to_dicts(embed_content_raw),
+            embedded_content=embed_content_raw,
         )
         return EmbedStepResponse(file_data_path=file_data_path, path=str(output_filepath))
 

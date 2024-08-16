@@ -3,8 +3,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import UUID
 
-import httpx
-
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.interfaces import (
@@ -316,7 +314,10 @@ class NotionSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
             retry_strategy_config=self.retry_strategy_config,
         )
 
+    @requires_dependencies(["httpx"], extras="notion")
     def check_connection(self):
+        import httpx
+
         try:
             request = self.client._build_request("HEAD", "users")
             response = self.client.client.send(request)

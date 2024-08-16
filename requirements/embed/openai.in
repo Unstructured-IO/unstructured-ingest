@@ -1,5 +1,5 @@
--c ../common/constraints.txt
--c ../common/base.txt
+-r ../common/base.in
+-r ./common/base.in
 
 langchain-community
 tiktoken

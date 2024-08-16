@@ -56,7 +56,7 @@ class PartitionStep(PipelineStep):
         if not self.should_partition(filepath=output_filepath, file_data=file_data):
             logger.debug(f"Skipping partitioning, output already exists: {output_filepath}")
             return PartitionStepResponse(file_data_path=file_data_path, path=str(output_filepath))
-        fn_kwargs = {"filename": path, "metadata": file_data.metadata}
+        fn_kwargs = {"filename": path, "metadata": file_data.metadata.to_dict()}
         if not asyncio.iscoroutinefunction(fn):
             partitioned_content = fn(**fn_kwargs)
         elif semaphore := self.context.semaphore:

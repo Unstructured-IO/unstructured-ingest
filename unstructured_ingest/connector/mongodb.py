@@ -3,8 +3,7 @@ import typing as t
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from unstructured.__version__ import __version__ as unstructured_version
-
+from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.enhanced_dataclass.core import _asdict
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError, WriteError

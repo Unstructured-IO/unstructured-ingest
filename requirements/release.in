@@ -1,2 +1,4 @@
+-c ./common/constraints.txt
+
 twine
 wheel
