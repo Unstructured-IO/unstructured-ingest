@@ -126,7 +126,7 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   unstructured-client
-unstructured==0.15.3
+unstructured==0.15.5
     # via -r ./requirements/embed/common/base.in
 unstructured-client==0.25.5
     # via unstructured

@@ -76,9 +76,7 @@ mypy-extensions==1.0.0
 nest-asyncio==1.6.0
     # via unstructured-client
 nltk==3.8.1
-    # via
-    #   -c ./requirements/local_partition/../common/constraints.txt
-    #   unstructured
+    # via unstructured
 numpy==1.26.4
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
@@ -161,7 +159,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured[msg]==0.15.1
+unstructured[msg]==0.15.5
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
     #   -r ./requirements/local_partition/msg.in
