@@ -17,7 +17,7 @@ def id_to_hash(element: dict, sequence_number: int) -> str:
     text = element["text"]
     page_number = element["metadata"].get("page_number")
     data = f"{filename}{text}{page_number}{sequence_number}"
-    element["_element_id"] = hashlib.sha256(data.encode()).hexdigest()[:32]
+    element["element_id"] = hashlib.sha256(data.encode()).hexdigest()[:32]
     return element["element_id"]
 
 
