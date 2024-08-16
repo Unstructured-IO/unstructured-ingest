@@ -52,7 +52,7 @@ install-docker-compose:
 	ARCH=${ARCH} ./scripts/install-docker-compose.sh
 
 .PHONY: install-ci
-install-ci: install-all-connectors install-all-embedders install-cli
+install-ci: install-all-connectors install-all-embedders
 	pip install -r requirements/local_partition/pdf.txt
 	pip install -r requirements/local_partition/docx.txt
 	pip install -r requirements/local_partition/pptx.txt
