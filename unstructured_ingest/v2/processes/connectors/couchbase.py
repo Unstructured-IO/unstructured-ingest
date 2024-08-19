@@ -180,14 +180,19 @@ class CouchbaseIndexer(Indexer):
             f"`{self.connection_config.collection}` as d"
         )
 
-        try:
-            cluster = self.connection_config.connect_to_couchbase()
-            result = cluster.query(query)  # TODO: If query fails repeatedly, add retry logic
-            document_ids = [row["id"] for row in result]
-            return document_ids
-        except Exception as e:
-            logger.error(f"Failed to get document ids {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to get document ids: {e}")
+        max_attempts = 5
+        attempts = 0
+        while attempts < max_attempts:
+            try:
+                cluster = self.connection_config.connect_to_couchbase()
+                result = cluster.query(query)
+                document_ids = [row["id"] for row in result]
+                return document_ids
+            except Exception as e:
+                attempts += 1
+                time.sleep(3)
+                if attempts == max_attempts:
+                    raise SourceConnectionError(f"failed to get document ids: {e}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         ids = self._get_doc_ids()
