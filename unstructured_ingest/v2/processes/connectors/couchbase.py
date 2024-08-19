@@ -1,9 +1,7 @@
-import asyncio
 import hashlib
 import json
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
