@@ -1,7 +1,5 @@
 from typing import Any, Generator, List, Optional, Tuple
 
-import backoff
-import httpx
 import notion_client.errors
 from notion_client import Client as NotionClient
 from notion_client.api_endpoints import BlocksChildrenEndpoint as NotionBlocksChildrenEndpoint
@@ -19,25 +17,36 @@ from unstructured_ingest.connector.notion.types.database_properties import (
 from unstructured_ingest.connector.notion.types.page import Page
 from unstructured_ingest.ingest_backoff import RetryHandler
 from unstructured_ingest.interfaces import RetryStrategyConfig
+from unstructured_ingest.utils.dep_check import requires_dependencies
 
-retryable_exceptions = (
-    httpx.TimeoutException,
-    httpx.HTTPStatusError,
-    notion_client.errors.HTTPResponseError,
-)
+
+@requires_dependencies(["httpx"], extras="notion")
+def _get_retry_strategy(
+    endpoint: Endpoint, retry_strategy_config: RetryStrategyConfig
+) -> RetryHandler:
+    import backoff
+    import httpx
+
+    retryable_exceptions = (
+        httpx.TimeoutException,
+        httpx.HTTPStatusError,
+        notion_client.errors.HTTPResponseError,
+    )
+
+    return RetryHandler(
+        backoff.expo,
+        retryable_exceptions,
+        max_time=retry_strategy_config.max_retry_time,
+        max_tries=retry_strategy_config.max_retries,
+        logger=endpoint.parent.logger,
+        start_log_level=endpoint.parent.logger.level,
+        backoff_log_level=endpoint.parent.logger.level,
+    )
 
 
 def get_retry_handler(endpoint: Endpoint) -> Optional[RetryHandler]:
     if retry_strategy_config := getattr(endpoint, "retry_strategy_config"):
-        return RetryHandler(
-            backoff.expo,
-            retryable_exceptions,
-            max_time=retry_strategy_config.max_retry_time,
-            max_tries=retry_strategy_config.max_retries,
-            logger=endpoint.parent.logger,
-            start_log_level=endpoint.parent.logger.level,
-            backoff_log_level=endpoint.parent.logger.level,
-        )
+        return _get_retry_strategy(endpoint=endpoint, retry_strategy_config=retry_strategy_config)
     return None
 
 
@@ -105,7 +114,10 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
         )  # type: ignore
         return Database.from_dict(data=resp)
 
+    @requires_dependencies(["httpx"], extras="notion")
     def retrieve_status(self, database_id: str, **kwargs) -> int:
+        import httpx
+
         request = self.parent._build_request(
             method="HEAD",
             path=f"databases/{database_id}",
@@ -203,7 +215,10 @@ class PagesEndpoint(NotionPagesEndpoint):
         )  # type: ignore
         return Page.from_dict(data=resp)
 
+    @requires_dependencies(["httpx"], extras="notion")
     def retrieve_status(self, page_id: str, **kwargs) -> int:
+        import httpx
+
         request = self.parent._build_request(
             method="HEAD",
             path=f"pages/{page_id}",

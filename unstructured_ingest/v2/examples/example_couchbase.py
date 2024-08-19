@@ -1,26 +1,27 @@
 from pathlib import Path
 
-from unstructured.ingest.v2.interfaces import ProcessorConfig
-from unstructured.ingest.v2.logger import logger
-from unstructured.ingest.v2.pipeline.pipeline import Pipeline
-from unstructured.ingest.v2.processes.chunker import ChunkerConfig
-from unstructured.ingest.v2.processes.connectors.couchbase import (
+from unstructured_ingest.v2.interfaces import ProcessorConfig
+from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.pipeline.pipeline import Pipeline
+from unstructured_ingest.v2.processes.chunker import ChunkerConfig
+from unstructured_ingest.v2.processes.connectors.couchbase import (
+    CONNECTOR_TYPE,
     CouchbaseAccessConfig,
     CouchbaseConnectionConfig,
     CouchbaseUploaderConfig,
     CouchbaseUploadStagerConfig,
 )
-from unstructured.ingest.v2.processes.connectors.local import (
+from unstructured_ingest.v2.processes.connectors.local import (
     LocalConnectionConfig,
     LocalDownloaderConfig,
     LocalIndexerConfig,
 )
-from unstructured.ingest.v2.processes.embedder import EmbedderConfig
-from unstructured.ingest.v2.processes.partitioner import PartitionerConfig
+from unstructured_ingest.v2.processes.embedder import EmbedderConfig
+from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent.parent
+base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
-work_dir = base_path / "tmp_ingest"
+work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
 

@@ -11,6 +11,7 @@ from unstructured_ingest.v2.processes.connectors.local import (
     LocalIndexerConfig,
 )
 from unstructured_ingest.v2.processes.connectors.pinecone import (
+    CONNECTOR_TYPE,
     PineconeAccessConfig,
     PineconeConnectionConfig,
     PineconeUploaderConfig,
@@ -19,9 +20,9 @@ from unstructured_ingest.v2.processes.connectors.pinecone import (
 from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent.parent
+base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
-work_dir = base_path / "tmp_ingest"
+work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
 
@@ -39,7 +40,7 @@ if __name__ == "__main__":
         embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
         destination_connection_config=PineconeConnectionConfig(
             # You'll need to set PINECONE_API_KEY environment variable to run this example
-            access_config=PineconeAccessConfig(api_key=os.getenv("PINECONE_API_KEY")),
+            access_config=PineconeAccessConfig(pinecone_api_key=os.getenv("PINECONE_API_KEY")),
             index_name=os.getenv(
                 "PINECONE_INDEX",
                 default="your index name here. e.g. my-index,"
@@ -52,5 +53,5 @@ if __name__ == "__main__":
             ),
         ),
         stager_config=PineconeUploadStagerConfig(),
-        uploader_config=PineconeUploaderConfig(batch_size=10, num_of_processes=2),
+        uploader_config=PineconeUploaderConfig(batch_size=10, num_processes=2),
     ).run()

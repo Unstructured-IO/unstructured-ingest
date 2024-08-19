@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import urlparse
 
-import requests
-
 from unstructured_ingest.connector.git import (
     GitIngestDoc,
     GitSourceConnector,
@@ -71,7 +69,10 @@ class GitHubIngestDoc(GitIngestDoc):
         return content_file
 
     @SourceConnectionNetworkError.wrap
+    @requires_dependencies(["requests"], extras="github")
     def _fetch_content(self, content_file):
+        import requests
+
         contents = b""
         if (
             not content_file.content  # type: ignore

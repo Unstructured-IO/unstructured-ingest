@@ -5,13 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
-from unstructured.staging.base import elements_to_dicts
-
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 from unstructured_ingest.v2.processes.chunker import Chunker
+from unstructured_ingest.v2.utils import serialize_base_model_json
 
 STEP_ID = "chunk"
 
@@ -30,11 +28,7 @@ class ChunkStep(PipelineStep):
         return f"{self.identifier} ({self.process.config.chunking_strategy})"
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.config.to_dict(redact_sensitive=True))
-            if self.process.config
-            else None
-        )
+        config = self.process.config.json() if self.process.config else None
         logger.info(f"Created {self.identifier} with configs: {config}")
 
     def should_chunk(self, filepath: Path, file_data: FileData) -> bool:
@@ -72,13 +66,13 @@ class ChunkStep(PipelineStep):
             chunked_content_raw = await fn(**fn_kwargs)
         self._save_output(
             output_filepath=str(output_filepath),
-            chunked_content=elements_to_dicts(chunked_content_raw),
+            chunked_content=chunked_content_raw,
         )
         return ChunkStepResponse(file_data_path=file_data_path, path=str(output_filepath))
 
     def get_hash(self, extras: Optional[list[str]]) -> str:
-        hashable_string = json.dumps(
-            self.process.config.to_dict(), sort_keys=True, ensure_ascii=True
+        hashable_string = serialize_base_model_json(
+            model=self.process.config, sort_keys=True, ensure_ascii=True
         )
         if extras:
             hashable_string += "".join(extras)

@@ -5,6 +5,8 @@ from pathlib import Path
 from time import time
 from typing import Any, Generator
 
+from pydantic import Field, Secret
+
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -29,20 +31,28 @@ from unstructured_ingest.v2.processes.connector_registry import (
 CONNECTOR_TYPE = "local"
 
 
-@dataclass
 class LocalAccessConfig(AccessConfig):
     pass
 
 
-@dataclass
+SecretLocalAccessConfig = Secret[LocalAccessConfig]
+
+
 class LocalConnectionConfig(ConnectionConfig):
-    access_config: LocalAccessConfig = field(default_factory=lambda: LocalAccessConfig())
+    access_config: SecretLocalAccessConfig = Field(
+        default_factory=lambda: SecretLocalAccessConfig(secret_value=LocalAccessConfig())
+    )
 
 
-@dataclass
 class LocalIndexerConfig(IndexerConfig):
-    input_path: str
-    recursive: bool = False
+    input_path: Path = Field(
+        description="Path to the location in the local file system that will be processed."
+    )
+    recursive: bool = Field(
+        default=False,
+        description="Recursively download files in their respective folders "
+        "otherwise stop at the files in provided folder level.",
+    )
 
     @property
     def path(self) -> Path:
@@ -122,7 +132,6 @@ class LocalIndexer(Indexer):
             yield file_data
 
 
-@dataclass
 class LocalDownloaderConfig(DownloaderConfig):
     pass
 
@@ -130,10 +139,8 @@ class LocalDownloaderConfig(DownloaderConfig):
 @dataclass
 class LocalDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
-    connection_config: LocalConnectionConfig = field(
-        default_factory=lambda: LocalConnectionConfig()
-    )
-    download_config: LocalDownloaderConfig = field(default_factory=lambda: LocalDownloaderConfig())
+    connection_config: LocalConnectionConfig = field(default_factory=LocalConnectionConfig)
+    download_config: LocalDownloaderConfig = field(default_factory=LocalDownloaderConfig)
 
     def get_download_path(self, file_data: FileData) -> Path:
         return Path(file_data.source_identifiers.fullpath)
@@ -144,9 +151,10 @@ class LocalDownloader(Downloader):
         )
 
 
-@dataclass
 class LocalUploaderConfig(UploaderConfig):
-    output_dir: str = field(default="structured-output")
+    output_dir: str = Field(
+        default="structured-output", description="Local path to write partitioned output to"
+    )
 
     @property
     def output_path(self) -> Path:
@@ -160,7 +168,7 @@ class LocalUploaderConfig(UploaderConfig):
 @dataclass
 class LocalUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
-    upload_config: LocalUploaderConfig = field(default_factory=lambda: LocalUploaderConfig())
+    upload_config: LocalUploaderConfig = field(default_factory=LocalUploaderConfig)
     connection_config: LocalConnectionConfig = field(
         default_factory=lambda: LocalConnectionConfig()
     )

@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any, Generator, Optional
 from urllib.parse import urlparse
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -27,10 +28,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 CONNECTOR_TYPE = "sftp"
 
 
-@dataclass
 class SftpIndexerConfig(FsspecIndexerConfig):
-    def __post_init__(self):
-        super().__post_init__()
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
         _, ext = os.path.splitext(self.remote_url)
         parsed_url = urlparse(self.remote_url)
         if ext:
@@ -39,21 +40,21 @@ class SftpIndexerConfig(FsspecIndexerConfig):
             self.path_without_protocol = parsed_url.path.lstrip("/")
 
 
-@dataclass
 class SftpAccessConfig(FsspecAccessConfig):
-    password: str
+    password: str = Field(description="Password for sftp connection")
 
 
-@dataclass
 class SftpConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["sftp"])
-    access_config: SftpAccessConfig = enhanced_field(sensitive=True)
-    connector_type: str = CONNECTOR_TYPE
-    username: Optional[str] = None
-    host: Optional[str] = None
-    port: int = 22
-    look_for_keys: bool = False
-    allow_agent: bool = False
+    supported_protocols: list[str] = Field(default_factory=lambda: ["sftp"], init=False)
+    access_config: Secret[SftpAccessConfig]
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    username: str = Field(description="Username for sftp connection")
+    host: Optional[str] = Field(default=None, description="Hostname for sftp connection")
+    port: int = Field(default=22, description="Port for sftp connection")
+    look_for_keys: bool = Field(
+        default=False, description="Whether to search for private key files in ~/.ssh/"
+    )
+    allow_agent: bool = Field(default=False, description="Whether to connect to the SSH agent.")
 
     def get_access_config(self) -> dict[str, Any]:
         access_config = {
@@ -62,7 +63,7 @@ class SftpConnectionConfig(FsspecConnectionConfig):
             "port": self.port,
             "look_for_keys": self.look_for_keys,
             "allow_agent": self.allow_agent,
-            "password": self.access_config.password,
+            "password": self.access_config.get_secret_value().password,
         }
         return access_config
 
@@ -96,24 +97,15 @@ class SftpIndexer(FsspecIndexer):
         super().precheck()
 
 
-@dataclass
 class SftpDownloaderConfig(FsspecDownloaderConfig):
-    remote_url: Optional[str] = None
-
-    def __post_init__(self):
-        # TODO once python3.9 no longer supported and kw_only is allowed in dataclasses, remove:
-        if not self.remote_url:
-            raise TypeError(
-                f"{self.__class__.__name__}.__init__() "
-                f"missing 1 required positional argument: 'remote_url'"
-            )
+    remote_url: str = Field(description="Remote fsspec URL formatted as `protocol://dir/path`")
 
 
 @dataclass
 class SftpDownloader(FsspecDownloader):
     protocol: str = "sftp"
     connection_config: SftpConnectionConfig
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     download_config: Optional[SftpDownloaderConfig] = field(default_factory=SftpDownloaderConfig)
 
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
@@ -131,7 +123,6 @@ class SftpDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class SftpUploaderConfig(FsspecUploaderConfig):
     pass
 

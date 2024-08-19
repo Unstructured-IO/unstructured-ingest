@@ -6,7 +6,8 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import quote
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, enhanced_field
+from pydantic import BaseModel, Field, Secret, SecretStr
+
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -54,24 +55,38 @@ class SharepointContentType(Enum):
     LIST = "list"
 
 
-@dataclass
 class SharepointAccessConfig(AccessConfig):
-    client_cred: str
+    client_cred: str = Field(description="Sharepoint app secret")
 
 
-@dataclass
-class SharepointPermissionsConfig(EnhancedDataClassJsonMixin):
-    permissions_application_id: str
-    permissions_tenant: str
-    permissions_client_cred: str = enhanced_field(sensitive=True)
-    authority_url: Optional[str] = field(repr=False, default="https://login.microsoftonline.com")
+class SharepointPermissionsConfig(BaseModel):
+    permissions_application_id: str = Field(description="Microsoft Graph API application id")
+    permissions_tenant: str = Field(
+        description="url to get permissions data within tenant.",
+        examples=["https://contoso.onmicrosoft.com"],
+    )
+    permissions_client_cred: SecretStr = Field(
+        description="Microsoft Graph API application credentials"
+    )
+    authority_url: Optional[SecretStr] = Field(
+        repr=False,
+        default_factory=lambda: SecretStr(secret_value="https://login.microsoftonline.com"),
+        description="Permissions authority url",
+        examples=["https://login.microsoftonline.com"],
+    )
 
 
-@dataclass
 class SharepointConnectionConfig(ConnectionConfig):
-    client_id: str
-    site: str
-    access_config: SharepointAccessConfig = enhanced_field(sensitive=True)
+    client_id: str = Field(description="Sharepoint app client ID")
+    site: str = Field(
+        description="Sharepoint site url. Process either base url e.g \
+                    https://[tenant].sharepoint.com  or relative sites \
+                    https://[tenant].sharepoint.com/sites/<site_name>. \
+                    To process all sites within the tenant pass a site url as \
+                    https://[tenant]-admin.sharepoint.com.\
+                    This requires the app to be registered at a tenant level"
+    )
+    access_config: Secret[SharepointAccessConfig]
     permissions_config: Optional[SharepointPermissionsConfig] = None
 
     @requires_dependencies(["office365"], extras="sharepoint")
@@ -80,7 +95,9 @@ class SharepointConnectionConfig(ConnectionConfig):
         from office365.sharepoint.client_context import ClientContext
 
         try:
-            credentials = ClientCredential(self.client_id, self.access_config.client_cred)
+            credentials = ClientCredential(
+                self.client_id, self.access_config.get_secret_value().client_cred
+            )
             site_client = ClientContext(self.site).with_credentials(credentials)
         except Exception as e:
             logger.error(f"Couldn't set Sharepoint client: {e}")
@@ -92,11 +109,12 @@ class SharepointConnectionConfig(ConnectionConfig):
         from msal import ConfidentialClientApplication
 
         try:
+            client_credential = self.permissions_config.permissions_client_cred.get_secret_value()
             app = ConfidentialClientApplication(
-                authority=f"{self.permissions_config.authority_url}/"
+                authority=f"{self.permissions_config.authority_url.get_secret_value()}/"
                 f"{self.permissions_config.permissions_tenant}",
                 client_id=self.permissions_config.permissions_application_id,
-                client_credential=self.permissions_config.permissions_client_cred,
+                client_credential=client_credential,
             )
             token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
         except ValueError as exc:
@@ -119,13 +137,21 @@ class SharepointConnectionConfig(ConnectionConfig):
         return client
 
 
-@dataclass
 class SharepointIndexerConfig(IndexerConfig):
-    path: Optional[str] = None
-    recursive: bool = False
-    omit_files: bool = False
-    omit_pages: bool = False
-    omit_lists: bool = False
+    path: Optional[str] = Field(
+        defaul=None,
+        description="Path from which to start parsing files. If the connector is to \
+                process all sites within the tenant this filter will be applied to \
+                all sites document libraries.",
+    )
+    recursive: bool = Field(
+        default=False,
+        description="Recursively download files in their respective folders "
+        "otherwise stop at the files in provided folder level.",
+    )
+    omit_files: bool = Field(default=False, description="Don't process files.")
+    omit_pages: bool = Field(default=False, description="Don't process site pages.")
+    omit_lists: bool = Field(default=False, description="Don't process lists.")
 
 
 @dataclass
@@ -310,7 +336,7 @@ class SharepointIndexer(Indexer):
     def process_permissions(self) -> bool:
         return (
             self.connection_config.permissions_config.permissions_tenant
-            and self.connection_config.permissions_config.permissions_client_cred
+            and self.connection_config.permissions_config.permissions_client_cred.get_secret_value()
             and self.connection_config.permissions_config.permissions_application_id
         )
 
@@ -335,7 +361,6 @@ class SharepointIndexer(Indexer):
                 yield file_data
 
 
-@dataclass
 class SharepointDownloaderConfig(DownloaderConfig):
     pass
 

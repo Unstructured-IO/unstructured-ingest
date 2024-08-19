@@ -9,6 +9,10 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, List, Optional
 
+from pydantic import Field, Secret
+
+from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import (
     SourceConnectionError,
@@ -62,22 +66,25 @@ def connect_to_couchbase(connection_string: str, username: str, password: str):
 
 @dataclass
 class CouchbaseAccessConfig(AccessConfig):
-    password: str
+    password: str = Field(description="The password for the Couchbase server")
 
 
-@dataclass
 class CouchbaseConnectionConfig(ConnectionConfig):
-    username: str
-    bucket: str
-    connection_string: str = "couchbase://localhost"
-    scope: str = "_default"
-    collection: str = "_default"
-    batch_size: int = 50
-    connector_type: str = CONNECTOR_TYPE
-    access_config: CouchbaseAccessConfig = enhanced_field(sensitive=True)
+    username: str = Field(description="The username for the Couchbase server")
+    bucket: str = Field(description="The bucket to connect to on the Couchbase server")
+    connection_string: str = Field(
+        default="couchbase://localhost", description="The connection string of the Couchbase server"
+    )
+    scope: str = Field(
+        default="_default", description="The scope to connect to on the Couchbase server"
+    )
+    collection: str = Field(
+        default="_default", description="The collection to connect to on the Couchbase server"
+    )
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    access_config: Secret[CouchbaseAccessConfig]
 
 
-@dataclass
 class CouchbaseUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -116,28 +123,49 @@ class CouchbaseUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class CouchbaseUploaderConfig(UploaderConfig):
-    batch_size: int = 50
+    batch_size: int = Field(default=50, description="Number of documents to upload per batch")
 
 
 @dataclass
 class CouchbaseUploader(Uploader):
     connection_config: CouchbaseConnectionConfig
     upload_config: CouchbaseUploaderConfig
-    cluster: Optional["Cluster"] = field(init=False, default=None)
     connector_type: str = CONNECTOR_TYPE
 
     def __post_init__(self):
         self.cluster = self.get_cluster()
 
     @requires_dependencies(["couchbase"], extras="couchbase")
+    def connect_to_couchbase(self) -> "Cluster":
+        from couchbase.auth import PasswordAuthenticator
+        from couchbase.cluster import Cluster
+        from couchbase.options import ClusterOptions
+
+        connection_string = self.connection_config.connection_string
+        username = self.connection_config.username
+        password = self.connection_config.access_config.get_secret_value().password
+
+        auth = PasswordAuthenticator(username, password)
+        options = ClusterOptions(auth)
+        options.apply_profile("wan_development")
+        cluster = Cluster(connection_string, options)
+        cluster.wait_until_ready(timedelta(seconds=5))
+        return cluster
+
     def get_cluster(self) -> "Cluster":
         return connect_to_couchbase(
             self.connection_config.connection_string,
             self.connection_config.username,
             self.connection_config.access_config.password,
         )
+
+    def precheck(self) -> None:
+        try:
+            self.connect_to_couchbase()
+        except Exception as e:
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
         elements = []
@@ -150,7 +178,8 @@ class CouchbaseUploader(Uploader):
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.connection_string}",
         )
-        bucket = self.cluster.bucket(self.connection_config.bucket)
+        cluster = self.connect_to_couchbase()
+        bucket = cluster.bucket(self.connection_config.bucket)
         scope = bucket.scope(self.connection_config.scope)
         collection = scope.collection(self.connection_config.collection)
 

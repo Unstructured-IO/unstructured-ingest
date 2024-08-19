@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -36,35 +37,59 @@ def azure_json_serial(obj):
     return json_serial(obj)
 
 
-@dataclass
 class AzureIndexerConfig(FsspecIndexerConfig):
     pass
 
 
-@dataclass
 class AzureAccessConfig(FsspecAccessConfig):
-    account_name: Optional[str] = None
-    account_key: Optional[str] = None
-    connection_string: Optional[str] = None
-    sas_token: Optional[str] = None
+    account_name: Optional[str] = Field(
+        default=None,
+        description="The storage account name. This is used to authenticate "
+        "requests signed with an account key and to construct "
+        "the storage endpoint. It is required unless a connection "
+        "string is given, or if a custom domain is used with "
+        "anonymous authentication.",
+    )
+    account_key: Optional[str] = Field(
+        default=None,
+        description="The storage account key. This is used for shared key "
+        "authentication. If any of account key, sas token or "
+        "client_id are not specified, anonymous access will be used.",
+    )
+    connection_string: Optional[str] = Field(
+        default=None,
+        description="If specified, this will override all other parameters. See "
+        "http://azure.microsoft.com/en-us/documentation/articles/storage-configure-connection-string/ "  # noqa: E501
+        "for the connection string format.",
+    )
+    sas_token: Optional[str] = Field(
+        default=None,
+        description="A shared access signature token to use to authenticate "
+        "requests instead of the account key. If account key and "
+        "sas token are both specified, account key will be used "
+        "to sign. If any of account key, sas token or client_id "
+        "are not specified, anonymous access will be used.",
+    )
 
-    def __post_init__(self):
+    def model_post_init(self, __context: Any) -> None:
         if self.connection_string is None and self.account_name is None:
             raise ValueError("either connection_string or account_name must be set")
 
 
-@dataclass
+SecretAzureAccessConfig = Secret[AzureAccessConfig]
+
+
 class AzureConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["az"])
-    access_config: AzureAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: AzureAccessConfig()
+    supported_protocols: list[str] = field(default_factory=lambda: ["az"], init=False)
+    access_config: SecretAzureAccessConfig = Field(
+        default_factory=lambda: SecretAzureAccessConfig(secret_value=AzureAccessConfig())
     )
-    connector_type: str = CONNECTOR_TYPE
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
         # Avoid injecting None by filtering out k,v pairs where the value is None
         access_configs: dict[str, Any] = {
-            k: v for k, v in self.access_config.to_dict().items() if v
+            k: v for k, v in self.access_config.get_secret_value().dict().items() if v
         }
         return access_configs
 
@@ -88,7 +113,6 @@ class AzureIndexer(FsspecIndexer):
         return super().run(**kwargs)
 
 
-@dataclass
 class AzureDownloaderConfig(FsspecDownloaderConfig):
     pass
 
@@ -109,7 +133,6 @@ class AzureDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class AzureUploaderConfig(FsspecUploaderConfig):
     pass
 

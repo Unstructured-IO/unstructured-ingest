@@ -4,14 +4,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel
+
 from unstructured_ingest.utils.compression import TAR_FILE_EXT, ZIP_FILE_EXT, uncompress_file
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
-class UncompressConfig(EnhancedDataClassJsonMixin):
+class UncompressConfig(BaseModel):
     pass
 
 

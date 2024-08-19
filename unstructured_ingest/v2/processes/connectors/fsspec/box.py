@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, Optional
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from pydantic import Field, Secret
+
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -25,35 +26,38 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 CONNECTOR_TYPE = "box"
 
 
-@dataclass
 class BoxIndexerConfig(FsspecIndexerConfig):
     pass
 
 
-@dataclass
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Optional[str] = None
-
-
-@dataclass
-class BoxConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["box"])
-    access_config: BoxAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: BoxAccessConfig()
+    box_app_config: Optional[str] = Field(
+        default=None, description="Path to Box app credentials as json file."
     )
-    connector_type: str = CONNECTOR_TYPE
+
+
+SecretBoxAccessConfig = Secret[BoxAccessConfig]
+
+
+class BoxConnectionConfig(FsspecConnectionConfig):
+    supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
+    access_config: SecretBoxAccessConfig = Field(
+        default_factory=lambda: SecretBoxAccessConfig(secret_value=BoxAccessConfig())
+    )
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
         # Return access_kwargs with oauth. The oauth object can not be stored directly in the config
         # because it is not serializable.
         from boxsdk import JWTAuth
 
+        ac = self.access_config.get_secret_value()
         access_kwargs_with_oauth: dict[str, Any] = {
             "oauth": JWTAuth.from_settings_file(
-                self.access_config.box_app_config,
+                ac.box_app_config,
             ),
         }
-        access_config: dict[str, Any] = self.access_config.to_dict()
+        access_config: dict[str, Any] = ac.dict()
         access_config.pop("box_app_config", None)
         access_kwargs_with_oauth.update(access_config)
 
@@ -75,7 +79,6 @@ class BoxIndexer(FsspecIndexer):
         super().precheck()
 
 
-@dataclass
 class BoxDownloaderConfig(FsspecDownloaderConfig):
     pass
 
@@ -96,7 +99,6 @@ class BoxDownloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class BoxUploaderConfig(FsspecUploaderConfig):
     pass
 

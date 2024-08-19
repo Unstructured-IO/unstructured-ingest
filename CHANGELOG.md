@@ -1,9 +1,11 @@
-## 0.0.4-dev0
+## 0.0.4-dev4
 
 ### Enhancements
 
 * **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
-
+* **Leverage pydantic base models** All user-supplied configs are now derived from pydantic base models to leverage better type checking and add built in support for sensitive fields.
+* **Autogenerate click options from base models** Leverage th pydantic base models for all configs to autogenerate teh cli options exposed when running ingest as a CLI.
+* **Drop required Unstructured dependency** Unstructured was moved to an extra dependency to only be imported when needed for functionality such as local partitioning/chunking.
 
 ## 0.0.3
 

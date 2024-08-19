@@ -1,20 +1,34 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Type
 
 import click
 
 from unstructured_ingest.v2.cli.base.cmd import BaseCmd
-from unstructured_ingest.v2.cli.interfaces import CliConfig
-from unstructured_ingest.v2.cli.utils import Dict, conform_click_options
+from unstructured_ingest.v2.cli.utils.click import Dict, conform_click_options
+from unstructured_ingest.v2.cli.utils.model_conversion import options_from_base_model
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 
 @dataclass
 class DestCmd(BaseCmd):
-    connection_config: Optional[Type[CliConfig]] = None
-    uploader_config: Optional[Type[CliConfig]] = None
-    upload_stager_config: Optional[Type[CliConfig]] = None
+    registry_entry: DestinationRegistryEntry
+
+    def get_registry_options(self):
+        options = []
+        configs = [
+            config
+            for config in [
+                self.registry_entry.uploader_config,
+                self.registry_entry.upload_stager_config,
+                self.registry_entry.connection_config,
+            ]
+            if config
+        ]
+        for config in configs:
+            options.extend(options_from_base_model(model=config))
+        options = self.consolidate_options(options=options)
+        return options
 
     def cmd(self, ctx: click.Context, **options) -> None:
         logger.setLevel(logging.DEBUG if options.get("verbose", False) else logging.INFO)
@@ -47,12 +61,7 @@ class DestCmd(BaseCmd):
         cmd.name = self.cli_cmd_name
         cmd.short_help = "v2"
         cmd.invoke_without_command = True
-        extras = [
-            x
-            for x in [self.uploader_config, self.upload_stager_config, self.connection_config]
-            if x
-        ]
-        self.add_options(cmd, extras=extras)
+        self.add_options(cmd)
         cmd.params.append(
             click.Option(
                 ["--custom-stager"],

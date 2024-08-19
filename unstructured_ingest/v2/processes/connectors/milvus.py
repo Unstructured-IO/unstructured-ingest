@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pandas as pd
 from dateutil import parser
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import WriteError
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -32,24 +32,28 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "milvus"
 
 
-@dataclass
 class MilvusAccessConfig(AccessConfig):
-    password: Optional[str] = None
-    token: Optional[str] = None
+    password: Optional[str] = Field(default=None, description="Milvus password")
+    token: Optional[str] = Field(default=None, description="Milvus access token")
 
 
-@dataclass
+SecretMilvusAccessConfig = Secret[MilvusAccessConfig]
+
+
 class MilvusConnectionConfig(ConnectionConfig):
-    access_config: MilvusAccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: MilvusAccessConfig()
+    access_config: SecretMilvusAccessConfig = Field(
+        default_factory=lambda: SecretMilvusAccessConfig(secret_value=MilvusAccessConfig())
     )
-    uri: Optional[str] = None
-    user: Optional[str] = None
-    db_name: Optional[str] = None
+    uri: Optional[str] = Field(
+        default=None, description="Milvus uri", examples=["http://localhost:19530"]
+    )
+    user: Optional[str] = Field(default=None, description="Milvus user")
+    db_name: Optional[str] = Field(default=None, description="Milvus database name")
 
     def get_connection_kwargs(self) -> dict[str, Any]:
-        access_config_dict = self.access_config.to_dict()
-        connection_config_dict = self.to_dict()
+        access_config = self.access_config.get_secret_value()
+        access_config_dict = access_config.dict()
+        connection_config_dict = self.dict()
         connection_config_dict.pop("access_config", None)
         connection_config_dict.update(access_config_dict)
         # Drop any that were not set explicitly
@@ -63,7 +67,6 @@ class MilvusConnectionConfig(ConnectionConfig):
         return MilvusClient(**self.get_connection_kwargs())
 
 
-@dataclass
 class MilvusUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -130,10 +133,11 @@ class MilvusUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class MilvusUploaderConfig(UploaderConfig):
-    collection_name: str
-    num_of_processes: int = 4
+    collection_name: str = Field(description="Milvus collections to write to")
+    num_processes: int = Field(
+        default=4, description="number of processes to use when writing to support parallel writes"
+    )
 
 
 @dataclass
@@ -180,13 +184,13 @@ class MilvusUploader(Uploader):
         self.insert_results(data=data)
 
     def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        if self.upload_config.num_of_processes == 1:
+        if self.upload_config.num_processes == 1:
             for content in contents:
                 self.upload(content=content)
 
         else:
             with mp.Pool(
-                processes=self.upload_config.num_of_processes,
+                processes=self.upload_config.num_processes,
             ) as pool:
                 pool.map(self.upload, contents)
 

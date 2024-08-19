@@ -5,9 +5,6 @@ from dataclasses import dataclass
 from ftplib import FTP, error_perm
 from pathlib import Path
 
-import requests
-from requests.adapters import HTTPAdapter
-
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.interfaces import (
     BaseConnectorConfig,
@@ -20,6 +17,10 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import (
     validate_date_args,
 )
+from unstructured_ingest.utils.dep_check import requires_dependencies
+
+if t.TYPE_CHECKING:
+    from requests import Response, Session
 
 DOMAIN = "ftp.ncbi.nlm.nih.gov"
 FTP_DOMAIN = f"ftp://{DOMAIN}"
@@ -165,8 +166,11 @@ class BiomedSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
 
         return endpoint_url
 
+    @requires_dependencies(["requests"], extras="biomed")
     def _list_objects_api(self) -> t.List[BiomedFileMeta]:
         from bs4 import BeautifulSoup
+        from requests import Session
+        from requests.adapters import HTTPAdapter
 
         def urls_to_metadata(urls):
             files = []
@@ -193,7 +197,7 @@ class BiomedSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
         endpoint_url = self.get_base_endpoints_url()
 
         while endpoint_url:
-            session = requests.Session()
+            session = Session()
             adapter = HTTPAdapter()
             session.mount("http://", adapter)
             session.mount("https://", adapter)
@@ -213,7 +217,7 @@ class BiomedSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
         return files
 
     @SourceConnectionNetworkError.wrap
-    def _get_request(self, session: requests.Session, endpoint_url: str) -> requests.Response:
+    def _get_request(self, session: "Session", endpoint_url: str) -> "Response":
         return session.get(endpoint_url, timeout=self.connector_config.max_request_time)
 
     def _list_objects(self) -> t.List[BiomedFileMeta]:
@@ -293,7 +297,10 @@ class BiomedSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
     def initialize(self):
         pass
 
+    @requires_dependencies(["requests"], extras="biomed")
     def check_connection(self):
+        import requests
+
         resp = requests.head(self.get_base_endpoints_url())
         try:
             resp.raise_for_status()

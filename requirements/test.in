@@ -2,6 +2,7 @@
 pytest
 pytest-cov
 pytest-mock
+unstructured
 
 # Connector specific deps
 cryptography

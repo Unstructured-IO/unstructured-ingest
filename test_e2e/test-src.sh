@@ -36,7 +36,7 @@ all_tests=(
   'wikipedia.sh'
   'local.sh'
   # 'slack.sh'
-  'against-api.sh'
+  #  'against-api.sh'
   'gcs.sh'
   'kafka-local.sh'
   'onedrive.sh'

@@ -3,14 +3,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel
+
 from unstructured_ingest.v2.interfaces.connector import BaseConnector
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 
-@dataclass
-class UploaderConfig(EnhancedDataClassJsonMixin):
+class UploaderConfig(BaseModel):
     pass
 
 

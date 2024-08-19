@@ -15,11 +15,11 @@ from email.utils import formatdate
 from pathlib import Path
 from string import Template
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Generator, Type
+from typing import TYPE_CHECKING, Any, Generator, Optional, Type
 
 from dateutil import parser
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -75,49 +75,58 @@ $htmlbody
 )
 
 
-@dataclass
 class SalesforceAccessConfig(AccessConfig):
     consumer_key: str
-    private_key: str
+    private_key_path: Optional[Path] = Field(
+        default=None,
+        description="Path to the private key file. " "Key file is usually named server.key.",
+    )
+    private_key: Optional[str] = Field(default=None, description="Contents of the private key")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.private_key_path is None and self.private_key is None:
+            raise ValueError("either private_key or private_key_path must be set")
+        if self.private_key is not None and self.private_key_path is not None:
+            raise ValueError("only one of private_key or private_key_path must be set")
 
     @requires_dependencies(["cryptography"])
     def get_private_key_value_and_type(self) -> tuple[str, Type]:
         from cryptography.hazmat.primitives import serialization
 
-        try:
-            serialization.load_pem_private_key(data=self.private_key.encode("utf-8"), password=None)
-        except ValueError:
-            pass
-        else:
+        if self.private_key_path and self.private_key_path.is_file():
+            return str(self.private_key_path), Path
+        if self.private_key:
+            try:
+                serialization.load_pem_private_key(
+                    data=str(self.private_key).encode("utf-8"), password=None
+                )
+            except Exception as e:
+                raise ValueError(f"failed to validate private key data: {e}") from e
             return self.private_key, str
-
-        if Path(self.private_key).is_file():
-            return self.private_key, Path
 
         raise ValueError("private_key does not contain PEM private key or path")
 
 
-@dataclass
 class SalesforceConnectionConfig(ConnectionConfig):
     username: str
-    access_config: SalesforceAccessConfig = enhanced_field(sensitive=True)
+    access_config: Secret[SalesforceAccessConfig]
 
     @requires_dependencies(["simple_salesforce"], extras="salesforce")
     def get_client(self) -> "Salesforce":
         from simple_salesforce import Salesforce
 
-        pkey_value, pkey_type = self.access_config.get_private_key_value_and_type()
+        access_config = self.access_config.get_secret_value()
+        pkey_value, pkey_type = access_config.get_private_key_value_and_type()
 
         return Salesforce(
             username=self.username,
-            consumer_key=self.access_config.consumer_key,
+            consumer_key=access_config.consumer_key,
             privatekey_file=pkey_value if pkey_type is Path else None,
             privatekey=pkey_value if pkey_type is str else None,
             version=SALESFORCE_API_VERSION,
         )
 
 
-@dataclass
 class SalesforceIndexerConfig(IndexerConfig):
     categories: list[str]
 
@@ -201,7 +210,6 @@ class SalesforceIndexer(Indexer):
             yield f
 
 
-@dataclass
 class SalesforceDownloaderConfig(DownloaderConfig):
     pass
 

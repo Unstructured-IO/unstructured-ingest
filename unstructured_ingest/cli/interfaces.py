@@ -11,7 +11,6 @@ from pathlib import Path
 import click
 from dataclasses_json.core import Json
 from typing_extensions import Self
-from unstructured.chunking import CHUNK_MAX_CHARS_DEFAULT, CHUNK_MULTI_PAGE_DEFAULT
 
 from unstructured_ingest.interfaces import (
     BaseConfig,
@@ -24,6 +23,9 @@ from unstructured_ingest.interfaces import (
     ReadConfig,
     RetryStrategyConfig,
 )
+
+CHUNK_MAX_CHARS_DEFAULT: int = 500
+CHUNK_MULTI_PAGE_DEFAULT: bool = True
 
 
 class Dict(click.ParamType):
@@ -412,14 +414,19 @@ class CliFilesStorageConfig(FileStorageConfig, CliMixin):
 class CliEmbeddingConfig(EmbeddingConfig, CliMixin):
     @staticmethod
     def get_cli_options() -> t.List[click.Option]:
-        from unstructured.embed import EMBEDDING_PROVIDER_TO_CLASS_MAP
-
+        embed_providers = [
+            "langchain-openai",
+            "langchain-huggingface",
+            "langchain-aws-bedrock",
+            "langchain-vertexai",
+            "langchain-voyageai",
+            "octoai",
+        ]
         options = [
             click.Option(
                 ["--embedding-provider"],
-                help="Type of the embedding class to be used. Can be one of: "
-                f"{list(EMBEDDING_PROVIDER_TO_CLASS_MAP)}",
-                type=click.Choice(list(EMBEDDING_PROVIDER_TO_CLASS_MAP)),
+                help="Type of the embedding class to be used.",
+                type=click.Choice(embed_providers),
             ),
             click.Option(
                 ["--embedding-api-key"],

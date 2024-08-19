@@ -1,5 +1,8 @@
 -c constraints.txt
 
 python-dateutil
-unstructured
 pandas
+pydantic
+dataclasses_json
+tqdm
+click

@@ -152,3 +152,4 @@ if __name__ == "__main__":
     )
 
     setup_cluster(config)
+    print("Done provisioning couchbase cluster.")

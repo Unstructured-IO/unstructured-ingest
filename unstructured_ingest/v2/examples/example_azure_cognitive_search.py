@@ -6,6 +6,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connectors.azure_cognitive_search import (
+    CONNECTOR_TYPE,
     AzureCognitiveSearchAccessConfig,
     AzureCognitiveSearchConnectionConfig,
     AzureCognitiveSearchUploaderConfig,
@@ -19,9 +20,9 @@ from unstructured_ingest.v2.processes.connectors.local import (
 from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent.parent
+base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
-work_dir = base_path / "tmp_ingest"
+work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
 
@@ -43,7 +44,9 @@ if __name__ == "__main__":
             embedding_provider="langchain-openai", embedding_api_key=os.getenv("OPENAI_API_KEY")
         ),
         destination_connection_config=AzureCognitiveSearchConnectionConfig(
-            access_config=AzureCognitiveSearchAccessConfig(key=os.getenv("AZURE_SEARCH_API_KEY")),
+            access_config=AzureCognitiveSearchAccessConfig(
+                azure_cognitive_search_key=os.getenv("AZURE_SEARCH_API_KEY")
+            ),
             index=os.getenv("AZURE_SEARCH_INDEX"),
             endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
         ),

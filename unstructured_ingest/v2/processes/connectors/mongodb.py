@@ -3,9 +3,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from unstructured.__version__ import __version__ as unstructured_version
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -31,25 +31,28 @@ CONNECTOR_TYPE = "mongodb"
 SERVER_API_VERSION = "1"
 
 
-@dataclass
 class MongoDBAccessConfig(AccessConfig):
-    uri: Optional[str] = None
+    uri: Optional[str] = Field(default=None, description="URI to user when connecting")
 
 
-@dataclass
+SecretMongoDBAccessConfig = Secret[MongoDBAccessConfig]
+
+
 class MongoDBConnectionConfig(ConnectionConfig):
-    access_config: MongoDBAccessConfig = enhanced_field(
-        sensitive=True, default_factory=MongoDBAccessConfig
+    access_config: SecretMongoDBAccessConfig = Field(
+        default_factory=lambda: SecretMongoDBAccessConfig(secret_value=MongoDBAccessConfig())
     )
-    host: Optional[str] = None
-    database: Optional[str] = None
-    collection: Optional[str] = None
-    port: int = 27017
-    batch_size: int = 100
-    connector_type: str = CONNECTOR_TYPE
+    host: Optional[str] = Field(
+        default=None,
+        description="hostname or IP address or Unix domain socket path of a single mongod or "
+        "mongos instance to connect to, or a list of hostnames",
+    )
+    database: Optional[str] = Field(default=None, description="database name to connect to")
+    collection: Optional[str] = Field(default=None, description="collection name to connect to")
+    port: int = Field(default=27017)
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 
-@dataclass
 class MongoDBUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -77,9 +80,8 @@ class MongoDBUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class MongoDBUploaderConfig(UploaderConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 @dataclass
@@ -102,9 +104,11 @@ class MongoDBUploader(Uploader):
         from pymongo.driver_info import DriverInfo
         from pymongo.server_api import ServerApi
 
-        if self.connection_config.access_config.uri:
+        access_config = self.connection_config.access_config.get_secret_value()
+
+        if access_config.uri:
             return MongoClient(
-                self.connection_config.access_config.uri,
+                access_config.uri,
                 server_api=ServerApi(version=SERVER_API_VERSION),
                 driver=DriverInfo(name="unstructured", version=unstructured_version),
             )
