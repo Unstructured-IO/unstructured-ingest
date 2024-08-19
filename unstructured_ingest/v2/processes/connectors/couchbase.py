@@ -7,14 +7,12 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Generator, List
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import (
+    DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
@@ -44,7 +42,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    from couchbase.cluster import Cluster
+    pass
 
 CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
@@ -64,7 +62,6 @@ def connect_to_couchbase(connection_string: str, username: str, password: str):
     return cluster
 
 
-@dataclass
 class CouchbaseAccessConfig(AccessConfig):
     password: str = Field(description="The password for the Couchbase server")
 
@@ -133,36 +130,13 @@ class CouchbaseUploader(Uploader):
     upload_config: CouchbaseUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def __post_init__(self):
-        self.cluster = self.get_cluster()
-
-    @requires_dependencies(["couchbase"], extras="couchbase")
-    def connect_to_couchbase(self) -> "Cluster":
-        from couchbase.auth import PasswordAuthenticator
-        from couchbase.cluster import Cluster
-        from couchbase.options import ClusterOptions
-
-        connection_string = self.connection_config.connection_string
-        username = self.connection_config.username
-        password = self.connection_config.access_config.get_secret_value().password
-
-        auth = PasswordAuthenticator(username, password)
-        options = ClusterOptions(auth)
-        options.apply_profile("wan_development")
-        cluster = Cluster(connection_string, options)
-        cluster.wait_until_ready(timedelta(seconds=5))
-        return cluster
-
-    def get_cluster(self) -> "Cluster":
-        return connect_to_couchbase(
-            self.connection_config.connection_string,
-            self.connection_config.username,
-            self.connection_config.access_config.password,
-        )
-
     def precheck(self) -> None:
         try:
-            self.connect_to_couchbase()
+            connect_to_couchbase(
+                self.connection_config.connection_string,
+                self.connection_config.username,
+                self.connection_config.access_config.get_secret_value().password,
+            )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -178,7 +152,11 @@ class CouchbaseUploader(Uploader):
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.connection_string}",
         )
-        cluster = self.connect_to_couchbase()
+        cluster = connect_to_couchbase(
+            self.connection_config.connection_string,
+            self.connection_config.username,
+            self.connection_config.access_config.get_secret_value().password,
+        )
         bucket = cluster.bucket(self.connection_config.bucket)
         scope = bucket.scope(self.connection_config.scope)
         collection = scope.collection(self.connection_config.collection)
@@ -187,9 +165,8 @@ class CouchbaseUploader(Uploader):
             collection.upsert_multi({doc_id: doc for doc in chunk for doc_id, doc in doc.items()})
 
 
-@dataclass
 class CouchbaseIndexerConfig(IndexerConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=50, description="Number of documents to upload per batch")
 
 
 @dataclass
@@ -197,22 +174,17 @@ class CouchbaseIndexer(Indexer):
     connection_config: CouchbaseConnectionConfig
     index_config: CouchbaseIndexerConfig
     connector_type: str = CONNECTOR_TYPE
-    cluster: Optional["Cluster"] = field(init=False, default=None)
 
-    def __post_init__(self):
+    def precheck(self) -> None:
         try:
-            self.cluster = self.get_cluster()
+            connect_to_couchbase(
+                self.connection_config.connection_string,
+                self.connection_config.username,
+                self.connection_config.access_config.get_secret_value().password,
+            )
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
-
-    @requires_dependencies(["couchbase"], extras="couchbase")
-    def get_cluster(self) -> "Cluster":
-        return connect_to_couchbase(
-            self.connection_config.connection_string,
-            self.connection_config.username,
-            self.connection_config.access_config.password,
-        )
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["couchbase"], extras="couchbase")
     def _get_doc_ids(self) -> List[str]:
@@ -227,7 +199,12 @@ class CouchbaseIndexer(Indexer):
         attempts = 0
         while attempts < max_attempts:
             try:
-                result = self.cluster.query(query)
+                cluster = connect_to_couchbase(
+                    self.connection_config.connection_string,
+                    self.connection_config.username,
+                    self.connection_config.access_config.get_secret_value().password,
+                )
+                result = cluster.query(query)
                 document_ids = [row["id"] for row in result]
                 return document_ids
             except Exception as e:
@@ -240,10 +217,9 @@ class CouchbaseIndexer(Indexer):
         ids = self._get_doc_ids()
 
         id_batches = [
-            ids[i * self.connection_config.batch_size : (i + 1) * self.connection_config.batch_size]
+            ids[i * self.index_config.batch_size : (i + 1) * self.index_config.batch_size]
             for i in range(
-                (len(ids) + self.connection_config.batch_size - 1)
-                // self.connection_config.batch_size
+                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
             )
         ]
         for batch in id_batches:
@@ -264,7 +240,6 @@ class CouchbaseIndexer(Indexer):
             )
 
 
-@dataclass
 class CouchbaseDownloaderConfig(DownloaderConfig):
     fields: list[str] = field(default_factory=list)
 
@@ -274,14 +249,6 @@ class CouchbaseDownloader(Downloader):
     connection_config: CouchbaseConnectionConfig
     download_config: CouchbaseDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
-
-    @requires_dependencies(["couchbase"], extras="couchbase")
-    def get_cluster(self) -> "Cluster":
-        return connect_to_couchbase(
-            self.connection_config.connection_string,
-            self.connection_config.username,
-            self.connection_config.access_config.password,
-        )
 
     def is_async(self) -> bool:
         return True
@@ -360,11 +327,14 @@ class CouchbaseDownloader(Downloader):
             return await asyncio.gather(*tasks)
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
-
         bucket_name: str = file_data.additional_metadata["bucket"]
         ids: list[str] = file_data.additional_metadata["ids"]
 
-        cluster = self.get_cluster()
+        cluster = connect_to_couchbase(
+            self.connection_config.connection_string,
+            self.connection_config.username,
+            self.connection_config.access_config.get_secret_value().password,
+        )
         bucket = cluster.bucket(bucket_name)
         scope = bucket.scope(self.connection_config.scope)
         collection = scope.collection(self.connection_config.collection)

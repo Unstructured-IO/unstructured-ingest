@@ -81,3 +81,4 @@ if __name__ == "__main__":
     )
 
     setup_cluster(config, args.source_file)
+    print("Done provisioning couchbase cluster.")
