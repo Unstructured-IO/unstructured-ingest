@@ -73,7 +73,7 @@ class KdbaiUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-        output_path = Path(output_dir) / Path(f"{output_filename}.csv")
+        output_path = Path(output_dir) / Path(f"{output_filename}.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         data = []
