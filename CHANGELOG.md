@@ -1,8 +1,9 @@
-## 0.0.5-dev2
+## 0.0.5-dev3
 
 ### Enhancements
 
 * **Add Couchbase Source Connector** Adds support for reading artifacts from Couchbase DB for processing in unstructured
+* **Drop environment from pinecone as part of v2 migration** environment is no longer required by the pinecone SDK, so that field has been removed from the ingest CLI/SDK/
 
 ### Fixes
 

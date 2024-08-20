@@ -42,7 +42,6 @@ SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
 
 class PineconeConnectionConfig(ConnectionConfig):
     index_name: str = Field(description="Name of the index to connect to.")
-    environment: str = Field(description="Environment to connect to.")
     access_config: SecretPineconeAccessConfig = Field(
         default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
     )
@@ -155,7 +154,6 @@ class PineconeUploader(Uploader):
         logger.info(
             f"writing document batches to destination"
             f" index named {self.connection_config.index_name}"
-            f" environment named {self.connection_config.environment}"
             f" with batch size {self.upload_config.batch_size}"
             f" with {self.upload_config.num_processes} (number of) processes"
         )

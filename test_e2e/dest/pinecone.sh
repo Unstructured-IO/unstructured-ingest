@@ -21,7 +21,6 @@ RANDOM_SUFFIX=$((RANDOM % 100000 + 1))
 # Set the variables with default values if they're not set in the environment
 PINECONE_INDEX=${PINECONE_INDEX:-"ingest-test-$RANDOM_SUFFIX"}
 PINECONE_HOST_POSTFIX=${PINECONE_HOST_POSTFIX:-"4627-b74a"}
-PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-"us-east1-gcp"}
 PINECONE_PROJECT_ID=${PINECONE_PROJECT_ID:-"art8iaj"}
 
 # shellcheck disable=SC1091
@@ -102,7 +101,6 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   pinecone \
   --api-key "$PINECONE_API_KEY" \
   --index-name "$PINECONE_INDEX" \
-  --environment "$PINECONE_ENVIRONMENT" \
   --batch-size 80 \
   --num-processes "$writer_processes"
 
