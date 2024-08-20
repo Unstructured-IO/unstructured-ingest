@@ -14,7 +14,7 @@ schema = {
         {"name": "document", "pytype": "str"},
         {"name": "metadata", "pytype": "dict"},
         {
-            "name": "embedding",
+            "name": "embeddings",
             "vectorIndex": {
                 "dims": 384,
                 "type": "hnsw",

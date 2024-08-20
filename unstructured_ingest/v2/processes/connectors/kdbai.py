@@ -40,8 +40,13 @@ class KdbaiAccessConfig(AccessConfig):
     )
 
 
+SecretKdbaiAccessConfig = Secret[KdbaiAccessConfig]
+
+
 class KdbaiConnectionConfig(ConnectionConfig):
-    access_config: Secret[KdbaiAccessConfig]
+    access_config: SecretKdbaiAccessConfig = Field(
+        default=SecretKdbaiAccessConfig(secret_value=KdbaiAccessConfig())
+    )
     endpoint: str = Field(
         default="http://localhost:8082", description="Endpoint url where KDBAI is hosted."
     )
@@ -83,7 +88,7 @@ class KdbaiUploadStager(UploadStager):
                     "id": str(uuid.uuid4()),
                     "element_id": element.get("element_id"),
                     "document": element.pop("text", None),
-                    "embedding": element.get("embedding"),
+                    "embeddings": element.get("embeddings"),
                     "metadata": flatten_dict(
                         dictionary=element.get("metadata"),
                         flatten_lists=True,

@@ -7,7 +7,6 @@ from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connectors.kdbai import (
     CONNECTOR_TYPE,
-    KdbaiAccessConfig,
     KdbaiConnectionConfig,
     KdbaiUploaderConfig,
     KdbaiUploadStagerConfig,
@@ -25,7 +24,7 @@ docs_path = base_path / "example-docs"
 work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 download_path = work_dir / "download"
-input_path = docs_path.resolve() / "book-war-and-peace-1p.txt"
+input_path = docs_path.resolve() / "pdf" / "fake-memo.pdf"
 
 os.environ["KDBAI_API_KEY"] = "key"
 os.environ["KDBAI_ENDPOINT"] = "http://localhost"
@@ -45,7 +44,6 @@ if __name__ == "__main__":
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
         embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
         destination_connection_config=KdbaiConnectionConfig(
-            access_config=KdbaiAccessConfig(api_key=os.environ["KDBAI_API_KEY"]),
             endpoint=os.environ["KDBAI_ENDPOINT"],
         ),
         stager_config=KdbaiUploadStagerConfig(),
