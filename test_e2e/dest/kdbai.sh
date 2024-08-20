@@ -32,6 +32,10 @@ function cleanup {
 
 trap cleanup EXIT
 
+# Fetch docker image from kdbai private registry
+docker login portal.dl.kx.com -u "$KDBAI_USERNAME" -p "$KDBAI_BEARER_TOKEN"
+docker pull portal.dl.kx.com/kdbai-db:latest
+
 "$SCRIPT_DIR"/env_setup/kdbai/provision.sh
 
 PYTHONPATH=. ./unstructured/ingest/main.py \
