@@ -6,7 +6,7 @@ import kdbai_client as kdbai
 
 @click.command()
 @click.option("--endpoint", type=str, default="http://localhost:8082")
-def run_tests(op, endpoint: str):
+def run_tests(endpoint: str):
     session = kdbai.Session(endpoint=endpoint)
     print("Running document length check")
     documents = session.table("unstructured_test")

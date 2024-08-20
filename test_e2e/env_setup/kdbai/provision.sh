@@ -8,8 +8,8 @@ gpg --quiet --batch --yes --decrypt --passphrase="$KDBAI_CIPHER_KEY" --output "$
 
 # Create the Opensearch cluster
 docker compose version
-docker compose -f "$SCRIPT_DIR"/docker-compose.yml up --wait
+docker compose -f "$SCRIPT_DIR"/docker-compose.yml up -d
 docker compose -f "$SCRIPT_DIR"/docker-compose.yml ps
 
 echo "Cluster is live."
-"$SCRIPT_DIR"/provision.sh
+"$SCRIPT_DIR"/provision.py

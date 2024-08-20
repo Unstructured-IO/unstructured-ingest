@@ -2,7 +2,7 @@ import json
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -33,12 +33,18 @@ CONNECTOR_TYPE = "kdbai"
 
 
 class KdbaiAccessConfig(AccessConfig):
-    api_key: str = Field()
+    api_key: Optional[str] = Field(
+        default=None,
+        description="A string for the api-key, can be left empty "
+        "when connecting to local KDBAI instance.",
+    )
 
 
 class KdbaiConnectionConfig(ConnectionConfig):
     access_config: Secret[KdbaiAccessConfig]
-    endpoint: str
+    endpoint: str = Field(
+        default="http://localhost:8082", description="Endpoint url where KDBAI is hosted."
+    )
 
     @requires_dependencies(["kdbai_client"], extras="kdbai")
     def get_session(self) -> "Session":
@@ -92,8 +98,8 @@ class KdbaiUploadStager(UploadStager):
 
 
 class KdbaiUploaderConfig(UploaderConfig):
-    table_name: str
-    batch_size: int = 100
+    table_name: str = Field(description="The name of the KDBAI table to write into.")
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 @dataclass

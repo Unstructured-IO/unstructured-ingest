@@ -39,14 +39,14 @@ docker logout
 
 "$SCRIPT_DIR"/env_setup/kdbai/provision.sh
 
-PYTHONPATH=. ./unstructured/ingest/main.py \
+PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
   --num-processes "$max_processes" \
   --output-dir "$OUTPUT_DIR" \
   --strategy fast \
   --verbose \
   --reprocess \
-  --input-path example-docs/fake-memo.pdf \
+  --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
   --embedding-provider "langchain-huggingface" \
   kdbai \
