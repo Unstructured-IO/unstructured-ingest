@@ -40,6 +40,7 @@ all_tests=(
   'weaviate.sh'
   'databricks-volumes.sh'
   'milvus.sh'
+  'kdbai.sh'
 )
 
 full_python_matrix_tests=(
