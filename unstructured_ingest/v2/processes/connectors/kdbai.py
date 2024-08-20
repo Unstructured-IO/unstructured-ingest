@@ -91,9 +91,8 @@ class KdbaiUploadStager(UploadStager):
                     ),
                 }
             )
-        df = pd.DataFrame(data)
         with output_path.open("w") as output_file:
-            df.to_csv(output_file, index=False)
+            json.dump(data, output_file)
         return output_path
 
 
@@ -124,14 +123,34 @@ class KdbaiUploader(Uploader):
         table = self.get_table()
         table.insert(data=batch)
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        df = pd.concat((pd.read_csv(content.path) for content in contents), ignore_index=True)
+    def process_dataframe(self, df: pd.DataFrame):
         logger.debug(
             f"uploading {len(df)} entries to {self.connection_config.endpoint} "
             f"db in table {self.upload_config.table_name}"
         )
         for _, batch_df in df.groupby(np.arange(len(df)) // self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
+
+    def process_csv(self, csv_paths: list[Path]):
+        df = pd.concat((pd.read_csv(path) for path in csv_paths), ignore_index=True)
+        self.process_dataframe(df=df)
+
+    def process_json(self, json_paths: list[Path]):
+        all_records = []
+        for p in json_paths:
+            with open(p) as json_file:
+                all_records.extend(json.load(json_file))
+
+        df = pd.DataFrame(data=all_records)
+        self.process_dataframe(df=df)
+
+    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
+        csv_paths = [c.path for c in contents if c.path.suffix == ".csv"]
+        if csv_paths:
+            self.process_csv(csv_paths=csv_paths)
+        json_paths = [c.path for c in contents if c.path.suffix == ".json"]
+        if json_paths:
+            self.process_json(json_paths=json_paths)
 
 
 kdbai_destination_entry = DestinationRegistryEntry(
