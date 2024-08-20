@@ -28,27 +28,30 @@ from unstructured_ingest.v2.processes.connector_registry import (
 if TYPE_CHECKING:
     from astrapy.db import AstraDBCollection
 
-CONNECTOR_TYPE = "astra"
+CONNECTOR_TYPE = "astradb"
 
 
-class AstraAccessConfig(AccessConfig):
+@dataclass
+class AstraDBAccessConfig(AccessConfig):
     token: str = Field(description="Astra DB Token with access to the database.")
     api_endpoint: str = Field(description="The API endpoint for the Astra DB.")
 
 
-class AstraConnectionConfig(ConnectionConfig):
+@dataclass
+class AstraDBConnectionConfig(ConnectionConfig):
     connection_type: str = CONNECTOR_TYPE
-    access_config: Secret[AstraAccessConfig]
+    access_config: Secret[AstraDBAccessConfig]
 
 
-class AstraUploadStagerConfig(UploadStagerConfig):
+@dataclass
+class AstraDBUploadStagerConfig(UploadStagerConfig):
     pass
 
 
 @dataclass
-class AstraUploadStager(UploadStager):
-    upload_stager_config: AstraUploadStagerConfig = field(
-        default_factory=lambda: AstraUploadStagerConfig()
+class AstraDBUploadStager(UploadStager):
+    upload_stager_config: AstraDBUploadStagerConfig = field(
+        default_factory=lambda: AstraDBUploadStagerConfig()
     )
 
     def conform_dict(self, element_dict: dict) -> dict:
@@ -77,7 +80,7 @@ class AstraUploadStager(UploadStager):
         return output_path
 
 
-class AstraUploaderConfig(UploaderConfig):
+class AstraDBUploaderConfig(UploaderConfig):
     collection_name: str = Field(
         description="The name of the Astra DB collection. "
         "Note that the collection name must only include letters, "
@@ -96,9 +99,9 @@ class AstraUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class AstraUploader(Uploader):
-    connection_config: AstraConnectionConfig
-    upload_config: AstraUploaderConfig
+class AstraDBUploader(Uploader):
+    connection_config: AstraDBConnectionConfig
+    upload_config: AstraDBUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
@@ -108,7 +111,7 @@ class AstraUploader(Uploader):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["astrapy"], extras="astra")
+    @requires_dependencies(["astrapy"], extras="astradb")
     def get_collection(self) -> "AstraDBCollection":
         from astrapy.db import AstraDB
 
@@ -117,7 +120,7 @@ class AstraUploader(Uploader):
         embedding_dimension = self.upload_config.embedding_dimension
         requested_indexing_policy = self.upload_config.requested_indexing_policy
 
-        # If the user has requested an indexing policy, pass it to the AstraDB
+        # If the user has requested an indexing policy, pass it to the Astra DB
         options = {"indexing": requested_indexing_policy} if requested_indexing_policy else None
 
         # Build the Astra DB object.
@@ -151,17 +154,17 @@ class AstraUploader(Uploader):
             f"collection {self.upload_config.collection_name}"
         )
 
-        astra_batch_size = self.upload_config.batch_size
+        astra_db_batch_size = self.upload_config.batch_size
         collection = self.get_collection()
 
-        for chunk in batch_generator(elements_dict, astra_batch_size):
+        for chunk in batch_generator(elements_dict, astra_db_batch_size):
             collection.insert_many(chunk)
 
 
-astra_destination_entry = DestinationRegistryEntry(
-    connection_config=AstraConnectionConfig,
-    upload_stager_config=AstraUploadStagerConfig,
-    upload_stager=AstraUploadStager,
-    uploader_config=AstraUploaderConfig,
-    uploader=AstraUploader,
+astra_db_destination_entry = DestinationRegistryEntry(
+    connection_config=AstraDBConnectionConfig,
+    upload_stager_config=AstraDBUploadStagerConfig,
+    upload_stager=AstraDBUploadStager,
+    uploader_config=AstraDBUploaderConfig,
+    uploader=AstraDBUploader,
 )

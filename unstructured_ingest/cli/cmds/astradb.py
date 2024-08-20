@@ -4,11 +4,11 @@ from dataclasses import dataclass
 import click
 
 from unstructured_ingest.cli.interfaces import CliConfig, Dict
-from unstructured_ingest.connector.astra import AstraWriteConfig, SimpleAstraConfig
+from unstructured_ingest.connector.astradb import AstraDBWriteConfig, SimpleAstraDBConfig
 
 
 @dataclass
-class AstraCliConfig(SimpleAstraConfig, CliConfig):
+class AstraDBCliConfig(SimpleAstraDBConfig, CliConfig):
     @staticmethod
     def get_cli_options() -> t.List[click.Option]:
         options = [
@@ -48,7 +48,7 @@ class AstraCliConfig(SimpleAstraConfig, CliConfig):
 
 
 @dataclass
-class AstraCliWriteConfig(AstraWriteConfig, CliConfig):
+class AstraDBCliWriteConfig(AstraDBWriteConfig, CliConfig):
     @staticmethod
     def get_cli_options() -> t.List[click.Option]:
         options = [
@@ -81,8 +81,8 @@ def get_base_src_cmd():
     from unstructured_ingest.cli.base.src import BaseSrcCmd
 
     cmd_cls = BaseSrcCmd(
-        cmd_name="astra",
-        cli_config=AstraCliConfig,
+        cmd_name="astradb",
+        cli_config=AstraDBCliConfig,
     )
     return cmd_cls
 
@@ -91,9 +91,9 @@ def get_base_dest_cmd():
     from unstructured_ingest.cli.base.dest import BaseDestCmd
 
     cmd_cls = BaseDestCmd(
-        cmd_name="astra",
-        cli_config=AstraCliConfig,
-        additional_cli_options=[AstraCliWriteConfig],
-        write_config=AstraWriteConfig,
+        cmd_name="astradb",
+        cli_config=AstraDBCliConfig,
+        additional_cli_options=[AstraDBCliWriteConfig],
+        write_config=AstraDBWriteConfig,
     )
     return cmd_cls
