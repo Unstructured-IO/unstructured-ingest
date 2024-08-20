@@ -1,3 +1,9 @@
+## 0.0.5-dev0
+
+### Fixes
+
+* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models. 
+
 ## 0.0.4
 
 ### Enhancements

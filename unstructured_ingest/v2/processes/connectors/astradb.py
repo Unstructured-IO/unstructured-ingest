@@ -31,19 +31,16 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "astradb"
 
 
-@dataclass
 class AstraDBAccessConfig(AccessConfig):
     token: str = Field(description="Astra DB Token with access to the database.")
     api_endpoint: str = Field(description="The API endpoint for the Astra DB.")
 
 
-@dataclass
 class AstraDBConnectionConfig(ConnectionConfig):
-    connection_type: str = CONNECTOR_TYPE
+    connection_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[AstraDBAccessConfig]
 
 
-@dataclass
 class AstraDBUploadStagerConfig(UploadStagerConfig):
     pass
 
