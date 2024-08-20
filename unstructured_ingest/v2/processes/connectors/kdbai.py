@@ -91,8 +91,9 @@ class KdbaiUploadStager(UploadStager):
                     ),
                 }
             )
+        logger.debug(f"writing {len(data)} elements to {output_path}")
         with output_path.open("w") as output_file:
-            json.dump(data, output_file)
+            json.dump(data, output_file, indent=2)
         return output_path
 
 
@@ -132,10 +133,12 @@ class KdbaiUploader(Uploader):
             self.upsert_batch(batch=batch_df)
 
     def process_csv(self, csv_paths: list[Path]):
+        logger.debug(f"uploading content from {len(csv_paths)} csv files")
         df = pd.concat((pd.read_csv(path) for path in csv_paths), ignore_index=True)
         self.process_dataframe(df=df)
 
     def process_json(self, json_paths: list[Path]):
+        logger.debug(f"uploading content from {len(json_paths)} json files")
         all_records = []
         for p in json_paths:
             with open(p) as json_file:
