@@ -26,6 +26,21 @@ jobs:
           python-version: ${{ matrix.python-version }}
           check-only: 'true'
 
+  test_kdbai_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 'actions/checkout@v4'
+      - name: pull
+        env:
+          KDBAI_BEARER_TOKEN: ${{ secrets.KDBAI_BEARER_TOKEN }}
+          KDBAI_USERNAME: ${{ secrets.KDBAI_USERNAME }}
+          KDBAI_CIPHER_KEY: ${{ secrets.KDBAI_CIPHER_KEY }}
+        run: |
+          sudo make install-docker-compose
+          docker compose version
+          ./test_e2e/dest/kdbai.sh
+          
+
   test_src:
     strategy:
       matrix:
