@@ -1,4 +1,4 @@
-## 0.0.5-dev1
+## 0.0.5-dev2
 
 ### Enhancements
 
@@ -7,6 +7,7 @@
 ### Fixes
 
 * **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models. 
+* **Local indexer recursive behavior** Local indexer was indexing directories as well as files. This was filtered out.
 
 ## 0.0.4
 

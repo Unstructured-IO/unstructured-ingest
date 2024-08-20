@@ -71,9 +71,12 @@ class LocalIndexer(Indexer):
         input_path = self.index_config.path
         if input_path.is_file():
             return [Path(s) for s in glob.glob(f"{self.index_config.path}")]
+        files = []
         if self.index_config.recursive:
-            return list(input_path.rglob("*"))
-        return list(input_path.glob("*"))
+            files.extend(list(input_path.rglob("*")))
+        else:
+            files.extend(list(input_path.glob("*")))
+        return [f for f in files if f.is_file()]
 
     def get_file_metadata(self, path: Path) -> FileDataSourceMetadata:
         stats = path.stat()
