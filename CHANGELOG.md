@@ -1,4 +1,8 @@
-## 0.0.5-dev0
+## 0.0.5-dev1
+
+### Enhancements
+
+* **Add Couchbase Source Connector** Adds support for reading artifacts from Couchbase DB for processing in unstructured
 
 ### Fixes
 
