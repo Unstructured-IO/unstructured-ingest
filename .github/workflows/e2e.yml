@@ -129,7 +129,7 @@ jobs:
         UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
       run: |
         ./test_e2e/src/against-api.sh
-    
+
 
 
   test_dest:
@@ -183,6 +183,9 @@ jobs:
         DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
         SHAREPOINT_CLIENT_ID: ${{secrets.SHAREPOINT_CLIENT_ID}}
         SHAREPOINT_CRED: ${{secrets.SHAREPOINT_CRED}}
+        KDBAI_BEARER_TOKEN: ${{ secrets.KDBAI_BEARER_TOKEN }}
+        KDBAI_USERNAME: ${{ secrets.KDBAI_USERNAME }}
+        KDBAI_CIPHER_KEY: ${{ secrets.KDBAI_CIPHER_KEY }}
         TABLE_OCR: "tesseract"
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"
