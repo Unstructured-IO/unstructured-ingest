@@ -50,10 +50,10 @@ class PineconeCliWriteConfig(PineconeWriteConfig, CliConfig):
                 help="Number of records per batch",
             ),
             click.Option(
-                ["--num-processes"],
-                default=2,
+                ["--num-threads"],
+                default=1,
                 type=int,
-                help="Number of parallel processes with which to upload elements",
+                help="Number of threads with which to upload elements",
             ),
         ]
         return options

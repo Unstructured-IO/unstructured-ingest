@@ -1,8 +1,8 @@
 import copy
 import json
-import multiprocessing as mp
 import typing as t
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
@@ -39,7 +39,7 @@ class SimplePineconeConfig(ConfigSessionHandleMixin, BaseConnectorConfig):
 @dataclass
 class PineconeWriteConfig(WriteConfig):
     batch_size: int = 50
-    num_processes: int = 1
+    num_threads: int = 1
 
 
 @dataclass
@@ -107,16 +107,14 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
 
         pinecone_batch_size = self.write_config.batch_size
 
-        logger.info(f"using {self.write_config.num_processes} processes to upload")
-        if self.write_config.num_processes == 1:
+        logger.info(f"using {self.write_config.num_threads} threads to upload")
+        if self.write_config.num_threads == 1:
             for chunk in batch_generator(elements_dict, pinecone_batch_size):
                 self.upsert_batch(chunk)  # noqa: E203
 
         else:
-            with mp.Pool(
-                processes=self.write_config.num_processes,
-            ) as pool:
-                pool.map(
+            with ThreadPoolExecutor(max_workers=self.write_config.num_threads) as executor:
+                executor.map(
                     self.upsert_batch, list(batch_generator(elements_dict, pinecone_batch_size))
                 )
 
