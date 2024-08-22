@@ -13,8 +13,8 @@ from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
     from unstructured_client import UnstructuredClient
-    from unstructured_client.models.shared import PartitionParameters
     from unstructured_client.models.operations import PartitionRequest
+    from unstructured_client.models.shared import PartitionParameters
 
 
 class PartitionerConfig(BaseModel):
