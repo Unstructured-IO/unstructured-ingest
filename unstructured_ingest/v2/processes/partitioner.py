@@ -190,6 +190,7 @@ class Partitioner(BaseProcess, ABC):
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
         from unstructured_client import UnstructuredClient
+        from unstructured_client.models.operations import PartitionRequest
 
         logger.debug(f"partitioning file {filename} with metadata: {metadata}")
         client = UnstructuredClient(
