@@ -13,6 +13,7 @@ from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
     from unstructured_client import UnstructuredClient
+    from unstructured_client.models.operations import PartitionRequest
     from unstructured_client.models.shared import PartitionParameters
 
 
@@ -153,7 +154,7 @@ class Partitioner(BaseProcess, ABC):
         )
         return self.postprocess(elements=elements_to_dicts(elements))
 
-    async def call_api(self, client: "UnstructuredClient", request: "PartitionParameters"):
+    async def call_api(self, client: "UnstructuredClient", request: "PartitionRequest"):
         # TODO when client supports async, run without using run_in_executor
         # isolate the IO heavy call
         loop = asyncio.get_event_loop()
@@ -189,6 +190,7 @@ class Partitioner(BaseProcess, ABC):
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
         from unstructured_client import UnstructuredClient
+        from unstructured_client.models.operations import PartitionRequest
 
         logger.debug(f"partitioning file {filename} with metadata: {metadata}")
         client = UnstructuredClient(
@@ -196,7 +198,8 @@ class Partitioner(BaseProcess, ABC):
             api_key_auth=self.config.api_key.get_secret_value(),
         )
         partition_params = self.create_partition_parameters(filename=filename)
-        resp = await self.call_api(client=client, request=partition_params)
+        partition_request = PartitionRequest(partition_params)
+        resp = await self.call_api(client=client, request=partition_request)
         elements = resp.elements or []
         # Append the data source metadata the auto partition does for you
         for element in elements:
