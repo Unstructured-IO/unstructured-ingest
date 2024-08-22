@@ -113,6 +113,7 @@ class Chunker(BaseProcess, ABC):
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured_client import UnstructuredClient
         from unstructured_client.models.shared import Files, PartitionParameters
+        from unstructured_client.models.operations import PartitionRequest
 
         client = UnstructuredClient(
             api_key_auth=self.config.chunk_api_key.get_secret_value(),
@@ -137,7 +138,8 @@ class Chunker(BaseProcess, ABC):
             )
             filtered_partition_request["files"] = files
             partition_params = PartitionParameters(**filtered_partition_request)
-        resp = client.general.partition(partition_params)
+            partition_request_obj = PartitionRequest(partition_params)
+        resp = client.general.partition(partition_request_obj)
         elements = resp.elements or []
         elements = assign_and_map_hash_ids(elements=elements)
         return elements
