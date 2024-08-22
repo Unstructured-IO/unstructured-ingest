@@ -64,6 +64,7 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
     def pinecone_index(self):
         if self._index is None:
             self._index = self.create_index()
+        1/0
         return self._index
 
     def initialize(self):
@@ -81,6 +82,7 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
 
         index = pc.Index(self.connector_config.index_name)
         logger.debug(f"Connected to index: {pc.describe_index(self.connector_config.index_name)}")
+        1/0
         return index
 
     @DestinationConnectionError.wrap
@@ -98,7 +100,7 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
         except pinecone.core.client.exceptions.ApiException as api_error:
             raise WriteError(f"http error: {api_error}") from api_error
         logger.debug(f"results: {response}")
-
+        print(1/0)
     def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
         logger.info(
             f"Upserting {len(elements_dict)} elements to destination "
@@ -106,7 +108,7 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
         )
 
         pinecone_batch_size = self.write_config.batch_size
-
+        print(1/0)
         logger.info(f"using {self.write_config.num_threads} threads to upload")
         if self.write_config.num_threads == 1:
             for chunk in batch_generator(elements_dict, pinecone_batch_size):
@@ -122,6 +124,7 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
         # While flatten_dict enables indexing on various fields,
         # element_serialized enables easily reloading the element object to memory.
         # element_serialized is formed without text/embeddings to avoid data bloating.
+        1/0
         return {
             "id": str(uuid.uuid4()),
             "values": element_dict.pop("embeddings", None),
