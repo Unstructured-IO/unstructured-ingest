@@ -112,8 +112,8 @@ class Chunker(BaseProcess, ABC):
     @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured_client import UnstructuredClient
-        from unstructured_client.models.shared import Files, PartitionParameters
         from unstructured_client.models.operations import PartitionRequest
+        from unstructured_client.models.shared import Files, PartitionParameters
 
         client = UnstructuredClient(
             api_key_auth=self.config.chunk_api_key.get_secret_value(),
