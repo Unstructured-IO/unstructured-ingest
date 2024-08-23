@@ -171,11 +171,12 @@ class PipelineStep(ABC):
 
 @dataclass
 class BatchPipelineStep(PipelineStep, ABC):
+    process: Uploader
+
     @timed
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
-        if self.context.mp_supported:
-            if isinstance(self.process, Uploader) and self.process.is_batch():
-                return self.run_batch(contents=iterable)
+        if self.context.mp_supported and self.process.is_batch():
+            return self.run_batch(contents=iterable)
         super().__call__(iterable=iterable)
 
     @abstractmethod
