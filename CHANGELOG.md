@@ -1,4 +1,8 @@
-## 0.0.7-dev0
+## 0.0.7-dev1
+
+### Enhancements
+
+* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.  
 
 ## 0.0.6
 

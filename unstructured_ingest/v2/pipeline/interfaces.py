@@ -12,7 +12,7 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar
 from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_asyncio
 
-from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig
+from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
 
 BaseProcessT = TypeVar("BaseProcessT", bound=BaseProcess)
@@ -131,6 +131,8 @@ class PipelineStep(ABC):
         if self.context.async_supported and self.process.is_async():
             return self.process_async(iterable=iterable)
         if self.context.mp_supported:
+            if isinstance(self.process, Uploader) and self.process.is_batch():
+                return self.run_batch(contents=iterable)
             return self.process_multiprocess(iterable=iterable)
         return self.process_serially(iterable=iterable)
 

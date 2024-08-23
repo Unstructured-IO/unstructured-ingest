@@ -1,5 +1,4 @@
 import json
-import multiprocessing as mp
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
@@ -135,9 +134,6 @@ class MilvusUploadStager(UploadStager):
 
 class MilvusUploaderConfig(UploaderConfig):
     collection_name: str = Field(description="Milvus collections to write to")
-    num_processes: int = Field(
-        default=4, description="number of processes to use when writing to support parallel writes"
-    )
 
 
 @dataclass
@@ -183,16 +179,8 @@ class MilvusUploader(Uploader):
             data: list[dict] = json.load(file)
         self.insert_results(data=data)
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        if self.upload_config.num_processes == 1:
-            for content in contents:
-                self.upload(content=content)
-
-        else:
-            with mp.Pool(
-                processes=self.upload_config.num_processes,
-            ) as pool:
-                pool.map(self.upload, contents)
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.upload(content=UploadContent(path=path, file_data=file_data))
 
 
 milvus_destination_entry = DestinationRegistryEntry(
