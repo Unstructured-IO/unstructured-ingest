@@ -67,7 +67,6 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
 
 class PineconeUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
-    num_processes: int = Field(default=4, description="Number of processes to use for uploading")
 
 
 @dataclass
@@ -149,7 +148,6 @@ class PineconeUploader(Uploader):
             f"writing document batches to destination"
             f" index named {self.connection_config.index_name}"
             f" with batch size {self.upload_config.batch_size}"
-            f" with {self.upload_config.num_processes} (number of) processes"
         )
 
         pinecone_batch_size = self.upload_config.batch_size
