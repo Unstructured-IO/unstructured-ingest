@@ -9,7 +9,6 @@ OUTPUT_FOLDER_NAME=s3-pinecone-dest
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
-writer_processes=$(((max_processes - 1) > 1 ? (max_processes - 1) : 2))
 
 if [ -z "$PINECONE_API_KEY" ]; then
   echo "Skipping Pinecone ingest test because PINECONE_API_KEY env var is not set."
