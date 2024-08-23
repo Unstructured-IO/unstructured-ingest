@@ -6,7 +6,7 @@ from typing import Callable, Optional, TypedDict
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.uploader import UploadContent, Uploader
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
+from unstructured_ingest.v2.pipeline.interfaces import BatchPipelineStep
 
 STEP_ID = "upload"
 
@@ -17,7 +17,7 @@ class UploadStepContent(TypedDict):
 
 
 @dataclass
-class UploadStep(PipelineStep):
+class UploadStep(BatchPipelineStep):
     process: Uploader
     identifier: str = STEP_ID
 

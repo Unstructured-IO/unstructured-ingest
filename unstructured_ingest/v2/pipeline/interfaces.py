@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import multiprocessing as mp
-from abc import ABC
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import wraps
@@ -131,8 +131,6 @@ class PipelineStep(ABC):
         if self.context.async_supported and self.process.is_async():
             return self.process_async(iterable=iterable)
         if self.context.mp_supported:
-            if isinstance(self.process, Uploader) and self.process.is_batch():
-                return self.run_batch(contents=iterable)
             return self.process_multiprocess(iterable=iterable)
         return self.process_serially(iterable=iterable)
 
@@ -169,3 +167,26 @@ class PipelineStep(ABC):
     @property
     def cache_dir(self) -> Path:
         return Path(self.context.work_dir) / self.identifier
+
+
+@dataclass
+class BatchPipelineStep(PipelineStep, ABC):
+    @timed
+    def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
+        if self.context.mp_supported:
+            if isinstance(self.process, Uploader) and self.process.is_batch():
+                return self.run_batch(contents=iterable)
+        super().__call__(iterable=iterable)
+
+    @abstractmethod
+    def _run_batch(self, contents: iterable_input, **kwargs) -> Any:
+        pass
+
+    def run_batch(self, contents: iterable_input, **kwargs) -> Any:
+        try:
+            return self._run_batch(contents=contents, **kwargs)
+        except Exception as e:
+            self.context.status[self.identifier] = {"step_error": str(e)}
+            if self.context.raise_on_error:
+                raise e
+            return None
