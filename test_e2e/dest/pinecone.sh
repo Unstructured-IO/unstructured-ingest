@@ -101,8 +101,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   pinecone \
   --api-key "$PINECONE_API_KEY" \
   --index-name "$PINECONE_INDEX" \
-  --batch-size 80 \
-  --num-processes "$writer_processes"
+  --batch-size 80
 
 # It can take some time for the index to catch up with the content that was written, this check between 10s sleeps
 # to give it that time process the writes. Will timeout after checking for a minute.
