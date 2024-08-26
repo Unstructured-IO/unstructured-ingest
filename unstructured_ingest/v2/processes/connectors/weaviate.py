@@ -183,7 +183,7 @@ class WeaviateUploader(Uploader):
 
     @requires_dependencies(["weaviate"], extras="weaviate")
     def _resolve_auth_method(self):
-        access_configs = self.connection_config.access_config
+        access_configs = self.connection_config.access_config.get_secret_value()
         connection_config = self.connection_config
         if connection_config.anonymous:
             return None
