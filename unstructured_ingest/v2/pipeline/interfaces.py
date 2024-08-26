@@ -12,6 +12,7 @@ from tqdm.asyncio import tqdm as tqdm_asyncio
 
 from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
+from unstructured_ingest.v2.otel import OtelHandler
 from unstructured_ingest.v2.pipeline.otel import instrument
 
 BaseProcessT = TypeVar("BaseProcessT", bound=BaseProcess)
@@ -83,6 +84,8 @@ class PipelineStep(ABC):
                 initializer=self._init_logger,
                 initargs=(logging.DEBUG if self.context.verbose else logging.INFO,),
             ) as pool:
+                for iter in iterable:
+                    iter[OtelHandler.trace_context_key] = OtelHandler.inject_context()
                 if self.context.tqdm:
                     return list(
                         tqdm(
@@ -124,9 +127,19 @@ class PipelineStep(ABC):
         raise NotImplementedError
 
     def run(self, _fn: Optional[Callable] = None, **kwargs: Any) -> Optional[Any]:
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.debug)
+        if trace_context := kwargs.pop(otel_handler.trace_context_key, None):
+            otel_handler.attach_context(trace_context=trace_context)
         try:
-            fn = _fn or self.process.run
-            return self._run(fn=fn, **kwargs)
+            attributes = {}
+            if file_data_path := kwargs.get("file_data_path"):
+                attributes["file_id"] = Path(file_data_path).stem
+            with otel_handler.get_tracer().start_as_current_span(
+                self.identifier, record_exception=True
+            ) as span:
+                otel_handler.set_attributes(span, attributes)
+                fn = _fn or self.process.run
+                return self._run(fn=fn, **kwargs)
         except Exception as e:
             logger.error(f"Exception raised while running {self.identifier}", exc_info=e)
             if "file_data_path" in kwargs:
@@ -136,9 +149,17 @@ class PipelineStep(ABC):
             return None
 
     async def run_async(self, _fn: Optional[Callable] = None, **kwargs: Any) -> Optional[Any]:
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.debug)
         try:
-            fn = _fn or self.process.run_async
-            return await self._run_async(fn=fn, **kwargs)
+            attributes = {}
+            if file_data_path := kwargs.get("file_data_path"):
+                attributes["file_id"] = Path(file_data_path).stem
+            with otel_handler.get_tracer().start_as_current_span(
+                self.identifier, record_exception=True
+            ) as span:
+                otel_handler.set_attributes(span, attributes)
+                fn = _fn or self.process.run_async
+                return await self._run_async(fn=fn, **kwargs)
         except Exception as e:
             logger.error(f"Exception raised while running {self.identifier}", exc_info=e)
             if "file_data_path" in kwargs:

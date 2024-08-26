@@ -1,8 +1,10 @@
 import os
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Protocol, Sequence
+from typing import Callable, ClassVar, Optional, Protocol, Sequence
 
 from opentelemetry import trace
+from opentelemetry.context import attach, get_current
+from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import ReadableSpan, Tracer, TracerProvider
 from opentelemetry.sdk.trace.export import (
@@ -37,12 +39,29 @@ class OtelHandler:
     service_name: str = "unstructured-ingest"
     trace_provider: TracerProvider = field(init=False)
     log_out: Callable = field(default=logger.info)
+    trace_context_key: ClassVar[str] = "_trace_context"
 
     def __post_init__(self):
         resource = Resource(attributes={SERVICE_NAME: self.service_name})
         self.trace_provider = self.init_trace_provider(resource=resource)
 
         trace._set_tracer_provider(self.trace_provider, log=False)
+
+    @staticmethod
+    def set_attributes(span, attributes_dict):
+        if attributes_dict:
+            for att in attributes_dict:
+                span.set_attribute(att, attributes_dict[att])
+
+    @staticmethod
+    def inject_context() -> dict:
+        trace_context = {}
+        inject(trace_context, get_current())
+        return trace_context
+
+    @staticmethod
+    def attach_context(trace_context: dict) -> None:
+        attach(extract(trace_context))
 
     def get_otel_endpoint(self) -> Optional[str]:
         if otel_endpoint := self.otel_endpoint:
@@ -56,7 +75,11 @@ class OtelHandler:
     def _add_console_trace_processor(self, provider: TracerProvider) -> None:
         def custom_formatter(span: ReadableSpan) -> str:
             duration = (span.end_time - span.start_time) / 1e9
-            return f"{span.name} finished in {duration}s\n"
+            s = f"{span.name} finished in {duration}s"
+            if span.attributes:
+                attributes_str = ", ".join([f"{k}={v}" for k, v in span.attributes.items()])
+                s += f", attributes: {attributes_str}"
+            return s
 
         tracer_exporter = LogSpanExporter(formatter=custom_formatter, log_out=self.log_out)
         processor = SimpleSpanProcessor(tracer_exporter)

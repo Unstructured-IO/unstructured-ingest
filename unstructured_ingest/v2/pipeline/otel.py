@@ -20,11 +20,6 @@ def instrument(
             else:
                 return func.__name__
 
-        def _set_attributes(span, attributes_dict):
-            if attributes_dict:
-                for att in attributes_dict:
-                    span.set_attribute(att, attributes_dict[att])
-
         @wraps(func)
         def wrap_with_span(self, *args, **kwargs):
             name = get_name(self=self)
@@ -32,7 +27,7 @@ def instrument(
             with otel_handler.get_tracer().start_as_current_span(
                 name, record_exception=record_exception
             ) as span:
-                _set_attributes(span, attributes)
+                otel_handler.set_attributes(span, attributes)
                 return func(self, *args, **kwargs)
 
         return wrap_with_span
