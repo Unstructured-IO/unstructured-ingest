@@ -95,9 +95,8 @@ class MilvusUploadStager(UploadStager):
         return parser.parse(date_string).timestamp()
 
     def conform_dict(self, data: dict) -> None:
-        if self.upload_stager_config.flatten_metadata:
-            if metadata := data.pop("metadata", None):
-                data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
+        if self.upload_stager_config.flatten_metadata and (metadata := data.pop("metadata", None)):
+            data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
 
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
         #  remove once that gets updated
@@ -112,7 +111,7 @@ class MilvusUploadStager(UploadStager):
                 if data_key not in self.upload_stager_config.fields_to_include:
                     data.pop(data_key)
             for field_include_key in self.upload_stager_config.fields_to_include:
-                if field_include_key not in data.keys():
+                if field_include_key not in data:
                     raise KeyError(f"Field '{field_include_key}' is missing in data!")
 
         datetime_columns = [
