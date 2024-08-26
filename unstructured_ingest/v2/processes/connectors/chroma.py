@@ -3,11 +3,11 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from dateutil import parser
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -32,26 +32,35 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "chroma"
 
 
-@dataclass
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[Dict[str, str]] = None
-    headers: Optional[Dict[str, str]] = None
+    settings: Optional[dict[str, str]] = Field(
+        default=None, description="A dictionary of settings to communicate with the chroma server."
+    )
+    headers: Optional[dict[str, str]] = Field(
+        default=None, description="A dictionary of headers to send to the Chroma server."
+    )
 
 
-@dataclass
 class ChromaConnectionConfig(ConnectionConfig):
-    collection_name: str
-    access_config: ChromaAccessConfig = enhanced_field(sensitive=True)
-    path: Optional[str] = None
-    tenant: Optional[str] = "default_tenant"
-    database: Optional[str] = "default_database"
-    host: Optional[str] = None
-    port: Optional[int] = None
-    ssl: bool = False
-    connector_type: str = CONNECTOR_TYPE
+    collection_name: str = Field(description="The name of the Chroma collection to write into.")
+    access_config: Secret[ChromaAccessConfig]
+    path: Optional[str] = Field(
+        default=None, description="Location where Chroma is persisted, if not connecting via http."
+    )
+    tenant: Optional[str] = Field(
+        default="default_tenant", description="The tenant to use for this client."
+    )
+    database: Optional[str] = Field(
+        default="default_database", description="The database to use for this client."
+    )
+    host: Optional[str] = Field(default=None, description="The hostname of the Chroma server.")
+    port: Optional[int] = Field(default=None, description="The port of the Chroma server.")
+    ssl: bool = Field(
+        default=False, description="Whether to use SSL to connect to the Chroma server."
+    )
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 
-@dataclass
 class ChromaUploadStagerConfig(UploadStagerConfig):
     pass
 
@@ -101,9 +110,8 @@ class ChromaUploadStager(UploadStager):
         return output_path
 
 
-@dataclass
 class ChromaUploaderConfig(UploaderConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 @dataclass
@@ -123,10 +131,11 @@ class ChromaUploader(Uploader):
     def create_client(self) -> "Client":
         import chromadb
 
+        access_config = self.connection_config.access_config.get_secret_value()
         if self.connection_config.path:
             return chromadb.PersistentClient(
                 path=self.connection_config.path,
-                settings=self.connection_config.access_config.settings,
+                settings=access_config.settings,
                 tenant=self.connection_config.tenant,
                 database=self.connection_config.database,
             )
@@ -136,8 +145,8 @@ class ChromaUploader(Uploader):
                 host=self.connection_config.host,
                 port=self.connection_config.port,
                 ssl=self.connection_config.ssl,
-                headers=self.connection_config.access_config.headers,
-                settings=self.connection_config.access_config.settings,
+                headers=access_config.headers,
+                settings=access_config.settings,
                 tenant=self.connection_config.tenant,
                 database=self.connection_config.database,
             )

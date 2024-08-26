@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 import click
 
 from unstructured_ingest.cli import dest, src
 from unstructured_ingest.v2.cli.cmds import dest as dest_v2
 from unstructured_ingest.v2.cli.cmds import src as src_v2
+
+if TYPE_CHECKING:
+    from click import Command
 
 
 @click.group()
@@ -10,7 +15,7 @@ def ingest():
     pass
 
 
-def get_cmd() -> click.Command:
+def get_cmd() -> "Command":
     """Construct and return a Click command object representing the main command for the CLI.
 
     This function adds all dest_subcommand(s) to each src_subcommand, and adds all of those

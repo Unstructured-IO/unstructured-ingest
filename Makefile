@@ -14,6 +14,11 @@ pip-compile:
 install-lint:
 	pip install -r requirements/lint.txt
 
+
+.PHONY: install-client
+install-client:
+	pip install -r requirements/remote/client.txt
+
 .PHONY: install-test
 install-test:
 	pip install -r requirements/test.txt

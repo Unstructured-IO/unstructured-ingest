@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-import requests
-
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.interfaces import (
@@ -208,8 +206,10 @@ class ConfluenceSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector
             )
         return self._confluence
 
-    @requires_dependencies(["atlassian"], extras="Confluence")
+    @requires_dependencies(["atlassian", "requests"], extras="Confluence")
     def check_connection(self):
+        import requests
+
         url = "rest/api/space"
         try:
             self.confluence.request(method="HEAD", path=url)

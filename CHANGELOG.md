@@ -1,9 +1,40 @@
-## 0.0.4
+## 0.0.7-dev1
 
 ### Enhancements
 
 * **Add fields_to_include option for Milvus Stager** Adds support for filtering which fields will remain in the document so user can align document structure to collection schema.
 * **Add flatten_metadata option for Milvus Stager** Flattening metadata is now optional (enabled by default) step in processing the document.
+
+## 0.0.7-dev0
+
+## 0.0.6
+
+### Fixes
+
+* **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partion` to avoid a breaking change in the newest version.
+
+## 0.0.5
+
+### Enhancements
+
+* **Add Couchbase Source Connector** Adds support for reading artifacts from Couchbase DB for processing in unstructured
+* **Drop environment from pinecone as part of v2 migration** environment is no longer required by the pinecone SDK, so that field has been removed from the ingest CLI/SDK/
+* **Add KDBAI Destination Connector** Adds support for writing elements and their embeddings to KDBAI DB.
+
+### Fixes
+
+* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models. 
+* **Local indexer recursive behavior** Local indexer was indexing directories as well as files. This was filtered out.
+
+## 0.0.4
+
+### Enhancements
+
+* **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
+* **Leverage pydantic base models** All user-supplied configs are now derived from pydantic base models to leverage better type checking and add built in support for sensitive fields.
+* **Autogenerate click options from base models** Leverage th pydantic base models for all configs to autogenerate teh cli options exposed when running ingest as a CLI.
+* **Drop required Unstructured dependency** Unstructured was moved to an extra dependency to only be imported when needed for functionality such as local partitioning/chunking.
+* **Rebrand Astra to Astra DB** The Astra DB integration was re-branded to be consistent with DataStax standard branding.
 
 ## 0.0.3
 

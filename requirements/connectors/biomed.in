@@ -1,4 +1,5 @@
--c ../common/constraints.txt
--c ../common/base.txt
+-r ../common/base.in
 
 bs4
+requests
+

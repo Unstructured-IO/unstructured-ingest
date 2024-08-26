@@ -5,7 +5,6 @@ from typing import Callable, Optional
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.pipeline.utils import sterilize_dict
 from unstructured_ingest.v2.processes.filter import Filterer
 
 STEP_ID = "filter"
@@ -17,11 +16,7 @@ class FilterStep(PipelineStep):
     identifier: str = STEP_ID
 
     def __post_init__(self):
-        config = (
-            sterilize_dict(self.process.config.to_dict(redact_sensitive=True))
-            if self.process.config
-            else None
-        )
+        config = self.process.config.json() if self.process.config else None
         logger.info(f"Created {self.identifier} with configs: {config}")
 
     async def _run_async(self, fn: Callable, file_data_path: str, **kwargs) -> Optional[dict]:

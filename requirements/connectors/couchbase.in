@@ -1,0 +1,3 @@
+-r ../common/base.in
+
+couchbase

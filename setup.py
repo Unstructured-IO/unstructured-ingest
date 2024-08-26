@@ -81,7 +81,7 @@ all_doc_reqs = list(
 )
 connectors_reqs = {
     "airtable": load_requirements("requirements/connectors/airtable.in"),
-    "astra": load_requirements("requirements/connectors/astra.in"),
+    "astradb": load_requirements("requirements/connectors/astradb.in"),
     "azure": load_requirements("requirements/connectors/azure.in"),
     "azure-cognitive-search": load_requirements(
         "requirements/connectors/azure-cognitive-search.in",
@@ -91,6 +91,7 @@ connectors_reqs = {
     "chroma": load_requirements("requirements/connectors/chroma.in"),
     "clarifai": load_requirements("requirements/connectors/clarifai.in"),
     "confluence": load_requirements("requirements/connectors/confluence.in"),
+    "couchbase": load_requirements("requirements/connectors/couchbase.in"),
     "delta-table": load_requirements("requirements/connectors/delta-table.in"),
     "discord": load_requirements("requirements/connectors/discord.in"),
     "dropbox": load_requirements("requirements/connectors/dropbox.in"),
@@ -102,6 +103,7 @@ connectors_reqs = {
     "hubspot": load_requirements("requirements/connectors/hubspot.in"),
     "jira": load_requirements("requirements/connectors/jira.in"),
     "kafka": load_requirements("requirements/connectors/kafka.in"),
+    "kdbai": load_requirements("requirements/connectors/kdbai.in"),
     "milvus": load_requirements("requirements/connectors/milvus.in"),
     "mongodb": load_requirements("requirements/connectors/mongodb.in"),
     "notion": load_requirements("requirements/connectors/notion.in"),
@@ -121,6 +123,7 @@ connectors_reqs = {
     "weaviate": load_requirements("requirements/connectors/weaviate.in"),
     "databricks-volumes": load_requirements("requirements/connectors/databricks-volumes.in"),
     "singlestore": load_requirements("requirements/connectors/singlestore.in"),
+    "vectara": load_requirements("requirements/connectors/vectara.in"),
 }
 
 embed_reqs = {
@@ -150,7 +153,9 @@ docs_reqs = {
     "xlsx": xlsx_reqs,
 }
 
-extras_require = {}
+extras_require = {
+    "remote": load_requirements("requirements/remote/client.in"),
+}
 for d in [docs_reqs, connectors_reqs, embed_reqs]:
     extras_require.update(d)
 

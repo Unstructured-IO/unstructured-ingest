@@ -3,16 +3,22 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin
+from pydantic import BaseModel, Field
+
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
 
-@dataclass
-class FiltererConfig(EnhancedDataClassJsonMixin):
-    file_glob: Optional[list[str]] = None
-    max_file_size: Optional[int] = None
+class FiltererConfig(BaseModel):
+    file_glob: Optional[list[str]] = Field(
+        default=None,
+        description="file globs to limit which types of " "files are accepted",
+        examples=["*.pdf", "*.html"],
+    )
+    max_file_size: Optional[int] = Field(
+        default=None, description="Max file size to process in bytes"
+    )
 
 
 @dataclass

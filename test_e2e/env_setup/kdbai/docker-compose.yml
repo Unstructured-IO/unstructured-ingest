@@ -1,0 +1,10 @@
+services:
+  kdbai:
+    image: "portal.dl.kx.com/kdbai-db:latest"
+    container_name: "kdbai-db"
+    volumes:
+      - ./k4.lic:/opt/kx/lic/k4.lic
+    ports:
+      - "8082:8082"
+
+

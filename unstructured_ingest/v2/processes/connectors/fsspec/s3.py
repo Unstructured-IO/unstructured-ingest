@@ -5,9 +5,9 @@ from pathlib import Path
 from time import time
 from typing import Any, Generator, Optional
 
-from unstructured.utils import requires_dependencies
+from pydantic import Field, Secret
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     DownloadResponse,
     FileData,
@@ -32,27 +32,41 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 CONNECTOR_TYPE = "s3"
 
 
-@dataclass
 class S3IndexerConfig(FsspecIndexerConfig):
     pass
 
 
-@dataclass
 class S3AccessConfig(FsspecAccessConfig):
-    key: Optional[str] = None
-    secret: Optional[str] = None
-    token: Optional[str] = None
-
-
-@dataclass
-class S3ConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["s3", "s3a"])
-    access_config: S3AccessConfig = enhanced_field(
-        sensitive=True, default_factory=lambda: S3AccessConfig()
+    key: Optional[str] = Field(
+        default=None,
+        description="If not anonymous, use this access key ID, if specified. Takes precedence "
+        "over `aws_access_key_id` in client_kwargs.",
     )
-    endpoint_url: Optional[str] = None
-    anonymous: bool = False
-    connector_type: str = CONNECTOR_TYPE
+    secret: Optional[str] = Field(
+        default=None, description="If not anonymous, use this secret access key, if specified."
+    )
+    token: Optional[str] = Field(
+        default=None, description="If not anonymous, use this security token, if specified."
+    )
+
+
+SecretS3AccessConfig = Secret[S3AccessConfig]
+
+
+class S3ConnectionConfig(FsspecConnectionConfig):
+    supported_protocols: list[str] = field(default_factory=lambda: ["s3", "s3a"], init=False)
+    access_config: SecretS3AccessConfig = Field(
+        default_factory=lambda: SecretS3AccessConfig(secret_value=S3AccessConfig())
+    )
+    endpoint_url: Optional[str] = Field(
+        default=None,
+        description="Use this endpoint_url, if specified. Needed for "
+        "connecting to non-AWS S3 buckets.",
+    )
+    anonymous: bool = Field(
+        default=False, description="Connect to s3 without local AWS credentials."
+    )
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
         access_configs: dict[str, Any] = {"anon": self.anonymous}
@@ -60,7 +74,9 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             access_configs["endpoint_url"] = self.endpoint_url
 
         # Avoid injecting None by filtering out k,v pairs where the value is None
-        access_configs.update({k: v for k, v in self.access_config.to_dict().items() if v})
+        access_configs.update(
+            {k: v for k, v in self.access_config.get_secret_value().dict().items() if v}
+        )
         return access_configs
 
 
@@ -116,7 +132,6 @@ class S3Indexer(FsspecIndexer):
         super().precheck()
 
 
-@dataclass
 class S3DownloaderConfig(FsspecDownloaderConfig):
     pass
 
@@ -137,7 +152,6 @@ class S3Downloader(FsspecDownloader):
         return await super().run_async(file_data=file_data, **kwargs)
 
 
-@dataclass
 class S3UploaderConfig(FsspecUploaderConfig):
     pass
 
