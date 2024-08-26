@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import multiprocessing as mp
-from abc import ABC
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import wraps
@@ -12,7 +12,7 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar
 from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_asyncio
 
-from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig
+from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
 
 BaseProcessT = TypeVar("BaseProcessT", bound=BaseProcess)
@@ -167,3 +167,27 @@ class PipelineStep(ABC):
     @property
     def cache_dir(self) -> Path:
         return Path(self.context.work_dir) / self.identifier
+
+
+@dataclass
+class BatchPipelineStep(PipelineStep, ABC):
+    process: Uploader
+
+    @timed
+    def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
+        if self.context.mp_supported and self.process.is_batch():
+            return self.run_batch(contents=iterable)
+        super().__call__(iterable=iterable)
+
+    @abstractmethod
+    def _run_batch(self, contents: iterable_input, **kwargs) -> Any:
+        pass
+
+    def run_batch(self, contents: iterable_input, **kwargs) -> Any:
+        try:
+            return self._run_batch(contents=contents, **kwargs)
+        except Exception as e:
+            self.context.status[self.identifier] = {"step_error": str(e)}
+            if self.context.raise_on_error:
+                raise e
+            return None

@@ -13,7 +13,6 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    UploadContent,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -119,13 +118,9 @@ class MongoDBUploader(Uploader):
                 server_api=ServerApi(version=SERVER_API_VERSION),
             )
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        elements_dict = []
-        for content in contents:
-            with open(content.path) as elements_file:
-                elements = json.load(elements_file)
-                elements_dict.extend(elements)
-
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        with path.open("r") as file:
+            elements_dict = json.load(file)
         logger.info(
             f"writing {len(elements_dict)} objects to destination "
             f"db, {self.connection_config.database}, "

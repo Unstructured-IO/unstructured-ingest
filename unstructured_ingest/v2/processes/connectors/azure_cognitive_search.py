@@ -12,7 +12,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    UploadContent,
+    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -192,14 +192,9 @@ class AzureCognitiveSearchUploader(Uploader):
     def write_dict_wrapper(self, elements_dict):
         return self.write_dict(elements_dict=elements_dict)
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-
-        elements_dict = []
-        for content in contents:
-            with open(content.path) as elements_file:
-                elements = json.load(elements_file)
-                elements_dict.extend(elements)
-
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        with path.open("r") as file:
+            elements_dict = json.load(file)
         logger.info(
             f"writing document batches to destination"
             f" endpoint at {str(self.connection_config.endpoint)}"

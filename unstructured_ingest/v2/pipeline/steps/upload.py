@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
 from unstructured_ingest.v2.interfaces import FileData
-from unstructured_ingest.v2.interfaces.uploader import UploadContent, Uploader
+from unstructured_ingest.v2.interfaces.uploader import UploadContent
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.pipeline.interfaces import PipelineStep, iterable_input, timed
+from unstructured_ingest.v2.pipeline.interfaces import BatchPipelineStep
 
 STEP_ID = "upload"
 
@@ -17,8 +17,7 @@ class UploadStepContent(TypedDict):
 
 
 @dataclass
-class UploadStep(PipelineStep):
-    process: Uploader
+class UploadStep(BatchPipelineStep):
     identifier: str = STEP_ID
 
     def __str__(self):
@@ -34,25 +33,12 @@ class UploadStep(PipelineStep):
             f"connection configs: {connection_config}"
         )
 
-    def process_whole(self, iterable: iterable_input):
-        self.run(contents=iterable)
-
-    @timed
-    def __call__(self, iterable: iterable_input):
-        logger.info(
-            f"Calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
-        )
-        if self.process.is_async():
-            self.process_async(iterable=iterable)
-        else:
-            self.process_whole(iterable=iterable)
-
-    def _run(self, fn: Callable, contents: list[UploadStepContent]):
+    def _run_batch(self, contents: list[UploadStepContent]) -> None:
         upload_contents = [
             UploadContent(path=Path(c["path"]), file_data=FileData.from_file(c["file_data_path"]))
             for c in contents
         ]
-        fn(contents=upload_contents)
+        self.process.run_batch(contents=upload_contents)
 
     async def _run_async(self, path: str, file_data_path: str, fn: Optional[Callable] = None):
         fn = fn or self.process.run_async

@@ -1,5 +1,4 @@
 import json
-import multiprocessing as mp
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -13,7 +12,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    UploadContent,
+    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -68,7 +67,6 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
 
 class PineconeUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
-    num_processes: int = Field(default=4, description="Number of processes to use for uploading")
 
 
 @dataclass
@@ -143,34 +141,18 @@ class PineconeUploader(Uploader):
             raise DestinationConnectionError(f"http error: {api_error}") from api_error
         logger.debug(f"results: {response}")
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-
-        elements_dict = []
-        for content in contents:
-            with open(content.path) as elements_file:
-                elements = json.load(elements_file)
-                elements_dict.extend(elements)
-
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        with path.open("r") as file:
+            elements_dict = json.load(file)
         logger.info(
             f"writing document batches to destination"
             f" index named {self.connection_config.index_name}"
             f" with batch size {self.upload_config.batch_size}"
-            f" with {self.upload_config.num_processes} (number of) processes"
         )
 
         pinecone_batch_size = self.upload_config.batch_size
-
-        if self.upload_config.num_processes == 1:
-            for batch in batch_generator(elements_dict, pinecone_batch_size):
-                self.upsert_batch(batch)  # noqa: E203
-
-        else:
-            with mp.Pool(
-                processes=self.upload_config.num_processes,
-            ) as pool:
-                pool.map(
-                    self.upsert_batch, list(batch_generator(elements_dict, pinecone_batch_size))
-                )
+        for pinecone_batch in batch_generator(elements_dict, pinecone_batch_size):
+            self.upsert_batch(batch=pinecone_batch)
 
 
 pinecone_destination_entry = DestinationRegistryEntry(

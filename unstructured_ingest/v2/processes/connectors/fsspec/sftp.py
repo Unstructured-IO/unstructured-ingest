@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, UploadContent
+from unstructured_ingest.v2.interfaces import DownloadResponse, FileData
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -142,8 +142,8 @@ class SftpUploader(FsspecUploader):
         super().precheck()
 
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        return super().run(contents=contents, **kwargs)
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        return super().run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

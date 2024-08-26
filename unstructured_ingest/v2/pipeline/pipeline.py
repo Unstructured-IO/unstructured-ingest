@@ -4,7 +4,7 @@ from dataclasses import InitVar, dataclass, field
 from time import time
 from typing import Any, Optional, Union
 
-from unstructured_ingest.v2.interfaces import ProcessorConfig
+from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
 from unstructured_ingest.v2.pipeline.steps.chunk import Chunker, ChunkStep
 from unstructured_ingest.v2.pipeline.steps.download import DownloaderT, DownloadStep
@@ -14,7 +14,7 @@ from unstructured_ingest.v2.pipeline.steps.index import IndexerT, IndexStep
 from unstructured_ingest.v2.pipeline.steps.partition import Partitioner, PartitionStep
 from unstructured_ingest.v2.pipeline.steps.stage import UploadStager, UploadStageStep
 from unstructured_ingest.v2.pipeline.steps.uncompress import Uncompressor, UncompressStep
-from unstructured_ingest.v2.pipeline.steps.upload import Uploader, UploadStep
+from unstructured_ingest.v2.pipeline.steps.upload import UploadStep
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connector_registry import (
     ConnectionConfig,
