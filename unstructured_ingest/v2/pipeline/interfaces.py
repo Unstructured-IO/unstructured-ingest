@@ -4,9 +4,7 @@ import multiprocessing as mp
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from functools import wraps
 from pathlib import Path
-from time import time
 from typing import Any, Awaitable, Callable, Optional, TypeVar
 
 from tqdm import tqdm
@@ -14,25 +12,10 @@ from tqdm.asyncio import tqdm as tqdm_asyncio
 
 from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
+from unstructured_ingest.v2.pipeline.otel import instrument
 
 BaseProcessT = TypeVar("BaseProcessT", bound=BaseProcess)
 iterable_input = list[dict[str, Any]]
-
-
-def timed(func):
-    @wraps(func)
-    def time_it(self, *args, **kwargs):
-        start = time()
-        try:
-            return func(self, *args, **kwargs)
-        finally:
-            if func.__name__ == "__call__":
-                reported_name = f"{self.__class__.__name__} [cls]"
-            else:
-                reported_name = func.__name__
-            logger.info(f"{reported_name} took {time() - start} seconds")
-
-    return time_it
 
 
 @dataclass
@@ -119,7 +102,7 @@ class PipelineStep(ABC):
         # Init logger for each spawned process when using multiprocessing pool
         make_default_logger(level=log_level)
 
-    @timed
+    @instrument()
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
         iterable = iterable or []
         if iterable:
@@ -173,7 +156,6 @@ class PipelineStep(ABC):
 class BatchPipelineStep(PipelineStep, ABC):
     process: Uploader
 
-    @timed
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
         if self.context.mp_supported and self.process.is_batch():
             return self.run_batch(contents=iterable)

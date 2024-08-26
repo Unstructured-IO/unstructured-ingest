@@ -27,9 +27,14 @@ class ProcessorConfig(BaseModel):
     re_download: bool = False
     uncompress: bool = False
 
+    # OTEL support
+    otel_endpoint: Optional[str] = Field(
+        default=None, description="OTEL endpoint to publish trace data to"
+    )
+
     # Used to keep track of state in pipeline
     status: dict = Field(default_factory=dict)
-    semaphore: Optional[Semaphore] = Field(init=False, default=None)
+    semaphore: Optional[Semaphore] = Field(init=False, default=None, exclude=True)
 
     def model_post_init(self, __context: Any) -> None:
         if self.max_connections is not None:
