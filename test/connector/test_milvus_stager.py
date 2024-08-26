@@ -52,12 +52,11 @@ def test_milvus_stager_processes_elements_correctly(
     config = MilvusUploadStagerConfig(fields_to_include=given_field_include_list)
     stager = MilvusUploadStager(upload_stager_config=config)
 
-    try:
-        stager.conform_dict(data=given_element)
-    except KeyError:
-        if not then_error:
-            raise
+    if then_error:
+        with pytest.raises(KeyError):
+            stager.conform_dict(data=given_element)
     else:
+        stager.conform_dict(data=given_element)
         assert given_element == then_element
 
 
