@@ -6,6 +6,7 @@ from typing import Generator, Optional, TypeVar
 from unstructured_ingest.v2.interfaces.indexer import Indexer
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
+from unstructured_ingest.v2.pipeline.otel import instrument
 from unstructured_ingest.v2.utils import serialize_base_model_json
 
 IndexerT = TypeVar("IndexerT", bound=Indexer)
@@ -31,6 +32,7 @@ class IndexStep(PipelineStep):
             f"connection configs: {connection_config}"
         )
 
+    @instrument(span_name=STEP_ID)
     def run(self) -> Generator[str, None, None]:
         for file_data in self.process.run():
             logger.debug(f"Generated file data: {file_data.to_dict()}")

@@ -18,11 +18,19 @@ cryptography==43.0.0
     # via paramiko
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
 fsspec==2024.5.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   -r ./requirements/connectors/sftp.in
-marshmallow==3.21.3
+importlib-metadata==7.1.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   opentelemetry-api
+marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
@@ -30,6 +38,14 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
+opentelemetry-api==1.26.0
+    # via
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.26.0
+    # via -r ./requirements/connectors/../common/base.in
+opentelemetry-semantic-conventions==0.47b0
+    # via opentelemetry-sdk
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
@@ -58,6 +74,7 @@ tqdm==4.66.5
     # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typing-inspect
@@ -65,3 +82,9 @@ typing-inspect==0.9.0
     # via dataclasses-json
 tzdata==2024.1
     # via pandas
+wrapt==1.16.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   deprecated
+zipp==3.20.1
+    # via importlib-metadata

@@ -6,3 +6,4 @@ pydantic
 dataclasses_json
 tqdm
 click
+opentelemetry-sdk
