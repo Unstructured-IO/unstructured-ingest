@@ -1,11 +1,11 @@
 import logging
 import multiprocessing as mp
 from dataclasses import InitVar, dataclass, field
-from time import time
 from typing import Any, Optional, Union
 
 from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
+from unstructured_ingest.v2.otel import OtelHandler
 from unstructured_ingest.v2.pipeline.steps.chunk import Chunker, ChunkStep
 from unstructured_ingest.v2.pipeline.steps.download import DownloaderT, DownloadStep
 from unstructured_ingest.v2.pipeline.steps.embed import Embedder, EmbedStep
@@ -77,6 +77,8 @@ class Pipeline:
         filterer: Filterer = None,
     ):
         make_default_logger(level=logging.DEBUG if self.context.verbose else logging.INFO)
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint)
+        otel_handler.init_trace()
         self.indexer_step = IndexStep(process=indexer, context=self.context)
         self.downloader_step = DownloadStep(process=downloader, context=self.context)
         self.filter_step = FilterStep(process=filterer, context=self.context) if filterer else None
@@ -121,11 +123,13 @@ class Pipeline:
                     logger.error(f"{k}: [{kk}] {vv}")
 
     def run(self):
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.info)
         try:
-            start_time = time()
-            self._run_prechecks()
-            self._run()
-            logger.info(f"Finished ingest process in {time() - start_time}s")
+            with otel_handler.get_tracer().start_as_current_span(
+                "ingest process", record_exception=True
+            ):
+                self._run_prechecks()
+                self._run()
         finally:
             self.log_statuses()
             self.cleanup()

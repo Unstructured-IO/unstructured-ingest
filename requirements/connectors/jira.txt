@@ -21,12 +21,19 @@ click==8.1.7
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
-    # via atlassian-python-api
-idna==3.7
+    # via
+    #   atlassian-python-api
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
+idna==3.8
     # via requests
+importlib-metadata==7.1.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   opentelemetry-api
 jmespath==1.0.1
     # via atlassian-python-api
-marshmallow==3.21.3
+marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
@@ -38,6 +45,14 @@ oauthlib==3.2.2
     # via
     #   atlassian-python-api
     #   requests-oauthlib
+opentelemetry-api==1.26.0
+    # via
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.26.0
+    # via -r ./requirements/connectors/../common/base.in
+opentelemetry-semantic-conventions==0.47b0
+    # via opentelemetry-sdk
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
@@ -70,6 +85,7 @@ tqdm==4.66.5
     # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typing-inspect
@@ -85,3 +101,5 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
+zipp==3.20.1
+    # via importlib-metadata

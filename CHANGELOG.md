@@ -3,6 +3,7 @@
 ### Enhancements
 
 * **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.  
+* **OTEL support** If endpoint supplied, publish all traces to an otel collector. 
 
 ### Fixes
 

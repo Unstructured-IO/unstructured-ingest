@@ -23,10 +23,17 @@ cryptography==43.0.0
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
-    # via pygithub
-idna==3.7
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
+    #   pygithub
+idna==3.8
     # via requests
-marshmallow==3.21.3
+importlib-metadata==7.1.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   opentelemetry-api
+marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
@@ -34,6 +41,14 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
+opentelemetry-api==1.26.0
+    # via
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.26.0
+    # via -r ./requirements/connectors/../common/base.in
+opentelemetry-semantic-conventions==0.47b0
+    # via opentelemetry-sdk
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
@@ -46,7 +61,7 @@ pydantic==2.8.2
     # via -r ./requirements/connectors/../common/base.in
 pydantic-core==2.20.1
     # via pydantic
-pygithub==2.3.0
+pygithub==2.4.0
     # via -r ./requirements/connectors/github.in
 pyjwt[crypto]==2.9.0
     # via pygithub
@@ -68,6 +83,7 @@ tqdm==4.66.5
     # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   pygithub
@@ -85,3 +101,5 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
+zipp==3.20.1
+    # via importlib-metadata
