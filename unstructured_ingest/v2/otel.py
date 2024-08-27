@@ -8,7 +8,6 @@ from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import ReadableSpan, Tracer, TracerProvider
 from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
     ConsoleSpanExporter,
     SimpleSpanProcessor,
     SpanExportResult,
@@ -41,11 +40,11 @@ class OtelHandler:
     log_out: Callable = field(default=logger.info)
     trace_context_key: ClassVar[str] = "_trace_context"
 
-    def __post_init__(self):
+    def init_trace(self):
+        # Should only be done once
         resource = Resource(attributes={SERVICE_NAME: self.service_name})
-        self.trace_provider = self.init_trace_provider(resource=resource)
-
-        trace._set_tracer_provider(self.trace_provider, log=False)
+        trace_provider = self.init_trace_provider(resource=resource)
+        trace.set_tracer_provider(trace_provider)
 
     @staticmethod
     def set_attributes(span, attributes_dict):
@@ -56,12 +55,14 @@ class OtelHandler:
     @staticmethod
     def inject_context() -> dict:
         trace_context = {}
-        inject(trace_context, get_current())
+        current_context = get_current()
+        inject(trace_context, current_context)
         return trace_context
 
     @staticmethod
-    def attach_context(trace_context: dict) -> None:
-        attach(extract(trace_context))
+    def attach_context(trace_context: dict) -> object:
+        extracted_context = extract(trace_context)
+        return attach(extracted_context)
 
     def get_otel_endpoint(self) -> Optional[str]:
         if otel_endpoint := self.otel_endpoint:
@@ -91,8 +92,9 @@ class OtelHandler:
             return None
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
+        logger.debug(f"Adding otel exported at {otel_endpoint}")
         trace_exporter = OTLPSpanExporter()
-        processor = BatchSpanProcessor(trace_exporter)
+        processor = SimpleSpanProcessor(trace_exporter)
         provider.add_span_processor(processor)
 
     def init_trace_provider(self, resource: Resource) -> TracerProvider:

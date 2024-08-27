@@ -77,6 +77,8 @@ class Pipeline:
         filterer: Filterer = None,
     ):
         make_default_logger(level=logging.DEBUG if self.context.verbose else logging.INFO)
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint)
+        otel_handler.init_trace()
         self.indexer_step = IndexStep(process=indexer, context=self.context)
         self.downloader_step = DownloadStep(process=downloader, context=self.context)
         self.filter_step = FilterStep(process=filterer, context=self.context) if filterer else None

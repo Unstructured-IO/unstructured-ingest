@@ -81,11 +81,15 @@ class PipelineStep(ABC):
                 return self.process_serially(iterable)
             with mp.Pool(
                 processes=self.context.num_processes,
-                initializer=self._init_logger,
-                initargs=(logging.DEBUG if self.context.verbose else logging.INFO,),
+                initializer=self._init_mp,
+                initargs=(
+                    logging.DEBUG if self.context.verbose else logging.INFO,
+                    self.context.otel_endpoint,
+                ),
             ) as pool:
+                otel_context = OtelHandler.inject_context()
                 for iter in iterable:
-                    iter[OtelHandler.trace_context_key] = OtelHandler.inject_context()
+                    iter[OtelHandler.trace_context_key] = otel_context
                 if self.context.tqdm:
                     return list(
                         tqdm(
@@ -101,9 +105,11 @@ class PipelineStep(ABC):
         # Allow mapping of kwargs via multiprocessing map()
         return self.run(**input_kwargs)
 
-    def _init_logger(self, log_level: int):
+    def _init_mp(self, log_level: int, endpoint: Optional[str] = None) -> None:
         # Init logger for each spawned process when using multiprocessing pool
         make_default_logger(level=log_level)
+        otel_handler = OtelHandler(otel_endpoint=endpoint, log_out=logger.debug)
+        otel_handler.init_trace()
 
     @instrument()
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
@@ -127,16 +133,16 @@ class PipelineStep(ABC):
         raise NotImplementedError
 
     def run(self, _fn: Optional[Callable] = None, **kwargs: Any) -> Optional[Any]:
+        kwargs = kwargs.copy()
         otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.debug)
-        if trace_context := kwargs.pop(otel_handler.trace_context_key, None):
+        tracer = otel_handler.get_tracer()
+        if trace_context := kwargs.pop(otel_handler.trace_context_key, {}):
             otel_handler.attach_context(trace_context=trace_context)
+        attributes = {}
+        if file_data_path := kwargs.get("file_data_path"):
+            attributes["file_id"] = Path(file_data_path).stem
         try:
-            attributes = {}
-            if file_data_path := kwargs.get("file_data_path"):
-                attributes["file_id"] = Path(file_data_path).stem
-            with otel_handler.get_tracer().start_as_current_span(
-                self.identifier, record_exception=True
-            ) as span:
+            with tracer.start_as_current_span(self.identifier, record_exception=True) as span:
                 otel_handler.set_attributes(span, attributes)
                 fn = _fn or self.process.run
                 return self._run(fn=fn, **kwargs)
