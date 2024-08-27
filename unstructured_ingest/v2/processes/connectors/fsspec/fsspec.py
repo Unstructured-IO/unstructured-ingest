@@ -26,7 +26,6 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    UploadContent,
     Uploader,
     UploaderConfig,
 )
@@ -273,6 +272,9 @@ class FsspecUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: FsspecUploaderConfigT = field(default=None)
 
+    def is_async(self) -> bool:
+        return self.fs.async_impl
+
     @property
     def fs(self) -> "AbstractFileSystem":
         from fsspec import get_filesystem_class
@@ -311,11 +313,7 @@ class FsspecUploader(Uploader):
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
         return updated_upload_path
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        for content in contents:
-            self._run(path=content.path, file_data=content.file_data)
-
-    def _run(self, path: Path, file_data: FileData) -> None:
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
         if self.fs.exists(path=str(upload_path)) and not self.upload_config.overwrite:

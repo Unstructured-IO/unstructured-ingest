@@ -9,7 +9,6 @@ OUTPUT_FOLDER_NAME=s3-pinecone-dest
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
-writer_processes=$(((max_processes - 1) > 1 ? (max_processes - 1) : 2))
 
 if [ -z "$PINECONE_API_KEY" ]; then
   echo "Skipping Pinecone ingest test because PINECONE_API_KEY env var is not set."
@@ -101,8 +100,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   pinecone \
   --api-key "$PINECONE_API_KEY" \
   --index-name "$PINECONE_INDEX" \
-  --batch-size 80 \
-  --num-processes "$writer_processes"
+  --batch-size 80
 
 # It can take some time for the index to catch up with the content that was written, this check between 10s sleeps
 # to give it that time process the writes. Will timeout after checking for a minute.
