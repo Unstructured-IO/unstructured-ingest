@@ -164,7 +164,14 @@ class Partitioner(BaseProcess, ABC):
         from unstructured_client.models.shared import Files, PartitionParameters
 
         partition_request = self.config.to_partition_kwargs()
-        possible_fields = [f.name for f in fields(PartitionParameters)]
+
+        # Note(austin): PartitionParameters is a Pydantic model in v0.26.0
+        # Prior to this it was a dataclass which doesn't have .__fields
+        try:
+            possible_fields = PartitionParameters.__fields__
+        except AttributeError:
+            possible_fields = [f.name for f in fields(PartitionParameters)]
+
         filtered_partition_request = {
             k: v for k, v in partition_request.items() if k in possible_fields
         }

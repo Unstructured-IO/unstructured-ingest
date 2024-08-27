@@ -1,3 +1,11 @@
+## 0.0.7
+
+### Enhancements
+
+### Fixes
+
+* **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
+
 ## 0.0.6
 
 ### Enhancements
