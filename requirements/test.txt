@@ -55,7 +55,7 @@ h11==0.14.0
     # via httpcore
 httpcore==1.0.5
     # via httpx
-httpx==0.27.1
+httpx==0.27.2
     # via unstructured-client
 idna==3.8
     # via
@@ -163,7 +163,7 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   unstructured-client
-unstructured==0.15.5
+unstructured==0.15.7
     # via
     #   -c ./requirements/./common/constraints.txt
     #   -r ./requirements/test.in

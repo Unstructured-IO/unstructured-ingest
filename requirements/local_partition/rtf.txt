@@ -52,7 +52,7 @@ h11==0.14.0
     # via httpcore
 httpcore==1.0.5
     # via httpx
-httpx==0.27.1
+httpx==0.27.2
     # via unstructured-client
 idna==3.8
     # via
@@ -172,7 +172,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured[rtf]==0.15.5
+unstructured[rtf]==0.15.7
     # via
     #   -c ./requirements/local_partition/../common/constraints.txt
     #   -r ./requirements/local_partition/rtf.in

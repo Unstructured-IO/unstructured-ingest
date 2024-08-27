@@ -78,7 +78,7 @@ h11==0.14.0
     # via httpcore
 httpcore==1.0.5
     # via httpx
-httpx==0.27.1
+httpx==0.27.2
     # via
     #   langsmith
     #   unstructured-client
@@ -260,7 +260,7 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured==0.15.5
+unstructured==0.15.7
     # via
     #   -c ./requirements/embed/../common/constraints.txt
     #   -r ./requirements/embed/./common/base.in
