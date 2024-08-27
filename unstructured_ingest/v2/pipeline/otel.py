@@ -15,10 +15,7 @@ def instrument(
         def get_name(self) -> str:
             if span_name:
                 return span_name
-            if func.__name__ == "__call__":
-                return f"{self.__class__.__name__} [cls]"
-            else:
-                return func.__name__
+            return f"{self.identifier} step"
 
         @wraps(func)
         def wrap_with_span(self, *args, **kwargs):
