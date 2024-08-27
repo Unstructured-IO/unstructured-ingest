@@ -1,4 +1,4 @@
-## 0.0.7-dev3
+## 0.0.7
 
 ### Enhancements
 
@@ -8,6 +8,7 @@
 ### Fixes
 
 * **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed. 
+* **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
 
 ## 0.0.6
 
