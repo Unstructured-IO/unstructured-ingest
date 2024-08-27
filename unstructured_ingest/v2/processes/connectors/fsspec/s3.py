@@ -12,7 +12,6 @@ from unstructured_ingest.v2.interfaces import (
     DownloadResponse,
     FileData,
     FileDataSourceMetadata,
-    UploadContent,
 )
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -171,8 +170,8 @@ class S3Uploader(FsspecUploader):
         super().__post_init__()
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        return super().run(contents=contents, **kwargs)
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        return super().run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

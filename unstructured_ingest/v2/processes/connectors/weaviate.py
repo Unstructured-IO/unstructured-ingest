@@ -13,7 +13,6 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    UploadContent,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -184,7 +183,7 @@ class WeaviateUploader(Uploader):
 
     @requires_dependencies(["weaviate"], extras="weaviate")
     def _resolve_auth_method(self):
-        access_configs = self.connection_config.access_config
+        access_configs = self.connection_config.access_config.get_secret_value()
         connection_config = self.connection_config
         if connection_config.anonymous:
             return None
@@ -216,15 +215,9 @@ class WeaviateUploader(Uploader):
             )
         return None
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        # TODO update to use async support in weaviate client
-        #  once the version can be bumped to include it
-        elements_dict = []
-        for content in contents:
-            with open(content.path) as elements_file:
-                elements = json.load(elements_file)
-                elements_dict.extend(elements)
-
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        with path.open("r") as file:
+            elements_dict = json.load(file)
         logger.info(
             f"writing {len(elements_dict)} objects to destination "
             f"class {self.connection_config.class_name} "

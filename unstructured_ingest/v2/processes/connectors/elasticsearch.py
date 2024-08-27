@@ -26,7 +26,6 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    UploadContent,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -384,14 +383,12 @@ class ElasticsearchUploader(Uploader):
 
         return parallel_bulk
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         parallel_bulk = self.load_parallel_bulk()
-        elements_dict = []
-        for content in contents:
-            with open(content.path) as elements_file:
-                elements = json.load(elements_file)
-                elements_dict.extend(elements)
+        with path.open("r") as file:
+            elements_dict = json.load(file)
         upload_destination = self.connection_config.hosts or self.connection_config.cloud_id
+
         logger.info(
             f"writing {len(elements_dict)} elements via document batches to destination "
             f"index named {self.upload_config.index_name} at {upload_destination} with "

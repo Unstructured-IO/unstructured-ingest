@@ -15,7 +15,6 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    UploadContent,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -152,13 +151,13 @@ class KdbaiUploader(Uploader):
         df = pd.DataFrame(data=all_records)
         self.process_dataframe(df=df)
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        csv_paths = [c.path for c in contents if c.path.suffix == ".csv"]
-        if csv_paths:
-            self.process_csv(csv_paths=csv_paths)
-        json_paths = [c.path for c in contents if c.path.suffix == ".json"]
-        if json_paths:
-            self.process_json(json_paths=json_paths)
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        if path.suffix == ".csv":
+            self.process_csv(csv_paths=[path])
+        elif path.suffix == ".json":
+            self.process_json(json_paths=[path])
+        else:
+            raise ValueError(f"Unsupported file type, must be json or csv file: {path}")
 
 
 kdbai_destination_entry = DestinationRegistryEntry(

@@ -18,7 +18,6 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    UploadContent,
     Uploader,
     UploaderConfig,
 )
@@ -179,27 +178,21 @@ class LocalUploader(Uploader):
     def is_async(self) -> bool:
         return False
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        self.upload_config.output_path.mkdir(parents=True, exist_ok=True)
-        for content in contents:
-            if source_identifiers := content.file_data.source_identifiers:
-                identifiers = source_identifiers
-                rel_path = (
-                    identifiers.relative_path[1:]
-                    if identifiers.relative_path.startswith("/")
-                    else identifiers.relative_path
-                )
-                new_path = self.upload_config.output_path / Path(rel_path)
-                final_path = str(new_path).replace(
-                    identifiers.filename, f"{identifiers.filename}.json"
-                )
-            else:
-                final_path = self.upload_config.output_path / Path(
-                    f"{content.file_data.identifier}.json"
-                )
-            Path(final_path).parent.mkdir(parents=True, exist_ok=True)
-            logger.debug(f"copying file from {content.path} to {final_path}")
-            shutil.copy(src=str(content.path), dst=str(final_path))
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        if source_identifiers := file_data.source_identifiers:
+            identifiers = source_identifiers
+            rel_path = (
+                identifiers.relative_path[1:]
+                if identifiers.relative_path.startswith("/")
+                else identifiers.relative_path
+            )
+            new_path = self.upload_config.output_path / Path(rel_path)
+            final_path = str(new_path).replace(identifiers.filename, f"{identifiers.filename}.json")
+        else:
+            final_path = self.upload_config.output_path / Path(f"{file_data.identifier}.json")
+        Path(final_path).parent.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"copying file from {path} to {final_path}")
+        shutil.copy(src=str(path), dst=str(final_path))
 
 
 local_source_entry = SourceRegistryEntry(

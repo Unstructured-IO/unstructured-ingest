@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
@@ -9,7 +10,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    UploadContent,
+    FileData,
     Uploader,
     UploaderConfig,
 )
@@ -142,15 +143,13 @@ class DatabricksVolumesUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, contents: list[UploadContent], **kwargs: Any) -> None:
-        for content in contents:
-            with open(content.path, "rb") as elements_file:
-                output_path = os.path.join(self.upload_config.path, content.path.name)
-                self.get_client().files.upload(
-                    file_path=output_path,
-                    contents=elements_file,
-                    overwrite=self.upload_config.overwrite,
-                )
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        output_path = os.path.join(self.upload_config.path, path.name)
+        self.get_client().files.upload(
+            file_path=output_path,
+            contents=path,
+            overwrite=self.upload_config.overwrite,
+        )
 
 
 databricks_volumes_destination_entry = DestinationRegistryEntry(
