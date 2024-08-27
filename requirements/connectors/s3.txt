@@ -6,9 +6,9 @@
 #
 aiobotocore==2.12.3
     # via s3fs
-aiohappyeyeballs==2.3.6
+aiohappyeyeballs==2.4.0
     # via aiohttp
-aiohttp==3.10.3
+aiohttp==3.10.5
     # via
     #   aiobotocore
     #   s3fs
@@ -30,6 +30,10 @@ click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -39,11 +43,15 @@ fsspec==2024.5.0
     #   -c ./requirements/connectors/../common/constraints.txt
     #   -r ./requirements/connectors/s3.in
     #   s3fs
-idna==3.7
+idna==3.8
     # via yarl
+importlib-metadata==7.1.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   opentelemetry-api
 jmespath==1.0.1
     # via botocore
-marshmallow==3.21.3
+marshmallow==3.22.0
     # via dataclasses-json
 multidict==6.0.5
     # via
@@ -55,6 +63,14 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
+opentelemetry-api==1.26.0
+    # via
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.26.0
+    # via -r ./requirements/connectors/../common/base.in
+opentelemetry-semantic-conventions==0.47b0
+    # via opentelemetry-sdk
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
@@ -81,6 +97,7 @@ tqdm==4.66.5
 typing-extensions==4.12.2
     # via
     #   aioitertools
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typing-inspect
@@ -96,5 +113,8 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   aiobotocore
+    #   deprecated
 yarl==1.9.4
     # via aiohttp
+zipp==3.20.1
+    # via importlib-metadata
