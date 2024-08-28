@@ -4,9 +4,7 @@ import multiprocessing as mp
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from functools import wraps
 from pathlib import Path
-from time import time
 from typing import Any, Awaitable, Callable, Optional, TypeVar
 
 from tqdm import tqdm
@@ -14,25 +12,11 @@ from tqdm.asyncio import tqdm as tqdm_asyncio
 
 from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
+from unstructured_ingest.v2.otel import OtelHandler
+from unstructured_ingest.v2.pipeline.otel import instrument
 
 BaseProcessT = TypeVar("BaseProcessT", bound=BaseProcess)
 iterable_input = list[dict[str, Any]]
-
-
-def timed(func):
-    @wraps(func)
-    def time_it(self, *args, **kwargs):
-        start = time()
-        try:
-            return func(self, *args, **kwargs)
-        finally:
-            if func.__name__ == "__call__":
-                reported_name = f"{self.__class__.__name__} [cls]"
-            else:
-                reported_name = func.__name__
-            logger.info(f"{reported_name} took {time() - start} seconds")
-
-    return time_it
 
 
 @dataclass
@@ -97,9 +81,15 @@ class PipelineStep(ABC):
                 return self.process_serially(iterable)
             with mp.Pool(
                 processes=self.context.num_processes,
-                initializer=self._init_logger,
-                initargs=(logging.DEBUG if self.context.verbose else logging.INFO,),
+                initializer=self._init_mp,
+                initargs=(
+                    logging.DEBUG if self.context.verbose else logging.INFO,
+                    self.context.otel_endpoint,
+                ),
             ) as pool:
+                otel_context = OtelHandler.inject_context()
+                for iter in iterable:
+                    iter[OtelHandler.trace_context_key] = otel_context
                 if self.context.tqdm:
                     return list(
                         tqdm(
@@ -115,11 +105,13 @@ class PipelineStep(ABC):
         # Allow mapping of kwargs via multiprocessing map()
         return self.run(**input_kwargs)
 
-    def _init_logger(self, log_level: int):
+    def _init_mp(self, log_level: int, endpoint: Optional[str] = None) -> None:
         # Init logger for each spawned process when using multiprocessing pool
         make_default_logger(level=log_level)
+        otel_handler = OtelHandler(otel_endpoint=endpoint, log_out=logger.debug)
+        otel_handler.init_trace()
 
-    @timed
+    @instrument()
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
         iterable = iterable or []
         if iterable:
@@ -141,9 +133,19 @@ class PipelineStep(ABC):
         raise NotImplementedError
 
     def run(self, _fn: Optional[Callable] = None, **kwargs: Any) -> Optional[Any]:
+        kwargs = kwargs.copy()
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.debug)
+        tracer = otel_handler.get_tracer()
+        if trace_context := kwargs.pop(otel_handler.trace_context_key, {}):
+            otel_handler.attach_context(trace_context=trace_context)
+        attributes = {}
+        if file_data_path := kwargs.get("file_data_path"):
+            attributes["file_id"] = Path(file_data_path).stem
         try:
-            fn = _fn or self.process.run
-            return self._run(fn=fn, **kwargs)
+            with tracer.start_as_current_span(self.identifier, record_exception=True) as span:
+                otel_handler.set_attributes(span, attributes)
+                fn = _fn or self.process.run
+                return self._run(fn=fn, **kwargs)
         except Exception as e:
             logger.error(f"Exception raised while running {self.identifier}", exc_info=e)
             if "file_data_path" in kwargs:
@@ -153,9 +155,17 @@ class PipelineStep(ABC):
             return None
 
     async def run_async(self, _fn: Optional[Callable] = None, **kwargs: Any) -> Optional[Any]:
+        otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.debug)
         try:
-            fn = _fn or self.process.run_async
-            return await self._run_async(fn=fn, **kwargs)
+            attributes = {}
+            if file_data_path := kwargs.get("file_data_path"):
+                attributes["file_id"] = Path(file_data_path).stem
+            with otel_handler.get_tracer().start_as_current_span(
+                self.identifier, record_exception=True
+            ) as span:
+                otel_handler.set_attributes(span, attributes)
+                fn = _fn or self.process.run_async
+                return await self._run_async(fn=fn, **kwargs)
         except Exception as e:
             logger.error(f"Exception raised while running {self.identifier}", exc_info=e)
             if "file_data_path" in kwargs:
@@ -173,7 +183,6 @@ class PipelineStep(ABC):
 class BatchPipelineStep(PipelineStep, ABC):
     process: Uploader
 
-    @timed
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
         if self.context.mp_supported and self.process.is_batch():
             return self.run_batch(contents=iterable)

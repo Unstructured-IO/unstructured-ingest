@@ -1,14 +1,21 @@
-## 0.0.7-dev3
+## 0.0.8
 
 ### Enhancements
 
-* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.
 * **Add fields_to_include option for Milvus Stager** Adds support for filtering which fields will remain in the document so user can align document structure to collection schema.
 * **Add flatten_metadata option for Milvus Stager** Flattening metadata is now optional (enabled by default) step in processing the document.
+
+## 0.0.7
+
+### Enhancements
+
+* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.  
+* **OTEL support** If endpoint supplied, publish all traces to an otel collector. 
 
 ### Fixes
 
 * **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed. 
+* **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
 
 ## 0.0.6
 

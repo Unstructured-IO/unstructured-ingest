@@ -14,7 +14,7 @@ charset-normalizer==3.3.2
     # via requests
 clarifai==10.7.0
     # via -r ./requirements/connectors/clarifai.in
-clarifai-grpc==10.7.2
+clarifai-grpc==10.7.3
     # via clarifai
 click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
@@ -22,17 +22,25 @@ contextlib2==21.6.0
     # via schema
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
-googleapis-common-protos==1.63.2
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
+googleapis-common-protos==1.64.0
     # via clarifai-grpc
 grpcio==1.64.3
     # via clarifai-grpc
-idna==3.7
+idna==3.8
     # via requests
+importlib-metadata==7.1.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   opentelemetry-api
 inquirerpy==0.3.4
     # via clarifai
 markdown-it-py==3.0.0
     # via rich
-marshmallow==3.21.3
+marshmallow==3.22.0
     # via dataclasses-json
 mdurl==0.1.2
     # via markdown-it-py
@@ -44,6 +52,14 @@ numpy==1.26.4
     #   clarifai
     #   pandas
     #   tritonclient
+opentelemetry-api==1.26.0
+    # via
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.26.0
+    # via -r ./requirements/connectors/../common/base.in
+opentelemetry-semantic-conventions==0.47b0
+    # via opentelemetry-sdk
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
@@ -79,7 +95,7 @@ pyyaml==6.0.2
     # via clarifai
 requests==2.32.3
     # via clarifai-grpc
-rich==13.7.1
+rich==13.8.0
     # via clarifai
 schema==0.7.5
     # via clarifai
@@ -95,6 +111,7 @@ tritonclient==2.41.1
     # via clarifai
 typing-extensions==4.12.2
     # via
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typing-inspect
@@ -108,3 +125,9 @@ urllib3==1.26.19
     #   requests
 wcwidth==0.2.13
     # via prompt-toolkit
+wrapt==1.16.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   deprecated
+zipp==3.20.1
+    # via importlib-metadata

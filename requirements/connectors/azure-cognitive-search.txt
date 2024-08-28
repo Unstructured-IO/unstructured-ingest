@@ -22,11 +22,19 @@ click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
-idna==3.7
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
+idna==3.8
     # via requests
+importlib-metadata==7.1.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   opentelemetry-api
 isodate==0.6.1
     # via azure-search-documents
-marshmallow==3.21.3
+marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
@@ -34,6 +42,14 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
+opentelemetry-api==1.26.0
+    # via
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-sdk==1.26.0
+    # via -r ./requirements/connectors/../common/base.in
+opentelemetry-semantic-conventions==0.47b0
+    # via opentelemetry-sdk
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
@@ -63,6 +79,7 @@ typing-extensions==4.12.2
     # via
     #   azure-core
     #   azure-search-documents
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typing-inspect
@@ -74,3 +91,9 @@ urllib3==1.26.19
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   requests
+wrapt==1.16.0
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   deprecated
+zipp==3.20.1
+    # via importlib-metadata
