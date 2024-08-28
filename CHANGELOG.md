@@ -1,3 +1,10 @@
+## 0.0.8
+
+### Enhancements
+
+* **Add fields_to_include option for Milvus Stager** Adds support for filtering which fields will remain in the document so user can align document structure to collection schema.
+* **Add flatten_metadata option for Milvus Stager** Flattening metadata is now optional (enabled by default) step in processing the document.
+
 ## 0.0.7
 
 ### Enhancements

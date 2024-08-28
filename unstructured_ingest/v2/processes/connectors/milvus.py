@@ -67,7 +67,15 @@ class MilvusConnectionConfig(ConnectionConfig):
 
 
 class MilvusUploadStagerConfig(UploadStagerConfig):
-    pass
+
+    fields_to_include: Optional[list[str]] = None
+    """If set - list of fields to include in the output.
+    Unspecified fields are removed from the elements.
+    This action takse place after metadata flattening.
+    Missing fields will cause stager to throw KeyError."""
+
+    flatten_metadata: bool = True
+    """If set - flatten "metadata" key and put contents directly into data"""
 
 
 @dataclass
@@ -85,8 +93,26 @@ class MilvusUploadStager(UploadStager):
             pass
         return parser.parse(date_string).timestamp()
 
-    @classmethod
-    def conform_dict(cls, data: dict) -> None:
+    def conform_dict(self, data: dict) -> None:
+        if self.upload_stager_config.flatten_metadata and (metadata := data.pop("metadata", None)):
+            data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
+
+        # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
+        #  remove once that gets updated
+        defaults = {"is_continuation": False}
+        for default in defaults:
+            if default not in data:
+                data[default] = defaults[default]
+
+        if self.upload_stager_config.fields_to_include:
+            data_keys = set(data.keys())
+            for data_key in data_keys:
+                if data_key not in self.upload_stager_config.fields_to_include:
+                    data.pop(data_key)
+            for field_include_key in self.upload_stager_config.fields_to_include:
+                if field_include_key not in data:
+                    raise KeyError(f"Field '{field_include_key}' is missing in data!")
+
         datetime_columns = [
             "data_source_date_created",
             "data_source_date_modified",
@@ -96,21 +122,12 @@ class MilvusUploadStager(UploadStager):
 
         json_dumps_fields = ["languages", "data_source_permissions_data"]
 
-        # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
-        #  remove once that gets updated
-        defaults = {"is_continuation": False}
-
-        if metadata := data.pop("metadata", None):
-            data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
         for datetime_column in datetime_columns:
             if datetime_column in data:
-                data[datetime_column] = cls.parse_date_string(data[datetime_column])
+                data[datetime_column] = self.parse_date_string(data[datetime_column])
         for json_dumps_field in json_dumps_fields:
             if json_dumps_field in data:
                 data[json_dumps_field] = json.dumps(data[json_dumps_field])
-        for default in defaults:
-            if default not in data:
-                data[default] = defaults[default]
 
     def run(
         self,
