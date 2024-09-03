@@ -2,7 +2,7 @@ import io
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -29,6 +29,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
+from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 
 CONNECTOR_TYPE = "google_drive"
 
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
 
 
 class GoogleDriveAccessConfig(AccessConfig):
-    service_account_key: Optional[dict] = Field(
+    service_account_key: Union[str, dict] = Field(
         default=None, description="Credentials values to use for authentication"
     )
     service_account_key_path: Optional[Path] = Field(
@@ -66,7 +67,12 @@ class GoogleDriveAccessConfig(AccessConfig):
                 )
         if key_data:
             return key_data
-        return self.service_account_key
+
+        if isinstance(self.service_account_key, str):
+            key_data = json_to_dict(self.service_account_key)
+        else:
+            key_data = self.service_account_key
+        return key_data
 
 
 class GoogleDriveConnectionConfig(ConnectionConfig):
