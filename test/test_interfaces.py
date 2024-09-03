@@ -90,7 +90,7 @@ class ExampleIngestDoc(BaseSingleIngestDoc):
         pass
 
 
-@pytest.fixture()
+@pytest.fixture
 def partition_test_results():
     # Reusable partition test results, calculated only once
     result = partition(
@@ -107,7 +107,7 @@ def partition_test_results():
     return result
 
 
-@pytest.fixture()
+@pytest.fixture
 def partition_file_test_results(partition_test_results):
     # Reusable partition_file test results, calculated only once
     return elements_to_dicts(partition_test_results)
