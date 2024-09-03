@@ -68,10 +68,9 @@ class DownloadStep(PipelineStep):
     def update_file_data(
         self, file_data: FileData, file_data_path: Path, download_path: Path
     ) -> None:
+        file_data.local_download_path = str(download_path.resolve())
         file_size_bytes = download_path.stat().st_size
-        changed = False
         if not file_data.metadata.filesize_bytes and file_size_bytes:
-            changed = True
             file_data.metadata.filesize_bytes = file_size_bytes
         if (
             file_data.metadata.filesize_bytes
@@ -82,12 +81,10 @@ class DownloadStep(PipelineStep):
                 f"({file_data.metadata.filesize_bytes}) doesn't "
                 f"match size of local file: {file_size_bytes}, updating"
             )
-            changed = True
             file_data.metadata.filesize_bytes = file_size_bytes
-        if changed:
-            logger.debug(f"Updating file data with new content: {file_data.to_dict()}")
-            with file_data_path.open("w") as file:
-                json.dump(file_data.to_dict(), file, indent=2)
+        logger.debug(f"Updating file data with new content: {file_data.to_dict()}")
+        with file_data_path.open("w") as file:
+            json.dump(file_data.to_dict(), file, indent=2)
 
     async def _run_async(self, fn: Callable, file_data_path: str) -> list[DownloadStepResponse]:
         file_data = FileData.from_file(path=file_data_path)
