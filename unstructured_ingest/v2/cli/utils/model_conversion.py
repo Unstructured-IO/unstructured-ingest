@@ -3,7 +3,18 @@ import datetime
 from collections import Counter
 from enum import EnumMeta
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional, Type, TypedDict, Union, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Type,
+    TypedDict,
+    Union,
+    get_args,
+    get_origin,
+)
 from uuid import UUID
 
 import click
@@ -102,6 +113,11 @@ def get_type_from_annotation(field_type: Any) -> click.ParamType:
     if field_origin is Union and len(field_args) == 2 and NoneType in field_args:
         field_type = next(field_arg for field_arg in field_args if field_arg is not None)
         return get_type_from_annotation(field_type=field_type)
+    if field_origin is Annotated:
+        field_origin = field_args[0]
+        field_metadata = field_args[1]
+        if isinstance(field_metadata, click.ParamType):
+            return field_metadata
     if field_origin is Secret and len(field_args) == 1:
         field_type = next(field_arg for field_arg in field_args if field_arg is not None)
         return get_type_from_annotation(field_type=field_type)

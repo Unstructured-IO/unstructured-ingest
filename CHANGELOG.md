@@ -1,3 +1,9 @@
+## 0.0.9-dev0
+
+### Enhancements
+
+**Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided. 
+
 ## 0.0.8
 
 ### Enhancements
