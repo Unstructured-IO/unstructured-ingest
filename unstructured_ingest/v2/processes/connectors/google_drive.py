@@ -13,6 +13,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
+from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -29,7 +30,6 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
-from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 
 CONNECTOR_TYPE = "google_drive"
 
