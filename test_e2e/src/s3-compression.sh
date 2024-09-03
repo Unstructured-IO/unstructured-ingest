@@ -34,7 +34,8 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --remote-url s3://utic-dev-tech-fixtures/small-pdf-set-w-compression/ \
   --anonymous \
   --work-dir "$WORK_DIR" \
-  --uncompress
+  --uncompress \
+  --file-glob "*.pdf,*.zip,*.tgz"
 
 "$SCRIPT_DIR"/check-num-files-output.sh 12 $OUTPUT_FOLDER_NAME
 
