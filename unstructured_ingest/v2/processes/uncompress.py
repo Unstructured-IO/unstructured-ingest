@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from unstructured_ingest.utils.compression import TAR_FILE_EXT, ZIP_FILE_EXT, uncompress_file
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.interfaces.process import BaseProcess
+from unstructured_ingest.v2.logger import logger
 
 
 class UncompressConfig(BaseModel):
@@ -30,6 +31,11 @@ class Uncompressor(BaseProcess, ABC):
         new_path = uncompress_file(filename=str(local_filepath))
         new_files = [i for i in Path(new_path).rglob("*") if i.is_file()]
         responses = []
+        logger.debug(
+            "uncompressed {} files from original file {}: {}".format(
+                len(new_files), local_filepath, ", ".join([str(f) for f in new_files])
+            )
+        )
         for f in new_files:
             new_file_data = copy(file_data)
             new_file_data.identifier = str(uuid5(NAMESPACE_DNS, str(f)))
