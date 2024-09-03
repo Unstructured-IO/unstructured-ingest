@@ -126,6 +126,9 @@ def get_type_from_annotation(field_type: Any) -> click.ParamType:
     if isinstance(field_type, EnumMeta):
         values = [i.value for i in field_type]
         return click.Choice(values)
+    if field_origin is Union and field_args == (str, dict):
+        # types that allow dict to be representated as a string
+        return Dict()
     raise TypeError(f"Unexpected field type: {field_type}")
 
 

@@ -1,3 +1,9 @@
+## 0.0.9
+
+### Fixes
+
+Allow string value for service_account_key in google drive source connector.
+
 ## 0.0.8
 
 ### Enhancements
