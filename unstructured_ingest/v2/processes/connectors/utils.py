@@ -21,7 +21,7 @@ def parse_datetime(date_value: Union[int, str, float, datetime]) -> datetime:
         return parser.parse(date_value)
 
 
-def conform_dict(value: Any) -> dict:
+def conform_string_to_dict(value: Any) -> dict:
     if isinstance(value, dict):
         return value
     if isinstance(value, str):
