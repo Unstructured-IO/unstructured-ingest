@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Annotated
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -21,9 +21,9 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-)
+from pydantic import ValidationError
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from pydantic.functional_validators import BeforeValidator
 
 if TYPE_CHECKING:
     from chromadb import Client
@@ -31,11 +31,19 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "chroma"
 
 
+def conform_dict(value: Any) -> dict:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        return json.loads(value)
+    raise ValidationError(f"Input could not be mapped to a valid dict: {value}")
+
+
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[dict[str, str]] = Field(
+    settings: Optional[Annotated[dict[str, str], BeforeValidator(conform_dict)]] = Field(
         default=None, description="A dictionary of settings to communicate with the chroma server."
     )
-    headers: Optional[dict[str, str]] = Field(
+    headers: Optional[Annotated[dict[str, str], BeforeValidator(conform_dict)]] = Field(
         default=None, description="A dictionary of headers to send to the Chroma server."
     )
 

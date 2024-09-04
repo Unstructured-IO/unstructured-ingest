@@ -2,6 +2,7 @@
 
 ### Enhancements
 
+**Chroma dict settings should allow string inputs
 **Move opensearch non-secret fields out of access config
 
 ## 0.0.9-dev0
