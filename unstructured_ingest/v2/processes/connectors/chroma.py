@@ -33,10 +33,10 @@ CONNECTOR_TYPE = "chroma"
 
 
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[Annotated[dict[str, str], BeforeValidator(conform_string_to_dict)]] = Field(
+    settings: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of settings to communicate with the chroma server."
     )
-    headers: Optional[Annotated[dict[str, str], BeforeValidator(conform_string_to_dict)]] = Field(
+    headers: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of headers to send to the Chroma server."
     )
 
