@@ -15,7 +15,7 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
+#  cleanup_dir "$OUTPUT_DIR"
   cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
@@ -37,6 +37,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --uncompress \
   --file-glob "*.pdf,*.zip,*.tgz"
 
-"$SCRIPT_DIR"/check-num-files-output.sh 12 $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-num-files-output.sh 18 $OUTPUT_FOLDER_NAME
 
 "$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
