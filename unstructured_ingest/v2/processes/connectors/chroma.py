@@ -3,10 +3,11 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 from dateutil import parser
-from pydantic import Field, Secret
+from pydantic import Field, Secret, ValidationError
+from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
@@ -21,9 +22,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from pydantic import ValidationError
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-from pydantic.functional_validators import BeforeValidator
 
 if TYPE_CHECKING:
     from chromadb import Client
