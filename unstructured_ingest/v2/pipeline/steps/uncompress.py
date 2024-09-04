@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, TypedDict
 
@@ -15,6 +16,7 @@ class UncompressStepResponse(TypedDict):
     path: str
 
 
+@dataclass
 class UncompressStep(PipelineStep):
     process: Uncompressor
     identifier: str = STEP_ID
@@ -22,21 +24,6 @@ class UncompressStep(PipelineStep):
     def __post_init__(self):
         config = self.process.config.json() if self.process.config else None
         logger.info(f"Created {self.identifier} with configs: {config}")
-
-    def _run(self, path: str, file_data_path: str) -> list[UncompressStepResponse]:
-        file_data = FileData.from_file(path=file_data_path)
-        new_file_data = self.process.run(file_data=file_data)
-        responses = []
-        for new_file in new_file_data:
-            new_file_data_path = Path(file_data_path).parent / f"{new_file.identifier}.json"
-            new_file.to_file(path=str(new_file_data_path.resolve()))
-            responses.append(
-                UncompressStepResponse(
-                    path=new_file.source_identifiers.fullpath,
-                    file_data_path=str(new_file_data_path),
-                )
-            )
-        return responses
 
     async def _run_async(
         self, fn: Callable, path: str, file_data_path: str
@@ -56,7 +43,7 @@ class UncompressStep(PipelineStep):
             new_file.to_file(path=str(new_file_data_path.resolve()))
             responses.append(
                 UncompressStepResponse(
-                    path=new_file.source_identifiers.fullpath,
+                    path=new_file.local_download_path,
                     file_data_path=str(new_file_data_path),
                 )
             )

@@ -1,10 +1,16 @@
-## 0.0.9-dev1
+## 0.0.9
 
 ### Enhancements
 
-**Chroma dict settings should allow string inputs
-**Move opensearch non-secret fields out of access config
-**Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided. 
+* **Chroma dict settings should allow string inputs**
+* **Move opensearch non-secret fields out of access config**
+* **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided. 
+* **Move opensearch non-secret fields out of access config
+
+### Fixes
+
+**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.  
+>>>>>>> d7a2cab (Add entry to changelog)
 
 ## 0.0.8
 
