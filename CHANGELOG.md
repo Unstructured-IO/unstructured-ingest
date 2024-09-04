@@ -1,13 +1,9 @@
-## 0.0.9
+## 0.0.9-dev1
 
 ### Enhancements
 
+**Chroma dict settings should allow string inputs
 **Move opensearch non-secret fields out of access config
-
-## 0.0.9-dev0
-
-### Enhancements
-
 **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided. 
 
 ## 0.0.8

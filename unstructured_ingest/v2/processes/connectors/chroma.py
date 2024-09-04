@@ -3,10 +3,11 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
+from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
@@ -21,9 +22,9 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-)
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+
+from .utils import conform_string_to_dict
 
 if TYPE_CHECKING:
     from chromadb import Client
@@ -32,10 +33,10 @@ CONNECTOR_TYPE = "chroma"
 
 
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[dict[str, str]] = Field(
+    settings: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of settings to communicate with the chroma server."
     )
-    headers: Optional[dict[str, str]] = Field(
+    headers: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of headers to send to the Chroma server."
     )
 

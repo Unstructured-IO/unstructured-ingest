@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Generator, Optional
 
 from dateutil import parser
-from pydantic import Field, Secret, ValidationError
+from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.error import (
@@ -27,9 +27,9 @@ from unstructured_ingest.v2.interfaces import (
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    SourceRegistryEntry,
-)
+from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+
+from .utils import conform_string_to_dict
 
 CONNECTOR_TYPE = "google_drive"
 
@@ -38,16 +38,8 @@ if TYPE_CHECKING:
     from googleapiclient.http import MediaIoBaseDownload
 
 
-def conform_dict(value: Any) -> dict:
-    if isinstance(value, dict):
-        return value
-    if isinstance(value, str):
-        return json.loads(value)
-    raise ValidationError(f"Input could not be mapped to a valid dict: {value}")
-
-
 class GoogleDriveAccessConfig(AccessConfig):
-    service_account_key: Optional[Annotated[dict, BeforeValidator(conform_dict)]] = Field(
+    service_account_key: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="Credentials values to use for authentication"
     )
     service_account_key_path: Optional[Path] = Field(
