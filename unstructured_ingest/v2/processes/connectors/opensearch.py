@@ -39,22 +39,6 @@ heavily on the Elasticsearch connector code, inheriting the functionality as muc
 
 class OpenSearchAccessConfig(AccessConfig):
     password: Optional[str] = Field(default=None, description="password when using basic auth")
-    use_ssl: bool = Field(default=False, description="use ssl for the connection")
-    verify_certs: bool = Field(default=False, description="whether to verify SSL certificates")
-    ssl_show_warn: bool = Field(
-        default=False, description="show warning when verify certs is disabled"
-    )
-    ca_certs: Optional[Path] = Field(default=None, description="path to CA bundle")
-    client_cert: Optional[Path] = Field(
-        default=None,
-        description="path to the file containing the private key and the certificate,"
-        " or cert only if using client_key",
-    )
-    client_key: Optional[Path] = Field(
-        default=None,
-        description="path to the file containing the private key"
-        " if using separate cert and key files",
-    )
 
 
 class OpenSearchClientInput(BaseModel):
@@ -75,6 +59,23 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         examples=["http://localhost:9200"],
     )
     username: Optional[str] = Field(default=None, description="username when using basic auth")
+    use_ssl: bool = Field(default=False, description="use ssl for the connection")
+    verify_certs: bool = Field(default=False, description="whether to verify SSL certificates")
+    ssl_show_warn: bool = Field(
+        default=False, description="show warning when verify certs is disabled"
+    )
+    ca_certs: Optional[Path] = Field(default=None, description="path to CA bundle")
+    client_cert: Optional[Path] = Field(
+        default=None,
+        description="path to the file containing the private key and the certificate,"
+        " or cert only if using client_key",
+    )
+    client_key: Optional[Path] = Field(
+        default=None,
+        description="path to the file containing the private key"
+        " if using separate cert and key files",
+    )
+
     access_config: Secret[OpenSearchAccessConfig]
 
     def get_client_kwargs(self) -> dict:
@@ -85,18 +86,18 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         client_input_kwargs = {}
         if self.hosts:
             client_input_kwargs["hosts"] = self.hosts
-        if access_config.use_ssl:
-            client_input_kwargs["use_ssl"] = access_config.use_ssl
-        if access_config.verify_certs:
-            client_input_kwargs["verify_certs"] = access_config.verify_certs
-        if access_config.ssl_show_warn:
-            client_input_kwargs["ssl_show_warn"] = access_config.ssl_show_warn
-        if access_config.ca_certs:
-            client_input_kwargs["ca_certs"] = str(access_config.ca_certs)
-        if access_config.client_cert:
-            client_input_kwargs["client_cert"] = str(access_config.client_cert)
-        if access_config.client_key:
-            client_input_kwargs["client_key"] = str(access_config.client_key)
+        if self.use_ssl:
+            client_input_kwargs["use_ssl"] = self.use_ssl
+        if self.verify_certs:
+            client_input_kwargs["verify_certs"] = self.verify_certs
+        if self.ssl_show_warn:
+            client_input_kwargs["ssl_show_warn"] = self.ssl_show_warn
+        if self.ca_certs:
+            client_input_kwargs["ca_certs"] = str(self.ca_certs)
+        if self.client_cert:
+            client_input_kwargs["client_cert"] = str(self.client_cert)
+        if self.client_key:
+            client_input_kwargs["client_key"] = str(self.client_key)
         if self.username and access_config.password:
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
         client_input = OpenSearchClientInput(**client_input_kwargs)

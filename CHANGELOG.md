@@ -1,3 +1,9 @@
+## 0.0.9
+
+### Enhancements
+
+**Move opensearch non-secret fields out of access config
+
 ## 0.0.9-dev0
 
 ### Enhancements

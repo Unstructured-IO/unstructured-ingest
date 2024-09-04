@@ -191,6 +191,6 @@ setup(
     },
     install_requires=load_requirements("requirements/common/base.in"),
     extras_require=extras_require,
-    package_dir={"unstructured": "unstructured"},
-    package_data={"unstructured": ["nlp/*.txt", "py.typed"]},
+    package_dir={"unstructured_ingest": "unstructured_ingest"},
+    package_data={"unstructured_ingest": ["py.typed"]},
 )
