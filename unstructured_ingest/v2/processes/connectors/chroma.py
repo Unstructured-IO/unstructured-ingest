@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 from dateutil import parser
-from pydantic import Field, Secret, ValidationError
+from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -24,18 +24,12 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
+from .utils import conform_dict
+
 if TYPE_CHECKING:
     from chromadb import Client
 
 CONNECTOR_TYPE = "chroma"
-
-
-def conform_dict(value: Any) -> dict:
-    if isinstance(value, dict):
-        return value
-    if isinstance(value, str):
-        return json.loads(value)
-    raise ValidationError(f"Input could not be mapped to a valid dict: {value}")
 
 
 class ChromaAccessConfig(AccessConfig):

@@ -1,7 +1,9 @@
+import json
 from datetime import datetime
-from typing import Union
+from typing import Any, Union
 
 from dateutil import parser
+from pydantic import ValidationError
 
 
 def parse_datetime(date_value: Union[int, str, float, datetime]) -> datetime:
@@ -17,3 +19,11 @@ def parse_datetime(date_value: Union[int, str, float, datetime]) -> datetime:
         return datetime.fromtimestamp(timestamp)
     except ValueError:
         return parser.parse(date_value)
+
+
+def conform_dict(value: Any) -> dict:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        return json.loads(value)
+    raise ValidationError(f"Input could not be mapped to a valid dict: {value}")
