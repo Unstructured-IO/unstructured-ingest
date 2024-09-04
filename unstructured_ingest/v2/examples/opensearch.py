@@ -40,10 +40,8 @@ if __name__ == "__main__":
         destination_connection_config=OpenSearchConnectionConfig(
             hosts="http://localhost:9247",
             username="admin",
-            access_config=OpenSearchAccessConfig(
-                password="admin",
-                use_ssl=True,
-            ),
+            use_ssl=True,
+            access_config=OpenSearchAccessConfig(password="admin"),
         ),
         stager_config=OpenSearchUploadStagerConfig(index_name="ingest-test-destination"),
         uploader_config=OpenSearchUploaderConfig(
