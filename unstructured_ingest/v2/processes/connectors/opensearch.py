@@ -86,17 +86,17 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         client_input_kwargs = {}
         if self.hosts:
             client_input_kwargs["hosts"] = self.hosts
-        if access_config.use_ssl:
+        if self.use_ssl:
             client_input_kwargs["use_ssl"] = self.use_ssl
-        if access_config.verify_certs:
+        if self.verify_certs:
             client_input_kwargs["verify_certs"] = self.verify_certs
-        if access_config.ssl_show_warn:
+        if self.ssl_show_warn:
             client_input_kwargs["ssl_show_warn"] = self.ssl_show_warn
-        if access_config.ca_certs:
+        if self.ca_certs:
             client_input_kwargs["ca_certs"] = str(self.ca_certs)
-        if access_config.client_cert:
+        if self.client_cert:
             client_input_kwargs["client_cert"] = str(self.client_cert)
-        if access_config.client_key:
+        if self.client_key:
             client_input_kwargs["client_key"] = str(self.client_key)
         if self.username and access_config.password:
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
