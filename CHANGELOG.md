@@ -6,7 +6,6 @@
 
 ### Fixes
 
-**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.  
 
 ## 0.0.9
 

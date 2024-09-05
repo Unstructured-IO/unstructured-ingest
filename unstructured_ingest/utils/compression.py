@@ -63,6 +63,7 @@ def uncompress_tar_file(tar_filename: str, path: Optional[str] = None) -> str:
 
     path = path if path else os.path.join(head, f"{tail}-tar-uncompressed")
     logger.info(f"extracting tar {tar_filename} -> {path}")
+    # NOTE: "r:*" mode opens both compressed (e.g ".tar.gz") and uncompressed ".tar" archives
     with tarfile.open(tar_filename, "r:*") as tfile:
         # NOTE(robinson: Mitigate against malicious content being extracted from the tar file.
         # This was added in Python 3.12
