@@ -1,3 +1,11 @@
+## 0.0.11
+
+### Enhancements
+
+* Fix OpenSearch connector
+
+### Fixes
+
 ## 0.0.10
 
 ### Enhancements
