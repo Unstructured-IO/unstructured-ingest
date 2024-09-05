@@ -1,3 +1,13 @@
+## 0.0.10
+
+### Enhancements
+
+* "Fix tar extraction" - tar extraction function assumed archive was gzip compressed which isn't true for supported `.tar` archives. Updated to work for both compressed and uncompressed tar archives.
+
+### Fixes
+
+**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.  
+
 ## 0.0.9
 
 ### Enhancements
@@ -10,7 +20,7 @@
 ### Fixes
 
 **Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.  
->>>>>>> d7a2cab (Add entry to changelog)
+
 
 ## 0.0.8
 
