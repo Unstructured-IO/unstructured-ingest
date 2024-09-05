@@ -1,3 +1,11 @@
+## 0.0.11
+
+### Enhancements
+
+* **Fix OpenSearch connector** OpenSearch connector did not work when `http_auth` was not provided
+
+### Fixes
+
 ## 0.0.10
 
 ### Enhancements
