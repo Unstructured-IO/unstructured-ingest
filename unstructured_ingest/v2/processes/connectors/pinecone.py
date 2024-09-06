@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import generator_batching_wbytes
+from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -128,7 +128,12 @@ class PineconeUploadStager(UploadStager):
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
-            "metadata": {k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
+            "metadata": flatten_dict(
+                {k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
+                separator="-",
+                flatten_lists=True,
+                remove_none=True,
+            ),
         }
 
     def run(
