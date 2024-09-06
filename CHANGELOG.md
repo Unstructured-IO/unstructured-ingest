@@ -1,3 +1,11 @@
+## 0.0.12
+
+### Enhancements
+
+### Fixes
+
+* **Fix invalid `replace()` calls in uncompress** - `replace()` calls meant to be on `str` versions of the path were instead called on `Path` causing errors with parameters.
+
 ## 0.0.11
 
 ### Enhancements
