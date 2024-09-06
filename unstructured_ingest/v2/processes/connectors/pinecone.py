@@ -129,10 +129,7 @@ class PineconeUploadStager(UploadStager):
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
-            "metadata": {
-                "text": element_dict.pop("text", None),
-                **{k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
-            },
+            "metadata": {k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
         }
 
     def run(
