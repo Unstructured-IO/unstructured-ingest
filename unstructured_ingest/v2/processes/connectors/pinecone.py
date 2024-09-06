@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -18,9 +19,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-)
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
@@ -187,20 +186,9 @@ class PineconeUploader(Uploader):
             f" with batch size {self.upload_config.batch_size}"
         )
 
-        max_batch_size = self.upload_config.batch_size
-        batch = []
-        batch_size = 0
-        for element in elements_dict:
-            element_size = len(json.dumps(element))
-            if (len(batch) > 0 and batch_size + element_size > (MAX_PAYLOAD_SIZE - 256)) or len(
-                batch
-            ) >= max_batch_size:
-                self.upsert_batch(batch=batch)
-                batch = []
-                batch_size = 0
-            batch.append(element)
-            batch_size += element_size
-        if len(batch) > 0:
+        for batch in generator_batching_wbytes(
+            elements_dict, MAX_PAYLOAD_SIZE - 100, self.upload_config.batch_size
+        ):
             self.upsert_batch(batch=batch)
 
 
