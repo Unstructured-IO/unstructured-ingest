@@ -26,7 +26,7 @@ def generator_batching_wbytes(
 
         if (
             current_batch_size + item_size_bytes <= batch_size_limit_bytes
-            or len(current_batch) == 0
+            or len(current_batch) == 0  # prevent inifite yielding of empty batch
         ) and len(current_batch) < max_batch_size:
             current_batch.append(item)
             current_batch_size += item_size_bytes
