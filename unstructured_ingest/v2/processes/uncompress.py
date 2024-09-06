@@ -43,11 +43,11 @@ class Uncompressor(BaseProcess, ABC):
             new_rel_download_path = str(f).replace(str(Path(local_filepath.parent)), "")[1:]
             new_file_data.source_identifiers = SourceIdentifiers(
                 filename=f.name,
-                fullpath=file_data.source_identifiers.fullpath.replace(
+                fullpath=str(file_data.source_identifiers.fullpath).replace(
                     file_data.source_identifiers.filename, new_rel_download_path
                 ),
                 rel_path=(
-                    file_data.source_identifiers.rel_path.replace(
+                    str(file_data.source_identifiers.rel_path).replace(
                         file_data.source_identifiers.filename, new_rel_download_path
                     )
                     if file_data.source_identifiers.rel_path
