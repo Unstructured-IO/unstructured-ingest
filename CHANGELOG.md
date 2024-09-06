@@ -1,3 +1,9 @@
+## 0.0.13
+
+### Fixes
+
+* **Pinecone payload size fixes** Pinecone destination now has a limited set of properties it will publish as well as dynamically handles batch size to stay under 2MB pinecone payload limit.
+
 ## 0.0.12
 
 ### Enhancements

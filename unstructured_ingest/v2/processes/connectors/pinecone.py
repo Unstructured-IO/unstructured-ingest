@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -19,15 +19,14 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-)
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
 
 
 CONNECTOR_TYPE = "pinecone"
+MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -69,6 +68,23 @@ class PineconeUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
 
 
+ALLOWED_FIELDS = (
+    "element_id",
+    "text",
+    "parent_id",
+    "category_depth",
+    "emphasized_text_tags",
+    "emphasized_text_contents",
+    "coordinates",
+    "last_modified",
+    "page_number",
+    "filename",
+    "is_continuation",
+    "link_urls",
+    "link_texts",
+)
+
+
 @dataclass
 class PineconeUploadStager(UploadStager):
     upload_stager_config: PineconeUploadStagerConfig = field(
@@ -77,22 +93,24 @@ class PineconeUploadStager(UploadStager):
 
     @staticmethod
     def conform_dict(element_dict: dict) -> dict:
-        # While flatten_dict enables indexing on various fields,
-        # element_serialized enables easily reloading the element object to memory.
-        # element_serialized is formed without text/embeddings to avoid data bloating.
+        embeddings = element_dict.pop("embeddings", None)
+        metadata: dict[str, Any] = element_dict.pop("metadata", {})
+        data_source = metadata.pop("data_source", {})
+        coordinates = metadata.pop("coordinates", {})
+
+        element_dict.update(metadata)
+        element_dict.update(data_source)
+        element_dict.update(coordinates)
+
         return {
             "id": str(uuid.uuid4()),
-            "values": element_dict.pop("embeddings", None),
-            "metadata": {
-                "text": element_dict.pop("text", None),
-                "element_serialized": json.dumps(element_dict),
-                **flatten_dict(
-                    element_dict,
-                    separator="-",
-                    flatten_lists=True,
-                    remove_none=True,
-                ),
-            },
+            "values": embeddings,
+            "metadata": flatten_dict(
+                {k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
+                separator="-",
+                flatten_lists=True,
+                remove_none=True,
+            ),
         }
 
     def run(
@@ -150,9 +168,10 @@ class PineconeUploader(Uploader):
             f" with batch size {self.upload_config.batch_size}"
         )
 
-        pinecone_batch_size = self.upload_config.batch_size
-        for pinecone_batch in batch_generator(elements_dict, pinecone_batch_size):
-            self.upsert_batch(batch=pinecone_batch)
+        for batch in generator_batching_wbytes(
+            elements_dict, MAX_PAYLOAD_SIZE - 100, self.upload_config.batch_size
+        ):
+            self.upsert_batch(batch=batch)
 
 
 pinecone_destination_entry = DestinationRegistryEntry(

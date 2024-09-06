@@ -15,14 +15,19 @@ def batch_generator(iterable, batch_size=100):
         chunk = tuple(itertools.islice(it, batch_size))
 
 
-def generator_batching_wbytes(iterable, batch_size_limit_bytes=15_000_000):
+def generator_batching_wbytes(
+    iterable, batch_size_limit_bytes=15_000_000, max_batch_size: int = 1000
+):
     """A helper function to break an iterable into chunks of specified bytes."""
     current_batch, current_batch_size = [], 0
 
     for item in iterable:
         item_size_bytes = len(json.dumps(item).encode("utf-8"))
 
-        if current_batch_size + item_size_bytes <= batch_size_limit_bytes:
+        if (
+            current_batch_size + item_size_bytes <= batch_size_limit_bytes
+            or len(current_batch) == 0  # prevent inifite yielding of empty batch
+        ) and len(current_batch) < max_batch_size:
             current_batch.append(item)
             current_batch_size += item_size_bytes
         else:
