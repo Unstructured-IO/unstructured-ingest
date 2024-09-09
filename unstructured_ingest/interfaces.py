@@ -24,7 +24,8 @@ from unstructured_ingest.utils.data_prep import flatten_dict
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-    from unstructured.embed.interfaces import BaseEmbeddingEncoder
+
+    from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder
 
 A = TypeVar("A", bound="DataClassJsonMixin")
 
@@ -204,22 +205,31 @@ class EmbeddingConfig(BaseConfig):
             kwargs["model_name"] = self.model_name
         # TODO make this more dynamic to map to encoder configs
         if self.provider == "langchain-openai":
-            from unstructured.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+            from unstructured_ingest.embed.openai import (
+                OpenAIEmbeddingConfig,
+                OpenAIEmbeddingEncoder,
+            )
 
             return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig(**kwargs))
         elif self.provider == "langchain-huggingface":
-            from unstructured.embed.huggingface import (
+            from unstructured_ingest.embed.huggingface import (
                 HuggingFaceEmbeddingConfig,
                 HuggingFaceEmbeddingEncoder,
             )
 
             return HuggingFaceEmbeddingEncoder(config=HuggingFaceEmbeddingConfig(**kwargs))
         elif self.provider == "octoai":
-            from unstructured.embed.octoai import OctoAiEmbeddingConfig, OctoAIEmbeddingEncoder
+            from unstructured_ingest.embed.octoai import (
+                OctoAiEmbeddingConfig,
+                OctoAIEmbeddingEncoder,
+            )
 
             return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig(**kwargs))
         elif self.provider == "langchain-aws-bedrock":
-            from unstructured.embed.bedrock import BedrockEmbeddingConfig, BedrockEmbeddingEncoder
+            from unstructured_ingest.embed.bedrock import (
+                BedrockEmbeddingConfig,
+                BedrockEmbeddingEncoder,
+            )
 
             return BedrockEmbeddingEncoder(
                 config=BedrockEmbeddingConfig(
@@ -229,14 +239,14 @@ class EmbeddingConfig(BaseConfig):
                 )
             )
         elif self.provider == "langchain-vertexai":
-            from unstructured.embed.vertexai import (
+            from unstructured_ingest.embed.vertexai import (
                 VertexAIEmbeddingConfig,
                 VertexAIEmbeddingEncoder,
             )
 
             return VertexAIEmbeddingEncoder(config=VertexAIEmbeddingConfig(**kwargs))
         elif self.provider == "langchain-voyageai":
-            from unstructured.embed.voyageai import (
+            from unstructured_ingest.embed.voyageai import (
                 VoyageAIEmbeddingConfig,
                 VoyageAIEmbeddingEncoder,
             )
