@@ -11,7 +11,11 @@ from es_cluster_config import (
     PASSWORD,
     USER,
 )
-from unstructured.embed.huggingface import HuggingFaceEmbeddingConfig, HuggingFaceEmbeddingEncoder
+
+from unstructured_ingest.embed.huggingface import (
+    HuggingFaceEmbeddingConfig,
+    HuggingFaceEmbeddingEncoder,
+)
 
 
 def embeddings_for_text(text: str) -> List[float]:
