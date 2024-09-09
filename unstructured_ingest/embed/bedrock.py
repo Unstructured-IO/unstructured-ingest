@@ -46,9 +46,6 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     def get_exemplary_embedding(self) -> List[float]:
         return self.embed_query(query="Q")
 
-    def __post_init__(self):
-        self.initialize()
-
     def num_of_dimensions(self):
         exemplary_embedding = self.get_exemplary_embedding()
         return np.shape(exemplary_embedding)
