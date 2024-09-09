@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
-    model_name: str = Field(default="text-embedding-ada-002")
+    embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
 
     @requires_dependencies(["langchain_openai"], extras="openai")
     def get_client(self) -> "OpenAIEmbeddings":
@@ -25,7 +25,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
         openai_client = OpenAIEmbeddings(
             openai_api_key=self.api_key.get_secret_value(),
-            model=self.model_name,  # type:ignore
+            model=self.embedder_model_name,  # type:ignore
         )
         return openai_client
 

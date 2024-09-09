@@ -32,7 +32,9 @@ ApiKeyType = Secret[Annotated[dict, BeforeValidator(conform_string_to_dict)]]
 
 class VertexAIEmbeddingConfig(EmbeddingConfig):
     api_key: ApiKeyType
-    model_name: Optional[str] = Field(default="textembedding-gecko@001")
+    embedder_model_name: Optional[str] = Field(
+        default="textembedding-gecko@001", alias="model_name"
+    )
 
     def register_application_credentials(self):
         # TODO look into passing credentials in directly, rather than via env var and tmp file
@@ -50,7 +52,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         from langchain_google_vertexai import VertexAIEmbeddings
 
         self.register_application_credentials()
-        vertexai_client = VertexAIEmbeddings(model_name=self.model_name)
+        vertexai_client = VertexAIEmbeddings(model_name=self.embedder_model_name)
         return vertexai_client
 
 

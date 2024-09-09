@@ -51,7 +51,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --embedding-provider "langchain-huggingface" \
   chroma \
   --host "localhost" \
-  --port 8000 \
+  --port 9999 \
   --collection-name "$COLLECTION_NAME" \
   --tenant "default_tenant" \
   --database "default_database" \
