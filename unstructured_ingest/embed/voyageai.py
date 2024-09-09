@@ -41,9 +41,6 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def get_exemplary_embedding(self) -> List[float]:
         return self.embed_query(query="A sample query.")
 
-    def initialize(self):
-        pass
-
     @property
     def num_of_dimensions(self) -> tuple[int, ...]:
         exemplary_embedding = self.get_exemplary_embedding()
