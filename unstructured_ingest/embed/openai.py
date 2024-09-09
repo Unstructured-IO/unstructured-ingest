@@ -37,9 +37,6 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def get_exemplary_embedding(self) -> List[float]:
         return self.embed_query(query="Q")
 
-    def initialize(self):
-        pass
-
     def num_of_dimensions(self):
         exemplary_embedding = self.get_exemplary_embedding()
         return np.shape(exemplary_embedding)
