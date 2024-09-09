@@ -28,15 +28,15 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
 
     Attributes:
         api_key (str): API key for accessing Mixedbread AI..
-        model_name (str): Name of the model to use for embeddings.
+        embedder_model_name (str): Name of the model to use for embeddings.
     """
 
     api_key: SecretStr = Field(
         default_factory=lambda: SecretStr(os.environ.get("MXBAI_API_KEY")),
     )
 
-    model_name: str = Field(
-        default="mixedbread-ai/mxbai-embed-large-v1",
+    embedder_model_name: str = Field(
+        default="mixedbread-ai/mxbai-embed-large-v1", alias="model_name"
     )
 
     @requires_dependencies(
@@ -121,7 +121,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         for i in batch_itr:
             batch = texts[i : i + batch_size]
             response = client.embeddings(
-                model=self.config.model_name,
+                model=self.config.embedder_model_name,
                 normalized=True,
                 encoding_format=ENCODING_FORMAT,
                 truncation_strategy=TRUNCATION_STRATEGY,

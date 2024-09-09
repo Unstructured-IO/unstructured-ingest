@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class OctoAiEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
-    model_name: str = Field(default="thenlper/gte-large")
+    embedder_model_name: str = Field(default="thenlper/gte-large", alias="model_name")
     base_url: str = Field(default="https://text.octoai.run/v1")
 
     @requires_dependencies(
@@ -49,7 +49,7 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_query(self, query):
         client = self.config.get_client()
-        response = client.embeddings.create(input=str(query), model=self.config.model_name)
+        response = client.embeddings.create(input=str(query), model=self.config.embedder_model_name)
         return response.data[0].embedding
 
     def embed_documents(self, elements: List[Element]) -> List[Element]:

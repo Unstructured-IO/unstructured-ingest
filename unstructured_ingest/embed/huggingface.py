@@ -15,8 +15,12 @@ if TYPE_CHECKING:
 
 
 class HuggingFaceEmbeddingConfig(EmbeddingConfig):
-    model_name: Optional[str] = Field(default="sentence-transformers/all-MiniLM-L6-v2")
-    model_kwargs: Optional[dict] = Field(default_factory=lambda: {"device": "cpu"})
+    embedder_model_name: Optional[str] = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2", alias="model_name"
+    )
+    embedder_model_kwargs: Optional[dict] = Field(
+        default_factory=lambda: {"device": "cpu"}, alias="model_kwargs"
+    )
     encode_kwargs: Optional[dict] = Field(default_factory=lambda: {"normalize_embeddings": False})
     cache_folder: Optional[dict] = Field(default=None)
 
@@ -28,7 +32,12 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
         """Creates a langchain Huggingface python client to embed elements."""
         from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
-        client = HuggingFaceEmbeddings(**self.dict())
+        client = HuggingFaceEmbeddings(
+            model_name=self.embedder_model_name,
+            model_kwargs=self.embedder_model_kwargs,
+            encode_kwargs=self.encode_kwargs,
+            cache_folder=self.cache_folder,
+        )
         return client
 
 

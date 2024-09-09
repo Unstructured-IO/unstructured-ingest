@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class VoyageAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
-    model_name: str
+    embedder_model_name: str = Field(alias="model_name")
     batch_size: Optional[int] = Field(default=None)
     truncation: Optional[bool] = Field(default=None)
 
@@ -28,7 +28,7 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
 
         return VoyageAIEmbeddings(
             voyage_api_key=self.api_key,
-            model=self.model_name,
+            model=self.embedder_model_name,
             batch_size=self.batch_size,
             truncation=self.truncation,
         )
