@@ -27,8 +27,6 @@ class Embedder(ReformatNode):
         return hashlib.sha256(json.dumps(hash_dict, sort_keys=True).encode()).hexdigest()[:32]
 
     def run(self, elements_json: str) -> Optional[str]:
-        from unstructured.staging.base import elements_from_json
-
         try:
             elements_json_filename = os.path.basename(elements_json)
             filename_ext = os.path.basename(elements_json_filename)
@@ -48,10 +46,10 @@ class Embedder(ReformatNode):
             ):
                 logger.debug(f"File exists: {json_path}, skipping embedding")
                 return str(json_path)
-            elements = elements_from_json(filename=elements_json)
+            with open(elements_json) as f:
+                elements = json.load(f)
             embedder = self.embedder_config.get_embedder()
-            embedded_elements = embedder.embed_documents(elements=elements)
-            element_dicts = [e.to_dict() for e in embedded_elements]
+            element_dicts = embedder.embed_documents(elements=elements)
             with open(json_path, "w", encoding="utf8") as output_f:
                 logger.info(f"writing embeddings content to {json_path}")
                 json.dump(element_dicts, output_f, ensure_ascii=False, indent=2)
