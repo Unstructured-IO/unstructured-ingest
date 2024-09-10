@@ -1,4 +1,3 @@
 -r ../common/base.in
--r ./common/base.in
 
 langchain-huggingface

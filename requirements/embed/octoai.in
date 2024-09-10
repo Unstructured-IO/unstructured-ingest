@@ -1,5 +1,4 @@
 -r ../common/base.in
--r ./common/base.in
 
 openai
 tiktoken
