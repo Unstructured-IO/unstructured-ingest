@@ -1,3 +1,4 @@
+import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
@@ -134,14 +135,12 @@ class EmbedderConfig(BaseModel):
 class Embedder(BaseProcess, ABC):
     config: EmbedderConfig
 
-    @requires_dependencies(dependencies=["unstructured"])
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
-        from unstructured.staging.base import elements_from_json
-
         # TODO update base embedder classes to support async
         embedder = self.config.get_embedder()
-        elements = elements_from_json(filename=str(elements_filepath))
+        with elements_filepath.open("r") as elements_file:
+            elements = json.load(elements_file)
         if not elements:
             return [e.to_dict() for e in elements]
         embedded_elements = embedder.embed_documents(elements=elements)
-        return [e.to_dict() for e in embedded_elements]
+        return embedded_elements

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 from pydantic import BaseModel
-from unstructured.documents.elements import Element
 
 
 class EmbeddingConfig(BaseModel):
@@ -29,7 +28,7 @@ class BaseEmbeddingEncoder(ABC):
         """Denotes if the embedding vector is a unit vector."""
 
     @abstractmethod
-    def embed_documents(self, elements: List[Element]) -> List[Element]:
+    def embed_documents(self, elements: List[dict]) -> List[dict]:
         pass
 
     @abstractmethod
