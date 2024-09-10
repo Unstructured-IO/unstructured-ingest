@@ -1,5 +1,3 @@
-from unstructured.documents.elements import Text
-
 from unstructured_ingest.embed.voyageai import VoyageAIEmbeddingConfig, VoyageAIEmbeddingEncoder
 
 
@@ -14,9 +12,11 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     encoder = VoyageAIEmbeddingEncoder(
         config=VoyageAIEmbeddingConfig(api_key="api_key", model_name="voyage-law-2")
     )
+    raw_elements = [{"text": f"This is sentence {i+1}"} for i in range(2)]
+
     elements = encoder.embed_documents(
-        elements=[Text("This is sentence 1"), Text("This is sentence 2")],
+        elements=raw_elements,
     )
     assert len(elements) == 2
-    assert elements[0].to_dict()["text"] == "This is sentence 1"
-    assert elements[1].to_dict()["text"] == "This is sentence 2"
+    assert elements[0]["text"] == "This is sentence 1"
+    assert elements[1]["text"] == "This is sentence 2"
