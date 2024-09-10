@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 from pydantic import Field, SecretStr
-from unstructured.documents.elements import Element
 
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -133,8 +132,8 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     @staticmethod
     def _add_embeddings_to_elements(
-        elements: List[Element], embeddings: List[List[float]]
-    ) -> List[Element]:
+        elements: List[dict], embeddings: List[List[float]]
+    ) -> List[dict]:
         """
         Add embeddings to elements.
 
@@ -148,11 +147,11 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         assert len(elements) == len(embeddings)
         elements_w_embedding = []
         for i, element in enumerate(elements):
-            element.embeddings = embeddings[i]
+            element["embeddings"] = embeddings[i]
             elements_w_embedding.append(element)
         return elements
 
-    def embed_documents(self, elements: List[Element]) -> List[Element]:
+    def embed_documents(self, elements: List[dict]) -> List[dict]:
         """
         Embed a list of document elements.
 
@@ -162,7 +161,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         Returns:
             List[Element]: Elements with embeddings.
         """
-        embeddings = self._embed([str(e) for e in elements])
+        embeddings = self._embed([e.get("text", "") for e in elements])
         return self._add_embeddings_to_elements(elements, embeddings)
 
     def embed_query(self, query: str) -> List[float]:
