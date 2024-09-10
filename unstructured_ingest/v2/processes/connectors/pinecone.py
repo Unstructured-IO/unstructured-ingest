@@ -187,7 +187,8 @@ class PineconeUploader(Uploader):
         with path.open("r") as file:
             elements_dict = json.load(file)
         logger.info(
-            f"writing document batches to destination"
+            f"writing a total of {len(elements_dict)} elements via"
+            f" document batches to destination"
             f" index named {self.connection_config.index_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
