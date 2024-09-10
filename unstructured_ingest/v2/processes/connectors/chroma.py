@@ -41,9 +41,14 @@ class ChromaAccessConfig(AccessConfig):
     )
 
 
+SecretChromaAccessConfig = Secret[ChromaAccessConfig]
+
+
 class ChromaConnectionConfig(ConnectionConfig):
     collection_name: str = Field(description="The name of the Chroma collection to write into.")
-    access_config: Secret[ChromaAccessConfig]
+    access_config: SecretChromaAccessConfig = Field(
+        default=SecretChromaAccessConfig(secret_value=ChromaAccessConfig())
+    )
     path: Optional[str] = Field(
         default=None, description="Location where Chroma is persisted, if not connecting via http."
     )

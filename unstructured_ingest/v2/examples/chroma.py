@@ -30,7 +30,7 @@ if __name__ == "__main__":
     logger.info(f"Writing all content in: {work_dir.resolve()}")
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve())),
-        indexer_config=LocalIndexerConfig(input_path=str(docs_path.resolve()) + "/multisimple/"),
+        indexer_config=LocalIndexerConfig(input_path=docs_path.resolve() / "multisimple"),
         downloader_config=LocalDownloaderConfig(download_dir=download_path),
         source_connection_config=LocalConnectionConfig(),
         partitioner_config=PartitionerConfig(strategy="fast"),
