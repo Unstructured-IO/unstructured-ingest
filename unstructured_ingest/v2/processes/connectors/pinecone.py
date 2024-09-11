@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "pinecone"
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
+MAX_POOL_THREADS = 100
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -167,10 +168,11 @@ class PineconeUploader(Uploader):
         )
         logger.info(f"Split doc with {len(elements_dict)} elements into {len(chunks)} batches")
 
+        max_pool_threads = min(len(chunks), MAX_POOL_THREADS)
         if self.upload_config.pool_threads:
-            pool_threads = min(self.upload_config.pool_threads, len(chunks))
+            pool_threads = min(self.upload_config.pool_threads, max_pool_threads)
         else:
-            pool_threads = len(chunks)
+            pool_threads = max_pool_threads
         index = self.connection_config.get_index(pool_threads=pool_threads)
         with index:
             async_results = [index.upsert(vectors=chunk, async_req=True) for chunk in chunks]
