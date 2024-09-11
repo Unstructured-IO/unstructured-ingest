@@ -149,15 +149,23 @@ class PineconeUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["pinecone"], extras="pinecone")
-    def upsert_batch(self, batch):
+    def upsert_batches_async(self, elements_dict: list[dict]):
         from pinecone.exceptions import PineconeApiException
 
-        try:
-            index = self.connection_config.get_index()
-            response = index.upsert(batch)
-        except PineconeApiException as api_error:
-            raise DestinationConnectionError(f"http error: {api_error}") from api_error
-        logger.debug(f"results: {response}")
+        index = self.connection_config.get_index()
+        with index:
+            async_results = [
+                index.upsert(vectors=chunk, async_req=True)
+                for chunk in generator_batching_wbytes(
+                    elements_dict, MAX_PAYLOAD_SIZE - 100, self.upload_config.batch_size
+                )
+            ]
+            # Wait for and retrieve responses (this raises in case of error)
+            try:
+                results = [async_result.get() for async_result in async_results]
+            except PineconeApiException as api_error:
+                raise DestinationConnectionError(f"http error: {api_error}") from api_error
+            logger.debug(f"results: {results}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         with path.open("r") as file:
@@ -168,10 +176,7 @@ class PineconeUploader(Uploader):
             f" with batch size {self.upload_config.batch_size}"
         )
 
-        for batch in generator_batching_wbytes(
-            elements_dict, MAX_PAYLOAD_SIZE - 100, self.upload_config.batch_size
-        ):
-            self.upsert_batch(batch=batch)
+        self.upsert_batches_async(elements_dict=elements_dict)
 
 
 pinecone_destination_entry = DestinationRegistryEntry(
