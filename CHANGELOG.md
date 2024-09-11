@@ -1,3 +1,9 @@
+## 0.0.14-dev0
+
+### Enhancements
+
+* **Support async batch uploads for pinecone connector**
+
 ## 0.0.13
 
 ### Fixes

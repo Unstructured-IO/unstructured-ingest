@@ -1,12 +1,15 @@
 import itertools
 import json
 from datetime import datetime
-from typing import Any, Optional, Sequence, cast
+from typing import Any, Iterable, Optional, Sequence, TypeVar, cast
 
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
+T = TypeVar("T")
+IterableT = Iterable[T]
 
-def batch_generator(iterable, batch_size=100):
+
+def batch_generator(iterable: IterableT, batch_size: int = 100) -> IterableT:
     """A helper function to break an iterable into batches of size batch_size."""
     it = iter(iterable)
     chunk = tuple(itertools.islice(it, batch_size))
@@ -16,23 +19,28 @@ def batch_generator(iterable, batch_size=100):
 
 
 def generator_batching_wbytes(
-    iterable, batch_size_limit_bytes=15_000_000, max_batch_size: int = 1000
-):
+    iterable: IterableT,
+    batch_size_limit_bytes: Optional[int] = None,
+    max_batch_size: Optional[int] = None,
+) -> IterableT:
+    if not batch_size_limit_bytes and not max_batch_size:
+        return iterable
     """A helper function to break an iterable into chunks of specified bytes."""
     current_batch, current_batch_size = [], 0
 
     for item in iterable:
         item_size_bytes = len(json.dumps(item).encode("utf-8"))
-
-        if (
-            current_batch_size + item_size_bytes <= batch_size_limit_bytes
-            or len(current_batch) == 0  # prevent inifite yielding of empty batch
-        ) and len(current_batch) < max_batch_size:
-            current_batch.append(item)
-            current_batch_size += item_size_bytes
-        else:
+        if batch_size_limit_bytes and current_batch_size + item_size_bytes > batch_size_limit_bytes:
             yield current_batch
             current_batch, current_batch_size = [item], item_size_bytes
+            continue
+        if max_batch_size and len(current_batch) + 1 > max_batch_size:
+            yield current_batch
+            current_batch, current_batch_size = [item], item_size_bytes
+            continue
+
+        current_batch.append(item)
+        current_batch_size += item_size_bytes
 
     if current_batch:
         yield current_batch
