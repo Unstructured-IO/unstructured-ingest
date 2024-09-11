@@ -22,9 +22,13 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-# Define the run script
-RUN_SCRIPT=${RUN_SCRIPT:-./unstructured/ingest/main.py}
+if [ -z "$MXBAI_API_KEY" ]; then
+  echo "Skipping Mixedbread AI ingest test because the MXBAI_API_KEY env var is not set."
+  exit 8
+fi
 
+# Define the run script
+RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 # Run the ingestion script with the specified parameters
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \

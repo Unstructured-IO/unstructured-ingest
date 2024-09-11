@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 if TYPE_CHECKING:
@@ -22,6 +21,7 @@ class EmbedderConfig(BaseModel):
             "langchain-vertexai",
             "langchain-voyageai",
             "octoai",
+            "mixedbread-ai",
         ]
     ] = Field(default=None, description="Type of the embedding class to be used.")
     embedding_api_key: Optional[SecretStr] = Field(
@@ -43,7 +43,6 @@ class EmbedderConfig(BaseModel):
         default="us-west-2", description="AWS region used for AWS-based embedders, such as bedrock"
     )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-huggingface")
     def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.huggingface import (
             HuggingFaceEmbeddingConfig,
@@ -54,19 +53,16 @@ class EmbedderConfig(BaseModel):
             config=HuggingFaceEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="openai")
     def get_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
 
         return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig.model_validate(embedding_kwargs))
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-octoai")
     def get_octoai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.octoai import OctoAiEmbeddingConfig, OctoAIEmbeddingEncoder
 
         return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig.model_validate(embedding_kwargs))
 
-    @requires_dependencies(dependencies=["unstructured"], extras="bedrock")
     def get_bedrock_embedder(self) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.bedrock import (
             BedrockEmbeddingConfig,
@@ -81,7 +77,6 @@ class EmbedderConfig(BaseModel):
             )
         )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-vertexai")
     def get_vertexai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.vertexai import (
             VertexAIEmbeddingConfig,
@@ -92,7 +87,6 @@ class EmbedderConfig(BaseModel):
             config=VertexAIEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-voyageai")
     def get_voyageai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.voyageai import (
             VoyageAIEmbeddingConfig,
@@ -101,6 +95,16 @@ class EmbedderConfig(BaseModel):
 
         return VoyageAIEmbeddingEncoder(
             config=VoyageAIEmbeddingConfig.model_validate(embedding_kwargs)
+        )
+
+    def get_mixedbread_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.mixedbreadai import (
+            MixedbreadAIEmbeddingConfig,
+            MixedbreadAIEmbeddingEncoder,
+        )
+
+        return MixedbreadAIEmbeddingEncoder(
+            config=MixedbreadAIEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
     def get_embedder(self) -> "BaseEmbeddingEncoder":
@@ -127,6 +131,8 @@ class EmbedderConfig(BaseModel):
 
         if self.embedding_provider == "langchain-voyageai":
             return self.get_voyageai_embedder(embedding_kwargs=kwargs)
+        if self.embedding_provider == "mixedbread-ai":
+            return self.get_mixedbread_embedder(embedding_kwargs=kwargs)
 
         raise ValueError(f"{self.embedding_provider} not a recognized encoder")
 

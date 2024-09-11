@@ -82,7 +82,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r ./../common/base.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 regex==2024.7.24
     # via tiktoken
