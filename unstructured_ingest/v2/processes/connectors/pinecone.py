@@ -70,7 +70,7 @@ class PineconeUploaderConfig(UploaderConfig):
         description="Optional number of records per batch. Will otherwise limit by size.",
     )
     pool_threads: Optional[int] = Field(
-        default=None, description="Optional limit on number of threads to use for upload"
+        default=1, description="Optional limit on number of threads to use for upload"
     )
 
 
@@ -167,7 +167,10 @@ class PineconeUploader(Uploader):
         )
         logger.info(f"Split doc with {len(elements_dict)} elements into {len(chunks)} batches")
 
-        pool_threads = self.upload_config.pool_threads or len(chunks)
+        if self.upload_config.pool_threads:
+            pool_threads = min(self.upload_config.pool_threads, len(chunks))
+        else:
+            pool_threads = len(chunks)
         index = self.connection_config.get_index(pool_threads=pool_threads)
         with index:
             async_results = [index.upsert(vectors=chunk, async_req=True) for chunk in chunks]
