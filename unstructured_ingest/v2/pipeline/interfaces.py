@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import multiprocessing as mp
@@ -132,7 +134,7 @@ class PipelineStep(ABC):
     async def _run_async(self, fn: Callable, **kwargs: Any) -> Optional[Any]:
         raise NotImplementedError
 
-    def run(self, _fn: Optional[Callable] = None, **kwargs: Any) -> Optional[Any]:
+    def run(self, _fn: Callable[..., Any] | None = None, **kwargs: Any) -> Optional[Any]:
         kwargs = kwargs.copy()
         otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.debug)
         tracer = otel_handler.get_tracer()

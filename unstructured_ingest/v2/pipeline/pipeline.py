@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import multiprocessing as mp
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Optional, Union
+from typing import Any
 
 from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
@@ -48,33 +50,33 @@ class Pipeline:
     partitioner: InitVar[Partitioner]
     partitioner_step: PartitionStep = field(init=False)
 
-    chunker: InitVar[Optional[Chunker]] = None
-    chunker_step: ChunkStep = field(init=False, default=None)
+    chunker: InitVar[Chunker | None] = None
+    chunker_step: ChunkStep | None = field(init=False, default=None)
 
-    embedder: InitVar[Optional[Embedder]] = None
-    embedder_step: EmbedStep = field(init=False, default=None)
+    embedder: InitVar[Embedder | None] = None
+    embedder_step: EmbedStep | None = field(init=False, default=None)
 
-    stager: InitVar[Optional[UploadStager]] = None
-    stager_step: UploadStageStep = field(init=False, default=None)
+    stager: InitVar[UploadStager | None] = None
+    stager_step: UploadStageStep | None = field(init=False, default=None)
 
     uploader: InitVar[Uploader] = field(default=LocalUploader())
-    uploader_step: UploadStep = field(init=False, default=None)
+    uploader_step: UploadStep | None = field(init=False, default=None)
 
-    uncompress_step: UncompressStep = field(init=False, default=None)
+    uncompress_step: UncompressStep | None = field(init=False, default=None)
 
-    filterer: InitVar[Optional[Filterer]] = None
-    filter_step: FilterStep = field(init=False, default=None)
+    filterer: InitVar[Filterer | None] = None
+    filter_step: FilterStep | None = field(init=False, default=None)
 
     def __post_init__(
         self,
         indexer: IndexerT,
         downloader: DownloaderT,
         partitioner: Partitioner,
-        chunker: Chunker = None,
-        embedder: Embedder = None,
-        stager: UploadStager = None,
-        uploader: Uploader = None,
-        filterer: Filterer = None,
+        chunker: Chunker | None = None,
+        embedder: Embedder | None = None,
+        stager: UploadStager | None = None,
+        uploader: Uploader | None = None,
+        filterer: Filterer | None = None,
     ):
         make_default_logger(level=logging.DEBUG if self.context.verbose else logging.INFO)
         otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint)
@@ -136,7 +138,7 @@ class Pipeline:
             if self.context.status:
                 raise PipelineError("Pipeline did not run successfully")
 
-    def clean_results(self, results: Optional[list[Union[Any, list[Any]]]]) -> Optional[list[Any]]:
+    def clean_results(self, results: list[Any | list[Any]] | None) -> list[Any] | None:
         if not results:
             return None
         results = [r for r in results if r]
@@ -274,12 +276,12 @@ class Pipeline:
         downloader_config: DownloaderConfigT,
         source_connection_config: ConnectionConfig,
         partitioner_config: PartitionerConfig,
-        filterer_config: FiltererConfig = None,
-        chunker_config: Optional[ChunkerConfig] = None,
-        embedder_config: Optional[EmbedderConfig] = None,
-        destination_connection_config: Optional[ConnectionConfig] = None,
-        stager_config: Optional[UploadStagerConfigT] = None,
-        uploader_config: Optional[UploaderConfigT] = None,
+        filterer_config: FiltererConfig | None = None,
+        chunker_config: ChunkerConfig | None = None,
+        embedder_config: EmbedderConfig | None = None,
+        destination_connection_config: ConnectionConfig | None = None,
+        stager_config: UploadStagerConfigT | None = None,
+        uploader_config: UploaderConfigT | None = None,
     ) -> "Pipeline":
         # Get registry key based on indexer config
         source_entry = {

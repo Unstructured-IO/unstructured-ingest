@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 from pydantic import BaseModel
@@ -47,7 +48,7 @@ class SrcCmd(BaseCmd):
         options = self.consolidate_options(options=options)
         return options
 
-    def cmd(self, ctx: click.Context, **options) -> None:
+    def cmd(self, ctx: click.Context, **options: dict[str, Any]) -> None:
         if ctx.invoked_subcommand:
             return
 
