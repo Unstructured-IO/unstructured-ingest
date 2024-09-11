@@ -45,7 +45,7 @@ class PineconeConnectionConfig(ConnectionConfig):
     )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
-    def get_index(self) -> "PineconeIndex":
+    def get_index(self, **index_kwargs) -> "PineconeIndex":
         from pinecone import Pinecone
 
         from unstructured_ingest import __version__ as unstructured_version
@@ -55,7 +55,7 @@ class PineconeConnectionConfig(ConnectionConfig):
             source_tag=f"unstructured_ingest=={unstructured_version}",
         )
 
-        index = pc.Index(self.index_name)
+        index = pc.Index(name=self.index_name, **index_kwargs)
         logger.debug(f"Connected to index: {pc.describe_index(self.index_name)}")
         return index
 
@@ -65,7 +65,13 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
 
 
 class PineconeUploaderConfig(UploaderConfig):
-    batch_size: int = Field(default=100, description="Number of records per batch")
+    batch_size: Optional[int] = Field(
+        default=None,
+        description="Optional number of records per batch. Will otherwise limit by size.",
+    )
+    pool_threads: Optional[int] = Field(
+        default=None, description="Optional limit on number of threads to use for upload"
+    )
 
 
 ALLOWED_FIELDS = (
@@ -152,14 +158,19 @@ class PineconeUploader(Uploader):
     def upsert_batches_async(self, elements_dict: list[dict]):
         from pinecone.exceptions import PineconeApiException
 
-        index = self.connection_config.get_index()
+        chunks = list(
+            generator_batching_wbytes(
+                iterable=elements_dict,
+                batch_size_limit_bytes=MAX_PAYLOAD_SIZE - 100,
+                max_batch_size=self.upload_config.batch_size,
+            )
+        )
+        logger.info(f"Split doc with {len(elements_dict)} elements into {len(chunks)} batches")
+
+        pool_threads = self.upload_config.pool_threads or len(chunks)
+        index = self.connection_config.get_index(pool_threads=pool_threads)
         with index:
-            async_results = [
-                index.upsert(vectors=chunk, async_req=True)
-                for chunk in generator_batching_wbytes(
-                    elements_dict, MAX_PAYLOAD_SIZE - 100, self.upload_config.batch_size
-                )
-            ]
+            async_results = [index.upsert(vectors=chunk, async_req=True) for chunk in chunks]
             # Wait for and retrieve responses (this raises in case of error)
             try:
                 results = [async_result.get() for async_result in async_results]
