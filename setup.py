@@ -131,6 +131,7 @@ embed_reqs = {
     "embed-octoai": load_requirements("requirements/embed/octoai.in"),
     "embed-vertexai": load_requirements("requirements/embed/vertexai.in"),
     "embed-voyageai": load_requirements("requirements/embed/voyageai.in"),
+    "embed-mixedbreadai": load_requirements("requirements/embed/mixedbreadai.in"),
     "openai": load_requirements("requirements/embed/openai.in"),
     "bedrock": load_requirements("requirements/embed/aws-bedrock.in"),
 }
