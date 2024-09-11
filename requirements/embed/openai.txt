@@ -81,7 +81,7 @@ langchain-community==0.2.16
     # via
     #   -c ./../common/constraints.txt
     #   -r ./openai.in
-langchain-core==0.2.38
+langchain-core==0.2.39
     # via
     #   langchain
     #   langchain-community
@@ -139,7 +139,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r ./../common/base.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 pyyaml==6.0.2
     # via
