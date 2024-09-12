@@ -32,16 +32,5 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --input-path example-docs/fake-html-cp1252.html \
   --work-dir "$WORK_DIR"
 
-set +e
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
-EXIT_CODE=$?
-set -e
 
-if [ "$EXIT_CODE" -ne 0 ]; then
-  echo "The last script run exited with a non-zero exit code: $EXIT_CODE."
-  # Handle the error or exit
-fi
-
-"$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
-
-exit $EXIT_CODE

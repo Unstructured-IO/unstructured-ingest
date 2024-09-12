@@ -48,16 +48,5 @@ AWS_SECRET_ACCESS_KEY=$secret_key AWS_ACCESS_KEY_ID=$access_key \
   --endpoint-url http://localhost:9000 \
   --work-dir "$WORK_DIR"
 
-set +e
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
-EXIT_CODE=$?
-set -e
 
-if [ "$EXIT_CODE" -ne 0 ]; then
-  echo "The last script run exited with a non-zero exit code: $EXIT_CODE."
-  # Handle the error or exit
-fi
-
-"$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
-
-exit $EXIT_CODE

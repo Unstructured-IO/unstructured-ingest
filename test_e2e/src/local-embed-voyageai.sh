@@ -39,8 +39,5 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --embedding-api-key "$VOYAGE_API_KEY" \
   --embedding-model-name "voyage-large-2"
 
-set +e
-
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
 
-"$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
