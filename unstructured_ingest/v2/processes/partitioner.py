@@ -152,7 +152,8 @@ class Partitioner(BaseProcess, ABC):
             data_source_metadata=FileDataSourceMetadata.from_dict(metadata),
             **self.config.to_partition_kwargs(),
         )
-        return self.postprocess(elements=elements_to_dicts(elements))
+        processed = self.postprocess(elements=elements_to_dicts(elements))
+        logger.debug(processed)
 
     async def call_api(self, client: "UnstructuredClient", request: "PartitionRequest"):
         # TODO when client supports async, run without using run_in_executor

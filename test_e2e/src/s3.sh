@@ -38,6 +38,21 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --anonymous \
   --work-dir "$WORK_DIR"
 
+# run second time for debugging
+PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
+  s3 \
+  --num-processes "$max_processes" \
+  --download-dir "$DOWNLOAD_DIR" \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+  --strategy hi_res \
+  --preserve-downloads \
+  --reprocess \
+  --output-dir "$OUTPUT_DIR" \
+  --verbose \
+  --remote-url s3://utic-dev-tech-fixtures/small-pdf-set/ \
+  --anonymous \
+  --work-dir "$WORK_DIR"
+
 set +e
 "$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
 EXIT_CODE=$?
