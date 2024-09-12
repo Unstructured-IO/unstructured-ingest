@@ -335,7 +335,8 @@ class SharepointIndexer(Indexer):
     @property
     def process_permissions(self) -> bool:
         return (
-            self.connection_config.permissions_config.permissions_tenant
+            self.connection_config.permissions_config is not None
+            and self.connection_config.permissions_config.permissions_tenant
             and self.connection_config.permissions_config.permissions_client_cred.get_secret_value()
             and self.connection_config.permissions_config.permissions_application_id
         )
