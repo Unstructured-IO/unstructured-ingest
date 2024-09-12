@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import shutil
 from pathlib import Path
 
 import click
@@ -81,6 +82,11 @@ def check_dir(dir_path: Path):
 
 def overwrite_outputs(expected_output_dir: Path, current_output_dir: Path):
     print(f"Overwriting output in {expected_output_dir} with content from {current_output_dir}")
+    # delete old fixture
+    shutil.rmtree(expected_output_dir)
+
+    # copy over new content
+    shutil.copytree(current_output_dir, expected_output_dir)
 
 
 def run_checks(expected_output_dir: Path, current_output_dir: Path):
@@ -99,12 +105,15 @@ def check_outputs(output_folder_name: str, overwrite_fixtures: bool):
     current_output_dir = base_current_output_dir / output_folder_name
     check_dir(dir_path=expected_output_dir)
     check_dir(dir_path=current_output_dir)
-    if overwrite_fixtures:
-        overwrite_outputs(
-            expected_output_dir=expected_output_dir, current_output_dir=current_output_dir
-        )
-    else:
+    try:
         run_checks(expected_output_dir=expected_output_dir, current_output_dir=current_output_dir)
+    except CheckError as e:
+        if overwrite_fixtures:
+            overwrite_outputs(
+                expected_output_dir=expected_output_dir, current_output_dir=current_output_dir
+            )
+        else:
+            raise e
 
 
 if __name__ == "__main__":
