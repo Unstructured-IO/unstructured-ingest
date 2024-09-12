@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from uuid import NAMESPACE_DNS, uuid5
 
@@ -172,17 +173,18 @@ class AirtableIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         table_metas = self.get_table_metas()
         for table_meta in table_metas:
+            fullpath = (
+                f"{table_meta.base_id}/{table_meta.table_id}/{table_meta.view_id}.csv"
+                if table_meta.view_id
+                else f"{table_meta.base_id}/{table_meta.table_id}.csv"
+            )
             yield FileData(
                 identifier=table_meta.get_id(),
                 connector_type=CONNECTOR_TYPE,
                 additional_metadata=table_meta.dict(),
                 source_identifiers=SourceIdentifiers(
-                    filename=f"{table_meta.get_id()}.csv",
-                    fullpath=(
-                        f"{table_meta.base_id}/{table_meta.table_id}/{table_meta.view_id}.csv"
-                        if table_meta.view_id
-                        else f"{table_meta.base_id}/{table_meta.table_id}.csv"
-                    ),
+                    filename=str(Path(fullpath).name),
+                    fullpath=fullpath,
                 ),
             )
 
