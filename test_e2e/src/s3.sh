@@ -16,7 +16,7 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC2317
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
+  #  cleanup_dir "$OUTPUT_DIR"
   cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
@@ -39,7 +39,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --work-dir "$WORK_DIR"
 
 set +e
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
 EXIT_CODE=$?
 set -e
 
