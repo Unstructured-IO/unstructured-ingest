@@ -5,3 +5,4 @@ text-output/**
 metrics-tmp/**
 structured-output-eval/**
 workdir
+skipped-files.txt
