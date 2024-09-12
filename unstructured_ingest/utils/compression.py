@@ -22,7 +22,7 @@ TAR_FILE_EXT = [".tar", ".tar.gz", ".tgz"]
 
 def uncompress_file(filename: str, path: Optional[str] = None) -> str:
     """
-    Takes in a compressed zip or tar file and uncompresses it
+    Takes in a compressed zip or tar file and decompresses it
     """
     # Create path if it doesn't already exist
     if path:
