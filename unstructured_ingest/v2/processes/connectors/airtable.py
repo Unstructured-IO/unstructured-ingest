@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from uuid import NAMESPACE_DNS, uuid5
 
 import pandas
-from pydantic import BaseModel, Field, Secret
+from pydantic import BaseModel, Field, Secret, field_validator
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -97,6 +97,22 @@ class AirtableIndexerConfig(IndexerConfig):
                 """,
     )
 
+    @classmethod
+    def validate_path(cls, path: str):
+        components = path.split("/")
+        if len(components) > 3:
+            raise ValueError(
+                f"Path must be of the format: base_id/table_id/view_id, "
+                f"where table id and view id are optional. Got: {path}"
+            )
+
+    @field_validator("list_of_paths")
+    @classmethod
+    def validate_format(cls, v: list[str]) -> list[str]:
+        for path in v:
+            cls.validate_path(path=path)
+        return v
+
 
 @dataclass
 class AirtableIndexer(Indexer):
@@ -131,11 +147,16 @@ class AirtableIndexer(Indexer):
                 airtable_meta.append(
                     AirtableTableMeta(base_id=components[0], table_id=components[1])
                 )
-            else:
+            elif len(components) == 3:
                 airtable_meta.append(
                     AirtableTableMeta(
                         base_id=components[0], table_id=components[1], view_id=components[2]
                     )
+                )
+            else:
+                raise ValueError(
+                    f"Path must be of the format: base_id/table_id/view_id, "
+                    f"where table id and view id are optional. Got: {path}"
                 )
         return airtable_meta
 
