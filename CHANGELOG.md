@@ -72,7 +72,7 @@
 
 ### Fixes
 
-* **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partion` to avoid a breaking change in the newest version.
+* **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partition` to avoid a breaking change in the newest version.
 
 ## 0.0.5
 
