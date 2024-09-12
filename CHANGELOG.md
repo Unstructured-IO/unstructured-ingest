@@ -1,9 +1,13 @@
-## 0.0.15-dev1
+## 0.0.15-dev2
 
 ### Fixes
 
 * **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
 * **Sharepoint permission config requirement** The sharepoint connector was expecting the permission config, even though it should have been optional.
+
+### Enhancements
+
+* **Migrate airtable connector to v2**
 
 ## 0.0.14
 
