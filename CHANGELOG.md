@@ -1,3 +1,8 @@
+## 0.0.15-dev0
+
+### Fixes
+
+* **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
 ## 0.0.14
 
 ### Enhancements
