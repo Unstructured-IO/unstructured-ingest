@@ -28,8 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-
-from .utils import conform_string_to_dict
+from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 
 CONNECTOR_TYPE = "google_drive"
 

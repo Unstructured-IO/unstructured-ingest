@@ -1,3 +1,4 @@
+import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
@@ -5,11 +6,10 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
 if TYPE_CHECKING:
-    from unstructured.embed.interfaces import BaseEmbeddingEncoder
+    from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder
 
 
 class EmbedderConfig(BaseModel):
@@ -21,6 +21,7 @@ class EmbedderConfig(BaseModel):
             "langchain-vertexai",
             "langchain-voyageai",
             "octoai",
+            "mixedbread-ai",
         ]
     ] = Field(default=None, description="Type of the embedding class to be used.")
     embedding_api_key: Optional[SecretStr] = Field(
@@ -42,30 +43,31 @@ class EmbedderConfig(BaseModel):
         default="us-west-2", description="AWS region used for AWS-based embedders, such as bedrock"
     )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-huggingface")
     def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured.embed.huggingface import (
+        from unstructured_ingest.embed.huggingface import (
             HuggingFaceEmbeddingConfig,
             HuggingFaceEmbeddingEncoder,
         )
 
-        return HuggingFaceEmbeddingEncoder(config=HuggingFaceEmbeddingConfig(**embedding_kwargs))
+        return HuggingFaceEmbeddingEncoder(
+            config=HuggingFaceEmbeddingConfig.model_validate(embedding_kwargs)
+        )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="openai")
     def get_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+        from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
 
-        return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig(**embedding_kwargs))
+        return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig.model_validate(embedding_kwargs))
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-octoai")
     def get_octoai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured.embed.octoai import OctoAiEmbeddingConfig, OctoAIEmbeddingEncoder
+        from unstructured_ingest.embed.octoai import OctoAiEmbeddingConfig, OctoAIEmbeddingEncoder
 
-        return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig(**embedding_kwargs))
+        return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig.model_validate(embedding_kwargs))
 
-    @requires_dependencies(dependencies=["unstructured"], extras="bedrock")
     def get_bedrock_embedder(self) -> "BaseEmbeddingEncoder":
-        from unstructured.embed.bedrock import BedrockEmbeddingConfig, BedrockEmbeddingEncoder
+        from unstructured_ingest.embed.bedrock import (
+            BedrockEmbeddingConfig,
+            BedrockEmbeddingEncoder,
+        )
 
         return BedrockEmbeddingEncoder(
             config=BedrockEmbeddingConfig(
@@ -75,20 +77,35 @@ class EmbedderConfig(BaseModel):
             )
         )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-vertexai")
     def get_vertexai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured.embed.vertexai import (
+        from unstructured_ingest.embed.vertexai import (
             VertexAIEmbeddingConfig,
             VertexAIEmbeddingEncoder,
         )
 
-        return VertexAIEmbeddingEncoder(config=VertexAIEmbeddingConfig(**embedding_kwargs))
+        return VertexAIEmbeddingEncoder(
+            config=VertexAIEmbeddingConfig.model_validate(embedding_kwargs)
+        )
 
-    @requires_dependencies(dependencies=["unstructured"], extras="embed-voyageai")
     def get_voyageai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured.embed.voyageai import VoyageAIEmbeddingConfig, VoyageAIEmbeddingEncoder
+        from unstructured_ingest.embed.voyageai import (
+            VoyageAIEmbeddingConfig,
+            VoyageAIEmbeddingEncoder,
+        )
 
-        return VoyageAIEmbeddingEncoder(config=VoyageAIEmbeddingConfig(**embedding_kwargs))
+        return VoyageAIEmbeddingEncoder(
+            config=VoyageAIEmbeddingConfig.model_validate(embedding_kwargs)
+        )
+
+    def get_mixedbread_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.mixedbreadai import (
+            MixedbreadAIEmbeddingConfig,
+            MixedbreadAIEmbeddingEncoder,
+        )
+
+        return MixedbreadAIEmbeddingEncoder(
+            config=MixedbreadAIEmbeddingConfig.model_validate(embedding_kwargs)
+        )
 
     def get_embedder(self) -> "BaseEmbeddingEncoder":
         kwargs: dict[str, Any] = {}
@@ -114,6 +131,8 @@ class EmbedderConfig(BaseModel):
 
         if self.embedding_provider == "langchain-voyageai":
             return self.get_voyageai_embedder(embedding_kwargs=kwargs)
+        if self.embedding_provider == "mixedbread-ai":
+            return self.get_mixedbread_embedder(embedding_kwargs=kwargs)
 
         raise ValueError(f"{self.embedding_provider} not a recognized encoder")
 
@@ -122,14 +141,12 @@ class EmbedderConfig(BaseModel):
 class Embedder(BaseProcess, ABC):
     config: EmbedderConfig
 
-    @requires_dependencies(dependencies=["unstructured"])
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
-        from unstructured.staging.base import elements_from_json
-
         # TODO update base embedder classes to support async
         embedder = self.config.get_embedder()
-        elements = elements_from_json(filename=str(elements_filepath))
+        with elements_filepath.open("r") as elements_file:
+            elements = json.load(elements_file)
         if not elements:
             return [e.to_dict() for e in elements]
         embedded_elements = embedder.embed_documents(elements=elements)
-        return [e.to_dict() for e in embedded_elements]
+        return embedded_elements

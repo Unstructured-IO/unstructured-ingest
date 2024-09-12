@@ -1,8 +1,9 @@
-## 0.0.14-dev1
+## 0.0.14
 
 ### Enhancements
 
 * **Support async batch uploads for pinecone connector**
+* **Migrate embedders** Move embedder implementations from the open source unstructured repo into this one.
 
 ### Fixes
 
@@ -28,16 +29,11 @@
 
 * **Fix OpenSearch connector** OpenSearch connector did not work when `http_auth` was not provided
 
-### Fixes
-
 ## 0.0.10
 
 ### Enhancements
 
 * "Fix tar extraction" - tar extraction function assumed archive was gzip compressed which isn't true for supported `.tar` archives. Updated to work for both compressed and uncompressed tar archives.
-
-### Fixes
-
 
 ## 0.0.9
 
