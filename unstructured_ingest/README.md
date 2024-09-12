@@ -92,12 +92,12 @@ In checklist form, the above steps are summarized as:
 - [ ] Update ingest documentation [here](https://github.com/Unstructured-IO/unstructured/tree/main/docs/source)
 - [ ] For team members that are developing in the original repository:
   - [ ] If there are secret variables created for the connector tests, make sure to:
-    - [ ] add the secrets into Github (contact someone with access)
+    - [ ] add the secrets into GitHub (contact someone with access)
     - [ ] include the secret variables in [`ci.yml`](https://github.com/Unstructured-IO/unstructured/blob/main/.github/workflows/ci.yml) and [`ingest-test-fixtures-update-pr.yml`](https://github.com/Unstructured-IO/unstructured/blob/main/.github/workflows/ingest-test-fixtures-update-pr.yml)
     - [ ] add a make install line in the workflow configurations to be able to provide the workflow machine with the required dependencies on the connector while testing
     - [ ] Whenever necessary, use the [ingest update test fixtures](https://github.com/Unstructured-IO/unstructured/actions/workflows/ingest-test-fixtures-update-pr.yml) workflow to update the test fixtures.
 - [ ] Honors the conventions of `BaseConnectorConfig` defined in [unstructured_ingest/interfaces.py](unstructured_ingest/interfaces.py) which is passed through [the CLI](unstructured_ingest/main.py):
-  - [ ] If running with an `.output_dir` where structured outputs already exists for a given file, the file content is not re-downloaded from the data source nor is it reprocessed. This is made possible by implementing the call to `MyIngestDoc.has_output()` which is invoked in [MainProcess._filter_docs_with_outputs](ingest-prep-for-many/unstructured_ingest/main.py).
+  - [ ] If running with an `.output_dir` where structured outputs already exists for a given file, the file content is neither re-downloaded from the data source nor is it reprocessed. This is made possible by implementing the call to `MyIngestDoc.has_output()` which is invoked in [MainProcess._filter_docs_with_outputs](ingest-prep-for-many/unstructured_ingest/main.py).
   - [ ] Unless `.reprocess` is `True`, then documents are always reprocessed.
   - [ ] If `.preserve_download` is `True`, documents downloaded to `.download_dir` are not removed after processing.
   - [ ] Else if `.preserve_download` is `False`, documents downloaded to `.download_dir` are removed after they are **successfully** processed during the invocation of `MyIngestDoc.cleanup_file()` in [process_document](unstructured_ingest/doc_processor/generalized.py)

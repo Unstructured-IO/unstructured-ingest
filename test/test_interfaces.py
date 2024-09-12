@@ -38,7 +38,7 @@ TEST_VERSION = "1.1.1"
 TEST_RECORD_LOCATOR = {"id": "data-source-id"}
 TEST_DATE_CREATED = "2021-01-01T00:00:00"
 TEST_DATE_MODIFIED = "2021-01-02T00:00:00"
-TEST_DATE_PROCESSSED = "2022-12-13T15:44:08"
+TEST_DATE_PROCESSED = "2022-12-13T15:44:08"
 
 
 @dataclass
@@ -101,7 +101,7 @@ def partition_test_results():
             record_locator=TEST_RECORD_LOCATOR,
             date_created=TEST_DATE_CREATED,
             date_modified=TEST_DATE_MODIFIED,
-            date_processed=TEST_DATE_PROCESSSED,
+            date_processed=TEST_DATE_PROCESSED,
         ),
     )
     return result
@@ -121,7 +121,7 @@ def test_partition_file():
         read_config=ReadConfig(download_dir=TEST_DOWNLOAD_DIR),
         processor_config=ProcessorConfig(output_dir=TEST_OUTPUT_DIR),
     )
-    test_ingest_doc._date_processed = TEST_DATE_PROCESSSED
+    test_ingest_doc._date_processed = TEST_DATE_PROCESSED
     elements = test_ingest_doc.partition_file(partition_config=PartitionConfig())
     element_dicts = elements_to_dicts(elements)
     assert len(element_dicts)
@@ -153,7 +153,7 @@ def test_partition_file():
         assert data_source_metadata["record_locator"] == TEST_RECORD_LOCATOR
         assert data_source_metadata["date_created"] == TEST_DATE_CREATED
         assert data_source_metadata["date_modified"] == TEST_DATE_MODIFIED
-        assert data_source_metadata["date_processed"] == TEST_DATE_PROCESSSED
+        assert data_source_metadata["date_processed"] == TEST_DATE_PROCESSED
 
 
 def test_process_file_fields_include_default(mocker, partition_test_results):
@@ -183,7 +183,7 @@ def test_process_file_fields_include_default(mocker, partition_test_results):
         assert data_source_metadata["record_locator"] == TEST_RECORD_LOCATOR
         assert data_source_metadata["date_created"] == TEST_DATE_CREATED
         assert data_source_metadata["date_modified"] == TEST_DATE_MODIFIED
-        assert data_source_metadata["date_processed"] == TEST_DATE_PROCESSSED
+        assert data_source_metadata["date_processed"] == TEST_DATE_PROCESSED
 
 
 def test_process_file_metadata_includes_filename_and_filetype(

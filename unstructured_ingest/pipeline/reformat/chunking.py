@@ -112,7 +112,7 @@ class Chunker(ReformatNode):
 
             return partition_via_api(
                 filename=elements_json_file,
-                # -- (jennings) If api_key or api_url are None, partition_via_api will raise an
+                # -- NOTE(jennings): If api_key or api_url are None, partition_via_api will raise an
                 # -- error, which will be caught and logged by Chunker.run()
                 api_key=self.partition_config.api_key,  # type: ignore
                 api_url=self.partition_config.partition_endpoint,  # type: ignore

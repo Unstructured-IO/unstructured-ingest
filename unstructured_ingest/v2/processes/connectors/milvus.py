@@ -71,7 +71,7 @@ class MilvusUploadStagerConfig(UploadStagerConfig):
     fields_to_include: Optional[list[str]] = None
     """If set - list of fields to include in the output.
     Unspecified fields are removed from the elements.
-    This action takse place after metadata flattening.
+    This action takes place after metadata flattening.
     Missing fields will cause stager to throw KeyError."""
 
     flatten_metadata: bool = True
