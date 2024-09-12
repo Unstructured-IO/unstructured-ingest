@@ -22,7 +22,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    from pyairtable import Api as ApiClient
+    from pyairtable import Api
     from pyairtable.api.types import RecordDict
 
 CONNECTOR_TYPE = "airtable"
@@ -54,10 +54,11 @@ class AirtableConnectionConfig(ConnectionConfig):
     access_config: Secret[AirtableAccessConfig]
 
     @requires_dependencies(["pyairtable"], extras="airtable")
-    def get_client(self) -> "ApiClient":
-        from pyairtable import Api as ApiClient
+    def get_client(self) -> "Api":
+        from pyairtable import Api
 
-        return ApiClient(api_key=self.access_config.get_secret_value().personal_access_token)
+        access_config = self.access_config.get_secret_value()
+        return Api(api_key=access_config.personal_access_token)
 
 
 class AirtableIndexerConfig(IndexerConfig):
@@ -116,7 +117,7 @@ class AirtableIndexer(Indexer):
         client = self.connection_config.get_client()
         base = client.base(base_id=base_id)
         airtable_meta = []
-        for table in base.schema().tables:
+        for table in base.tables():
             airtable_meta.append(AirtableTableMeta(base_id=base.id, table_id=table.id))
         return airtable_meta
 
@@ -177,7 +178,7 @@ class AirtableDownloader(Downloader):
 
     def get_table_contents(self, table_meta: AirtableTableMeta) -> list["RecordDict"]:
         client = self.connection_config.get_client()
-        table = client.table(base_id=table_meta.base_id, table_name=table_meta.base_id)
+        table = client.table(base_id=table_meta.base_id, table_name=table_meta.table_id)
         table_fetch_kwargs = {"view": table_meta.view_id} if table_meta.view_id else {}
         rows = table.all(**table_fetch_kwargs)
         return rows
