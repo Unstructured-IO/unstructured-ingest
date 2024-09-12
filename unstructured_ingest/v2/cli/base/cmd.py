@@ -102,7 +102,7 @@ class BaseCmd(ABC):
         cmd.params.extend(options)
         return cmd
 
-    def get_pipline(
+    def get_pipeline(
         self,
         src: str,
         source_options: dict[str, Any],
