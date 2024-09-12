@@ -180,14 +180,15 @@ class LocalUploader(Uploader):
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         if source_identifiers := file_data.source_identifiers:
-            identifiers = source_identifiers
             rel_path = (
-                identifiers.relative_path[1:]
-                if identifiers.relative_path.startswith("/")
-                else identifiers.relative_path
+                source_identifiers.relative_path[1:]
+                if source_identifiers.relative_path.startswith("/")
+                else source_identifiers.relative_path
             )
             new_path = self.upload_config.output_path / Path(rel_path)
-            final_path = str(new_path).replace(identifiers.filename, f"{identifiers.filename}.json")
+            final_path = str(new_path).replace(
+                source_identifiers.filename, f"{source_identifiers.filename}.json"
+            )
         else:
             final_path = self.upload_config.output_path / Path(f"{file_data.identifier}.json")
         Path(final_path).parent.mkdir(parents=True, exist_ok=True)
