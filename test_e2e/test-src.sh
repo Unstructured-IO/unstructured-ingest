@@ -133,16 +133,3 @@ for test in "${all_tests[@]}"; do
   fi
   echo "--------- FINISHED SCRIPT $test ---------"
 done
-
-set +e
-
-all_eval=(
-  'text-extraction'
-  'element-type'
-)
-for eval in "${all_eval[@]}"; do
-  CURRENT_TEST="evaluation-metrics.sh $eval"
-  echo "--------- RUNNING SCRIPT evaluation-metrics.sh $eval ---------"
-  ./test_unstructured_ingest/evaluation-metrics.sh "$eval" "$EVAL_OUTPUT_ROOT"
-  echo "--------- FINISHED SCRIPT evaluation-metrics.sh $eval ---------"
-done
