@@ -1,8 +1,12 @@
-## 0.0.14-dev0
+## 0.0.14-dev1
 
 ### Enhancements
 
 * **Support async batch uploads for pinecone connector**
+
+### Fixes
+
+* **Misc. Onedrive connector fixes**
 
 ## 0.0.13
 
