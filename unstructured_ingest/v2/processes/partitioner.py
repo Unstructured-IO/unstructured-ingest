@@ -165,7 +165,7 @@ class Partitioner(BaseProcess, ABC):
 
         partition_request = self.config.to_partition_kwargs()
 
-        # Note(austin): PartitionParameters is a Pydantic model in v0.26.0
+        # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
         # Prior to this it was a dataclass which doesn't have .__fields
         try:
             possible_fields = PartitionParameters.__fields__
