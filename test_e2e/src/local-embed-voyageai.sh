@@ -40,4 +40,3 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --embedding-model-name "voyage-large-2"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
-

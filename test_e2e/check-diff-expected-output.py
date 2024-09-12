@@ -47,14 +47,37 @@ def check_contents(expected_output_dir: Path, current_output_dir: Path):
         raise CheckError("Diffs found between files")
 
 
+def print_diffs(expected: list[dict], current: list[dict]):
+    expected = dict(enumerate(expected))
+    current = dict(enumerate(current))
+    only_in_expected = {
+        i: e
+        for i, e in expected.items()
+        if e["element_id"] not in [c["element_id"] for c in current.values()]
+    }
+    only_in_current = {
+        i: c
+        for i, c in current.items()
+        if c["element_id"] not in [e["element_id"] for e in expected.values()]
+    }
+    if only_in_expected:
+        print("Elements only in expected:")
+        print(json.dumps(only_in_expected, indent=2))
+    if only_in_current:
+        print("Elements only in current:")
+        print(json.dumps(only_in_current, indent=2))
+
+
 def compare_files(expected_file: Path, current_file: Path) -> list[DeepDiff]:
+    print(f"Comparing content of {expected_file} to {current_file}")
     with expected_file.open("r") as expected:
         expected_data = json.load(expected)
     with current_file.open("r") as current:
         current_data = json.load(current)
     if len(current_data) != len(expected_data):
+        print_diffs(expected=expected_data, current=current_data)
         raise CheckError(
-            f"The content length of current ({len(current_data)}) "
+            f"The number of elements of current ({len(current_data)}) "
             f"and expected ({len(expected_data)}) files don't match"
         )
     diffs = []
