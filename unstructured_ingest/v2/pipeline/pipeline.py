@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import multiprocessing as mp
+import shutil
 from dataclasses import InitVar, dataclass, field
 from typing import Any
 
@@ -115,7 +116,9 @@ class Pipeline:
             )
 
     def cleanup(self):
-        pass
+        if self.context.delete_cache:
+            logger.info(f"deleting cache directory: {self.context.work_dir}")
+            shutil.rmtree(self.context.work_dir)
 
     def log_statuses(self):
         if status := self.context.status:
@@ -228,26 +231,42 @@ class Pipeline:
                 logger.info("No files to process after filtering uncompressed content, exiting")
                 return
 
-        if not downloaded_data:
+        if not downloaded_data or self.context.download_only:
             return
 
         # Partition content
         elements = self.partitioner_step(downloaded_data)
+        # Download data non longer needed, delete if possible
+        if self.context.iter_delete and not self.context.preserve_downloads:
+            cache_dir = self.downloader_step.cache_dir
+            logger.info(f"deleting download dir {cache_dir}")
+            shutil.rmtree(cache_dir)
         elements = self.clean_results(results=elements)
         if not elements:
             logger.info("No files to process after partitioning, exiting")
             return
 
         # Run element specific modifiers
-        for step in [self.chunker_step, self.embedder_step, self.stager_step]:
-            elements = step(elements) if step else elements
+        last_step = self.partitioner_step
+        for step in [s for s in [self.chunker_step, self.embedder_step, self.stager_step] if s]:
+            elements = step(elements)
             elements = self.clean_results(results=elements)
+            # Delete data from previous step if possible since no longer needed
+            if self.context.iter_delete:
+                cache_dir = last_step.cache_dir
+                logger.info(f"deleting {last_step.identifier} cache dir {cache_dir}")
+                shutil.rmtree(cache_dir)
+            last_step = step
             if not elements:
                 logger.info(f"No files to process after {step.__class__.__name__}, exiting")
                 return
 
         # Upload the final result
         self.uploader_step(iterable=elements)
+        if self.context.iter_delete:
+            cache_dir = last_step.cache_dir
+            logger.info(f"deleting {last_step.identifier} cache dir {cache_dir}")
+            shutil.rmtree(cache_dir)
 
     def __str__(self):
         s = [str(self.indexer_step)]
