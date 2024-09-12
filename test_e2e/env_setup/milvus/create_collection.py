@@ -12,7 +12,7 @@ from pymilvus.milvus_client import IndexParams
 
 def get_schema() -> CollectionSchema:
     id_field = FieldSchema(
-        name="id", dtype=DataType.INT64, descrition="primary field", is_primary=True, auto_id=True
+        name="id", dtype=DataType.INT64, description="primary field", is_primary=True, auto_id=True
     )
     embeddings_field = FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=384)
 
