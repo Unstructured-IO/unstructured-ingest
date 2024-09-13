@@ -4,22 +4,19 @@
 #
 #    pip-compile ./requirements/test.in
 #
-anyio==3.7.1
-    # via
-    #   -c ./requirements/./common/constraints.txt
-    #   httpx
+anyio==4.4.0
+    # via httpx
 backoff==2.2.1
     # via unstructured
 beautifulsoup4==4.12.3
     # via unstructured
-certifi==2024.7.4
+certifi==2024.8.30
     # via
-    #   -c ./requirements/./common/constraints.txt
     #   httpcore
     #   httpx
     #   requests
     #   unstructured-client
-cffi==1.17.0
+cffi==1.17.1
     # via cryptography
 chardet==5.2.0
     # via unstructured
@@ -28,16 +25,18 @@ charset-normalizer==3.3.2
     #   requests
     #   unstructured-client
 click==8.1.7
-    # via nltk
+    # via
+    #   nltk
+    #   python-oxmsg
 coverage[toml]==7.6.1
     # via pytest-cov
-cryptography==43.0.0
+cryptography==43.0.1
     # via -r ./requirements/test.in
 dataclasses-json==0.6.7
     # via
     #   unstructured
     #   unstructured-client
-deepdiff==7.0.1
+deepdiff==8.0.1
     # via unstructured-client
 emoji==2.12.1
     # via unstructured
@@ -86,10 +85,10 @@ nest-asyncio==1.6.0
 nltk==3.9.1
     # via unstructured
 numpy==1.26.4
-    # via
-    #   -c ./requirements/./common/constraints.txt
-    #   unstructured
-ordered-set==4.1.0
+    # via unstructured
+olefile==0.47
+    # via python-oxmsg
+orderly-set==5.2.2
     # via deepdiff
 packaging==23.2
     # via
@@ -105,7 +104,7 @@ pycparser==2.22
     # via cffi
 pypdf==4.3.1
     # via unstructured-client
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r ./requirements/test.in
     #   pytest-cov
@@ -120,9 +119,11 @@ python-iso639==2024.4.27
     # via unstructured
 python-magic==0.4.27
     # via unstructured
-rapidfuzz==3.9.6
+python-oxmsg==0.0.1
     # via unstructured
-regex==2024.7.24
+rapidfuzz==3.9.7
+    # via unstructured
+regex==2024.9.11
     # via nltk
 requests==2.32.3
     # via
@@ -154,8 +155,10 @@ tqdm==4.66.5
     #   unstructured
 typing-extensions==4.12.2
     # via
+    #   anyio
     #   emoji
     #   pypdf
+    #   python-oxmsg
     #   typing-inspect
     #   unstructured
     #   unstructured-client
@@ -163,15 +166,15 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   unstructured-client
-unstructured==0.15.7
+unstructured==0.15.10
     # via
     #   -c ./requirements/./common/constraints.txt
     #   -r ./requirements/test.in
-unstructured-client==0.25.5
+unstructured-client==0.25.8
     # via
     #   -c ./requirements/./common/constraints.txt
     #   unstructured
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c ./requirements/./common/constraints.txt
     #   requests

@@ -30,10 +30,8 @@ packaging==23.2
     #   black
 pathspec==0.12.1
     # via black
-platformdirs==3.10.0
-    # via
-    #   -c ./requirements/./common/constraints.txt
-    #   black
+platformdirs==4.3.2
+    # via black
 pycodestyle==2.12.1
     # via
     #   flake8
@@ -42,7 +40,7 @@ pyflakes==3.2.0
     # via
     #   autoflake
     #   flake8
-ruff==0.6.2
+ruff==0.6.4
     # via -r ./requirements/lint.in
 tomli==2.0.1
     # via
