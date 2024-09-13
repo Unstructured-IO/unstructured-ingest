@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict, TypeVar
@@ -189,3 +190,13 @@ class DownloadStep(PipelineStep):
     @property
     def cache_dir(self) -> Path:
         return self.process.download_config.download_dir
+
+    def delete_cache(self):
+        if (
+            self.context.iter_delete
+            and not self.context.preserve_downloads
+            and self.cache_dir.exists()
+        ):
+            cache_dir = self.cache_dir
+            logger.info(f"deleting {self.identifier} cache dir {cache_dir}")
+            shutil.rmtree(cache_dir)
