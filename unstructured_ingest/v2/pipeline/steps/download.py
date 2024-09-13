@@ -185,3 +185,7 @@ class DownloadStep(PipelineStep):
         if extras:
             hashable_string += "".join(extras)
         return hashlib.sha256(hashable_string.encode()).hexdigest()[:12]
+
+    @property
+    def cache_dir(self) -> Path:
+        return self.process.download_config.download_dir
