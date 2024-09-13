@@ -18,6 +18,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -41,6 +42,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -64,6 +66,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -87,6 +90,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -110,6 +114,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -133,12 +138,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "caa3c2eba90fedb7c8923ae8cd8de961",
     "text": "1. General biomedical subject matter knowledge: biomedical data scientists should have a general working knowledge of the principles of biology, bioinformatics, and basic clinical science;",
     "metadata": {
@@ -156,12 +162,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "a4622e6575ee04b0c4d74c0c6b3b2452",
     "text": "2. Programming language expertise: biomedical data scientists should be fluent in at least one programming language (typically R and/or Python);",
     "metadata": {
@@ -179,12 +186,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "206899164b194bb9c379531b35eae01b",
     "text": "3. Predictive analytics, modeling, and machine learning: while a range of statistical methods may be useful, predictive analytics, modeling, and machine learning emerged as especially important skills in biomedical data science;",
     "metadata": {
@@ -202,12 +210,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "36eb8f3c3778fbb71dc056571e71175d",
     "text": "4. Team science and scientific communication: \u201csoft\u201d skills, like the ability to work well on teams and communicate effectively in both verbal and written venues, may be as important as the more technical skills typically associated with data science.",
     "metadata": {
@@ -225,12 +234,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "afe37b1ec10a6d08294ff0fb6df79996",
     "text": "5. Responsible data stewardship: a successful data scientist must be able to implement best practices for data management and stewardship, as well as conduct research in an ethical manner that maintains data security and privacy.",
     "metadata": {
@@ -248,6 +258,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -271,6 +282,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -294,6 +306,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -317,6 +330,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -340,6 +354,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -363,6 +378,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -386,6 +402,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -409,12 +426,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "ba70aa3bc3ad0dec6a62939c94c5a20c",
     "text": "a) Responses to a 2017 Kaggle1 survey2 of over 16,000 self-identified data scientists working across many industries. Analysis of the Kaggle survey responses from the current data science workforce provided insights into the current generation of data scientists, including how they were trained and what programming and analysis skills they use.",
     "metadata": {
@@ -432,12 +450,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "24724b1f0d20a6575f2782fd525c562f",
     "text": "b) Data science skills taught in BD2K-funded training programs. A qualitative content analysis was applied to the descriptions of required courses offered under the 12 BD2K-funded training programs. Each course was coded using qualitative data analysis software, with each skill that was present in the description counted once. The coding schema of data science-related skills was inductively developed and was organized into four major categories: (1) statistics and math skills; (2) computer science; (3) subject knowledge; (4) general skills, like communication and teamwork. The coding schema is detailed in Appendix A.",
     "metadata": {
@@ -455,12 +474,13 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "5e6c73154a1e5f74780c69afbc9bc084",
     "text": "c) Desired skills identified from data science-related job ads. 59 job ads from government (8.5%), academia (42.4%), industry (33.9%), and the nonprofit sector (15.3%) were sampled from websites like Glassdoor, Linkedin, and Ziprecruiter. The content analysis methodology and coding schema utilized in analyzing the training programs were applied to the job descriptions. Because many job ads mentioned the same skill more than once, each occurrence of the skill was coded, therefore weighting important skills that were mentioned multiple times in a single ad.",
     "metadata": {
@@ -478,6 +498,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -501,6 +522,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -524,6 +546,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
@@ -547,6 +570,7 @@
         },
         "date_created": "1678440764.0",
         "date_modified": "1678440764.0",
+        "permissions_data": null,
         "filesize_bytes": 41164
       }
     }
