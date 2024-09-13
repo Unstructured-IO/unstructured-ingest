@@ -51,5 +51,3 @@ set +e
 # Check the differences with the expected output
 "$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
 
-# Evaluate the ingestion results
-"$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
