@@ -107,6 +107,7 @@ jobs:
         tesseract --version
         sudo make install-docker-compose
         docker compose version
+        pip freeze
         ./test_e2e/test-src.sh
 
   test_src_api:
@@ -204,4 +205,5 @@ jobs:
         tesseract --version
         sudo make install-docker-compose
         docker compose version
+        pip freeze
         ./test_e2e/test-dest.sh
