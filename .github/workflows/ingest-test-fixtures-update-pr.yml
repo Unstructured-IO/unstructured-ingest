@@ -95,6 +95,7 @@ jobs:
           tesseract --version
           sudo make install-docker-compose
           docker compose version
+          pip freeze
           ./test_e2e/test-src.sh
 
       - name: Save branch name to environment file
