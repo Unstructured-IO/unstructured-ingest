@@ -1,8 +1,8 @@
 [
   {
-    "type": "Title",
-    "element_id": "614b7a52d42e8e3b66edf4943093c85c",
-    "text": "WORLD ASSOCIATION",
+    "type": "Image",
+    "element_id": "344500990e3c772ee7e61ef4a44afc0e",
+    "text": "ASSOCIATION",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -64,8 +64,8 @@
   },
   {
     "type": "Image",
-    "element_id": "4ab4d4df6aeb3d4fb6d8102edd876ab8",
-    "text": "",
+    "element_id": "768d78aeafbbb5d28fa681c9139fa20b",
+    "text": "A Be 3 \\ i\u2018 | \u00bb",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -126,7 +126,7 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "Title",
     "element_id": "7137c1e14141fad3ad306fe68918a967",
     "text": "Recalibrating risk",
     "metadata": {
@@ -819,7 +819,7 @@
     }
   },
   {
-    "type": "Footer",
+    "type": "UncategorizedText",
     "element_id": "14926217ad635f3b0d8aa6a1c084ffae",
     "text": "1",
     "metadata": {
@@ -882,71 +882,8 @@
     }
   },
   {
-    "type": "Header",
-    "element_id": "d7d7ca3be3dd09816ae5d0294281e8d9",
-    "text": "2",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "data_source": {
-        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
-        "record_locator": {
-          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
-        },
-        "date_created": "1718723636.34",
-        "date_modified": "1676196572.0",
-        "permissions_data": [
-          {
-            "id": "18298851591250030956",
-            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
-            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "04774006893477068632",
-            "displayName": "ryan",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
-            "emailAddress": "ryan@unstructured.io",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "anyoneWithLink",
-            "type": "anyone",
-            "kind": "drive#permission",
-            "role": "reader",
-            "allowFileDiscovery": false
-          },
-          {
-            "id": "09147371668407854156",
-            "displayName": "roman",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
-            "emailAddress": "roman@unstructured.io",
-            "role": "owner",
-            "deleted": false,
-            "pendingOwner": false
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "Title",
-    "element_id": "ca878cdd15c9e34463e380dfcb994c2d",
+    "element_id": "c48c986070dfdd3b79fb5b991bddfa4e",
     "text": "Perceived versus actual risk",
     "metadata": {
       "filetype": "application/pdf",
@@ -1009,7 +946,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "7a6ffe00fc921772e62d72d8b36ae72d",
+    "element_id": "50e4f073d0345dfb7577928b3f9038ec",
     "text": "It is widely accepted that humans have skewed perceptions of risks, and the way we respond to them is shaped by these perceptions, rather than the actual threats posed. Approximately 1.35 millioni people die every year because of traffic accidents, in comparison with 257 aviation fatalities in 2019ii, yet more people are nervous about flying, fearing a rare deadly crash, than being in a fatal traffic accident. These numbers tell a powerful and well-established story: evaluations of risk are largely the result of emotions, rather than logic or facts. Although it is hard to recognize and accept that our perceptions may mislead us and curtail effective decision making, this is a well-established characteristic of humanity.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1072,7 +1009,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "31ed39cf3f959ddf86d3eba65cb79a01",
+    "element_id": "ecb2e6e53e4df8416c8a3979f99ed00d",
     "text": "Nuclear energy and the risk of radiation is one of the most extreme cases in which perceived and actual risks have diverged. The fear of radiation, whilst pre- dating the Second World War, was firmly established by the debate on the potential impacts of low-dose radiation from the fallout from nuclear weapons testing in the early years of the Cold War. Radiation in many ways became linked with the mental imagery of nuclear war, playing an important role in increasing public concern about radiation and its health effects. There is a well-established discrepancy between fact-based risk assessments and public perception of different risks. This is very much the case with nuclear power, and this is clearly highlighted in Figure 1, with laypersons ranking nuclear power as the highest risk out of 30 activities and technologies, with experts ranking nuclear as 20th. In many ways, popular culture\u2019s depiction of radiation has played a role in ensuring that this discrepancy has remained, be it Godzilla, The Incredible Hulk, or The Simpsons, which regularly plays on the notion of radiation from nuclear power plants causing three-eyed fish, something that has been firmly rejected as unscientific.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1134,134 +1071,8 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "a66214340855880a5393384d1363511c",
-    "text": "Rank Order Laypersons",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "data_source": {
-        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
-        "record_locator": {
-          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
-        },
-        "date_created": "1718723636.34",
-        "date_modified": "1676196572.0",
-        "permissions_data": [
-          {
-            "id": "18298851591250030956",
-            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
-            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "04774006893477068632",
-            "displayName": "ryan",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
-            "emailAddress": "ryan@unstructured.io",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "anyoneWithLink",
-            "type": "anyone",
-            "kind": "drive#permission",
-            "role": "reader",
-            "allowFileDiscovery": false
-          },
-          {
-            "id": "09147371668407854156",
-            "displayName": "roman",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
-            "emailAddress": "roman@unstructured.io",
-            "role": "owner",
-            "deleted": false,
-            "pendingOwner": false
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Table",
-    "element_id": "9512f477364e1da1fa60dbd237c41f85",
-    "text": "Experts 1 20 Nuclear power Motor vehicles 2 1 4 3 Handguns 2 4 Smoking Electric power (non-nuclear) 9 17 22 7 X-rays 25 30 Vaccinations",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "data_source": {
-        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
-        "record_locator": {
-          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
-        },
-        "date_created": "1718723636.34",
-        "date_modified": "1676196572.0",
-        "permissions_data": [
-          {
-            "id": "18298851591250030956",
-            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
-            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "04774006893477068632",
-            "displayName": "ryan",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
-            "emailAddress": "ryan@unstructured.io",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "anyoneWithLink",
-            "type": "anyone",
-            "kind": "drive#permission",
-            "role": "reader",
-            "allowFileDiscovery": false
-          },
-          {
-            "id": "09147371668407854156",
-            "displayName": "roman",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
-            "emailAddress": "roman@unstructured.io",
-            "role": "owner",
-            "deleted": false,
-            "pendingOwner": false
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "NarrativeText",
-    "element_id": "3ff36869cefb14183f0955094a908fc5",
+    "element_id": "63c522a3b31ef1bc244cb5fc1c65e65f",
     "text": "In reality, radiation is a natural part of life; indeed, we are all exposed to radiation every day, on average receiving 2-3 millisieverts (mSv) per year. Most of this radiation is naturally occurring, with radon gas from the ground being the main source of exposure. The nuclear industry is responsible for a very small part of radiation exposure to the public, as seen in Figure 2. To put this into perspective, eating 10 bananas or two Brazil nuts results in the same radiation dose as living nearby a nuclear power plant for a year. Humans are also naturally radioactive, and the radiation dose from sleeping next to someone else each night for a year is ten times higher than the exposure from living nearby a nuclear power plant for the same time span.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1324,7 +1135,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "773667f6d4fbe19cc347ace06ca3664e",
+    "element_id": "7b61fefbec9a7d2b1a18a2da17e6774f",
     "text": "In fact, scientific consensus is that when it comes to preventing exposure to radiation, nuclear power is much better than other electricity generators. A 2016 reportiii from the United Nations Scientific Committee on the Effects of Atomic Radiation (UNSCEAR) found that coal-generated electricity is responsible for more than half of the total global radiation exposure arising from electricity generation, while nuclear power contributed less than a fifth. Coal miners received high occupational exposure and workers in solar and wind farms received the highest occupational exposure associated with plant construction for the same amount of installed capacity.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1386,8 +1197,71 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "6dab7cb99fa308838e8c0413caccb7f1",
+    "type": "PageNumber",
+    "element_id": "d3d726225919d335848941972777d9be",
+    "text": "2",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "6a271f175ed4a5da6fb53247ddeb7949",
     "text": "1 The original study was published in 1978, but its findings have been confirmed by numerous studies since.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1449,9 +1323,9 @@
     }
   },
   {
-    "type": "Image",
-    "element_id": "57a9b2172894596e88b48caac276416d",
-    "text": "Natural  Artificial    48%  Radon   14%  Buildings & soil   12%  Food & water   10%  Cosmic   4%  Thoron    11%  Medicine   0.4%    0.4%  Miscellaneous   0.2%  Occupational   0.04%  Nuclear discharges  Fallout ",
+    "type": "Title",
+    "element_id": "cc6caddce6134f3ab941cd1034baa832",
+    "text": "Natural",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1512,8 +1386,260 @@
     }
   },
   {
-    "type": "FigureCaption",
-    "element_id": "9add7e245b0191530386fcf00bb218df",
+    "type": "UncategorizedText",
+    "element_id": "ce6dbc93efd5d1de564f08427f7e77f1",
+    "text": "48% Radon 14% Buildings & soil 12% Food & water 10% Cosmic 4% Thoron",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "6fbbc6f1a33bd4e8355682363051839f",
+    "text": "Artificial",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "49a42d2996f9021592716ff7ed10e1d4",
+    "text": "11% Medicine 0.4% 0.4% Miscellaneous 0.2% Occupational 0.04% Nuclear discharges",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "44b025d5a49899fb340a69517c0fb9d7",
+    "text": "Fallout",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "0475d0402d28b7f957a889e7355472c0",
     "text": "Figure 2. Global average exposure from different sources of radiation",
     "metadata": {
       "filetype": "application/pdf",
@@ -1576,7 +1702,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "e9a9edcbe70d12be56e6947010012f76",
+    "element_id": "3f3508476c710060dfb8431d7600c2ec",
     "text": "Fossil fuels \u2013 currently accounting for around 81% of total energy supplyiv \u2013 cause significant levels of emissions in terms of both greenhouse gases and air pollutants. Despite the serious and ongoing health and environmental harms caused by air pollution, it is often considered to be an inevitable consequence of economic development. Air pollution\u2019s contribution to the burden of disease is profound, with an estimated 8.7 million people dying worldwide prematurely in 2018 alonev,vi. Despite this, it fails to induce the same fears and anxieties in people as nuclear energy does.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1639,7 +1765,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "b8ec2beffbf0ae3c620edbc5288b5e7f",
+    "element_id": "c525bff677c1e20aabffcbeb462e23d8",
     "text": "In terms of accidents, hydropower is the deadliest electricity generator, mostly due to collapsing dams and the consequences of flooding. The Banqiao Dam failure in 1975 led to at least 26,000 people drowning, and as many as 150,000 deaths resulting from the secondary effects of the accident. In comparison, radiation exposure following Chernobyl caused 54 deaths2, while no casualties due to radiation are likely to occur from the accident at Fukushima Daiichi.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1701,9 +1827,198 @@
     }
   },
   {
-    "type": "Image",
-    "element_id": "1b93c33208a85ba6d2a69d23babd6def",
-    "text": "25  24.6  20  18.4  e  15  10  5  4.6  2.8  0  C oal  Oil  Bio m ass  N atural gas  0.07  Wind  0.04  H ydropo w er  0.02  S olar  0.01  N uclear ",
+    "type": "UncategorizedText",
+    "element_id": "6cdd2346b4496f1af2b33ed75c3410f1",
+    "text": "25",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "9715544c9914ef7de8052bc92f04cd58",
+    "text": "24.6",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "3559d07dc2379e2f4c1f4653add91028",
+    "text": "20",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "75e15b7448c3c129b9ca24698c044163",
+    "text": "18.4",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1765,7 +2080,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "6c9fe7851d0f4e06c5ec939f53dbce3b",
+    "element_id": "13969ab3a15bf32df2fe13c9a40cc40e",
     "text": "r a e y",
     "metadata": {
       "filetype": "application/pdf",
@@ -1828,8 +2143,134 @@
   },
   {
     "type": "Title",
-    "element_id": "a70b649d3f49fafd8a15a6617364bd69",
-    "text": "W T",
+    "element_id": "4b6921413fc54cc610daf6b297438229",
+    "text": "e",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "4d2b6d2354832969323946d0ac34c5f4",
+    "text": "TW,",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "200a39549b498e29cddfc9dcb442eed9",
+    "text": "15",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1891,7 +2332,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "26963be98ae7ff2e8c0428862d074cf6",
+    "element_id": "e3b14044884f4154b0ba61d2434de184",
     "text": "r e p s e i t i l",
     "metadata": {
       "filetype": "application/pdf",
@@ -1953,8 +2394,71 @@
     }
   },
   {
+    "type": "UncategorizedText",
+    "element_id": "07dbe194a47f5cf9a9ca556284c75a4f",
+    "text": "10",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
     "type": "Title",
-    "element_id": "b69c60ea2e3fa24e25a069f90ee4b696",
+    "element_id": "f4af307ce2cdc30401293219340f0099",
     "text": "a t a F",
     "metadata": {
       "filetype": "application/pdf",
@@ -2016,8 +2520,1016 @@
     }
   },
   {
-    "type": "FigureCaption",
-    "element_id": "af241d12aef0f51bace400db4e14649d",
+    "type": "UncategorizedText",
+    "element_id": "54ac36b92df403df7ffaf63424588d4b",
+    "text": "5",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "3fd75f6eaddaee6b63b2ce4a774fe967",
+    "text": "4.6",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "e5967ea57bcfb0730309e1469deda080",
+    "text": "2.8",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "b44ee5b4593fe0d7608c71176b305adb",
+    "text": "0",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "df539d6131bf7d159d73b0d0dc52b047",
+    "text": "C oal",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "b72baa7737abca757fc689770500137b",
+    "text": "Oil",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "20206e826347544edfd5e6533ab54f1f",
+    "text": "Bio m ass",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "10849b003629604de2c5cc3e8022eb9e",
+    "text": "N atural gas",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "068ab5055324937852f1104bd7e79295",
+    "text": "0.07",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "22a2dc33737f8a92014f09ed2c92dc1f",
+    "text": "Wind",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "667426af36c4a61263d4667bbd6bf3cf",
+    "text": "0.04",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a7606053bbf8555c8d74bf8294c4bb14",
+    "text": "H ydropo w er",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "56725953e374c47b37fc81f6e1e7e7e2",
+    "text": "0.02",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "ed8296145e96a846499a17250d047116",
+    "text": "S olar",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "ff5c2f0ecf3a004fd75b39436b00fc41",
+    "text": "0.01",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "d7474bea6883be0de77cd5ee766d5350",
+    "text": "N uclear",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "990bafbee868bdc70c810bcd97b122da",
     "text": "Figure 3. Comparison of number of fatalities due to electricity generation, including accidents and air pollution3",
     "metadata": {
       "filetype": "application/pdf",
@@ -2080,7 +3592,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "1e41836d6d7be638be9c0de0ce2c2256",
+    "element_id": "63cb8c9bbf197f41ccce41445f34bfff",
     "text": "Contrary to perceptions, nuclear is an incredibly safe source of energy (see Figure 3 for a comparison). What is also clear is that the continued use of alternative energy sources in preference to nuclear energy \u2013 in particular fossil fuels \u2013 poses a far greater risk to public health by significantly contributing to climate change and air pollution.",
     "metadata": {
       "filetype": "application/pdf",
@@ -2142,9 +3654,9 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "59b04b23d82c7c013abd6477a14c9425",
-    "text": "2 Including 28 firefighters that were exposed to lethal amounts of radiation during the accident night, and 15 fatal cases of thyroid cancer. 3 Sources drawn upon: Markandya, A., & Wilkinson, P. (2007), Sovacool et al. (2016). Data for nuclear accidents modified to reflect the 2012 UNSCEAR report and the 2015 US NRC SOARCA study.",
+    "type": "NarrativeText",
+    "element_id": "ff2e4ccb339b143fc3e2023da7a16b64",
+    "text": "2 Including 28 firefighters that were exposed to lethal amounts of radiation during the accident night, and 15 fatal cases of thyroid cancer. 3 Sources drawn upon: Markandya, A., & Wilkinson, P. (2007), Sovacool et al. (2016). Data for nuclear accidents modified to reflect the",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -2205,8 +3717,71 @@
     }
   },
   {
-    "type": "Header",
-    "element_id": "9a8b3b64f6d252a6d31d87d306952ca2",
+    "type": "NarrativeText",
+    "element_id": "6bda1b0ac58cb5068289427a5f9e2f03",
+    "text": "2012 UNSCEAR report and the 2015 US NRC SOARCA study.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "72dd24b52a6a46e82d563b4f9dc0eac8",
     "text": "3",
     "metadata": {
       "filetype": "application/pdf",
@@ -2268,7 +3843,7 @@
     }
   },
   {
-    "type": "Header",
+    "type": "UncategorizedText",
     "element_id": "e754a2849dac122e7d2e05447f0da512",
     "text": "4",
     "metadata": {
@@ -2647,8 +4222,8 @@
   },
   {
     "type": "Image",
-    "element_id": "31e685f786964a09b167a0fb68c01973",
-    "text": "",
+    "element_id": "cb4076e5cabea90f903311190f0c9341",
+    "text": "U HER LER EEE L \u00bb L) L",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -3024,9 +4599,9 @@
     }
   },
   {
-    "type": "Image",
-    "element_id": "dc83c2d2395c30a8785a2533424f1c72",
-    "text": "Plant-level production costs at market prices  Grid-level costs of the electricity system  Social and environmental costs of emissions, land-use, climate change, security of supply, etc. ",
+    "type": "Title",
+    "element_id": "53623f733ae76fcac17fc6f378b9ab37",
+    "text": "o [l",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -3087,8 +4662,197 @@
     }
   },
   {
-    "type": "FigureCaption",
-    "element_id": "a4c9c9c3c416898e4ba9df7c3a3e31ac",
+    "type": "Title",
+    "element_id": "6b30ad9a46d5961fd0829ef64c687f4f",
+    "text": "Plant-level production costs at market prices",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "b64043b5d9c3f0f114dc85ffa01a3e1c",
+    "text": "Grid-level costs of the electricity system",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "d2c2f81f38f91fd1ed4dd762427c958c",
+    "text": "Social and environmental costs of emissions, land-use, climate change, security of supply, etc.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3b8b9eb68d3eb182226bcd5a6f8544ef",
     "text": "Figure 4. The different levels of cost associated with electricity generationx",
     "metadata": {
       "filetype": "application/pdf",
@@ -3151,7 +4915,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "4d355be258d489a707dfd634ea0f8810",
+    "element_id": "62c507510608f74a0a1da0676d89e94a",
     "text": "A more holistic regulatory process would be required, in which regulators move away from being siloed, looking at specific risks in isolation, with little regard for the greater picture. The move towards an all-hazard, holistic approach would require greater coordination between regulators, ensuring that the combined risks of a specific nuclear project are weighed against the risks posed by not advancing said project.",
     "metadata": {
       "filetype": "application/pdf",
@@ -3214,7 +4978,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "9c79edb1b3d13f851f56559d7d3046a8",
+    "element_id": "837c5fd06c6026c08fe69f113fa7348f",
     "text": "Equally, the adoption of an all-hazards approach means regulators should consider declaring when a risk is too low to be a public health concern, in line with what the U.S. Nuclear Regulatory Commission attempted to do with its Below Regulatory Concern policy statements in the 1980s and early 1990s. In the context of nuclear power, this means departing from the notion that LNT instils of no safe level of radiation, and adopting a regulatory framework which notes the impossibility of eradicating risks. Failing to do so will result in excessive regulation that continues to limit the full potential of nuclear power in tackling climate change and sees a continued reliance on objectively more harmful energy sources.",
     "metadata": {
       "filetype": "application/pdf",
@@ -3276,8 +5040,8 @@
     }
   },
   {
-    "type": "Header",
-    "element_id": "4fa08c2ba2738ea62be41b466b794caa",
+    "type": "PageNumber",
+    "element_id": "b298e7f7baa47e6106b3cd13ff539486",
     "text": "5",
     "metadata": {
       "filetype": "application/pdf",
@@ -3339,7 +5103,7 @@
     }
   },
   {
-    "type": "Header",
+    "type": "PageNumber",
     "element_id": "eeae015ec524f1b1bb0f7ac376a2090b",
     "text": "6",
     "metadata": {
@@ -3592,8 +5356,8 @@
   },
   {
     "type": "Image",
-    "element_id": "482fb91e0e9646a1ad97fe9881ff6053",
-    "text": "",
+    "element_id": "7f371a3e1305ca22d61786ffa95f56b0",
+    "text": "- A N, - w4 /\u20187\u20181 = < /\u2018;\ufb01\u2018 o ot T 202 g e v - <% ,4_\"'& ey A 2 Yo _\u00e9 - iy \u2014 \\ ;v",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -3655,8 +5419,8 @@
   },
   {
     "type": "Image",
-    "element_id": "b0197950e1af5c2aac10f5b67d61524a",
-    "text": "",
+    "element_id": "76bf450e90b4d9b8b36929fb8b1be616",
+    "text": "L) 2% ew : U",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -3717,71 +5481,8 @@
     }
   },
   {
-    "type": "Image",
-    "element_id": "34d2dd4af420ea3fdddc8fc5d581cac2",
-    "text": "",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "data_source": {
-        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
-        "record_locator": {
-          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
-        },
-        "date_created": "1718723636.34",
-        "date_modified": "1676196572.0",
-        "permissions_data": [
-          {
-            "id": "18298851591250030956",
-            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
-            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "04774006893477068632",
-            "displayName": "ryan",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
-            "emailAddress": "ryan@unstructured.io",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "anyoneWithLink",
-            "type": "anyone",
-            "kind": "drive#permission",
-            "role": "reader",
-            "allowFileDiscovery": false
-          },
-          {
-            "id": "09147371668407854156",
-            "displayName": "roman",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
-            "emailAddress": "roman@unstructured.io",
-            "role": "owner",
-            "deleted": false,
-            "pendingOwner": false
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "FigureCaption",
-    "element_id": "a8ac039aa1d77ac96ecd4c8c14a556d5",
+    "type": "NarrativeText",
+    "element_id": "83578f6774acfda63a6aeaba61c1338b",
     "text": "Equally, it is well established that living without access to electricity results in illness and death around the world, caused by everything from not having access to modern healthcare to household air pollution. As of today, 770 million people around the world do not have access to electricity, with over 75% of that population living in Sub-Saharan Africa. The world's poorest 4 billion people consume a mere 5% of the energy used in developed economies, and we need to find ways of delivering reliable electricity to the entire human population in a fashion that is sustainable. Household and ambient air pollution causes 8.7 million deaths each year, largely because of the continued use of fossil fuels. Widespread electrification is a key tool for delivering a just energy transition. Investment in nuclear, has become an urgent necessity. Discarding it, based on risk perceptions divorced from science, would be to abandon the moral obligation to ensure affordable, reliable, and sustainable energy for every community around the world.",
     "metadata": {
       "filetype": "application/pdf",
@@ -3844,8 +5545,8 @@
   },
   {
     "type": "Image",
-    "element_id": "c15d25fbb31fbdcee08859ae84555ead",
-    "text": "",
+    "element_id": "58dbfe57b61b154b42560f0bded81c5d",
+    "text": "[ A < robor T e Fsa B3 5% % oy ot T e bicd v e 2\u2018 s, s e aNs = 7 ' 2 \u2018:\u2019; Y % AN S",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -4096,8 +5797,8 @@
   },
   {
     "type": "Image",
-    "element_id": "c48fc44c56f9a43d02304448e8b717ad",
-    "text": "",
+    "element_id": "73af40f157c76328a54d3a265bb0b64d",
+    "text": "~\u2014 = = e \u2014\u2014 5 = \u2014 ] o o: { i - i",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -4158,7 +5859,7 @@
     }
   },
   {
-    "type": "Footer",
+    "type": "UncategorizedText",
     "element_id": "81e1362c9dfb3e04603ba076f6384c1b",
     "text": "7",
     "metadata": {
@@ -4221,7 +5922,7 @@
     }
   },
   {
-    "type": "Header",
+    "type": "PageNumber",
     "element_id": "254ec884050f824b4524f53a2693f685",
     "text": "8",
     "metadata": {
@@ -4347,8 +6048,71 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "59f05d231c2357ab111ee31b0da3c25d",
+    "type": "Title",
+    "element_id": "b8894ad8644fb6f13e827c34d656547b",
+    "text": "i",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 10,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "f75a66f1ae3524b41d0f7c212c01c2f9",
     "text": "World Health Organization (2020). Road traffic injuries. Available at: https://www.who.int/news-room/fact-sheets/ detail/road-traffic-injuries",
     "metadata": {
       "filetype": "application/pdf",
@@ -4411,8 +6175,8 @@
   },
   {
     "type": "Title",
-    "element_id": "a95a2add68d668b944cc332c88ea721e",
-    "text": "i",
+    "element_id": "72f0132fa7de410e48a4788048dc5f85",
+    "text": "ii",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -4473,8 +6237,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "a3be0ee530629ee7a2413f05eb0cce76",
+    "type": "NarrativeText",
+    "element_id": "a303e7831d9ee1669929c5268d18700e",
     "text": "BBC (2020). Plane crash fatalities fell more than 50% in 2019. Available at: https://www.bbc.co.uk/news/ business-50953712",
     "metadata": {
       "filetype": "application/pdf",
@@ -4536,8 +6300,71 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "1eed7cbdb8d1de7a460e08217dd4c5c4",
+    "type": "Title",
+    "element_id": "140aa813a7abab7610055f7f54431142",
+    "text": "iii",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 10,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a2de59991693d2a3e0129b13b3a65651",
     "text": "Slovic, P., 2010. The Psychology of risk. Sa\u00fade e Sociedade, 19(4), pp. 731-747.",
     "metadata": {
       "filetype": "application/pdf",
@@ -4599,8 +6426,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "2c1956254dae0592c70f445f8c8973c3",
+    "type": "NarrativeText",
+    "element_id": "c8dcc6e4dc178391f5047c388df8076c",
     "text": "iv United Nations Scientific Committee on the Effects of Radiation (2016). Report of the United Nations Scientific Committee on the Effects of Atomic Radiation. Accessed from: https://www.unscear.org/docs/publications/2016/ UNSCEAR_2016_GA-Report-CORR.pdf",
     "metadata": {
       "filetype": "application/pdf",
@@ -4662,8 +6489,71 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "4ca71e69090af4ad16216a0ddcc0a168",
+    "type": "Title",
+    "element_id": "521e32ae2b0e0f758cfd883929a9ac44",
+    "text": "v",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 10,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "0f0805be3f758c1ed209db4519b020f2",
     "text": "International Energy Agency (2020). Global share of total energy supply by source, 2018. Key World Energy Statistics 2020. Available at: https://www.iea.org/data-and-statistics/charts/global-share-of-total-energy-supply-by- source-2018",
     "metadata": {
       "filetype": "application/pdf",
@@ -4725,8 +6615,71 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "16bb7fca4ab44ffc73e847ea7b93fc4d",
+    "type": "Title",
+    "element_id": "2c1957b6cda893d433f2b2c365792833",
+    "text": "vi",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 10,
+      "data_source": {
+        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+        "record_locator": {
+          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+        },
+        "date_created": "1718723636.34",
+        "date_modified": "1676196572.0",
+        "permissions_data": [
+          {
+            "id": "18298851591250030956",
+            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "04774006893477068632",
+            "displayName": "ryan",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+            "emailAddress": "ryan@unstructured.io",
+            "role": "writer",
+            "deleted": false,
+            "pendingOwner": false
+          },
+          {
+            "id": "anyoneWithLink",
+            "type": "anyone",
+            "kind": "drive#permission",
+            "role": "reader",
+            "allowFileDiscovery": false
+          },
+          {
+            "id": "09147371668407854156",
+            "displayName": "roman",
+            "type": "user",
+            "kind": "drive#permission",
+            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+            "emailAddress": "roman@unstructured.io",
+            "role": "owner",
+            "deleted": false,
+            "pendingOwner": false
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "360261513a58c85cce096d9b71770acc",
     "text": "Vohra, K., Vodonos, A., Schwartz, J., Marais, E., Sulprizio, M., & Mickley, L. (2021). Global mortality from outdoor fine particle pollution generated by fossil fuel combustion: Results from GEOS-Chem. Environmental Research, 195, p. 1-8",
     "metadata": {
       "filetype": "application/pdf",
@@ -4788,8 +6741,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "0754024aff3f7b1e2850b689e180fc7f",
+    "type": "NarrativeText",
+    "element_id": "5b6bd1131333cb38d783b8043b343875",
     "text": "vii World Health Organization. (2016). Updated tables 2016 for \u2018Preventing disease through health environments: a global assessment of the burden of disease from environmental risks\u2019. Available at: https://www.who.int/data/gho/ data/themes/public-health-and-environment [Accessed on 8 April 2021]",
     "metadata": {
       "filetype": "application/pdf",
@@ -4851,8 +6804,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "84953aabe78d95937c2bde298a8655c7",
+    "type": "NarrativeText",
+    "element_id": "ea5a2b71f9e171e335762eddef21a122",
     "text": "viii National Cancer Institute (2020). Cancer statistics. Available at: https://www.cancer.gov/about-cancer/ understanding/statistics",
     "metadata": {
       "filetype": "application/pdf",
@@ -4914,8 +6867,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "1f4fb7cb0ed3eb56bc1b0c4a36c5885a",
+    "type": "NarrativeText",
+    "element_id": "41e05bc3315bcd5b0646d7b66417854b",
     "text": "ix Cancer Research UK (n.d.). Cancer risk statistics. Available at: https://www.cancerresearchuk.org/health- professional/cancer-statistics/risk",
     "metadata": {
       "filetype": "application/pdf",
@@ -4977,8 +6930,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "eae4cdbbf622c9a2885b4585f9c8f115",
+    "type": "NarrativeText",
+    "element_id": "1bd105323ab8f3171c88788dc1fe8105",
     "text": "x OECD-NEA (2019). The Full Costs of Electricity Provision. Available at: https://www.oecd-nea.org/jcms/pl_14998/ the-full-costs-of-electricity-provision?details=true",
     "metadata": {
       "filetype": "application/pdf",
@@ -5040,8 +6993,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "04bb02d84ab3e401a668eb44fd8d676c",
+    "type": "NarrativeText",
+    "element_id": "1fc873be16bf783187a0ca6c3a7a91a8",
     "text": "xi World Health Organization (2018). Climate change and health. Available at: https://www.who.int/news-room/fact- sheets/detail/climate-change-and-health",
     "metadata": {
       "filetype": "application/pdf",
@@ -5103,8 +7056,8 @@
     }
   },
   {
-    "type": "ListItem",
-    "element_id": "2e6ca48a0339d0bc72e7cc00dd922b7f",
+    "type": "NarrativeText",
+    "element_id": "59883a943d0a7dabee433edda954eef7",
     "text": "xii BP, 2020. BP Statistical Review of World Energy, London: BP.",
     "metadata": {
       "filetype": "application/pdf",
@@ -5167,7 +7120,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "e7dbdcca2a70adc904aab19790ef9d50",
+    "element_id": "02ba07b2ea8288d9e8f653407110ac5a",
     "text": "Photo credits: Front cover & pages 1, 4, 6 left, 7 bottom: Adobe Stock; page 6 right: Getty Images; page 7 top: Uniper.",
     "metadata": {
       "filetype": "application/pdf",
@@ -5292,7 +7245,7 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "Title",
     "element_id": "7ac9948c40759d5a7c1a2dbe870ca322",
     "text": "+44 (0)20 7451 1520 www.world-nuclear.org info@world-nuclear.org",
     "metadata": {
@@ -5418,71 +7371,8 @@
     }
   },
   {
-    "type": "Image",
-    "element_id": "5b875f4e450a92d95cbcf868d76ab04e",
-    "text": "contributing to the energy debate.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 12,
-      "data_source": {
-        "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
-        "record_locator": {
-          "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
-        },
-        "date_created": "1718723636.34",
-        "date_modified": "1676196572.0",
-        "permissions_data": [
-          {
-            "id": "18298851591250030956",
-            "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
-            "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "04774006893477068632",
-            "displayName": "ryan",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
-            "emailAddress": "ryan@unstructured.io",
-            "role": "writer",
-            "deleted": false,
-            "pendingOwner": false
-          },
-          {
-            "id": "anyoneWithLink",
-            "type": "anyone",
-            "kind": "drive#permission",
-            "role": "reader",
-            "allowFileDiscovery": false
-          },
-          {
-            "id": "09147371668407854156",
-            "displayName": "roman",
-            "type": "user",
-            "kind": "drive#permission",
-            "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
-            "emailAddress": "roman@unstructured.io",
-            "role": "owner",
-            "deleted": false,
-            "pendingOwner": false
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "NarrativeText",
-    "element_id": "dfaec74062af8b1e913079272ee13f49",
+    "element_id": "a637062adfd950e2491a0929d2b4ac1a",
     "text": "Recalibrating risk \u00a9 2021 World Nuclear Association. Registered in England and Wales, company number 01215741",
     "metadata": {
       "filetype": "application/pdf",

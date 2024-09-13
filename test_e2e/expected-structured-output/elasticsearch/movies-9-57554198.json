@@ -9,6 +9,7 @@
       ],
       "filetype": "text/plain",
       "data_source": {
+        "url": null,
         "version": "1",
         "record_locator": {
           "hosts": [
@@ -17,6 +18,9 @@
           "index_name": "movies",
           "document_id": "9"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 673
       }
     }
@@ -31,6 +35,7 @@
       ],
       "filetype": "text/plain",
       "data_source": {
+        "url": null,
         "version": "1",
         "record_locator": {
           "hosts": [
@@ -39,6 +44,9 @@
           "index_name": "movies",
           "document_id": "9"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 673
       }
     }
@@ -53,6 +61,7 @@
       ],
       "filetype": "text/plain",
       "data_source": {
+        "url": null,
         "version": "1",
         "record_locator": {
           "hosts": [
@@ -61,6 +70,9 @@
           "index_name": "movies",
           "document_id": "9"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 673
       }
     }
