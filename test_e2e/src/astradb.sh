@@ -24,6 +24,9 @@ COLLECTION_NAME="ingest_test_src"
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   astradb \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --token "$ASTRA_DB_APPLICATION_TOKEN" \
   --api-endpoint "$ASTRA_DB_API_ENDPOINT" \
   --collection-name "$COLLECTION_NAME" \

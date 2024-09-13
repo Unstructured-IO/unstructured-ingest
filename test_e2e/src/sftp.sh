@@ -36,6 +36,9 @@ wait
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   sftp \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
   --metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.data_source.version \
