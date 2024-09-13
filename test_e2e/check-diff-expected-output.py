@@ -42,7 +42,7 @@ def check_contents(expected_output_dir: Path, current_output_dir: Path):
             found_diff = True
             print(f"diffs between files {expected_file_path} and {current_file_path}")
             for diff in diffs:
-                print(json.dumps(dict(diff), indent=2))
+                print(diff.to_json(indent=2))
     if found_diff:
         raise CheckError("Diffs found between files")
 
