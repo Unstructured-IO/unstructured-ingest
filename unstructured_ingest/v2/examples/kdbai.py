@@ -31,8 +31,8 @@ os.environ["KDBAI_ENDPOINT"] = "http://localhost"
 os.environ["KDBAI_TABLE"] = "table"
 
 if __name__ == "__main__":
-    logger.info(f"Writing all content in: {work_dir.resolve()}")
-    logger.info(f"Processing file(s): {input_path.resolve()}")
+    logger.info(f"writing all content in: {work_dir.resolve()}")
+    logger.info(f"processing file(s): {input_path.resolve()}")
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve()), tqdm=True, verbose=True),
         indexer_config=LocalIndexerConfig(

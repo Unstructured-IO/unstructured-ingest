@@ -123,7 +123,7 @@ class BiomedIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
             and self.filename.is_file()
             and not self.read_config.download_only
         ):
-            logger.debug(f"Cleaning up {self}")
+            logger.debug(f"cleaning up {self}")
             Path.unlink(self.filename)
 
     @SourceConnectionError.wrap
@@ -132,12 +132,12 @@ class BiomedIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
         download_path = self.file_meta.download_filepath  # type: ignore
         dir_ = Path(os.path.dirname(download_path))  # type: ignore
         if not dir_.is_dir():
-            logger.debug(f"Creating directory: {dir_}")
+            logger.debug(f"creating directory: {dir_}")
 
             if dir_:
                 dir_.mkdir(parents=True, exist_ok=True)
         self._retrieve()
-        logger.debug(f"File downloaded: {self.file_meta.download_filepath}")
+        logger.debug(f"file downloaded: {self.file_meta.download_filepath}")
 
     @SourceConnectionNetworkError.wrap
     def _retrieve(self):
@@ -229,7 +229,7 @@ class BiomedSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
 
         def traverse(path, download_dir, output_dir):
             full_path = Path(PMC_DIR) / path
-            logger.debug(f"Traversing directory: {full_path}")
+            logger.debug(f"traversing directory: {full_path}")
 
             ftp = FTP(DOMAIN)
             ftp.login()

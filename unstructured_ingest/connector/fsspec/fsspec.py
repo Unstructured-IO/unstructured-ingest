@@ -221,7 +221,7 @@ class FsspecSourceConnector(
         for pattern in patterns:
             if fnmatch.filter([path], pattern):
                 return True
-        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
+        logger.debug(f"the file {path!r} is discarded as it does not match any given glob.")
         return False
 
     def get_ingest_docs(self):
@@ -328,7 +328,7 @@ class FsspecDestinationConnector(BaseDestinationConnector):
             **self.connector_config.get_access_config(),
         )
 
-        logger.info(f"Writing content using filesystem: {type(fs).__name__}")
+        logger.info(f"writing content using filesystem: {type(fs).__name__}")
 
         output_folder = self.connector_config.path_without_protocol
         output_folder = os.path.join(output_folder)  # Make sure folder ends with file separator

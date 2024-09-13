@@ -113,6 +113,6 @@ class CompressionSourceConnectorMixin:
             read_config=new_read_configs,
             processor_config=new_process_configs,
         )
-        logger.info(f"Created local source connector: {local_connector.to_json()}")
+        logger.info(f"created local source connector: {local_connector.to_json()}")
         local_connector.initialize()
         return local_connector.get_ingest_docs()

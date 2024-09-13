@@ -164,7 +164,7 @@ class OutlookIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
             self.connector_config._get_client()
             self.update_source_metadata()
             if not self.download_dir.is_dir():
-                logger.debug(f"Creating directory: {self.download_dir}")
+                logger.debug(f"creating directory: {self.download_dir}")
                 self.download_dir.mkdir(parents=True, exist_ok=True)
 
             with open(
@@ -182,7 +182,7 @@ class OutlookIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
             )
             logger.error(e)
             return
-        logger.info(f"File downloaded: {self.hash_mail_name(self.message_id)}")
+        logger.info(f"file downloaded: {self.hash_mail_name(self.message_id)}")
         return
 
 

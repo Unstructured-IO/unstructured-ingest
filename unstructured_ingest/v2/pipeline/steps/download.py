@@ -83,7 +83,7 @@ class DownloadStep(PipelineStep):
                 f"match size of local file: {file_size_bytes}, updating"
             )
             file_data.metadata.filesize_bytes = file_size_bytes
-        logger.debug(f"Updating file data with new content: {file_data.to_dict()}")
+        logger.debug(f"updating file data with new content: {file_data.to_dict()}")
         with file_data_path.open("w") as file:
             json.dump(file_data.to_dict(), file, indent=2)
 
@@ -91,7 +91,7 @@ class DownloadStep(PipelineStep):
         file_data = FileData.from_file(path=file_data_path)
         download_path = self.process.get_download_path(file_data=file_data)
         if not self.should_download(file_data=file_data, file_data_path=file_data_path):
-            logger.debug(f"Skipping download, file already exists locally: {download_path}")
+            logger.debug(f"skipping download, file already exists locally: {download_path}")
             self.update_file_data(
                 file_data=file_data,
                 file_data_path=Path(file_data_path),

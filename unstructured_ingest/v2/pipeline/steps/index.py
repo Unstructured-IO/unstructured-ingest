@@ -28,14 +28,14 @@ class IndexStep(PipelineStep):
             self.process.connection_config.json() if self.process.connection_config else None
         )
         logger.info(
-            f"Created {self.identifier} with configs: {config}, "
+            f"created {self.identifier} with configs: {config}, "
             f"connection configs: {connection_config}"
         )
 
     @instrument(span_name=STEP_ID)
     def run(self) -> Generator[str, None, None]:
         for file_data in self.process.run():
-            logger.debug(f"Generated file data: {file_data.to_dict()}")
+            logger.debug(f"generated file data: {file_data.to_dict()}")
             try:
                 record_hash = self.get_hash(extras=[file_data.identifier])
                 filename = f"{record_hash}.json"

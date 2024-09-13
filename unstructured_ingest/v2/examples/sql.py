@@ -32,7 +32,7 @@ download_path = work_dir / "download"
 SQLITE_DB_PATH = "test-sql-db.sqlite"
 
 if __name__ == "__main__":
-    logger.info(f"Writing all content in: {work_dir.resolve()}")
+    logger.info(f"writing all content in: {work_dir.resolve()}")
 
     configs = {
         "context": ProcessorConfig(work_dir=str(work_dir.resolve())),

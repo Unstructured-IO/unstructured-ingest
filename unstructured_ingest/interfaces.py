@@ -529,7 +529,7 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
                 and self.filename.is_file()
                 and self.filename.stat().st_size
             ):
-                logger.debug(f"File exists: {self.filename}, skipping {func.__name__}")
+                logger.debug(f"file exists: {self.filename}, skipping {func.__name__}")
                 return None
             return func(self, *args, **kwargs)
 
@@ -586,7 +586,7 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
 
             endpoint = partition_config.partition_endpoint
 
-            logger.debug(f"Using remote partition ({endpoint})")
+            logger.debug(f"using remote partition ({endpoint})")
 
             elements = partition_via_api(
                 filename=str(self.filename),
@@ -606,7 +606,7 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
         self._date_processed = datetime.utcnow().isoformat()
         if self.read_config.download_only:
             return None
-        logger.info(f"Processing {self.filename}")
+        logger.info(f"processing {self.filename}")
 
         elements = self.partition_file(partition_config=partition_config, **partition_kwargs)
         element_dicts = [e.to_dict() for e in elements]
@@ -824,7 +824,7 @@ class IngestDocCleanupMixin:
             and self.filename.is_file()
             and not self.read_config.download_only
         ):
-            logger.debug(f"Cleaning up {self}")
+            logger.debug(f"cleaning up {self}")
             os.unlink(self.filename)
 
 

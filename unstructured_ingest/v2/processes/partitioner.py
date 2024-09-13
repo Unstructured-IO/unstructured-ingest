@@ -145,7 +145,7 @@ class Partitioner(BaseProcess, ABC):
         class FileDataSourceMetadata(DataSourceMetadata):
             filesize_bytes: Optional[int] = None
 
-        logger.debug(f"Using local partition with kwargs: {self.config.to_partition_kwargs()}")
+        logger.debug(f"using local partition with kwargs: {self.config.to_partition_kwargs()}")
         logger.debug(f"partitioning file {filename} with metadata {metadata}")
         elements = partition(
             filename=str(filename.resolve()),
@@ -182,7 +182,7 @@ class Partitioner(BaseProcess, ABC):
                     ", ".join([v for v in partition_request if v not in filtered_partition_request])
                 )
             )
-        logger.debug(f"Using hosted partitioner with kwargs: {partition_request}")
+        logger.debug(f"using hosted partitioner with kwargs: {partition_request}")
         with open(filename, "rb") as f:
             files = Files(
                 content=f.read(),

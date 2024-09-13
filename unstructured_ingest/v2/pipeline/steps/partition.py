@@ -29,7 +29,7 @@ class PartitionStep(PipelineStep):
 
     def __post_init__(self):
         config = self.process.config.json()
-        logger.info(f"Created {self.identifier} with configs: {config}")
+        logger.info(f"created {self.identifier} with configs: {config}")
 
     def should_partition(self, filepath: Path, file_data: FileData) -> bool:
         if self.context.reprocess or file_data.reprocess:
@@ -44,7 +44,7 @@ class PartitionStep(PipelineStep):
 
     def _save_output(self, output_filepath: str, partitioned_content: list[dict]):
         with open(str(output_filepath), "w") as f:
-            logger.debug(f"Writing partitioned output to: {output_filepath}")
+            logger.debug(f"writing partitioned output to: {output_filepath}")
             json.dump(partitioned_content, f, indent=2)
 
     async def _run_async(
@@ -54,7 +54,7 @@ class PartitionStep(PipelineStep):
         file_data = FileData.from_file(path=file_data_path)
         output_filepath = self.get_output_filepath(filename=Path(file_data_path))
         if not self.should_partition(filepath=output_filepath, file_data=file_data):
-            logger.debug(f"Skipping partitioning, output already exists: {output_filepath}")
+            logger.debug(f"skipping partitioning, output already exists: {output_filepath}")
             return PartitionStepResponse(file_data_path=file_data_path, path=str(output_filepath))
         fn_kwargs = {"filename": path, "metadata": file_data.metadata.to_dict()}
         if not asyncio.iscoroutinefunction(fn):

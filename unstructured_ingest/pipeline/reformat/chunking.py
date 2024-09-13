@@ -58,7 +58,7 @@ class Chunker(ReformatNode):
                 and json_path.is_file()
                 and json_path.stat().st_size
             ):
-                logger.debug(f"File exists: {json_path}, skipping chunking")
+                logger.debug(f"file exists: {json_path}, skipping chunking")
                 return str(json_path)
 
             chunked_elements = self.chunk(elements_json)

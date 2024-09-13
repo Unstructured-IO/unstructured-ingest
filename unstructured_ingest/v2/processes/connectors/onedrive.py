@@ -213,9 +213,9 @@ class OnedriveDownloader(Downloader):
         fsize = file.get_property("size", 0)
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Downloading {file_data.source_identifiers.fullpath} to {download_path}")
+        logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
         if fsize > MAX_MB_SIZE:
-            logger.info(f"Downloading file with size: {fsize} bytes in chunks")
+            logger.info(f"downloading file with size: {fsize} bytes in chunks")
             with download_path.open(mode="wb") as f:
                 file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
         else:

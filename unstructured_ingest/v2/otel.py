@@ -92,7 +92,7 @@ class OtelHandler:
             return None
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
-        logger.debug(f"Adding otel exported at {otel_endpoint}")
+        logger.debug(f"adding otel exported at {otel_endpoint}")
         trace_exporter = OTLPSpanExporter()
         processor = SimpleSpanProcessor(trace_exporter)
         provider.add_span_processor(processor)

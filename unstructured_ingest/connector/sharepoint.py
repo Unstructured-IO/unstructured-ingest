@@ -253,11 +253,11 @@ class SharepointIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         if not self.download_dir.is_dir():
-            logger.debug(f"Creating directory: {self.download_dir}")
+            logger.debug(f"creating directory: {self.download_dir}")
             self.download_dir.mkdir(parents=True, exist_ok=True)
         with self.filename.open(mode="w") as f:
             f.write(pld)
-        logger.info(f"File downloaded: {self.filename}")
+        logger.info(f"file downloaded: {self.filename}")
 
     def _download_file(self):
         file = self._fetch_file()
@@ -266,17 +266,17 @@ class SharepointIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.download_dir.is_dir():
-            logger.debug(f"Creating directory: {self.download_dir}")
+            logger.debug(f"creating directory: {self.download_dir}")
             self.download_dir.mkdir(parents=True, exist_ok=True)
 
         if fsize > MAX_MB_SIZE:
-            logger.info(f"Downloading file with size: {fsize} bytes in chunks")
+            logger.info(f"downloading file with size: {fsize} bytes in chunks")
             with self.filename.open(mode="wb") as f:
                 file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
         else:
             with self.filename.open(mode="wb") as f:
                 file.download(f).execute_query()
-        logger.info(f"File downloaded: {self.filename}")
+        logger.info(f"file downloaded: {self.filename}")
 
     @BaseSingleIngestDoc.skip_if_file_exists
     @SourceConnectionError.wrap
@@ -374,7 +374,7 @@ class SharepointSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector
         if self.connector_config.process_pages:
             page_output = self._list_pages(site_client)
             if not page_output:
-                logger.info(f"Couldn't process pages for site {site_client.base_url}")
+                logger.info(f"couldn't process pages for site {site_client.base_url}")
             output = output + page_output
         return output
 
@@ -404,7 +404,7 @@ class SharepointSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector
         tenant_sites = {s.url for s in tenant_sites if (s.url is not None)}
         ingest_docs: t.List[SharepointIngestDoc] = []
         for site_url in tenant_sites:
-            logger.info(f"Processing docs for site: {site_url}")
+            logger.info(f"processing docs for site: {site_url}")
             site_client = self.connector_config.get_site_client(site_url)
             ingest_docs = ingest_docs + self._ingest_site_docs(site_client)
         return ingest_docs
@@ -440,7 +440,7 @@ class SharepointPermissionsConnector:
         if response.status_code == 200:
             return response.json()
         else:
-            logger.info(f"Request failed with status code {response.status_code}:")
+            logger.info(f"request failed with status code {response.status_code}:")
             logger.info(response.text)
 
     @requires_dependencies(["requests"], extras="sharepoint")

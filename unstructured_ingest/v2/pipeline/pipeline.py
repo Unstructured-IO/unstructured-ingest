@@ -187,7 +187,7 @@ class Pipeline:
         return filtered_records
 
     def _run(self):
-        logger.info(f"Running local pipeline: {self} with configs: " f"{self.context.json()}")
+        logger.info(f"running local pipeline: {self} with configs: " f"{self.context.json()}")
         if self.context.mp_supported:
             manager = mp.Manager()
             self.context.status = manager.dict()
@@ -253,7 +253,7 @@ class Pipeline:
             last_step.delete_cache()
             last_step = step
             if not elements:
-                logger.info(f"No files to process after {step.__class__.__name__}, exiting")
+                logger.info(f"no files to process after {step.__class__.__name__}, exiting")
                 return
 
         # Upload the final result
