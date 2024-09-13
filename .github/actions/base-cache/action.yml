@@ -45,5 +45,10 @@ runs:
         path: |
           .venv
         key: ${{ steps.virtualenv-cache-restore.outputs.cache-primary-key }}
+    - name: Print python versions
+      shell: bash
+      run: |
+        source .venv/bin/activate
+        pip freeze
 
 
