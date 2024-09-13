@@ -26,7 +26,7 @@ all_tests=(
   'biomed-path.sh'
   # NOTE(yuming): The pdf-fast-reprocess test should be put after any tests that save downloaded files
   'pdf-fast-reprocess.sh'
-#  's3-compression.sh'
+  #  's3-compression.sh'
   'salesforce.sh'
   'box.sh'
   'discord.sh'
