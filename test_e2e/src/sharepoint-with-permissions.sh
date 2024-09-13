@@ -42,6 +42,9 @@ fi
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   sharepoint \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
   --metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.permissions_data \
   --num-processes "$max_processes" \

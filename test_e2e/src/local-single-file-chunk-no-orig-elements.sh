@@ -37,6 +37,9 @@ RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --chunking-strategy by_title \
   --no-chunk-include-orig-elements \
   --chunk-max-characters 2000 \

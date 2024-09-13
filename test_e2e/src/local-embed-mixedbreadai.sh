@@ -32,6 +32,9 @@ RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 # Run the ingestion script with the specified parameters
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --metadata-exclude coordinates,filename,file_directory,metadata.data_source.record_locator.path,metadata.data_source.date_created,metadata.data_source.date_modified,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --output-dir "$OUTPUT_DIR" \
