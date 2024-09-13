@@ -8,28 +8,22 @@ annotated-types==0.7.0
     # via pydantic
 bcrypt==4.2.0
     # via paramiko
-cffi==1.17.0
+cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
 click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
-cryptography==43.0.0
+cryptography==43.0.1
     # via paramiko
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
+    # via opentelemetry-api
 fsspec==2024.5.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   -r ./requirements/connectors/sftp.in
-importlib-metadata==7.1.0
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   opentelemetry-api
 marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
@@ -38,13 +32,11 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
-opentelemetry-api==1.26.0
-    # via
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.26.0
+opentelemetry-api==1.16.0
+    # via opentelemetry-sdk
+opentelemetry-sdk==1.16.0
     # via -r ./requirements/connectors/../common/base.in
-opentelemetry-semantic-conventions==0.47b0
+opentelemetry-semantic-conventions==0.37b0
     # via opentelemetry-sdk
 packaging==23.2
     # via
@@ -56,9 +48,9 @@ paramiko==3.4.1
     # via -r ./requirements/connectors/sftp.in
 pycparser==2.22
     # via cffi
-pydantic==2.8.2
+pydantic==2.9.1
     # via -r ./requirements/connectors/../common/base.in
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
 pynacl==1.5.0
     # via paramiko
@@ -66,7 +58,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -r ./requirements/connectors/../common/base.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 six==1.16.0
     # via python-dateutil
@@ -86,5 +78,6 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
-zipp==3.20.1
-    # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

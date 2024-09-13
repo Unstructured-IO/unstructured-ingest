@@ -16,21 +16,17 @@ async-timeout==4.0.3
     # via aiohttp
 attrs==24.2.0
     # via aiohttp
-certifi==2024.7.4
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   elastic-transport
+certifi==2024.8.30
+    # via elastic-transport
 click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
+    # via opentelemetry-api
 elastic-transport==8.15.0
     # via elasticsearch
-elasticsearch[async]==8.15.0
+elasticsearch[async]==8.15.1
     # via -r ./requirements/connectors/elasticsearch.in
 frozenlist==1.4.1
     # via
@@ -38,13 +34,9 @@ frozenlist==1.4.1
     #   aiosignal
 idna==3.8
     # via yarl
-importlib-metadata==7.1.0
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   opentelemetry-api
 marshmallow==3.22.0
     # via dataclasses-json
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
@@ -54,13 +46,11 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
-opentelemetry-api==1.26.0
-    # via
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.26.0
+opentelemetry-api==1.16.0
+    # via opentelemetry-sdk
+opentelemetry-sdk==1.16.0
     # via -r ./requirements/connectors/../common/base.in
-opentelemetry-semantic-conventions==0.47b0
+opentelemetry-semantic-conventions==0.37b0
     # via opentelemetry-sdk
 packaging==23.2
     # via
@@ -68,15 +58,15 @@ packaging==23.2
     #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
-pydantic==2.8.2
+pydantic==2.9.1
     # via -r ./requirements/connectors/../common/base.in
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
 python-dateutil==2.9.0.post0
     # via
     #   -r ./requirements/connectors/../common/base.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 six==1.16.0
     # via python-dateutil
@@ -84,6 +74,7 @@ tqdm==4.66.5
     # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
+    #   multidict
     #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
@@ -92,7 +83,7 @@ typing-inspect==0.9.0
     # via dataclasses-json
 tzdata==2024.1
     # via pandas
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   elastic-transport
@@ -100,7 +91,8 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
-yarl==1.9.4
+yarl==1.11.1
     # via aiohttp
-zipp==3.20.1
-    # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
