@@ -36,4 +36,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --input-path "$SCRIPT_DIR"/example-docs/ \
   --work-dir "$WORK_DIR"
 
-"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAMEE
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name "$OUTPUT_FOLDER_NAME"
