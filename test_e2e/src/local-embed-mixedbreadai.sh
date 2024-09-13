@@ -49,5 +49,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
 set +e
 
 # Check the differences with the expected output
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
-
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
