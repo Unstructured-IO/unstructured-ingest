@@ -22,7 +22,7 @@ deprecated==1.2.14
     # via opentelemetry-api
 google-auth==2.34.0
     # via databricks-sdk
-idna==3.8
+idna==3.10
     # via requests
 marshmallow==3.22.0
     # via dataclasses-json

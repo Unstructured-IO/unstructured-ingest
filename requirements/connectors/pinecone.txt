@@ -36,7 +36,7 @@ pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 pinecone-client==5.0.1
     # via -r ./requirements/connectors/pinecone.in
-pinecone-plugin-inference==1.0.3
+pinecone-plugin-inference==1.1.0
     # via pinecone-client
 pinecone-plugin-interface==0.0.7
     # via

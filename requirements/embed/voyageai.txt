@@ -49,7 +49,7 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.2
     # via langsmith
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   httpx
@@ -59,16 +59,16 @@ jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.0.0
     # via jsonpatch
-langchain==0.2.16
+langchain==0.3.0
     # via -r ./requirements/embed/voyageai.in
-langchain-core==0.2.39
+langchain-core==0.3.0
     # via
     #   langchain
     #   langchain-text-splitters
     #   langchain-voyageai
-langchain-text-splitters==0.2.4
+langchain-text-splitters==0.3.0
     # via langchain
-langchain-voyageai==0.1.1
+langchain-voyageai==0.1.2
     # via -r ./requirements/embed/voyageai.in
 langsmith==0.1.120
     # via
@@ -84,6 +84,7 @@ mypy-extensions==1.0.0
     # via typing-inspect
 numpy==1.26.4
     # via
+    #   -c ./requirements/embed/../common/constraints.txt
     #   langchain
     #   pandas
     #   voyageai
@@ -107,6 +108,7 @@ pydantic==2.9.1
     #   -r ./requirements/embed/../common/base.in
     #   langchain
     #   langchain-core
+    #   langchain-voyageai
     #   langsmith
 pydantic-core==2.23.3
     # via pydantic

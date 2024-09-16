@@ -16,7 +16,7 @@ dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
     # via opentelemetry-api
-idna==3.8
+idna==3.10
     # via requests
 inflection==0.5.1
     # via pyairtable

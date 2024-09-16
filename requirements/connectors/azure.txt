@@ -58,7 +58,7 @@ fsspec==2024.5.0
     #   -c ./requirements/connectors/../common/constraints.txt
     #   -r ./requirements/connectors/azure.in
     #   adlfs
-idna==3.8
+idna==3.10
     # via
     #   requests
     #   yarl

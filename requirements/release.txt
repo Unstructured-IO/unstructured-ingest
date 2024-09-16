@@ -12,7 +12,7 @@ colorama==0.4.6
     # via twine
 docutils==0.21.2
     # via readme-renderer
-idna==3.8
+idna==3.10
     # via requests
 keyring==22.3.0
     # via twine
@@ -40,7 +40,6 @@ urllib3==1.26.20
     # via
     #   -c ./requirements/./common/constraints.txt
     #   requests
-    #   twine
 wheel==0.44.0
     # via -r ./requirements/release.in
 

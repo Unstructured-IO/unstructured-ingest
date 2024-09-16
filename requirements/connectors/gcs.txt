@@ -70,7 +70,7 @@ google-resumable-media==2.7.2
     # via google-cloud-storage
 googleapis-common-protos==1.65.0
     # via google-api-core
-idna==3.8
+idna==3.10
     # via
     #   requests
     #   yarl

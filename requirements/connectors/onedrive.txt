@@ -26,7 +26,7 @@ dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
     # via opentelemetry-api
-idna==3.8
+idna==3.10
     # via requests
 marshmallow==3.22.0
     # via dataclasses-json
@@ -36,8 +36,10 @@ msal==1.31.0
     #   office365-rest-python-client
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==2.0.2
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   pandas
 office365-rest-python-client==2.5.12
     # via -r ./requirements/connectors/onedrive.in
 opentelemetry-api==1.16.0

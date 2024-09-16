@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via pydantic
-atlassian-python-api==3.41.15
+atlassian-python-api==3.41.16
     # via -r ./requirements/connectors/jira.in
 beautifulsoup4==4.12.3
     # via atlassian-python-api
@@ -22,7 +22,7 @@ deprecated==1.2.14
     # via
     #   atlassian-python-api
     #   opentelemetry-api
-idna==3.8
+idna==3.10
     # via requests
 jmespath==1.0.1
     # via atlassian-python-api
@@ -30,8 +30,10 @@ marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==2.0.2
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   pandas
 oauthlib==3.2.2
     # via
     #   atlassian-python-api

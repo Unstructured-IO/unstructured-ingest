@@ -49,7 +49,7 @@ httpx[http2]==0.27.2
     # via astrapy
 hyperframe==6.0.1
     # via h2
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   httpx

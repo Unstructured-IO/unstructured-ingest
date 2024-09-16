@@ -110,7 +110,7 @@ huggingface-hub==0.24.7
     #   unstructured-inference
 humanfriendly==10.0
     # via coloredlogs
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   httpx
@@ -160,6 +160,7 @@ nltk==3.9.1
     # via unstructured
 numpy==1.26.4
     # via
+    #   -c ./requirements/local_partition/../common/constraints.txt
     #   contourpy
     #   layoutparser
     #   matplotlib

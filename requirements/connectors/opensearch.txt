@@ -20,7 +20,7 @@ deprecated==1.2.14
     # via opentelemetry-api
 events==0.5
     # via opensearch-py
-idna==3.8
+idna==3.10
     # via requests
 marshmallow==3.22.0
     # via dataclasses-json

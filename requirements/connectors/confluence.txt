@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via pydantic
-atlassian-python-api==3.41.15
+atlassian-python-api==3.41.16
     # via -r ./requirements/connectors/confluence.in
 beautifulsoup4==4.12.3
     # via atlassian-python-api
@@ -22,7 +22,7 @@ deprecated==1.2.14
     # via
     #   atlassian-python-api
     #   opentelemetry-api
-idna==3.8
+idna==3.10
     # via requests
 jmespath==1.0.1
     # via atlassian-python-api

@@ -24,7 +24,7 @@ deprecated==1.2.14
     # via
     #   opentelemetry-api
     #   pygithub
-idna==3.8
+idna==3.10
     # via requests
 marshmallow==3.22.0
     # via dataclasses-json

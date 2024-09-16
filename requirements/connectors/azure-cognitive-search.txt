@@ -22,7 +22,7 @@ dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
     # via opentelemetry-api
-idna==3.8
+idna==3.10
     # via requests
 isodate==0.6.1
     # via azure-search-documents
@@ -30,8 +30,10 @@ marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==2.0.2
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   pandas
 opentelemetry-api==1.16.0
     # via opentelemetry-sdk
 opentelemetry-sdk==1.16.0

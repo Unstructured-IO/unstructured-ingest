@@ -45,7 +45,7 @@ huggingface-hub==0.24.7
     #   sentence-transformers
     #   tokenizers
     #   transformers
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   httpx
@@ -58,9 +58,9 @@ jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.0.0
     # via jsonpatch
-langchain-core==0.2.39
+langchain-core==0.3.0
     # via langchain-huggingface
-langchain-huggingface==0.0.3
+langchain-huggingface==0.1.0
     # via -r ./requirements/embed/huggingface.in
 langsmith==0.1.120
     # via langchain-core
@@ -76,6 +76,7 @@ networkx==3.2.1
     # via torch
 numpy==1.26.4
     # via
+    #   -c ./requirements/embed/../common/constraints.txt
     #   pandas
     #   scikit-learn
     #   scipy

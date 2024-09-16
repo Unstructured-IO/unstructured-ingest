@@ -29,3 +29,4 @@ langchain-community>=0.2.5
 # instead of 7.2.0. Need to investigate
 importlib-metadata==7.1.0
 unstructured==0.15.10
+numpy<2

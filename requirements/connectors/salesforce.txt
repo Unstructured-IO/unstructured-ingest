@@ -22,7 +22,7 @@ dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
     # via opentelemetry-api
-idna==3.8
+idna==3.10
     # via requests
 isodate==0.6.1
     # via zeep
@@ -50,7 +50,7 @@ packaging==23.2
     #   marshmallow
 pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
-platformdirs==4.3.2
+platformdirs==4.3.3
     # via zeep
 pycparser==2.22
     # via cffi

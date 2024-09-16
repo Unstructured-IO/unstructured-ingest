@@ -16,8 +16,10 @@ marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
-numpy==2.0.2
-    # via pandas
+numpy==1.26.4
+    # via
+    #   -c ./requirements/connectors/../common/constraints.txt
+    #   pandas
 opentelemetry-api==1.16.0
     # via opentelemetry-sdk
 opentelemetry-sdk==1.16.0
