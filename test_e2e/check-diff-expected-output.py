@@ -68,6 +68,15 @@ def print_diffs(expected: list[dict], current: list[dict]):
         print(json.dumps(only_in_current, indent=2))
 
 
+def omit_ignored_fields(data: dict) -> None:
+    # Ignore text and the dependant fields since these can change based on
+    # partitioning which isn't derived from this repo
+    data.pop("text", None)
+    data.pop("element_id", None)
+    if data.get("metadata", {}).get("text_as_html"):
+        data["metadata"].pop("text_as_html", None)
+
+
 def compare_files(expected_file: Path, current_file: Path) -> list[DeepDiff]:
     print(f"Comparing content of {expected_file} to {current_file}")
     with expected_file.open("r") as expected:
@@ -82,12 +91,8 @@ def compare_files(expected_file: Path, current_file: Path) -> list[DeepDiff]:
         )
     diffs = []
     for expected_element, current_element in zip(expected_data, current_data):
-        # Ignore text and the dependant element id since these can change based on
-        # partitioning which isn't derived from this repo
-        expected_element.pop("text", None)
-        expected_element.pop("element_id", None)
-        current_element.pop("text", None)
-        current_element.pop("element_id", None)
+        omit_ignored_fields(data=expected_element)
+        omit_ignored_fields(data=current_data)
 
         diff = DeepDiff(expected_element, current_element)
         if diff:
