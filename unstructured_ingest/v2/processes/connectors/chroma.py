@@ -7,7 +7,6 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
-from chromadb import Settings
 from dateutil import parser
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
@@ -36,7 +35,7 @@ CONNECTOR_TYPE = "chroma"
 
 
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[Annotated[Settings, BeforeValidator(conform_string_to_dict)]] = Field(
+    settings: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of settings to communicate with the chroma server."
     )
     headers: Optional[Annotated[dict[str, Any], BeforeValidator(conform_string_to_dict)]] = Field(
