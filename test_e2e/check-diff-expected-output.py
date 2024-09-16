@@ -92,7 +92,7 @@ def compare_files(expected_file: Path, current_file: Path) -> list[DeepDiff]:
     diffs = []
     for expected_element, current_element in zip(expected_data, current_data):
         omit_ignored_fields(data=expected_element)
-        omit_ignored_fields(data=current_data)
+        omit_ignored_fields(data=current_element)
 
         diff = DeepDiff(expected_element, current_element)
         if diff:
