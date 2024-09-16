@@ -1,6 +1,8 @@
-## 0.0.15
+## 0.0.16-dev1
 
 ### Fixes
+
+* ** Update Sharepoint test expected responses
 
 * **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
 * **Sharepoint permission config requirement** The sharepoint connector was expecting the permission config, even though it should have been optional.
