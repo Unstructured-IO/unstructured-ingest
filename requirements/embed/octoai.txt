@@ -48,7 +48,7 @@ numpy==1.26.4
     # via
     #   -c ./requirements/embed/../common/constraints.txt
     #   pandas
-openai==1.45.0
+openai==1.45.1
     # via -r ./requirements/embed/octoai.in
 opentelemetry-api==1.16.0
     # via opentelemetry-sdk

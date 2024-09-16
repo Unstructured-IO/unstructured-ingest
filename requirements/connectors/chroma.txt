@@ -123,7 +123,6 @@ overrides==7.7.0
 packaging==23.2
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
-    #   build
     #   huggingface-hub
     #   marshmallow
     #   onnxruntime
