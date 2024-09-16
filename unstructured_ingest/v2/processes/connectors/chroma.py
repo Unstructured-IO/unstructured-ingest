@@ -55,9 +55,7 @@ class ChromaConnectionConfig(ConnectionConfig):
     path: Optional[str] = Field(
         default=None, description="Location where Chroma is persisted, if not connecting via http."
     )
-    tenant: str = Field(
-        default="default_tenant", description="The tenant to use for this client."
-    )
+    tenant: str = Field(default="default_tenant", description="The tenant to use for this client.")
     database: str = Field(
         default="default_database", description="The database to use for this client."
     )
