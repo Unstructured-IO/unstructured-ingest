@@ -12,6 +12,8 @@
       ],
       "filetype": "text/html",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
@@ -37,6 +39,8 @@
       ],
       "filetype": "text/html",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
@@ -62,6 +66,8 @@
       ],
       "filetype": "text/html",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },
@@ -87,6 +93,8 @@
       ],
       "filetype": "text/html",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/example-docs/fake-html-cp1252.html"
         },

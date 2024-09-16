@@ -26,6 +26,9 @@ trap cleanup EXIT
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   s3 \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
   --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
@@ -38,16 +41,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --anonymous \
   --work-dir "$WORK_DIR"
 
-set +e
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
-EXIT_CODE=$?
-set -e
-
-if [ "$EXIT_CODE" -ne 0 ]; then
-  echo "The last script run exited with a non-zero exit code: $EXIT_CODE."
-  # Handle the error or exit
-fi
-
-"$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
-
-exit $EXIT_CODE
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

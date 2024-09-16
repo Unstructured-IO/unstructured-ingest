@@ -6,13 +6,10 @@
 #
 annotated-types==0.7.0
     # via pydantic
-anyio==3.7.1
+anyio==4.4.0
+    # via httpx
+certifi==2024.8.30
     # via
-    #   -c ./requirements/remote/../common/constraints.txt
-    #   httpx
-certifi==2024.7.4
-    # via
-    #   -c ./requirements/remote/../common/constraints.txt
     #   httpcore
     #   httpx
     #   requests
@@ -27,12 +24,10 @@ dataclasses-json==0.6.7
     # via
     #   -r ./requirements/remote/../common/base.in
     #   unstructured-client
-deepdiff==7.0.1
+deepdiff==8.0.1
     # via unstructured-client
 deprecated==1.2.14
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
+    # via opentelemetry-api
 exceptiongroup==1.2.2
     # via anyio
 h11==0.14.0
@@ -41,16 +36,12 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.2
     # via unstructured-client
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   httpx
     #   requests
     #   unstructured-client
-importlib-metadata==7.1.0
-    # via
-    #   -c ./requirements/remote/../common/constraints.txt
-    #   opentelemetry-api
 jsonpath-python==1.0.6
     # via unstructured-client
 marshmallow==3.22.0
@@ -67,15 +58,13 @@ numpy==1.26.4
     # via
     #   -c ./requirements/remote/../common/constraints.txt
     #   pandas
-opentelemetry-api==1.26.0
-    # via
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.26.0
-    # via -r ./requirements/remote/../common/base.in
-opentelemetry-semantic-conventions==0.47b0
+opentelemetry-api==1.16.0
     # via opentelemetry-sdk
-ordered-set==4.1.0
+opentelemetry-sdk==1.16.0
+    # via -r ./requirements/remote/../common/base.in
+opentelemetry-semantic-conventions==0.37b0
+    # via opentelemetry-sdk
+orderly-set==5.2.2
     # via deepdiff
 packaging==23.2
     # via
@@ -84,9 +73,9 @@ packaging==23.2
     #   unstructured-client
 pandas==2.2.2
     # via -r ./requirements/remote/../common/base.in
-pydantic==2.8.2
+pydantic==2.9.1
     # via -r ./requirements/remote/../common/base.in
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
 pypdf==4.3.1
     # via unstructured-client
@@ -95,7 +84,7 @@ python-dateutil==2.9.0.post0
     #   -r ./requirements/remote/../common/base.in
     #   pandas
     #   unstructured-client
-pytz==2024.1
+pytz==2024.2
     # via pandas
 requests==2.32.3
     # via
@@ -115,6 +104,7 @@ tqdm==4.66.5
     # via -r ./requirements/remote/../common/base.in
 typing-extensions==4.12.2
     # via
+    #   anyio
     #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
@@ -127,11 +117,11 @@ typing-inspect==0.9.0
     #   unstructured-client
 tzdata==2024.1
     # via pandas
-unstructured-client==0.25.5
+unstructured-client==0.25.8
     # via
     #   -c ./requirements/remote/../common/constraints.txt
     #   -r ./requirements/remote/client.in
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c ./requirements/remote/../common/constraints.txt
     #   requests
@@ -140,5 +130,6 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/remote/../common/constraints.txt
     #   deprecated
-zipp==3.20.1
-    # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

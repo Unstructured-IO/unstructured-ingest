@@ -56,6 +56,9 @@ wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   couchbase \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.date_created,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
@@ -72,4 +75,4 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --batch-size 2 \
   --verbose
 
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

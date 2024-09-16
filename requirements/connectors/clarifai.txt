@@ -6,15 +6,13 @@
 #
 annotated-types==0.7.0
     # via pydantic
-certifi==2024.7.4
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   requests
+certifi==2024.8.30
+    # via requests
 charset-normalizer==3.3.2
     # via requests
 clarifai==10.7.0
     # via -r ./requirements/connectors/clarifai.in
-clarifai-grpc==10.7.3
+clarifai-grpc==10.7.1
     # via clarifai
 click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
@@ -23,19 +21,15 @@ contextlib2==21.6.0
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
-googleapis-common-protos==1.64.0
+    # via opentelemetry-api
+googleapis-common-protos==1.65.0
     # via clarifai-grpc
-grpcio==1.64.3
-    # via clarifai-grpc
-idna==3.8
-    # via requests
-importlib-metadata==7.1.0
+grpcio==1.66.1
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
-    #   opentelemetry-api
+    #   clarifai-grpc
+idna==3.10
+    # via requests
 inquirerpy==0.3.4
     # via clarifai
 markdown-it-py==3.0.0
@@ -52,13 +46,11 @@ numpy==1.26.4
     #   clarifai
     #   pandas
     #   tritonclient
-opentelemetry-api==1.26.0
-    # via
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.26.0
+opentelemetry-api==1.16.0
+    # via opentelemetry-sdk
+opentelemetry-sdk==1.16.0
     # via -r ./requirements/connectors/../common/base.in
-opentelemetry-semantic-conventions==0.47b0
+opentelemetry-semantic-conventions==0.37b0
     # via opentelemetry-sdk
 packaging==23.2
     # via
@@ -77,9 +69,9 @@ protobuf==4.23.4
     #   -c ./requirements/connectors/../common/constraints.txt
     #   clarifai-grpc
     #   googleapis-common-protos
-pydantic==2.8.2
+pydantic==2.9.1
     # via -r ./requirements/connectors/../common/base.in
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
 pygments==2.18.0
     # via rich
@@ -89,13 +81,13 @@ python-dateutil==2.9.0.post0
     #   pandas
 python-rapidjson==1.20
     # via tritonclient
-pytz==2024.1
+pytz==2024.2
     # via pandas
 pyyaml==6.0.2
     # via clarifai
 requests==2.32.3
     # via clarifai-grpc
-rich==13.8.0
+rich==13.8.1
     # via clarifai
 schema==0.7.5
     # via clarifai
@@ -119,7 +111,7 @@ typing-inspect==0.9.0
     # via dataclasses-json
 tzdata==2024.1
     # via pandas
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   requests
@@ -129,5 +121,6 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
-zipp==3.20.1
-    # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

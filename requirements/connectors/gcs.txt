@@ -22,10 +22,8 @@ bs4==0.0.2
     # via -r ./requirements/connectors/gcs.in
 cachetools==5.5.0
     # via google-auth
-certifi==2024.7.4
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   requests
+certifi==2024.8.30
+    # via requests
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -35,9 +33,7 @@ dataclasses-json==0.6.7
 decorator==5.1.1
     # via gcsfs
 deprecated==1.2.14
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
+    # via opentelemetry-api
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -49,7 +45,7 @@ fsspec==2024.5.0
     #   gcsfs
 gcsfs==2024.5.0
     # via -r ./requirements/connectors/gcs.in
-google-api-core==2.19.1
+google-api-core==2.19.2
     # via
     #   google-cloud-core
     #   google-cloud-storage
@@ -66,25 +62,21 @@ google-cloud-core==2.4.1
     # via google-cloud-storage
 google-cloud-storage==2.18.2
     # via gcsfs
-google-crc32c==1.5.0
+google-crc32c==1.6.0
     # via
     #   google-cloud-storage
     #   google-resumable-media
 google-resumable-media==2.7.2
     # via google-cloud-storage
-googleapis-common-protos==1.64.0
+googleapis-common-protos==1.65.0
     # via google-api-core
-idna==3.8
+idna==3.10
     # via
     #   requests
     #   yarl
-importlib-metadata==7.1.0
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   opentelemetry-api
 marshmallow==3.22.0
     # via dataclasses-json
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
@@ -96,13 +88,11 @@ numpy==1.26.4
     #   pandas
 oauthlib==3.2.2
     # via requests-oauthlib
-opentelemetry-api==1.26.0
-    # via
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.26.0
+opentelemetry-api==1.16.0
+    # via opentelemetry-sdk
+opentelemetry-sdk==1.16.0
     # via -r ./requirements/connectors/../common/base.in
-opentelemetry-semantic-conventions==0.47b0
+opentelemetry-semantic-conventions==0.37b0
     # via opentelemetry-sdk
 packaging==23.2
     # via
@@ -118,21 +108,21 @@ protobuf==4.23.4
     #   google-api-core
     #   googleapis-common-protos
     #   proto-plus
-pyasn1==0.6.0
+pyasn1==0.6.1
     # via
     #   pyasn1-modules
     #   rsa
-pyasn1-modules==0.4.0
+pyasn1-modules==0.4.1
     # via google-auth
-pydantic==2.8.2
+pydantic==2.9.1
     # via -r ./requirements/connectors/../common/base.in
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
 python-dateutil==2.9.0.post0
     # via
     #   -r ./requirements/connectors/../common/base.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 requests==2.32.3
     # via
@@ -152,6 +142,7 @@ tqdm==4.66.5
     # via -r ./requirements/connectors/../common/base.in
 typing-extensions==4.12.2
     # via
+    #   multidict
     #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
@@ -160,7 +151,7 @@ typing-inspect==0.9.0
     # via dataclasses-json
 tzdata==2024.1
     # via pandas
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   requests
@@ -168,7 +159,8 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
-yarl==1.9.4
+yarl==1.11.1
     # via aiohttp
-zipp==3.20.1
-    # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

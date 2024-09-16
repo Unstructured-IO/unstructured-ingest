@@ -18,6 +18,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -41,6 +42,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -64,6 +66,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -87,6 +90,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -110,6 +114,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -133,6 +138,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -156,12 +162,13 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "fd24bf7bf21b4aab2a36021f9ebb253b",
     "text": "\u2022 In \"encoder-decoder attention\" layers, the queries come from the previous decoder layer, and the memory keys and values come from the output of the encoder. This allows every position in the decoder to attend over all positions in the input sequence. This mimics the typical encoder-decoder attention mechanisms in sequence-to-sequence models such as [38, 2, 9].",
     "metadata": {
@@ -179,12 +186,13 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "77762865993fd26c55c87cb45d75cad8",
     "text": "\u2022 The encoder contains self-attention layers. In a self-attention layer all of the keys, values and queries come from the same place, in this case, the output of the previous layer in the encoder. Each position in the encoder can attend to all positions in the previous layer of the encoder.",
     "metadata": {
@@ -202,12 +210,13 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
   },
   {
-    "type": "ListItem",
+    "type": "NarrativeText",
     "element_id": "41b9b9d2a4329a8f6075f4776403c2de",
     "text": "\u2022 Similarly, self-attention layers in the decoder allow each position in the decoder to attend to all positions in the decoder up to and including that position. We need to prevent leftward information flow in the decoder to preserve the auto-regressive property. We implement this inside of scaled dot-product attention by masking out (setting to \u2212\u221e) all values in the input of the softmax which correspond to illegal connections. See Figure 2.",
     "metadata": {
@@ -225,6 +234,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -248,6 +258,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -271,14 +282,15 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
   },
   {
     "type": "Formula",
-    "element_id": "eda9b46d50730928c8437d6149e01a2b",
-    "text": "FFN(x) = max(0, xW1 + b1)W2 + b2 (2)",
+    "element_id": "eba702ac258c00ce8a4e2150e3b0b5dc",
+    "text": "FFN(x) = max(0, xW1 + b1)W2 + b2",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -294,6 +306,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
@@ -317,36 +330,14 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
-        "filesize_bytes": 138124
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "63fc763509dec0fa03ba8296e4b0616e",
-    "text": "3.4 Embeddings and Softmax",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
-        "version": "f2819db63e5aa2a3a6b8ba305f1911ea",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1697584841.0",
-        "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
   },
   {
     "type": "NarrativeText",
-    "element_id": "ab8cefbb53c308302ee0e3c0c7ecfd25",
+    "element_id": "0be52b5e411636263e3881b672dca0c3",
     "text": "Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension dmodel. We also use the usual learned linear transfor- mation and softmax function to convert the decoder output to predicted next-token probabilities. In our model, we share the same weight matrix between the two embedding layers and the pre-softmax dmodel. linear transformation, similar to [30]. In the embedding layers, we multiply those weights by",
     "metadata": {
       "filetype": "application/pdf",
@@ -363,13 +354,62 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }
   },
   {
-    "type": "Footer",
-    "element_id": "b45e24bb89196d4b50d76df531acfaf2",
+    "type": "UncategorizedText",
+    "element_id": "3bc16d1f44390c70e5586b5cac9c83ef",
+    "text": "(2)",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+        "version": "f2819db63e5aa2a3a6b8ba305f1911ea",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1697584841.0",
+        "date_modified": "1697584841.0",
+        "permissions_data": null,
+        "filesize_bytes": 138124
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "17d2c45aa77fb612576f6b0ca784695a",
+    "text": "3.4 Embeddings and Softmax",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+        "version": "f2819db63e5aa2a3a6b8ba305f1911ea",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1697584841.0",
+        "date_modified": "1697584841.0",
+        "permissions_data": null,
+        "filesize_bytes": 138124
+      }
+    }
+  },
+  {
+    "type": "PageNumber",
+    "element_id": "820941fe83a7e9aa8c2ab484f366b7c9",
     "text": "5",
     "metadata": {
       "filetype": "application/pdf",
@@ -386,6 +426,7 @@
         },
         "date_created": "1697584841.0",
         "date_modified": "1697584841.0",
+        "permissions_data": null,
         "filesize_bytes": 138124
       }
     }

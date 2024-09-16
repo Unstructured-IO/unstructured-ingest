@@ -46,6 +46,9 @@ jq 'keys' <"$BOX_APP_CONFIG_PATH"
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   box \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
   --box-app-config "$BOX_APP_CONFIG_PATH" \
   --remote-url box://utic-test-ingest-fixtures \
@@ -58,4 +61,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --verbose \
   --work-dir "$WORK_DIR"
 
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

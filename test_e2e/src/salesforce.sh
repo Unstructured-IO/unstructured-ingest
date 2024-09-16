@@ -46,6 +46,9 @@ fi
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   salesforce \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --categories "EmailMessage,Campaign" \
   --download-dir "$DOWNLOAD_DIR" \
   --username "$SALESFORCE_USERNAME" \
@@ -59,4 +62,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --verbose \
   --work-dir "$WORK_DIR"
 
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
