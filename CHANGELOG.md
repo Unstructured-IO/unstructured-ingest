@@ -1,3 +1,9 @@
+## 0.0.16
+
+### Fixes
+
+* **Add constraint on pydantic** Make sure the version of pydantic being used with this repo pulls in the earliest version that introduces generic Secret, since this is used heavily.
+
 ## 0.0.15
 
 ### Fixes
