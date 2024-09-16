@@ -1,9 +1,16 @@
-## 0.0.15-dev4
+## 0.0.16-dev0
+
+### Enhancements
+
+### Fixes
+
+## 0.0.15
 
 ### Fixes
 
 * **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
 * **Sharepoint permission config requirement** The sharepoint connector was expecting the permission config, even though it should have been optional.
+* **Sharepoint CLI permission params made optional
 
 ### Enhancements
 

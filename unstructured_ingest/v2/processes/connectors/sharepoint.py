@@ -60,13 +60,16 @@ class SharepointAccessConfig(AccessConfig):
 
 
 class SharepointPermissionsConfig(BaseModel):
-    permissions_application_id: str = Field(description="Microsoft Graph API application id")
-    permissions_tenant: str = Field(
+    permissions_application_id: Optional[str] = Field(
+        default=None, description="Microsoft Graph API application id"
+    )
+    permissions_tenant: Optional[str] = Field(
+        default=None,
         description="url to get permissions data within tenant.",
         examples=["https://contoso.onmicrosoft.com"],
     )
-    permissions_client_cred: SecretStr = Field(
-        description="Microsoft Graph API application credentials"
+    permissions_client_cred: Optional[SecretStr] = Field(
+        default=None, description="Microsoft Graph API application credentials"
     )
     authority_url: Optional[SecretStr] = Field(
         repr=False,

@@ -41,6 +41,9 @@ source "$SCRIPT_DIR"/env_setup/airtable/component_ids.sh
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   airtable \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
   --personal-access-token "$AIRTABLE_PERSONAL_ACCESS_TOKEN" \
   --list-of-paths "$LARGE_TEST_LIST_OF_PATHS" \

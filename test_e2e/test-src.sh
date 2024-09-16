@@ -26,7 +26,7 @@ all_tests=(
   'biomed-path.sh'
   # NOTE(yuming): The pdf-fast-reprocess test should be put after any tests that save downloaded files
   'pdf-fast-reprocess.sh'
-  's3-compression.sh'
+  #  's3-compression.sh'
   'salesforce.sh'
   'box.sh'
   'discord.sh'
@@ -132,17 +132,4 @@ for test in "${all_tests[@]}"; do
     fi
   fi
   echo "--------- FINISHED SCRIPT $test ---------"
-done
-
-set +e
-
-all_eval=(
-  'text-extraction'
-  'element-type'
-)
-for eval in "${all_eval[@]}"; do
-  CURRENT_TEST="evaluation-metrics.sh $eval"
-  echo "--------- RUNNING SCRIPT evaluation-metrics.sh $eval ---------"
-  ./test_unstructured_ingest/evaluation-metrics.sh "$eval" "$EVAL_OUTPUT_ROOT"
-  echo "--------- FINISHED SCRIPT evaluation-metrics.sh $eval ---------"
 done

@@ -37,6 +37,7 @@ runs:
         fi
         make install-base
         make install-ci
+        make install-client
     - name: Save Cache
       if: steps.virtualenv-cache-restore.outputs.cache-hit != 'true'
       id: virtualenv-cache-save

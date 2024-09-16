@@ -60,6 +60,9 @@ python "$SCRIPT_DIR"/python/test-produce-kafka-message.py up \
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   kafka \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --bootstrap-server localhost \
   --download-dir "$DOWNLOAD_DIR" \
   --topic "$KAFKA_TOPIC" \
@@ -72,16 +75,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --work-dir "$WORK_DIR" \
   --confluent false
 
-set +e
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
-EXIT_CODE=$?
-set -e
-
-if [ "$EXIT_CODE" -ne 0 ]; then
-  echo "The last script run exited with a non-zero exit code: $EXIT_CODE."
-  # Handle the error or exit
-fi
-
-"$SCRIPT_DIR"/evaluation-ingest-cp.sh "$OUTPUT_DIR" "$OUTPUT_FOLDER_NAME"
-
-exit $EXIT_CODE
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

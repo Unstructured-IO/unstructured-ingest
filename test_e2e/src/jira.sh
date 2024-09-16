@@ -53,6 +53,9 @@ fi
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   jira \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
   --metadata-exclude filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --num-processes "$max_processes" \
@@ -68,4 +71,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --issues "JCTP2-4,JCTP2-7,JCTP2-8,10012,JCTP2-11" \
   --work-dir "$WORK_DIR"
 
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

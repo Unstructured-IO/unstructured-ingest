@@ -6,22 +6,14 @@
 #
 annotated-types==0.7.0
     # via pydantic
-certifi==2024.7.4
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   pinecone-client
+certifi==2024.8.30
+    # via pinecone-client
 click==8.1.7
     # via -r ./requirements/connectors/../common/base.in
 dataclasses-json==0.6.7
     # via -r ./requirements/connectors/../common/base.in
 deprecated==1.2.14
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
-importlib-metadata==7.1.0
-    # via
-    #   -c ./requirements/connectors/../common/constraints.txt
-    #   opentelemetry-api
+    # via opentelemetry-api
 marshmallow==3.22.0
     # via dataclasses-json
 mypy-extensions==1.0.0
@@ -30,13 +22,11 @@ numpy==1.26.4
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pandas
-opentelemetry-api==1.26.0
-    # via
-    #   opentelemetry-sdk
-    #   opentelemetry-semantic-conventions
-opentelemetry-sdk==1.26.0
+opentelemetry-api==1.16.0
+    # via opentelemetry-sdk
+opentelemetry-sdk==1.16.0
     # via -r ./requirements/connectors/../common/base.in
-opentelemetry-semantic-conventions==0.47b0
+opentelemetry-semantic-conventions==0.37b0
     # via opentelemetry-sdk
 packaging==23.2
     # via
@@ -46,21 +36,21 @@ pandas==2.2.2
     # via -r ./requirements/connectors/../common/base.in
 pinecone-client==5.0.1
     # via -r ./requirements/connectors/pinecone.in
-pinecone-plugin-inference==1.0.3
+pinecone-plugin-inference==1.1.0
     # via pinecone-client
 pinecone-plugin-interface==0.0.7
     # via
     #   pinecone-client
     #   pinecone-plugin-inference
-pydantic==2.8.2
+pydantic==2.9.1
     # via -r ./requirements/connectors/../common/base.in
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
 python-dateutil==2.9.0.post0
     # via
     #   -r ./requirements/connectors/../common/base.in
     #   pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 six==1.16.0
     # via python-dateutil
@@ -79,7 +69,7 @@ typing-inspect==0.9.0
     # via dataclasses-json
 tzdata==2024.1
     # via pandas
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   pinecone-client
@@ -87,5 +77,6 @@ wrapt==1.16.0
     # via
     #   -c ./requirements/connectors/../common/constraints.txt
     #   deprecated
-zipp==3.20.1
-    # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

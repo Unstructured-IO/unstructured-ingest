@@ -16,6 +16,7 @@
           "protocol": "s3",
           "remote_file_path": "s3://utic-dev-tech-fixtures/"
         },
+        "permissions_data": null,
         "filesize_bytes": 19610
       }
     }

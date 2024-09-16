@@ -38,6 +38,9 @@ fi
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   airtable \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
   --personal-access-token "$AIRTABLE_PERSONAL_ACCESS_TOKEN" \
   --list-of-paths "$VARIED_DATA_BASE_ID,$VARIED_DATA_BASE_ID_2" \
@@ -49,4 +52,4 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --work-dir "$WORK_DIR" \
   --verbose
 
-"$SCRIPT_DIR"/check-diff-expected-output.sh $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

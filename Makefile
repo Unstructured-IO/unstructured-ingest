@@ -43,10 +43,6 @@ install-all-embedders:
 install-all-deps:
 	find requirements -type f -name "*.txt" ! -name "constraints.txt" -exec pip install -r '{}' ';'
 
-.PHONY: install-pandoc
-install-pandoc:
-	ARCH=${ARCH} ./scripts/install-pandoc.sh
-
 .PHONY: install-docker-compose
 install-docker-compose:
 	ARCH=${ARCH} ./scripts/install-docker-compose.sh
