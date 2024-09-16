@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import multiprocessing as mp
+import shutil
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -118,10 +119,10 @@ class PipelineStep(ABC):
         iterable = iterable or []
         if iterable:
             logger.info(
-                f"Calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
+                f"calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
             )
         else:
-            logger.info(f"Calling {self.__class__.__name__} with no inputs")
+            logger.info(f"calling {self.__class__.__name__} with no inputs")
         if self.context.async_supported and self.process.is_async():
             return self.process_async(iterable=iterable)
         if self.context.mp_supported:
@@ -179,6 +180,12 @@ class PipelineStep(ABC):
     @property
     def cache_dir(self) -> Path:
         return Path(self.context.work_dir) / self.identifier
+
+    def delete_cache(self):
+        if self.context.iter_delete and self.cache_dir.exists():
+            cache_dir = self.cache_dir
+            logger.info(f"deleting {self.identifier} cache dir {cache_dir}")
+            shutil.rmtree(cache_dir)
 
 
 @dataclass

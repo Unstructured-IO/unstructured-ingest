@@ -101,7 +101,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         if self.username and access_config.password:
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
         client_input = OpenSearchClientInput(**client_input_kwargs)
-        logger.debug(f"OpenSearch client inputs mapped to: {client_input.dict()}")
+        logger.debug(f"opensearch client inputs mapped to: {client_input.dict()}")
         client_kwargs = client_input.dict()
         if client_input.http_auth is not None:
             client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()

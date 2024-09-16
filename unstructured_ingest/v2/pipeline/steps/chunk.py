@@ -29,7 +29,7 @@ class ChunkStep(PipelineStep):
 
     def __post_init__(self):
         config = self.process.config.json() if self.process.config else None
-        logger.info(f"Created {self.identifier} with configs: {config}")
+        logger.info(f"created {self.identifier} with configs: {config}")
 
     def should_chunk(self, filepath: Path, file_data: FileData) -> bool:
         if self.context.reprocess or file_data.reprocess:
@@ -44,7 +44,7 @@ class ChunkStep(PipelineStep):
 
     def _save_output(self, output_filepath: str, chunked_content: list[dict]):
         with open(str(output_filepath), "w") as f:
-            logger.debug(f"Writing chunker output to: {output_filepath}")
+            logger.debug(f"writing chunker output to: {output_filepath}")
             json.dump(chunked_content, f, indent=2)
 
     async def _run_async(
@@ -54,7 +54,7 @@ class ChunkStep(PipelineStep):
         file_data = FileData.from_file(path=file_data_path)
         output_filepath = self.get_output_filepath(filename=path)
         if not self.should_chunk(filepath=output_filepath, file_data=file_data):
-            logger.debug(f"Skipping chunking, output already exists: {output_filepath}")
+            logger.debug(f"skipping chunking, output already exists: {output_filepath}")
             return ChunkStepResponse(file_data_path=file_data_path, path=str(output_filepath))
         fn_kwargs = {"elements_filepath": path}
         if not asyncio.iscoroutinefunction(fn):

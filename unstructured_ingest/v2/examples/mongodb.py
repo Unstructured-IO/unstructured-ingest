@@ -27,7 +27,7 @@ output_path = work_dir / "output"
 download_path = work_dir / "download"
 
 if __name__ == "__main__":
-    logger.info(f"Writing all content in: {work_dir.resolve()}")
+    logger.info(f"writing all content in: {work_dir.resolve()}")
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve())),
         indexer_config=LocalIndexerConfig(input_path=str(docs_path.resolve()) + "/multisimple/"),

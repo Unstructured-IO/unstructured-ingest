@@ -24,9 +24,9 @@ output_path = work_dir / "output"
 download_path = work_dir / "download"
 
 if __name__ == "__main__":
-    logger.info(f"Writing all content in: {work_dir.resolve()}")
+    logger.info(f"writing all content in: {work_dir.resolve()}")
     Pipeline.from_configs(
-        context=ProcessorConfig(work_dir=str(work_dir.resolve()), verbose=True),
+        context=ProcessorConfig(work_dir=str(work_dir.resolve()), verbose=True, iter_delete=True),
         indexer_config=S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/small-pdf-set/"),
         downloader_config=S3DownloaderConfig(download_dir=download_path),
         source_connection_config=S3ConnectionConfig(anonymous=True),

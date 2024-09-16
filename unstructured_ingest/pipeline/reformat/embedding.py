@@ -44,7 +44,7 @@ class Embedder(ReformatNode):
                 and json_path.is_file()
                 and json_path.stat().st_size
             ):
-                logger.debug(f"File exists: {json_path}, skipping embedding")
+                logger.debug(f"file exists: {json_path}, skipping embedding")
                 return str(json_path)
             with open(elements_json) as f:
                 elements = json.load(f)

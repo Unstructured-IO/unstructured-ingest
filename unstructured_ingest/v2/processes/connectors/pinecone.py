@@ -57,7 +57,7 @@ class PineconeConnectionConfig(ConnectionConfig):
         )
 
         index = pc.Index(name=self.index_name, **index_kwargs)
-        logger.debug(f"Connected to index: {pc.describe_index(self.index_name)}")
+        logger.debug(f"connected to index: {pc.describe_index(self.index_name)}")
         return index
 
 
@@ -166,7 +166,7 @@ class PineconeUploader(Uploader):
                 max_batch_size=self.upload_config.batch_size,
             )
         )
-        logger.info(f"Split doc with {len(elements_dict)} elements into {len(chunks)} batches")
+        logger.info(f"split doc with {len(elements_dict)} elements into {len(chunks)} batches")
 
         max_pool_threads = min(len(chunks), MAX_POOL_THREADS)
         if self.upload_config.pool_threads:

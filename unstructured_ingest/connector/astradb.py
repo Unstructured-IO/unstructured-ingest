@@ -222,7 +222,7 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
-        logger.info(f"Inserting / updating {len(elements_dict)} documents to Astra DB.")
+        logger.info(f"inserting / updating {len(elements_dict)} documents to Astra DB.")
 
         astra_db_batch_size = self.write_config.batch_size
 

@@ -57,7 +57,7 @@ class PipelineNode(DataClassJsonMixin, ABC):
         iterable = iterable if iterable else []
         if iterable:
             logger.info(
-                f"Calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
+                f"calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
             )
 
         self.initialize()
@@ -92,7 +92,7 @@ class PipelineNode(DataClassJsonMixin, ABC):
 
     def initialize(self):
         if path := self.get_path():
-            logger.info(f"Creating {path}")
+            logger.info(f"creating {path}")
             path.mkdir(parents=True, exist_ok=True)
         ingest_log_streaming_init(logging.DEBUG if self.pipeline_context.verbose else logging.INFO)
 

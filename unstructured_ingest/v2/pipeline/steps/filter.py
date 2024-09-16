@@ -17,7 +17,7 @@ class FilterStep(PipelineStep):
 
     def __post_init__(self):
         config = self.process.config.json() if self.process.config else None
-        logger.info(f"Created {self.identifier} with configs: {config}")
+        logger.info(f"created {self.identifier} with configs: {config}")
 
     async def _run_async(self, fn: Callable, file_data_path: str, **kwargs) -> Optional[dict]:
         file_data = FileData.from_file(path=file_data_path)

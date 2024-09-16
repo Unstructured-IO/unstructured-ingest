@@ -30,7 +30,7 @@ class Partitioner(PartitionNode):
                 and json_path.is_file()
                 and json_path.stat().st_size
             ):
-                logger.info(f"File exists: {json_path}, skipping partition")
+                logger.info(f"file exists: {json_path}, skipping partition")
                 return str(json_path)
             partition_kwargs: t.Dict[str, t.Any] = {
                 "strategy": self.partition_config.strategy,

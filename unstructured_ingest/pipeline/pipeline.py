@@ -96,7 +96,7 @@ class Pipeline(DataClassJsonMixin):
         for reformat_node in self.reformat_nodes:
             reformatted_jsons = reformat_node(iterable=partitioned_jsons)
             if not reformatted_jsons:
-                logger.info(f"No files to process after {reformat_node.__class__.__name__}")
+                logger.info(f"no files to process after {reformat_node.__class__.__name__}")
                 return
             partitioned_jsons = reformatted_jsons
 

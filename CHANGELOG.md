@@ -1,4 +1,4 @@
-## 0.0.15-dev2
+## 0.0.15-dev3
 
 ### Fixes
 
@@ -8,6 +8,7 @@
 ### Enhancements
 
 * **Migrate airtable connector to v2**
+* **Support iteratively deleting cached content** Add a flag to delete cached content once it's no longer needed for systems that are limited in memory.
 
 ## 0.0.14
 

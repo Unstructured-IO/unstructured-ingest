@@ -31,7 +31,7 @@ class UploadStageStep(PipelineStep):
             self.process.upload_stager_config.json() if self.process.upload_stager_config else None
         )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Created {self.identifier} with configs: {config}")
+        logger.info(f"created {self.identifier} with configs: {config}")
 
     async def _run_async(
         self, fn: Callable, path: str, file_data_path: str

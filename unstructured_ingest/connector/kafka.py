@@ -114,7 +114,7 @@ class KafkaSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
 
     def initialize(self):
         topic = self.connector_config.topic
-        logger.info(f"Subscribing to topic: {topic}")
+        logger.info(f"subscribing to topic: {topic}")
         self.kafka_consumer.subscribe([topic])
 
     @property
@@ -149,7 +149,7 @@ class KafkaSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
             conf["sasl.password"] = secret
 
         consumer = Consumer(conf)
-        logger.debug(f"Kafka Consumer connected to bootstrap: {bootstrap}")
+        logger.debug(f"kafka consumer connected to bootstrap: {bootstrap}")
         return consumer
 
     @SourceConnectionError.wrap
@@ -161,7 +161,7 @@ class KafkaSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
 
         collected = []
         num_messages_to_consume = self.connector_config.num_messages_to_consume
-        logger.info(f"Config set for blocking on {num_messages_to_consume} messages")
+        logger.info(f"config set for blocking on {num_messages_to_consume} messages")
         # Consume specified number of messages
         while running:
             msg = consumer.poll(timeout=self.connector_config.timeout)
@@ -178,7 +178,7 @@ class KafkaSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
             else:
                 collected.append(json.loads(msg.value().decode("utf8")))
                 if len(collected) >= num_messages_to_consume:
-                    logger.debug(f"Found {len(collected)} messages, stopping")
+                    logger.debug(f"found {len(collected)} messages, stopping")
                     consumer.commit(asynchronous=False)
                     break
 
@@ -243,7 +243,7 @@ class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConn
             conf["sasl.password"] = secret
 
         producer = Producer(conf)
-        logger.debug(f"Connected to bootstrap: {bootstrap}")
+        logger.debug(f"connected to bootstrap: {bootstrap}")
         return producer
 
     def check_connection(self):
@@ -255,7 +255,7 @@ class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConn
 
     @DestinationConnectionError.wrap
     def upload_msg(self, batch) -> int:
-        logger.debug(f"Uploading batch: {batch}")
+        logger.debug(f"uploading batch: {batch}")
         topic = self.connector_config.topic
         producer = self.kafka_producer
         uploaded = 0
@@ -267,7 +267,7 @@ class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConn
 
     @DestinationConnectionError.wrap
     def write_dict(self, *args, dict_list: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
-        logger.info(f"Writing {len(dict_list)} documents to Kafka")
+        logger.info(f"writing {len(dict_list)} documents to Kafka")
         num_uploaded = 0
 
         for chunk in batch_generator(dict_list, self.write_config.batch_size):
@@ -275,7 +275,7 @@ class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConn
 
         producer = self.kafka_producer
         producer.flush()
-        logger.info(f"Uploaded {num_uploaded} documents to Kafka")
+        logger.info(f"uploaded {num_uploaded} documents to Kafka")
 
     def write(self, docs: t.List[BaseIngestDoc]) -> None:
         content_list: t.List[t.Dict[str, t.Any]] = []

@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict, TypeVar
@@ -82,7 +83,7 @@ class DownloadStep(PipelineStep):
                 f"match size of local file: {file_size_bytes}, updating"
             )
             file_data.metadata.filesize_bytes = file_size_bytes
-        logger.debug(f"Updating file data with new content: {file_data.to_dict()}")
+        logger.debug(f"updating file data with new content: {file_data.to_dict()}")
         with file_data_path.open("w") as file:
             json.dump(file_data.to_dict(), file, indent=2)
 
@@ -90,7 +91,7 @@ class DownloadStep(PipelineStep):
         file_data = FileData.from_file(path=file_data_path)
         download_path = self.process.get_download_path(file_data=file_data)
         if not self.should_download(file_data=file_data, file_data_path=file_data_path):
-            logger.debug(f"Skipping download, file already exists locally: {download_path}")
+            logger.debug(f"skipping download, file already exists locally: {download_path}")
             self.update_file_data(
                 file_data=file_data,
                 file_data_path=Path(file_data_path),
@@ -185,3 +186,17 @@ class DownloadStep(PipelineStep):
         if extras:
             hashable_string += "".join(extras)
         return hashlib.sha256(hashable_string.encode()).hexdigest()[:12]
+
+    @property
+    def cache_dir(self) -> Path:
+        return self.process.download_config.download_dir
+
+    def delete_cache(self):
+        if (
+            self.context.iter_delete
+            and not self.context.preserve_downloads
+            and self.cache_dir.exists()
+        ):
+            cache_dir = self.cache_dir
+            logger.info(f"deleting {self.identifier} cache dir {cache_dir}")
+            shutil.rmtree(cache_dir)

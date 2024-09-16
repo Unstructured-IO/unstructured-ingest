@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import multiprocessing as mp
+import shutil
 from dataclasses import InitVar, dataclass, field
+from pathlib import Path
 from typing import Any
 
 from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
@@ -115,7 +117,9 @@ class Pipeline:
             )
 
     def cleanup(self):
-        pass
+        if self.context.delete_cache and Path(self.context.work_dir).exists():
+            logger.info(f"deleting cache directory: {self.context.work_dir}")
+            shutil.rmtree(self.context.work_dir)
 
     def log_statuses(self):
         if status := self.context.status:
@@ -183,7 +187,7 @@ class Pipeline:
         return filtered_records
 
     def _run(self):
-        logger.info(f"Running local pipeline: {self} with configs: " f"{self.context.json()}")
+        logger.info(f"running local pipeline: {self} with configs: " f"{self.context.json()}")
         if self.context.mp_supported:
             manager = mp.Manager()
             self.context.status = manager.dict()
@@ -228,26 +232,33 @@ class Pipeline:
                 logger.info("No files to process after filtering uncompressed content, exiting")
                 return
 
-        if not downloaded_data:
+        if not downloaded_data or self.context.download_only:
             return
 
         # Partition content
         elements = self.partitioner_step(downloaded_data)
+        # Download data non longer needed, delete if possible
+        self.downloader_step.delete_cache()
         elements = self.clean_results(results=elements)
         if not elements:
             logger.info("No files to process after partitioning, exiting")
             return
 
         # Run element specific modifiers
-        for step in [self.chunker_step, self.embedder_step, self.stager_step]:
-            elements = step(elements) if step else elements
+        last_step = self.partitioner_step
+        for step in [s for s in [self.chunker_step, self.embedder_step, self.stager_step] if s]:
+            elements = step(elements)
             elements = self.clean_results(results=elements)
+            # Delete data from previous step if possible since no longer needed
+            last_step.delete_cache()
+            last_step = step
             if not elements:
-                logger.info(f"No files to process after {step.__class__.__name__}, exiting")
+                logger.info(f"no files to process after {step.__class__.__name__}, exiting")
                 return
 
         # Upload the final result
         self.uploader_step(iterable=elements)
+        last_step.delete_cache()
 
     def __str__(self):
         s = [str(self.indexer_step)]
