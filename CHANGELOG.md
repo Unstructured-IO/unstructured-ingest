@@ -1,8 +1,25 @@
-## 0.0.14-dev1
+## 0.0.15-dev4
+
+### Fixes
+
+* **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
+* **Sharepoint permission config requirement** The sharepoint connector was expecting the permission config, even though it should have been optional.
+
+### Enhancements
+
+* **Migrate airtable connector to v2**
+* **Support iteratively deleting cached content** Add a flag to delete cached content once it's no longer needed for systems that are limited in memory.
+
+## 0.0.14
 
 ### Enhancements
 
 * **Support async batch uploads for pinecone connector**
+* **Migrate embedders** Move embedder implementations from the open source unstructured repo into this one.
+
+### Fixes
+
+* **Misc. Onedrive connector fixes**
 
 ## 0.0.13
 
@@ -24,16 +41,11 @@
 
 * **Fix OpenSearch connector** OpenSearch connector did not work when `http_auth` was not provided
 
-### Fixes
-
 ## 0.0.10
 
 ### Enhancements
 
 * "Fix tar extraction" - tar extraction function assumed archive was gzip compressed which isn't true for supported `.tar` archives. Updated to work for both compressed and uncompressed tar archives.
-
-### Fixes
-
 
 ## 0.0.9
 
@@ -72,7 +84,7 @@
 
 ### Fixes
 
-* **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partion` to avoid a breaking change in the newest version.
+* **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partition` to avoid a breaking change in the newest version.
 
 ## 0.0.5
 
@@ -93,7 +105,7 @@
 
 * **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
 * **Leverage pydantic base models** All user-supplied configs are now derived from pydantic base models to leverage better type checking and add built in support for sensitive fields.
-* **Autogenerate click options from base models** Leverage th pydantic base models for all configs to autogenerate teh cli options exposed when running ingest as a CLI.
+* **Autogenerate click options from base models** Leverage the pydantic base models for all configs to autogenerate the cli options exposed when running ingest as a CLI.
 * **Drop required Unstructured dependency** Unstructured was moved to an extra dependency to only be imported when needed for functionality such as local partitioning/chunking.
 * **Rebrand Astra to Astra DB** The Astra DB integration was re-branded to be consistent with DataStax standard branding.
 

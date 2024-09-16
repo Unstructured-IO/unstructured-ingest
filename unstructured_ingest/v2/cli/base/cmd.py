@@ -102,7 +102,7 @@ class BaseCmd(ABC):
         cmd.params.extend(options)
         return cmd
 
-    def get_pipline(
+    def get_pipeline(
         self,
         src: str,
         source_options: dict[str, Any],
@@ -122,7 +122,7 @@ class BaseCmd(ABC):
             pipeline_kwargs["chunker"] = chunker
         if filterer := self.get_filterer(options=source_options):
             pipeline_kwargs["filterer"] = filterer
-        if embedder := self.get_embeder(options=source_options):
+        if embedder := self.get_embedder(options=source_options):
             pipeline_kwargs["embedder"] = embedder
         if dest:
             logger.debug(
@@ -160,7 +160,7 @@ class BaseCmd(ABC):
         return Filterer(config=filterer_configs)
 
     @staticmethod
-    def get_embeder(options: dict[str, Any]) -> Optional[Embedder]:
+    def get_embedder(options: dict[str, Any]) -> Optional[Embedder]:
         embedder_config = extract_config(flat_data=options, config=EmbedderConfig)
         if not embedder_config.embedding_provider:
             return None

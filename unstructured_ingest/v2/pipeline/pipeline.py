@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import logging
 import multiprocessing as mp
+import shutil
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Optional, Union
+from pathlib import Path
+from typing import Any
 
 from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
@@ -48,33 +52,33 @@ class Pipeline:
     partitioner: InitVar[Partitioner]
     partitioner_step: PartitionStep = field(init=False)
 
-    chunker: InitVar[Optional[Chunker]] = None
-    chunker_step: ChunkStep = field(init=False, default=None)
+    chunker: InitVar[Chunker | None] = None
+    chunker_step: ChunkStep | None = field(init=False, default=None)
 
-    embedder: InitVar[Optional[Embedder]] = None
-    embedder_step: EmbedStep = field(init=False, default=None)
+    embedder: InitVar[Embedder | None] = None
+    embedder_step: EmbedStep | None = field(init=False, default=None)
 
-    stager: InitVar[Optional[UploadStager]] = None
-    stager_step: UploadStageStep = field(init=False, default=None)
+    stager: InitVar[UploadStager | None] = None
+    stager_step: UploadStageStep | None = field(init=False, default=None)
 
     uploader: InitVar[Uploader] = field(default=LocalUploader())
-    uploader_step: UploadStep = field(init=False, default=None)
+    uploader_step: UploadStep | None = field(init=False, default=None)
 
-    uncompress_step: UncompressStep = field(init=False, default=None)
+    uncompress_step: UncompressStep | None = field(init=False, default=None)
 
-    filterer: InitVar[Optional[Filterer]] = None
-    filter_step: FilterStep = field(init=False, default=None)
+    filterer: InitVar[Filterer | None] = None
+    filter_step: FilterStep | None = field(init=False, default=None)
 
     def __post_init__(
         self,
         indexer: IndexerT,
         downloader: DownloaderT,
         partitioner: Partitioner,
-        chunker: Chunker = None,
-        embedder: Embedder = None,
-        stager: UploadStager = None,
-        uploader: Uploader = None,
-        filterer: Filterer = None,
+        chunker: Chunker | None = None,
+        embedder: Embedder | None = None,
+        stager: UploadStager | None = None,
+        uploader: Uploader | None = None,
+        filterer: Filterer | None = None,
     ):
         make_default_logger(level=logging.DEBUG if self.context.verbose else logging.INFO)
         otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint)
@@ -113,7 +117,9 @@ class Pipeline:
             )
 
     def cleanup(self):
-        pass
+        if self.context.delete_cache and Path(self.context.work_dir).exists():
+            logger.info(f"deleting cache directory: {self.context.work_dir}")
+            shutil.rmtree(self.context.work_dir)
 
     def log_statuses(self):
         if status := self.context.status:
@@ -136,7 +142,7 @@ class Pipeline:
             if self.context.status:
                 raise PipelineError("Pipeline did not run successfully")
 
-    def clean_results(self, results: Optional[list[Union[Any, list[Any]]]]) -> Optional[list[Any]]:
+    def clean_results(self, results: list[Any | list[Any]] | None) -> list[Any] | None:
         if not results:
             return None
         results = [r for r in results if r]
@@ -181,7 +187,7 @@ class Pipeline:
         return filtered_records
 
     def _run(self):
-        logger.info(f"Running local pipline: {self} with configs: " f"{self.context.json()}")
+        logger.info(f"running local pipeline: {self} with configs: " f"{self.context.json()}")
         if self.context.mp_supported:
             manager = mp.Manager()
             self.context.status = manager.dict()
@@ -226,26 +232,33 @@ class Pipeline:
                 logger.info("No files to process after filtering uncompressed content, exiting")
                 return
 
-        if not downloaded_data:
+        if not downloaded_data or self.context.download_only:
             return
 
         # Partition content
         elements = self.partitioner_step(downloaded_data)
+        # Download data non longer needed, delete if possible
+        self.downloader_step.delete_cache()
         elements = self.clean_results(results=elements)
         if not elements:
             logger.info("No files to process after partitioning, exiting")
             return
 
         # Run element specific modifiers
-        for step in [self.chunker_step, self.embedder_step, self.stager_step]:
-            elements = step(elements) if step else elements
+        last_step = self.partitioner_step
+        for step in [s for s in [self.chunker_step, self.embedder_step, self.stager_step] if s]:
+            elements = step(elements)
             elements = self.clean_results(results=elements)
+            # Delete data from previous step if possible since no longer needed
+            last_step.delete_cache()
+            last_step = step
             if not elements:
-                logger.info(f"No files to process after {step.__class__.__name__}, exiting")
+                logger.info(f"no files to process after {step.__class__.__name__}, exiting")
                 return
 
         # Upload the final result
         self.uploader_step(iterable=elements)
+        last_step.delete_cache()
 
     def __str__(self):
         s = [str(self.indexer_step)]
@@ -274,12 +287,12 @@ class Pipeline:
         downloader_config: DownloaderConfigT,
         source_connection_config: ConnectionConfig,
         partitioner_config: PartitionerConfig,
-        filterer_config: FiltererConfig = None,
-        chunker_config: Optional[ChunkerConfig] = None,
-        embedder_config: Optional[EmbedderConfig] = None,
-        destination_connection_config: Optional[ConnectionConfig] = None,
-        stager_config: Optional[UploadStagerConfigT] = None,
-        uploader_config: Optional[UploaderConfigT] = None,
+        filterer_config: FiltererConfig | None = None,
+        chunker_config: ChunkerConfig | None = None,
+        embedder_config: EmbedderConfig | None = None,
+        destination_connection_config: ConnectionConfig | None = None,
+        stager_config: UploadStagerConfigT | None = None,
+        uploader_config: UploaderConfigT | None = None,
     ) -> "Pipeline":
         # Get registry key based on indexer config
         source_entry = {

@@ -24,12 +24,12 @@ class Reader(SourceNode):
             and doc.filename.is_file()
             and doc.filename.stat().st_size
         ):
-            logger.info(f"File exists: {doc.filename}, skipping download")
+            logger.info(f"file exists: {doc.filename}, skipping download")
             # Still need to fetch metadata if file exists locally
             doc.update_source_metadata()
         else:
             serialized_doc = doc.to_json(redact_sensitive=True)
-            logger.debug(f"Fetching {serialized_doc} - PID: {os.getpid()}")
+            logger.debug(f"fetching {serialized_doc} - PID: {os.getpid()}")
             if self.retry_strategy:
                 self.retry_strategy(doc.get_file)
             else:

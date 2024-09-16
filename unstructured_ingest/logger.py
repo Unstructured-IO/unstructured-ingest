@@ -95,7 +95,7 @@ class SensitiveFormatter(logging.Formatter):
 
 
 def remove_root_handlers(logger: logging.Logger) -> None:
-    # NOTE(robinson) - in some environments such as Google Colab, there is a root handler
+    # NOTE(robinson): in some environments such as Google Colab, there is a root handler
     # that doesn't not mask secrets, meaning sensitive info such as api keys appear in logs.
     # Removing these when they exist prevents this behavior
     if logger.root.hasHandlers():

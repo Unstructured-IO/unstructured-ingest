@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 from pydantic import BaseModel
@@ -47,14 +48,14 @@ class SrcCmd(BaseCmd):
         options = self.consolidate_options(options=options)
         return options
 
-    def cmd(self, ctx: click.Context, **options) -> None:
+    def cmd(self, ctx: click.Context, **options: dict[str, Any]) -> None:
         if ctx.invoked_subcommand:
             return
 
         conform_click_options(options)
         logger.setLevel(logging.DEBUG if options.get("verbose", False) else logging.INFO)
         try:
-            pipeline = self.get_pipline(src=self.cmd_name, source_options=options)
+            pipeline = self.get_pipeline(src=self.cmd_name, source_options=options)
             pipeline.run()
         except Exception as e:
             logger.error(f"failed to run source command {self.cmd_name}: {e}", exc_info=True)

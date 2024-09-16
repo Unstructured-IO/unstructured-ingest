@@ -222,7 +222,7 @@ class GoogleDriveIngestDoc(IngestDocSessionHandleMixin, IngestDocCleanupMixin, B
             dir_ = Path(self.meta["download_dir"])
             if dir_:
                 if not dir_.is_dir():
-                    logger.debug(f"Creating directory: {self.meta.get('download_dir')}")
+                    logger.debug(f"creating directory: {self.meta.get('download_dir')}")
 
                     if dir_:
                         dir_.mkdir(parents=True, exist_ok=True)
@@ -230,7 +230,7 @@ class GoogleDriveIngestDoc(IngestDocSessionHandleMixin, IngestDocCleanupMixin, B
                 with open(self.filename, "wb") as handler:
                     handler.write(file.getbuffer())
                     saved = True
-                    logger.debug(f"File downloaded: {self.filename}.")
+                    logger.debug(f"file downloaded: {self.filename}.")
         if not saved:
             logger.error(f"Error while downloading and saving file: {self.filename}.")
 
@@ -241,7 +241,7 @@ class GoogleDriveIngestDoc(IngestDocSessionHandleMixin, IngestDocCleanupMixin, B
         self._output_filename.parent.mkdir(parents=True, exist_ok=True)
         with open(self._output_filename, "w") as output_f:
             output_f.write(json.dumps(self.isd_elems_no_filename, ensure_ascii=False, indent=2))
-        logger.info(f"Wrote {self._output_filename}")
+        logger.info(f"wrote {self._output_filename}")
 
 
 @dataclass
@@ -295,7 +295,7 @@ class GoogleDriveSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnecto
                                 guess = guess_extension(export_mime)
                                 ext = guess if guess else ext
 
-                        # TODO (Habeeb): Consider filtering at the query level.
+                        # TODO(Habeeb): Consider filtering at the query level.
                         if (
                             self.connector_config.extension
                             and self.connector_config.extension != ext

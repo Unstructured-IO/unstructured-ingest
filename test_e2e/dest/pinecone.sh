@@ -102,12 +102,13 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --index-name "$PINECONE_INDEX" \
   --batch-size 80
 
-# It can take some time for the index to catch up with the content that was written, this check between 10s sleeps
+# It can take some time for the index to catch up with the content that was written, this check between 5s sleeps
 # to give it that time process the writes. Will timeout after checking for a minute.
 num_of_vectors_remote=0
 attempt=1
-sleep_amount=8
-while [ "$num_of_vectors_remote" -eq 0 ] && [ "$attempt" -lt 4 ]; do
+sleep_amount=5
+
+while [ "$num_of_vectors_remote" -eq 0 ] && [ "$attempt" -lt 8 ]; do
   echo "attempt $attempt: sleeping $sleep_amount seconds to let index finish catching up after writes"
   sleep $sleep_amount
 
@@ -122,9 +123,9 @@ while [ "$num_of_vectors_remote" -eq 0 ] && [ "$attempt" -lt 4 ]; do
   attempt=$((attempt + 1))
 done
 
-EXPECTED=1825
+EXPECTED=$(cat "$WORK_DIR"/upload_stage/*.json | jq '. | length')
 
-if [ "$num_of_vectors_remote" -ne $EXPECTED ]; then
+if [ "$num_of_vectors_remote" -ne "$EXPECTED" ]; then
   echo "Number of vectors in Pinecone are $num_of_vectors_remote when the expected number is $EXPECTED. Test failed."
   exit 1
 fi

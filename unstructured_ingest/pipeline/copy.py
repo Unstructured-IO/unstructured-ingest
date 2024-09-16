@@ -15,5 +15,5 @@ class Copier(CopyNode):
         ingest_doc = create_ingest_doc_from_dict(ingest_doc_dict)
         desired_output = ingest_doc._output_filename
         Path(desired_output).parent.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Copying {json_path} -> {desired_output}")
+        logger.info(f"copying {json_path} -> {desired_output}")
         shutil.copy(json_path, desired_output)

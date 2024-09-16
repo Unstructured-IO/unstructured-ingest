@@ -13,6 +13,7 @@ CREATE TABLE elements (
     data_source_date_modified TIMESTAMP,
     data_source_date_processed TIMESTAMP,
     data_source_permissions_data TEXT,
+    data_source_filesize_bytes DECIMAL,
     data_source_url TEXT,
     data_source_version TEXT,
     data_source_record_locator JSON,

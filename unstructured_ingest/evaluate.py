@@ -42,7 +42,7 @@ def main():
     help="Directory to save the output evaluation metrics to. Default to \
         your/working/dir/metrics/",
 )
-@click.option("--group_by", type=str, help="Input field for aggregration, or leave blank if none.")
+@click.option("--group_by", type=str, help="Input field for aggregation, or leave blank if none.")
 @click.option(
     "--weights",
     type=(int, int, int),
@@ -149,7 +149,7 @@ def measure_element_type_accuracy_command(
     "--data_input",
     type=str,
     required=True,
-    help="A datafram or path to the CSV/TSV file containing the data",
+    help="A dataframe or path to the CSV/TSV file containing the data",
 )
 @click.option(
     "--export_dir",

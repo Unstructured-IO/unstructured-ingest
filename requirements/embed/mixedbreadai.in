@@ -1,0 +1,4 @@
+-r ../common/base.in
+-c ../common/constraints.txt
+
+mixedbread-ai

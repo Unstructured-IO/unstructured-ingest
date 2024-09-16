@@ -28,8 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-
-from .utils import conform_string_to_dict
+from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 
 CONNECTOR_TYPE = "google_drive"
 
@@ -200,7 +199,7 @@ class GoogleDriveIndexer(Indexer):
         if extensions:
             ext_filter = " or ".join([f"fileExtension = '{e}'" for e in extensions])
             q = f"{q} and ({ext_filter} or mimeType = 'application/vnd.google-apps.folder')"
-        logger.debug(f"Query used when indexing: {q}")
+        logger.debug(f"query used when indexing: {q}")
         logger.debug("response fields limited to: {}".format(", ".join(self.fields)))
         done = False
         page_token = None

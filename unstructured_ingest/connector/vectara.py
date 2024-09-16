@@ -181,7 +181,7 @@ class VectaraDestinationConnector(BaseDestinationConnector):
         try:
             result = self._request(endpoint="index", data=body, http_method="POST")
         except Exception as e:
-            logger.info(f"Exception {e} while indexing document {document['documentId']}")
+            logger.info(f"exception {e} while indexing document {document['documentId']}")
             return
 
         if (
@@ -196,18 +196,18 @@ class VectaraDestinationConnector(BaseDestinationConnector):
                 )
             )
         ):
-            logger.info(f"Document {document['documentId']} already exists, re-indexing")
+            logger.info(f"document {document['documentId']} already exists, re-indexing")
             self._delete_doc(document["documentId"])
             result = self._request(endpoint="index", data=body, http_method="POST")
             return
 
         if "status" in result and result["status"] and "OK" in result["status"]["code"]:
-            logger.info(f"Indexing document {document['documentId']} succeeded")
+            logger.info(f"indexing document {document['documentId']} succeeded")
         else:
-            logger.info(f"Indexing document {document['documentId']} failed, response = {result}")
+            logger.info(f"indexing document {document['documentId']} failed, response = {result}")
 
     def write_dict(self, *args, docs_list: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
-        logger.info(f"Inserting / updating {len(docs_list)} documents to Vectara ")
+        logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
         for vdoc in docs_list:
             self._index_document(vdoc)
 
@@ -216,7 +216,7 @@ class VectaraDestinationConnector(BaseDestinationConnector):
 
         def get_metadata(element) -> t.Dict[str, t.Any]:
             """
-            Select which meta-data fields to include and optionaly map them to a new new.
+            Select which meta-data fields to include and optionally map them to a new new.
             remove the "metadata-" prefix from the keys
             """
             metadata_map = {

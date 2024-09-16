@@ -22,7 +22,7 @@ TAR_FILE_EXT = [".tar", ".tar.gz", ".tgz"]
 
 def uncompress_file(filename: str, path: Optional[str] = None) -> str:
     """
-    Takes in a compressed zip or tar file and uncompresses it
+    Takes in a compressed zip or tar file and decompresses it
     """
     # Create path if it doesn't already exist
     if path:
@@ -65,7 +65,7 @@ def uncompress_tar_file(tar_filename: str, path: Optional[str] = None) -> str:
     logger.info(f"extracting tar {tar_filename} -> {path}")
     # NOTE: "r:*" mode opens both compressed (e.g ".tar.gz") and uncompressed ".tar" archives
     with tarfile.open(tar_filename, "r:*") as tfile:
-        # NOTE(robinson: Mitigate against malicious content being extracted from the tar file.
+        # NOTE(robinson): Mitigate against malicious content being extracted from the tar file.
         # This was added in Python 3.12
         # Ref: https://docs.python.org/3/library/tarfile.html#extraction-filters
         if sys.version_info >= (3, 12):
@@ -113,6 +113,6 @@ class CompressionSourceConnectorMixin:
             read_config=new_read_configs,
             processor_config=new_process_configs,
         )
-        logger.info(f"Created local source connector: {local_connector.to_json()}")
+        logger.info(f"created local source connector: {local_connector.to_json()}")
         local_connector.initialize()
         return local_connector.get_ingest_docs()

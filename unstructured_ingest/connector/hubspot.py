@@ -271,7 +271,7 @@ class HubSpotSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
 
         ingest_docs: t.List[HubSpotIngestDoc] = []
         for obj_name, obj_method in obj_method_resolver.items():
-            logger.info(f"Retrieving - {obj_name}")
+            logger.info(f"retrieving - {obj_name}")
             results: t.List[HubSpotIngestDoc] = obj_method()  # type: ignore
             ingest_docs += results  # type: ignore
 

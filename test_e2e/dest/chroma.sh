@@ -9,7 +9,6 @@ OUTPUT_FOLDER_NAME=chroma-dest
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
 DOWNLOAD_DIR=$SCRIPT_DIR/download/$OUTPUT_FOLDER_NAME
-DESTINATION_PATH=$SCRIPT_DIR/chroma-dest
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 CI=${CI:-"false"}
 
@@ -22,8 +21,7 @@ source "$SCRIPT_DIR"/cleanup.sh
 
 function cleanup() {
   # Kill chroma background process
-  pgrep -f chroma-dest | xargs kill
-  cleanup_dir "$DESTINATION_PATH"
+  docker compose -f "$SCRIPT_DIR"/env_setup/chroma/docker-compose.yml down --remove-orphans -v
   cleanup_dir "$OUTPUT_DIR"
   cleanup_dir "$WORK_DIR"
   if [ "$CI" == "true" ]; then
@@ -34,8 +32,7 @@ function cleanup() {
 trap cleanup EXIT
 
 # Run chroma from different script so it can be forced into background
-"$SCRIPT_DIR"/env_setup/chroma/create-and-check-chroma.sh "$DESTINATION_PATH"
-wait
+docker compose -f "$SCRIPT_DIR"/env_setup/chroma/docker-compose.yml up -d --wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   local \

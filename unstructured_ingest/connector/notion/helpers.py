@@ -103,7 +103,7 @@ def extract_page_html(
             ):
                 children.extend(children_block)
             if children:
-                logger.debug(f"Adding {len(children)} children from parent: {parent}")
+                logger.debug(f"adding {len(children)} children from parent: {parent}")
                 for child in children:
                     if child.id not in processed_block_ids:
                         parents.append((level + 1, child))
@@ -159,7 +159,7 @@ def extract_database_html(
     for page_chunk in client.databases.iterate_query(database_id=database_id):  # type: ignore
         all_pages.extend(page_chunk)
 
-    logger.debug(f"Creating {len(all_pages)} rows")
+    logger.debug(f"creating {len(all_pages)} rows")
     for page in all_pages:
         if is_database_url(client=client, url=page.url):
             child_databases.append(page.id)
@@ -237,7 +237,7 @@ def get_recursive_content(
         parent: QueueEntry = parents.pop()
         processed.append(str(parent.id))
         if parent.type == QueueEntryType.PAGE:
-            logger.debug(f"Getting child data from page: {parent.id}")
+            logger.debug(f"getting child data from page: {parent.id}")
             page_children = []
             try:
                 for children_block in client.blocks.children.iterate_list(  # type: ignore
@@ -316,7 +316,7 @@ def get_recursive_content(
                     )
 
         elif parent.type == QueueEntryType.DATABASE:
-            logger.debug(f"Getting child data from database: {parent.id}")
+            logger.debug(f"getting child data from database: {parent.id}")
             database_pages = []
             try:
                 for page_entries in client.databases.iterate_query(  # type: ignore

@@ -139,7 +139,7 @@ class ChromaDestinationConnector(BaseDestinationConnector):
         return chroma_dict
 
     def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
-        logger.info(f"Inserting / updating {len(elements_dict)} documents to destination ")
+        logger.info(f"inserting / updating {len(elements_dict)} documents to destination ")
 
         chroma_batch_size = self.write_config.batch_size
 

@@ -6,6 +6,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
     add_source_entry,
 )
 
+from .airtable import CONNECTOR_TYPE as AIRTABLE_CONNECTOR_TYPE
+from .airtable import airtable_source_entry
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
 from .astradb import astra_db_destination_entry
 from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE
@@ -92,3 +94,4 @@ add_destination_entry(
 )
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
+add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)

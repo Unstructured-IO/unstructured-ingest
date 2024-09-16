@@ -145,7 +145,7 @@ class Partitioner(BaseProcess, ABC):
         class FileDataSourceMetadata(DataSourceMetadata):
             filesize_bytes: Optional[int] = None
 
-        logger.debug(f"Using local partition with kwargs: {self.config.to_partition_kwargs()}")
+        logger.debug(f"using local partition with kwargs: {self.config.to_partition_kwargs()}")
         logger.debug(f"partitioning file {filename} with metadata {metadata}")
         elements = partition(
             filename=str(filename.resolve()),
@@ -165,7 +165,7 @@ class Partitioner(BaseProcess, ABC):
 
         partition_request = self.config.to_partition_kwargs()
 
-        # Note(austin): PartitionParameters is a Pydantic model in v0.26.0
+        # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
         # Prior to this it was a dataclass which doesn't have .__fields
         try:
             possible_fields = PartitionParameters.__fields__
@@ -182,7 +182,7 @@ class Partitioner(BaseProcess, ABC):
                     ", ".join([v for v in partition_request if v not in filtered_partition_request])
                 )
             )
-        logger.debug(f"Using hosted partitioner with kwargs: {partition_request}")
+        logger.debug(f"using hosted partitioner with kwargs: {partition_request}")
         with open(filename, "rb") as f:
             files = Files(
                 content=f.read(),

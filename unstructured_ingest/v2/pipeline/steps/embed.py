@@ -29,7 +29,7 @@ class EmbedStep(PipelineStep):
 
     def __post_init__(self):
         config = self.process.config.json() if self.process.config else None
-        logger.info(f"Created {self.identifier} with configs: {config}")
+        logger.info(f"created {self.identifier} with configs: {config}")
 
     def should_embed(self, filepath: Path, file_data: FileData) -> bool:
         if self.context.reprocess or file_data.reprocess:
@@ -44,7 +44,7 @@ class EmbedStep(PipelineStep):
 
     def _save_output(self, output_filepath: str, embedded_content: list[dict]):
         with open(str(output_filepath), "w") as f:
-            logger.debug(f"Writing embedded output to: {output_filepath}")
+            logger.debug(f"writing embedded output to: {output_filepath}")
             json.dump(embedded_content, f, indent=2)
 
     async def _run_async(self, fn: Callable, path: str, file_data_path: str) -> EmbedStepResponse:
@@ -52,7 +52,7 @@ class EmbedStep(PipelineStep):
         file_data = FileData.from_file(path=file_data_path)
         output_filepath = self.get_output_filepath(filename=path)
         if not self.should_embed(filepath=output_filepath, file_data=file_data):
-            logger.debug(f"Skipping embedding, output already exists: {output_filepath}")
+            logger.debug(f"skipping embedding, output already exists: {output_filepath}")
             return EmbedStepResponse(file_data_path=file_data_path, path=str(output_filepath))
         fn_kwargs = {"elements_filepath": path}
         if not asyncio.iscoroutinefunction(fn):

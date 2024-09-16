@@ -47,7 +47,7 @@ class Filterer(BaseProcess, ABC):
         for pattern in patterns:
             if fnmatch.filter([path], pattern):
                 return True
-        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
+        logger.debug(f"the file {path!r} is discarded as it does not match any given glob.")
         return False
 
     def run(self, file_data: FileData, **kwargs: Any) -> Optional[FileData]:

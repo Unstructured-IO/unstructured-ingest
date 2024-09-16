@@ -20,6 +20,11 @@ def is_secret(value: Any) -> bool:
 def serialize_base_model(model: BaseModel) -> dict:
     # To get the full serialized dict regardless of if values are marked as Secret
     model_dict = model.dict()
+    return serialize_base_dict(model_dict=model_dict)
+
+
+def serialize_base_dict(model_dict: dict) -> dict:
+    model_dict = model_dict.copy()
     for k, v in model_dict.items():
         if isinstance(v, _SecretBase):
             secret_value = v.get_secret_value()
@@ -27,6 +32,8 @@ def serialize_base_model(model: BaseModel) -> dict:
                 model_dict[k] = serialize_base_model(model=secret_value)
             else:
                 model_dict[k] = secret_value
+        if isinstance(v, dict):
+            model_dict[k] = serialize_base_dict(model_dict=v)
 
     return model_dict
 
