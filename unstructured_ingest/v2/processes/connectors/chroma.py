@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -27,16 +29,17 @@ from unstructured_ingest.v2.processes.connector_registry import DestinationRegis
 from .utils import conform_string_to_dict
 
 if TYPE_CHECKING:
-    from chromadb import Client
+    from chromadb.api import ClientAPI
+    from chromadb.config import Settings
 
 CONNECTOR_TYPE = "chroma"
 
 
 class ChromaAccessConfig(AccessConfig):
-    settings: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
+    settings: Optional[Annotated[Settings, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of settings to communicate with the chroma server."
     )
-    headers: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
+    headers: Optional[Annotated[dict[str, Any], BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="A dictionary of headers to send to the Chroma server."
     )
 
@@ -47,10 +50,10 @@ class ChromaConnectionConfig(ConnectionConfig):
     path: Optional[str] = Field(
         default=None, description="Location where Chroma is persisted, if not connecting via http."
     )
-    tenant: Optional[str] = Field(
+    tenant: str = Field(
         default="default_tenant", description="The tenant to use for this client."
     )
-    database: Optional[str] = Field(
+    database: str = Field(
         default="default_database", description="The database to use for this client."
     )
     host: Optional[str] = Field(default=None, description="The hostname of the Chroma server.")
@@ -81,7 +84,7 @@ class ChromaUploadStager(UploadStager):
         return parser.parse(date_string)
 
     @staticmethod
-    def conform_dict(data: dict) -> dict:
+    def conform_dict(data: dict[str, Any]) -> dict[str, Any]:
         """
         Prepares dictionary in the format that Chroma requires
         """
@@ -128,7 +131,7 @@ class ChromaUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["chromadb"], extras="chroma")
-    def create_client(self) -> "Client":
+    def create_client(self) -> ClientAPI:
         import chromadb
 
         access_config = self.connection_config.access_config.get_secret_value()
