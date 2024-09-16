@@ -7,6 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
+from chromadb import Settings
 from dateutil import parser
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
@@ -30,7 +31,6 @@ from .utils import conform_string_to_dict
 
 if TYPE_CHECKING:
     from chromadb.api import ClientAPI
-    from chromadb.config import Settings
 
 CONNECTOR_TYPE = "chroma"
 
