@@ -80,7 +80,7 @@ langchain-core==0.3.0
     #   langchain-text-splitters
 langchain-text-splitters==0.3.0
     # via langchain
-langsmith==0.1.120
+langsmith==0.1.121
     # via
     #   langchain
     #   langchain-community
@@ -99,7 +99,7 @@ numpy==1.26.4
     #   langchain
     #   langchain-community
     #   pandas
-openai==1.45.0
+openai==1.45.1
     # via -r ./requirements/embed/openai.in
 opentelemetry-api==1.16.0
     # via opentelemetry-sdk

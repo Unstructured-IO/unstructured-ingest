@@ -138,7 +138,7 @@ langchain-google-vertexai==2.0.0
     # via -r ./requirements/embed/vertexai.in
 langchain-text-splitters==0.3.0
     # via langchain
-langsmith==0.1.120
+langsmith==0.1.121
     # via
     #   langchain
     #   langchain-community

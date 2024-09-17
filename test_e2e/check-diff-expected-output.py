@@ -73,8 +73,9 @@ def omit_ignored_fields(data: dict) -> None:
     # partitioning which isn't derived from this repo
     data.pop("text", None)
     data.pop("element_id", None)
-    if data.get("metadata", {}).get("text_as_html"):
-        data["metadata"].pop("text_as_html", None)
+    if metadata := data.get("metadata"):
+        metadata.pop("text_as_html", None)
+        metadata.pop("languages", None)
 
 
 def compare_files(expected_file: Path, current_file: Path) -> list[DeepDiff]:

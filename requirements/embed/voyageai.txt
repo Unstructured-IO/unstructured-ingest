@@ -70,7 +70,7 @@ langchain-text-splitters==0.3.0
     # via langchain
 langchain-voyageai==0.1.2
     # via -r ./requirements/embed/voyageai.in
-langsmith==0.1.120
+langsmith==0.1.121
     # via
     #   langchain
     #   langchain-core
