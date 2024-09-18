@@ -1,3 +1,10 @@
+## 0.0.17
+
+### Fixes
+
+* **Drop use of unstructued in embed** Remove remnant import from unstructured dependency in embed implementations.
+
+
 ## 0.0.16
 
 ### Fixes
