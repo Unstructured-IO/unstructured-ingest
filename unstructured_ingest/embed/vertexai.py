@@ -2,12 +2,12 @@
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, List, Optional
 
 import numpy as np
 from pydantic import Field, Secret, ValidationError
 from pydantic.functional_validators import BeforeValidator
-from unstructured.utils import FileHandler
 
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -35,10 +35,10 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
 
     def register_application_credentials(self):
         # TODO look into passing credentials in directly, rather than via env var and tmp file
-        application_credentials_path = os.path.join("/tmp", "google-vertex-app-credentials.json")
-        credentials_file = FileHandler(application_credentials_path)
-        credentials_file.write_file(json.dumps(self.api_key.get_secret_value()))
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = application_credentials_path
+        application_credentials_path = Path("/tmp") / "google-vertex-app-credentials.json"
+        with application_credentials_path.open("w+") as credentials_file:
+            json.dump(self.api_key.get_secret_value(), credentials_file)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(application_credentials_path)
 
     @requires_dependencies(
         ["langchain", "langchain_google_vertexai"],
