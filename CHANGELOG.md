@@ -1,3 +1,9 @@
+## 0.0.18
+
+### Enhancements
+
+* **Better destination precheck for blob storage** Write an empty file to the destination location when running fsspec-based precheck
+
 ## 0.0.17
 
 ### Fixes
