@@ -36,7 +36,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     def register_application_credentials(self):
         # TODO look into passing credentials in directly, rather than via env var and tmp file
         application_credentials_path = Path("/tmp") / "google-vertex-app-credentials.json"
-        with application_credentials_path.open() as credentials_file:
+        with application_credentials_path.open("w+") as credentials_file:
             json.dump(self.api_key.get_secret_value(), credentials_file)
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(application_credentials_path)
 
