@@ -24,9 +24,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 
-if TYPE_CHECKING:
-    import astrapy
-
 CONNECTOR_TYPE = "astradb"
 
 
