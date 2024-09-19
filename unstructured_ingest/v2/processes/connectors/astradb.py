@@ -24,6 +24,9 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 
+if TYPE_CHECKING:
+    import astrapy
+
 CONNECTOR_TYPE = "astradb"
 
 
@@ -105,7 +108,7 @@ class AstraDBUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def get_collection(self) -> Any:
+    def get_collection(self) -> "astrapy.Collection":
         import astrapy
 
         # Get the collection_name and embedding dimension
