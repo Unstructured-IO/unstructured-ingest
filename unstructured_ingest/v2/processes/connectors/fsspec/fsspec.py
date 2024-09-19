@@ -102,7 +102,13 @@ class FsspecIndexer(Indexer):
             fs = get_filesystem_class(self.index_config.protocol)(
                 **self.connection_config.get_access_config(),
             )
-            fs.ls(path=self.index_config.path_without_protocol, detail=False)
+            files = fs.ls(path=self.index_config.path_without_protocol, detail=True)
+            valid_files = [x.get("name") for x in files if x.get("type") == "file"]
+            if not valid_files:
+                return
+            file_to_sample = valid_files[0]
+            logger.debug(f"attempting to make HEAD request for file: {file_to_sample}")
+            self.fs.head(path=file_to_sample)
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -299,8 +305,8 @@ class FsspecUploader(Uploader):
             fs = get_filesystem_class(self.upload_config.protocol)(
                 **self.connection_config.get_access_config(),
             )
-            root_dir = self.upload_config.path_without_protocol.split("/")[0]
-            fs.ls(path=root_dir, detail=False)
+            upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
+            fs.write_bytes(path=str(upload_path), value=b"")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
