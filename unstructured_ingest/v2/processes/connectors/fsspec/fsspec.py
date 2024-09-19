@@ -103,13 +103,11 @@ class FsspecIndexer(Indexer):
                 **self.connection_config.get_access_config(),
             )
             files = fs.ls(path=self.index_config.path_without_protocol, detail=True)
-            valid_files = [
-                x.get("name") for x in files if x.get("size") > 0 and x.get("type") == "file"
-            ]
+            valid_files = [x.get("name") for x in files if x.get("type") == "file"]
             if not valid_files:
                 return
             file_to_sample = valid_files[0]
-            logger.debug(f"Attempting to make HEAD request for file: {file_to_sample}")
+            logger.debug(f"attempting to make HEAD request for file: {file_to_sample}")
             self.fs.head(path=file_to_sample)
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
