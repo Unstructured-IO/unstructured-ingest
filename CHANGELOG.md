@@ -3,6 +3,7 @@
 ### Enhancements
 
 * **Better destination precheck for blob storage** Write an empty file to the destination location when running fsspec-based precheck
+* **Support for latest AstraPy API** Add support for the modern AstraPy client interface for the Astra DB Connector.
 
 ## 0.0.17
 
