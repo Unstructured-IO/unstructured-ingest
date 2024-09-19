@@ -25,7 +25,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    from astrapy.db import AstraDBCollection
+    import astrapy
 
 CONNECTOR_TYPE = "astradb"
 
@@ -108,34 +108,38 @@ class AstraDBUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def get_collection(self) -> "AstraDBCollection":
-        from astrapy.db import AstraDB
+    def get_collection(self) -> Any:
+        import astrapy
 
         # Get the collection_name and embedding dimension
         collection_name = self.upload_config.collection_name
         embedding_dimension = self.upload_config.embedding_dimension
         requested_indexing_policy = self.upload_config.requested_indexing_policy
 
-        # If the user has requested an indexing policy, pass it to the Astra DB
-        options = {"indexing": requested_indexing_policy} if requested_indexing_policy else None
-
         # Build the Astra DB object.
-        # caller_name/version for AstraDB tracking
         access_configs = self.connection_config.access_config.get_secret_value()
-        astra_db = AstraDB(
-            api_endpoint=access_configs.api_endpoint,
-            token=access_configs.token,
-            namespace=self.upload_config.namespace,
+
+        # Create a client object to interact with the Astra DB
+        # caller_name/version for Astra DB tracking
+        my_client = astrapy.DataAPIClient(
             caller_name=integration_name,
             caller_version=integration_version,
         )
 
+        # Get the database object
+        astra_db = my_client.get_database(
+            api_endpoint=access_configs.api_endpoint,
+            token=access_configs.token,
+            namespace=self.upload_config.namespace,
+        )
+
         # Create and connect to the newly created collection
         astra_db_collection = astra_db.create_collection(
-            collection_name=collection_name,
+            name=collection_name,
             dimension=embedding_dimension,
-            options=options,
+            indexing=requested_indexing_policy,
         )
+
         return astra_db_collection
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

@@ -24,7 +24,7 @@ from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if t.TYPE_CHECKING:
-    from astrapy.db import AstraDB, AstraDBCollection
+    import astrapy
 
 NON_INDEXED_FIELDS = ["metadata._node_content", "content"]
 
@@ -91,29 +91,34 @@ class AstraDBIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
 @dataclass
 class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
     connector_config: SimpleAstraDBConfig
-    _astra_db: t.Optional["AstraDB"] = field(init=False, default=None)
-    _astra_db_collection: t.Optional["AstraDBCollection"] = field(init=False, default=None)
+    _astra_db: t.Optional["astrapy.Database"] = field(init=False, default=None)
+    _astra_db_collection: t.Optional["astrapy.Collection"] = field(init=False, default=None)
 
     @property
     @requires_dependencies(["astrapy"], extras="astradb")
-    def astra_db_collection(self) -> "AstraDBCollection":
+    def astra_db_collection(self) -> "astrapy.Collection":
         if self._astra_db_collection is None:
-            from astrapy.db import AstraDB
+            import astrapy
 
-            # Build the Astra DB object.
+            # Create a client object to interact with the Astra DB
             # caller_name/version for Astra DB tracking
-            self._astra_db = AstraDB(
-                api_endpoint=self.connector_config.access_config.api_endpoint,
-                token=self.connector_config.access_config.token,
-                namespace=self.connector_config.namespace,
+            my_client = astrapy.DataAPIClient(
                 caller_name=integration_name,
                 caller_version=integration_version,
             )
 
-            # Create and connect to the collection
-            self._astra_db_collection = self._astra_db.collection(
-                collection_name=self.connector_config.collection_name,
+            # Get the database object
+            self._astra_db = my_client.get_database(
+                api_endpoint=self.connector_config.access_config.api_endpoint,
+                token=self.connector_config.access_config.token,
+                namespace=self.connector_config.namespace,
             )
+
+            # Create and connect to the newly created collection
+            self._astra_db_collection = self._astra_db.get_collection(
+                name=self.connector_config.collection_name,
+            )
+
         return self._astra_db_collection  # type: ignore
 
     @requires_dependencies(["astrapy"], extras="astradb")
@@ -161,8 +166,8 @@ class AstraDBWriteConfig(WriteConfig):
 class AstraDBDestinationConnector(BaseDestinationConnector):
     write_config: AstraDBWriteConfig
     connector_config: SimpleAstraDBConfig
-    _astra_db: t.Optional["AstraDB"] = field(init=False, default=None)
-    _astra_db_collection: t.Optional["AstraDBCollection"] = field(init=False, default=None)
+    _astra_db: t.Optional["astrapy.Database"] = field(init=False, default=None)
+    _astra_db_collection: t.Optional["astrapy.Collection"] = field(init=False, default=None)
 
     def to_dict(self, **kwargs):
         """
@@ -180,32 +185,35 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
 
     @property
     @requires_dependencies(["astrapy"], extras="astradb")
-    def astra_db_collection(self) -> "AstraDBCollection":
+    def astra_db_collection(self) -> "astrapy.Collection":
         if self._astra_db_collection is None:
-            from astrapy.db import AstraDB
+            import astrapy
 
             collection_name = self.connector_config.collection_name
             embedding_dimension = self.write_config.embedding_dimension
-
-            # If the user has requested an indexing policy, pass it to the Astra DB
             requested_indexing_policy = self.write_config.requested_indexing_policy
-            options = {"indexing": requested_indexing_policy} if requested_indexing_policy else None
 
+            # Create a client object to interact with the Astra DB
             # caller_name/version for Astra DB tracking
-            self._astra_db = AstraDB(
-                api_endpoint=self.connector_config.access_config.api_endpoint,
-                token=self.connector_config.access_config.token,
-                namespace=self.connector_config.namespace,
+            my_client = astrapy.DataAPIClient(
                 caller_name=integration_name,
                 caller_version=integration_version,
             )
 
+            # Get the database object
+            self._astra_db = my_client.get_database(
+                api_endpoint=self.connector_config.access_config.api_endpoint,
+                token=self.connector_config.access_config.token,
+                namespace=self.connector_config.namespace,
+            )
+
             # Create and connect to the newly created collection
             self._astra_db_collection = self._astra_db.create_collection(
-                collection_name=collection_name,
+                name=collection_name,
                 dimension=embedding_dimension,
-                options=options,
+                indexing=requested_indexing_policy,
             )
+
         return self._astra_db_collection
 
     @requires_dependencies(["astrapy"], extras="astradb")
