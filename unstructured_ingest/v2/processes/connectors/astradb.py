@@ -111,12 +111,9 @@ class AstraDBUploader(Uploader):
     @requires_dependencies(["astrapy"], extras="astradb")
     def get_collection(self) -> "AstraDBCollection":
         from astrapy import DataAPIClient as AstraDBClient
-        from astrapy.exceptions import CollectionAlreadyExistsException
 
-        # Get the collection_name and embedding dimension
+        # Get the collection_name
         collection_name = self.upload_config.collection_name
-        embedding_dimension = self.upload_config.embedding_dimension
-        requested_indexing_policy = self.upload_config.requested_indexing_policy
 
         # Build the Astra DB object.
         access_configs = self.connection_config.access_config.get_secret_value()
@@ -135,16 +132,8 @@ class AstraDBUploader(Uploader):
             namespace=self.upload_config.namespace,
         )
 
-        # Create and connect to the newly created collection
-        try:
-            astra_db_collection = astra_db.create_collection(
-                name=collection_name,
-                dimension=embedding_dimension,
-                indexing=requested_indexing_policy,
-            )
-        except CollectionAlreadyExistsException as e:
-            logger.info(f"{e}", exc_info=True)
-            astra_db_collection = astra_db.get_collection(name=collection_name)
+        # Connect to the newly created collection
+        astra_db_collection = astra_db.get_collection(name=collection_name)
 
         return astra_db_collection
 
