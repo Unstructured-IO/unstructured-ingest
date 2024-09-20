@@ -25,7 +25,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    import astrapy
+    from astrapy import Collection as AstraDBCollection
+
 
 CONNECTOR_TYPE = "astradb"
 
@@ -108,8 +109,9 @@ class AstraDBUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def get_collection(self) -> "astrapy.Collection":
-        import astrapy
+    def get_collection(self) -> "AstraDBCollection":
+        from astrapy import DataAPIClient as AstraDBClient
+        from astrapy.exceptions import CollectionAlreadyExistsException
 
         # Get the collection_name and embedding dimension
         collection_name = self.upload_config.collection_name
@@ -121,7 +123,7 @@ class AstraDBUploader(Uploader):
 
         # Create a client object to interact with the Astra DB
         # caller_name/version for Astra DB tracking
-        my_client = astrapy.DataAPIClient(
+        my_client = AstraDBClient(
             caller_name=integration_name,
             caller_version=integration_version,
         )
@@ -134,11 +136,16 @@ class AstraDBUploader(Uploader):
         )
 
         # Create and connect to the newly created collection
-        astra_db_collection = astra_db.create_collection(
-            name=collection_name,
-            dimension=embedding_dimension,
-            indexing=requested_indexing_policy,
-        )
+        try:
+            astra_db_collection = astra_db.create_collection(
+                name=collection_name,
+                dimension=embedding_dimension,
+                indexing=requested_indexing_policy,
+            )
+        except CollectionAlreadyExistsException as _:
+            astra_db_collection = astra_db.get_collection(
+                name=collection_name
+            )
 
         return astra_db_collection
 

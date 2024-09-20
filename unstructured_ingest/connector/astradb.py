@@ -24,7 +24,8 @@ from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if t.TYPE_CHECKING:
-    import astrapy
+    from astrapy import Collection as AstraDBCollection
+    from astrapy import Database as AstraDB
 
 NON_INDEXED_FIELDS = ["metadata._node_content", "content"]
 
@@ -91,18 +92,18 @@ class AstraDBIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
 @dataclass
 class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
     connector_config: SimpleAstraDBConfig
-    _astra_db: t.Optional["astrapy.Database"] = field(init=False, default=None)
-    _astra_db_collection: t.Optional["astrapy.Collection"] = field(init=False, default=None)
+    _astra_db: t.Optional["AstraDB"] = field(init=False, default=None)
+    _astra_db_collection: t.Optional["AstraDBCollection"] = field(init=False, default=None)
 
     @property
     @requires_dependencies(["astrapy"], extras="astradb")
-    def astra_db_collection(self) -> "astrapy.Collection":
+    def astra_db_collection(self) -> "AstraDBCollection":
         if self._astra_db_collection is None:
-            import astrapy
+            from astrapy import DataAPIClient as AstraDBClient
 
             # Create a client object to interact with the Astra DB
             # caller_name/version for Astra DB tracking
-            my_client = astrapy.DataAPIClient(
+            my_client = AstraDBClient(
                 caller_name=integration_name,
                 caller_version=integration_version,
             )
@@ -166,8 +167,8 @@ class AstraDBWriteConfig(WriteConfig):
 class AstraDBDestinationConnector(BaseDestinationConnector):
     write_config: AstraDBWriteConfig
     connector_config: SimpleAstraDBConfig
-    _astra_db: t.Optional["astrapy.Database"] = field(init=False, default=None)
-    _astra_db_collection: t.Optional["astrapy.Collection"] = field(init=False, default=None)
+    _astra_db: t.Optional["AstraDB"] = field(init=False, default=None)
+    _astra_db_collection: t.Optional["AstraDBCollection"] = field(init=False, default=None)
 
     def to_dict(self, **kwargs):
         """
@@ -185,9 +186,10 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
 
     @property
     @requires_dependencies(["astrapy"], extras="astradb")
-    def astra_db_collection(self) -> "astrapy.Collection":
+    def astra_db_collection(self) -> "AstraDBCollection":
         if self._astra_db_collection is None:
-            import astrapy
+            from astrapy import DataAPIClient as AstraDBClient
+            from astrapy.exceptions import CollectionAlreadyExistsException
 
             collection_name = self.connector_config.collection_name
             embedding_dimension = self.write_config.embedding_dimension
@@ -195,7 +197,7 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
 
             # Create a client object to interact with the Astra DB
             # caller_name/version for Astra DB tracking
-            my_client = astrapy.DataAPIClient(
+            my_client = AstraDBClient(
                 caller_name=integration_name,
                 caller_version=integration_version,
             )
@@ -208,11 +210,16 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
             )
 
             # Create and connect to the newly created collection
-            self._astra_db_collection = self._astra_db.create_collection(
-                name=collection_name,
-                dimension=embedding_dimension,
-                indexing=requested_indexing_policy,
-            )
+            try:
+                self._astra_db_collection = self._astra_db.create_collection(
+                    name=collection_name,
+                    dimension=embedding_dimension,
+                    indexing=requested_indexing_policy,
+                )
+            except CollectionAlreadyExistsException as _:
+                self._astra_db_collection = self._astra_db.get_collection(
+                    name=collection_name
+                )
 
         return self._astra_db_collection
 
@@ -231,6 +238,9 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
 
     def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
         logger.info(f"inserting / updating {len(elements_dict)} documents to Astra DB.")
+
+        if self._astra_db_collection is None:
+            raise DestinationConnectionError("Astra DB collection not available for insertion.")
 
         astra_db_batch_size = self.write_config.batch_size
 
