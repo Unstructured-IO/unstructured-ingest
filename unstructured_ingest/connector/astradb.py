@@ -216,7 +216,8 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
                     dimension=embedding_dimension,
                     indexing=requested_indexing_policy,
                 )
-            except CollectionAlreadyExistsException as _:
+            except CollectionAlreadyExistsException as e:
+                logger.info(f"{e}", exc_info=True)
                 self._astra_db_collection = self._astra_db.get_collection(name=collection_name)
 
         return self._astra_db_collection

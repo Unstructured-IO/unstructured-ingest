@@ -142,7 +142,8 @@ class AstraDBUploader(Uploader):
                 dimension=embedding_dimension,
                 indexing=requested_indexing_policy,
             )
-        except CollectionAlreadyExistsException as _:
+        except CollectionAlreadyExistsException as e:
+            logger.info(f"{e}", exc_info=True)
             astra_db_collection = astra_db.get_collection(name=collection_name)
 
         return astra_db_collection
