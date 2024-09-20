@@ -217,9 +217,7 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
                     indexing=requested_indexing_policy,
                 )
             except CollectionAlreadyExistsException as _:
-                self._astra_db_collection = self._astra_db.get_collection(
-                    name=collection_name
-                )
+                self._astra_db_collection = self._astra_db.get_collection(name=collection_name)
 
         return self._astra_db_collection
 

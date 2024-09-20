@@ -143,9 +143,7 @@ class AstraDBUploader(Uploader):
                 indexing=requested_indexing_policy,
             )
         except CollectionAlreadyExistsException as _:
-            astra_db_collection = astra_db.get_collection(
-                name=collection_name
-            )
+            astra_db_collection = astra_db.get_collection(name=collection_name)
 
         return astra_db_collection
 
