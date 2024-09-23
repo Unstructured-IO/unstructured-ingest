@@ -1,6 +1,7 @@
 import asyncio
 from abc import ABC
 from dataclasses import dataclass, fields
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -158,7 +159,12 @@ class Partitioner(BaseProcess, ABC):
         # TODO when client supports async, run without using run_in_executor
         # isolate the IO heavy call
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, client.general.partition, request)
+
+        # Note(austin) - The partition calls needs request to be a keyword arg
+        # We have to use partial to do this, we can't pass request=request into run_in_executor
+        partition_call = partial(client.general.partition, request=request)
+
+        return await loop.run_in_executor(None, partition_call)
 
     def create_partition_parameters(self, filename: Path) -> "PartitionParameters":
         from unstructured_client.models.shared import Files, PartitionParameters
@@ -205,7 +211,7 @@ class Partitioner(BaseProcess, ABC):
             api_key_auth=self.config.api_key.get_secret_value(),
         )
         partition_params = self.create_partition_parameters(filename=filename)
-        partition_request = PartitionRequest(partition_params)
+        partition_request = PartitionRequest(partition_parameters=partition_params)
         resp = await self.call_api(client=client, request=partition_request)
         elements = resp.elements or []
         # Append the data source metadata the auto partition does for you

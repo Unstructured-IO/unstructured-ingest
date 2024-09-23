@@ -120,7 +120,14 @@ class Chunker(BaseProcess, ABC):
             server_url=self.config.chunking_endpoint,
         )
         partition_request = self.config.to_chunking_kwargs()
-        possible_fields = [f.name for f in fields(PartitionParameters)]
+
+        # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
+        # Prior to this it was a dataclass which doesn't have .__fields
+        try:
+            possible_fields = PartitionParameters.__fields__
+        except AttributeError:
+            possible_fields = [f.name for f in fields(PartitionParameters)]
+
         filtered_partition_request = {
             k: v for k, v in partition_request.items() if k in possible_fields
         }
@@ -138,8 +145,8 @@ class Chunker(BaseProcess, ABC):
             )
             filtered_partition_request["files"] = files
             partition_params = PartitionParameters(**filtered_partition_request)
-            partition_request_obj = PartitionRequest(partition_params)
-        resp = client.general.partition(partition_request_obj)
+            partition_request_obj = PartitionRequest(partition_parameters=partition_params)
+        resp = client.general.partition(request=partition_request_obj)
         elements = resp.elements or []
         elements = assign_and_map_hash_ids(elements=elements)
         return elements
