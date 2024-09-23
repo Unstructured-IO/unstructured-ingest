@@ -87,6 +87,10 @@ class AstraDBUploaderConfig(UploaderConfig):
         default=384, description="The dimensionality of the embeddings"
     )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
+    namespace: Optional[str] = Field(
+        default=None,
+        description="[DEPRECATED] The Astra DB connection namespace."
+    )
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
         default=None,
         description="The indexing policy to use for the collection.",
@@ -112,6 +116,9 @@ class AstraDBUploader(Uploader):
     def get_collection(self) -> "AstraDBCollection":
         from astrapy import DataAPIClient as AstraDBClient
 
+        # Choose keyspace or deprecated namespace
+        keyspace_param = self.upload_config.keyspace or self.upload_config.namespace
+
         # Get the collection_name
         collection_name = self.upload_config.collection_name
 
@@ -129,7 +136,7 @@ class AstraDBUploader(Uploader):
         astra_db = my_client.get_database(
             api_endpoint=access_configs.api_endpoint,
             token=access_configs.token,
-            keyspace=self.upload_config.keyspace,
+            keyspace=keyspace_param,
         )
 
         # Connect to the newly created collection

@@ -41,6 +41,7 @@ class SimpleAstraDBConfig(BaseConnectorConfig):
     access_config: AstraDBAccessConfig
     collection_name: str
     keyspace: t.Optional[str] = None
+    namespace: t.Optional[str] = None
 
 
 @dataclass
@@ -101,6 +102,9 @@ class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
         if self._astra_db_collection is None:
             from astrapy import DataAPIClient as AstraDBClient
 
+            # Choose keyspace or deprecated namespace
+            keyspace_param = self.connector_config.keyspace or self.connector_config.namespace
+
             # Create a client object to interact with the Astra DB
             # caller_name/version for Astra DB tracking
             my_client = AstraDBClient(
@@ -112,7 +116,7 @@ class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
             self._astra_db = my_client.get_database(
                 api_endpoint=self.connector_config.access_config.api_endpoint,
                 token=self.connector_config.access_config.token,
-                keyspace=self.connector_config.keyspace,
+                keyspace=keyspace_param,
             )
 
             # Create and connect to the newly created collection
@@ -191,6 +195,9 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
             from astrapy import DataAPIClient as AstraDBClient
             from astrapy.exceptions import CollectionAlreadyExistsException
 
+            # Choose keyspace or deprecated namespace
+            keyspace_param = self.connector_config.keyspace or self.connector_config.namespace
+
             collection_name = self.connector_config.collection_name
             embedding_dimension = self.write_config.embedding_dimension
             requested_indexing_policy = self.write_config.requested_indexing_policy
@@ -206,7 +213,7 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
             self._astra_db = my_client.get_database(
                 api_endpoint=self.connector_config.access_config.api_endpoint,
                 token=self.connector_config.access_config.token,
-                keyspace=self.connector_config.keyspace,
+                keyspace=keyspace_param,
             )
 
             # Create and connect to the newly created collection
