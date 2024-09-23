@@ -86,7 +86,7 @@ class AstraDBUploaderConfig(UploaderConfig):
     embedding_dimension: int = Field(
         default=384, description="The dimensionality of the embeddings"
     )
-    namespace: Optional[str] = Field(default=None, description="The Astra DB connection namespace.")
+    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
         default=None,
         description="The indexing policy to use for the collection.",
@@ -129,7 +129,7 @@ class AstraDBUploader(Uploader):
         astra_db = my_client.get_database(
             api_endpoint=access_configs.api_endpoint,
             token=access_configs.token,
-            namespace=self.upload_config.namespace,
+            keyspace=self.upload_config.keyspace,
         )
 
         # Connect to the newly created collection

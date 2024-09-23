@@ -40,7 +40,7 @@ class AstraDBAccessConfig(AccessConfig):
 class SimpleAstraDBConfig(BaseConnectorConfig):
     access_config: AstraDBAccessConfig
     collection_name: str
-    namespace: t.Optional[str] = None
+    keyspace: t.Optional[str] = None
 
 
 @dataclass
@@ -112,7 +112,7 @@ class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
             self._astra_db = my_client.get_database(
                 api_endpoint=self.connector_config.access_config.api_endpoint,
                 token=self.connector_config.access_config.token,
-                namespace=self.connector_config.namespace,
+                keyspace=self.connector_config.keyspace,
             )
 
             # Create and connect to the newly created collection
@@ -206,7 +206,7 @@ class AstraDBDestinationConnector(BaseDestinationConnector):
             self._astra_db = my_client.get_database(
                 api_endpoint=self.connector_config.access_config.api_endpoint,
                 token=self.connector_config.access_config.token,
-                namespace=self.connector_config.namespace,
+                keyspace=self.connector_config.keyspace,
             )
 
             # Create and connect to the newly created collection

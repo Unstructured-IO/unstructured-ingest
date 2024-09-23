@@ -82,7 +82,7 @@ def check(ctx):
     cursor = astra_db_collection.find(
         {},
         projection={"*": True},
-        vector=random_vector,
+        sort={"$vector": random_vector},
         limit=1,
     )
 
