@@ -22,6 +22,7 @@ all_tests=(
   'chroma.sh'
   'clarifai.sh'
   'couchbase.sh'
+  'databricks-volumes.sh'
   'delta-table.sh'
   'dropbox.sh'
   'elasticsearch.sh'
@@ -37,6 +38,7 @@ all_tests=(
   'sharepoint-embed-cog-index.sh'
   'sqlite.sh'
   'vectara.sh'
+  'sharepoint.sh'
   'singlestore.sh'
   'weaviate.sh'
   'databricks-volumes.sh'
@@ -67,8 +69,6 @@ python_version=$(python --version 2>&1)
 tests_to_ignore=(
   'notion.sh'
   'dropbox.sh'
-  'sharepoint.sh'
-  'databricks-volumes.sh'
 )
 
 for test in "${all_tests[@]}"; do

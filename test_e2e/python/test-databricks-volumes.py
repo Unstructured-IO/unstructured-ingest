@@ -66,7 +66,7 @@ def cleanup(
     volume: str,
     volume_path: str,
 ):
-    client = WorkspaceClient(host=host, client_id=client_ie, client_secret=client_secret)
+    client = WorkspaceClient(host=host, client_id=client_id, client_secret=client_secret)
 
     for file in client.files.list_directory_contents(
         _get_volume_path(catalog, volume, volume_path)
