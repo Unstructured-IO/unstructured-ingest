@@ -145,11 +145,11 @@ class DescribeChunker:
 
     # -- fixtures --------------------------------------------------------------------------------
 
-    @pytest.fixture
+    @pytest.fixture()
     def _ingest_docs_map_(self, request: FixtureRequest):
         return method_mock(request, PipelineContext, "ingest_docs_map")
 
-    @pytest.fixture
+    @pytest.fixture()
     def _partition_via_api_(self, request: FixtureRequest):
         return function_mock(
             request, "unstructured.ingest.pipeline.reformat.chunking.partition_via_api"

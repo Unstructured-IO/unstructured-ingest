@@ -17,8 +17,6 @@ RANDOM_SUFFIX=$((RANDOM % 100000 + 1))
 DATABRICKS_VOLUME="test-platform"
 DATABRICKS_VOLUME_PATH="databricks-volumes-test-output-$RANDOM_SUFFIX"
 
-
-
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 

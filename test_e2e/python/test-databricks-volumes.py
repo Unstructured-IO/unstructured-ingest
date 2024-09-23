@@ -37,7 +37,6 @@ def test(
     assert len(files) == 1
 
     resp = client.files.download(files[0].path)
-    breakpoint()
     data = json.loads(resp.contents.read())
 
     assert len(data) == 5

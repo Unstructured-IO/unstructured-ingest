@@ -145,7 +145,6 @@ class DatabricksVolumesUploader(Uploader):
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = os.path.join(self.upload_config.path, path.name)
-        breakpoint()
         self.get_client().files.upload(
             file_path=output_path,
             contents=path.open(),
