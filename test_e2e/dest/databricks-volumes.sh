@@ -17,14 +17,16 @@ RANDOM_SUFFIX=$((RANDOM % 100000 + 1))
 DATABRICKS_VOLUME="test-platform"
 DATABRICKS_VOLUME_PATH="databricks-volumes-test-output-$RANDOM_SUFFIX"
 
+
+
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 
 function cleanup() {
   python "$SCRIPT_DIR"/python/test-databricks-volumes.py cleanup \
     --host "$DATABRICKS_HOST" \
-    --username "$DATABRICKS_USERNAME" \
-    --password "$DATABRICKS_PASSWORD" \
+    --client-id "$DATABRICKS_CLIENT_ID" \
+    --client-secret "$DATABRICKS_CLIENT_SECRET" \
     --volume "$DATABRICKS_VOLUME" \
     --catalog "$DATABRICKS_CATALOG" \
     --volume-path "$DATABRICKS_VOLUME_PATH"
@@ -37,7 +39,7 @@ function cleanup() {
   fi
 }
 
-trap cleanup EXIT
+# trap cleanup EXIT
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
@@ -48,16 +50,16 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --work-dir "$WORK_DIR" \
   databricks-volumes \
   --host "$DATABRICKS_HOST" \
-  --username "$DATABRICKS_USERNAME" \
-  --password "$DATABRICKS_PASSWORD" \
+  --client-id "$DATABRICKS_CLIENT_ID" \
+  --client-secret "$DATABRICKS_CLIENT_SECRET" \
   --volume "$DATABRICKS_VOLUME" \
   --catalog "$DATABRICKS_CATALOG" \
   --volume-path "$DATABRICKS_VOLUME_PATH"
 
 python "$SCRIPT_DIR"/python/test-databricks-volumes.py test \
   --host "$DATABRICKS_HOST" \
-  --username "$DATABRICKS_USERNAME" \
-  --password "$DATABRICKS_PASSWORD" \
+  --client-id "$DATABRICKS_CLIENT_ID" \
+  --client-secret "$DATABRICKS_CLIENT_SECRET" \
   --volume "$DATABRICKS_VOLUME" \
   --catalog "$DATABRICKS_CATALOG" \
   --volume-path "$DATABRICKS_VOLUME_PATH"
