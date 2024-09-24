@@ -2,7 +2,7 @@
 
 ### Fixes
 
-* **Update Databricks CI Test** Update to use client_id and client_secret auth. Also update the files.upload method.
+* **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to original.
 
 ## 0.0.18
 
