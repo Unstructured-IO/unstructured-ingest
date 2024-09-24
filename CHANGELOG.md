@@ -2,8 +2,7 @@
 
 ### Fixes
 
-* **Use the Serverless URL as the default `chunking_endpoint`.** This ensures that `--chunk-by-api` will use the same default endpoint as ``--partition-by-api`
-* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax in both the Partitioner and Chunker for compatibility with the upcoming `unstructured-client`
+* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax and create a new SDK util file for resuse in the Partitioner and Chunker
 
 ## 0.0.18
 
