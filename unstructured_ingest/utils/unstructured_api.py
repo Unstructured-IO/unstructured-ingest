@@ -1,16 +1,13 @@
 import asyncio
-from dataclasses import dataclass, fields
+from dataclasses import fields
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
-    from unstructured_client import UnstructuredClient
     from unstructured_client.models.operations import PartitionRequest
-    from unstructured_client.models.shared import PartitionParameters
 
 
 def create_partition_request(filename: Path, parameters_dict: dict) -> "PartitionRequest":
@@ -83,7 +80,8 @@ async def call_api(
 
     # Note(austin) - The partition calls needs request to be a keyword arg
     # We have to use partial to do this, we can't pass request=request into run_in_executor
-    partition_call = partial(client.general.partition, request=partition_request)
+    # partition_call = partial(client.general.partition, request=partition_request)
+    partition_call = partial(client.general.partition, partition_request)
 
     res = await loop.run_in_executor(None, partition_call)
 
