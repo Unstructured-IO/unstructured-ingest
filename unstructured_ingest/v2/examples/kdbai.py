@@ -27,7 +27,8 @@ download_path = work_dir / "download"
 input_path = docs_path.resolve() / "pdf" / "fake-memo.pdf"
 
 os.environ["KDBAI_API_KEY"] = "key"
-os.environ["KDBAI_ENDPOINT"] = "http://localhost"
+os.environ["KDBAI_ENDPOINT"] = "http://localhost:8082"
+os.environ["KDBAI_DATABASE"] = "default"
 os.environ["KDBAI_TABLE"] = "table"
 
 if __name__ == "__main__":
@@ -47,5 +48,5 @@ if __name__ == "__main__":
             endpoint=os.environ["KDBAI_ENDPOINT"],
         ),
         stager_config=KdbaiUploadStagerConfig(),
-        uploader_config=KdbaiUploaderConfig(table_name=os.environ["KDBAI_TABLE"]),
+        uploader_config=KdbaiUploaderConfig(database_name=os.environ["KDBAI_DATABASE"],table_name=os.environ["KDBAI_TABLE"]),
     ).run()
