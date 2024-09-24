@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.utils.unstructured_api import call_api
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.unstructured_api import call_api
 
 CHUNK_MAX_CHARS_DEFAULT: int = 500
 CHUNK_MULTI_PAGE_DEFAULT: bool = True
