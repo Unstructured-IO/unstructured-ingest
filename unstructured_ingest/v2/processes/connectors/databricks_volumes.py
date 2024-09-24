@@ -42,10 +42,10 @@ class DatabricksVolumesAccessConfig(AccessConfig):
         description="The Databricks password part of basic authentication. "
         "Only possible when Host is *.cloud.databricks.com (AWS).",
     )
-    client_id: Optional[str] = Field(default=None,
-    description="Client ID of the OAuth app.")
-    client_secret: Optional[str] = Field(default=None,
-    description="Client Secret of the OAuth app.")
+    client_id: Optional[str] = Field(default=None, description="Client ID of the OAuth app.")
+    client_secret: Optional[str] = Field(
+        default=None, description="Client Secret of the OAuth app."
+    )
     token: Optional[str] = Field(
         default=None,
         description="The Databricks personal access token (PAT) (AWS, Azure, and GCP) or "
