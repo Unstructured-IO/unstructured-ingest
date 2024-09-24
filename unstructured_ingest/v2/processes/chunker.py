@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.unstructured_api import call_api
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 
@@ -111,42 +112,13 @@ class Chunker(BaseProcess, ABC):
 
     @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
-        from unstructured_client import UnstructuredClient
-        from unstructured_client.models.operations import PartitionRequest
-        from unstructured_client.models.shared import Files, PartitionParameters
-
-        client = UnstructuredClient(
-            api_key_auth=self.config.chunk_api_key.get_secret_value(),
+        elements = await call_api(
             server_url=self.config.chunking_endpoint,
+            api_key=self.config.chunk_api_key.get_secret_value(),
+            filename=elements_filepath,
+            api_parameters=self.config.to_chunking_kwargs(),
         )
-        partition_request = self.config.to_chunking_kwargs()
 
-        # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
-        # Prior to this it was a dataclass which doesn't have .__fields
-        try:
-            possible_fields = PartitionParameters.__fields__
-        except AttributeError:
-            possible_fields = [f.name for f in fields(PartitionParameters)]
-
-        filtered_partition_request = {
-            k: v for k, v in partition_request.items() if k in possible_fields
-        }
-        if len(filtered_partition_request) != len(partition_request):
-            logger.debug(
-                "Following fields were omitted due to not being "
-                "supported by the currently used unstructured client: {}".format(
-                    ", ".join([v for v in partition_request if v not in filtered_partition_request])
-                )
-            )
-        with open(elements_filepath, "rb") as f:
-            files = Files(
-                content=f.read(),
-                file_name=str(elements_filepath.resolve()),
-            )
-            filtered_partition_request["files"] = files
-            partition_params = PartitionParameters(**filtered_partition_request)
-            partition_request_obj = PartitionRequest(partition_parameters=partition_params)
-        resp = client.general.partition(request=partition_request_obj)
-        elements = resp.elements or []
         elements = assign_and_map_hash_ids(elements=elements)
+
         return elements
