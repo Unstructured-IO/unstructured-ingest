@@ -49,14 +49,9 @@ class S3AccessConfig(FsspecAccessConfig):
     )
 
 
-SecretS3AccessConfig = Secret[S3AccessConfig]
-
-
 class S3ConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["s3", "s3a"], init=False)
-    access_config: SecretS3AccessConfig = Field(
-        default_factory=lambda: SecretS3AccessConfig(secret_value=S3AccessConfig())
-    )
+    access_config: Secret[S3AccessConfig] = Field(default=S3AccessConfig(), validate_default=True)
     endpoint_url: Optional[str] = Field(
         default=None,
         description="Use this endpoint_url, if specified. Needed for "

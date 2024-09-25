@@ -1,8 +1,14 @@
-## 0.0.19-dev0
+## 0.0.20-dev0
 
 ### Fixes
 
 * **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to one from oss.
+
+## 0.0.19
+
+### Fixes
+
+* **Use validate_default to instantiate default pydantic secrets**
 
 ## 0.0.18
 

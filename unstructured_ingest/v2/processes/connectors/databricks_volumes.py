@@ -83,14 +83,9 @@ class DatabricksVolumesAccessConfig(AccessConfig):
     google_service_account: Optional[str] = None
 
 
-SecretDatabricksVolumesAccessConfig = Secret[DatabricksVolumesAccessConfig]
-
-
 class DatabricksVolumesConnectionConfig(ConnectionConfig):
-    access_config: SecretDatabricksVolumesAccessConfig = Field(
-        default_factory=lambda: SecretDatabricksVolumesAccessConfig(
-            secret_value=DatabricksVolumesAccessConfig()
-        )
+    access_config: Secret[DatabricksVolumesAccessConfig] = Field(
+        default=DatabricksVolumesAccessConfig(), validate_default=True
     )
     host: Optional[str] = Field(
         default=None,
