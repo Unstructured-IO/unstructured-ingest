@@ -78,9 +78,7 @@ class AzureAccessConfig(FsspecAccessConfig):
 
 class AzureConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["az"], init=False)
-    access_config: Secret[AzureAccessConfig] = Field(
-        default=AzureAccessConfig(), validate_default=True
-    )
+    access_config: Secret[AzureAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
