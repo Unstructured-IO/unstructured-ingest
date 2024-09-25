@@ -2,7 +2,7 @@
 
 ### Fixes
 
-* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax and create a new SDK util file for resuse in the Partitioner and Chunker
+* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
 
 ## 0.0.18
 
