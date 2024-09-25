@@ -36,12 +36,9 @@ class MilvusAccessConfig(AccessConfig):
     token: Optional[str] = Field(default=None, description="Milvus access token")
 
 
-SecretMilvusAccessConfig = Secret[MilvusAccessConfig]
-
-
 class MilvusConnectionConfig(ConnectionConfig):
-    access_config: SecretMilvusAccessConfig = Field(
-        default_factory=lambda: SecretMilvusAccessConfig(secret_value=MilvusAccessConfig())
+    access_config: Secret[MilvusAccessConfig] = Field(
+        default=MilvusAccessConfig(), validate_default=True
     )
     uri: Optional[str] = Field(
         default=None, description="Milvus uri", examples=["http://localhost:19530"]

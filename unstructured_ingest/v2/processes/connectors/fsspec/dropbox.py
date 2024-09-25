@@ -35,13 +35,10 @@ class DropboxAccessConfig(FsspecAccessConfig):
     token: Optional[str] = Field(default=None, description="Dropbox access token.")
 
 
-SecretDropboxAccessConfig = Secret[DropboxAccessConfig]
-
-
 class DropboxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["dropbox"], init=False)
-    access_config: SecretDropboxAccessConfig = Field(
-        default_factory=lambda: SecretDropboxAccessConfig(secret_value=DropboxAccessConfig())
+    access_config: Secret[DropboxAccessConfig] = Field(
+        default=DropboxAccessConfig(), validate_default=True
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 

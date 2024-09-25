@@ -36,14 +36,9 @@ class BoxAccessConfig(FsspecAccessConfig):
     )
 
 
-SecretBoxAccessConfig = Secret[BoxAccessConfig]
-
-
 class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
-    access_config: SecretBoxAccessConfig = Field(
-        default_factory=lambda: SecretBoxAccessConfig(secret_value=BoxAccessConfig())
-    )
+    access_config: Secret[BoxAccessConfig] = Field(default=BoxAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
