@@ -1,3 +1,9 @@
+## 0.0.19
+
+### Fixes
+
+* **Use validate_default to instantiate default pydantic secrets**
+
 ## 0.0.18
 
 ### Enhancements

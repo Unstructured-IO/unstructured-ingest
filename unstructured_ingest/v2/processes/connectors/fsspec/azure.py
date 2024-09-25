@@ -76,14 +76,9 @@ class AzureAccessConfig(FsspecAccessConfig):
             raise ValueError("either connection_string or account_name must be set")
 
 
-SecretAzureAccessConfig = Secret[AzureAccessConfig]
-
-
 class AzureConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["az"], init=False)
-    access_config: SecretAzureAccessConfig = Field(
-        default_factory=lambda: SecretAzureAccessConfig(secret_value=AzureAccessConfig())
-    )
+    access_config: Secret[AzureAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:

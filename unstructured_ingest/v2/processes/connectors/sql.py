@@ -40,9 +40,6 @@ class SQLAccessConfig(AccessConfig):
     password: Optional[str] = Field(default=None, description="DB password")
 
 
-SecreteSQLAccessConfig = Secret[SQLAccessConfig]
-
-
 class SQLConnectionConfig(ConnectionConfig):
     db_type: Literal["sqlite", "postgresql"] = Field(
         default=SQLITE_DB, description="Type of the database backend"
@@ -53,9 +50,7 @@ class SQLConnectionConfig(ConnectionConfig):
     )
     host: Optional[str] = Field(default=None, description="DB host")
     port: Optional[int] = Field(default=5432, description="DB host connection port")
-    access_config: SecreteSQLAccessConfig = Field(
-        default_factory=lambda: SecreteSQLAccessConfig(secret_value=SQLAccessConfig())
-    )
+    access_config: Secret[SQLAccessConfig] = Field(default=SQLAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def __post_init__(self):
