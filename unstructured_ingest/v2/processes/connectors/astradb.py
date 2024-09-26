@@ -89,7 +89,8 @@ class AstraDBUploaderConfig(UploaderConfig):
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
     namespace: Optional[str] = Field(
         default=None,
-        description="[DEPRECATED] The Astra DB connection namespace."
+        description="The Astra DB connection namespace.",
+        deprecated="Please use 'keyspace' instead.",
     )
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
         default=None,
