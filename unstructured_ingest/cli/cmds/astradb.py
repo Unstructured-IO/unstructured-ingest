@@ -37,11 +37,11 @@ class AstraDBCliConfig(SimpleAstraDBConfig, CliConfig):
                 "numbers, and underscores.",
             ),
             click.Option(
-                ["--namespace"],
+                ["--keyspace"],
                 required=False,
                 default=None,
                 type=str,
-                help="The Astra DB connection namespace.",
+                help="The Astra DB connection keyspace.",
             ),
         ]
         return options

@@ -1,8 +1,14 @@
-## 0.0.20-dev01
+## 0.0.21-dev01
 
 ### Fixes
 
 * **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to one from oss.
+
+## 0.0.20
+
+### Enhancements
+
+* **Support for latest AstraPy API** Add support for the modern AstraPy client interface for the Astra DB Connector.
 
 ## 0.0.19
 
