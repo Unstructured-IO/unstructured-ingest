@@ -86,14 +86,9 @@ class GcsAccessConfig(FsspecAccessConfig):
         raise ValueError("Invalid auth token value")
 
 
-SecretGcsAccessConfig = Secret[GcsAccessConfig]
-
-
 class GcsConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["gs", "gcs"], init=False)
-    access_config: SecretGcsAccessConfig = Field(
-        default_factory=lambda: SecretGcsAccessConfig(secret_value=GcsAccessConfig())
-    )
+    access_config: Secret[GcsAccessConfig] = Field(default=GcsAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
 

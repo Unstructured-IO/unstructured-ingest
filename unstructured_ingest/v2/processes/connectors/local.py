@@ -34,12 +34,9 @@ class LocalAccessConfig(AccessConfig):
     pass
 
 
-SecretLocalAccessConfig = Secret[LocalAccessConfig]
-
-
 class LocalConnectionConfig(ConnectionConfig):
-    access_config: SecretLocalAccessConfig = Field(
-        default_factory=lambda: SecretLocalAccessConfig(secret_value=LocalAccessConfig())
+    access_config: Secret[LocalAccessConfig] = Field(
+        default=LocalAccessConfig(), validate_default=True
     )
 
 
