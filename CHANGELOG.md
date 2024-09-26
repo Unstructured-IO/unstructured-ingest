@@ -1,3 +1,9 @@
+## 0.0.20
+
+### Enhancements
+
+* **Support for latest AstraPy API** Add support for the modern AstraPy client interface for the Astra DB Connector.
+
 ## 0.0.19
 
 ### Fixes
