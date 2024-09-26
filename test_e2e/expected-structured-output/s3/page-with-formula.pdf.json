@@ -336,9 +336,33 @@
     }
   },
   {
+    "type": "Title",
+    "element_id": "63fc763509dec0fa03ba8296e4b0616e",
+    "text": "3.4 Embeddings and Softmax",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+        "version": "f2819db63e5aa2a3a6b8ba305f1911ea",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1697584841.0",
+        "date_modified": "1697584841.0",
+        "permissions_data": null,
+        "filesize_bytes": 138124
+      }
+    }
+  },
+  {
     "type": "NarrativeText",
-    "element_id": "0be52b5e411636263e3881b672dca0c3",
-    "text": "Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension dmodel. We also use the usual learned linear transfor- mation and softmax function to convert the decoder output to predicted next-token probabilities. In our model, we share the same weight matrix between the two embedding layers and the pre-softmax dmodel. linear transformation, similar to [30]. In the embedding layers, we multiply those weights by",
+    "element_id": "ebdf8de46645084127f7ff7b24ed87e9",
+    "text": "Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension dmodel. We also use the usual learned linear transfor- mation and softmax function to convert the decoder output to predicted next-token probabilities. In our model, we share the same weight matrix between the two embedding layers and the pre-softmax linear transformation, similar to [30]. In the embedding layers, we multiply those weights by \u221a dmodel.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -361,32 +385,8 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "3bc16d1f44390c70e5586b5cac9c83ef",
+    "element_id": "90bc3011811aa56b780cb227f2a14965",
     "text": "(2)",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
-        "version": "f2819db63e5aa2a3a6b8ba305f1911ea",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1697584841.0",
-        "date_modified": "1697584841.0",
-        "permissions_data": null,
-        "filesize_bytes": 138124
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "17d2c45aa77fb612576f6b0ca784695a",
-    "text": "3.4 Embeddings and Softmax",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
