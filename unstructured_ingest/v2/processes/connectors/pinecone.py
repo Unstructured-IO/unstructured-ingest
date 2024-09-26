@@ -36,13 +36,10 @@ class PineconeAccessConfig(AccessConfig):
     )
 
 
-SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
-
-
 class PineconeConnectionConfig(ConnectionConfig):
     index_name: str = Field(description="Name of the index to connect to.")
-    access_config: SecretPineconeAccessConfig = Field(
-        default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
+    access_config: Secret[PineconeAccessConfig] = Field(
+        default=PineconeAccessConfig(), validate_default=True
     )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
