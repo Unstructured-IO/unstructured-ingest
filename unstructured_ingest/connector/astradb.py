@@ -143,7 +143,7 @@ class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
     def get_ingest_docs(self):  # type: ignore
         # Perform the find operation
         astra_db_docs_cursor = self.astra_db_collection.find({})
-        
+
         # Iterate over the cursor
         astra_db_docs = []
         for result in astra_db_docs_cursor:
