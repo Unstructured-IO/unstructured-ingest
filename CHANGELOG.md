@@ -1,3 +1,9 @@
+## 0.0.21
+
+### Fixes
+
+* **fix bug**
+
 ## 0.0.20
 
 ### Enhancements
