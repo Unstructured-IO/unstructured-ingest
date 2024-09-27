@@ -7,7 +7,11 @@ from pydantic import Field, Secret
 
 from unstructured_ingest import __name__ as integration_name
 from unstructured_ingest.__version__ import __version__ as integration_version
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -36,7 +40,6 @@ if TYPE_CHECKING:
     from astrapy.db import AstraDBCollection
 
 CONNECTOR_TYPE = "astradb"
-
 
 
 def get_astra_collection(connection_config, config) -> "AstraDBCollection":
@@ -143,10 +146,7 @@ class AstraDBIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            get_astra_collection(
-                connection_config=self.connection_config,
-                config=self.index_config
-            )
+            get_astra_collection(connection_config=self.connection_config, config=self.index_config)
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -157,7 +157,6 @@ class AstraDBIndexer(Indexer):
             connection_config=self.connection_config,
             config=self.index_config,
         )
-    
 
     @requires_dependencies(["astrapy"], extras="astradb")
     def astra_record_to_file_data(self, astra_record: Dict[str, Any]) -> FileData:
@@ -171,7 +170,6 @@ class AstraDBIndexer(Indexer):
             ),
             additional_metadata=astra_record.get("metadata", {}),
         )
-
 
     @requires_dependencies(["astrapy"], extras="astradb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
@@ -189,7 +187,7 @@ class AstraDBIndexer(Indexer):
         # Create file data for each astra record
         for astra_record in astra_db_docs:
             file_data = self.astra_record_to_file_data(astra_record=astra_record)
-            
+
             yield file_data
 
 
@@ -233,10 +231,9 @@ class AstraDBDownloader(Downloader):
         # Write "record" to a json file at download path
         with open(download_path, "w") as file:
             for key, value in record.items():
-                file.write(f'{key}: {value}\n')
- 
-        return DownloadResponse(file_data=file_data, path=download_path)
+                file.write(f"{key}: {value}\n")
 
+        return DownloadResponse(file_data=file_data, path=download_path)
 
 
 @dataclass
@@ -280,8 +277,7 @@ class AstraDBUploader(Uploader):
     def precheck(self) -> None:
         try:
             get_astra_collection(
-                connection_config=self.connection_config,
-                config=self.upload_config
+                connection_config=self.connection_config, config=self.upload_config
             )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
