@@ -1,3 +1,9 @@
+## 0.0.21-dev0
+
+### Fixes
+
+* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
+
 ## 0.0.20
 
 ### Enhancements
