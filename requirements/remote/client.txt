@@ -6,7 +6,7 @@
 #
 annotated-types==0.7.0
     # via pydantic
-anyio==4.4.0
+anyio==4.6.0
     # via httpx
 certifi==2024.8.30
     # via
@@ -14,12 +14,16 @@ certifi==2024.8.30
     #   httpx
     #   requests
     #   unstructured-client
+cffi==1.17.1
+    # via cryptography
 charset-normalizer==3.3.2
     # via
     #   requests
     #   unstructured-client
 click==8.1.7
     # via -r ./requirements/remote/../common/base.in
+cryptography==43.0.1
+    # via unstructured-client
 dataclasses-json==0.6.7
     # via
     #   -r ./requirements/remote/../common/base.in
@@ -71,13 +75,15 @@ packaging==23.2
     #   -c ./requirements/remote/../common/constraints.txt
     #   marshmallow
     #   unstructured-client
-pandas==2.2.2
+pandas==2.2.3
     # via -r ./requirements/remote/../common/base.in
-pydantic==2.9.1
+pycparser==2.22
+    # via cffi
+pydantic==2.9.2
     # via -r ./requirements/remote/../common/base.in
-pydantic-core==2.23.3
+pydantic-core==2.23.4
     # via pydantic
-pypdf==4.3.1
+pypdf==5.0.0
     # via unstructured-client
 python-dateutil==2.9.0.post0
     # via
@@ -115,9 +121,9 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   unstructured-client
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
-unstructured-client==0.25.8
+unstructured-client==0.25.9
     # via
     #   -c ./requirements/remote/../common/constraints.txt
     #   -r ./requirements/remote/client.in
