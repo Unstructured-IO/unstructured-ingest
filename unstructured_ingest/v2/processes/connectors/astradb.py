@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -13,7 +13,12 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
+    Downloader,
+    DownloaderConfig,
+    DownloadResponse,
     FileData,
+    Indexer,
+    IndexerConfig,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -22,12 +27,31 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
+    SourceRegistryEntry,
 )
 
 if TYPE_CHECKING:
     from astrapy.db import AstraDBCollection
 
 CONNECTOR_TYPE = "astradb"
+
+
+class AstraDBIndexerConfig(IndexerConfig):
+    pass
+
+
+class AstraDBDownloaderConfig(DownloaderConfig):
+    collection_name: str = Field(
+        description="The name of the Astra DB collection. "
+        "Note that the collection name must only include letters, "
+        "numbers, and underscores."
+    )
+    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
+    namespace: Optional[str] = Field(
+        default=None,
+        description="The Astra DB connection namespace.",
+        deprecated="Please use 'keyspace' instead.",
+    )
 
 
 class AstraDBAccessConfig(AccessConfig):
@@ -42,6 +66,36 @@ class AstraDBConnectionConfig(ConnectionConfig):
 
 class AstraDBUploadStagerConfig(UploadStagerConfig):
     pass
+
+
+@dataclass
+class AstraDBIndexer(Indexer):
+    connector_type: str = CONNECTOR_TYPE
+    connection_config: AstraDBConnectionConfig
+    index_config: AstraDBIndexerConfig
+
+    @requires_dependencies(["astrapy"], extras="astradb")
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        return super().run(**kwargs)
+
+    @requires_dependencies(["astrapy"], extras="astradb")
+    def precheck(self) -> None:
+        super().precheck()
+
+
+@dataclass
+class AstraDBDownloader(Downloader):
+    connector_type: str = CONNECTOR_TYPE
+    connection_config: AstraDBConnectionConfig = field(default_factory=AstraDBConnectionConfig)
+    download_config: AstraDBDownloaderConfig = field(default_factory=AstraDBDownloaderConfig)
+
+    @requires_dependencies(["astrapy"], extras="astradb")
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        return super().run(file_data=file_data, **kwargs)
+
+    @requires_dependencies(["astrapy"], extras="astradb")
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        return await super().run_async(file_data=file_data, **kwargs)
 
 
 @dataclass
@@ -159,4 +213,12 @@ astra_db_destination_entry = DestinationRegistryEntry(
     upload_stager=AstraDBUploadStager,
     uploader_config=AstraDBUploaderConfig,
     uploader=AstraDBUploader,
+)
+
+astra_db_source_entry = SourceRegistryEntry(
+    indexer=AstraDBIndexer,
+    indexer_config=AstraDBIndexerConfig,
+    downloader=AstraDBDownloader,
+    downloader_config=AstraDBDownloaderConfig,
+    connection_config=AstraDBConnectionConfig,
 )
