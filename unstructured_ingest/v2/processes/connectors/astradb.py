@@ -37,7 +37,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    from astrapy.db import AstraDBCollection
+    from astrapy import Collection as AstraDBCollection
+
 
 CONNECTOR_TYPE = "astradb"
 
