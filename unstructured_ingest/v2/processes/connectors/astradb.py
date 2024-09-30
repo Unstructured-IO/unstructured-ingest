@@ -165,9 +165,9 @@ class AstraDBIndexer(Indexer):
             identifier=astra_record["_id"],
             connector_type=CONNECTOR_TYPE,
             source_identifiers=SourceIdentifiers(
-                fullpath=astra_record["_id"] + ".txt",
-                filename=astra_record["_id"] + ".txt",
-                rel_path=astra_record["_id"] + ".txt",
+                fullpath=astra_record["_id"],# + ".txt",
+                filename=astra_record["_id"],# + ".txt",
+                rel_path=astra_record["_id"],# + ".txt",
             ),
             additional_metadata=astra_record.get("metadata", {}),
         )
