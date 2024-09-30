@@ -1,3 +1,9 @@
+## 0.2.1-dev0
+
+### Enhancements
+
+* **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+
 ## 0.2.0
 
 ### Enhancements
@@ -73,6 +79,8 @@
 * **Drop langchain as dependency for embedders**
 
 ## 0.0.21
+
+### Enhancements
 
 ### Fixes
 
