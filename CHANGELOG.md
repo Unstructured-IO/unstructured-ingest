@@ -3,6 +3,7 @@
 ### Enhancements
 
 * **Update KDB.AI vectorstore integration to 1.4**
+* **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 
 ## 0.1.0
 
@@ -57,6 +58,8 @@
 * **Drop langchain as dependency for embedders**
 
 ## 0.0.21
+
+### Enhancements
 
 ### Fixes
 
