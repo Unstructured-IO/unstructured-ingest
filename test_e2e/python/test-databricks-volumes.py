@@ -16,20 +16,20 @@ def _get_volume_path(catalog: str, volume: str, volume_path: str):
 
 @cli.command()
 @click.option("--host", type=str, required=True)
-@click.option("--username", type=str, required=True)
-@click.option("--password", type=str, required=True)
+@click.option("--client-id", type=str, required=True)
+@click.option("--client-secret", type=str, required=True)
 @click.option("--catalog", type=str, required=True)
 @click.option("--volume", type=str, required=True)
 @click.option("--volume-path", type=str, required=True)
 def test(
     host: str,
-    username: str,
-    password: str,
+    client_id: str,
+    client_secret: str,
     catalog: str,
     volume: str,
     volume_path: str,
 ):
-    client = WorkspaceClient(host=host, username=username, password=password)
+    client = WorkspaceClient(host=host, client_id=client_id, client_secret=client_secret)
     files = list(
         client.files.list_directory_contents(_get_volume_path(catalog, volume, volume_path))
     )
@@ -53,20 +53,20 @@ def test(
 
 @cli.command()
 @click.option("--host", type=str, required=True)
-@click.option("--username", type=str, required=True)
-@click.option("--password", type=str, required=True)
+@click.option("--client-id", type=str, required=True)
+@click.option("--client-secret", type=str, required=True)
 @click.option("--catalog", type=str, required=True)
 @click.option("--volume", type=str, required=True)
 @click.option("--volume-path", type=str, required=True)
 def cleanup(
     host: str,
-    username: str,
-    password: str,
+    client_id: str,
+    client_secret: str,
     catalog: str,
     volume: str,
     volume_path: str,
 ):
-    client = WorkspaceClient(host=host, username=username, password=password)
+    client = WorkspaceClient(host=host, client_id=client_id, client_secret=client_secret)
 
     for file in client.files.list_directory_contents(
         _get_volume_path(catalog, volume, volume_path)

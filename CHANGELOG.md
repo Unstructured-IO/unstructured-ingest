@@ -1,8 +1,10 @@
-## 0.0.21-dev1
+## 0.0.21-dev2
 
 ### Fixes
 
-* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
+* **Fix forward compatibility issues with `unstructured-client==0.26.0`.** Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
+
+* **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to one from open source.
 
 * **fix astra src bug**
 
