@@ -142,8 +142,14 @@ class AstraDBSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
     @requires_dependencies(["astrapy"], extras="astradb")
     def get_ingest_docs(self):  # type: ignore
         # Perform the find operation
-        astra_db_docs = list(self.astra_db_collection.paginated_find())
+        astra_db_docs_cursor = self.astra_db_collection.find({})
 
+        # Iterate over the cursor
+        astra_db_docs = []
+        for result in astra_db_docs_cursor:
+            astra_db_docs.append(result)
+
+        # Create a list of AstraDBIngestDoc objects
         doc_list = []
         for record in astra_db_docs:
             doc = AstraDBIngestDoc(

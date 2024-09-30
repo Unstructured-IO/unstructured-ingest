@@ -1,8 +1,15 @@
-## 0.0.21
+## 0.0.22
 
 ### Enhancements
 
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+
+## 0.0.21-dev1
+
+### Fixes
+
+* **Fix forward compatibility issues with `unstructured-client==0.26.0`. Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
+* **fix astra src bug**
 
 ## 0.0.20
 
