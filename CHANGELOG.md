@@ -1,4 +1,8 @@
-## 0.0.21-dev2
+## 0.0.21-dev3
+
+### Enhancements
+
+* **Add documentation for developing sources/destinations**
 
 ### Fixes
 
