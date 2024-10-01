@@ -6,7 +6,7 @@
 
 * **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to one from open source.
 
-* **fix astra src bug**
+* **Fix astra src bug** V1 source connector was updated to work with astrapy 1.5.0
 
 ## 0.0.20
 
