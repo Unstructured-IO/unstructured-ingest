@@ -10,15 +10,15 @@ The most basic example of a pipeline starts with a local source connector, follo
 `local.py`
 
 ```
-from unstructured.ingest.v2.interfaces import ProcessorConfig
-from unstructured.ingest.v2.pipeline.pipeline import Pipeline
-from unstructured.ingest.v2.processes.connectors.local import (
+from unstructured_ingest.v2.interfaces import ProcessorConfig
+from unstructured_ingest.v2.pipeline.pipeline import Pipeline
+from unstructured_ingest.v2.processes.connectors.local import (
     LocalConnectionConfig,
     LocalDownloaderConfig,
     LocalIndexerConfig,
     LocalUploaderConfig,
 )
-from unstructured.ingest.v2.processes.partitioner import PartitionerConfig
+from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
 if __name__ == "__main__":
     Pipeline.from_configs(
@@ -65,11 +65,11 @@ local-working-dir
   - 36caa9b04378.json
 ```
 
-(Note that the index and partition file names are deterministic and based on the hash of the current step along with the previous step's hash.) In the case of the local source connector, it won't *download* files because they are already local. But for other source connectors there will be a `download` folder. Also note that the final file is named based on the original file with a `.json` extension since it has been partitioned. Not all output files will be named the same as the input file. This is the case for database like sources.
+(Note that the index and partition file names are deterministic and based on the hash of the current step along with the previous step's hash.) In the case of the local source connector, it won't *download* files because they are already local. But for other source connectors there will be a `download` folder. Also note that the final file is named based on the original file with a `.json` extension since it has been partitioned. Not all output files will be named the same as the input file. (ex. database like sources)
 
 You can see the source/destination connector file that it runs here:
 
-https://github.com/Unstructured-IO/unstructured/blob/main/unstructured/ingest/v2/processes/connectors/local.py
+https://github.com/Unstructured-IO/unstructured/blob/main/unstructured_ingest/v2/processes/connectors/local.py
 
 If you look through the file you will notice these interfaces and functions
 
@@ -89,9 +89,9 @@ If you look through the file you will notice these interfaces and functions
 
 * LocalUploader - Does the actual uploading
 
-* local_source_entry - Used to register the source connector here: `unstructured/ingest/v2/processes/connectors/__init__.py`
+* local_source_entry - Used to register the source connector here: [`unstructured_ingest/v2/processes/connectors/__init__.py`](https://github.com/Unstructured-IO/unstructured_ingest/blob/main/unstructured_ingest/v2/processes/connectors/__init__.py)
 
-* local_destination_entry - Used to register the destination connector here: `unstructured/ingest/v2/processes/connectors/__init__.py`
+* local_destination_entry - Used to register the destination connector here: [`unstructured_ingest/v2/processes/connectors/__init__.py`](https://github.com/Unstructured-IO/unstructured_ingest/blob/main/unstructured_ingest/v2/processes/connectors/__init__.py)
 
 
 
@@ -113,22 +113,22 @@ The python file to iterate on development looks like this:
 ```
 import random # So we get a new Chroma collections on every run
 
-from unstructured.ingest.v2.interfaces import ProcessorConfig
-from unstructured.ingest.v2.pipeline.pipeline import Pipeline
-from unstructured.ingest.v2.processes.chunker import ChunkerConfig
-from unstructured.ingest.v2.processes.connectors.chroma import (
+from unstructured_ingest.v2.interfaces import ProcessorConfig
+from unstructured_ingest.v2.pipeline.pipeline import Pipeline
+from unstructured_ingest.v2.processes.chunker import ChunkerConfig
+from unstructured_ingest.v2.processes.connectors.chroma import (
     ChromaAccessConfig,
     ChromaConnectionConfig,
     ChromaUploaderConfig,
     ChromaUploadStagerConfig,
 )
-from unstructured.ingest.v2.processes.connectors.local import (
+from unstructured_ingest.v2.processes.connectors.local import (
     LocalConnectionConfig,
     LocalDownloaderConfig,
     LocalIndexerConfig,
 )
-from unstructured.ingest.v2.processes.embedder import EmbedderConfig
-from unstructured.ingest.v2.processes.partitioner import PartitionerConfig
+from unstructured_ingest.v2.processes.embedder import EmbedderConfig
+from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
 if __name__ == "__main__":
     Pipeline.from_configs(
@@ -178,7 +178,7 @@ the service should now be running on port 8000
 
 Let's look at the python file in the Unstructured repo
 
-https://github.com/Unstructured-IO/unstructured/blob/main/unstructured/ingest/v2/processes/connectors/chroma.py
+https://github.com/Unstructured-IO/unstructured/blob/main/unstructured_ingest/v2/processes/connectors/chroma.py
 
 * ChromaAccessConfig - Needed for connecting to Chroma. Usually sensitive attributes that will be hidden.
 
@@ -192,7 +192,7 @@ https://github.com/Unstructured-IO/unstructured/blob/main/unstructured/ingest/v2
 
 * ChromaUploader - Connects to the Client. And uploads artifacts. Note that it does the minimum amount of processing possible to the artifacts before uploading. The Stager phase is responsible for preparing artifacts. Chroma wants artifacts in a dictionary of lists so we do have to create that in the Uploader since there is not a practical way to store that in a `.json` file.
 
-* chroma_destination_entry - Registers the Chroma destination connector with the pipeline. (!!! LINK `unstructured/ingest/v2/processes/connectors/__init__.py`)
+* chroma_destination_entry - Registers the Chroma destination connector with the pipeline. ([`unstructured_ingest/v2/processes/connectors/__init__.py`](https://github.com/Unstructured-IO/unstructured_ingest/blob/main/unstructured_ingest/v2/processes/connectors/__init__.py))
 
 Note that the `chroma.py` file imports the official Chroma python package when it *creates* the client and not at the top of the file. This allows the classes to be *instantiated* without error,They will raise a runtime error though if the imports are missing.
 
@@ -210,21 +210,23 @@ chroma-working-dir
 - upload_stage
   - e17715933baf.json
 ```
-`e17715933baf.json` in the `upload_stage` is a `.json` file which is appropriate for this destination connector. But it could very well be a `.csv` (or file of your choosing) if the uploader is a relational database. Or if the destination is blob(file) storage, like AWS S3, you may not need the Staging phase. The partitioned/embedded `.json` file would be uploaded directly.
+`e17715933baf.json` in the `upload_stage` is a `.json` file which is appropriate for this destination connector. But it could very well be a `.csv` (or file of your choosing) if the uploader is a relational database. 
+
+If the destination is blob(file) storage, like AWS S3, you may not need the Staging phase. The partitioned/embedded `.json` file would be uploaded directly.
 
 ### Additional files
 
 When you make a **new** destination connector you will need these files first:
 
-* `unstructured/ingest/v2/processes/connectors/your_connector.py`
-* And add that to: `unstructured/ingest/v2/processes/connectors/__init__.py`
-* Your python file to iterate on development. You can call it `unstructured/ingest/v2/examples/example_your_connector.py`
+* `unstructured_ingest/v2/processes/connectors/your_connector.py`
+* And add that to: `unstructured_ingest/v2/processes/connectors/__init__.py`
+* Your python file to iterate on development. You can call it `unstructured_ingest/v2/examples/example_your_connector.py`
 * And some form of **live connection** to the destination service. In the case of Chroma we have a local service running. Often we will run a docker container (Elasticsearch). At other times we will use a hosted service if there is no docker image (Pinecone).
 
 Once the connector is worked out with those files, you will need to add a few more files. 
 
-* `unstructured/ingest/v2/cli/cmds/your_connector.py`
-* Add that to: `unstructured/ingest/v2/cli/cmds/__init__.py`
+* `unstructured_ingest/v2/cli/cmds/your_connector.py`
+* Add that to: `unstructured_ingest/v2/cli/cmds/__init__.py`
 * Makefile
 * Manifest.in
 * setup.py
@@ -233,7 +235,7 @@ Once the connector is worked out with those files, you will need to add a few mo
 
 The CLI file. This allows the connector to be run via the command line. All the arguments for the connector need to be exposed.
 
-`unstructured/ingest/v2/cli/cmds/your_connector.py`
+`unstructured_ingest/v2/cli/cmds/your_connector.py`
 
 
 ### Intrgration Test
@@ -274,18 +276,18 @@ The file to use for iteration would look like this:
 ```
 import os
 
-from unstructured.ingest.v2.interfaces import ProcessorConfig
-from unstructured.ingest.v2.pipeline.pipeline import Pipeline
-from unstructured.ingest.v2.processes.connectors.local import (
+from unstructured_ingest.v2.interfaces import ProcessorConfig
+from unstructured_ingest.v2.pipeline.pipeline import Pipeline
+from unstructured_ingest.v2.processes.connectors.local import (
     LocalUploaderConfig,
 )
-from unstructured.ingest.v2.processes.connectors.onedrive import (
+from unstructured_ingest.v2.processes.connectors.onedrive import (
     OnedriveAccessConfig,
     OnedriveConnectionConfig,
     OnedriveDownloaderConfig,
     OnedriveIndexerConfig,
 )
-from unstructured.ingest.v2.processes.partitioner import PartitionerConfig
+from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
 if __name__ == "__main__":
     Pipeline.from_configs(
@@ -311,7 +313,7 @@ To run this would require service credentials for Onedrive. And we can't run a D
 
 Let's look at the source connector file that it runs.
 
-https://github.com/Unstructured-IO/unstructured-ingest/blob/main/unstructured_ingest/v2/processes/connectors/onedrive.py
+https://github.com/Unstructured-IO/unstructured_ingest/blob/main/unstructured_ingest/v2/processes/connectors/onedrive.py
 
 If you look through the file you will notice these interfaces and functions
 
@@ -347,7 +349,7 @@ If you have any questions post in the public Slack channel `ask-for-help-open-so
 
 Yellow (without the Uncompressing) represents the steps in a source connector. Orange represents a destination connector.
 
-![unstructured ingest diagram](assets/pipeline.png)
+![unstructured_ingest diagram](assets/pipeline.png)
 
 
 
