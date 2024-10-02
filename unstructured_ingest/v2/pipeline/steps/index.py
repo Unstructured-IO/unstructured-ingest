@@ -23,9 +23,11 @@ class IndexStep(PipelineStep):
         return f"{self.identifier} ({self.process.__class__.__name__})"
 
     def __post_init__(self):
-        config = self.process.index_config.json() if self.process.index_config else None
+        config = self.process.index_config.model_dump_json() if self.process.index_config else None
         connection_config = (
-            self.process.connection_config.json() if self.process.connection_config else None
+            self.process.connection_config.model_dump_json()
+            if self.process.connection_config
+            else None
         )
         logger.info(
             f"created {self.identifier} with configs: {config}, "

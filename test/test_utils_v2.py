@@ -57,7 +57,7 @@ def test_serialize_base_model():
 
 
 def test_serialize_base_model_json():
-    serialized_json = model.json()
+    serialized_json = model.model_dump_json()
     serialized_dict = json.loads(serialized_json)
     expected_dict = {
         "secret_str": "**********",
