@@ -133,19 +133,21 @@ class FsspecIndexer(Indexer):
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         raise NotImplementedError()
 
-    def sterilize_info(self, path) -> dict:
-        info = self.fs.info(path=path)
-        return sterilize_dict(data=info)
+    def get_path(self, file_data: dict) -> str:
+        return file_data["name"]
+
+    def sterilize_info(self, file_data: dict) -> dict:
+        return sterilize_dict(data=file_data)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         files = self.get_file_data()
         for file_data in files:
-            file_path = file_data["key"]
+            file_path = self.get_path(file_data=file_data)
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
             rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip("/")
 
-            additional_metadata = self.sterilize_info(path=file_path)
+            additional_metadata = self.sterilize_info(file_data=file_data)
             additional_metadata["original_file_path"] = file_path
             yield FileData(
                 identifier=str(uuid5(NAMESPACE_DNS, file_path)),
@@ -155,7 +157,7 @@ class FsspecIndexer(Indexer):
                     rel_path=rel_path or None,
                     fullpath=file_path,
                 ),
-                metadata=self.get_metadata(path=file_path),
+                metadata=self.get_metadata(file_data=file_data),
                 additional_metadata=additional_metadata,
             )
 

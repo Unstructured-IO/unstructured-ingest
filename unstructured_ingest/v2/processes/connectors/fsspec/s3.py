@@ -79,6 +79,9 @@ class S3Indexer(FsspecIndexer):
     index_config: S3IndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def get_path(self, file_data: dict) -> str:
+        return file_data["Key"]
+
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["Key"]
         date_created = None

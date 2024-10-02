@@ -50,6 +50,9 @@ class DropboxIndexer(FsspecIndexer):
     index_config: DropboxIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def get_path(self, file_data: dict) -> str:
+        return file_data["name"].lstrip("/")
+
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"].lstrip("/")
         date_created = None
