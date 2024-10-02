@@ -100,9 +100,8 @@ class AzureIndexer(FsspecIndexer):
     def precheck(self) -> None:
         super().precheck()
 
-    def sterilize_info(self, path) -> dict:
-        info = self.fs.info(path=path)
-        return sterilize_dict(data=info, default=azure_json_serial)
+    def sterilize_info(self, file_data: dict) -> dict:
+        return sterilize_dict(data=file_data, default=azure_json_serial)
 
     @requires_dependencies(["adlfs", "fsspec"], extras="azure")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
