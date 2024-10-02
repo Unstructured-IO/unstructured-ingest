@@ -21,7 +21,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_access_key_id: SecretStr
     aws_secret_access_key: SecretStr
     region_name: str = "us-west-2"
-    embed_model_name: str = Field(default="amazon.titan-embed-text-v2:0", alias="model_name")
+    embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
 
     @requires_dependencies(
         ["boto3", "numpy", "botocore"],
