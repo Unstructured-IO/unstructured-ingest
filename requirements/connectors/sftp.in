@@ -1,4 +1,4 @@
--r ../common/base.in
+-c ../common/constraints.txt
 
 fsspec
 paramiko
