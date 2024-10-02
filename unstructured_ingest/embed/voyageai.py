@@ -53,8 +53,6 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        from voyageai import Client as VoyageAIClient
-
         client: VoyageAIClient = self.config.get_client()
         response = client.embed(texts=elements, model=self.config.embedder_model_name)
         return response.embeddings
