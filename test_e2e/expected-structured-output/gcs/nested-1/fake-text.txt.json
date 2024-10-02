@@ -10,7 +10,7 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "gs://utic-test-ingest-fixtures/nested-1/fake-text.txt",
-        "version": "180263070579038859328651626981788275889",
+        "version": "CKyIrMaE0/8CEAE=",
         "record_locator": {
           "protocol": "gs",
           "remote_file_path": "gs://utic-test-ingest-fixtures/",
@@ -34,7 +34,7 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "gs://utic-test-ingest-fixtures/nested-1/fake-text.txt",
-        "version": "180263070579038859328651626981788275889",
+        "version": "CKyIrMaE0/8CEAE=",
         "record_locator": {
           "protocol": "gs",
           "remote_file_path": "gs://utic-test-ingest-fixtures/",
@@ -58,7 +58,7 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "gs://utic-test-ingest-fixtures/nested-1/fake-text.txt",
-        "version": "180263070579038859328651626981788275889",
+        "version": "CKyIrMaE0/8CEAE=",
         "record_locator": {
           "protocol": "gs",
           "remote_file_path": "gs://utic-test-ingest-fixtures/",
@@ -82,7 +82,7 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "gs://utic-test-ingest-fixtures/nested-1/fake-text.txt",
-        "version": "180263070579038859328651626981788275889",
+        "version": "CKyIrMaE0/8CEAE=",
         "record_locator": {
           "protocol": "gs",
           "remote_file_path": "gs://utic-test-ingest-fixtures/",
@@ -106,7 +106,7 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "gs://utic-test-ingest-fixtures/nested-1/fake-text.txt",
-        "version": "180263070579038859328651626981788275889",
+        "version": "CKyIrMaE0/8CEAE=",
         "record_locator": {
           "protocol": "gs",
           "remote_file_path": "gs://utic-test-ingest-fixtures/",
@@ -130,7 +130,7 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "gs://utic-test-ingest-fixtures/nested-1/fake-text.txt",
-        "version": "180263070579038859328651626981788275889",
+        "version": "CKyIrMaE0/8CEAE=",
         "record_locator": {
           "protocol": "gs",
           "remote_file_path": "gs://utic-test-ingest-fixtures/",
