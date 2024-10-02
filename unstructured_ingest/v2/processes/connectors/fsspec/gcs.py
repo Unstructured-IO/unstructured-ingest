@@ -123,6 +123,7 @@ class GcsIndexer(FsspecIndexer):
         record_locator = {
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,
+            "file_id": file_data.get("id"),
         }
         return FileDataSourceMetadata(
             date_created=date_created,
