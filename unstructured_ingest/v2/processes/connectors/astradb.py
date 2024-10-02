@@ -165,9 +165,9 @@ class AstraDBIndexer(Indexer):
             identifier=astra_record["_id"],
             connector_type=CONNECTOR_TYPE,
             source_identifiers=SourceIdentifiers(
-                fullpath=astra_record["_id"],# + ".txt",
-                filename=astra_record["_id"],# + ".txt",
-                rel_path=astra_record["_id"],# + ".txt",
+                fullpath=astra_record["_id"] + ".txt",
+                filename=astra_record["_id"] + ".txt",
+                rel_path=astra_record["_id"] + ".txt",
             ),
             additional_metadata=astra_record.get("metadata", {}),
         )
@@ -231,8 +231,8 @@ class AstraDBDownloader(Downloader):
 
         # Write "record" to a json file at download path
         with open(download_path, "w") as file:
-            for key, value in record.items():
-                file.write(f"{key}: {value}\n")
+            # List comp. to prevent newlines at the end of the file which affects partitioning
+            file.write("\n".join([str(x) for x in record.values()]))
 
         return DownloadResponse(file_data=file_data, path=download_path)
 
