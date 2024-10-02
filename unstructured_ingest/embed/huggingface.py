@@ -19,7 +19,7 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
         default_factory=lambda: {"device": "cpu"}, alias="model_kwargs"
     )
     encode_kwargs: Optional[dict] = Field(default_factory=lambda: {"normalize_embeddings": False})
-    cache_folder: Optional[dict] = Field(default=None)
+    cache_folder: Optional[str] = Field(default=None)
 
     @requires_dependencies(
         ["sentence_transformers"],
@@ -29,9 +29,9 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
         from sentence_transformers import SentenceTransformer
 
         return SentenceTransformer(
-            self.embedder_model_name,
+            model_name_or_path=self.embedder_model_name,
             cache_folder=self.cache_folder,
-            model_kwargs=self.embedder_model_kwargs,
+            **self.embedder_model_kwargs,
         )
 
 
