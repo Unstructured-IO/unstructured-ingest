@@ -25,7 +25,7 @@ if __name__ == "__main__":
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve())),
         indexer_config=LocalIndexerConfig(
-            input_path=str(docs_path.resolve()) + "/book-war-and-peace-1p.txt"
+            input_path=str(docs_path.resolve()) + "/language-docs/UDHR_first_article_all.txt"
         ),
         downloader_config=LocalDownloaderConfig(download_dir=download_path),
         source_connection_config=LocalConnectionConfig(),

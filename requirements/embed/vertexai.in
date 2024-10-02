@@ -1,6 +1,3 @@
 -c ../common/constraints.txt
--c ../common/constraints.txt
 
-langchain
-langchain-community
-langchain-google-vertexai
+vertexai

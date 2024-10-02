@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from pydantic import Field, SecretStr
@@ -31,16 +31,16 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
 class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: OctoAiEmbeddingConfig
     # Uses the OpenAI SDK
-    _exemplary_embedding: Optional[List[float]] = field(init=False, default=None)
+    _exemplary_embedding: Optional[list[float]] = field(init=False, default=None)
 
-    def get_exemplary_embedding(self) -> List[float]:
+    def get_exemplary_embedding(self) -> list[float]:
         return self.embed_query("Q")
 
-    def num_of_dimensions(self):
+    def num_of_dimensions(self) -> tuple[int, ...]:
         exemplary_embedding = self.get_exemplary_embedding()
         return np.shape(exemplary_embedding)
 
-    def is_unit_vector(self):
+    def is_unit_vector(self) -> bool:
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
@@ -49,12 +49,12 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         response = client.embeddings.create(input=query, model=self.config.embedder_model_name)
         return response.data[0].embedding
 
-    def embed_documents(self, elements: List[dict]) -> List[dict]:
+    def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = [self.embed_query(e.get("text", "")) for e in elements]
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
 
-    def _add_embeddings_to_elements(self, elements, embeddings) -> List[dict]:
+    def _add_embeddings_to_elements(self, elements, embeddings) -> list[dict]:
         assert len(elements) == len(embeddings)
         elements_w_embedding = []
         for i, element in enumerate(elements):

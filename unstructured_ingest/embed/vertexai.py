@@ -3,7 +3,7 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, List, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 import numpy as np
 from pydantic import Field, Secret, ValidationError
@@ -13,7 +13,7 @@ from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, Embedding
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
-    from langchain_google_vertexai import VertexAIEmbeddings
+    from vertexai.language_models import TextEmbeddingModel
 
 
 def conform_string_to_dict(value: Any) -> dict:
@@ -32,6 +32,8 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: Optional[str] = Field(
         default="textembedding-gecko@001", alias="model_name"
     )
+    dimensionality: Optional[int] = None
+    task: str = "RETRIEVAL_DOCUMENT"
 
     def register_application_credentials(self):
         # TODO look into passing credentials in directly, rather than via env var and tmp file
@@ -41,45 +43,54 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(application_credentials_path)
 
     @requires_dependencies(
-        ["langchain", "langchain_google_vertexai"],
+        ["vertexai"],
         extras="embed-vertexai",
     )
-    def get_client(self) -> "VertexAIEmbeddings":
+    def get_client(self) -> "TextEmbeddingModel":
         """Creates a Langchain VertexAI python client to embed elements."""
-        from langchain_google_vertexai import VertexAIEmbeddings
+        from vertexai.language_models import TextEmbeddingModel
 
         self.register_application_credentials()
-        vertexai_client = VertexAIEmbeddings(model_name=self.embedder_model_name)
-        return vertexai_client
+        return TextEmbeddingModel.from_pretrained(self.embedder_model_name)
 
 
 @dataclass
 class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: VertexAIEmbeddingConfig
 
-    def get_exemplary_embedding(self) -> List[float]:
+    def get_exemplary_embedding(self) -> list[float]:
         return self.embed_query(query="A sample query.")
 
-    def num_of_dimensions(self):
+    def num_of_dimensions(self) -> tuple[int, ...]:
         exemplary_embedding = self.get_exemplary_embedding()
         return np.shape(exemplary_embedding)
 
-    def is_unit_vector(self):
+    def is_unit_vector(self) -> bool:
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
+    @requires_dependencies(
+        ["vertexai"],
+        extras="embed-vertexai",
+    )
     def embed_query(self, query):
-        client = self.config.get_client()
-        result = client.embed_query(str(query))
-        return result
+        from vertexai.language_models import TextEmbeddingInput
 
-    def embed_documents(self, elements: List[dict]) -> List[dict]:
         client = self.config.get_client()
-        embeddings = client.embed_documents([e.get("text", "") for e in elements])
+        inputs = [TextEmbeddingInput(query, self.config.task)]
+        kwargs = (
+            {"output_dimensionality": self.config.dimensionality}
+            if self.config.dimensionality
+            else {}
+        )
+        return client.get_embeddings(inputs, **kwargs)
+
+    def embed_documents(self, elements: list[dict]) -> list[dict]:
+        embeddings = self._embed_documents([e.get("text", "") for e in elements])
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
 
-    def _add_embeddings_to_elements(self, elements, embeddings) -> List[dict]:
+    def _add_embeddings_to_elements(self, elements, embeddings) -> list[dict]:
         assert len(elements) == len(embeddings)
         elements_w_embedding = []
         for i, element in enumerate(elements):
