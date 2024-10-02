@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import time
 from typing import Any, Generator, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData
+from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -99,13 +100,38 @@ class AzureIndexer(FsspecIndexer):
     def precheck(self) -> None:
         super().precheck()
 
-    def sterilize_info(self, path) -> dict:
-        info = self.fs.info(path=path)
-        return sterilize_dict(data=info, default=azure_json_serial)
+    def sterilize_info(self, file_data: dict) -> dict:
+        return sterilize_dict(data=file_data, default=azure_json_serial)
 
     @requires_dependencies(["adlfs", "fsspec"], extras="azure")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         return super().run(**kwargs)
+
+    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+        path = file_data["name"]
+        date_created = (
+            file_data.get("creation_time").timestamp() if "creation_time" in file_data else None
+        )
+        date_modified = (
+            file_data.get("last_modified").timestamp() if "last_modified" in file_data else None
+        )
+
+        file_size = file_data.get("size") if "size" in file_data else None
+
+        version = file_data.get("etag")
+        record_locator = {
+            "protocol": self.index_config.protocol,
+            "remote_file_path": self.index_config.remote_url,
+        }
+        return FileDataSourceMetadata(
+            date_created=date_created,
+            date_modified=date_modified,
+            date_processed=str(time()),
+            version=version,
+            url=f"{self.index_config.protocol}://{path}",
+            record_locator=record_locator,
+            filesize_bytes=file_size,
+        )
 
 
 class AzureDownloaderConfig(FsspecDownloaderConfig):

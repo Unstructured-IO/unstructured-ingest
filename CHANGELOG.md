@@ -1,9 +1,10 @@
-## 0.0.22-dev1
+## 0.0.22-dev2
 
 ### Enhancements
 
 * **Add documentation for developing sources/destinations**
 * **Leverage `uv` for pip compile**
+* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
 
 ## 0.0.21
 

@@ -1,6 +1,5 @@
 import contextlib
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import Any, Generator, Optional
@@ -80,27 +79,25 @@ class S3Indexer(FsspecIndexer):
     index_config: S3IndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def get_metadata(self, path: str) -> FileDataSourceMetadata:
+    def get_path(self, file_data: dict) -> str:
+        return file_data["Key"]
+
+    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+        path = file_data["Key"]
         date_created = None
         date_modified = None
-        file_size = None
-        try:
-            modified: Optional[datetime] = self.fs.modified(path)
-            if modified:
-                date_created = str(modified.timestamp())
-                date_modified = str(modified.timestamp())
-        except NotImplementedError:
-            pass
-        with contextlib.suppress(AttributeError):
-            file_size = self.fs.size(path)
+        modified = file_data.get("LastModified")
+        if modified:
+            date_created = str(modified.timestamp())
+            date_modified = str(modified.timestamp())
 
-        version = None
-        info: dict[str, Any] = self.fs.info(path)
-        if etag := info.get("ETag"):
-            version = str(etag).rstrip('"').lstrip('"')
+        file_size = file_data.get("size") if "size" in file_data else None
+        file_size = file_size or file_data.get("Size")
+
+        version = file_data.get("ETag").rstrip('"').lstrip('"') if "ETag" in file_data else None
         metadata: dict[str, str] = {}
         with contextlib.suppress(AttributeError):
-            metadata = self.fs.metadata(path)
+            metadata = self.fs.metadata(path=path)
         record_locator = {
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,

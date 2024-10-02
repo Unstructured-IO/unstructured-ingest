@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import time
 from typing import Any, Generator, Optional, Union
 
+from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData
+from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -105,6 +107,33 @@ class GcsIndexer(FsspecIndexer):
     @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
     def precheck(self) -> None:
         super().precheck()
+
+    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+        path = file_data["name"]
+        date_created = None
+        date_modified = None
+        if modified_at_str := file_data.get("updated"):
+            date_modified = parser.parse(modified_at_str).timestamp()
+        if created_at_str := file_data.get("timeCreated"):
+            date_created = parser.parse(created_at_str).timestamp()
+
+        file_size = file_data.get("size") if "size" in file_data else None
+
+        version = file_data.get("etag")
+        record_locator = {
+            "protocol": self.index_config.protocol,
+            "remote_file_path": self.index_config.remote_url,
+            "file_id": file_data.get("id"),
+        }
+        return FileDataSourceMetadata(
+            date_created=date_created,
+            date_modified=date_modified,
+            date_processed=str(time()),
+            version=version,
+            url=f"{self.index_config.protocol}://{path}",
+            record_locator=record_locator,
+            filesize_bytes=file_size,
+        )
 
 
 class GcsDownloaderConfig(FsspecDownloaderConfig):
