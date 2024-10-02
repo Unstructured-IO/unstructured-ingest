@@ -97,12 +97,6 @@ class DropboxIndexer(FsspecIndexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         return super().run(**kwargs)
 
-    def sterilize_info(self, path) -> dict:
-        # the fs.info method defined in the dropboxdrivefs library expects a "url"
-        # kwarg rather than "path"; though both refer to the same thing
-        info = self.fs.info(url=path)
-        return sterilize_dict(data=info)
-
 
 class DropboxDownloaderConfig(FsspecDownloaderConfig):
     pass
