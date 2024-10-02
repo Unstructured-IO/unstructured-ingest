@@ -1,8 +1,9 @@
-## 0.0.22-dev0
+## 0.0.22-dev1
 
 ### Enhancements
 
 * **Add documentation for developing sources/destinations**
+* **Leverage `uv` for pip compile**
 
 ## 0.0.21
 

@@ -1,5 +1,3 @@
--r ../common/base.in
-
 bs4
 requests
 
