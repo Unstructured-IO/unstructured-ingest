@@ -28,6 +28,7 @@ def check_files(expected_output_dir: Path, current_output_dir: Path):
     diff = set(expected_files) ^ set(current_files)
     if diff:
         print("diff in files that exist: {}".format(", ".join(diff)))
+        print('to update test fixtures, "export OVERWRITE_FIXTURES=true" and rerun this script')
         raise CheckError("The same files don't exist in both locations")
 
 
@@ -41,6 +42,7 @@ def check_contents(expected_output_dir: Path, current_output_dir: Path):
         if diffs:
             found_diff = True
             print(f"diffs between files {expected_file_path} and {current_file_path}")
+            print('to update test fixtures, "export OVERWRITE_FIXTURES=true" and rerun this script')
             for diff in diffs:
                 print(diff.to_json(indent=2))
     if found_diff:

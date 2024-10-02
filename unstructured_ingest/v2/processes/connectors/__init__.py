@@ -9,7 +9,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 from .airtable import CONNECTOR_TYPE as AIRTABLE_CONNECTOR_TYPE
 from .airtable import airtable_source_entry
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
-from .astradb import astra_db_destination_entry
+from .astradb import astra_db_destination_entry, astra_db_source_entry
 from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE
 from .azure_cognitive_search import azure_cognitive_search_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
@@ -47,6 +47,7 @@ from .sql import sql_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
+add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
 
 add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_destination_entry)
