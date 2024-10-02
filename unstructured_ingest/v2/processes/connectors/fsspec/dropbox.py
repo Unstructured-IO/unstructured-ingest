@@ -23,7 +23,6 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploader,
     FsspecUploaderConfig,
 )
-from unstructured_ingest.v2.processes.connectors.fsspec.utils import sterilize_dict
 
 CONNECTOR_TYPE = "dropbox"
 
@@ -51,7 +50,7 @@ class DropboxIndexer(FsspecIndexer):
     connector_type: str = CONNECTOR_TYPE
 
     def get_path(self, file_data: dict) -> str:
-        return file_data["name"].lstrip("/")
+        return file_data["name"]
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"].lstrip("/")
