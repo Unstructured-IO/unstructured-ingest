@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 class EmbedderConfig(BaseModel):
     embedding_provider: Optional[
         Literal[
-            "langchain-openai",
-            "langchain-huggingface",
-            "langchain-aws-bedrock",
-            "langchain-vertexai",
-            "langchain-voyageai",
+            "openai",
+            "huggingface",
+            "aws-bedrock",
+            "vertexai",
+            "voyageai",
             "octoai",
             "mixedbread-ai",
         ]
@@ -114,22 +114,22 @@ class EmbedderConfig(BaseModel):
         if self.embedding_model_name:
             kwargs["model_name"] = self.embedding_model_name
         # TODO make this more dynamic to map to encoder configs
-        if self.embedding_provider == "langchain-openai":
+        if self.embedding_provider == "openai":
             return self.get_openai_embedder(embedding_kwargs=kwargs)
 
-        if self.embedding_provider == "langchain-huggingface":
+        if self.embedding_provider == "huggingface":
             return self.get_huggingface_embedder(embedding_kwargs=kwargs)
 
         if self.embedding_provider == "octoai":
             return self.get_octoai_embedder(embedding_kwargs=kwargs)
 
-        if self.embedding_provider == "langchain-aws-bedrock":
+        if self.embedding_provider == "aws-bedrock":
             return self.get_bedrock_embedder()
 
-        if self.embedding_provider == "langchain-vertexai":
+        if self.embedding_provider == "vertexai":
             return self.get_vertexai_embedder(embedding_kwargs=kwargs)
 
-        if self.embedding_provider == "langchain-voyageai":
+        if self.embedding_provider == "voyageai":
             return self.get_voyageai_embedder(embedding_kwargs=kwargs)
         if self.embedding_provider == "mixedbread-ai":
             return self.get_mixedbread_embedder(embedding_kwargs=kwargs)

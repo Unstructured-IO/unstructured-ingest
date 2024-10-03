@@ -38,7 +38,7 @@ if __name__ == "__main__":
         source_connection_config=LocalConnectionConfig(),
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
+        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         destination_connection_config=ElasticsearchConnectionConfig(
             access_config=ElasticsearchAccessConfig(password=os.getenv("ELASTIC_PASSWORD")),
             username=os.getenv("ELASTIC_USERNAME"),

@@ -1,3 +1,9 @@
+## 0.0.23
+
+### Fixes
+
+* **Remove check for langchain dependency in embedders**
+
 ## 0.0.22
 
 ### Enhancements

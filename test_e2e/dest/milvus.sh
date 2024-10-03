@@ -48,7 +48,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --reprocess \
   --input-path example-docs/book-war-and-peace-1p.txt \
   --work-dir "$WORK_DIR" \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   milvus \
   --uri $MILVUS_URI \
   --db-name $DB_NAME \

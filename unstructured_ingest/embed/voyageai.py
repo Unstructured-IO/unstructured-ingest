@@ -20,11 +20,11 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
     timeout_in_seconds: Optional[int] = None
 
     @requires_dependencies(
-        ["langchain", "langchain_voyageai"],
+        ["voyageai"],
         extras="embed-voyageai",
     )
     def get_client(self) -> "VoyageAIClient":
-        """Creates a Langchain VoyageAI python client to embed elements."""
+        """Creates a VoyageAI python client to embed elements."""
         from voyageai import Client as VoyageAIClient
 
         client = VoyageAIClient(

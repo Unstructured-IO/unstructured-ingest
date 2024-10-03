@@ -49,7 +49,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --chunk-new-after-n-chars 2500 \
   --chunk-max-characters 38000 \
   --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   kafka \
   --topic "$KAFKA_TOPIC" \
   --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" \
