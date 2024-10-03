@@ -96,7 +96,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --work-dir "$WORK_DIR" \
   --chunking-strategy by_title \
   --chunk-combine-text-under-n-chars 150 --chunk-new-after-n-chars 1500 --chunk-max-characters 2500 --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   pinecone \
   --api-key "$PINECONE_API_KEY" \
   --index-name "$PINECONE_INDEX" \

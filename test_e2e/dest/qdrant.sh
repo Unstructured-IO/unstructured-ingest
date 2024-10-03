@@ -49,7 +49,7 @@ curl -X PUT \
     }
 }'
 
-EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-"langchain-huggingface"}
+EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-"huggingface"}
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
@@ -62,7 +62,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --work-dir "$WORK_DIR" \
   --chunking-strategy by_title \
   --chunk-combine-text-under-n-chars 200 --chunk-new-after-n-chars 2500 --chunk-max-characters 38000 --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "$EMBEDDING_PROVIDER" \
   qdrant \
   --collection-name "$COLLECTION_NAME" \
   --location "http://"$QDRANT_HOST \

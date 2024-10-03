@@ -50,7 +50,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --chunk-new-after-n-chars 2500 \
   --chunk-max-characters 38000 \
   --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   elasticsearch \
   --hosts http://localhost:9200 \
   --index-name ingest-test-destination \

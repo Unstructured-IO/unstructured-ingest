@@ -415,11 +415,11 @@ class CliEmbeddingConfig(EmbeddingConfig, CliMixin):
     @staticmethod
     def get_cli_options() -> t.List[click.Option]:
         embed_providers = [
-            "langchain-openai",
-            "langchain-huggingface",
-            "langchain-aws-bedrock",
-            "langchain-vertexai",
-            "langchain-voyageai",
+            "openai",
+            "huggingface",
+            "aws-bedrock",
+            "vertexai",
+            "voyageai",
             "octoai",
         ]
         options = [
