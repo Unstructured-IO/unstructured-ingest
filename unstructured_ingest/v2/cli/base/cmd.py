@@ -155,7 +155,7 @@ class BaseCmd(ABC):
     @staticmethod
     def get_filterer(options: dict[str, Any]) -> Optional[Filterer]:
         filterer_configs = extract_config(flat_data=options, config=FiltererConfig)
-        if not filterer_configs.dict():
+        if not filterer_configs.model_dump():
             return None
         return Filterer(config=filterer_configs)
 

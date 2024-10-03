@@ -54,7 +54,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
                 ac.box_app_config,
             ),
         }
-        access_config: dict[str, Any] = ac.dict()
+        access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
         access_kwargs_with_oauth.update(access_config)
 

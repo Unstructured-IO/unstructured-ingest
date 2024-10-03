@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from pydantic import Field
@@ -8,7 +8,7 @@ from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, Embedding
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
-    from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+    from sentence_transformers import SentenceTransformer
 
 
 class HuggingFaceEmbeddingConfig(EmbeddingConfig):
@@ -19,51 +19,51 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
         default_factory=lambda: {"device": "cpu"}, alias="model_kwargs"
     )
     encode_kwargs: Optional[dict] = Field(default_factory=lambda: {"normalize_embeddings": False})
-    cache_folder: Optional[dict] = Field(default=None)
+    cache_folder: Optional[str] = Field(default=None)
 
     @requires_dependencies(
-        ["langchain_huggingface"],
+        ["sentence_transformers"],
         extras="embed-huggingface",
     )
-    def get_client(self) -> "HuggingFaceEmbeddings":
-        """Creates a langchain Huggingface python client to embed elements."""
-        from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+    def get_client(self) -> "SentenceTransformer":
+        from sentence_transformers import SentenceTransformer
 
-        client = HuggingFaceEmbeddings(
-            model_name=self.embedder_model_name,
-            model_kwargs=self.embedder_model_kwargs,
-            encode_kwargs=self.encode_kwargs,
+        return SentenceTransformer(
+            model_name_or_path=self.embedder_model_name,
             cache_folder=self.cache_folder,
+            **self.embedder_model_kwargs,
         )
-        return client
 
 
 @dataclass
 class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
     config: HuggingFaceEmbeddingConfig
 
-    def get_exemplary_embedding(self) -> List[float]:
+    def get_exemplary_embedding(self) -> list[float]:
         return self.embed_query(query="Q")
 
-    def num_of_dimensions(self):
+    def num_of_dimensions(self) -> tuple[int, ...]:
         exemplary_embedding = self.get_exemplary_embedding()
         return np.shape(exemplary_embedding)
 
-    def is_unit_vector(self):
+    def is_unit_vector(self) -> bool:
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
-    def embed_query(self, query):
-        client = self.config.get_client()
-        return client.embed_query(str(query))
+    def embed_query(self, query: str) -> list[float]:
+        return self._embed_documents(texts=[query])[0]
 
-    def embed_documents(self, elements: List[dict]) -> List[dict]:
+    def _embed_documents(self, texts: list[str]) -> list[list[float]]:
         client = self.config.get_client()
-        embeddings = client.embed_documents([e.get("text", "") for e in elements])
+        embeddings = client.encode(texts, **self.config.encode_kwargs)
+        return embeddings.tolist()
+
+    def embed_documents(self, elements: list[dict]) -> list[dict]:
+        embeddings = self._embed_documents([e.get("text", "") for e in elements])
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
 
-    def _add_embeddings_to_elements(self, elements: list[dict], embeddings: list) -> List[dict]:
+    def _add_embeddings_to_elements(self, elements: list[dict], embeddings: list) -> list[dict]:
         assert len(elements) == len(embeddings)
         elements_w_embedding = []
 

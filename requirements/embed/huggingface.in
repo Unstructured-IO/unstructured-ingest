@@ -1,5 +1,3 @@
 -c ../common/constraints.txt
--c ../common/constraints.txt
 
-
-langchain-huggingface
+sentence-transformers
