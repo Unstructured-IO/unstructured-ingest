@@ -97,8 +97,8 @@ class SharepointConnectionConfig(ConnectionConfig):
         from office365.runtime.auth.client_credential import ClientCredential
         from office365.sharepoint.client_context import ClientContext
 
-        logger.info(self.access_config.get_secret_value().client_cred[0:4])
-        logger.info(self.access_config.get_secret_value().client_cred[-4:])
+        # logger.info(self.access_config.get_secret_value().client_cred[0:4])
+        # logger.info(self.access_config.get_secret_value().client_cred[-4:])
         logger.info(self.client_id[0:4])
         logger.info(self.client_id[-4:])
         logger.info(self.site)
