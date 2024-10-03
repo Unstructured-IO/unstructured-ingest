@@ -32,8 +32,6 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: Optional[str] = Field(
         default="textembedding-gecko@001", alias="model_name"
     )
-    dimensionality: Optional[int] = None
-    task: str = "RETRIEVAL_DOCUMENT"
 
     def register_application_credentials(self):
         # TODO look into passing credentials in directly, rather than via env var and tmp file
@@ -69,26 +67,25 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
-    @requires_dependencies(
-        ["vertexai"],
-        extras="embed-vertexai",
-    )
     def embed_query(self, query):
-        from vertexai.language_models import TextEmbeddingInput
-
-        client = self.config.get_client()
-        inputs = [TextEmbeddingInput(query, self.config.task)]
-        kwargs = (
-            {"output_dimensionality": self.config.dimensionality}
-            if self.config.dimensionality
-            else {}
-        )
-        return client.get_embeddings(inputs, **kwargs)
+        return self._embed_documents(elements=[query])[0]
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = self._embed_documents([e.get("text", "") for e in elements])
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
+
+    @requires_dependencies(
+        ["vertexai"],
+        extras="embed-vertexai",
+    )
+    def _embed_documents(self, elements: list[str]) -> list[list[float]]:
+        from vertexai.language_models import TextEmbeddingInput
+
+        client = self.config.get_client()
+        inputs = [TextEmbeddingInput(text=element) for element in elements]
+        embeddings = client.get_embeddings(inputs)
+        return [e.values for e in embeddings]
 
     def _add_embeddings_to_elements(self, elements, embeddings) -> list[dict]:
         assert len(elements) == len(embeddings)
