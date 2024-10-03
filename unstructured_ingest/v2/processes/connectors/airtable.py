@@ -181,7 +181,7 @@ class AirtableIndexer(Indexer):
             yield FileData(
                 identifier=table_meta.get_id(),
                 connector_type=CONNECTOR_TYPE,
-                additional_metadata=table_meta.dict(),
+                additional_metadata=table_meta.model_dump(),
                 source_identifiers=SourceIdentifiers(
                     filename=str(Path(fullpath).name),
                     fullpath=fullpath,

@@ -28,7 +28,7 @@ class PartitionStep(PipelineStep):
         return f"{self.identifier} ({self.process.config.strategy})"
 
     def __post_init__(self):
-        config = self.process.config.json()
+        config = self.process.config.model_dump_json()
         logger.info(f"created {self.identifier} with configs: {config}")
 
     def should_partition(self, filepath: Path, file_data: FileData) -> bool:

@@ -312,30 +312,6 @@
     }
   },
   {
-    "type": "UncategorizedText",
-    "element_id": "14926217ad635f3b0d8aa6a1c084ffae",
-    "text": "1",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 3,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "Title",
     "element_id": "c48c986070dfdd3b79fb5b991bddfa4e",
     "text": "Perceived versus actual risk",
@@ -385,8 +361,8 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "ecb2e6e53e4df8416c8a3979f99ed00d",
-    "text": "Nuclear energy and the risk of radiation is one of the most extreme cases in which perceived and actual risks have diverged. The fear of radiation, whilst pre- dating the Second World War, was firmly established by the debate on the potential impacts of low-dose radiation from the fallout from nuclear weapons testing in the early years of the Cold War. Radiation in many ways became linked with the mental imagery of nuclear war, playing an important role in increasing public concern about radiation and its health effects. There is a well-established discrepancy between fact-based risk assessments and public perception of different risks. This is very much the case with nuclear power, and this is clearly highlighted in Figure 1, with laypersons ranking nuclear power as the highest risk out of 30 activities and technologies, with experts ranking nuclear as 20th. In many ways, popular culture\u2019s depiction of radiation has played a role in ensuring that this discrepancy has remained, be it Godzilla, The Incredible Hulk, or The Simpsons, which regularly plays on the notion of radiation from nuclear power plants causing three-eyed fish, something that has been firmly rejected as unscientific.",
+    "element_id": "ac51177e60c6aea2b58bc824c3dddbc8",
+    "text": "most extreme cases in which perceived and actual Laypersons Experts risks have diverged. The fear of radiation, whilst pre- dating the Second World War, was firmly established 1 Nuclear power 20 by the debate on the potential impacts of low-dose 2 Motor vehicles 1 radiation from the fallout from nuclear weapons 3 Handguns 4 testing in the early years of the Cold War. Radiation in many ways became linked with the mental imagery 4 Smoking 2 of nuclear war, playing an important role in increasing public concern about radiation and its health effects. 17 Electric power (non-nuclear) 9 There is a well-established discrepancy between fact-based risk assessments and public perception of different risks. This is very much the case with 22 X-rays 7 nuclear power, and this is clearly highlighted in Figure 1, with laypersons ranking nuclear power as the highest risk out of 30 activities and technologies, 30 Vaccinations 25 with experts ranking nuclear as 20th. In many ways, popular culture\u2019s depiction of radiation has played a role in ensuring that this discrepancy has remained, Figure 1. Ordering of perceived risks for 30 activities and technologies1,iii be it Godzilla, The Incredible Hulk, or The Simpsons, which regularly plays on the notion of radiation from nuclear power plants causing three-eyed fish, something that has been firmly rejected as unscientific.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -528,9 +504,9 @@
     }
   },
   {
-    "type": "UncategorizedText",
-    "element_id": "ce6dbc93efd5d1de564f08427f7e77f1",
-    "text": "48% Radon 14% Buildings & soil 12% Food & water 10% Cosmic 4% Thoron",
+    "type": "Title",
+    "element_id": "6e540e0536402537d10789c7524d5f18",
+    "text": "48% Radon",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -553,7 +529,127 @@
   },
   {
     "type": "Title",
-    "element_id": "6fbbc6f1a33bd4e8355682363051839f",
+    "element_id": "69d7fff9ba79ce126e48502b3627d9ba",
+    "text": "14% Buildings & soil",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "471493f2af36d6dcc12634f43580e14a",
+    "text": "12% Food & water",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "0eb12470922d4678ba4e9f6c9e04ba63",
+    "text": "10% Cosmic",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "e80555182339afc7ab01a1bc3b98b698",
+    "text": "4%",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "42f897c5f8585bc3a663c1a26cd937cc",
+    "text": "Thoron",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "2da5240a4288674abad03dd7d91d58a1",
     "text": "Artificial",
     "metadata": {
       "filetype": "application/pdf",
@@ -577,8 +673,32 @@
   },
   {
     "type": "Title",
-    "element_id": "49a42d2996f9021592716ff7ed10e1d4",
-    "text": "11% Medicine 0.4% 0.4% Miscellaneous 0.2% Occupational 0.04% Nuclear discharges",
+    "element_id": "4cd0c7af3a0f99e239fed67823470e75",
+    "text": "11% Medicine",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "5382d8d47d1400c3d62e52c647d41af4",
+    "text": "0.4%",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -601,7 +721,7 @@
   },
   {
     "type": "Title",
-    "element_id": "44b025d5a49899fb340a69517c0fb9d7",
+    "element_id": "e1100cf4ceac257593fda94fd61a6bb0",
     "text": "Fallout",
     "metadata": {
       "filetype": "application/pdf",
@@ -625,7 +745,79 @@
   },
   {
     "type": "Title",
-    "element_id": "0475d0402d28b7f957a889e7355472c0",
+    "element_id": "af41dfee9a4b47ea199d9e3a368c47d9",
+    "text": "0.4% Miscellaneous",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "ad0aaed7f98fb6d26df14f3cdbb896e7",
+    "text": "0.2% Occupational",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "838c66116195f6153d2310a50ed8ceac",
+    "text": "0.04% Nuclear discharges",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "9c78b79d0b1576dd4be39a3a44f91f50",
     "text": "Figure 2. Global average exposure from different sources of radiation",
     "metadata": {
       "filetype": "application/pdf",
@@ -649,7 +841,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "3f3508476c710060dfb8431d7600c2ec",
+    "element_id": "8623905baf016581f86bdadc10d14883",
     "text": "Fossil fuels \u2013 currently accounting for around 81% of total energy supplyiv \u2013 cause significant levels of emissions in terms of both greenhouse gases and air pollutants. Despite the serious and ongoing health and environmental harms caused by air pollution, it is often considered to be an inevitable consequence of economic development. Air pollution\u2019s contribution to the burden of disease is profound, with an estimated 8.7 million people dying worldwide prematurely in 2018 alonev,vi. Despite this, it fails to induce the same fears and anxieties in people as nuclear energy does.",
     "metadata": {
       "filetype": "application/pdf",
@@ -673,7 +865,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "c525bff677c1e20aabffcbeb462e23d8",
+    "element_id": "80ed6dd766beeaaeddba51209106d9de",
     "text": "In terms of accidents, hydropower is the deadliest electricity generator, mostly due to collapsing dams and the consequences of flooding. The Banqiao Dam failure in 1975 led to at least 26,000 people drowning, and as many as 150,000 deaths resulting from the secondary effects of the accident. In comparison, radiation exposure following Chernobyl caused 54 deaths2, while no casualties due to radiation are likely to occur from the accident at Fukushima Daiichi.",
     "metadata": {
       "filetype": "application/pdf",
@@ -697,7 +889,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "6cdd2346b4496f1af2b33ed75c3410f1",
+    "element_id": "fb90316b25365a7546733fa222fc3b7a",
     "text": "25",
     "metadata": {
       "filetype": "application/pdf",
@@ -721,7 +913,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "9715544c9914ef7de8052bc92f04cd58",
+    "element_id": "0266d9a100c27671f14ff32b23cb298c",
     "text": "24.6",
     "metadata": {
       "filetype": "application/pdf",
@@ -745,7 +937,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "3559d07dc2379e2f4c1f4653add91028",
+    "element_id": "1951f30d6406474386cde5ea7a9587d0",
     "text": "20",
     "metadata": {
       "filetype": "application/pdf",
@@ -769,7 +961,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "75e15b7448c3c129b9ca24698c044163",
+    "element_id": "b6cea67ad41d7bd54fd804306c150d40",
     "text": "18.4",
     "metadata": {
       "filetype": "application/pdf",
@@ -792,9 +984,9 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "13969ab3a15bf32df2fe13c9a40cc40e",
-    "text": "r a e y",
+    "type": "Title",
+    "element_id": "e03df358bbcdf138cc218ee8595a3fc1",
+    "text": "Fatalities per TW, year",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -817,7 +1009,7 @@
   },
   {
     "type": "Title",
-    "element_id": "4b6921413fc54cc610daf6b297438229",
+    "element_id": "f064e7c68b2410bea2df10ec60765d92",
     "text": "e",
     "metadata": {
       "filetype": "application/pdf",
@@ -840,9 +1032,9 @@
     }
   },
   {
-    "type": "UncategorizedText",
-    "element_id": "4d2b6d2354832969323946d0ac34c5f4",
-    "text": "TW,",
+    "type": "Title",
+    "element_id": "0d0c634601ecc0e2885a1d2587650d08",
+    "text": "F",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -865,7 +1057,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "200a39549b498e29cddfc9dcb442eed9",
+    "element_id": "063d8fbb58c10734085ed095826e18fb",
     "text": "15",
     "metadata": {
       "filetype": "application/pdf",
@@ -888,32 +1080,8 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "e3b14044884f4154b0ba61d2434de184",
-    "text": "r e p s e i t i l",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "UncategorizedText",
-    "element_id": "07dbe194a47f5cf9a9ca556284c75a4f",
+    "element_id": "1c74a1f14ee5b1e5f070510fc9ed6ab5",
     "text": "10",
     "metadata": {
       "filetype": "application/pdf",
@@ -936,32 +1104,8 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "f4af307ce2cdc30401293219340f0099",
-    "text": "a t a F",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "UncategorizedText",
-    "element_id": "54ac36b92df403df7ffaf63424588d4b",
+    "element_id": "5a47ef5730e70264d01088021d41bb7c",
     "text": "5",
     "metadata": {
       "filetype": "application/pdf",
@@ -985,7 +1129,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "3fd75f6eaddaee6b63b2ce4a774fe967",
+    "element_id": "6c319e495f30ffbf66a5b566a598e286",
     "text": "4.6",
     "metadata": {
       "filetype": "application/pdf",
@@ -1009,7 +1153,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "e5967ea57bcfb0730309e1469deda080",
+    "element_id": "cf400da72f4d4bfc6b713776a27c11c8",
     "text": "2.8",
     "metadata": {
       "filetype": "application/pdf",
@@ -1033,7 +1177,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "b44ee5b4593fe0d7608c71176b305adb",
+    "element_id": "8a90401479b0edb067ef88f9a4c143f9",
     "text": "0",
     "metadata": {
       "filetype": "application/pdf",
@@ -1057,7 +1201,7 @@
   },
   {
     "type": "Title",
-    "element_id": "df539d6131bf7d159d73b0d0dc52b047",
+    "element_id": "f6016dcb7e5fd90817d9319912054602",
     "text": "C oal",
     "metadata": {
       "filetype": "application/pdf",
@@ -1081,7 +1225,7 @@
   },
   {
     "type": "Title",
-    "element_id": "b72baa7737abca757fc689770500137b",
+    "element_id": "f6ff737938789347c077f90bb5f5015b",
     "text": "Oil",
     "metadata": {
       "filetype": "application/pdf",
@@ -1105,7 +1249,7 @@
   },
   {
     "type": "Title",
-    "element_id": "20206e826347544edfd5e6533ab54f1f",
+    "element_id": "dfe4dcf8607bcd29a91c021354b9f8bb",
     "text": "Bio m ass",
     "metadata": {
       "filetype": "application/pdf",
@@ -1129,7 +1273,7 @@
   },
   {
     "type": "Title",
-    "element_id": "10849b003629604de2c5cc3e8022eb9e",
+    "element_id": "387d61f3251ad52b145e589be20e304d",
     "text": "N atural gas",
     "metadata": {
       "filetype": "application/pdf",
@@ -1153,7 +1297,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "068ab5055324937852f1104bd7e79295",
+    "element_id": "38b211e47183839a3fec2c7d8b626af8",
     "text": "0.07",
     "metadata": {
       "filetype": "application/pdf",
@@ -1177,7 +1321,7 @@
   },
   {
     "type": "Title",
-    "element_id": "22a2dc33737f8a92014f09ed2c92dc1f",
+    "element_id": "1f70cf62e4921476f72de6637f6bc5f0",
     "text": "Wind",
     "metadata": {
       "filetype": "application/pdf",
@@ -1201,7 +1345,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "667426af36c4a61263d4667bbd6bf3cf",
+    "element_id": "18b1cf875a627f4bf182533dbb78afd4",
     "text": "0.04",
     "metadata": {
       "filetype": "application/pdf",
@@ -1225,7 +1369,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "a7606053bbf8555c8d74bf8294c4bb14",
+    "element_id": "f0391f6f836e076fd93f0abf17ede8a2",
     "text": "H ydropo w er",
     "metadata": {
       "filetype": "application/pdf",
@@ -1249,7 +1393,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "56725953e374c47b37fc81f6e1e7e7e2",
+    "element_id": "058d804e37328324dbaf8e3f72734322",
     "text": "0.02",
     "metadata": {
       "filetype": "application/pdf",
@@ -1273,7 +1417,7 @@
   },
   {
     "type": "Title",
-    "element_id": "ed8296145e96a846499a17250d047116",
+    "element_id": "adc03220f3e95806ef991c2bb35c76d0",
     "text": "S olar",
     "metadata": {
       "filetype": "application/pdf",
@@ -1297,7 +1441,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "ff5c2f0ecf3a004fd75b39436b00fc41",
+    "element_id": "cd5545dd4666f501c87da407494bafb7",
     "text": "0.01",
     "metadata": {
       "filetype": "application/pdf",
@@ -1321,7 +1465,7 @@
   },
   {
     "type": "Title",
-    "element_id": "d7474bea6883be0de77cd5ee766d5350",
+    "element_id": "0c2d707e14539349a6f79d315d923113",
     "text": "N uclear",
     "metadata": {
       "filetype": "application/pdf",
@@ -1345,7 +1489,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "990bafbee868bdc70c810bcd97b122da",
+    "element_id": "6230d27ecc162e320a7db6c5380b27a4",
     "text": "Figure 3. Comparison of number of fatalities due to electricity generation, including accidents and air pollution3",
     "metadata": {
       "filetype": "application/pdf",
@@ -1369,7 +1513,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "63cb8c9bbf197f41ccce41445f34bfff",
+    "element_id": "29bc7c54356b454c454a0cfa9d12cbf8",
     "text": "Contrary to perceptions, nuclear is an incredibly safe source of energy (see Figure 3 for a comparison). What is also clear is that the continued use of alternative energy sources in preference to nuclear energy \u2013 in particular fossil fuels \u2013 poses a far greater risk to public health by significantly contributing to climate change and air pollution.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1393,8 +1537,8 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "ff2e4ccb339b143fc3e2023da7a16b64",
-    "text": "2 Including 28 firefighters that were exposed to lethal amounts of radiation during the accident night, and 15 fatal cases of thyroid cancer. 3 Sources drawn upon: Markandya, A., & Wilkinson, P. (2007), Sovacool et al. (2016). Data for nuclear accidents modified to reflect the",
+    "element_id": "eab19e3904330755737d2cba73091025",
+    "text": "2 Including 28 firefighters that were exposed to lethal amounts of radiation during the accident night, and 15 fatal cases of thyroid cancer.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1417,32 +1561,8 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "6bda1b0ac58cb5068289427a5f9e2f03",
-    "text": "2012 UNSCEAR report and the 2015 US NRC SOARCA study.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "72dd24b52a6a46e82d563b4f9dc0eac8",
-    "text": "3",
+    "element_id": "e675e93fd076176a493de0748cf0c057",
+    "text": "3 Sources drawn upon: Markandya, A., & Wilkinson, P. (2007), Sovacool et al. (2016). Data for nuclear accidents modified to reflect the 2012 UNSCEAR report and the 2015 US NRC SOARCA study.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1777,8 +1897,8 @@
   },
   {
     "type": "Title",
-    "element_id": "6b30ad9a46d5961fd0829ef64c687f4f",
-    "text": "Plant-level production costs at market prices",
+    "element_id": "0b0e91411325e00a8dde585aff5a4bec",
+    "text": "Plant-level",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1801,8 +1921,152 @@
   },
   {
     "type": "Title",
-    "element_id": "b64043b5d9c3f0f114dc85ffa01a3e1c",
-    "text": "Grid-level costs of the electricity system",
+    "element_id": "c5a28f6f56578be58cfba84cd8062f54",
+    "text": "production costs",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "da241be918bd78668f851865a9ba95d0",
+    "text": "at market prices",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "b750a29f7317192a8b1344fdf79c8142",
+    "text": "Grid-level costs",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "5c7e7539e3b95d55703c0f151fe82236",
+    "text": "of the electricity",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e145c307bb2e0973cf7d56759e7f4997",
+    "text": "system",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "00d81a0daaa78dde1658eaf3ae4c26cc",
+    "text": "Social and",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "65868ffa6c1eda57a7e8614271cd0624",
+    "text": "environmental costs of",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1825,8 +2089,56 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "d2c2f81f38f91fd1ed4dd762427c958c",
-    "text": "Social and environmental costs of emissions, land-use, climate change, security of supply, etc.",
+    "element_id": "1dbfae283b389c4b5b555bbde97763a1",
+    "text": "emissions, land-use,",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "50832f1d34651d572c3c432a5391c2de",
+    "text": "climate change, security",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 7,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "7e4536f5cc16a0ad93e0d449a2602a1f",
+    "text": "of supply, etc.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1849,7 +2161,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "3b8b9eb68d3eb182226bcd5a6f8544ef",
+    "element_id": "bd1a791f47eec14e42d5a14401f903ed",
     "text": "Figure 4. The different levels of cost associated with electricity generationx",
     "metadata": {
       "filetype": "application/pdf",
@@ -1873,7 +2185,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "62c507510608f74a0a1da0676d89e94a",
+    "element_id": "f47f6b136a19abb09fd77dfacdb525f6",
     "text": "A more holistic regulatory process would be required, in which regulators move away from being siloed, looking at specific risks in isolation, with little regard for the greater picture. The move towards an all-hazard, holistic approach would require greater coordination between regulators, ensuring that the combined risks of a specific nuclear project are weighed against the risks posed by not advancing said project.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1897,7 +2209,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "837c5fd06c6026c08fe69f113fa7348f",
+    "element_id": "24f26c3fc267c1efaa1c7135e6dbe514",
     "text": "Equally, the adoption of an all-hazards approach means regulators should consider declaring when a risk is too low to be a public health concern, in line with what the U.S. Nuclear Regulatory Commission attempted to do with its Below Regulatory Concern policy statements in the 1980s and early 1990s. In the context of nuclear power, this means departing from the notion that LNT instils of no safe level of radiation, and adopting a regulatory framework which notes the impossibility of eradicating risks. Failing to do so will result in excessive regulation that continues to limit the full potential of nuclear power in tackling climate change and sees a continued reliance on objectively more harmful energy sources.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1921,7 +2233,7 @@
   },
   {
     "type": "PageNumber",
-    "element_id": "b298e7f7baa47e6106b3cd13ff539486",
+    "element_id": "55e611371c0add58329077f53e9ae43a",
     "text": "5",
     "metadata": {
       "filetype": "application/pdf",
@@ -2232,30 +2544,6 @@
     }
   },
   {
-    "type": "UncategorizedText",
-    "element_id": "81e1362c9dfb3e04603ba076f6384c1b",
-    "text": "7",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 9,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "PageNumber",
     "element_id": "254ec884050f824b4524f53a2693f685",
     "text": "8",
@@ -2304,32 +2592,8 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "b8894ad8644fb6f13e827c34d656547b",
-    "text": "i",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 10,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
     "type": "NarrativeText",
-    "element_id": "f75a66f1ae3524b41d0f7c212c01c2f9",
+    "element_id": "59f05d231c2357ab111ee31b0da3c25d",
     "text": "World Health Organization (2020). Road traffic injuries. Available at: https://www.who.int/news-room/fact-sheets/ detail/road-traffic-injuries",
     "metadata": {
       "filetype": "application/pdf",
@@ -2353,7 +2617,7 @@
   },
   {
     "type": "Title",
-    "element_id": "72f0132fa7de410e48a4788048dc5f85",
+    "element_id": "78a8f97b96c4fcaa5439b66075f79651",
     "text": "ii",
     "metadata": {
       "filetype": "application/pdf",
@@ -2377,7 +2641,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "a303e7831d9ee1669929c5268d18700e",
+    "element_id": "a3be0ee530629ee7a2413f05eb0cce76",
     "text": "BBC (2020). Plane crash fatalities fell more than 50% in 2019. Available at: https://www.bbc.co.uk/news/ business-50953712",
     "metadata": {
       "filetype": "application/pdf",
@@ -2401,7 +2665,7 @@
   },
   {
     "type": "Title",
-    "element_id": "140aa813a7abab7610055f7f54431142",
+    "element_id": "ef69749b35b633d0263bf0539d3157c1",
     "text": "iii",
     "metadata": {
       "filetype": "application/pdf",
@@ -2425,7 +2689,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "a2de59991693d2a3e0129b13b3a65651",
+    "element_id": "57e619cca5f815f94d4e3d9ed293f2e9",
     "text": "Slovic, P., 2010. The Psychology of risk. Sa\u00fade e Sociedade, 19(4), pp. 731-747.",
     "metadata": {
       "filetype": "application/pdf",
@@ -2449,7 +2713,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "c8dcc6e4dc178391f5047c388df8076c",
+    "element_id": "6a3002e9f7bedb021bc37d6ec372a1df",
     "text": "iv United Nations Scientific Committee on the Effects of Radiation (2016). Report of the United Nations Scientific Committee on the Effects of Atomic Radiation. Accessed from: https://www.unscear.org/docs/publications/2016/ UNSCEAR_2016_GA-Report-CORR.pdf",
     "metadata": {
       "filetype": "application/pdf",
@@ -2473,7 +2737,7 @@
   },
   {
     "type": "Title",
-    "element_id": "521e32ae2b0e0f758cfd883929a9ac44",
+    "element_id": "61d8392d98d01c8da7f7e30558c61e1a",
     "text": "v",
     "metadata": {
       "filetype": "application/pdf",
@@ -2497,7 +2761,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "0f0805be3f758c1ed209db4519b020f2",
+    "element_id": "19bbb3e21eb1ef742c4bd197731203da",
     "text": "International Energy Agency (2020). Global share of total energy supply by source, 2018. Key World Energy Statistics 2020. Available at: https://www.iea.org/data-and-statistics/charts/global-share-of-total-energy-supply-by- source-2018",
     "metadata": {
       "filetype": "application/pdf",
@@ -2521,8 +2785,8 @@
   },
   {
     "type": "Title",
-    "element_id": "2c1957b6cda893d433f2b2c365792833",
-    "text": "vi",
+    "element_id": "d7ed124fdfeab719cdbf46939cf48c58",
+    "text": "Vi",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -2545,7 +2809,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "360261513a58c85cce096d9b71770acc",
+    "element_id": "eea121e82fc16b8b008d8e6476fd21a7",
     "text": "Vohra, K., Vodonos, A., Schwartz, J., Marais, E., Sulprizio, M., & Mickley, L. (2021). Global mortality from outdoor fine particle pollution generated by fossil fuel combustion: Results from GEOS-Chem. Environmental Research, 195, p. 1-8",
     "metadata": {
       "filetype": "application/pdf",
@@ -2569,7 +2833,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "5b6bd1131333cb38d783b8043b343875",
+    "element_id": "5ae5eb2fed5b4a0edfd0ddbb8cf2f35b",
     "text": "vii World Health Organization. (2016). Updated tables 2016 for \u2018Preventing disease through health environments: a global assessment of the burden of disease from environmental risks\u2019. Available at: https://www.who.int/data/gho/ data/themes/public-health-and-environment [Accessed on 8 April 2021]",
     "metadata": {
       "filetype": "application/pdf",
@@ -2593,7 +2857,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "ea5a2b71f9e171e335762eddef21a122",
+    "element_id": "4e26a78c24c6516da84f33da2e493a16",
     "text": "viii National Cancer Institute (2020). Cancer statistics. Available at: https://www.cancer.gov/about-cancer/ understanding/statistics",
     "metadata": {
       "filetype": "application/pdf",
@@ -2617,7 +2881,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "41e05bc3315bcd5b0646d7b66417854b",
+    "element_id": "f06194bd8216773ffd89998507416300",
     "text": "ix Cancer Research UK (n.d.). Cancer risk statistics. Available at: https://www.cancerresearchuk.org/health- professional/cancer-statistics/risk",
     "metadata": {
       "filetype": "application/pdf",
@@ -2641,7 +2905,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "1bd105323ab8f3171c88788dc1fe8105",
+    "element_id": "eee655e0a6ed028b0ff4c6c1cb102e05",
     "text": "x OECD-NEA (2019). The Full Costs of Electricity Provision. Available at: https://www.oecd-nea.org/jcms/pl_14998/ the-full-costs-of-electricity-provision?details=true",
     "metadata": {
       "filetype": "application/pdf",
@@ -2665,7 +2929,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "1fc873be16bf783187a0ca6c3a7a91a8",
+    "element_id": "6fa39b04640664710823433e28784e92",
     "text": "xi World Health Organization (2018). Climate change and health. Available at: https://www.who.int/news-room/fact- sheets/detail/climate-change-and-health",
     "metadata": {
       "filetype": "application/pdf",
@@ -2689,7 +2953,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "59883a943d0a7dabee433edda954eef7",
+    "element_id": "e197f318d4ad0d645f43943c08acd3a5",
     "text": "xii BP, 2020. BP Statistical Review of World Energy, London: BP.",
     "metadata": {
       "filetype": "application/pdf",
@@ -2713,7 +2977,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "02ba07b2ea8288d9e8f653407110ac5a",
+    "element_id": "dd620c2122255afa371e4f5ed21ab5ca",
     "text": "Photo credits: Front cover & pages 1, 4, 6 left, 7 bottom: Adobe Stock; page 6 right: Getty Images; page 7 top: Uniper.",
     "metadata": {
       "filetype": "application/pdf",
@@ -2760,9 +3024,57 @@
     }
   },
   {
+    "type": "UncategorizedText",
+    "element_id": "790abb1a416d9ae423e02d19818f5677",
+    "text": "+44 (0)20 7451 1520",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
     "type": "Title",
-    "element_id": "7ac9948c40759d5a7c1a2dbe870ca322",
-    "text": "+44 (0)20 7451 1520 www.world-nuclear.org info@world-nuclear.org",
+    "element_id": "0dd9ba4f291c32e10ffbfca875b59681",
+    "text": "www.world-nuclear.org",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "EmailAddress",
+    "element_id": "6b05ddf2e09021dbe516a9cfd75ea0b3",
+    "text": "info@world-nuclear.org",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -2785,8 +3097,8 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "f133df66727c328c27d3b8184204f864",
-    "text": "World Nuclear Association is the international organization that represents the global nuclear industry. Its mission is to promote a wider understanding of nuclear energy among key international influencers by producing authoritative information, developing common industry positions, and contributing to the energy debate.",
+    "element_id": "d915059fdee6b51fcf5547409995f72f",
+    "text": "World Nuclear Association is the international organization that represents",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -2809,8 +3121,128 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "a637062adfd950e2491a0929d2b4ac1a",
-    "text": "Recalibrating risk \u00a9 2021 World Nuclear Association. Registered in England and Wales, company number 01215741",
+    "element_id": "03904254c41bc16cbe45c6e3d6a98925",
+    "text": "the global nuclear industry. Its mission is to promote a wider understanding",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8dbb4c0642c0c839ed7e0fa8388b83fe",
+    "text": "of nuclear energy among key international influencers by producing",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8030921dc96da33f474ac82259ef8bba",
+    "text": "authoritative information, developing common industry positions, and",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "c124a070f9be41dbb994f5b2fd32831c",
+    "text": "contributing to the energy debate.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "f5f2d777f1a7ce81bf592a3a55848cb1",
+    "text": "Recalibrating risk",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "d7c10c098e485dfcf38b61c0eea7f784",
+    "text": "\u00a9 2021 World Nuclear Association. Registered in England and Wales, company number 01215741",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [

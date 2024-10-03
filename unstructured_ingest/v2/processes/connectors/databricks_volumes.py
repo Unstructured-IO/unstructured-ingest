@@ -42,8 +42,10 @@ class DatabricksVolumesAccessConfig(AccessConfig):
         description="The Databricks password part of basic authentication. "
         "Only possible when Host is *.cloud.databricks.com (AWS).",
     )
-    client_id: Optional[str] = Field(default=None)
-    client_secret: Optional[str] = Field(default=None)
+    client_id: Optional[str] = Field(default=None, description="Client ID of the OAuth app.")
+    client_secret: Optional[str] = Field(
+        default=None, description="Client Secret of the OAuth app."
+    )
     token: Optional[str] = Field(
         default=None,
         description="The Databricks personal access token (PAT) (AWS, Azure, and GCP) or "
@@ -81,14 +83,9 @@ class DatabricksVolumesAccessConfig(AccessConfig):
     google_service_account: Optional[str] = None
 
 
-SecretDatabricksVolumesAccessConfig = Secret[DatabricksVolumesAccessConfig]
-
-
 class DatabricksVolumesConnectionConfig(ConnectionConfig):
-    access_config: SecretDatabricksVolumesAccessConfig = Field(
-        default_factory=lambda: SecretDatabricksVolumesAccessConfig(
-            secret_value=DatabricksVolumesAccessConfig()
-        )
+    access_config: Secret[DatabricksVolumesAccessConfig] = Field(
+        default=DatabricksVolumesAccessConfig(), validate_default=True
     )
     host: Optional[str] = Field(
         default=None,
@@ -133,7 +130,7 @@ class DatabricksVolumesUploader(Uploader):
 
         return WorkspaceClient(
             host=self.connection_config.host,
-            **self.connection_config.access_config.get_secret_value().dict(),
+            **self.connection_config.access_config.get_secret_value().model_dump(),
         )
 
     def precheck(self) -> None:
@@ -145,11 +142,12 @@ class DatabricksVolumesUploader(Uploader):
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = os.path.join(self.upload_config.path, path.name)
-        self.get_client().files.upload(
-            file_path=output_path,
-            contents=path,
-            overwrite=self.upload_config.overwrite,
-        )
+        with open(path, "rb") as elements_file:
+            self.get_client().files.upload(
+                file_path=output_path,
+                contents=elements_file,
+                overwrite=self.upload_config.overwrite,
+            )
 
 
 databricks_volumes_destination_entry = DestinationRegistryEntry(

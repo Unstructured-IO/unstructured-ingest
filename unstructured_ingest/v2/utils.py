@@ -19,7 +19,7 @@ def is_secret(value: Any) -> bool:
 
 def serialize_base_model(model: BaseModel) -> dict:
     # To get the full serialized dict regardless of if values are marked as Secret
-    model_dict = model.dict()
+    model_dict = model.model_dump()
     return serialize_base_dict(model_dict=model_dict)
 
 

@@ -7,3 +7,4 @@ unstructured
 # Connector specific deps
 cryptography
 fsspec
+vertexai

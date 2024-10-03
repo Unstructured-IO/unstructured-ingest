@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import time
 from typing import Any, Generator, Optional
 
+from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData
+from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -36,14 +38,9 @@ class BoxAccessConfig(FsspecAccessConfig):
     )
 
 
-SecretBoxAccessConfig = Secret[BoxAccessConfig]
-
-
 class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
-    access_config: SecretBoxAccessConfig = Field(
-        default_factory=lambda: SecretBoxAccessConfig(secret_value=BoxAccessConfig())
-    )
+    access_config: Secret[BoxAccessConfig] = Field(default=BoxAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
@@ -57,7 +54,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
                 ac.box_app_config,
             ),
         }
-        access_config: dict[str, Any] = ac.dict()
+        access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
         access_kwargs_with_oauth.update(access_config)
 
@@ -77,6 +74,33 @@ class BoxIndexer(FsspecIndexer):
     @requires_dependencies(["boxfs"], extras="box")
     def precheck(self) -> None:
         super().precheck()
+
+    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+        path = file_data["name"]
+        date_created = None
+        date_modified = None
+        if modified_at_str := file_data.get("modified_at"):
+            date_modified = parser.parse(modified_at_str).timestamp()
+        if created_at_str := file_data.get("created_at"):
+            date_created = parser.parse(created_at_str).timestamp()
+
+        file_size = file_data.get("size") if "size" in file_data else None
+
+        version = file_data.get("id")
+        record_locator = {
+            "protocol": self.index_config.protocol,
+            "remote_file_path": self.index_config.remote_url,
+            "file_id": file_data.get("id"),
+        }
+        return FileDataSourceMetadata(
+            date_created=date_created,
+            date_modified=date_modified,
+            date_processed=str(time()),
+            version=version,
+            url=f"{self.index_config.protocol}://{path}",
+            record_locator=record_locator,
+            filesize_bytes=file_size,
+        )
 
 
 class BoxDownloaderConfig(FsspecDownloaderConfig):

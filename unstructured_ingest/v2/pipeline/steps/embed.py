@@ -28,7 +28,7 @@ class EmbedStep(PipelineStep):
         return f"{self.identifier} ({self.process.config.embedding_provider})"
 
     def __post_init__(self):
-        config = self.process.config.json() if self.process.config else None
+        config = self.process.config.model_dump_json() if self.process.config else None
         logger.info(f"created {self.identifier} with configs: {config}")
 
     def should_embed(self, filepath: Path, file_data: FileData) -> bool:

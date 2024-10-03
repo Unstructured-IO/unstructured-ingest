@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from pydantic import Field, SecretStr
@@ -67,10 +67,10 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     config: MixedbreadAIEmbeddingConfig
 
-    _exemplary_embedding: Optional[List[float]] = field(init=False, default=None)
+    _exemplary_embedding: Optional[list[float]] = field(init=False, default=None)
     _request_options: Optional["RequestOptions"] = field(init=False, default=None)
 
-    def get_exemplary_embedding(self) -> List[float]:
+    def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
         return self._embed(["Q"])[0]
 
@@ -91,7 +91,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         )
 
     @property
-    def num_of_dimensions(self):
+    def num_of_dimensions(self) -> tuple[int, ...]:
         """Get the number of dimensions for the embeddings."""
         exemplary_embedding = self.get_exemplary_embedding()
         return np.shape(exemplary_embedding)
@@ -102,15 +102,15 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
-    def _embed(self, texts: List[str]) -> List[List[float]]:
+    def _embed(self, texts: list[str]) -> list[list[float]]:
         """
         Embed a list of texts using the Mixedbread AI API.
 
         Args:
-            texts (List[str]): List of texts to embed.
+            texts (list[str]): List of texts to embed.
 
         Returns:
-            List[List[float]]: List of embeddings.
+            list[list[float]]: List of embeddings.
         """
         batch_size = BATCH_SIZE
         batch_itr = range(0, len(texts), batch_size)
@@ -132,17 +132,17 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     @staticmethod
     def _add_embeddings_to_elements(
-        elements: List[dict], embeddings: List[List[float]]
-    ) -> List[dict]:
+        elements: list[dict], embeddings: list[list[float]]
+    ) -> list[dict]:
         """
         Add embeddings to elements.
 
         Args:
-            elements (List[Element]): List of elements.
-            embeddings (List[List[float]]): List of embeddings.
+            elements (list[Element]): List of elements.
+            embeddings (list[list[float]]): List of embeddings.
 
         Returns:
-            List[Element]: Elements with embeddings added.
+            list[Element]: Elements with embeddings added.
         """
         assert len(elements) == len(embeddings)
         elements_w_embedding = []
@@ -151,20 +151,20 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             elements_w_embedding.append(element)
         return elements
 
-    def embed_documents(self, elements: List[dict]) -> List[dict]:
+    def embed_documents(self, elements: list[dict]) -> list[dict]:
         """
         Embed a list of document elements.
 
         Args:
-            elements (List[Element]): List of document elements.
+            elements (list[Element]): List of document elements.
 
         Returns:
-            List[Element]: Elements with embeddings.
+            list[Element]: Elements with embeddings.
         """
         embeddings = self._embed([e.get("text", "") for e in elements])
         return self._add_embeddings_to_elements(elements, embeddings)
 
-    def embed_query(self, query: str) -> List[float]:
+    def embed_query(self, query: str) -> list[float]:
         """
         Embed a query string.
 
@@ -172,6 +172,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             query (str): Query string to embed.
 
         Returns:
-            List[float]: Embedding of the query.
+            list[float]: Embedding of the query.
         """
         return self._embed([query])[0]

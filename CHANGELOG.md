@@ -1,4 +1,60 @@
-## 0.0.16-dev1
+## 0.0.23-dev0
+
+### Fixes
+
+* **Update Sharepoint Creds and Expected docs**
+
+## 0.0.22
+
+### Enhancements
+
+* **Add documentation for developing sources/destinations**
+* **Leverage `uv` for pip compile**
+* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
+* **Drop langchain as dependency for embedders**
+
+## 0.0.21
+
+### Fixes
+
+* **Fix forward compatibility issues with `unstructured-client==0.26.0`.** Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
+
+* **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to one from open source.
+
+* **Fix astra src bug** V1 source connector was updated to work with astrapy 1.5.0
+
+## 0.0.20
+
+### Enhancements
+
+* **Support for latest AstraPy API** Add support for the modern AstraPy client interface for the Astra DB Connector.
+
+## 0.0.19
+
+### Fixes
+
+* **Use validate_default to instantiate default pydantic secrets**
+
+## 0.0.18
+
+### Enhancements
+
+* **Better destination precheck for blob storage** Write an empty file to the destination location when running fsspec-based precheck
+
+## 0.0.17
+
+### Fixes
+
+* **Drop use of unstructued in embed** Remove remnant import from unstructured dependency in embed implementations.
+
+
+## 0.0.16
+
+### Fixes
+
+* **Add constraint on pydantic** Make sure the version of pydantic being used with this repo pulls in the earliest version that introduces generic Secret, since this is used heavily.
+
+## 0.0.15
 
 ### Fixes
 
