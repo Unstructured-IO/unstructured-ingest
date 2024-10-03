@@ -1,3 +1,9 @@
+## 0.0.23-dev0
+
+### Fixes
+
+* **Update Sharepoint Creds and Expected docs**
+
 ## 0.0.22
 
 ### Enhancements
