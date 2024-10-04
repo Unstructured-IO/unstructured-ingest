@@ -27,8 +27,10 @@ from unstructured_ingest.v2.interfaces import (
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
+    DestinationRegistryEntry, SourceRegistryEntry
 )
 
 if TYPE_CHECKING:
@@ -65,6 +67,9 @@ class MongoDBUploadStagerConfig(UploadStagerConfig):
 
 class MongoDBIndexerConfig(IndexerConfig):
     batch_size: int = 100
+    
+class MongoDBDownloaderConfig(DownloaderConfig):
+    pass
 
 @dataclass
 class MongoDBIndexer(Indexer):
@@ -75,33 +80,37 @@ class MongoDBIndexer(Indexer):
     def precheck(self) -> None:
         """Validates the connection to the MongoDB server."""
         try:
-            client = self._get_client()
+            client = self.create_client()
             client.admin.command("ping")
         except Exception as e:
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     @requires_dependencies(["pymongo"], extras="mongodb")
-    def _get_client(self) -> "MongoClient":
-        """Creates a MongoClient instance based on the connection configuration."""
-        access_config = self.connection_config.get_access_config()
-        if access_config.get('uri'):
+    def create_client(self) -> "MongoClient":
+        from pymongo import MongoClient
+        from pymongo.driver_info import DriverInfo
+        from pymongo.server_api import ServerApi
+
+        access_config = self.connection_config.access_config.get_secret_value()
+
+        if access_config.uri:
             return MongoClient(
-                access_config['uri'],
+                access_config.uri,
+                server_api=ServerApi(version=SERVER_API_VERSION),
                 driver=DriverInfo(name="unstructured", version=unstructured_version),
-                server_api=ServerApi(version=SERVER_API_VERSION)
             )
         else:
             return MongoClient(
                 host=self.connection_config.host,
                 port=self.connection_config.port,
-                server_api=ServerApi(version=SERVER_API_VERSION)
+                server_api=ServerApi(version=SERVER_API_VERSION),
             )
 
     @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
-        client = self._get_client()
+        client = self.create_client()
         database = client[self.connection_config.database]
         collection = database[self.connection_config.collection]
 
@@ -146,6 +155,91 @@ class MongoDBIndexer(Indexer):
                 yield file_data
 
 
+@dataclass
+class MongoDBDownloader(Downloader):
+    connector_type: str = CONNECTOR_TYPE
+    connection_config: MongoDBConnectionConfig
+    download_config: MongoDBDownloaderConfig
+
+    @requires_dependencies(["pymongo"], extras="mongodb")
+    def create_client(self) -> "MongoClient":
+        from pymongo import MongoClient
+        from pymongo.driver_info import DriverInfo
+        from pymongo.server_api import ServerApi
+
+        access_config = self.connection_config.access_config.get_secret_value()
+
+        if access_config.uri:
+            return MongoClient(
+                access_config.uri,
+                server_api=ServerApi(version=SERVER_API_VERSION),
+                driver=DriverInfo(name="unstructured", version=unstructured_version),
+            )
+        else:
+            return MongoClient(
+                host=self.connection_config.host,
+                port=self.connection_config.port,
+                server_api=ServerApi(version=SERVER_API_VERSION),
+            )
+
+    def get_download_path(self, file_data: FileData) -> Optional[Path]:
+        """Determines the path where the file will be downloaded."""
+        if not file_data.source_identifiers:
+            return None
+        relative_path = file_data.source_identifiers.relative_path
+        if not relative_path:
+            # Default to using the identifier as filename
+            filename = f"{file_data.identifier}.txt"
+            relative_path = self.connection_config.collection + '/' + filename
+        else:
+            # Ensure the relative path is correct
+            relative_path = self.connection_config.collection + '/' + relative_path
+
+        return self.download_dir / relative_path
+
+    @SourceConnectionError.wrap
+    @requires_dependencies(["pymongo"], extras="mongodb")
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        """Fetches the document from MongoDB and writes it to a file."""
+        client = self.create_client()
+        database = client[self.connection_config.database]
+        collection = database[self.connection_config.collection]
+
+        # Convert the identifier back to an ObjectId if necessary
+        try:
+            document_id = ObjectId(file_data.identifier)
+        except Exception:
+            document_id = file_data.identifier  # Handle non-ObjectId identifiers
+
+        try:
+            doc = collection.find_one({"_id": document_id})
+        except Exception as e:
+            logger.error(f"Failed to fetch document with ID {document_id}: {e}", exc_info=True)
+            raise e
+
+        if doc is None:
+            raise FileNotFoundError(f"Document with ID {document_id} not found")
+
+        # Remove the _id field
+        doc.pop('_id', None)
+
+        flattened_dict = flatten_dict(dictionary=doc)
+        concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
+
+        # Determine the download path
+        download_path = self.get_download_path(file_data)
+        if download_path is None:
+            raise ValueError("Download path could not be determined")
+
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write the concatenated values to the file
+        with open(download_path, "w", encoding="utf8") as f:
+            f.write(concatenated_values)
+
+        file_data.local_download_path = str(download_path)
+
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 @dataclass
 class MongoDBUploadStager(UploadStager):
@@ -232,3 +326,11 @@ mongodb_destination_entry = DestinationRegistryEntry(
     upload_stager=MongoDBUploadStager,
     upload_stager_config=MongoDBUploadStagerConfig,
 )
+
+mongodb_source_entry = SourceRegistryEntry(
+    connection_config=MongoDBConnectionConfig,
+    indexer_config=MongoDBIndexerConfig,
+    indexer=MongoDBIndexer,
+    downloader_config=MongoDBDownloaderConfig,
+    downloader=MongoDBDownloader
+    )
