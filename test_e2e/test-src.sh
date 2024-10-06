@@ -64,6 +64,7 @@ all_tests=(
   'local-embed.sh'
   'local-embed-bedrock.sh'
   'local-embed-octoai.sh'
+  'local-embed-ollama.sh'
   'local-embed-vertexai.sh'
   'local-embed-voyageai.sh'
   'local-embed-mixedbreadai.sh'

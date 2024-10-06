@@ -218,6 +218,13 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return HuggingFaceEmbeddingEncoder(config=HuggingFaceEmbeddingConfig(**kwargs))
+        elif self.provider == "ollama":
+            from unstructured_ingest.embed.ollama import (
+                OllamaEmbeddingConfig,
+                OllamaEmbeddingEncoder,
+            )
+
+            return OllamaEmbeddingEncoder(config=OllamaEmbeddingConfig(**kwargs))
         elif self.provider == "octoai":
             from unstructured_ingest.embed.octoai import (
                 OctoAiEmbeddingConfig,

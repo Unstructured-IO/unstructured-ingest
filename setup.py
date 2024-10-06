@@ -128,6 +128,7 @@ connectors_reqs = {
 
 embed_reqs = {
     "embed-huggingface": load_requirements("requirements/embed/huggingface.in"),
+    "embed-ollama": load_requirements("requirements/embed/ollama.in"),
     "embed-octoai": load_requirements("requirements/embed/octoai.in"),
     "embed-vertexai": load_requirements("requirements/embed/vertexai.in"),
     "embed-voyageai": load_requirements("requirements/embed/voyageai.in"),
