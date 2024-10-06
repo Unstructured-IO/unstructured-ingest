@@ -120,16 +120,7 @@ _COLUMNS = (
     "detection_class_prob",
 )
 
-_DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
-
-
-def parse_date_string(date_value: Union[str, int]) -> date:
-    try:
-        timestamp = float(date_value) / 1000 if isinstance(date_value, int) else float(date_value)
-        return datetime.fromtimestamp(timestamp)
-    except Exception as e:
-        logger.debug(f"date {date_value} string not a timestamp: {e}")
-    return parser.parse(date_value)
+# _DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
 
 
 @dataclass
@@ -182,7 +173,7 @@ class DuckDBUploadStager(UploadStager):
 
 
 class DuckDBUploaderConfig(UploaderConfig):
-    batch_size: int = Field(default=50, description="Number of records per batch")
+    batch_size: int = Field(default=50, description="[Not-used] Number of records per batch")
 
 
 @dataclass
@@ -228,19 +219,11 @@ class DuckDBUploader(Uploader):
     def upload_contents(self, path: Path) -> None:
         df_elements = pd.read_json(path, orient="records", lines=True)
         logger.debug(f"uploading {len(df_elements)} entries to {self.connection_config.database} ")
-        # TODO: what happens if this is skipped?
-        # df.replace({np.nan: None}, inplace=True)
-
-        # columns = tuple(df_elements.columns)
-        # print("\n\n\n\n")
-        # for row in tuple(df_elements.itertuples(index=False, name=None)):
-        #     for column_name, value in zip(columns, row):
-        #         print(f"{column_name} :: {type(value)}")
-        #     break
-        # print("\n\n\n\n")
 
         with self.connection() as conn:
-            conn.query(f"INSERT INTO {self.connection_config.schema}.{ELEMENTS_TABLE_NAME} BY NAME SELECT * FROM df_elements")
+            conn.query(
+                f"INSERT INTO {self.connection_config.schema}.{ELEMENTS_TABLE_NAME} BY NAME SELECT * FROM df_elements"
+            )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         self.upload_contents(path=path)
