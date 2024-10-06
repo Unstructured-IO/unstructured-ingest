@@ -11,9 +11,7 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     # Mock get_client to return our mock_client
     mocker.patch.object(OllamaEmbeddingConfig, "get_client", return_value=mock_client)
 
-    encoder = OllamaEmbeddingEncoder(
-        config=OllamaEmbeddingConfig(model_name="all-minilm")
-    )
+    encoder = OllamaEmbeddingEncoder(config=OllamaEmbeddingConfig(model_name="all-minilm"))
     raw_elements = [{"text": f"This is sentence {i+1}"} for i in range(2)]
 
     elements = encoder.embed_documents(

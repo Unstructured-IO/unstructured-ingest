@@ -45,7 +45,7 @@ class OllamaEmbeddingEncoder(BaseEmbeddingEncoder):
     def _embed_documents(self, texts: list[str]) -> list[list[float]]:
         client = self.config.get_client()
         _r = client(model=self.config.embedder_model_name, input=texts)
-        return _r['embeddings']
+        return _r["embeddings"]
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = self._embed_documents([e.get("text", "") for e in elements])

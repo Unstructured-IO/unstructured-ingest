@@ -54,16 +54,6 @@ class EmbedderConfig(BaseModel):
             config=HuggingFaceEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
-    def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured_ingest.embed.huggingface import (
-            HuggingFaceEmbeddingConfig,
-            HuggingFaceEmbeddingEncoder,
-        )
-
-        return HuggingFaceEmbeddingEncoder(
-            config=HuggingFaceEmbeddingConfig.model_validate(embedding_kwargs)
-        )
-
     def get_ollama_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.ollama import OllamaEmbeddingConfig, OllamaEmbeddingEncoder
 
@@ -150,7 +140,7 @@ class EmbedderConfig(BaseModel):
 
         if self.embedding_provider == "voyageai":
             return self.get_voyageai_embedder(embedding_kwargs=kwargs)
-        
+
         if self.embedding_provider == "mixedbread-ai":
             return self.get_mixedbread_embedder(embedding_kwargs=kwargs)
 
