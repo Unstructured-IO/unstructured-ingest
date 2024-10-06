@@ -17,6 +17,7 @@ class EmbedderConfig(BaseModel):
         Literal[
             "openai",
             "huggingface",
+            "ollama",
             "aws-bedrock",
             "vertexai",
             "voyageai",
@@ -52,6 +53,21 @@ class EmbedderConfig(BaseModel):
         return HuggingFaceEmbeddingEncoder(
             config=HuggingFaceEmbeddingConfig.model_validate(embedding_kwargs)
         )
+
+    def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.huggingface import (
+            HuggingFaceEmbeddingConfig,
+            HuggingFaceEmbeddingEncoder,
+        )
+
+        return HuggingFaceEmbeddingEncoder(
+            config=HuggingFaceEmbeddingConfig.model_validate(embedding_kwargs)
+        )
+
+    def get_ollama_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.ollama import OllamaEmbeddingConfig, OllamaEmbeddingEncoder
+
+        return OllamaEmbeddingEncoder(config=OllamaEmbeddingConfig.model_validate(embedding_kwargs))
 
     def get_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
@@ -120,6 +136,9 @@ class EmbedderConfig(BaseModel):
         if self.embedding_provider == "huggingface":
             return self.get_huggingface_embedder(embedding_kwargs=kwargs)
 
+        if self.embedding_provider == "ollama":
+            return self.get_ollama_embedder(embedding_kwargs=kwargs)
+
         if self.embedding_provider == "octoai":
             return self.get_octoai_embedder(embedding_kwargs=kwargs)
 
@@ -131,6 +150,7 @@ class EmbedderConfig(BaseModel):
 
         if self.embedding_provider == "voyageai":
             return self.get_voyageai_embedder(embedding_kwargs=kwargs)
+        
         if self.embedding_provider == "mixedbread-ai":
             return self.get_mixedbread_embedder(embedding_kwargs=kwargs)
 
