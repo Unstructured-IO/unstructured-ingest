@@ -79,7 +79,10 @@ ALLOWED_FIELDS = (
 class PineconeUploadStagerConfig(UploadStagerConfig):
     metadata_fields: list[str] = Field(
         default=ALLOWED_FIELDS,
-        description="which metadata from the source element to map to the payload metadata being sent to Pinecone.",
+        description=(
+            "which metadata from the source element to map to the payload metadata being sent to "
+            "Pinecone.",
+        )
     )
 
 
