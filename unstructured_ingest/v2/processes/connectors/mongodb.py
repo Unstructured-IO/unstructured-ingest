@@ -73,9 +73,9 @@ class MongoDBDownloaderConfig(DownloaderConfig):
 
 @dataclass
 class MongoDBIndexer(Indexer):
-    connector_type: str = CONNECTOR_TYPE
     connection_config: MongoDBConnectionConfig
     index_config: Optional[MongoDBIndexerConfig] = None
+    connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
         """Validates the connection to the MongoDB server."""
@@ -155,9 +155,9 @@ class MongoDBIndexer(Indexer):
 
 @dataclass
 class MongoDBDownloader(Downloader):
-    connector_type: str = CONNECTOR_TYPE
     connection_config: MongoDBConnectionConfig
     download_config: MongoDBDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["pymongo"], extras="mongodb")
     def create_client(self) -> "MongoClient":
