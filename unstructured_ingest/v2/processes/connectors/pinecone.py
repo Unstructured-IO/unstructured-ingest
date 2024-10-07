@@ -82,7 +82,7 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
         description=(
             "which metadata from the source element to map to the payload metadata being sent to "
             "Pinecone.",
-        )
+        ),
     )
 
 
