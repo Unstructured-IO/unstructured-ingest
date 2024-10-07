@@ -204,14 +204,14 @@ class EmbeddingConfig(BaseConfig):
         if self.model_name:
             kwargs["model_name"] = self.model_name
         # TODO make this more dynamic to map to encoder configs
-        if self.provider == "langchain-openai":
+        if self.provider == "openai":
             from unstructured_ingest.embed.openai import (
                 OpenAIEmbeddingConfig,
                 OpenAIEmbeddingEncoder,
             )
 
             return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig(**kwargs))
-        elif self.provider == "langchain-huggingface":
+        elif self.provider == "huggingface":
             from unstructured_ingest.embed.huggingface import (
                 HuggingFaceEmbeddingConfig,
                 HuggingFaceEmbeddingEncoder,
@@ -225,7 +225,7 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig(**kwargs))
-        elif self.provider == "langchain-aws-bedrock":
+        elif self.provider == "aws-bedrock":
             from unstructured_ingest.embed.bedrock import (
                 BedrockEmbeddingConfig,
                 BedrockEmbeddingEncoder,
@@ -238,14 +238,14 @@ class EmbeddingConfig(BaseConfig):
                     region_name=self.aws_region,
                 )
             )
-        elif self.provider == "langchain-vertexai":
+        elif self.provider == "vertexai":
             from unstructured_ingest.embed.vertexai import (
                 VertexAIEmbeddingConfig,
                 VertexAIEmbeddingEncoder,
             )
 
             return VertexAIEmbeddingEncoder(config=VertexAIEmbeddingConfig(**kwargs))
-        elif self.provider == "langchain-voyageai":
+        elif self.provider == "voyageai":
             from unstructured_ingest.embed.voyageai import (
                 VoyageAIEmbeddingConfig,
                 VoyageAIEmbeddingEncoder,

@@ -3,8 +3,10 @@ from unstructured_ingest.embed.voyageai import VoyageAIEmbeddingConfig, VoyageAI
 
 def test_embed_documents_does_not_break_element_to_dict(mocker):
     # Mocked client with the desired behavior for embed_documents
+    mock_response = mocker.MagicMock()
+    mocker.patch.object(mock_response, "embeddings", [1, 2])
     mock_client = mocker.MagicMock()
-    mock_client.embed_documents.return_value = [1, 2]
+    mock_client.embed.return_value = mock_response
 
     # Mock get_client to return our mock_client
     mocker.patch.object(VoyageAIEmbeddingConfig, "get_client", return_value=mock_client)

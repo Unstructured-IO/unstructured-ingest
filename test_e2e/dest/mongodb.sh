@@ -56,7 +56,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --reprocess \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   mongodb \
   --uri "$MONGODB_URI" \
   --database "$MONGODB_DATABASE_NAME" \

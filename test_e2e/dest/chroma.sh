@@ -45,7 +45,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --chunking-strategy by_title \
   --chunk-max-characters 1500 \
   --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   chroma \
   --host "localhost" \
   --port 8000 \

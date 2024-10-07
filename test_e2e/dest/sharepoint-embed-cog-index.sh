@@ -97,7 +97,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --permissions-tenant "$SHAREPOINT_PERMISSIONS_TENANT" \
   --path "Shared Documents" \
   --recursive \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   --chunking-strategy by_title \
   --chunk-multipage-sections \
   --work-dir "$WORK_DIR" \

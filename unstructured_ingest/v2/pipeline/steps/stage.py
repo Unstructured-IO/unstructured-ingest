@@ -28,7 +28,9 @@ class UploadStageStep(PipelineStep):
 
     def __post_init__(self):
         config = (
-            self.process.upload_stager_config.json() if self.process.upload_stager_config else None
+            self.process.upload_stager_config.model_dump_json()
+            if self.process.upload_stager_config
+            else None
         )
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"created {self.identifier} with configs: {config}")

@@ -187,7 +187,9 @@ class Pipeline:
         return filtered_records
 
     def _run(self):
-        logger.info(f"running local pipeline: {self} with configs: " f"{self.context.json()}")
+        logger.info(
+            f"running local pipeline: {self} with configs: " f"{self.context.model_dump_json()}"
+        )
         if self.context.mp_supported:
             manager = mp.Manager()
             self.context.status = manager.dict()

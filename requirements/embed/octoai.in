@@ -1,5 +1,4 @@
 -c ../common/constraints.txt
--c ../common/constraints.txt
 
 openai
 tiktoken

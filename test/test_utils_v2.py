@@ -34,7 +34,7 @@ model = MockBaseModel(
 
 def test_serialize_base_model():
 
-    serialized_dict = model.dict()
+    serialized_dict = model.model_dump()
     assert isinstance(serialized_dict["secret_str"], _SecretBase)
     assert isinstance(serialized_dict["secret_child_base"], _SecretBase)
 
@@ -57,7 +57,7 @@ def test_serialize_base_model():
 
 
 def test_serialize_base_model_json():
-    serialized_json = model.json()
+    serialized_json = model.model_dump_json()
     serialized_dict = json.loads(serialized_json)
     expected_dict = {
         "secret_str": "**********",
