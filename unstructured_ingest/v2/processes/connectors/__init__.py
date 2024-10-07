@@ -82,7 +82,7 @@ add_destination_entry(
 add_destination_entry(destination_type=SQL_CONNECTOR_TYPE, entry=sql_destination_entry)
 
 add_destination_entry(destination_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_destination_entry)
-add_source_entry(source_type=MONGODB_CONNECTOR_TYPE,entry=mongodb_source_entry)
+add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)
 
 add_destination_entry(destination_type=PINECONE_CONNECTOR_TYPE, entry=pinecone_destination_entry)
 add_source_entry(source_type=SHAREPOINT_CONNECTOR_TYPE, entry=sharepoint_source_entry)

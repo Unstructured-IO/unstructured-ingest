@@ -1,43 +1,40 @@
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Generator
 from time import time
+from typing import TYPE_CHECKING, Any, Generator, Optional
+
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
-    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
-    SourceIdentifiers,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.utils.data_prep import flatten_dict
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry, SourceRegistryEntry
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
 )
 
 if TYPE_CHECKING:
-    from pymongo import MongoClient
-    from pymongo.server_api import ServerApi
-    from pymongo.driver_info import DriverInfo
     from bson.objectid import ObjectId
+    from pymongo import MongoClient
 
 CONNECTOR_TYPE = "mongodb"
 SERVER_API_VERSION = "1"
@@ -65,11 +62,14 @@ class MongoDBConnectionConfig(ConnectionConfig):
 class MongoDBUploadStagerConfig(UploadStagerConfig):
     pass
 
+
 class MongoDBIndexerConfig(IndexerConfig):
     batch_size: int = 100
-    
+
+
 class MongoDBDownloaderConfig(DownloaderConfig):
     pass
+
 
 @dataclass
 class MongoDBIndexer(Indexer):
@@ -117,7 +117,7 @@ class MongoDBIndexer(Indexer):
         # Get list of document IDs
         ids = collection.distinct("_id")
         batch_size = self.index_config.batch_size if self.index_config else 100
-        id_batches = [ids[i:i + batch_size] for i in range(0, len(ids), batch_size)]
+        id_batches = [ids[i : i + batch_size] for i in range(0, len(ids), batch_size)]
 
         for id_batch in id_batches:
             for doc_id in id_batch:
@@ -128,9 +128,7 @@ class MongoDBIndexer(Indexer):
 
                 # Prepare source_identifiers
                 source_identifiers = SourceIdentifiers(
-                    fullpath=str(doc_id),
-                    filename=str(doc_id),
-                    relative_path=f"{doc_id}.txt"
+                    fullpath=str(doc_id), filename=str(doc_id), relative_path=f"{doc_id}.txt"
                 )
 
                 # Create FileDataSourceMetadata
@@ -190,10 +188,10 @@ class MongoDBDownloader(Downloader):
         if not relative_path:
             # Default to using the identifier as filename
             filename = f"{file_data.identifier}.txt"
-            relative_path = self.connection_config.collection + '/' + filename
+            relative_path = self.connection_config.collection + "/" + filename
         else:
             # Ensure the relative path is correct
-            relative_path = self.connection_config.collection + '/' + relative_path
+            relative_path = self.connection_config.collection + "/" + relative_path
 
         return self.download_dir / relative_path
 
@@ -221,7 +219,7 @@ class MongoDBDownloader(Downloader):
             raise FileNotFoundError(f"Document with ID {document_id} not found")
 
         # Remove the _id field
-        doc.pop('_id', None)
+        doc.pop("_id", None)
 
         flattened_dict = flatten_dict(dictionary=doc)
         concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
@@ -240,6 +238,7 @@ class MongoDBDownloader(Downloader):
         file_data.local_download_path = str(download_path)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
+
 
 @dataclass
 class MongoDBUploadStager(UploadStager):
@@ -332,5 +331,5 @@ mongodb_source_entry = SourceRegistryEntry(
     indexer_config=MongoDBIndexerConfig,
     indexer=MongoDBIndexer,
     downloader_config=MongoDBDownloaderConfig,
-    downloader=MongoDBDownloader
-    )
+    downloader=MongoDBDownloader,
+)
