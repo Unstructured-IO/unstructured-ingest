@@ -74,7 +74,7 @@ class MongoDBDownloaderConfig(DownloaderConfig):
 @dataclass
 class MongoDBIndexer(Indexer):
     connection_config: MongoDBConnectionConfig
-    index_config: Optional[MongoDBIndexerConfig] = None
+    index_config: MongoDBIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
@@ -155,8 +155,8 @@ class MongoDBIndexer(Indexer):
 
 @dataclass
 class MongoDBDownloader(Downloader):
-    connection_config: MongoDBConnectionConfig
     download_config: MongoDBDownloaderConfig
+    connection_config: MongoDBConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["pymongo"], extras="mongodb")
@@ -180,20 +180,20 @@ class MongoDBDownloader(Downloader):
                 server_api=ServerApi(version=SERVER_API_VERSION),
             )
 
-    def get_download_path(self, file_data: FileData) -> Optional[Path]:
-        """Determines the path where the file will be downloaded."""
-        if not file_data.source_identifiers:
-            return None
-        relative_path = file_data.source_identifiers.relative_path
-        if not relative_path:
-            # Default to using the identifier as filename
-            filename = f"{file_data.identifier}.txt"
-            relative_path = self.connection_config.collection + "/" + filename
-        else:
-            # Ensure the relative path is correct
-            relative_path = self.connection_config.collection + "/" + relative_path
+    # def get_download_path(self, file_data: FileData) -> Optional[Path]:
+    #     """Determines the path where the file will be downloaded."""
+    #     if not file_data.source_identifiers:
+    #         return None
+    #     relative_path = file_data.source_identifiers.relative_path
+    #     if not relative_path:
+    #         # Default to using the identifier as filename
+    #         filename = f"{file_data.identifier}.txt"
+    #         relative_path = self.connection_config.collection + "/" + filename
+    #     else:
+    #         # Ensure the relative path is correct
+    #         relative_path = self.connection_config.collection + "/" + relative_path
 
-        return self.download_dir / relative_path
+    #     return self.download_dir / relative_path
 
     @SourceConnectionError.wrap
     @requires_dependencies(["pymongo"], extras="mongodb")
