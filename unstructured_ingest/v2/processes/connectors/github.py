@@ -8,10 +8,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, root_validator
 
-from unstructured_ingest.error import (
-    SourceConnectionError,
-    SourceConnectionNetworkError
-)
+from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -24,44 +21,34 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses
+    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    SourceRegistryEntry
-)
+from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-CONNECTOR_TYPE = 'github'
+CONNECTOR_TYPE = "github"
 if TYPE_CHECKING:
     from github.Repository import Repository
 
 
 class GitHubAccessConfig(AccessConfig):
     access_token: Optional[str] = Field(
-        default=None,
-        sensitive=False,
-        overload_name="git_access_token"
+        default=None, sensitive=False, overload_name="git_access_token"
     )
 
 
 class GitHubConnectionConfig(ConnectionConfig):
     url: str
     access_config: GitHubAccessConfig
-    branch: Optional[str] = Field(
-        default=None,
-        overload_name="git_branch"
-    )
+    branch: Optional[str] = Field(default=None, overload_name="git_branch")
 
-    git_file_glob: Optional[List[str]] = Field(
-        default=None,
-        overload_name="git_file_glob"
-    )
+    git_file_glob: Optional[List[str]] = Field(default=None, overload_name="git_file_glob")
     repo_path: str = field(init=False, repr=False, default=None)
 
     @root_validator(pre=True)
     def set_repo_path(cls, values):
         # Parse the URL
-        url = values.get('url')
+        url = values.get("url")
         if url:
             parsed_gh_url = urlparse(url)
             path_fragments = [fragment for fragment in parsed_gh_url.path.split("/") if fragment]
@@ -77,7 +64,7 @@ class GitHubConnectionConfig(ConnectionConfig):
                 )
 
             # Set the repo_path based on URL fragments
-            values['repo_path'] = "/".join(path_fragments)
+            values["repo_path"] = "/".join(path_fragments)
         return values
 
     @SourceConnectionError.wrap
@@ -177,7 +164,10 @@ class GitHubIndexer(Indexer):
             if (
                 element.type == "blob"
                 and self.is_file_type_supported(element.path)
-                and (not self.connection_config.git_file_glob or self.does_path_match_glob(element.path))
+                and (
+                    not self.connection_config.git_file_glob
+                    or self.does_path_match_glob(element.path)
+                )
             ):
                 record_locator = {
                     "repo_path": self.connection_config.repo_path,
@@ -195,17 +185,15 @@ class GitHubIndexer(Indexer):
                         rel_path=rel_path,
                     ),
                     metadata=FileDataSourceMetadata(
-                        url=element.url,
-                        version=element.etag,
-                        record_locator=record_locator
+                        url=element.url, version=element.etag, record_locator=record_locator
                     ),
                     additional_metadata={
                         "content-type": element._headers["content-type"],
                         "content-length": element._headers["content-length"],
                         "mode": element._rawData["mode"],
                         "type": element._rawData["type"],
-                        "size": element._rawData["size"]
-                    }
+                        "size": element._rawData["size"],
+                    },
                 )
 
 
