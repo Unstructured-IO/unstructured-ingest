@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 class GitHubAccessConfig(AccessConfig):
     access_token: Optional[str] = Field(
-        default=None, sensitive=False, overload_name="git_access_token"
+        default=None, sensitive=False, overload_name="access_token"
     )
 
 
