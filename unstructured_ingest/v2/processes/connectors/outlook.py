@@ -156,8 +156,17 @@ class OutlookIndexer(Indexer):
                     "user_email": self.index_config.user_email,
                 },
             ),
-            # TODO(Filip Knefel): What about additional metadata in this case?
-            # additional_metadata={}
+            additional_metadata={
+                "sent_from": message.sent_from,
+                "to_recipients": message.to_recipients,
+                "bcc_recipients": message.bcc_recipients,
+                "subject": message.subject,
+                "conversation_id": message.conversation_id,
+                "is_draft": message.is_draft,
+                "is_read": message.is_read,
+                "has_attachments": message.has_attachments,
+                "importance": message.importance,
+            }
         )
 
     def _generate_fullpath(self, message: "Message") -> Path:
