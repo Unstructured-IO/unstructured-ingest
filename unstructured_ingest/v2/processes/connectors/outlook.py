@@ -141,16 +141,6 @@ class OutlookIndexer(Indexer):
 
     def _message_to_file_data(self, message: "Message") -> FileData:
         fullpath = self._generate_fullpath(message)
-        logger.debug(
-            "Date modified: %s, timezone: %s",
-            message.last_modified_datetime,
-            message.last_modified_datetime.tzinfo,
-        )
-        logger.debug(
-            "Date created: %s, timezone: %s",
-            message.created_datetime,
-            message.created_datetime.tzinfo,
-        )
 
         return FileData(
             identifier=message.id,
@@ -161,10 +151,10 @@ class OutlookIndexer(Indexer):
                 # TODO(Filip Knefel): Based on V1 I used web_link but there's also
                 # message.resource_url, which one better suits this field?
                 version=message.change_key,
-                date_modified=message.last_modified_datetime.replace(tzinfo=timezone.utc).strftime(
-                    "%s"
+                date_modified=str(
+                    message.last_modified_datetime.replace(tzinfo=timezone.utc).timestamp()
                 ),
-                date_created=message.created_datetime.replace(tzinfo=timezone.utc).strftime("%s"),
+                date_created=str(message.created_datetime.replace(tzinfo=timezone.utc).timestamp()),
                 date_processed=str(time.time()),
                 record_locator={
                     "message_id": message.id,
