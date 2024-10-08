@@ -191,7 +191,7 @@ class PineconeUploader(Uploader):
             if namespace := self.upload_config.namespace:
                 for kwargs in upsert_kwargs:
                     kwargs["namespace"] = namespace
-            async_results = [index.upsert(**kwargs) for kwarg in upsert_kwargs]
+            async_results = [index.upsert(**kwarg) for kwarg in upsert_kwargs]
             # Wait for and retrieve responses (this raises in case of error)
             try:
                 results = [async_result.get() for async_result in async_results]
