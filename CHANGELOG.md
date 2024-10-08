@@ -1,4 +1,8 @@
-## 0.0.23-dev0
+## 0.0.24
+
+### Enhancements
+
+* **Support dynamic metadata mapping in Pinecone uploader**
 
 ## 0.0.23
 
