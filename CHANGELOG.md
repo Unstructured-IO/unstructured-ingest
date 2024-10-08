@@ -1,3 +1,9 @@
+## 0.0.25
+
+### Enhancements
+
+* **Support pinecone namespace on upload**
+
 ## 0.0.24
 
 ### Enhancements
