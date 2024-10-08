@@ -1,10 +1,11 @@
-## 0.0.22-dev2
+## 0.0.22-dev3
 
 ### Enhancements
 
 * **Add documentation for developing sources/destinations**
 * **Leverage `uv` for pip compile**
 * **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
+* **Migrate Outlook Source Connector to V2**
 
 ## 0.0.21
 
