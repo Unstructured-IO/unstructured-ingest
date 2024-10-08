@@ -21,6 +21,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.interfaces.file_data import FileDataSourceMetadata, SourceIdentifiers
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from datetime import timezone
 
 MAX_EMAILS_PER_FOLDER = 1_000_000  # Maximum number of emails per folder
 
@@ -150,8 +151,8 @@ class OutlookIndexer(Indexer):
                 # TODO(Filip Knefel): Based on V1 I used web_link but there's also
                 # message.resource_url, which one better suits this field?
                 version=message.change_key,
-                date_modified=message.last_modified_datetime.strftime("%s"),
-                date_created=message.created_datetime.strftime("%s"),
+                date_modified=message.last_modified_datetime.astimezone(timezone.utc).strftime("%s"),
+                date_created=message.created_datetime.astimezone(timezone.utc).strftime("%s"),
                 date_processed=str(time.time()),
                 record_locator={
                     "message_id": message.id,
