@@ -19,7 +19,7 @@ class ConnectionConfig(BaseModel):
     def get_access_config(self) -> dict[str, Any]:
         if not self.access_config:
             return {}
-        return self.access_config.get_secret_value().dict()
+        return self.access_config.get_secret_value().model_dump()
 
 
 ConnectionConfigT = TypeVar("ConnectionConfigT", bound=ConnectionConfig)

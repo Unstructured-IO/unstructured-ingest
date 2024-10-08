@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Tuple
 
 from pydantic import BaseModel
 
@@ -19,7 +18,7 @@ class BaseEmbeddingEncoder(ABC):
 
     @property
     @abstractmethod
-    def num_of_dimensions(self) -> Tuple[int]:
+    def num_of_dimensions(self) -> tuple[int, ...]:
         """Number of dimensions for the embedding vector."""
 
     @property
@@ -28,9 +27,17 @@ class BaseEmbeddingEncoder(ABC):
         """Denotes if the embedding vector is a unit vector."""
 
     @abstractmethod
-    def embed_documents(self, elements: List[dict]) -> List[dict]:
+    def embed_documents(self, elements: list[dict]) -> list[dict]:
         pass
 
     @abstractmethod
-    def embed_query(self, query: str) -> List[float]:
+    def embed_query(self, query: str) -> list[float]:
         pass
+
+    def _embed_documents(self, elements: list[str]) -> list[list[float]]:
+        results = []
+        for text in elements:
+            response = self.embed_query(query=text)
+            results.append(response)
+
+        return results

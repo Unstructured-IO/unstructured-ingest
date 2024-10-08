@@ -68,7 +68,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
 
         # Avoid injecting None by filtering out k,v pairs where the value is None
         access_configs.update(
-            {k: v for k, v in self.access_config.get_secret_value().dict().items() if v}
+            {k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v}
         )
         return access_configs
 

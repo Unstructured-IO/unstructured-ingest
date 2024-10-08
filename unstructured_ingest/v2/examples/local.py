@@ -25,12 +25,12 @@ if __name__ == "__main__":
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve())),
         indexer_config=LocalIndexerConfig(
-            input_path=str(docs_path.resolve()) + "/book-war-and-peace-1p.txt"
+            input_path=str(docs_path.resolve()) + "/language-docs/UDHR_first_article_all.txt"
         ),
         downloader_config=LocalDownloaderConfig(download_dir=download_path),
         source_connection_config=LocalConnectionConfig(),
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
+        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         uploader_config=LocalUploaderConfig(output_dir=str(output_path.resolve())),
     ).run()

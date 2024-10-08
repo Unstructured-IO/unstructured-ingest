@@ -146,7 +146,7 @@ if __name__ == "__main__":
         chunker_config=ChunkerConfig(
             chunking_strategy="basic",
         ),
-        embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
+        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         
         destination_connection_config=ChromaConnectionConfig(
             access_config=ChromaAccessConfig(settings=None, headers=None),

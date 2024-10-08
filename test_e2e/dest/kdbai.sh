@@ -48,7 +48,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --reprocess \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   kdbai \
   --table-name "unstructured_test" \
   --batch-size 100

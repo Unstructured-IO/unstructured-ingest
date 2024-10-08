@@ -130,7 +130,7 @@ class DatabricksVolumesUploader(Uploader):
 
         return WorkspaceClient(
             host=self.connection_config.host,
-            **self.connection_config.access_config.get_secret_value().dict(),
+            **self.connection_config.access_config.get_secret_value().model_dump(),
         )
 
     def precheck(self) -> None:

@@ -33,7 +33,7 @@ if __name__ == "__main__":
         source_connection_config=LocalConnectionConfig(),
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
+        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         destination_connection_config=WeaviateConnectionConfig(
             host_url="http://localhost:8080",
             class_name="elements",

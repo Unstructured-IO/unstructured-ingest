@@ -67,7 +67,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --chunking-strategy by_title \
   --chunk-max-characters 1500 \
   --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   couchbase \
   --connection-string "$CB_CONN_STR" \
   --bucket "$CB_BUCKET" \
