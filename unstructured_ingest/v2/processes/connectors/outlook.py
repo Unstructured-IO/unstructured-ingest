@@ -141,10 +141,6 @@ class OutlookIndexer(Indexer):
     def _message_to_file_data(self, message: "Message") -> FileData:
         fullpath = self._generate_fullpath(message)
 
-        logger.warning(message.sent_from)
-        logger.warning(message.to_recipients)
-        logger.warning(message.bcc_recipients)
-
         return FileData(
             identifier=message.id,
             connector_type=CONNECTOR_TYPE,
