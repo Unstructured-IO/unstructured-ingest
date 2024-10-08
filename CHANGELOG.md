@@ -1,3 +1,9 @@
+## 0.0.24
+
+### Enhancements
+
+* **Vectara destination to v2**
+
 ## 0.0.23
 
 ### Fixes
