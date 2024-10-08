@@ -141,6 +141,10 @@ class OutlookIndexer(Indexer):
     def _message_to_file_data(self, message: "Message") -> FileData:
         fullpath = self._generate_fullpath(message)
 
+        logger.warning(message.sent_from)
+        logger.warning(message.to_recipients)
+        logger.warning(message.bcc_recipients)
+
         return FileData(
             identifier=message.id,
             connector_type=CONNECTOR_TYPE,
@@ -159,9 +163,9 @@ class OutlookIndexer(Indexer):
                 },
             ),
             additional_metadata={
-                "sent_from": message.sent_from,
-                "to_recipients": message.to_recipients,
-                "bcc_recipients": message.bcc_recipients,
+                "sent_from": str(message.sent_from),
+                "to_recipients": [str(recipient) for recipient in message.to_recipients],
+                "bcc_recipients": [str(recipient) for recipient in message.to_recipients],
                 "subject": message.subject,
                 "conversation_id": message.conversation_id,
                 "is_draft": message.is_draft,
