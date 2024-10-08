@@ -64,7 +64,7 @@ class MongoDBUploadStagerConfig(UploadStagerConfig):
 
 
 class MongoDBIndexerConfig(IndexerConfig):
-    batch_size: int = 100
+    batch_size: int = Field(default=100, description="Number of records per batch")
 
 
 class MongoDBDownloaderConfig(DownloaderConfig):
