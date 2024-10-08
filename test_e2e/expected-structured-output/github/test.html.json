@@ -1,52 +1,88 @@
 [
   {
+    "type": "Title",
     "element_id": "218722ac66e142a570ab2053b430c6c4",
-    "metadata": {
-      "filetype": "text/html",
-      "languages": [
-        "eng"
-      ]
-    },
     "text": "Downloadify Example",
-    "type": "Title"
-  },
-  {
-    "element_id": "bf0fab1925c4b2cbb23a53afce28ebd2",
     "metadata": {
-      "filetype": "text/html",
       "languages": [
         "eng"
       ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/c63c8fc21d46d44de85a14a3ed4baec0348ce344",
+        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "record_locator": {
+          "repo_path": "dcneiner/Downloadify",
+          "file_path": "test.html"
+        },
+        "filesize_bytes": 3001
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "bf0fab1925c4b2cbb23a53afce28ebd2",
+    "text": "More info available at the Github Project Page",
+    "metadata": {
       "link_texts": [
         "Github Project Page"
       ],
       "link_urls": [
         "http://github.com/dcneiner/Downloadify"
-      ]
-    },
-    "text": "More info available at the Github Project Page",
-    "type": "Title"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/c63c8fc21d46d44de85a14a3ed4baec0348ce344",
+        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "record_locator": {
+          "repo_path": "dcneiner/Downloadify",
+          "file_path": "test.html"
+        },
+        "filesize_bytes": 3001
+      }
+    }
   },
   {
+    "type": "Title",
     "element_id": "395aed29cd13842fede90a1a8677aa4b",
+    "text": "Downloadify Invoke Script For This Page",
     "metadata": {
-      "filetype": "text/html",
       "languages": [
         "eng"
-      ]
-    },
-    "text": "Downloadify Invoke Script For This Page",
-    "type": "Title"
+      ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/c63c8fc21d46d44de85a14a3ed4baec0348ce344",
+        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "record_locator": {
+          "repo_path": "dcneiner/Downloadify",
+          "file_path": "test.html"
+        },
+        "filesize_bytes": 3001
+      }
+    }
   },
   {
+    "type": "NarrativeText",
     "element_id": "2e22c39e004cb7d566294080c976efc8",
+    "text": "Downloadify.create('downloadify',{\n  filename: function(){\n    return document.getElementById('filename').value;\n  },\n  data: function(){ \n    return document.getElementById('data').value;\n  },\n  onComplete: function(){ \n    alert('Your File Has Been Saved!'); \n  },\n  onCancel: function(){ \n    alert('You have cancelled the saving of this file.');\n  },\n  onError: function(){ \n    alert('You must put something in the File Contents or there will be nothing to save!'); \n  },\n  swf: 'media/downloadify.swf',\n  downloadImage: 'images/download.png',\n  width: 100,\n  height: 30,\n  transparent: true,\n  append: false\n});",
     "metadata": {
-      "filetype": "text/html",
       "languages": [
         "eng"
-      ]
-    },
-    "text": "Downloadify.create('downloadify',{\n  filename: function(){\n    return document.getElementById('filename').value;\n  },\n  data: function(){ \n    return document.getElementById('data').value;\n  },\n  onComplete: function(){ \n    alert('Your File Has Been Saved!'); \n  },\n  onCancel: function(){ \n    alert('You have cancelled the saving of this file.');\n  },\n  onError: function(){ \n    alert('You must put something in the File Contents or there will be nothing to save!'); \n  },\n  swf: 'media/downloadify.swf',\n  downloadImage: 'images/download.png',\n  width: 100,\n  height: 30,\n  transparent: true,\n  append: false\n});",
-    "type": "NarrativeText"
+      ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/c63c8fc21d46d44de85a14a3ed4baec0348ce344",
+        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "record_locator": {
+          "repo_path": "dcneiner/Downloadify",
+          "file_path": "test.html"
+        },
+        "filesize_bytes": 3001
+      }
+    }
   }
 ]
