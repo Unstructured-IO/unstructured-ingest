@@ -1,6 +1,7 @@
 import hashlib
 import time
 from dataclasses import dataclass, field
+from datetime import timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Coroutine, Generator
 
@@ -21,7 +22,6 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.interfaces.file_data import FileDataSourceMetadata, SourceIdentifiers
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-from datetime import timezone
 
 MAX_EMAILS_PER_FOLDER = 1_000_000  # Maximum number of emails per folder
 
@@ -141,8 +141,16 @@ class OutlookIndexer(Indexer):
 
     def _message_to_file_data(self, message: "Message") -> FileData:
         fullpath = self._generate_fullpath(message)
-        logger.debug("Date modified: %s, timezone: %s", message.last_modified_datetime, message.last_modified_datetime.tzinfo)
-        logger.debug("Date created: %s, timezone: %s", message.created_datetime, message.created_datetime.tzinfo)
+        logger.debug(
+            "Date modified: %s, timezone: %s",
+            message.last_modified_datetime,
+            message.last_modified_datetime.tzinfo,
+        )
+        logger.debug(
+            "Date created: %s, timezone: %s",
+            message.created_datetime,
+            message.created_datetime.tzinfo,
+        )
 
         return FileData(
             identifier=message.id,
@@ -153,7 +161,9 @@ class OutlookIndexer(Indexer):
                 # TODO(Filip Knefel): Based on V1 I used web_link but there's also
                 # message.resource_url, which one better suits this field?
                 version=message.change_key,
-                date_modified=message.last_modified_datetime.replace(tzinfo=timezone.utc).strftime("%s"),
+                date_modified=message.last_modified_datetime.replace(tzinfo=timezone.utc).strftime(
+                    "%s"
+                ),
                 date_created=message.created_datetime.replace(tzinfo=timezone.utc).strftime("%s"),
                 date_processed=str(time.time()),
                 record_locator={
