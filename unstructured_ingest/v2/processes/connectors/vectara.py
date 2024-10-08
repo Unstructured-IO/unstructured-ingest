@@ -274,8 +274,7 @@ class VectaraUploader(Uploader):
             self._index_document(vdoc)
 
     #def write(self, docs: t.List[BaseIngestDoc]) -> None:
-    def run(self,elements_filepath: Path,file_data: FileData,
-        output_dir: Path,output_filename: str,**kwargs: Any,
+    def run(self,path: Path,file_data: FileData,**kwargs: Any,
     ) -> Path:
         docs_list: t.Dict[t.Dict[str, t.Any]] = []
 
@@ -296,25 +295,23 @@ class VectaraUploader(Uploader):
             md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
             return md
 
-        for doc in elements_filepath:
-            local_path = doc._output_filename
-            with open(local_path) as json_file:
-                dict_content = json.load(json_file)
-                vdoc = {
-                    "documentId": str(uuid.uuid4()),
-                    "title": dict_content[0].get("metadata", {}).get("data_source", {}).get("url"),
-                    "section": [
-                        {
-                            "text": element.pop("text", None),
-                            "metadataJson": json.dumps(get_metadata(element)),
-                        }
-                        for element in dict_content
-                    ],
-                }
-                logger.info(
-                    f"Extending {len(vdoc)} json elements from content in {local_path}",
-                )
-                docs_list.append(vdoc)
+        with path.open("r") as json_file:
+            dict_content = json.load(json_file)
+            vdoc = {
+                "documentId": str(uuid.uuid4()),
+                "title": dict_content[0].get("metadata", {}).get("data_source", {}).get("url"),
+                "section": [
+                    {
+                        "text": element.pop("text", None),
+                        "metadataJson": json.dumps(get_metadata(element)),
+                    }
+                    for element in dict_content
+                ],
+            }
+            logger.info(
+                f"Extending {len(vdoc)} json elements from content in {path}",
+            )
+            docs_list.append(vdoc)
         self.write_dict(docs_list=docs_list)
 
 
