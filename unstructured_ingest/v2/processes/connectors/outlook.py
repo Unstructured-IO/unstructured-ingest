@@ -55,7 +55,7 @@ class OutlookConnectionConfig(ConnectionConfig):
 
         # NOTE: It'd be nice to use `msal.authority.AuthorityBuilder` here paired with AZURE_PUBLIC
         # constant as default in the future but they do not fit well with `authority_url` right now
-        authority_url = f"{self.authority_url.rstrip("/")}/{self.tenant}"
+        authority_url = f"{self.authority_url.rstrip('/')}/{self.tenant}"
         app = ConfidentialClientApplication(
             authority=authority_url,
             client_id=self.client_id,
