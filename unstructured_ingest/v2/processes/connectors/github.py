@@ -60,7 +60,8 @@ class GitHubConnectionConfig(ConnectionConfig):
                 or len(path_fragments) != 2
             ):
                 raise ValueError(
-                    'Please provide a valid URL, e.g. "https://github.com/owner/repo" or "owner/repo".'
+                    'Please provide a valid URL, e.g. "https://github.com/owner/repo" or '
+                    '"owner/repo".'
                 )
 
             # Set the repo_path based on URL fragments
