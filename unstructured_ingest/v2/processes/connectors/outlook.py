@@ -185,7 +185,7 @@ class OutlookDownloader(Downloader):
     connection_config: OutlookConnectionConfig
     download_config: OutlookDownloaderConfig = field(default_factory=OutlookDownloaderConfig)
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:  # type: ignore[override]
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         download_path = self.get_download_path(file_data)
         # NOTE: Indexer should provide source identifiers required to generate the download path
         self._download_message(file_data, download_path)
