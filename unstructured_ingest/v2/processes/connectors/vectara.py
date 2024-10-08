@@ -12,7 +12,7 @@ from dateutil import parser
 
 from unstructured_ingest.error import DestinationConnectionError
 
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 
@@ -33,6 +33,7 @@ from unstructured_ingest.v2.processes.connector_registry import DestinationRegis
 BASE_URL = "https://api.vectara.io/v1"
 
 CONNECTOR_TYPE = "vectara"
+
 
 # @dataclass
 class VectaraAccessConfig(AccessConfig):
@@ -120,13 +121,10 @@ class VectaraUploader(Uploader):
 
     @property
     def jwt_token(self):
-        if (
-            not self._jwt_token
-            or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60
-        ):
+        if not self._jwt_token or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60:
             self._jwt_token = self._get_jwt_token()
         return self._jwt_token
-    
+
     # Get Oauth2 JWT token
     @requires_dependencies(["requests"], extras="vectara")
     def _get_jwt_token(self):
@@ -187,7 +185,6 @@ class VectaraUploader(Uploader):
             create_corpus_response = self._request(endpoint="create-corpus", data=data)
             self.connection_config.corpus_id = create_corpus_response.get("corpusId")
 
-
     @requires_dependencies(["requests"], extras="vectara")
     def _request(
         self,
@@ -214,7 +211,6 @@ class VectaraUploader(Uploader):
         response.raise_for_status()
         return response.json()
 
-    
     def _delete_doc(self, doc_id: str) -> None:
         """
         Delete a document from the Vectara corpus.
@@ -273,8 +269,12 @@ class VectaraUploader(Uploader):
         for vdoc in docs_list:
             self._index_document(vdoc)
 
-    #def write(self, docs: t.List[BaseIngestDoc]) -> None:
-    def run(self,path: Path,file_data: FileData,**kwargs: Any,
+    # def write(self, docs: t.List[BaseIngestDoc]) -> None:
+    def run(
+        self,
+        path: Path,
+        file_data: FileData,
+        **kwargs: Any,
     ) -> Path:
         docs_list: t.Dict[t.Dict[str, t.Any]] = []
 
@@ -313,8 +313,6 @@ class VectaraUploader(Uploader):
             )
             docs_list.append(vdoc)
         self.write_dict(docs_list=docs_list)
-
-
 
 
 vectara_destination_entry = DestinationRegistryEntry(
