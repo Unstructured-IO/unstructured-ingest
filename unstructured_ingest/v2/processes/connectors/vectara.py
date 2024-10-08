@@ -1,22 +1,14 @@
-from datetime import date, datetime
-import json
-import typing as t
-import uuid
 from dataclasses import dataclass, field
-
-from pathlib import Path
-from typing import Any
-from pydantic import Field
-
+from datetime import date, datetime
 from dateutil import parser
-
-from unstructured_ingest.error import DestinationConnectionError
-
+import json
+from pathlib import Path
+from pydantic import Field
+import typing as t
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.enhanced_dataclass import enhanced_field
-
-
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -28,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+import uuid
 
 
 BASE_URL = "https://api.vectara.io/v1"
@@ -89,7 +82,7 @@ class VectaraUploadStager(UploadStager):
         file_data: FileData,
         output_dir: Path,
         output_filename: str,
-        **kwargs: Any,
+        **kwargs: t.Any,
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
@@ -274,7 +267,7 @@ class VectaraUploader(Uploader):
         self,
         path: Path,
         file_data: FileData,
-        **kwargs: Any,
+        **kwargs: t.Any,
     ) -> Path:
         docs_list: t.Dict[t.Dict[str, t.Any]] = []
 
