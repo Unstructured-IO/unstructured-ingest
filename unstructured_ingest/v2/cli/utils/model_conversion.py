@@ -155,14 +155,14 @@ def _get_type_from_field(field: FieldInfo) -> click.ParamType:
 
 def get_option_from_field(option_name: str, field_info: FieldInfo) -> Option:
     param_decls = [option_name]
-    help = field_info.description or ""
+    help_text = field_info.description or ""
     if examples := field_info.examples:
-        help += f" [Examples: {', '.join(examples)}]"
+        help_text += f" [Examples: {', '.join(examples)}]"
     option_kwargs = {
         "type": _get_type_from_field(field_info),
         "default": get_default_value_from_field(field_info),
         "required": field_info.is_required(),
-        "help": help,
+        "help": str(help_text),
         "is_flag": is_boolean_flag(field_info),
         "show_default": field_info.default is not PydanticUndefined,
     }
