@@ -33,7 +33,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    from bson.objectid import ObjectId
     from pymongo import MongoClient
 
 CONNECTOR_TYPE = "mongodb"
@@ -109,6 +108,7 @@ class MongoDBIndexer(Indexer):
 
     @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        from bson.objectid import ObjectId
         """Generates FileData objects for each document in the MongoDB collection."""
         client = self.create_client()
         database = client[self.connection_config.database]
@@ -128,7 +128,7 @@ class MongoDBIndexer(Indexer):
 
                 # Prepare source_identifiers
                 source_identifiers = SourceIdentifiers(
-                    fullpath=str(doc_id), filename=str(doc_id), relative_path=f"{doc_id}.txt"
+                    fullpath=str(doc_id), filename=str(doc_id), rel_path=f"{doc_id}.txt"
                 )
 
                 # Create FileDataSourceMetadata
@@ -180,25 +180,11 @@ class MongoDBDownloader(Downloader):
                 server_api=ServerApi(version=SERVER_API_VERSION),
             )
 
-    # def get_download_path(self, file_data: FileData) -> Optional[Path]:
-    #     """Determines the path where the file will be downloaded."""
-    #     if not file_data.source_identifiers:
-    #         return None
-    #     relative_path = file_data.source_identifiers.relative_path
-    #     if not relative_path:
-    #         # Default to using the identifier as filename
-    #         filename = f"{file_data.identifier}.txt"
-    #         relative_path = self.connection_config.collection + "/" + filename
-    #     else:
-    #         # Ensure the relative path is correct
-    #         relative_path = self.connection_config.collection + "/" + relative_path
-
-    #     return self.download_dir / relative_path
-
     @SourceConnectionError.wrap
     @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
+        from bson.objectid import ObjectId
         client = self.create_client()
         database = client[self.connection_config.database]
         collection = database[self.connection_config.collection]
