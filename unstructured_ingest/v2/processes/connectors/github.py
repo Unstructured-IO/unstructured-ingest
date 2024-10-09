@@ -32,7 +32,9 @@ if TYPE_CHECKING:
 
 
 class GitHubAccessConfig(AccessConfig):
-    access_token: Optional[str] = Field(default=None, sensitive=False, overload_name="access_token")
+    access_token: Optional[str] = Field(
+        default=None, sensitive=False, overload_name="github_access_token"
+    )
 
 
 class GitHubConnectionConfig(ConnectionConfig):
@@ -115,10 +117,15 @@ class GitHubIndexer(Indexer):
         from github import Consts
         from github.GithubRetry import GithubRetry
         from github.Requester import Requester
+        from github import Auth
+
+        logger.debug("Running 'precheck'...")
+
+        auth = Auth.Token(self.connection_config.access_config.access_token)
 
         try:
             requester = Requester(
-                auth=self.connection_config.access_config.access_token,
+                auth=auth,
                 base_url=Consts.DEFAULT_BASE_URL,
                 timeout=Consts.DEFAULT_TIMEOUT,
                 user_agent=Consts.DEFAULT_USER_AGENT,
@@ -127,11 +134,9 @@ class GitHubIndexer(Indexer):
                 retry=GithubRetry(),
                 pool_size=None,
             )
-            url_base = (
-                "/repositories/" if isinstance(self.connection_config.repo_path, int) else "/repos/"
-            )
-            url = f"{url_base}{self.connection_config.repo_path}"
+            url = f"{Consts.DEFAULT_BASE_URL}/repos/{self.connection_config.repo_path}"
             logger.debug(f"Precheck Request: '{url}'")
+
             headers, _ = requester.requestJsonAndCheck("HEAD", url)
             logger.debug(f"Headers from HEAD request: {headers}")
         except Exception as e:
@@ -147,7 +152,7 @@ class GitHubIndexer(Indexer):
             if fnmatch.filter([path], pattern):
                 return True
 
-        logger.debug(f"the file {path!r} is discarded as it does not match any given glob.")
+        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
         return False
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
@@ -187,11 +192,10 @@ class GitHubIndexer(Indexer):
                         url=element.url, version=element.etag, record_locator=record_locator
                     ),
                     additional_metadata={
-                        "content-type": element._headers["content-type"],
-                        "content-length": element._headers["content-length"],
-                        "mode": element._rawData["mode"],
-                        "type": element._rawData["type"],
-                        "size": element._rawData["size"],
+                        "content-type": element._headers.get("content-type", ""),
+                        "mode": element._rawData.get("mode", ""),
+                        "type": element._rawData.get("type", ""),
+                        "size": element._rawData.get("size", ""),
                     },
                 )
 
