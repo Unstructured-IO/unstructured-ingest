@@ -1,3 +1,8 @@
+## 0.0.24-dev0
+
+* **Added migration for GitHub Source V2**
+  * **Updated the expected output for GitHub Source V2**
+
 ## 0.0.24
 
 ### Enhancements
