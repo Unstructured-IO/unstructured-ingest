@@ -19,8 +19,8 @@ source "$SCRIPT_DIR"/env_setup/couchbase/common/constants.env
 
 # Check if all necessary environment variables are set
 if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ]; then
-  echo "Error: One or more environment variables are not set. Please set CB_CONN_STR, CB_USERNAME, CB_PASSWORD, and CB_BUCKET"
-  exit 1
+	echo "Error: One or more environment variables are not set. Please set CB_CONN_STR, CB_USERNAME, CB_PASSWORD, and CB_BUCKET"
+	exit 1
 fi
 
 # shellcheck disable=SC1091
@@ -28,15 +28,15 @@ source "$SCRIPT_DIR"/cleanup.sh
 
 function cleanup() {
 
-  # Remove docker container
-  echo "Stopping Couchbase Docker container"
-  docker compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
+	# Remove docker container
+	echo "Stopping Couchbase Docker container"
+	docker compose -f "$SCRIPT_DIR"/env_setup/couchbase/common/docker-compose.yaml down --remove-orphans
 
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
-  if [ "$CI" == "true" ]; then
-    cleanup_dir "$DOWNLOAD_DIR"
-  fi
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
+	if [ "$CI" == "true" ]; then
+		cleanup_dir "$DOWNLOAD_DIR"
+	fi
 }
 
 trap cleanup EXIT
@@ -47,54 +47,54 @@ bash "$SCRIPT_DIR"/env_setup/couchbase/common/setup_couchbase_cluster.sh
 wait
 
 python "$SCRIPT_DIR"/env_setup/couchbase/destination_connector/ingest_destination_setup_cluster.py \
-  --username "$CB_USERNAME" \
-  --password "$CB_PASSWORD" \
-  --connection_string "$CB_CONN_STR" \
-  --bucket_name "$CB_BUCKET" \
-  --scope_name "$DESTINATION_CB_SCOPE" \
-  --collection_name "$DESTINATION_CB_COLLECTION" \
-  --search_index_name "$CB_INDEX_NAME"
+--username "$CB_USERNAME" \
+--password "$CB_PASSWORD" \
+--connection_string "$CB_CONN_STR" \
+--bucket_name "$CB_BUCKET" \
+--scope_name "$DESTINATION_CB_SCOPE" \
+--collection_name "$DESTINATION_CB_COLLECTION" \
+--search_index_name "$CB_INDEX_NAME"
 wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-  local \
-  --num-processes "$max_processes" \
-  --output-dir "$OUTPUT_DIR" \
-  --strategy fast \
-  --verbose \
-  --input-path example-docs/book-war-and-peace-1p.txt \
-  --work-dir "$WORK_DIR" \
-  --chunking-strategy by_title \
-  --chunk-max-characters 1500 \
-  --chunk-multipage-sections \
-  --embedding-provider "huggingface" \
-  couchbase \
-  --connection-string "$CB_CONN_STR" \
-  --bucket "$CB_BUCKET" \
-  --username "$CB_USERNAME" \
-  --password "$CB_PASSWORD" \
-  --scope "$DESTINATION_CB_SCOPE" \
-  --collection "$DESTINATION_CB_COLLECTION" \
-  --batch-size 80
+local \
+--num-processes "$max_processes" \
+--output-dir "$OUTPUT_DIR" \
+--strategy fast \
+--verbose \
+--input-path example-docs/book-war-and-peace-1p.txt \
+--work-dir "$WORK_DIR" \
+--chunking-strategy by_title \
+--chunk-max-characters 1500 \
+--chunk-multipage-sections \
+--embedding-provider "huggingface" \
+couchbase \
+--connection-string "$CB_CONN_STR" \
+--bucket "$CB_BUCKET" \
+--username "$CB_USERNAME" \
+--password "$CB_PASSWORD" \
+--scope "$DESTINATION_CB_SCOPE" \
+--collection "$DESTINATION_CB_COLLECTION" \
+--batch-size 80
 
 python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
-  --connection-string "$CB_CONN_STR" \
-  --username "$CB_USERNAME" \
-  --password "$CB_PASSWORD" \
-  --bucket "$CB_BUCKET" \
-  --scope "$DESTINATION_CB_SCOPE" \
-  --collection "$DESTINATION_CB_COLLECTION" \
-  check --expected-docs 3
+--connection-string "$CB_CONN_STR" \
+--username "$CB_USERNAME" \
+--password "$CB_PASSWORD" \
+--bucket "$CB_BUCKET" \
+--scope "$DESTINATION_CB_SCOPE" \
+--collection "$DESTINATION_CB_COLLECTION" \
+check --expected-docs 3
 
 # shellcheck disable=SC2012
 stage_file=$(ls -1 "$WORK_DIR"/upload_stage | head -n 1)
 
 python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
-  --connection-string "$CB_CONN_STR" \
-  --username "$CB_USERNAME" \
-  --password "$CB_PASSWORD" \
-  --bucket "$CB_BUCKET" \
-  --scope "$DESTINATION_CB_SCOPE" \
-  --collection "$DESTINATION_CB_COLLECTION" \
-  check-vector \
-  --output-json "$WORK_DIR"/upload_stage/"$stage_file"
+--connection-string "$CB_CONN_STR" \
+--username "$CB_USERNAME" \
+--password "$CB_PASSWORD" \
+--bucket "$CB_BUCKET" \
+--scope "$DESTINATION_CB_SCOPE" \
+--collection "$DESTINATION_CB_COLLECTION" \
+check-vector \
+--output-json "$WORK_DIR"/upload_stage/"$stage_file"

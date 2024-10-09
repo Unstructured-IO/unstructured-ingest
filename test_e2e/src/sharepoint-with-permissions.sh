@@ -19,47 +19,47 @@ CI=${CI:-"false"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
-  if [ "$CI" == "true" ]; then
-    cleanup_dir "$DOWNLOAD_DIR"
-  fi
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
+	if [ "$CI" == "true" ]; then
+		cleanup_dir "$DOWNLOAD_DIR"
+	fi
 }
 trap cleanup EXIT
 
 if [ -z "$SHAREPOINT_CLIENT_ID" ] || [ -z "$SHAREPOINT_CRED" ]; then
-  echo "Skipping Sharepoint ingest test because the SHAREPOINT_CLIENT_ID or SHAREPOINT_CRED env var is not set."
-  exit 8
+	echo "Skipping Sharepoint ingest test because the SHAREPOINT_CLIENT_ID or SHAREPOINT_CRED env var is not set."
+	exit 8
 fi
 
 if [ -z "$SHAREPOINT_PERMISSIONS_APP_ID" ] || [ -z "$SHAREPOINT_PERMISSIONS_APP_CRED" ] || [ -z "$SHAREPOINT_PERMISSIONS_TENANT" ]; then
-  echo "Skipping Sharepoint ingest test because the SHAREPOINT_PERMISSIONS_APP_ID, SHAREPOINT_PERMISSIONS_APP_CRED, or SHAREPOINT_PERMISSIONS_TENANT env var is not set."
-  exit 8
+	echo "Skipping Sharepoint ingest test because the SHAREPOINT_PERMISSIONS_APP_ID, SHAREPOINT_PERMISSIONS_APP_CRED, or SHAREPOINT_PERMISSIONS_TENANT env var is not set."
+	exit 8
 fi
 
 # excluding metadata.last_modified since this will always update as date processed because the Sharepoint connector creates documents on the fly
 # excluding metadata.data_source.permissions_data since the api has deprecation warnings. Will want to do a separate test for permissions data
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-  sharepoint \
-  --api-key "$UNS_PAID_API_KEY" \
-  --partition-by-api \
-  --partition-endpoint "https://api.unstructuredapp.io" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.permissions_data \
-  --num-processes "$max_processes" \
-  --strategy hi_res \
-  --preserve-downloads \
-  --reprocess \
-  --output-dir "$OUTPUT_DIR" \
-  --verbose \
-  --client-cred "$SHAREPOINT_CRED" \
-  --client-id "$SHAREPOINT_CLIENT_ID" \
-  --site "$SHAREPOINT_SITE" \
-  --permissions-application-id "$SHAREPOINT_PERMISSIONS_APP_ID" \
-  --permissions-client-cred "$SHAREPOINT_PERMISSIONS_APP_CRED" \
-  --permissions-tenant "$SHAREPOINT_PERMISSIONS_TENANT" \
-  --recursive \
-  --work-dir "$WORK_DIR"
+sharepoint \
+--api-key "$UNS_PAID_API_KEY" \
+--partition-by-api \
+--partition-endpoint "https://api.unstructuredapp.io" \
+--download-dir "$DOWNLOAD_DIR" \
+--metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.permissions_data \
+--num-processes "$max_processes" \
+--strategy hi_res \
+--preserve-downloads \
+--reprocess \
+--output-dir "$OUTPUT_DIR" \
+--verbose \
+--client-cred "$SHAREPOINT_CRED" \
+--client-id "$SHAREPOINT_CLIENT_ID" \
+--site "$SHAREPOINT_SITE" \
+--permissions-application-id "$SHAREPOINT_PERMISSIONS_APP_ID" \
+--permissions-client-cred "$SHAREPOINT_PERMISSIONS_APP_CRED" \
+--permissions-tenant "$SHAREPOINT_PERMISSIONS_TENANT" \
+--recursive \
+--work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

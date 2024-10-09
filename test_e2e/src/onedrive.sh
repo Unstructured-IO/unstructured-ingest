@@ -16,39 +16,39 @@ CI=${CI:-"false"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
-  if [ "$CI" == "true" ]; then
-    cleanup_dir "$DOWNLOAD_DIR"
-  fi
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
+	if [ "$CI" == "true" ]; then
+		cleanup_dir "$DOWNLOAD_DIR"
+	fi
 }
 trap cleanup EXIT
 
 if [ -z "$MS_CLIENT_ID" ] || [ -z "$MS_CLIENT_CRED" ] || [ -z "$MS_USER_PNAME" ]; then
-  echo "Skipping OneDrive ingest test because the MS_CLIENT_ID, MS_CLIENT_CRED, MS_USER_PNAME env var is not set."
-  exit 8
+	echo "Skipping OneDrive ingest test because the MS_CLIENT_ID, MS_CLIENT_CRED, MS_USER_PNAME env var is not set."
+	exit 8
 fi
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-  onedrive \
-  --api-key "$UNS_PAID_API_KEY" \
-  --partition-by-api \
-  --partition-endpoint "https://api.unstructuredapp.io" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
-  --num-processes "$max_processes" \
-  --strategy hi_res \
-  --preserve-downloads \
-  --reprocess \
-  --output-dir "$OUTPUT_DIR" \
-  --verbose \
-  --client-cred "$MS_CLIENT_CRED" \
-  --client-id "$MS_CLIENT_ID" \
-  --tenant "$MS_TENANT_ID" \
-  --user-pname "$MS_USER_PNAME" \
-  --path '/utic-test-ingest-fixtures' \
-  --recursive \
-  --work-dir "$WORK_DIR"
+onedrive \
+--api-key "$UNS_PAID_API_KEY" \
+--partition-by-api \
+--partition-endpoint "https://api.unstructuredapp.io" \
+--download-dir "$DOWNLOAD_DIR" \
+--metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+--num-processes "$max_processes" \
+--strategy hi_res \
+--preserve-downloads \
+--reprocess \
+--output-dir "$OUTPUT_DIR" \
+--verbose \
+--client-cred "$MS_CLIENT_CRED" \
+--client-id "$MS_CLIENT_ID" \
+--tenant "$MS_TENANT_ID" \
+--user-pname "$MS_USER_PNAME" \
+--path '/utic-test-ingest-fixtures' \
+--recursive \
+--work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

@@ -20,12 +20,12 @@ KAFKA_TOPIC=${KAFKA_TOPIC:-"ingest-test-$RANDOM_SUFFIX"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
-  # Local file cleanup
-  cleanup_dir "$WORK_DIR"
-  cleanup_dir "$OUTPUT_DIR"
+	# Local file cleanup
+	cleanup_dir "$WORK_DIR"
+	cleanup_dir "$OUTPUT_DIR"
 
-  echo "Stopping local Kafka instance"
-  docker compose -f "$SCRIPT_DIR"/env_setup/kafka/docker-compose.yml down --remove-orphans -v
+	echo "Stopping local Kafka instance"
+	docker compose -f "$SCRIPT_DIR"/env_setup/kafka/docker-compose.yml down --remove-orphans -v
 }
 
 trap cleanup EXIT
@@ -36,31 +36,31 @@ echo "Creating local Kafka instance"
 wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-  local \
-  --num-processes "$max_processes" \
-  --output-dir "$OUTPUT_DIR" \
-  --strategy fast \
-  --verbose \
-  --reprocess \
-  --input-path example-docs/pdf/layout-parser-paper.pdf \
-  --work-dir "$WORK_DIR" \
-  --chunking-strategy basic \
-  --chunk-combine-text-under-n-chars 200 \
-  --chunk-new-after-n-chars 2500 \
-  --chunk-max-characters 38000 \
-  --chunk-multipage-sections \
-  --embedding-provider "huggingface" \
-  kafka \
-  --topic "$KAFKA_TOPIC" \
-  --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" \
-  --port 29092 \
-  --confluent false
+local \
+--num-processes "$max_processes" \
+--output-dir "$OUTPUT_DIR" \
+--strategy fast \
+--verbose \
+--reprocess \
+--input-path example-docs/pdf/layout-parser-paper.pdf \
+--work-dir "$WORK_DIR" \
+--chunking-strategy basic \
+--chunk-combine-text-under-n-chars 200 \
+--chunk-new-after-n-chars 2500 \
+--chunk-max-characters 38000 \
+--chunk-multipage-sections \
+--embedding-provider "huggingface" \
+kafka \
+--topic "$KAFKA_TOPIC" \
+--bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" \
+--port 29092 \
+--confluent false
 
 echo "Checking for matching messages in Kafka"
 
 #Check the number of messages in destination topic
 python "$SCRIPT_DIR"/python/test-kafka-output.py check \
-  --bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" \
-  --topic "$KAFKA_TOPIC" \
-  --confluent false \
-  --port 29092
+--bootstrap-server "$KAFKA_BOOTSTRAP_SERVER" \
+--topic "$KAFKA_TOPIC" \
+--confluent false \
+--port 29092

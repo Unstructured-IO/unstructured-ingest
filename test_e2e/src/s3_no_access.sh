@@ -16,8 +16,8 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC2317
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
 
@@ -26,20 +26,22 @@ set +e
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 
 # Capture the stderr in a variable to check against
-{ err=$(PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-  s3 \
-  --num-processes "$max_processes" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --reprocess \
-  --output-dir "$OUTPUT_DIR" \
-  --verbose \
-  --remote-url s3://utic-ingest-test-fixtures/destination/ \
-  --anonymous \
-  --work-dir "$WORK_DIR" 2>&1 >&3 3>&-); } 3>&1
+{ err=$(
+	PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
+	s3 \
+	--num-processes "$max_processes" \
+	--download-dir "$DOWNLOAD_DIR" \
+	--reprocess \
+	--output-dir "$OUTPUT_DIR" \
+	--verbose \
+	--remote-url s3://utic-ingest-test-fixtures/destination/ \
+	--anonymous \
+	--work-dir "$WORK_DIR" 2>&1 >&3 3>&-
+); } 3>&1
 
 if [[ "$err" == *"Error: Precheck failed"* ]]; then
-  echo "passed"
+	echo "passed"
 else
-  echo "error didn't occur with expected text: $err"
-  exit 1
+	echo "error didn't occur with expected text: $err"
+	exit 1
 fi

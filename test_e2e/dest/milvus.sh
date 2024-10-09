@@ -15,13 +15,13 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
-  # Index cleanup
-  echo "Stopping Milvus Docker container"
-  docker compose -f "$SCRIPT_DIR"/env_setup/milvus/docker-compose.yml down --remove-orphans -v
+	# Index cleanup
+	echo "Stopping Milvus Docker container"
+	docker compose -f "$SCRIPT_DIR"/env_setup/milvus/docker-compose.yml down --remove-orphans -v
 
-  # Local file cleanup
-  cleanup_dir "$WORK_DIR"
-  cleanup_dir "$OUTPUT_DIR"
+	# Local file cleanup
+	cleanup_dir "$WORK_DIR"
+	cleanup_dir "$OUTPUT_DIR"
 
 }
 
@@ -40,25 +40,25 @@ docker compose -f "$SCRIPT_DIR"/env_setup/milvus/docker-compose.yml up -d --wait
 "$SCRIPT_DIR"/env_setup/milvus/create_collection.py --db-name $DB_NAME
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-  local \
-  --num-processes "$max_processes" \
-  --output-dir "$OUTPUT_DIR" \
-  --strategy fast \
-  --verbose \
-  --reprocess \
-  --input-path example-docs/book-war-and-peace-1p.txt \
-  --work-dir "$WORK_DIR" \
-  --embedding-provider "huggingface" \
-  milvus \
-  --uri $MILVUS_URI \
-  --db-name $DB_NAME \
-  --collection-name $COLLECTION_NAME
+local \
+--num-processes "$max_processes" \
+--output-dir "$OUTPUT_DIR" \
+--strategy fast \
+--verbose \
+--reprocess \
+--input-path example-docs/book-war-and-peace-1p.txt \
+--work-dir "$WORK_DIR" \
+--embedding-provider "huggingface" \
+milvus \
+--uri $MILVUS_URI \
+--db-name $DB_NAME \
+--collection-name $COLLECTION_NAME
 
 sample_embeddings=$(cat "$WORK_DIR"/upload_stage/* | jq '.[0].embeddings')
 expected_count=$(cat "$WORK_DIR"/upload_stage/* | jq 'length')
 
 "$SCRIPT_DIR"/env_setup/milvus/test_outputs.py \
-  --db-name $DB_NAME \
-  --embeddings "$sample_embeddings" \
-  --collection-name $COLLECTION_NAME \
-  --count "$expected_count"
+--db-name $DB_NAME \
+--embeddings "$sample_embeddings" \
+--collection-name $COLLECTION_NAME \
+--count "$expected_count"

@@ -16,37 +16,37 @@ CI=${CI:-"false"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
-  if [ "$CI" == "true" ]; then
-    cleanup_dir "$DOWNLOAD_DIR"
-  fi
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
+	if [ "$CI" == "true" ]; then
+		cleanup_dir "$DOWNLOAD_DIR"
+	fi
 }
 trap cleanup EXIT
 
 if [ -z "$SLACK_TOKEN" ]; then
-  echo "Skipping Slack ingest test because the SLACK_TOKEN env var is not set."
-  exit 8
+	echo "Skipping Slack ingest test because the SLACK_TOKEN env var is not set."
+	exit 8
 fi
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-  slack \
-  --api-key "$UNS_PAID_API_KEY" \
-  --partition-by-api \
-  --partition-endpoint "https://api.unstructuredapp.io" \
-  --num-processes "$max_processes" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
-  --strategy hi_res \
-  --preserve-downloads \
-  --reprocess \
-  --output-dir "$OUTPUT_DIR" \
-  --verbose \
-  --channels C07ABKJ83C6 \
-  --token "${SLACK_TOKEN}" \
-  --start-date 2023-04-01 \
-  --end-date 2024-07-01T07:47:00-07:00 \
-  --work-dir "$WORK_DIR"
+slack \
+--api-key "$UNS_PAID_API_KEY" \
+--partition-by-api \
+--partition-endpoint "https://api.unstructuredapp.io" \
+--num-processes "$max_processes" \
+--download-dir "$DOWNLOAD_DIR" \
+--metadata-exclude coordinates,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+--strategy hi_res \
+--preserve-downloads \
+--reprocess \
+--output-dir "$OUTPUT_DIR" \
+--verbose \
+--channels C07ABKJ83C6 \
+--token "${SLACK_TOKEN}" \
+--start-date 2023-04-01 \
+--end-date 2024-07-01T07:47:00-07:00 \
+--work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

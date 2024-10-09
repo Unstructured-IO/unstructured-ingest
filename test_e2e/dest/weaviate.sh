@@ -15,13 +15,13 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
-  # Index cleanup
-  echo "Stopping Weaviate Docker container"
-  docker compose -f "$SCRIPT_DIR"/env_setup/weaviate/docker-compose.yml down --remove-orphans -v
+	# Index cleanup
+	echo "Stopping Weaviate Docker container"
+	docker compose -f "$SCRIPT_DIR"/env_setup/weaviate/docker-compose.yml down --remove-orphans -v
 
-  # Local file cleanup
-  cleanup_dir "$WORK_DIR"
-  cleanup_dir "$OUTPUT_DIR"
+	# Local file cleanup
+	cleanup_dir "$WORK_DIR"
+	cleanup_dir "$OUTPUT_DIR"
 
 }
 
@@ -34,18 +34,18 @@ echo "Creating weaviate instance"
 wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-  local \
-  --num-processes "$max_processes" \
-  --output-dir "$OUTPUT_DIR" \
-  --strategy fast \
-  --verbose \
-  --reprocess \
-  --input-path example-docs/pdf/fake-memo.pdf \
-  --work-dir "$WORK_DIR" \
-  --embedding-provider "huggingface" \
-  weaviate \
-  --host-url http://localhost:8080 \
-  --class-name elements \
-  --anonymous
+local \
+--num-processes "$max_processes" \
+--output-dir "$OUTPUT_DIR" \
+--strategy fast \
+--verbose \
+--reprocess \
+--input-path example-docs/pdf/fake-memo.pdf \
+--work-dir "$WORK_DIR" \
+--embedding-provider "huggingface" \
+weaviate \
+--host-url http://localhost:8080 \
+--class-name elements \
+--anonymous
 
 "$SCRIPT_DIR"/python/test-ingest-weaviate-output.py
