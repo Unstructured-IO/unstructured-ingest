@@ -1,14 +1,17 @@
+import json
+import typing as t
+import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from dateutil import parser
-import json
 from pathlib import Path
+
+from dateutil import parser
 from pydantic import Field
-import typing as t
-from unstructured_ingest.utils.data_prep import flatten_dict
-from unstructured_ingest.utils.dep_check import requires_dependencies
+
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -20,8 +23,6 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-import uuid
-
 
 BASE_URL = "https://api.vectara.io/v1"
 
