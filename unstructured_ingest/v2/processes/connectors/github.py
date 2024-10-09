@@ -8,7 +8,10 @@ from urllib.parse import urlparse
 
 from pydantic import Field, root_validator
 
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    SourceConnectionNetworkError
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -21,10 +24,12 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
+    download_responses
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.v2.processes.connector_registry import (
+    SourceRegistryEntry
+)
 
 CONNECTOR_TYPE = "github"
 if TYPE_CHECKING:
@@ -114,10 +119,9 @@ class GitHubIndexer(Indexer):
         return supported
 
     def precheck(self) -> None:
-        from github import Consts
+        from github import Auth, Consts
         from github.GithubRetry import GithubRetry
         from github.Requester import Requester
-        from github import Auth
 
         logger.debug("Running 'precheck'...")
 
