@@ -109,6 +109,7 @@ class MongoDBIndexer(Indexer):
     @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         from bson.objectid import ObjectId
+
         """Generates FileData objects for each document in the MongoDB collection."""
         client = self.create_client()
         database = client[self.connection_config.database]
@@ -185,6 +186,7 @@ class MongoDBDownloader(Downloader):
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
         from bson.objectid import ObjectId
+
         client = self.create_client()
         database = client[self.connection_config.database]
         collection = database[self.connection_config.collection]

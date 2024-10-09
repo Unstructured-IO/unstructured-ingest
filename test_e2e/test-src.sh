@@ -13,6 +13,7 @@ cd "$SCRIPT_DIR"/.. || exit 1
 
 EVAL_OUTPUT_ROOT=${EVAL_OUTPUT_ROOT:-$SCRIPT_DIR}
 
+
 # NOTE(crag): sets number of tesseract threads to 1 which may help with more reproducible outputs
 export OMP_THREAD_LIMIT=1
 
