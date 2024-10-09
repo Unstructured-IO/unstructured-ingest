@@ -1,7 +1,7 @@
 # https://developers.notion.com/reference/parent-object
 from dataclasses import dataclass
 
-from unstructured_ingest.connector.notion.interfaces import FromJSONMixin
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import FromJSONMixin
 
 
 # https://developers.notion.com/reference/parent-object#database-parent

@@ -22,11 +22,11 @@ from htmlBuilder.tags import (
 )
 from notion_client.errors import APIResponseError
 
-import unstructured_ingest.connector.notion.types.blocks as notion_blocks
-from unstructured_ingest.connector.notion.client import Client
-from unstructured_ingest.connector.notion.interfaces import BlockBase
-from unstructured_ingest.connector.notion.types.block import Block
-from unstructured_ingest.connector.notion.types.database import Database
+import unstructured_ingest.v2.processes.connectors.notion.types.blocks as notion_blocks
+from unstructured_ingest.v2.processes.connectors.notion.client import Client
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.v2.processes.connectors.notion.types.block import Block
+from unstructured_ingest.v2.processes.connectors.notion.types.database import Database
 
 
 @dataclass

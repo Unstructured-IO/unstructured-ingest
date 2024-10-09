@@ -4,14 +4,14 @@ from typing import Optional
 
 from htmlBuilder.tags import HtmlTag
 
-from unstructured_ingest.connector.notion.interfaces import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
     BlockBase,
     FromJSONMixin,
     GetHTMLMixin,
 )
-from unstructured_ingest.connector.notion.types import blocks
-from unstructured_ingest.connector.notion.types.parent import Parent
-from unstructured_ingest.connector.notion.types.user import PartialUser
+from unstructured_ingest.v2.processes.connectors.notion.types import blocks
+from unstructured_ingest.v2.processes.connectors.notion.types.parent import Parent
+from unstructured_ingest.v2.processes.connectors.notion.types.user import PartialUser
 
 block_type_mapping = {
     "bookmark": blocks.Bookmark,
@@ -63,6 +63,7 @@ class Block(FromJSONMixin, GetHTMLMixin):
     block: BlockBase
     object: str = "block"
     request_id: Optional[str] = None
+    #in_trash: bool
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
@@ -74,6 +75,7 @@ class Block(FromJSONMixin, GetHTMLMixin):
         created_by = data.pop("created_by")
         last_edited_by = data.pop("last_edited_by")
         parent = data.pop("parent")
+        in_trash = data.pop("in_trash")
         try:
             block = cls(
                 created_by=PartialUser.from_dict(created_by),

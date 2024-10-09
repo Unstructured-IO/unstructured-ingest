@@ -9,12 +9,12 @@ from notion_client.api_endpoints import Endpoint
 from notion_client.api_endpoints import PagesEndpoint as NotionPagesEndpoint
 from notion_client.errors import RequestTimeoutError
 
-from unstructured_ingest.connector.notion.types.block import Block
-from unstructured_ingest.connector.notion.types.database import Database
-from unstructured_ingest.connector.notion.types.database_properties import (
+from unstructured_ingest.v2.processes.connectors.notion.types.block import Block
+from unstructured_ingest.v2.processes.connectors.notion.types.database import Database
+from unstructured_ingest.v2.processes.connectors.notion.types.database_properties import (
     map_cells,
 )
-from unstructured_ingest.connector.notion.types.page import Page
+from unstructured_ingest.v2.processes.connectors.notion.types.page import Page
 from unstructured_ingest.ingest_backoff import RetryHandler
 from unstructured_ingest.interfaces import RetryStrategyConfig
 from unstructured_ingest.utils.dep_check import requires_dependencies

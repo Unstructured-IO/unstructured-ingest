@@ -2,10 +2,10 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from unstructured_ingest.connector.notion.interfaces import FromJSONMixin
-from unstructured_ingest.connector.notion.types.file import FileObject
-from unstructured_ingest.connector.notion.types.parent import Parent
-from unstructured_ingest.connector.notion.types.user import PartialUser
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import FromJSONMixin
+from unstructured_ingest.v2.processes.connectors.notion.types.file import FileObject
+from unstructured_ingest.v2.processes.connectors.notion.types.parent import Parent
+from unstructured_ingest.v2.processes.connectors.notion.types.user import PartialUser
 
 
 @dataclass
@@ -16,6 +16,7 @@ class Page(FromJSONMixin):
     last_edited_time: str
     last_edited_by: PartialUser
     archived: bool
+    in_trash: bool
     properties: dict
     parent: Parent
     url: str

@@ -4,18 +4,18 @@ from typing import Dict, List, Optional
 
 from htmlBuilder.tags import Div, HtmlTag, Span
 
-from unstructured_ingest.connector.notion.interfaces import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
     DBPropertyBase,
     FromJSONMixin,
     GetHTMLMixin,
 )
-from unstructured_ingest.connector.notion.types.database_properties import (
+from unstructured_ingest.v2.processes.connectors.notion.types.database_properties import (
     map_properties,
 )
-from unstructured_ingest.connector.notion.types.file import FileObject
-from unstructured_ingest.connector.notion.types.parent import Parent
-from unstructured_ingest.connector.notion.types.rich_text import RichText
-from unstructured_ingest.connector.notion.types.user import PartialUser
+from unstructured_ingest.v2.processes.connectors.notion.types.file import FileObject
+from unstructured_ingest.v2.processes.connectors.notion.types.parent import Parent
+from unstructured_ingest.v2.processes.connectors.notion.types.rich_text import RichText
+from unstructured_ingest.v2.processes.connectors.notion.types.user import PartialUser
 
 
 @dataclass

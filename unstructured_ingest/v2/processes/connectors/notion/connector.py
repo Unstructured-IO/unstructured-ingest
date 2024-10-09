@@ -1,15 +1,13 @@
-import json
-import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, List, Optional, Set, Tuple
+from typing import Any, Generator, List, Optional, Set, Tuple
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import Field, SecretStr
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
-    ConnectionConfig,
+    AccessConfig,
     Downloader,
     DownloaderConfig,
     DownloadResponse,
@@ -21,15 +19,17 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-
-if TYPE_CHECKING:
-    from unstructured_ingest.connector.notion.client import Client as NotionClient
+from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
+from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_database_html
+from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_page_html
+from unstructured_ingest.v2.processes.connectors.notion.helpers import get_recursive_content_from_database
+from unstructured_ingest.v2.processes.connectors.notion.helpers import get_recursive_content_from_page
 
 NOTION_API_VERSION = "2022-06-28"
 CONNECTOR_TYPE = "notion"
 
 
-class NotionConnectionConfig(ConnectionConfig):
+class NotionConnectionConfig(AccessConfig):
     notion_api_key: SecretStr = Field(description="Notion API key")
 
 
@@ -49,12 +49,10 @@ class NotionIndexerConfig(IndexerConfig):
 @dataclass
 class NotionIndexer(Indexer):
     connection_config: NotionConnectionConfig
-    indexer_config: NotionIndexerConfig
+    index_config: NotionIndexerConfig
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_client(self) -> "NotionClient":
-        from unstructured_ingest.connector.notion.client import Client as NotionClient
-
         return NotionClient(
             notion_version=NOTION_API_VERSION,
             auth=self.connection_config.notion_api_key.get_secret_value(),
@@ -80,8 +78,8 @@ class NotionIndexer(Indexer):
         processed_pages: Set[str] = set()
         processed_databases: Set[str] = set()
 
-        pages_to_process: Set[str] = set(self.indexer_config.page_ids or [])
-        databases_to_process: Set[str] = set(self.indexer_config.database_ids or [])
+        pages_to_process: Set[str] = set(self.index_config.page_ids or [])
+        databases_to_process: Set[str] = set(self.index_config.database_ids or [])
 
         while pages_to_process or databases_to_process:
             # Process pages
@@ -95,7 +93,7 @@ class NotionIndexer(Indexer):
                 if file_data:
                     yield file_data
 
-                if self.indexer_config.recursive:
+                if self.index_config.recursive:
                     child_pages, child_databases = self.get_child_pages_and_databases(
                         page_id=page_id,
                         client=client,
@@ -116,7 +114,7 @@ class NotionIndexer(Indexer):
                 )
                 if file_data:
                     yield file_data
-                if self.indexer_config.recursive:
+                if self.index_config.recursive:
                     (
                         child_pages,
                         child_databases,
@@ -131,7 +129,7 @@ class NotionIndexer(Indexer):
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_page_file_data(
-        self, page_id: str, client: "NotionClient"
+            self, page_id: str, client: "NotionClient"
     ) -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
@@ -163,7 +161,7 @@ class NotionIndexer(Indexer):
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_database_file_data(
-        self, database_id: str, client: "NotionClient"
+            self, database_id: str, client: "NotionClient"
     ) -> Optional[FileData]:
         try:
             database_metadata = client.databases.retrieve(
@@ -196,16 +194,12 @@ class NotionIndexer(Indexer):
             return None
 
     def get_child_pages_and_databases(
-        self,
-        page_id: str,
-        client: "NotionClient",
-        processed_pages: Set[str],
-        processed_databases: Set[str],
+            self,
+            page_id: str,
+            client: "NotionClient",
+            processed_pages: Set[str],
+            processed_databases: Set[str],
     ) -> Tuple[Set[str], Set[str]]:
-        from unstructured_ingest.connector.notion.helpers import (
-            get_recursive_content_from_page,
-        )
-
         child_content = get_recursive_content_from_page(
             client=client,
             page_id=page_id,
@@ -216,16 +210,12 @@ class NotionIndexer(Indexer):
         return child_pages, child_databases
 
     def get_child_pages_and_databases_from_database(
-        self,
-        database_id: str,
-        client: "NotionClient",
-        processed_pages: Set[str],
-        processed_databases: Set[str],
+            self,
+            database_id: str,
+            client: "NotionClient",
+            processed_pages: Set[str],
+            processed_databases: Set[str],
     ) -> Tuple[Set[str], Set[str]]:
-        from unstructured_ingest.connector.notion.helpers import (
-            get_recursive_content_from_database,
-        )
-
         child_content = get_recursive_content_from_database(
             client=client,
             database_id=database_id,
@@ -236,7 +226,7 @@ class NotionIndexer(Indexer):
         return child_pages, child_databases
 
 
-@dataclass
+# @dataclass
 class NotionDownloaderConfig(DownloaderConfig):
     pass
 
@@ -249,8 +239,6 @@ class NotionDownloader(Downloader):
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_client(self) -> "NotionClient":
-        from unstructured_ingest.connector.notion.client import Client as NotionClient
-
         return NotionClient(
             notion_version=NOTION_API_VERSION,
             auth=self.connection_config.notion_api_key.get_secret_value(),
@@ -278,7 +266,6 @@ class NotionDownloader(Downloader):
             raise ValueError("Invalid record_locator in file_data")
 
     def download_page(self, client: "NotionClient", page_id: str, file_data: FileData) -> DownloadResponse:
-        from unstructured_ingest.connector.notion.helpers import extract_page_html
 
         try:
             text_extraction = extract_page_html(
@@ -302,8 +289,6 @@ class NotionDownloader(Downloader):
             return None
 
     def download_database(self, client: "NotionClient", database_id: str, file_data: FileData) -> DownloadResponse:
-        from unstructured_ingest.connector.notion.helpers import extract_database_html
-
         try:
             text_extraction = extract_database_html(
                 client=client,
@@ -327,7 +312,6 @@ class NotionDownloader(Downloader):
 
 
 notion_source_entry = SourceRegistryEntry(
-    connector_type=CONNECTOR_TYPE,
     connection_config=NotionConnectionConfig,
     indexer_config=NotionIndexerConfig,
     indexer=NotionIndexer,

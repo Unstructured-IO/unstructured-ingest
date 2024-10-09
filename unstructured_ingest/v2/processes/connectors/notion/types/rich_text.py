@@ -6,12 +6,12 @@ from htmlBuilder.attributes import Href, Style
 from htmlBuilder.tags import A, B, Code, Div, HtmlTag, I, S, Span, U
 from htmlBuilder.tags import Text as HtmlText
 
-from unstructured_ingest.connector.notion.interfaces import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
     FromJSONMixin,
     GetHTMLMixin,
 )
-from unstructured_ingest.connector.notion.types.date import Date
-from unstructured_ingest.connector.notion.types.user import People
+from unstructured_ingest.v2.processes.connectors.notion.types.date import Date
+from unstructured_ingest.v2.processes.connectors.notion.types.user import People
 
 
 @dataclass

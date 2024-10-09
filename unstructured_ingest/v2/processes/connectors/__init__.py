@@ -46,6 +46,8 @@ from .sql import CONNECTOR_TYPE as SQL_CONNECTOR_TYPE
 from .sql import sql_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
+from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
+from .notion.connector import notion_source_entry
 
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
 
@@ -95,3 +97,5 @@ add_destination_entry(
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
+add_source_entry(source_type=NOTION_CONNECTOR_TYPE, entry=notion_source_entry)
+

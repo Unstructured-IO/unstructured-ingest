@@ -43,7 +43,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --num-processes "$max_processes" \
   --recursive \
   --verbose \
-  --work-dir "$WORK_DIR" \
-  --max-retry-time 30
+  --work-dir "$WORK_DIR"
+  #--max-retry-time 30
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
