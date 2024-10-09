@@ -10,11 +10,14 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/2c4f1ab8689a6dfef4ee7d13d4d935cb6663a7e4",
-        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
         "record_locator": {
           "repo_path": "dcneiner/Downloadify",
           "file_path": "LICENSE.txt"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 1127
       }
     }
@@ -30,11 +33,14 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/2c4f1ab8689a6dfef4ee7d13d4d935cb6663a7e4",
-        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
         "record_locator": {
           "repo_path": "dcneiner/Downloadify",
           "file_path": "LICENSE.txt"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 1127
       }
     }
@@ -50,11 +56,14 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/2c4f1ab8689a6dfef4ee7d13d4d935cb6663a7e4",
-        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
         "record_locator": {
           "repo_path": "dcneiner/Downloadify",
           "file_path": "LICENSE.txt"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 1127
       }
     }
@@ -70,11 +79,14 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/2c4f1ab8689a6dfef4ee7d13d4d935cb6663a7e4",
-        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
         "record_locator": {
           "repo_path": "dcneiner/Downloadify",
           "file_path": "LICENSE.txt"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 1127
       }
     }
@@ -90,11 +102,14 @@
       "filetype": "text/plain",
       "data_source": {
         "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/2c4f1ab8689a6dfef4ee7d13d4d935cb6663a7e4",
-        "version": "W/\"5ca41db0fe5d158e157728172b03525af638c63b673160125e607e6097b89b71\"",
+        "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
         "record_locator": {
           "repo_path": "dcneiner/Downloadify",
           "file_path": "LICENSE.txt"
         },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 1127
       }
     }
