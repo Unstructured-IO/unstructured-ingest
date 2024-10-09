@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO - remove this comment in the future
+
 set -u -o pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
