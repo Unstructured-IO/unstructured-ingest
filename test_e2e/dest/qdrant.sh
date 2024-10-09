@@ -18,31 +18,31 @@ EXPECTED_POINTS_COUNT=1404
 RETRIES=5
 
 function stop_docker() {
-	docker stop $CONTAINER_NAME
+  docker stop $CONTAINER_NAME
 }
 
 docker run -d --rm \
--p 6333:$QDRANT_PORT \
---name $CONTAINER_NAME qdrant/qdrant:latest
+  -p 6333:$QDRANT_PORT \
+  --name $CONTAINER_NAME qdrant/qdrant:latest
 
 trap stop_docker SIGINT
 trap stop_docker ERR
 
 until curl --output /dev/null --silent --get --fail http://$QDRANT_HOST/collections; do
-	RETRIES=$((RETRIES - 1))
-	if [ "$RETRIES" -le 0 ]; then
-		echo "Qdrant server failed to start"
-		stop_docker
-		exit 1
-	fi
-	printf 'Waiting for Qdrant server to start...'
-	sleep 5
+  RETRIES=$((RETRIES - 1))
+  if [ "$RETRIES" -le 0 ]; then
+    echo "Qdrant server failed to start"
+    stop_docker
+    exit 1
+  fi
+  printf 'Waiting for Qdrant server to start...'
+  sleep 5
 done
 
 curl -X PUT \
-http://$QDRANT_HOST/collections/"$COLLECTION_NAME" \
--H 'Content-Type: application/json' \
--d '{
+  http://$QDRANT_HOST/collections/"$COLLECTION_NAME" \
+  -H 'Content-Type: application/json' \
+  -d '{
     "vectors": {
       "size": 384,
       "distance": "Cosine"
@@ -52,38 +52,36 @@ http://$QDRANT_HOST/collections/"$COLLECTION_NAME" \
 EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-"huggingface"}
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-local \
---num-processes "$max_processes" \
---output-dir "$OUTPUT_DIR" \
---strategy fast \
---verbose \
---reprocess \
---input-path example-docs/book-war-and-peace-1225p.txt \
---work-dir "$WORK_DIR" \
---chunking-strategy by_title \
---chunk-combine-text-under-n-chars 200 --chunk-new-after-n-chars 2500 --chunk-max-characters 38000 --chunk-multipage-sections \
---embedding-provider "$EMBEDDING_PROVIDER" \
-qdrant \
---collection-name "$COLLECTION_NAME" \
---location "http://"$QDRANT_HOST \
---batch-size 80 \
---num-processes "$writer_processes"
+  local \
+  --num-processes "$max_processes" \
+  --output-dir "$OUTPUT_DIR" \
+  --strategy fast \
+  --verbose \
+  --reprocess \
+  --input-path example-docs/book-war-and-peace-1225p.txt \
+  --work-dir "$WORK_DIR" \
+  --chunking-strategy by_title \
+  --chunk-combine-text-under-n-chars 200 --chunk-new-after-n-chars 2500 --chunk-max-characters 38000 --chunk-multipage-sections \
+  --embedding-provider "$EMBEDDING_PROVIDER" \
+  qdrant \
+  --collection-name "$COLLECTION_NAME" \
+  --location "http://"$QDRANT_HOST \
+  --batch-size 80 \
+  --num-processes "$writer_processes"
 
-response=$(
-	curl -s -X POST \
-	$QDRANT_HOST/collections/"$COLLECTION_NAME"/points/count \
-	-H 'Content-Type: application/json' \
-	-d '{
+response=$(curl -s -X POST \
+  $QDRANT_HOST/collections/"$COLLECTION_NAME"/points/count \
+  -H 'Content-Type: application/json' \
+  -d '{
      "exact": true
-}'
-)
+}')
 
 count=$(echo "$response" | jq -r '.result.count')
 
 if [ "$count" -ne $EXPECTED_POINTS_COUNT ]; then
-	echo "Points count assertion failed. Expected: $EXPECTED. Got: $count. Test failed."
-	stop_docker
-	exit 1
+  echo "Points count assertion failed. Expected: $EXPECTED. Got: $count. Test failed."
+  stop_docker
+  exit 1
 fi
 
 stop_docker

@@ -17,14 +17,14 @@ DB_PATH=$SCRIPT_DIR/elements.db
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
-	# Local file cleanup
-	cleanup_dir "$WORK_DIR"
-	cleanup_dir "$OUTPUT_DIR"
-	rm -rf "$DB_PATH"
-	if [ "$CI" == "true" ]; then
-		cleanup_dir "$DOWNLOAD_DIR"
+  # Local file cleanup
+  cleanup_dir "$WORK_DIR"
+  cleanup_dir "$OUTPUT_DIR"
+  rm -rf "$DB_PATH"
+  if [ "$CI" == "true" ]; then
+    cleanup_dir "$DOWNLOAD_DIR"
 
-	fi
+  fi
 }
 
 trap cleanup EXIT
@@ -36,17 +36,17 @@ echo "Creating SQL DB instance"
 wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-local \
---num-processes "$max_processes" \
---output-dir "$OUTPUT_DIR" \
---strategy fast \
---verbose \
---reprocess \
---input-path example-docs/pdf/fake-memo.pdf \
---work-dir "$WORK_DIR" \
-sql \
---db-type "$DATABASE_TYPE" \
---username unstructured \
---database "$DB_PATH"
+  local \
+  --num-processes "$max_processes" \
+  --output-dir "$OUTPUT_DIR" \
+  --strategy fast \
+  --verbose \
+  --reprocess \
+  --input-path example-docs/pdf/fake-memo.pdf \
+  --work-dir "$WORK_DIR" \
+  sql \
+  --db-type "$DATABASE_TYPE" \
+  --username unstructured \
+  --database "$DB_PATH"
 
 "$SCRIPT_DIR"/python/test-ingest-sql-output.py "$DATABASE_TYPE" "$DB_PATH"

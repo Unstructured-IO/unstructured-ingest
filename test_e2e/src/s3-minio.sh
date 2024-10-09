@@ -18,12 +18,12 @@ access_key=minioadmin
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC2317
 function cleanup() {
-	# Kill the container so the script can be repeatedly run using the same ports
-	echo "Stopping Minio Docker container"
-	docker compose -f "$SCRIPT_DIR"/env_setup/minio/docker-compose.yaml down --remove-orphans -v
+  # Kill the container so the script can be repeatedly run using the same ports
+  echo "Stopping Minio Docker container"
+  docker compose -f "$SCRIPT_DIR"/env_setup/minio/docker-compose.yaml down --remove-orphans -v
 
-	cleanup_dir "$OUTPUT_DIR"
-	cleanup_dir "$WORK_DIR"
+  cleanup_dir "$OUTPUT_DIR"
+  cleanup_dir "$WORK_DIR"
 }
 
 trap cleanup EXIT
@@ -34,21 +34,21 @@ wait
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 AWS_SECRET_ACCESS_KEY=$secret_key AWS_ACCESS_KEY_ID=$access_key \
-PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-s3 \
---api-key "$UNS_PAID_API_KEY" \
---partition-by-api \
---partition-endpoint "https://api.unstructuredapp.io" \
---num-processes "$max_processes" \
---download-dir "$DOWNLOAD_DIR" \
---metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.data_source.date_modified,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.date_created \
---strategy hi_res \
---preserve-downloads \
---reprocess \
---output-dir "$OUTPUT_DIR" \
---verbose \
---remote-url s3://utic-dev-tech-fixtures/ \
---endpoint-url http://localhost:9000 \
---work-dir "$WORK_DIR"
+  PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
+  s3 \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
+  --num-processes "$max_processes" \
+  --download-dir "$DOWNLOAD_DIR" \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.data_source.date_modified,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.date_created \
+  --strategy hi_res \
+  --preserve-downloads \
+  --reprocess \
+  --output-dir "$OUTPUT_DIR" \
+  --verbose \
+  --remote-url s3://utic-dev-tech-fixtures/ \
+  --endpoint-url http://localhost:9000 \
+  --work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

@@ -20,13 +20,13 @@ COLLECTION_NAME="chroma-test-output-$RANDOM_SUFFIX"
 source "$SCRIPT_DIR"/cleanup.sh
 
 function cleanup() {
-	# Kill chroma background process
-	docker compose -f "$SCRIPT_DIR"/env_setup/chroma/docker-compose.yml down --remove-orphans -v
-	cleanup_dir "$OUTPUT_DIR"
-	cleanup_dir "$WORK_DIR"
-	if [ "$CI" == "true" ]; then
-		cleanup_dir "$DOWNLOAD_DIR"
-	fi
+  # Kill chroma background process
+  docker compose -f "$SCRIPT_DIR"/env_setup/chroma/docker-compose.yml down --remove-orphans -v
+  cleanup_dir "$OUTPUT_DIR"
+  cleanup_dir "$WORK_DIR"
+  if [ "$CI" == "true" ]; then
+    cleanup_dir "$DOWNLOAD_DIR"
+  fi
 }
 
 trap cleanup EXIT
@@ -35,23 +35,23 @@ trap cleanup EXIT
 docker compose -f "$SCRIPT_DIR"/env_setup/chroma/docker-compose.yml up -d --wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-local \
---num-processes "$max_processes" \
---output-dir "$OUTPUT_DIR" \
---strategy fast \
---verbose \
---input-path example-docs/book-war-and-peace-1p.txt \
---work-dir "$WORK_DIR" \
---chunking-strategy by_title \
---chunk-max-characters 1500 \
---chunk-multipage-sections \
---embedding-provider "huggingface" \
-chroma \
---host "localhost" \
---port 8000 \
---collection-name "$COLLECTION_NAME" \
---tenant "default_tenant" \
---database "default_database" \
---batch-size 80
+  local \
+  --num-processes "$max_processes" \
+  --output-dir "$OUTPUT_DIR" \
+  --strategy fast \
+  --verbose \
+  --input-path example-docs/book-war-and-peace-1p.txt \
+  --work-dir "$WORK_DIR" \
+  --chunking-strategy by_title \
+  --chunk-max-characters 1500 \
+  --chunk-multipage-sections \
+  --embedding-provider "huggingface" \
+  chroma \
+  --host "localhost" \
+  --port 8000 \
+  --collection-name "$COLLECTION_NAME" \
+  --tenant "default_tenant" \
+  --database "default_database" \
+  --batch-size 80
 
 python "$SCRIPT_DIR"/python/test-ingest-chroma-output.py --collection-name "$COLLECTION_NAME"

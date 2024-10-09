@@ -17,27 +17,27 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC2317
 function cleanup() {
-	cleanup_dir "$OUTPUT_DIR"
-	cleanup_dir "$WORK_DIR"
+  cleanup_dir "$OUTPUT_DIR"
+  cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-local \
---api-key "$UNS_PAID_API_KEY" \
---partition-by-api \
---partition-endpoint "https://api.unstructuredapp.io" \
---chunking-strategy basic \
---chunk-overlap 20 \
---chunk-max-characters 150 \
---input-path "$ABS_INPUT_PATH" \
---metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_created,metadata.data_source.date_modified,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
---num-processes "$max_processes" \
---output-dir "$OUTPUT_DIR" \
---reprocess \
---verbose \
---work-dir "$WORK_DIR"
+  local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
+  --chunking-strategy basic \
+  --chunk-overlap 20 \
+  --chunk-max-characters 150 \
+  --input-path "$ABS_INPUT_PATH" \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_created,metadata.data_source.date_modified,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+  --num-processes "$max_processes" \
+  --output-dir "$OUTPUT_DIR" \
+  --reprocess \
+  --verbose \
+  --work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

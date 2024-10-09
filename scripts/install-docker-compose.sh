@@ -4,9 +4,9 @@ set -euo pipefail
 
 DOCKER_ARCH=${ARCH}
 if [ "${ARCH}" = "x86_64" ]; then
-	TARGETARCH="amd64"
+  TARGETARCH="amd64"
 elif [ "${ARCH}" = "arm64" ] || [ "${ARCH}" = "aarch64" ]; then
-	TARGETARCH="arm64"
+  TARGETARCH="arm64"
 fi
 TARGETOS=linux
 DOCKER_VERSION=26.1.3

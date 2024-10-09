@@ -16,14 +16,14 @@ DATABASE_TYPE="pgvector"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
-	echo "Stopping SQL DB Docker container"
-	docker compose -f "$SCRIPT_DIR"/env_setup/sql/docker-compose-"$DATABASE_TYPE".yaml down --remove-orphans -v
-	# Local file cleanup
-	cleanup_dir "$WORK_DIR"
-	cleanup_dir "$OUTPUT_DIR"
-	if [ "$CI" == "true" ]; then
-		cleanup_dir "$DOWNLOAD_DIR"
-	fi
+  echo "Stopping SQL DB Docker container"
+  docker compose -f "$SCRIPT_DIR"/env_setup/sql/docker-compose-"$DATABASE_TYPE".yaml down --remove-orphans -v
+  # Local file cleanup
+  cleanup_dir "$WORK_DIR"
+  cleanup_dir "$OUTPUT_DIR"
+  if [ "$CI" == "true" ]; then
+    cleanup_dir "$DOWNLOAD_DIR"
+  fi
 }
 
 trap cleanup EXIT
@@ -35,20 +35,20 @@ echo "Creating SQL DB instance"
 wait
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-local \
---num-processes "$max_processes" \
---output-dir "$OUTPUT_DIR" \
---strategy fast \
---verbose \
---input-path example-docs/pdf/fake-memo.pdf \
---work-dir "$WORK_DIR" \
---embedding-provider "huggingface" \
-sql \
---db-type "postgresql" \
---username unstructured \
---password test \
---host localhost \
---port 5433 \
---database elements
+  local \
+  --num-processes "$max_processes" \
+  --output-dir "$OUTPUT_DIR" \
+  --strategy fast \
+  --verbose \
+  --input-path example-docs/pdf/fake-memo.pdf \
+  --work-dir "$WORK_DIR" \
+  --embedding-provider "huggingface" \
+  sql \
+  --db-type "postgresql" \
+  --username unstructured \
+  --password test \
+  --host localhost \
+  --port 5433 \
+  --database elements
 
 "$SCRIPT_DIR"/python/test-ingest-sql-output.py "$DATABASE_TYPE" "5433"

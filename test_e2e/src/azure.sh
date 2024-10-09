@@ -16,27 +16,27 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC2317
 function cleanup() {
-	cleanup_dir "$OUTPUT_DIR"
-	cleanup_dir "$WORK_DIR"
+  cleanup_dir "$OUTPUT_DIR"
+  cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-azure \
---api-key "$UNS_PAID_API_KEY" \
---partition-by-api \
---partition-endpoint "https://api.unstructuredapp.io" \
---download-dir "$DOWNLOAD_DIR" \
---metadata-exclude coordinates,filename,file_directory,metadata.last_modified,metadata.data_source.date_processed,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
---num-processes "$max_processes" \
---strategy hi_res \
---preserve-downloads \
---reprocess \
---output-dir "$OUTPUT_DIR" \
---verbose \
---account-name azureunstructured1 \
---remote-url abfs://container1/ \
---work-dir "$WORK_DIR"
+  azure \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
+  --download-dir "$DOWNLOAD_DIR" \
+  --metadata-exclude coordinates,filename,file_directory,metadata.last_modified,metadata.data_source.date_processed,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+  --num-processes "$max_processes" \
+  --strategy hi_res \
+  --preserve-downloads \
+  --reprocess \
+  --output-dir "$OUTPUT_DIR" \
+  --verbose \
+  --account-name azureunstructured1 \
+  --remote-url abfs://container1/ \
+  --work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

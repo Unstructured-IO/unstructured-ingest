@@ -13,7 +13,7 @@ CI=${CI:-"false"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-	cleanup_dir "$WORK_DIR"
+  cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
 
@@ -22,22 +22,20 @@ set +e
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 
 # Capture the stderr in a variable to check against
-{ err=$(
-	PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-	local \
-	--num-processes "$max_processes" \
-	--strategy fast \
-	--verbose \
-	--reprocess \
-	--input-path example-docs/pdf/fake-memo.pdf \
-	--work-dir "$WORK_DIR" \
-	s3 \
-	--remote-url "$DESTINATION_S3" 2>&1 >&3 3>&-
-); } 3>&1
+{ err=$(PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
+  local \
+  --num-processes "$max_processes" \
+  --strategy fast \
+  --verbose \
+  --reprocess \
+  --input-path example-docs/pdf/fake-memo.pdf \
+  --work-dir "$WORK_DIR" \
+  s3 \
+  --remote-url "$DESTINATION_S3" 2>&1 >&3 3>&-); } 3>&1
 
 if [[ "$err" == *"Error: Precheck failed"* ]]; then
-	echo "passed"
+  echo "passed"
 else
-	echo "error didn't occur with expected text: $err"
-	exit 1
+  echo "error didn't occur with expected text: $err"
+  exit 1
 fi
