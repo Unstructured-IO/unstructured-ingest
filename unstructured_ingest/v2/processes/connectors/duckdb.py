@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection as DuckDBConnection
 
 CONNECTOR_TYPE = "duckdb"
-ELEMENTS_TABLE_NAME = "elements"
 DUCKDB_DB = "duckdb"
 MOTHERDUCK_DB = "motherduck"
 
@@ -43,11 +42,15 @@ class DuckDBConnectionConfig(ConnectionConfig):
     )
     database: Optional[str] = Field(
         default=None,
-        description="Database name. For duckdb databases, this is the path to the DuckDB .db file.",
+        description="Database name. This is the path to the DuckDB .db file.",
     )
     schema: Optional[str] = Field(
         default="main",
-        description="Schema name. For duckdb databases, this is the schema within the database where the table is located..",
+        description="Schema name. This is the schema within the database where the elements table is located.",
+    )
+    table: Optional[str] = Field(
+        default="elements",
+        description="Table name. This is the table name into which the elements data is inserted.",
     )
     access_config: Secret[MotherDuckAccessConfig] = Field(
         default=MotherDuckAccessConfig(), validate_default=True
@@ -222,7 +225,7 @@ class DuckDBUploader(Uploader):
 
         with self.connection() as conn:
             conn.query(
-                f"INSERT INTO {self.connection_config.schema}.{ELEMENTS_TABLE_NAME} BY NAME SELECT * FROM df_elements"
+                f"INSERT INTO {self.connection_config.schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"
             )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
