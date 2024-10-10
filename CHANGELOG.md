@@ -1,3 +1,9 @@
+## 0.0.25
+
+### Enhancements
+
+* **Support for Databricks Volumes source connector**
+
 ## 0.0.24
 
 ### Enhancements
