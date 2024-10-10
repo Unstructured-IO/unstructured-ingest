@@ -29,7 +29,7 @@ install-release:
 
 .PHONY: install-base
 install-base:
-	pip install -r requirements/common/base.txt
+	pip install -r requirements/common/base.in
 
 .PHONY: install-all-connectors
 install-all-connectors:

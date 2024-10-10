@@ -75,7 +75,8 @@ class Block(FromJSONMixin, GetHTMLMixin):
         created_by = data.pop("created_by")
         last_edited_by = data.pop("last_edited_by")
         parent = data.pop("parent")
-        in_trash = data.pop("in_trash")
+        if "in_trash" in data:
+            in_trash = data.pop("in_trash")
         try:
             block = cls(
                 created_by=PartialUser.from_dict(created_by),
