@@ -2,28 +2,35 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Optional, Generator
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionNetworkError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
+    Downloader,
+    DownloaderConfig,
+    DownloadResponse,
     FileData,
-    Uploader,
-    UploaderConfig,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    Downloader,
-    DownloaderConfig,
-    FileDataSourceMetadata,
-    DownloadResponse
+    Uploader,
+    UploaderConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry, SourceRegistryEntry
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
+)
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
@@ -140,7 +147,7 @@ class DatabricksVolumesIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         logger.info(f"Indexer looking into: {self.connection_config.path}")
         for file_info in self.connection_config.get_client().dbfs.list(
-                path=self.connection_config.path, recursive=self.index_config.recursive
+            path=self.connection_config.path, recursive=self.index_config.recursive
         ):
             if file_info.is_dir:
                 continue
@@ -221,6 +228,7 @@ class DatabricksVolumesUploaderConfig(UploaderConfig):
         default=False, description="If true, an existing file will be overwritten."
     )
 
+
 @dataclass
 class DatabricksVolumesUploader(Uploader):
     upload_config: DatabricksVolumesUploaderConfig
@@ -257,4 +265,3 @@ databricks_volumes_source_entry = SourceRegistryEntry(
     downloader=DatabricksVolumesDownloader,
     downloader_config=DatabricksVolumesDownloaderConfig,
 )
-
