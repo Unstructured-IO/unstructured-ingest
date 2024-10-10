@@ -12,7 +12,7 @@ pip-compile:
 
 .PHONY: install-lint
 install-lint:
-	pip install -r requirements/lint.txt
+	pip install -r requirements/lint.in
 
 
 .PHONY: install-client
