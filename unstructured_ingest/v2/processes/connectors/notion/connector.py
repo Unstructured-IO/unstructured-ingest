@@ -22,8 +22,12 @@ from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEn
 from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
 from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_database_html
 from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_page_html
-from unstructured_ingest.v2.processes.connectors.notion.helpers import get_recursive_content_from_database
-from unstructured_ingest.v2.processes.connectors.notion.helpers import get_recursive_content_from_page
+from unstructured_ingest.v2.processes.connectors.notion.helpers import (
+    get_recursive_content_from_database,
+)
+from unstructured_ingest.v2.processes.connectors.notion.helpers import (
+    get_recursive_content_from_page,
+)
 
 NOTION_API_VERSION = "2022-06-28"
 CONNECTOR_TYPE = "notion"
@@ -109,9 +113,7 @@ class NotionIndexer(Indexer):
                     continue
                 processed_databases.add(database_id)
                 databases_to_process.remove(database_id)
-                file_data = self.get_database_file_data(
-                    database_id=database_id, client=client
-                )
+                file_data = self.get_database_file_data(database_id=database_id, client=client)
                 if file_data:
                     yield file_data
                 if self.index_config.recursive:
@@ -128,9 +130,7 @@ class NotionIndexer(Indexer):
                     databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_page_file_data(
-            self, page_id: str, client: "NotionClient"
-    ) -> Optional[FileData]:
+    def get_page_file_data(self, page_id: str, client: "NotionClient") -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
             date_created = page_metadata.get("created_time")
@@ -161,12 +161,10 @@ class NotionIndexer(Indexer):
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_database_file_data(
-            self, database_id: str, client: "NotionClient"
+        self, database_id: str, client: "NotionClient"
     ) -> Optional[FileData]:
         try:
-            database_metadata = client.databases.retrieve(
-                database_id=database_id
-            )  # type: ignore
+            database_metadata = client.databases.retrieve(database_id=database_id)  # type: ignore
             date_created = database_metadata.get("created_time")
             date_modified = database_metadata.get("last_edited_time")
             identifier = database_id
@@ -194,11 +192,11 @@ class NotionIndexer(Indexer):
             return None
 
     def get_child_pages_and_databases(
-            self,
-            page_id: str,
-            client: "NotionClient",
-            processed_pages: Set[str],
-            processed_databases: Set[str],
+        self,
+        page_id: str,
+        client: "NotionClient",
+        processed_pages: Set[str],
+        processed_databases: Set[str],
     ) -> Tuple[Set[str], Set[str]]:
         child_content = get_recursive_content_from_page(
             client=client,
@@ -210,11 +208,11 @@ class NotionIndexer(Indexer):
         return child_pages, child_databases
 
     def get_child_pages_and_databases_from_database(
-            self,
-            database_id: str,
-            client: "NotionClient",
-            processed_pages: Set[str],
-            processed_databases: Set[str],
+        self,
+        database_id: str,
+        client: "NotionClient",
+        processed_pages: Set[str],
+        processed_databases: Set[str],
     ) -> Tuple[Set[str], Set[str]]:
         child_content = get_recursive_content_from_database(
             client=client,
@@ -265,7 +263,9 @@ class NotionDownloader(Downloader):
         else:
             raise ValueError("Invalid record_locator in file_data")
 
-    def download_page(self, client: "NotionClient", page_id: str, file_data: FileData) -> DownloadResponse:
+    def download_page(
+        self, client: "NotionClient", page_id: str, file_data: FileData
+    ) -> DownloadResponse:
 
         try:
             text_extraction = extract_page_html(
@@ -288,7 +288,9 @@ class NotionDownloader(Downloader):
             logger.error(f"Error downloading page {page_id}: {e}")
             return None
 
-    def download_database(self, client: "NotionClient", database_id: str, file_data: FileData) -> DownloadResponse:
+    def download_database(
+        self, client: "NotionClient", database_id: str, file_data: FileData
+    ) -> DownloadResponse:
         try:
             text_extraction = extract_database_html(
                 client=client,

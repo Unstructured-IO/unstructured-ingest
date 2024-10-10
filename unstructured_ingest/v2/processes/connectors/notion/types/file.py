@@ -5,7 +5,10 @@ from typing import Optional
 from htmlBuilder.attributes import Href
 from htmlBuilder.tags import A, HtmlTag
 
-from unstructured_ingest.v2.processes.connectors.notion.interfaces import FromJSONMixin, GetHTMLMixin
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
+    FromJSONMixin,
+    GetHTMLMixin,
+)
 
 
 @dataclass

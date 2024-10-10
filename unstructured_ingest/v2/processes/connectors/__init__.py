@@ -98,4 +98,3 @@ add_destination_entry(
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 add_source_entry(source_type=NOTION_CONNECTOR_TYPE, entry=notion_source_entry)
-

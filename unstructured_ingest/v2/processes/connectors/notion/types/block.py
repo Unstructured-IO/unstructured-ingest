@@ -63,7 +63,7 @@ class Block(FromJSONMixin, GetHTMLMixin):
     block: BlockBase
     object: str = "block"
     request_id: Optional[str] = None
-    #in_trash: bool
+    # in_trash: bool
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
