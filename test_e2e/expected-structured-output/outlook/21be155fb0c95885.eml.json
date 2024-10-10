@@ -18,7 +18,7 @@
       ],
       "filetype": "message/rfc822",
       "data_source": {
-        "url": "https://outlook.office365.com/owa/?ItemID=AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MABGAAAAAADc1MfJYetSQ6QZntYrI9k4BwDZYn%2FlfnvLSqIcW%2FYsN8ebAAATaI%2BsAADZYn%2FlfnvLSqIcW%2FYsN8ebAAATaJ9PAAA%3D&exvsurl=1&viewmodel=ReadMessageItem",
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAAA=/messages/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MABGAAAAAADc1MfJYetSQ6QZntYrI9k4BwDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAADZYn-lfnvLSqIcW-YsN8ebAAATaJ9PAAA=",
         "version": null,
         "record_locator": {
           "message_id": "AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MABGAAAAAADc1MfJYetSQ6QZntYrI9k4BwDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAADZYn-lfnvLSqIcW-YsN8ebAAATaJ9PAAA=",

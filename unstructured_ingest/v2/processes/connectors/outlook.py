@@ -147,9 +147,7 @@ class OutlookIndexer(Indexer):
             connector_type=CONNECTOR_TYPE,
             source_identifiers=SourceIdentifiers(filename=fullpath.name, fullpath=str(fullpath)),
             metadata=FileDataSourceMetadata(
-                url=message.web_link,
-                # TODO(Filip Knefel): Based on V1 I used web_link but there's also
-                # message.resource_url, which one better suits this field?
+                url=message.resource_url,
                 version=message.change_key,
                 date_modified=str(
                     message.last_modified_datetime.replace(tzinfo=timezone.utc).timestamp()
