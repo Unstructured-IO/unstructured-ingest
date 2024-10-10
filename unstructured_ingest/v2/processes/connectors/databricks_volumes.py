@@ -1,12 +1,12 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from time import time
 from typing import TYPE_CHECKING, Any, Optional, Generator
 
 from pydantic import Field, Secret
 
-from unstructured.documents.elements import DataSourceMetadata
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionNetworkError, SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -16,7 +16,11 @@ from unstructured_ingest.v2.interfaces import (
     UploaderConfig,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers, Downloader, DownloaderConfig
+    SourceIdentifiers,
+    Downloader,
+    DownloaderConfig,
+    FileDataSourceMetadata,
+    DownloadResponse
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry, SourceRegistryEntry
@@ -35,16 +39,6 @@ class DatabricksVolumesAccessConfig(AccessConfig):
         "either https://accounts.cloud.databricks.com/ (AWS), "
         "https://accounts.azuredatabricks.net/ (Azure), "
         "or https://accounts.gcp.databricks.com/ (GCP).",
-    )
-    username: Optional[str] = Field(
-        default=None,
-        description="The Databricks username part of basic authentication. "
-        "Only possible when Host is *.cloud.databricks.com (AWS).",
-    )
-    password: Optional[str] = Field(
-        default=None,
-        description="The Databricks password part of basic authentication. "
-        "Only possible when Host is *.cloud.databricks.com (AWS).",
     )
     client_id: Optional[str] = Field(default=None, description="Client ID of the OAuth app.")
     client_secret: Optional[str] = Field(
@@ -82,7 +76,6 @@ class DatabricksVolumesAccessConfig(AccessConfig):
         "argument. This argument also holds the currently "
         "selected auth.",
     )
-    cluster_id: Optional[str] = None
     google_credentials: Optional[str] = None
     google_service_account: Optional[str] = None
 
@@ -97,39 +90,10 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig):
         "Databricks workspace endpoint or the "
         "Databricks accounts endpoint.",
     )
-
-
-@dataclass
-class DatabricksVolumesIndexerConfig(IndexerConfig):
-    remote_url: str
-    recursive: bool = False
-    catalog: str = Field(init=False)
-    path: str = Field(init=False)
-    full_name: str = Field(init=False)
-
-    def __post_init__(self):
-        full_path = self.remote_url
-
-        if full_path.startswith("/"):
-            full_path = full_path[1:]
-        parts = full_path.split("/")
-        if parts[0] != "Volumes":
-            raise ValueError(
-                "remote url needs to be of the format /Volumes/catalog_name/volume/path"
-            )
-        self.catalog = parts[1]
-        self.path = "/".join(parts[2:])
-        self.full_name = ".".join(parts[1:])
-
-
-class DatabricksVolumesUploaderConfig(UploaderConfig):
     volume: str = Field(description="Name of volume in the Unity Catalog")
     catalog: str = Field(description="Name of the catalog in the Databricks Unity Catalog service")
     volume_path: Optional[str] = Field(
         default=None, description="Optional path within the volume to write to"
-    )
-    overwrite: bool = Field(
-        default=False, description="If true, an existing file will be overwritten."
     )
     databricks_schema: str = Field(
         default="default",
@@ -145,24 +109,44 @@ class DatabricksVolumesUploaderConfig(UploaderConfig):
         return path
 
 
+@dataclass
+class DatabricksVolumesIndexerConfig(IndexerConfig):
+    recursive: bool = False
+
 
 @dataclass
 class DatabricksVolumesIndexer(Indexer):
-    connector_type: str = CONNECTOR_TYPE
     index_config: DatabricksVolumesIndexerConfig
     connection_config: DatabricksVolumesConnectionConfig
-    workspace: "WorkspaceClient" = Field(init=False)
+    connector_type: str = CONNECTOR_TYPE
 
-    def __post_init__(self):
-        self.workspace = self.connection_config.get_client()
+    def precheck(self) -> None:
+        try:
+            self.get_client()
+            logger.info("Indexer connection OK")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
+
+    @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
+    def get_client(self) -> "WorkspaceClient":
+        from databricks.sdk import WorkspaceClient
+
+        return WorkspaceClient(
+            host=self.connection_config.host,
+            **self.connection_config.access_config.get_secret_value().model_dump(),
+        )
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        for file_info in self.workspace.dbfs.list(
-                path=self.index_config.remote_url, recursive=self.index_config.recursive
+        logger.info(f"Indexer looking into: {self.connection_config.path}")
+        for file_info in self.get_client().dbfs.list(
+                path=self.connection_config.path, recursive=self.index_config.recursive
         ):
             if file_info.is_dir:
                 continue
-            rel_path = file_info.path.replace(self.index_config.remote_url, "")
+            logger.debug(f"Indexer found file: {file_info.path}")
+
+            rel_path = file_info.path.replace(self.connection_config.path, "")
             if rel_path.startswith("/"):
                 rel_path = rel_path[1:]
             filename = Path(file_info.path).name
@@ -173,11 +157,11 @@ class DatabricksVolumesIndexer(Indexer):
                     filename=filename,
                     rel_path=rel_path,
                     fullpath=file_info.path,
-                    additional_metadata={
-                        "catalog": self.index_config.catalog,
-                    },
                 ),
-                metadata=DataSourceMetadata(
+                additional_metadata={
+                    "catalog": self.connection_config.catalog,
+                },
+                metadata=FileDataSourceMetadata(
                     url=file_info.path, date_modified=str(file_info.modification_time)
                 ),
             )
@@ -192,51 +176,65 @@ class DatabricksVolumesDownloaderConfig(DownloaderConfig):
 class DatabricksVolumesDownloader(Downloader):
     download_config: DatabricksVolumesDownloaderConfig
     connection_config: DatabricksVolumesConnectionConfig
-    workspace: "WorkspaceClient" = Field(init=False)
+    connector_type: str = CONNECTOR_TYPE
 
-    def __post_init__(self):
-        self.workspace = self.connection_config.get_client()
+    @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
+    def get_client(self) -> "WorkspaceClient":
+        from databricks.sdk import WorkspaceClient
+
+        return WorkspaceClient(
+            host=self.connection_config.host,
+            **self.connection_config.access_config.get_secret_value().model_dump(),
+        )
+
+    def precheck(self) -> None:
+        try:
+            self.get_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)
 
-    @staticmethod
-    def is_float(value: str):
-        try:
-            float(value)
-            return True
-        except ValueError:
-            return False
-
-    def run(self, file_data: FileData, **kwargs: Any) -> Path:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         logger.info(f"Writing {file_data.identifier} to {download_path}")
         try:
-            with self.workspace.dbfs.download(path=file_data.identifier) as c:
+            with self.get_client().dbfs.download(path=file_data.identifier) as c:
                 read_content = c._read_handle.read()
             with open(download_path, "wb") as f:
                 f.write(read_content)
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-        if (
-                file_data.metadata.date_modified
-                and self.is_float(file_data.metadata.date_modified)
-                and file_data.metadata.date_created
-                and self.is_float(file_data.metadata.date_created)
-        ):
-            date_modified = float(file_data.metadata.date_modified)
-            date_created = float(file_data.metadata.date_created)
-            os.utime(download_path, times=(date_created, date_modified))
-        return download_path
 
+        return DownloadResponse(
+            file_data=FileData(
+                identifier=file_data.identifier,
+                connector_type=CONNECTOR_TYPE,
+                metadata=FileDataSourceMetadata(
+                    date_processed=str(time()),
+                    record_locator={
+                        "hosts": self.connection_config.host,
+                    },
+                ),
+            ),
+            path=download_path,
+        )
+
+
+class DatabricksVolumesUploaderConfig(UploaderConfig):
+    overwrite: bool = Field(
+        default=False, description="If true, an existing file will be overwritten."
+    )
 
 @dataclass
 class DatabricksVolumesUploader(Uploader):
-    connector_type: str = CONNECTOR_TYPE
     upload_config: DatabricksVolumesUploaderConfig
     connection_config: DatabricksVolumesConnectionConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
     def get_client(self) -> "WorkspaceClient":
@@ -255,7 +253,7 @@ class DatabricksVolumesUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        output_path = os.path.join(self.upload_config.path, path.name)
+        output_path = os.path.join(self.connection_config.path, path.name)
         with open(path, "rb") as elements_file:
             self.get_client().files.upload(
                 file_path=output_path,
