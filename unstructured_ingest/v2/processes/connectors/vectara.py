@@ -1,9 +1,9 @@
 import json
-from typing import Optional,Any, Dict, List, Mapping
 import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any, Dict, List, Mapping, Optional
 
 from dateutil import parser
 from pydantic import Field
