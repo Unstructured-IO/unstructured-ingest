@@ -1,5 +1,5 @@
 import json
-import typing as t
+from typing import Optional,Any, Dict, List, Mapping
 import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -29,19 +29,16 @@ BASE_URL = "https://api.vectara.io/v1"
 CONNECTOR_TYPE = "vectara"
 
 
-# @dataclass
 class VectaraAccessConfig(AccessConfig):
     oauth_client_id: str = enhanced_field(sensitive=True)
     oauth_secret: str = enhanced_field(sensitive=True)
 
 
-# @dataclass
-# class SimpleVectaraConfig(BaseConnectorConfig):
 class VectaraConnectionConfig(ConnectionConfig):
     access_config: VectaraAccessConfig
     customer_id: str
-    corpus_name: t.Optional[str] = None
-    corpus_id: t.Optional[str] = None
+    corpus_name: Optional[str] = None
+    corpus_id: Optional[str] = None
     token_url: str = "https://vectara-prod-{}.auth.us-west-2.amazoncognito.com/oauth2/token"
 
 
@@ -83,7 +80,7 @@ class VectaraUploadStager(UploadStager):
         file_data: FileData,
         output_dir: Path,
         output_filename: str,
-        **kwargs: t.Any,
+        **kwargs: Any,
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
@@ -103,8 +100,8 @@ class VectaraUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: VectaraUploaderConfig
     connection_config: VectaraConnectionConfig
-    _jwt_token: t.Optional[str] = field(init=False, default=None)
-    _jwt_token_expires_ts: t.Optional[float] = field(init=False, default=None)
+    _jwt_token: Optional[str] = field(init=False, default=None)
+    _jwt_token_expires_ts: Optional[float] = field(init=False, default=None)
 
     def precheck(self) -> None:
         try:
@@ -184,8 +181,8 @@ class VectaraUploader(Uploader):
         self,
         endpoint: str,
         http_method: str = "POST",
-        params: t.Mapping[str, t.Any] = None,
-        data: t.Mapping[str, t.Any] = None,
+        params: Mapping[str, Any] = None,
+        data: Mapping[str, Any] = None,
     ):
         import requests
 
@@ -220,7 +217,7 @@ class VectaraUploader(Uploader):
         }
         self._request(endpoint="delete-doc", data=body)
 
-    def _index_document(self, document: t.Dict[str, t.Any]) -> None:
+    def _index_document(self, document: Dict[str, Any]) -> None:
         """
         Index a document (by uploading it to the Vectara corpus) from the document dictionary
         """
@@ -258,21 +255,20 @@ class VectaraUploader(Uploader):
         else:
             logger.info(f"indexing document {document['documentId']} failed, response = {result}")
 
-    def write_dict(self, *args, docs_list: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
+    def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
         for vdoc in docs_list:
             self._index_document(vdoc)
 
-    # def write(self, docs: t.List[BaseIngestDoc]) -> None:
     def run(
         self,
         path: Path,
         file_data: FileData,
-        **kwargs: t.Any,
+        **kwargs: Any,
     ) -> Path:
-        docs_list: t.Dict[t.Dict[str, t.Any]] = []
+        docs_list: Dict[Dict[str, Any]] = []
 
-        def get_metadata(element) -> t.Dict[str, t.Any]:
+        def get_metadata(element) -> Dict[str, Any]:
             """
             Select which meta-data fields to include and optionally map them to a new new.
             remove the "metadata-" prefix from the keys
