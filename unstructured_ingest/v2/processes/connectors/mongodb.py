@@ -129,7 +129,7 @@ class MongoDBIndexer(Indexer):
 
                 # Prepare source_identifiers
                 source_identifiers = SourceIdentifiers(
-                    fullpath=str(doc_id), filename=str(doc_id), rel_path=f"{doc_id}.txt"
+                    fullpath=str(doc_id), filename=str(doc_id), rel_path=str(doc_id)
                 )
 
                 # Create FileDataSourceMetadata
