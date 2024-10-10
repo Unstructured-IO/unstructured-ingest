@@ -101,6 +101,11 @@ class OutlookIndexer(Indexer):
     def run_async(self, **kwargs: Any) -> Coroutine[Any, Any, Any]:
         raise NotImplementedError
 
+    @SourceConnectionError.wrap
+    def precheck(self) -> None:
+        client = self.connection_config.get_client()
+        client.users[self.index_config.user_email].get().execute_query()
+
     def is_async(self) -> bool:
         return False
 
