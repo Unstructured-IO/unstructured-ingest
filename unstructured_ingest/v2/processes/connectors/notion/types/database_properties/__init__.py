@@ -1,7 +1,6 @@
 from typing import Dict
 
 from unstructured_ingest.connector.notion.interfaces import DBCellBase, DBPropertyBase
-
 from .checkbox import Checkbox, CheckboxCell
 from .created_by import CreatedBy, CreatedByCell
 from .created_time import CreatedTime, CreatedTimeCell

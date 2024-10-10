@@ -5,7 +5,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
     add_source_entry,
 )
-
 from .airtable import CONNECTOR_TYPE as AIRTABLE_CONNECTOR_TYPE
 from .airtable import airtable_source_entry
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
@@ -30,6 +29,8 @@ from .milvus import CONNECTOR_TYPE as MILVUS_CONNECTOR_TYPE
 from .milvus import milvus_destination_entry
 from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry
+from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
+from .notion.connector import notion_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_source_entry
 from .opensearch import CONNECTOR_TYPE as OPENSEARCH_CONNECTOR_TYPE
@@ -46,8 +47,6 @@ from .sql import CONNECTOR_TYPE as SQL_CONNECTOR_TYPE
 from .sql import sql_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
-from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
-from .notion.connector import notion_source_entry
 
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
 
