@@ -28,6 +28,7 @@ CONNECTOR_TYPE = "delta_table"
 
 
 class DeltaTableAccessConfig(AccessConfig):
+    pass
     # aws_region: str = Field(
     #     default=None,
     #     description="Region"
