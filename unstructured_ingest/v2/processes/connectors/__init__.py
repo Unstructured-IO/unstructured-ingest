@@ -34,6 +34,8 @@ from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_source_entry
 from .opensearch import CONNECTOR_TYPE as OPENSEARCH_CONNECTOR_TYPE
 from .opensearch import opensearch_destination_entry, opensearch_source_entry
+from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
+from .outlook import outlook_source_entry
 from .pinecone import CONNECTOR_TYPE as PINECONE_CONNECTOR_TYPE
 from .pinecone import pinecone_destination_entry
 from .salesforce import CONNECTOR_TYPE as SALESFORCE_CONNECTOR_TYPE
@@ -95,3 +97,5 @@ add_destination_entry(
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
+
+add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)

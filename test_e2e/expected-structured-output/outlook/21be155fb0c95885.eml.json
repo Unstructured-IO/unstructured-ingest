@@ -1,22 +1,34 @@
 [
   {
+    "type": "Title",
     "element_id": "df08d0aeb11a34e75766d2d2008d73a6",
+    "text": "integration test email",
     "metadata": {
-      "email_message_id": "CAOvAh-6yWG99vvaoQ5niLgGTgpwe90LGiNPLvx7bAY3ZFyq54w@mail.gmail.com",
       "filename": "21be155fb0c95885.eml",
-      "filetype": "message/rfc822",
-      "languages": [
-        "eng"
-      ],
+      "email_message_id": "CAOvAh-6yWG99vvaoQ5niLgGTgpwe90LGiNPLvx7bAY3ZFyq54w@mail.gmail.com",
       "sent_from": [
         "David Potter <potterdavidm@gmail.com>"
       ],
       "sent_to": [
         "devops@unstructuredio.onmicrosoft.com"
       ],
-      "subject": "integration test email 1"
-    },
-    "text": "integration test email",
-    "type": "Title"
+      "subject": "integration test email 1",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {
+        "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAAA=/messages/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MABGAAAAAADc1MfJYetSQ6QZntYrI9k4BwDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAADZYn-lfnvLSqIcW-YsN8ebAAATaJ9PAAA=",
+        "version": null,
+        "record_locator": {
+          "message_id": "AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MABGAAAAAADc1MfJYetSQ6QZntYrI9k4BwDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAADZYn-lfnvLSqIcW-YsN8ebAAATaJ9PAAA=",
+          "user_email": "devops@unstructuredio.onmicrosoft.com"
+        },
+        "date_created": "1689435368.0",
+        "date_modified": "1689435537.0",
+        "permissions_data": null,
+        "filesize_bytes": 9189
+      }
+    }
   }
 ]
