@@ -35,12 +35,12 @@ CONNECTOR_TYPE = "outlook"
 
 
 class OutlookAccessConfig(AccessConfig):
-    client_credential: str = Field(description="Microsoft App client secret", alias="client_cred")
+    client_credential: str = Field(description="Azure AD App client secret", alias="client_cred")
 
 
 class OutlookConnectionConfig(ConnectionConfig):
     access_config: Secret[OutlookAccessConfig]
-    client_id: str = Field(description="Microsoft App client ID")
+    client_id: str = Field(description="Azure AD App client ID")
     tenant: str = Field(
         default="common", description="ID or domain name associated with your Azure AD instance"
     )
