@@ -9,13 +9,10 @@ OUTPUT_FOLDER_NAME=databricks-volumes
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
 DOWNLOAD_DIR=$SCRIPT_DIR/download/$OUTPUT_FOLDER_NAME
-DESTINATION_PATH=$SCRIPT_DIR/databricks-volumes
 CI=${CI:-"false"}
-
 
 DATABRICKS_VOLUME="test-platform"
 DATABRICKS_VOLUME_PATH="databricks-volumes-test-output-24497"
-
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
@@ -28,7 +25,7 @@ function cleanup() {
 }
 trap cleanup EXIT
 
- PYTHONPATH=. ./unstructured_ingest/main.py \
+PYTHONPATH=. ./unstructured_ingest/main.py \
   databricks-volumes \
   --host "$DATABRICKS_HOST" \
   --client-id "$DATABRICKS_CLIENT_ID" \
@@ -42,6 +39,5 @@ trap cleanup EXIT
   --download-only \
   --verbose \
   --work-dir "$WORK_DIR"
-
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
