@@ -20,12 +20,10 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
-from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_database_html
-from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_page_html
 from unstructured_ingest.v2.processes.connectors.notion.helpers import (
+    extract_database_html,
+    extract_page_html,
     get_recursive_content_from_database,
-)
-from unstructured_ingest.v2.processes.connectors.notion.helpers import (
     get_recursive_content_from_page,
 )
 
