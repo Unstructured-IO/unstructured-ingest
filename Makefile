@@ -12,7 +12,7 @@ pip-compile:
 
 .PHONY: install-lint
 install-lint:
-	pip install -r requirements/lint.in
+	pip install -r requirements/lint.txt
 
 
 .PHONY: install-client
@@ -29,7 +29,7 @@ install-release:
 
 .PHONY: install-base
 install-base:
-	pip install -r requirements/common/base.in
+	pip install -r requirements/common/base.txt
 
 .PHONY: install-all-connectors
 install-all-connectors:
