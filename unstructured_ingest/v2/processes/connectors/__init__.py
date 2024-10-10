@@ -5,6 +5,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
     add_source_entry,
 )
+
 from .airtable import CONNECTOR_TYPE as AIRTABLE_CONNECTOR_TYPE
 from .airtable import airtable_source_entry
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
