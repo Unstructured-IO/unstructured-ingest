@@ -108,6 +108,15 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig):
             path = f"{path}/{self.volume_path}"
         return path
 
+    @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
+    def get_client(self) -> "WorkspaceClient":
+        from databricks.sdk import WorkspaceClient
+
+        return WorkspaceClient(
+            host=self.host,
+            **self.access_config.get_secret_value().model_dump(),
+        )
+
 
 @dataclass
 class DatabricksVolumesIndexerConfig(IndexerConfig):
@@ -122,24 +131,15 @@ class DatabricksVolumesIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.get_client()
+            self.connection_config.get_client()
             logger.info("Indexer connection OK")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
-    def get_client(self) -> "WorkspaceClient":
-        from databricks.sdk import WorkspaceClient
-
-        return WorkspaceClient(
-            host=self.connection_config.host,
-            **self.connection_config.access_config.get_secret_value().model_dump(),
-        )
-
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         logger.info(f"Indexer looking into: {self.connection_config.path}")
-        for file_info in self.get_client().dbfs.list(
+        for file_info in self.connection_config.get_client().dbfs.list(
                 path=self.connection_config.path, recursive=self.index_config.recursive
         ):
             if file_info.is_dir:
@@ -178,18 +178,9 @@ class DatabricksVolumesDownloader(Downloader):
     connection_config: DatabricksVolumesConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
-    def get_client(self) -> "WorkspaceClient":
-        from databricks.sdk import WorkspaceClient
-
-        return WorkspaceClient(
-            host=self.connection_config.host,
-            **self.connection_config.access_config.get_secret_value().model_dump(),
-        )
-
     def precheck(self) -> None:
         try:
-            self.get_client()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -202,7 +193,7 @@ class DatabricksVolumesDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
         logger.info(f"Writing {file_data.identifier} to {download_path}")
         try:
-            with self.get_client().dbfs.download(path=file_data.identifier) as c:
+            with self.connection_config.get_client().dbfs.download(path=file_data.identifier) as c:
                 read_content = c._read_handle.read()
             with open(download_path, "wb") as f:
                 f.write(read_content)
@@ -236,18 +227,9 @@ class DatabricksVolumesUploader(Uploader):
     connection_config: DatabricksVolumesConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
-    def get_client(self) -> "WorkspaceClient":
-        from databricks.sdk import WorkspaceClient
-
-        return WorkspaceClient(
-            host=self.connection_config.host,
-            **self.connection_config.access_config.get_secret_value().model_dump(),
-        )
-
     def precheck(self) -> None:
         try:
-            assert self.get_client().current_user.me().active
+            assert self.connection_config.get_client().current_user.me().active
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -255,7 +237,7 @@ class DatabricksVolumesUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = os.path.join(self.connection_config.path, path.name)
         with open(path, "rb") as elements_file:
-            self.get_client().files.upload(
+            self.connection_config.get_client().files.upload(
                 file_path=output_path,
                 contents=elements_file,
                 overwrite=self.upload_config.overwrite,
