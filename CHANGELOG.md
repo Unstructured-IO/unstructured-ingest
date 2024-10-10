@@ -1,3 +1,9 @@
+## 0.0.25-dev0
+
+### Enhancements
+
+* **Databricks Delta Table destination to v2**
+
 ## 0.0.24
 
 ### Enhancements
