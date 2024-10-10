@@ -196,6 +196,7 @@ tags
 .ruff_cache/
 
 .ppm
+.vs
 
 example-docs/*_images
 examples/**/output/
