@@ -187,8 +187,13 @@ class OutlookDownloader(Downloader):
     download_config: OutlookDownloaderConfig = field(default_factory=OutlookDownloaderConfig)
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        download_path = self.get_download_path(file_data)
         # NOTE: Indexer should provide source identifiers required to generate the download path
+        download_path = self.get_download_path(file_data)
+        if download_path is None:
+            logger.error("Generated download path is None, source_identifiers might be missing"
+                         "from FileData.")
+            raise ValueError("Generated invalid download path.")
+        
         self._download_message(file_data, download_path)
         return self.generate_download_response(file_data, download_path)
 
@@ -197,8 +202,16 @@ class OutlookDownloader(Downloader):
 
     def _download_message(self, file_data: FileData, download_path: Path) -> None:
         # NOTE: Indexer should supply the record locator in metadata
+        if (file_data.metadata.record_locator is None
+                or "user_email" not in file_data.metadata.record_locator
+                or "message_id" not in file_data.metadata.record_locator):
+            logger.error(f"Invalid record locator in metadata: {file_data.metadata.record_locator}."
+                         "Keys 'user_email' and 'message_id' must be present.")
+            raise ValueError("Invalid record locator.")
+
         user_email = file_data.metadata.record_locator["user_email"]
         message_id = file_data.metadata.record_locator["message_id"]
+
 
         message = self.connection_config.get_client().users[user_email].messages[message_id]
         download_path.parent.mkdir(exist_ok=True, parents=True)
