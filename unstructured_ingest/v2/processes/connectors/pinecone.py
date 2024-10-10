@@ -58,20 +58,6 @@ class PineconeConnectionConfig(ConnectionConfig):
         return index
 
 
-class PineconeUploadStagerConfig(UploadStagerConfig):
-    pass
-
-
-class PineconeUploaderConfig(UploaderConfig):
-    batch_size: Optional[int] = Field(
-        default=None,
-        description="Optional number of records per batch. Will otherwise limit by size.",
-    )
-    pool_threads: Optional[int] = Field(
-        default=1, description="Optional limit on number of threads to use for upload"
-    )
-
-
 ALLOWED_FIELDS = (
     "element_id",
     "text",
@@ -86,7 +72,28 @@ ALLOWED_FIELDS = (
     "is_continuation",
     "link_urls",
     "link_texts",
+    "text_as_html",
 )
+
+
+class PineconeUploadStagerConfig(UploadStagerConfig):
+    metadata_fields: list[str] = Field(
+        default=str(ALLOWED_FIELDS),
+        description=(
+            "which metadata from the source element to map to the payload metadata being sent to "
+            "Pinecone."
+        ),
+    )
+
+
+class PineconeUploaderConfig(UploaderConfig):
+    batch_size: Optional[int] = Field(
+        default=None,
+        description="Optional number of records per batch. Will otherwise limit by size.",
+    )
+    pool_threads: Optional[int] = Field(
+        default=1, description="Optional limit on number of threads to use for upload"
+    )
 
 
 @dataclass
@@ -95,22 +102,26 @@ class PineconeUploadStager(UploadStager):
         default_factory=lambda: PineconeUploadStagerConfig()
     )
 
-    @staticmethod
-    def conform_dict(element_dict: dict) -> dict:
+    def conform_dict(self, element_dict: dict) -> dict:
         embeddings = element_dict.pop("embeddings", None)
         metadata: dict[str, Any] = element_dict.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
-
-        element_dict.update(metadata)
-        element_dict.update(data_source)
-        element_dict.update(coordinates)
+        pinecone_metadata = {}
+        for possible_meta in [element_dict, metadata, data_source, coordinates]:
+            pinecone_metadata.update(
+                {
+                    k: v
+                    for k, v in possible_meta.items()
+                    if k in self.upload_stager_config.metadata_fields
+                }
+            )
 
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
             "metadata": flatten_dict(
-                {k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
+                pinecone_metadata,
                 separator="-",
                 flatten_lists=True,
                 remove_none=True,

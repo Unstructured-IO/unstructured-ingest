@@ -1,3 +1,15 @@
+## 0.0.25
+
+### Enhancements
+
+* **Databricks Delta Table destination to v2**
+
+## 0.0.24
+
+### Enhancements
+
+* **Support dynamic metadata mapping in Pinecone uploader**
+
 ## 0.0.23
 
 ### Fixes

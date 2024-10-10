@@ -18,6 +18,8 @@ from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
 from .databricks_volumes import CONNECTOR_TYPE as DATABRICKS_VOLUMES_CONNECTOR_TYPE
 from .databricks_volumes import databricks_volumes_destination_entry
+from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
+from .delta_table import delta_table_destination_entry
 from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
@@ -53,6 +55,10 @@ add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_desti
 
 add_source_entry(source_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_source_entry)
 add_destination_entry(destination_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_destination_entry)
+
+add_destination_entry(
+    destination_type=DELTA_TABLE_CONNECTOR_TYPE, entry=delta_table_destination_entry
+)
 
 add_source_entry(source_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_source_entry)
 add_destination_entry(
