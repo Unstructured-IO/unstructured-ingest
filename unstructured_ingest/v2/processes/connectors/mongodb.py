@@ -127,12 +127,10 @@ class MongoDBIndexer(Indexer):
                 if isinstance(doc_id, ObjectId):
                     date_created = doc_id.generation_time.isoformat()
 
-                # Prepare source_identifiers
                 source_identifiers = SourceIdentifiers(
                     fullpath=str(doc_id), filename=str(doc_id), rel_path=str(doc_id)
                 )
 
-                # Create FileDataSourceMetadata
                 metadata = FileDataSourceMetadata(
                     date_created=date_created,
                     date_processed=str(time()),
@@ -143,13 +141,12 @@ class MongoDBIndexer(Indexer):
                     },
                 )
 
-                # Create the FileData object
                 file_data = FileData(
                     identifier=str(doc_id),
                     connector_type=self.connector_type,
                     source_identifiers=source_identifiers,
                     metadata=metadata,
-                    additional_metadata={},  # Add any additional metadata if needed
+                    additional_metadata={}, 
                 )
                 yield file_data
 
@@ -206,20 +203,17 @@ class MongoDBDownloader(Downloader):
         if doc is None:
             raise FileNotFoundError(f"Document with ID {document_id} not found")
 
-        # Remove the _id field
         doc.pop("_id", None)
 
         flattened_dict = flatten_dict(dictionary=doc)
         concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
 
-        # Determine the download path
         download_path = self.get_download_path(file_data)
         if download_path is None:
             raise ValueError("Download path could not be determined")
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write the concatenated values to the file
         with open(download_path, "w", encoding="utf8") as f:
             f.write(concatenated_values)
 

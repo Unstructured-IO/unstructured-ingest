@@ -45,4 +45,4 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --batch-size 2 \
   --verbose
 
-"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME --overwrite-fixtures=True
