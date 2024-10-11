@@ -1,3 +1,9 @@
+## 0.0.25
+
+### Features
+
+* **Add Ollama embedder** Adds support for creating embeddings vector using Ollama
+
 ## 0.0.24
 
 ### Enhancements
