@@ -1,3 +1,9 @@
+## 0.0.24
+
+### Enhancements
+
+* **Support dynamic metadata mapping in Pinecone uploader**
+
 ## 0.0.23
 
 ### Fixes
