@@ -287,23 +287,6 @@ class VectaraUploader(Uploader):
     ) -> Path:
         docs_list: Dict[Dict[str, Any]] = []
 
-        # def get_metadata(element) -> Dict[str, Any]:
-        #     """
-        #     Select which meta-data fields to include and optionally map them to a new new.
-        #     remove the "metadata-" prefix from the keys
-        #     """
-        #     metadata_map = {
-        #         "page_number": "page_number",
-        #         "data_source-url": "url",
-        #         "filename": "filename",
-        #         "filetype": "filetype",
-        #         "last_modified": "last_modified",
-        #     }
-        #     md = flatten_dict(element, separator="-", flatten_lists=True)
-        #     md = {k.replace("metadata-", ""): v for k, v in md.items()}
-        #     md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
-        #     return md
-
         with path.open("r") as json_file:
             dict_content = json.load(json_file)
             vdoc = {
