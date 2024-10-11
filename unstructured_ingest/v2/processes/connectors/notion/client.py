@@ -1,6 +1,5 @@
 from typing import Any, Generator, List, Optional, Tuple
 
-import notion_client.errors
 from notion_client import Client as NotionClient
 from notion_client.api_endpoints import BlocksChildrenEndpoint as NotionBlocksChildrenEndpoint
 from notion_client.api_endpoints import BlocksEndpoint as NotionBlocksEndpoint
