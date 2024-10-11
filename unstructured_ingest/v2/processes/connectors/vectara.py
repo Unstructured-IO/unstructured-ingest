@@ -60,18 +60,37 @@ class VectaraUploadStager(UploadStager):
         except Exception as e:
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
+    
+    
 
     @staticmethod
     def conform_dict(data: dict) -> dict:
         """
         Prepares dictionary in the format that Chroma requires
         """
+        def get_metadata(element) -> Dict[str, Any]:
+            """
+            Select which meta-data fields to include and optionally map them to a new new.
+            remove the "metadata-" prefix from the keys
+            """
+            metadata_map = {
+                "page_number": "page_number",
+                "data_source-url": "url",
+                "filename": "filename",
+                "filetype": "filetype",
+                "last_modified": "last_modified",
+            }
+            md = flatten_dict(element, separator="-", flatten_lists=True)
+            md = {k.replace("metadata-", ""): v for k, v in md.items()}
+            md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
+            return md
+        
         element_id = data.get("element_id", str(uuid.uuid4()))
         return {
             "id": element_id,
             "embedding": data.pop("embeddings", None),
             "document": data.pop("text", None),
-            "metadata": flatten_dict(data, separator="-", flatten_lists=True, remove_none=True),
+            "metadata": flatten_dict(get_metadata(data), separator="-", flatten_lists=True, remove_none=True),
         }
 
     def run(
@@ -268,22 +287,22 @@ class VectaraUploader(Uploader):
     ) -> Path:
         docs_list: Dict[Dict[str, Any]] = []
 
-        def get_metadata(element) -> Dict[str, Any]:
-            """
-            Select which meta-data fields to include and optionally map them to a new new.
-            remove the "metadata-" prefix from the keys
-            """
-            metadata_map = {
-                "page_number": "page_number",
-                "data_source-url": "url",
-                "filename": "filename",
-                "filetype": "filetype",
-                "last_modified": "last_modified",
-            }
-            md = flatten_dict(element, separator="-", flatten_lists=True)
-            md = {k.replace("metadata-", ""): v for k, v in md.items()}
-            md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
-            return md
+        # def get_metadata(element) -> Dict[str, Any]:
+        #     """
+        #     Select which meta-data fields to include and optionally map them to a new new.
+        #     remove the "metadata-" prefix from the keys
+        #     """
+        #     metadata_map = {
+        #         "page_number": "page_number",
+        #         "data_source-url": "url",
+        #         "filename": "filename",
+        #         "filetype": "filetype",
+        #         "last_modified": "last_modified",
+        #     }
+        #     md = flatten_dict(element, separator="-", flatten_lists=True)
+        #     md = {k.replace("metadata-", ""): v for k, v in md.items()}
+        #     md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
+        #     return md
 
         with path.open("r") as json_file:
             dict_content = json.load(json_file)
@@ -293,7 +312,7 @@ class VectaraUploader(Uploader):
                 "section": [
                     {
                         "text": element.pop("text", None),
-                        "metadataJson": json.dumps(get_metadata(element)),
+                        "metadataJson": json.dumps(element),
                     }
                     for element in dict_content
                 ],
