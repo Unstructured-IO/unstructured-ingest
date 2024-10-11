@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import Field, Secret
 
-# from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -20,27 +19,15 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
-
 if TYPE_CHECKING:
-    from deltalake.writer import write_deltalake
+    pass
 
 CONNECTOR_TYPE = "delta_table"
 
 
 class DeltaTableAccessConfig(AccessConfig):
-    pass
-    # aws_region: str = Field(
-    #     default=None,
-    #     description="Region"
-    # )
-    # aws_access_key_id: str = Field(
-    #     default=None,
-    #     description="Region"
-    # )
-    # aws_secret_access_key: str = Field(
-    #     default=None,
-    #     description="Region"
-    # )
+    aws_access_key_id: Optional[str] = Field(default=None, description="AWS Access Key Id")
+    aws_secret_access_key: Optional[str] = Field(default=None, description="AWS Secret Access Key")
 
 
 class DeltaTableConnectionConfig(ConnectionConfig):
@@ -49,7 +36,7 @@ class DeltaTableConnectionConfig(ConnectionConfig):
     )
     table_uri: str = Field(
         default=None,
-        description="desc",
+        description="The path to the target folder in the S3 bucket, formatted as s3://my-bucket/my-folder/ or local path",
     )
 
 
@@ -66,22 +53,24 @@ class DeltaTableUploadStager(UploadStager):
     def run(
         self,
         elements_filepath: Path,
-        # file_data: FileData,
         output_dir: Path,
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
+        from unstructured_ingest.utils.table import convert_to_pandas_dataframe
+
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
 
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(elements_contents, output_file)
+
+        df = convert_to_pandas_dataframe(elements_dict=elements_contents)
+        df.to_parquet(output_path)
+
         return output_path
 
 
 class DeltaTableUploaderConfig(UploaderConfig):
-    drop_empty_cols: bool = False
     mode: Literal["error", "append", "overwrite", "ignore"] = "error"
     schema_mode: Optional[Literal["merge", "overwrite"]] = None
     engine: Literal["pyarrow", "rust"] = "pyarrow"
@@ -99,32 +88,31 @@ class DeltaTableUploader(Uploader):
 
     @requires_dependencies(["deltalake"], extras="delta-table")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        import pandas as pd
         from deltalake.writer import write_deltalake
 
-        from unstructured_ingest.utils.table import convert_to_pandas_dataframe
-
-        with path.open("r") as file:
-            elements_dict = json.load(file)
-
-        df = convert_to_pandas_dataframe(
-            elements_dict=elements_dict,
-            drop_empty_cols=self.upload_config.drop_empty_cols,
-        )
+        df = pd.read_parquet(path)
         logger.info(
             f"writing {len(df)} rows to destination table "
             f"at {self.connection_config.table_uri}\ndtypes: {df.dtypes}",
         )
-        # storage_options = {
-        #     "AWS_REGION": self.connection_config.access_config.get_secret_value().aws_region,
-        #     "AWS_ACCESS_KEY_ID": self.connection_config.access_config.get_secret_value().aws_access_key_id,
-        #     "AWS_SECRET_ACCESS_KEY": self.connection_config.access_config.get_secret_value().aws_secret_access_key,
-        # }
+
+        secrets = self.connection_config.access_config.get_secret_value()
+        if secrets.aws_access_key_id and secrets.aws_secret_access_key:
+            storage_options = {
+                "AWS_ACCESS_KEY_ID": secrets.aws_access_key_id,
+                "AWS_SECRET_ACCESS_KEY": secrets.aws_secret_access_key,
+                "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+            }
+        else:
+            storage_options = {}
+
         writer_kwargs = {
             "table_or_uri": self.connection_config.table_uri,
             "data": df,
             "mode": self.upload_config.mode,
             "engine": self.upload_config.engine,
-            # "storage_options": storage_options,
+            "storage_options": storage_options,
         }
         if self.upload_config.schema_mode is not None:
             writer_kwargs["schema_mode"] = self.upload_config.schema_mode
