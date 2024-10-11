@@ -9,15 +9,13 @@ from deltalake import DeltaTable
 @click.option("--aws-secret-access-key", type=str)
 def run_check(table_uri, aws_region, aws_access_key_id, aws_secret_access_key):
     print(f"Checking contents of table at {table_uri}")
+    storage_options = {}
     if aws_region and aws_access_key_id and aws_secret_access_key:
-        storage_options = {
-            "AWS_REGION": aws_region,
-            "AWS_ACCESS_KEY_ID": aws_access_key_id,
-            "AWS_SECRET_ACCESS_KEY": aws_secret_access_key,
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
-        }
-    else:
-        storage_options = {}
+        storage_options["AWS_REGION"] = aws_region
+        storage_options["AWS_ACCESS_KEY_ID"] = aws_access_key_id
+        storage_options["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
+        storage_options["AWS_S3_ALLOW_UNSAFE_RENAME"] = "true"
+
     delta_table = DeltaTable(table_uri=table_uri, storage_options=storage_options)
 
     df = delta_table.to_pandas()

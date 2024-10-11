@@ -98,17 +98,13 @@ class DeltaTableUploader(Uploader):
             f"writing {len(df)} rows to destination table "
             f"at {self.connection_config.table_uri}\ndtypes: {df.dtypes}",
         )
-
+        storage_options = {}
         secrets = self.connection_config.access_config.get_secret_value()
         if secrets.aws_access_key_id and secrets.aws_secret_access_key:
-            storage_options = {
-                "AWS_REGION": secrets.aws_region,
-                "AWS_ACCESS_KEY_ID": secrets.aws_access_key_id,
-                "AWS_SECRET_ACCESS_KEY": secrets.aws_secret_access_key,
-                "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
-            }
-        else:
-            storage_options = {}
+            storage_options["AWS_REGION"] = secrets.aws_region
+            storage_options["AWS_ACCESS_KEY_ID"] = secrets.aws_access_key_id
+            storage_options["AWS_SECRET_ACCESS_KEY"] = secrets.aws_secret_access_key
+            storage_options["AWS_S3_ALLOW_UNSAFE_RENAME"] = "true"
 
         writer_kwargs = {
             "table_or_uri": self.connection_config.table_uri,
