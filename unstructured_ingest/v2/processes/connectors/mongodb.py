@@ -146,7 +146,7 @@ class MongoDBIndexer(Indexer):
                     connector_type=self.connector_type,
                     source_identifiers=source_identifiers,
                     metadata=metadata,
-                    additional_metadata={}, 
+                    additional_metadata={},
                 )
                 yield file_data
 
