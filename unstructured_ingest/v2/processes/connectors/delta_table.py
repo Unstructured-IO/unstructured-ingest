@@ -26,6 +26,7 @@ CONNECTOR_TYPE = "delta_table"
 
 
 class DeltaTableAccessConfig(AccessConfig):
+    aws_region: Optional[str] = Field(default=None, description="AWS Region")
     aws_access_key_id: Optional[str] = Field(default=None, description="AWS Access Key Id")
     aws_secret_access_key: Optional[str] = Field(default=None, description="AWS Secret Access Key")
 
@@ -36,7 +37,8 @@ class DeltaTableConnectionConfig(ConnectionConfig):
     )
     table_uri: str = Field(
         default=None,
-        description="The path to the target folder in the S3 bucket, formatted as s3://my-bucket/my-folder/ or local path",
+        description="The path to the target folder in the S3 bucket,"
+        "formatted as s3://my-bucket/my-folder/ or local path",
     )
 
 
@@ -100,6 +102,7 @@ class DeltaTableUploader(Uploader):
         secrets = self.connection_config.access_config.get_secret_value()
         if secrets.aws_access_key_id and secrets.aws_secret_access_key:
             storage_options = {
+                "AWS_REGION": secrets.aws_region,
                 "AWS_ACCESS_KEY_ID": secrets.aws_access_key_id,
                 "AWS_SECRET_ACCESS_KEY": secrets.aws_secret_access_key,
                 "AWS_S3_ALLOW_UNSAFE_RENAME": "true",

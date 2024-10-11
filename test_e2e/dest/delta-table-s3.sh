@@ -41,10 +41,12 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --work-dir "$WORK_DIR" \
   delta-table \
   --table-uri "$DESTINATION_TABLE" \
+  --aws-region "us-east-2" \
   --aws-access-key-id "$S3_INGEST_TEST_ACCESS_KEY" \
   --aws-secret-access-key "$S3_INGEST_TEST_SECRET_KEY"
 
 python "$SCRIPT_DIR"/python/test-ingest-delta-table-output.py \
   --table-uri "$DESTINATION_TABLE" \
+  --aws-region "us-east-2" \
   --aws-access-key-id "$S3_INGEST_TEST_ACCESS_KEY" \
   --aws-secret-access-key "$S3_INGEST_TEST_SECRET_KEY"
