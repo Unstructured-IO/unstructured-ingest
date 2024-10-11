@@ -6,7 +6,7 @@ from notion_client.api_endpoints import BlocksEndpoint as NotionBlocksEndpoint
 from notion_client.api_endpoints import DatabasesEndpoint as NotionDatabasesEndpoint
 from notion_client.api_endpoints import Endpoint
 from notion_client.api_endpoints import PagesEndpoint as NotionPagesEndpoint
-from notion_client.errors import RequestTimeoutError
+from notion_client.errors import RequestTimeoutError, HTTPResponseError
 
 from unstructured_ingest.ingest_backoff import RetryHandler
 from unstructured_ingest.interfaces import RetryStrategyConfig
@@ -29,7 +29,7 @@ def _get_retry_strategy(
     retryable_exceptions = (
         httpx.TimeoutException,
         httpx.HTTPStatusError,
-        notion_client.errors.HTTPResponseError,
+        HTTPResponseError,
     )
 
     return RetryHandler(
