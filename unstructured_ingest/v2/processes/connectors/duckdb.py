@@ -1,13 +1,10 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 
-import numpy as np
 import pandas as pd
-from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError

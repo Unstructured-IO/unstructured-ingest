@@ -25,6 +25,7 @@ all_tests=(
   'databricks-volumes.sh'
   'delta-table.sh'
   'dropbox.sh'
+  'duckdb.sh'
   'elasticsearch.sh'
   'gcs.sh'
   'kafka-local.sh'
