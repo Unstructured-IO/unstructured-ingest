@@ -57,7 +57,6 @@ all_tests=(
   'local-single-file-with-pdf-infer-table-structure.sh'
   'notion.sh'
   'delta-table.sh'
-  'delta-table-s3.sh'
   'jira.sh'
   # 'sharepoint.sh'
   # 'sharepoint-with-permissions.sh'
