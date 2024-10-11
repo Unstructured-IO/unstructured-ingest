@@ -8,3 +8,4 @@ dataclasses_json
 tqdm
 click
 opentelemetry-sdk
+notion-client
