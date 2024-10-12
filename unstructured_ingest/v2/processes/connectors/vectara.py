@@ -67,32 +67,23 @@ class VectaraUploadStager(UploadStager):
     def conform_dict(data: dict) -> dict:
         """
         Prepares dictionary in the format that Chroma requires
-        """
-        def get_metadata(element) -> Dict[str, Any]:
-            """
-            Select which meta-data fields to include and optionally map them to a new new.
-            remove the "metadata-" prefix from the keys
-            """
-            metadata_map = {
-                "page_number": "page_number",
-                "data_source-url": "url",
-                "filename": "filename",
-                "filetype": "filetype",
-                "last_modified": "last_modified",
-            }
-            md = flatten_dict(element, separator="-", flatten_lists=True)
-            md = {k.replace("metadata-", ""): v for k, v in md.items()}
-            md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
-            return md
-        
-        element_id = data.get("element_id", str(uuid.uuid4()))
-        return {
-            "id": element_id,
-            "embedding": data.pop("embeddings", None),
-            "document": data.pop("text", None),
-            "metadata": flatten_dict(get_metadata(data), separator="-", flatten_lists=True, remove_none=True),
-        }
 
+        Select which meta-data fields to include and optionally map them to a new new.
+        remove the "metadata-" prefix from the keys
+        """
+        metadata_map = {    
+            "page_number": "page_number",
+            "data_source-url": "url",
+            "data_source-record_locator-path": "path",
+            "filename": "filename",
+            "filetype": "filetype",
+            "last_modified": "last_modified",
+        }
+        md = flatten_dict(data, separator="-", flatten_lists=True)
+        md = {k.replace("metadata-", ""): v for k, v in md.items()}
+        md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
+        return md
+        
     def run(
         self,
         elements_filepath: Path,
@@ -101,12 +92,30 @@ class VectaraUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
+        docs_list: Dict[Dict[str, Any]] = []
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-        conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
+        
+        docs_list: Dict[Dict[str, Any]] = []
+        conformed_elements = {
+            "documentId": str(uuid.uuid4()),
+            "title": elements_contents[0].get("metadata", {}).get("data_source", {}).get("record_locator", {}).get("path"),
+            "section": [
+                    {
+                        "text": element.pop("text", None),
+                        "metadataJson": json.dumps(self.conform_dict(data=element)),
+                    }
+                    for element in elements_contents
+                ],
+        }
+        logger.info(
+            f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}",
+        )
+        docs_list.append(conformed_elements)
+
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
+            json.dump(docs_list, output_file)
         return output_path
 
 
@@ -288,22 +297,7 @@ class VectaraUploader(Uploader):
         docs_list: Dict[Dict[str, Any]] = []
 
         with path.open("r") as json_file:
-            dict_content = json.load(json_file)
-            vdoc = {
-                "documentId": str(uuid.uuid4()),
-                "title": dict_content[0].get("metadata", {}).get("data_source", {}).get("url"),
-                "section": [
-                    {
-                        "text": element.pop("text", None),
-                        "metadataJson": json.dumps(element),
-                    }
-                    for element in dict_content
-                ],
-            }
-            logger.info(
-                f"Extending {len(vdoc)} json elements from content in {path}",
-            )
-            docs_list.append(vdoc)
+            docs_list = json.load(json_file)
         self.write_dict(docs_list=docs_list)
 
 
