@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import fnmatch
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
+from time import time
 from typing import TYPE_CHECKING, Any, Generator, List, Optional
 from urllib.parse import urlparse
 
@@ -32,8 +34,8 @@ if TYPE_CHECKING:
 
 
 class GitHubAccessConfig(AccessConfig):
-    access_token: Optional[str] = Field(
-        default=None, sensitive=False, overload_name="github_access_token"
+    git_access_token: Optional[str] = Field(
+        default=None, sensitive=False, overload_name="git_access_token"
     )
 
 
@@ -73,7 +75,7 @@ class GitHubConnectionConfig(ConnectionConfig):
     def get_repo(self) -> "Repository":
         from github import Github
 
-        github = Github(self.access_config.access_token)
+        github = Github(self.access_config.git_access_token)
         return github.get_repo(self.repo_path)
 
 
@@ -120,7 +122,7 @@ class GitHubIndexer(Indexer):
 
         logger.debug("Running 'precheck'...")
 
-        auth = Auth.Token(self.connection_config.access_config.access_token)
+        auth = Auth.Token(self.connection_config.access_config.git_access_token)
 
         try:
             requester = Requester(
@@ -179,6 +181,16 @@ class GitHubIndexer(Indexer):
                 if self.connection_config.branch is not None:
                     record_locator["branch"] = self.connection_config.branch
 
+                date_modified = datetime.strptime(
+                    element._headers["last-modified"],
+                    "%a, %d %b %Y %H:%M:%S %Z",
+                ).isoformat()
+
+                date_created = datetime.strptime(
+                    element._headers["date"],
+                    "%a, %d %b %Y %H:%M:%S %Z",
+                ).isoformat()
+
                 yield FileData(
                     identifier=element.sha,
                     connector_type=CONNECTOR_TYPE,
@@ -188,7 +200,12 @@ class GitHubIndexer(Indexer):
                         rel_path=rel_path,
                     ),
                     metadata=FileDataSourceMetadata(
-                        url=element.url, version=element.etag, record_locator=record_locator
+                        url=element.url,
+                        version=element.etag,
+                        record_locator=record_locator,
+                        date_modified=date_modified,
+                        date_created=date_created,
+                        date_processed=str(time()),
                     ),
                     additional_metadata={
                         "content-type": element._headers.get("content-type", ""),
