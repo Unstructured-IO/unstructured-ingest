@@ -29,7 +29,7 @@ GH_READ_ONLY_ACCESS_TOKEN=${GH_READ_ONLY_ACCESS_TOKEN:-none}
 ACCESS_TOKEN_FLAGS=""
 # to update test fixtures, "export OVERWRITE_FIXTURES=true" and rerun this script
 if [[ "$GH_READ_ONLY_ACCESS_TOKEN" != "none" ]]; then
-  ACCESS_TOKEN_FLAGS="--access-token $GH_READ_ONLY_ACCESS_TOKEN"
+  ACCESS_TOKEN_FLAGS="--git-access-token $GH_READ_ONLY_ACCESS_TOKEN"
 elif [[ "$CI" == "true" ]]; then
   echo "Warning: GH_READ_ONLY_ACCESS_TOKEN is not defined in the CI environment."
   echo "This can lead to intermittent failures in test-ingest-github.sh, as non-auth'ed"
@@ -46,7 +46,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.date_created,metadata.data_source.date_modified \
   --strategy hi_res \
   --preserve-downloads \
   --reprocess \
