@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass, field
 from multiprocessing import Process
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import Field, Secret
 
@@ -18,9 +18,6 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-
-if TYPE_CHECKING:
-    pass
 
 CONNECTOR_TYPE = "delta_table"
 
