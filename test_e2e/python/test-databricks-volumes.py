@@ -58,6 +58,32 @@ def test(
 @click.option("--catalog", type=str, required=True)
 @click.option("--volume", type=str, required=True)
 @click.option("--volume-path", type=str, required=True)
+@click.option("--local-filepath", type=str, required=True)
+def upload(
+        host: str,
+        client_id: str,
+        client_secret: str,
+        catalog: str,
+        volume: str,
+        volume_path: str,
+        local_filepath: str,
+):
+    client = WorkspaceClient(host=host, client_id=client_id, client_secret=client_secret)
+
+    # open local_filepath as binary
+    with open(local_filepath, "rb") as file_contents:
+        client.files.upload(file_path=_get_volume_path(catalog, volume, volume_path), contents=file_contents)
+
+    print("Databricks upload successfull!")
+
+
+@cli.command()
+@click.option("--host", type=str, required=True)
+@click.option("--client-id", type=str, required=True)
+@click.option("--client-secret", type=str, required=True)
+@click.option("--catalog", type=str, required=True)
+@click.option("--volume", type=str, required=True)
+@click.option("--volume-path", type=str, required=True)
 def cleanup(
     host: str,
     client_id: str,
