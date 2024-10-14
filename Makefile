@@ -119,4 +119,8 @@ check-version:
 ###########
 .PHONY: unit-test
 unit-test:
-	PYTHONPATH=. pytest test
+	PYTHONPATH=. pytest test/unit
+
+.PHONY: integration-test
+unit-test:
+	PYTHONPATH=. pytest test/integration
