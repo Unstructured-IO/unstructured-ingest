@@ -136,3 +136,7 @@ integration-test-chunkers:
 .PHONY: integration-test-embedders
 integration-test-embedders:
 	PYTHONPATH=. pytest -sv test/integration/embedders
+
+.PHONY: integration-test-connectors
+integration-test-connectors:
+	PYTHONPATH=. pytest -sv test/integration/connectors
