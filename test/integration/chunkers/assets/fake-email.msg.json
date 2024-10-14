@@ -15,7 +15,7 @@
       "languages": [
         "eng"
       ],
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -34,7 +34,7 @@
       "languages": [
         "eng"
       ],
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -54,7 +54,7 @@
         "eng"
       ],
       "parent_id": "1114e85a861bac7c4ed9450af9029b17",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -74,7 +74,7 @@
         "eng"
       ],
       "parent_id": "1114e85a861bac7c4ed9450af9029b17",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

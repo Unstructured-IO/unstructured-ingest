@@ -10,7 +10,7 @@
       ],
       "filename": "fake-html.html",
       "filetype": "text/html",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -24,7 +24,7 @@
       ],
       "filename": "fake-html.html",
       "filetype": "text/html",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

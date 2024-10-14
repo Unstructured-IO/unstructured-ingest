@@ -10,7 +10,7 @@
       ],
       "filename": "fake-doc.rtf",
       "filetype": "text/rtf",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -24,7 +24,7 @@
       ],
       "filename": "fake-doc.rtf",
       "filetype": "text/rtf",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

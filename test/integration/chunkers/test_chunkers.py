@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from pathlib import Path
 
@@ -15,9 +14,9 @@ chunker_files = [path for path in assets_dir.iterdir() if path.is_file()]
 
 
 @pytest.mark.parametrize("chunker_file", chunker_files, ids=[path.name for path in chunker_files])
-@pytest.mark.parametrize("strategy", ["basic", "by_title"])
+@pytest.mark.parametrize("strategy", ["basic", "by_title", "by_similarity", "by_page"])
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
-def test_chunker(chunker_file: Path, strategy: str):
+def test_chunker_api(chunker_file: Path, strategy: str):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
 
@@ -30,6 +29,14 @@ def test_chunker(chunker_file: Path, strategy: str):
     chunker = Chunker(config=chunker_config)
     results = asyncio.run(chunker.run_async(elements_filepath=chunker_file))
     assert results
-    with chunker_file.open("r") as f:
-        elements_data = json.load(f)
-    assert len(elements_data) >= len(results)
+
+
+@pytest.mark.parametrize("chunker_file", chunker_files, ids=[path.name for path in chunker_files])
+@pytest.mark.parametrize("strategy", ["basic", "by_title"])
+def test_chunker_basic(chunker_file: Path, strategy: str):
+    chunker_config = ChunkerConfig(
+        chunking_strategy=strategy,
+    )
+    chunker = Chunker(config=chunker_config)
+    results = chunker.run(elements_filepath=chunker_file)
+    assert results

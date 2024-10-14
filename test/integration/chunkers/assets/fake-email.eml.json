@@ -17,7 +17,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -38,7 +38,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -60,7 +60,7 @@
       ],
       "parent_id": "3af769629208842d7db0e738e5cbb812",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -82,7 +82,7 @@
       ],
       "parent_id": "3af769629208842d7db0e738e5cbb812",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

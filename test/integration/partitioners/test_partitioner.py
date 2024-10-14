@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from pathlib import Path
 
@@ -28,10 +29,15 @@ def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
-        strategy="fast", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
+        strategy="hi_res", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
     )
     partitioner = Partitioner(config=partitioner_config)
     results = asyncio.run(partitioner.run_async(filename=partition_file))
+    results_dir = int_test_dir / "results"
+    results_dir.mkdir(exist_ok=True)
+    results_path = results_dir / f"{partition_file.name}.json"
+    with results_path.open("w") as f:
+        json.dump(results, f, indent=2)
     assert results
 
 

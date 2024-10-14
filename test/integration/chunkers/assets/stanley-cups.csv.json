@@ -10,7 +10,7 @@
         "eng"
       ],
       "filetype": "text/csv",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

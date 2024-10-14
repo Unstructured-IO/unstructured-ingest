@@ -17,7 +17,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -38,7 +38,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -59,7 +59,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -80,7 +80,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

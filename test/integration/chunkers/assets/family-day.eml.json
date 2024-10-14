@@ -17,7 +17,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -38,7 +38,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -59,7 +59,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -80,7 +80,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -101,7 +101,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -123,7 +123,7 @@
       ],
       "parent_id": "5df38eba0ec073f8e5b0d4b891e0eede",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -144,7 +144,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -165,7 +165,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -186,7 +186,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]

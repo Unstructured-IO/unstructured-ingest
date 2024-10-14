@@ -17,7 +17,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -39,7 +39,7 @@
       ],
       "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -61,7 +61,7 @@
       ],
       "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -83,7 +83,7 @@
       ],
       "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -105,7 +105,7 @@
       ],
       "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -127,7 +127,7 @@
       ],
       "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -149,7 +149,7 @@
       ],
       "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   },
   {
@@ -170,7 +170,7 @@
         "eng"
       ],
       "filetype": "message/rfc822",
-      "data_source": null
+      "data_source": {}
     }
   }
 ]
