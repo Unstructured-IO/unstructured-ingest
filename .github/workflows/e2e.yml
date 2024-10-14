@@ -31,18 +31,10 @@ jobs:
       matrix:
         test: ["partitioners", "chunkers"]
     runs-on: ubuntu-latest
-    needs: [ setup ]
     steps:
       - uses: 'actions/checkout@v4'
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: Get full Python version
-        id: full-python-version
-        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-      - name: Setup virtual environment
-        uses: ./.github/actions/base-cache
         with:
           python-version: "3.10"
       - name: Run ${{ matrix.test }} integration test
@@ -50,7 +42,8 @@ jobs:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
-          source .venv/bin/activate
+          make install-client
+          make install-test
           make integration-test-${{ matrix.test }}
 
   test_src:
