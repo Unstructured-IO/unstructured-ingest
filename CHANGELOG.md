@@ -1,4 +1,4 @@
-## 0.2.2-dev3
+## 0.2.2-dev4
 
 ### Enhancements
 
@@ -6,6 +6,7 @@
 * **Added migration for GitLab Source V2**
 * **Added V2 confluence source connector**
 * **Added OneDrive destination connector**
+* **Qdrant destination to v2**
 
 ## 0.2.1
 
