@@ -1,7 +1,8 @@
-## 0.0.24-dev1
+## 0.0.25
 
 ### Enhancements
 
+* **Support pinecone namespace on upload**
 * **Migrate Outlook Source Connector to V2**
 * **Support for Databricks Volumes source connector**
 
