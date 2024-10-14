@@ -61,7 +61,7 @@ class DeltaTableUploadStager(UploadStager):
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
 
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
+        output_path = Path(output_dir) / Path(f"{output_filename}.parquet")
 
         df = convert_to_pandas_dataframe(elements_dict=elements_contents)
         df.to_parquet(output_path)
