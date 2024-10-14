@@ -9,6 +9,7 @@ OUTPUT_FOLDER_NAME=delta-table-dest
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
 DESTINATION_TABLE=s3://utic-platform-test-destination/test-delta-tables/
+AWS_REGION="us-east-2"
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 CI=${CI:-"false"}
 
@@ -41,12 +42,12 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --work-dir "$WORK_DIR" \
   delta-table \
   --table-uri "$DESTINATION_TABLE" \
-  --aws-region "us-east-2" \
+  --aws-region "$AWS_REGION" \
   --aws-access-key-id "$S3_INGEST_TEST_ACCESS_KEY" \
   --aws-secret-access-key "$S3_INGEST_TEST_SECRET_KEY"
 
 python "$SCRIPT_DIR"/python/test-ingest-delta-table-output.py \
   --table-uri "$DESTINATION_TABLE" \
-  --aws-region "us-east-2" \
+  --aws-region "$AWS_REGION" \
   --aws-access-key-id "$S3_INGEST_TEST_ACCESS_KEY" \
   --aws-secret-access-key "$S3_INGEST_TEST_SECRET_KEY"

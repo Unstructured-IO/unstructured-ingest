@@ -70,7 +70,7 @@ class DeltaTableUploadStager(UploadStager):
 
 
 class DeltaTableUploaderConfig(UploaderConfig):
-    mode: Literal["error", "append", "overwrite", "ignore"] = "error"
+    mode: Literal["error", "append", "overwrite", "ignore"] = "overwrite"
     schema_mode: Optional[Literal["merge", "overwrite"]] = None
     engine: Literal["pyarrow", "rust"] = "pyarrow"
 
@@ -97,7 +97,7 @@ class DeltaTableUploader(Uploader):
         )
         storage_options = {}
         secrets = self.connection_config.access_config.get_secret_value()
-        if secrets.aws_access_key_id and secrets.aws_secret_access_key:
+        if secrets.aws_region and secrets.aws_access_key_id and secrets.aws_secret_access_key:
             storage_options["AWS_REGION"] = secrets.aws_region
             storage_options["AWS_ACCESS_KEY_ID"] = secrets.aws_access_key_id
             storage_options["AWS_SECRET_ACCESS_KEY"] = secrets.aws_secret_access_key
