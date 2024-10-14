@@ -21,7 +21,7 @@ def requires_dependencies(
     extras: Optional[str] = None,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Decorator ensuring required modules are installed.
-    
+
     Use on functions with local imports to ensure required modules are available and log
     an installation instruction if they're not.
 
