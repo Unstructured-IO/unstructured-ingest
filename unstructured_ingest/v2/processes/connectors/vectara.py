@@ -74,7 +74,6 @@ class VectaraUploadStager(UploadStager):
         metadata_map = {    
             "page_number": "page_number",
             "data_source-url": "url",
-            "data_source-record_locator-path": "path",
             "filename": "filename",
             "filetype": "filetype",
             "last_modified": "last_modified",
