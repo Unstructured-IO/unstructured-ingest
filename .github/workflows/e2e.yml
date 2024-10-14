@@ -57,7 +57,6 @@ jobs:
       - name: Run ${{ matrix.test }} integration test
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OCTOAI_API_KEY: ${{ secrets.OCTOAI_API_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           MXBAI_API_KEY: ${{ secrets.MXBAI_API_KEY }}

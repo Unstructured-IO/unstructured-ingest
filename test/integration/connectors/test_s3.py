@@ -1,9 +1,12 @@
+import os
 import tempfile
+import uuid
 from pathlib import Path
 
 import pytest
 
-from unstructured_ingest.v2.interfaces import FileData
+from test.integration.utils import requires_env
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     CONNECTOR_TYPE,
     S3AccessConfig,
@@ -12,6 +15,8 @@ from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3DownloaderConfig,
     S3Indexer,
     S3IndexerConfig,
+    S3Uploader,
+    S3UploaderConfig,
 )
 
 
@@ -26,19 +31,19 @@ def validate_postdownload_file_data(file_data: FileData):
 
 
 @pytest.fixture
-def connection_config() -> S3ConnectionConfig:
+def anon_connection_config() -> S3ConnectionConfig:
     return S3ConnectionConfig(access_config=S3AccessConfig(), anonymous=True)
 
 
 @pytest.mark.asyncio
-async def test_s3_source(connection_config: S3ConnectionConfig):
+async def test_s3_source(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/small-pdf-set/")
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         download_config = S3DownloaderConfig(download_dir=tempdir_path)
-        indexer = S3Indexer(connection_config=connection_config, index_config=indexer_config)
+        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
         downloader = S3Downloader(
-            connection_config=connection_config, download_config=download_config
+            connection_config=anon_connection_config, download_config=download_config
         )
         for file_data in indexer.run():
             assert file_data
@@ -51,3 +56,42 @@ async def test_s3_source(connection_config: S3ConnectionConfig):
             validate_postdownload_file_data(file_data=postdownload_file_data)
         downloaded_files = [p for p in tempdir_path.rglob("*") if p.is_file()]
         assert len(downloaded_files) == 4
+
+
+def get_aws_credentials() -> dict:
+    access_key = os.getenv("S3_INGEST_TEST_ACCESS_KEY", None)
+    assert access_key
+    secret_key = os.getenv("S3_INGEST_TEST_SECRET_KEY", None)
+    assert secret_key
+    return {"aws_access_key_id": access_key, "aws_secret_access_key": secret_key}
+
+
+@pytest.mark.asyncio
+@requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
+async def test_s3_destination(upload_file: Path):
+    aws_credentials = get_aws_credentials()
+    s3_bucket = "s3://utic-ingest-test-fixtures"
+    destination_path = f"{s3_bucket}/destination/{uuid.uuid4()}"
+    connection_config = S3ConnectionConfig(
+        access_config=S3AccessConfig(
+            key=aws_credentials["aws_access_key_id"],
+            secret=aws_credentials["aws_secret_access_key"],
+        ),
+    )
+    upload_config = S3UploaderConfig(remote_url=destination_path)
+    uploader = S3Uploader(connection_config=connection_config, upload_config=upload_config)
+    s3fs = uploader.fs
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    try:
+        if uploader.is_async():
+            await uploader.run_async(path=upload_file, file_data=file_data)
+        else:
+            uploader.run(path=upload_file, file_data=file_data)
+        uploaded_files = s3fs.ls(path=destination_path)
+        assert len(uploaded_files) == 1
+    finally:
+        s3fs.rm(path=destination_path, recursive=True)
