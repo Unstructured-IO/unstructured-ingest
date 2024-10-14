@@ -2,33 +2,44 @@ import json
 import multiprocessing as mp
 from typing import TYPE_CHECKING,Optional,List,Dict,Any
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from pathlib import Path
+
+from datetime import date, datetime
+
+from dateutil import parser
+from pydantic import Field
 
 from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError, WriteError
-from unstructured_ingest.interfaces import (
+from unstructured_ingest.v2.interfaces import (
     AccessConfig,
-    BaseConnectorConfig,
-    BaseDestinationConnector,
-    ConfigSessionHandleMixin,
-    IngestDocSessionHandleMixin,
-    WriteConfig,
+    ConnectionConfig,
+    FileData,
+    Uploader,
+    UploaderConfig,
+    UploadStager,
+    UploadStagerConfig,
 )
-from unstructured_ingest.logger import logger
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
     from qdrant_client import QdrantClient
 
 
-@dataclass
+CONNECTOR_TYPE = "qdrant"
+
+
 class QdrantAccessConfig(AccessConfig):
     api_key: Optional[str] = enhanced_field(sensitive=True)
 
 
-@dataclass
-class SimpleQdrantConfig(ConfigSessionHandleMixin, BaseConnectorConfig):
+
+class QdrantConnectionConfig(ConnectionConfig):
     collection_name: str
     location: Optional[str] = None
     url: Optional[str] = None
@@ -43,13 +54,98 @@ class SimpleQdrantConfig(ConfigSessionHandleMixin, BaseConnectorConfig):
     force_disable_check_same_thread: Optional[bool] = False
     access_config: Optional[QdrantAccessConfig] = None
 
+class QdrantUploadStagerConfig(UploadStagerConfig):
+    pass
+
 
 @dataclass
-class QdrantWriteConfig(WriteConfig):
-    batch_size: int = 50
-    num_processes: int = 1
+class QdrantUploadStager(UploadStager):
+    upload_stager_config: QdrantUploadStagerConfig = field(
+        default_factory=lambda: QdrantUploadStagerConfig()
+    )
+
+    @staticmethod
+    def parse_date_string(date_string: str) -> date:
+        try:
+            timestamp = float(date_string)
+            return datetime.fromtimestamp(timestamp)
+        except Exception as e:
+            logger.debug(f"date {date_string} string not a timestamp: {e}")
+        return parser.parse(date_string)
+    
+    @staticmethod
+    def conform_dict(data: dict) -> dict:
+        """
+        Prepares dictionary in the format that Chroma requires
+        """
+        return {
+            "id": str(uuid.uuid4()),
+            "vector": data.pop("embeddings", {}),
+            "payload": {
+                "text": data.pop("text", None),
+                "element_serialized": json.dumps(data),
+                **flatten_dict(
+                    data,
+                    separator="-",
+                    flatten_lists=True,
+                ),
+            },
+        }
+
+    def run(
+        self,
+        elements_filepath: Path,
+        file_data: FileData,
+        output_dir: Path,
+        output_filename: str,
+        **kwargs: Any,
+    ) -> Path:
+        with open(elements_filepath) as elements_file:
+            elements_contents = json.load(elements_file)
+        conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
+        output_path = Path(output_dir) / Path(f"{output_filename}.json")
+        with open(output_path, "w") as output_file:
+            json.dump(conformed_elements, output_file)
+        return output_path
 
 
+class QdrantUploaderConfig(UploaderConfig):
+    batch_size: int = Field(default=50, description="Number of records per batch")
+    pool_threads: Optional[int] = Field(
+        default=1, description="Optional limit on number of threads to use for upload"
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
 @dataclass
 class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConnector):
     write_config: QdrantWriteConfig
@@ -128,17 +224,17 @@ class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationCon
             ) as pool:
                 pool.map(self.upsert_batch, list(batch_generator(elements_dict, qdrant_batch_size)))
 
-    def normalize_dict(self, element_dict: dict) -> dict:
-        return {
-            "id": str(uuid.uuid4()),
-            "vector": element_dict.pop("embeddings", {}),
-            "payload": {
-                "text": element_dict.pop("text", None),
-                "element_serialized": json.dumps(element_dict),
-                **flatten_dict(
-                    element_dict,
-                    separator="-",
-                    flatten_lists=True,
-                ),
-            },
-        }
+    # def normalize_dict(self, element_dict: dict) -> dict:
+    #     return {
+    #         "id": str(uuid.uuid4()),
+    #         "vector": element_dict.pop("embeddings", {}),
+    #         "payload": {
+    #             "text": element_dict.pop("text", None),
+    #             "element_serialized": json.dumps(element_dict),
+    #             **flatten_dict(
+    #                 element_dict,
+    #                 separator="-",
+    #                 flatten_lists=True,
+    #             ),
+    #         },
+    #     }
