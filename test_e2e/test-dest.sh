@@ -21,7 +21,7 @@ all_tests=(
   'box.sh'
   'chroma.sh'
   'clarifai.sh'
-#  'couchbase.sh'  # tmp disable failing on CI
+  #  'couchbase.sh'  # tmp disable failing on CI
   'databricks-volumes.sh'
   'delta-table.sh'
   'dropbox.sh'
