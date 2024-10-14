@@ -128,7 +128,7 @@ class MongoDBIndexer(Indexer):
                     date_created = doc_id.generation_time.isoformat()
 
                 source_identifiers = SourceIdentifiers(
-                    fullpath=str(doc_id), filename=str(doc_id), rel_path=str(doc_id)
+                    fullpath=str(doc_id), filename=str(doc_id), rel_path=str(f'{doc_id}.txt')
                 )
 
                 metadata = FileDataSourceMetadata(
