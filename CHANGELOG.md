@@ -1,8 +1,10 @@
-## 0.0.25-dev0
+## 0.0.24-dev1
 
 ### Enhancements
 
+* **Migrate Outlook Source Connector to V2**
 * **Databricks Delta Table destination to v2**
+
 
 ## 0.0.24
 
