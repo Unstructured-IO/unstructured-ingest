@@ -30,8 +30,8 @@ CONNECTOR_TYPE = "vectara"
 
 
 class VectaraAccessConfig(AccessConfig):
-    oauth_client_id: str = enhanced_field(sensitive=True)
-    oauth_secret: str = enhanced_field(sensitive=True)
+    oauth_client_id: Optional[str] = Field(default=None, sensitive=True, description="Client ID")
+    oauth_secret: Optional[str] = Field(default=None, sensitive=True, description="Client Secret")
 
 
 class VectaraConnectionConfig(ConnectionConfig):
@@ -66,7 +66,7 @@ class VectaraUploadStager(UploadStager):
     @staticmethod
     def conform_dict(data: dict) -> dict:
         """
-        Prepares dictionary in the format that Chroma requires
+        Prepares dictionary in the format that Vectara requires
 
         Select which meta-data fields to include and optionally map them to a new new.
         remove the "metadata-" prefix from the keys
