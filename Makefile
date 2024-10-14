@@ -128,3 +128,7 @@ integration-test:
 .PHONY: integration-test-partitioners
 integration-test-partitioners:
 	PYTHONPATH=. pytest -sv test/integration/partitioners
+
+.PHONY: integration-test-chunkers
+integration-test-chunkers:
+	PYTHONPATH=. pytest -sv test/integration/chunkers
