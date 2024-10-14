@@ -128,7 +128,7 @@ class MongoDBIndexer(Indexer):
                     date_created = doc_id.generation_time.isoformat()
 
                 source_identifiers = SourceIdentifiers(
-                    fullpath=str(doc_id), filename=str(doc_id), rel_path=str(f'{doc_id}.txt')
+                    fullpath=str(doc_id), filename=str(doc_id), rel_path=str(doc_id)
                 )
 
                 metadata = FileDataSourceMetadata(
@@ -213,7 +213,7 @@ class MongoDBDownloader(Downloader):
             raise ValueError("Download path could not be determined")
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
-
+        download_path = download_path.with_suffix(".txt")
         with open(download_path, "w", encoding="utf8") as f:
             f.write(concatenated_values)
 
