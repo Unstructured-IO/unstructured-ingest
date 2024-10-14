@@ -139,20 +139,16 @@ class DatabricksVolumesIndexer(Indexer):
     def precheck(self) -> None:
         try:
             self.connection_config.get_client()
-            logger.info("Indexer connection OK")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        logger.info(f"Indexer looking into: {self.connection_config.path}")
         for file_info in self.connection_config.get_client().dbfs.list(
             path=self.connection_config.path, recursive=self.index_config.recursive
         ):
             if file_info.is_dir:
                 continue
-            logger.debug(f"Indexer found file: {file_info.path}")
-
             rel_path = file_info.path.replace(self.connection_config.path, "")
             if rel_path.startswith("/"):
                 rel_path = rel_path[1:]
@@ -208,19 +204,7 @@ class DatabricksVolumesDownloader(Downloader):
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
-        return DownloadResponse(
-            file_data=FileData(
-                identifier=file_data.identifier,
-                connector_type=CONNECTOR_TYPE,
-                metadata=FileDataSourceMetadata(
-                    date_processed=str(time()),
-                    record_locator={
-                        "hosts": self.connection_config.host,
-                    },
-                ),
-            ),
-            path=download_path,
-        )
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 class DatabricksVolumesUploaderConfig(UploaderConfig):
