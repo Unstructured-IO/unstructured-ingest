@@ -41,7 +41,7 @@ if __name__ == "__main__":
             chunking_strategy="by_title", chunk_include_orig_elements=False
         ),
         embedder_config=EmbedderConfig(
-            embedding_provider="langchain-openai", embedding_api_key=os.getenv("OPENAI_API_KEY")
+            embedding_provider="openai", embedding_api_key=os.getenv("OPENAI_API_KEY")
         ),
         destination_connection_config=AzureCognitiveSearchConnectionConfig(
             access_config=AzureCognitiveSearchAccessConfig(

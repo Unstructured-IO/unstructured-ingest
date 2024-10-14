@@ -45,7 +45,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
         extras="embed-vertexai",
     )
     def get_client(self) -> "TextEmbeddingModel":
-        """Creates a Langchain VertexAI python client to embed elements."""
+        """Creates a VertexAI python client to embed elements."""
         from vertexai.language_models import TextEmbeddingModel
 
         self.register_application_credentials()

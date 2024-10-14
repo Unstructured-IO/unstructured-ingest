@@ -1,16 +1,35 @@
-## 0.0.23-dev0
+## 0.0.24-dev1
+
+### Enhancements
+
+* **Migrate Outlook Source Connector to V2**
 
 ### Fixes
 
 * **Update Sharepoint Creds and Expected docs**
+
+## 0.0.24
+
+### Enhancements
+
+* **Support dynamic metadata mapping in Pinecone uploader**
+
+## 0.0.23
+
+### Fixes
+
+* **Remove check for langchain dependency in embedders**
 
 ## 0.0.22
 
 ### Enhancements
 
 * **Add documentation for developing sources/destinations**
+
 * **Leverage `uv` for pip compile**
+
 * **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
+
 * **Drop langchain as dependency for embedders**
 
 ## 0.0.21

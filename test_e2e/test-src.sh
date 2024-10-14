@@ -63,7 +63,8 @@ all_tests=(
   'hubspot.sh'
   'local-embed.sh'
   'local-embed-bedrock.sh'
-  'local-embed-octoai.sh'
+  # NOTE (yao): octoai url is giving 404
+  # 'local-embed-octoai.sh'
   'local-embed-vertexai.sh'
   'local-embed-voyageai.sh'
   'local-embed-mixedbreadai.sh'
