@@ -3,6 +3,7 @@
 ### Enhancements
 
 * **Migrate Outlook Source Connector to V2**
+* **Support for Databricks Volumes source connector**
 
 ### Fixes
 
