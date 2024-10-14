@@ -122,5 +122,9 @@ unit-test:
 	PYTHONPATH=. pytest test/unit
 
 .PHONY: integration-test
-unit-test:
-	PYTHONPATH=. pytest test/integration
+integration-test:
+	PYTHONPATH=. pytest -sv test/integration
+
+.PHONY: integration-test-partitioners
+integration-test-partitioners:
+	PYTHONPATH=. pytest -sv test/integration/partitioners
