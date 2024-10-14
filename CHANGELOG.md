@@ -1,7 +1,8 @@
-## 0.0.25
+## 0.0.24-dev1
 
 ### Enhancements
 
+* **Migrate Outlook Source Connector to V2**
 * **Support for Databricks Volumes source connector**
 
 ## 0.0.24
