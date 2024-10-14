@@ -1,3 +1,9 @@
+## 0.0.24-dev0
+
+### Enhancements
+
+* **Migrate Outlook Source Connector to V2**
+
 ## 0.0.24
 
 ### Enhancements
