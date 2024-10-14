@@ -8,10 +8,7 @@ from deltalake import DeltaTable
 @click.option("--aws-access-key-id", type=str)
 @click.option("--aws-secret-access-key", type=str)
 def run_check(
-    table_uri: str,
-    aws_region: str,
-    aws_access_key_id: str,
-    aws_secret_access_key: str
+    table_uri: str, aws_region: str, aws_access_key_id: str, aws_secret_access_key: str
 ) -> None:
     print(f"Checking contents of table at {table_uri}")
     storage_options = {}
