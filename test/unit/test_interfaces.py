@@ -18,7 +18,7 @@ from unstructured_ingest.interfaces import (
     ReadConfig,
 )
 
-DIRECTORY = pathlib.Path(__file__).parent.parent.resolve()
+DIRECTORY = pathlib.Path(__file__).parents[2].resolve()
 EXAMPLE_DOCS_DIRECTORY = DIRECTORY / "example-docs"
 TEST_DOWNLOAD_DIR = "/tmp"
 TEST_OUTPUT_DIR = "/tmp"
