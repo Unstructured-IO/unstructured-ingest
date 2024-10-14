@@ -101,6 +101,9 @@ class DeltaTableUploader(Uploader):
             storage_options["AWS_REGION"] = secrets.aws_region
             storage_options["AWS_ACCESS_KEY_ID"] = secrets.aws_access_key_id
             storage_options["AWS_SECRET_ACCESS_KEY"] = secrets.aws_secret_access_key
+            # Delta-rs doesn't support concurrent S3 writes without external locks (DynamoDB).
+            # This flag allows single-writer uploads to S3 without using locks, according to:
+            # https://delta-io.github.io/delta-rs/usage/writing/writing-to-s3-with-locking-provider/
             storage_options["AWS_S3_ALLOW_UNSAFE_RENAME"] = "true"
 
         writer_kwargs = {
