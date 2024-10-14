@@ -49,7 +49,7 @@ class OutlookConnectionConfig(ConnectionConfig):
         description="Authentication token provider for Microsoft apps",
     )
 
-    @requires_dependencies(["msal"])
+    @requires_dependencies(["msal"], extras="outlook")
     def _acquire_token(self):
         """Acquire token via MSAL"""
         from msal import ConfidentialClientApplication
@@ -65,7 +65,7 @@ class OutlookConnectionConfig(ConnectionConfig):
         token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
         return token
 
-    @requires_dependencies(["office365"], extras="graph")
+    @requires_dependencies(["office365"], extras="outlook")
     @SourceConnectionError.wrap
     def get_client(self) -> "GraphClient":
         from office365.graph_client import GraphClient
