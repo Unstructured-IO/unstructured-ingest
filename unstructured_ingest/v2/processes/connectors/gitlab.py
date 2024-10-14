@@ -64,10 +64,18 @@ class GitLabConnectionConfig(ConnectionConfig):
     def get_project(self) -> "Project":
         from gitlab import Gitlab
 
-        logger.info(f"Accessing Base URL: '{self.base_url}'")
+        logger.info(f"Accessing Base URL: '{self.base_url}'", extra={"base_url": self.base_url})
+
         gitlab = Gitlab(self.base_url, private_token=self.access_config.access_token)
-        logger.info(f"Accessing Project: '{self.repo_path}'")
-        return gitlab.projects.get(self.repo_path)
+
+        logger.info(f"Accessing Project: '{self.repo_path}'", extra={"repo_path": self.repo_path})
+
+        project = gitlab.projects.get(self.repo_path)
+
+        logger.info(
+            f"Successfully accessed project '{self.repo_path}'", extra={"repo_path": self.repo_path}
+        )
+        return project
 
 
 class GitLabIndexerConfig(IndexerConfig):
@@ -147,8 +155,6 @@ class GitLabIndexer(Indexer):
             all=True,
         )
         for element in git_tree:
-            logger.info(f"Element: {element}")
-
             rel_path = element["path"].replace(self.connection_config.repo_path, "").lstrip("/")
             if (
                 element["type"] == "blob"
@@ -199,7 +205,6 @@ class GitLabDownloader(Downloader):
         from gitlab.exceptions import GitlabHttpError
 
         try:
-            logger.info(f"Path: '{self.path}'")
             project = self.connection_config.get_project()
             content_file = project.files.get(
                 self.path,
