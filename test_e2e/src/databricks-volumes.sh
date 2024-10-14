@@ -45,7 +45,6 @@ python "$SCRIPT_DIR"/python/test-databricks-volumes.py upload \
   --volume-path "$DATABRICKS_VOLUME_PATH/fake-memo.pdf" \
   --local-filepath example-docs/pdf/fake-memo.pdf
 
-
 PYTHONPATH=. ./unstructured_ingest/main.py \
   databricks-volumes \
   --host "$DATABRICKS_HOST" \

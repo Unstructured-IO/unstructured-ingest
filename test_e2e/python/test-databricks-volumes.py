@@ -60,20 +60,19 @@ def test(
 @click.option("--volume-path", type=str, required=True)
 @click.option("--local-filepath", type=str, required=True)
 def upload(
-        host: str,
-        client_id: str,
-        client_secret: str,
-        catalog: str,
-        volume: str,
-        volume_path: str,
-        local_filepath: str,
+    host: str,
+    client_id: str,
+    client_secret: str,
+    catalog: str,
+    volume: str,
+    volume_path: str,
+    local_filepath: str,
 ):
     client = WorkspaceClient(host=host, client_id=client_id, client_secret=client_secret)
 
     remote_filepath = _get_volume_path(catalog, volume, volume_path)
     print(f"Uploading {local_filepath} to {remote_filepath}")
 
-    # open local_filepath as binary
     with open(local_filepath, "rb") as file_contents:
         client.files.upload(file_path=remote_filepath, contents=file_contents)
 
