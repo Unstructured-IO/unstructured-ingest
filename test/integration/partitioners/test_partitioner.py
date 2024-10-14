@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 from pathlib import Path
@@ -25,14 +24,15 @@ image_partition_files = [
     "partition_file", all_partition_files, ids=[path.name for path in all_partition_files]
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
-def test_partitioner_api_hi_res(partition_file: Path):
+@pytest.mark.asyncio
+async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
         strategy="hi_res", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
     )
     partitioner = Partitioner(config=partitioner_config)
-    results = asyncio.run(partitioner.run_async(filename=partition_file))
+    results = await partitioner.run_async(filename=partition_file)
     results_dir = int_test_dir / "results"
     results_dir.mkdir(exist_ok=True)
     results_path = results_dir / f"{partition_file.name}.json"
@@ -47,14 +47,15 @@ def test_partitioner_api_hi_res(partition_file: Path):
     ids=[path.name for path in non_image_partition_files],
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
-def test_partitioner_api_fast(partition_file: Path):
+@pytest.mark.asyncio
+async def test_partitioner_api_fast(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
         strategy="fast", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
     )
     partitioner = Partitioner(config=partitioner_config)
-    results = asyncio.run(partitioner.run_async(filename=partition_file))
+    results = await partitioner.run_async(filename=partition_file)
     assert results
 
 
@@ -62,7 +63,8 @@ def test_partitioner_api_fast(partition_file: Path):
     "partition_file", image_partition_files, ids=[path.name for path in image_partition_files]
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
-def test_partitioner_api_fast_error(partition_file: Path):
+@pytest.mark.asyncio
+async def test_partitioner_api_fast_error(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
@@ -70,4 +72,4 @@ def test_partitioner_api_fast_error(partition_file: Path):
     )
     partitioner = Partitioner(config=partitioner_config)
     with pytest.raises(SDKError):
-        asyncio.run(partitioner.run_async(filename=partition_file))
+        await partitioner.run_async(filename=partition_file)

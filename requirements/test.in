@@ -3,6 +3,7 @@ pytest
 pytest-cov
 pytest-mock
 unstructured
+pytest-asyncio
 
 # Connector specific deps
 cryptography
