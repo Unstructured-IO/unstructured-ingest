@@ -1,4 +1,7 @@
-## 0.0.24
+## 0.0.24-dev1
+
+* **Added migration for GitLab Source V2**
+  * **Updated the expected output for GitLab Source V2**
 
 ### Enhancements
 
