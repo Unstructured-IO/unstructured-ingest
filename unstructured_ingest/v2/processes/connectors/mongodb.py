@@ -173,6 +173,7 @@ class MongoDBDownloader(Downloader):
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
         from bson.objectid import ObjectId
+        from datetime import datetime
 
         client = self.create_client()
         database = client[self.connection_config.database]
@@ -199,6 +200,20 @@ class MongoDBDownloader(Downloader):
         for doc in docs:
             doc_id = doc["_id"]
             doc.pop("_id", None)
+
+            # Extract date_created from the document or ObjectId
+            date_created = None
+            if "date_created" in doc:
+                # If the document has a 'date_created' field, use it
+                date_created = doc["date_created"]
+                if isinstance(date_created, datetime):
+                    date_created = date_created.isoformat()
+                else:
+                    # Convert to ISO format if it's a string
+                    date_created = str(date_created)
+            elif isinstance(doc_id, ObjectId):
+                # Use the ObjectId's generation time
+                date_created = doc_id.generation_time.isoformat()
 
             flattened_dict = flatten_dict(dictionary=doc)
             concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
@@ -230,6 +245,7 @@ class MongoDBDownloader(Downloader):
 
             # Update metadata
             individual_file_data.metadata = FileDataSourceMetadata(
+                date_created=date_created,  # Include date_created here
                 date_processed=str(time()),
                 record_locator={
                     "database": self.connection_config.database,
