@@ -153,6 +153,7 @@ class Partitioner(BaseProcess, ABC):
     async def partition_via_api(
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
+        metadata = metadata or {}
         logger.debug(f"partitioning file {filename} with metadata: {metadata}")
 
         elements = await call_api(

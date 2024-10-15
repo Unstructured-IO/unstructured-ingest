@@ -1,0 +1,569 @@
+[
+  {
+    "type": "Title",
+    "element_id": "7c7e55a31eca8a4d929ca12464873107",
+    "text": "Module One - Introduction to Product Development and Quality Assurance",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a49fb492b292cace0f9e8b61e6bf4ca4",
+    "text": "This module introduces the learner to the importance and principles of product development and quality assurance, explores what kinds of products might be developed and tested, considers potential challenges and provides guidance on ensuring standards and efficiency throughout the development process. It then introduces the four steps of successful development.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9d4e6f1cc6199c02c2e37cecd0a0919b",
+    "text": "\u25cf What are product types?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "46ed4f8e0690cd7923e498569d593cf0",
+    "text": "\u25cf What challenges may arise in development?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "97c18d580bab9549870a6e2c0ff0d0e4",
+    "text": "\u25cf What is product development and quality assurance, and who is involved?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "df2b104f00db0cdce25b39b7be367a8a",
+    "text": "\u25cf The importance and benefits of product development and quality assurance",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "eee3e21a72bd3cf2c7a913a34c5b351c",
+    "text": "\u25cf Which products should be developed and tested?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "bde14bcb9b09720ba4a6160f89f08e51",
+    "text": "\u25cf Ensuring standards and efficiency in development",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "f4d14e9201663f7e97843414157965b3",
+    "text": "\u25cf Timescales and conduct of development",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "7c7e55a31eca8a4d929ca12464873107",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "bb9e1eb27ca7d2d92114a5294411a837",
+    "text": "Module Two: Initial Planning and Step 1: Concept Development",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b839e173e6765429aad8442db1b81245",
+    "text": "This module considers immediate actions following a product idea, including market research, defining requirements, and initial collaboration with stakeholders. It then looks at who should lead the development and what relevant information might need to be gathered as part of the process.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "bb9e1eb27ca7d2d92114a5294411a837",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9542c2777e7f8ac2c5acf43be074075c",
+    "text": "Market research and defining requirements Collaboration and initial planning Engaging stakeholders and recording information",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "bb9e1eb27ca7d2d92114a5294411a837",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9aad7654ae84f331e18d380985f32be0",
+    "text": "\u25cf Who should lead the development?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "bb9e1eb27ca7d2d92114a5294411a837",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "ace030f750516178b52dc1fee58a47e9",
+    "text": "\u25cf Step 1: Concept development",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "bb9e1eb27ca7d2d92114a5294411a837",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "0aefa894bcc83be97f292b34dcc67bcc",
+    "text": "\u25cf What is the product idea, target market, and objective?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "bb9e1eb27ca7d2d92114a5294411a837",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "8a569df606546dda3fe2cafde381480f",
+    "text": "Module Three: Step 2: Design and Prototyping",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "97af4677bef9a97fba12b8f64fedd0d4",
+    "text": "This module looks at the role of the design team in detail and outlines an approach for creating and testing prototypes based on the concept developed in the previous step. It looks at potential root challenges that may arise during the design phase, as well as considering underlying considerations.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7538cb280aafe7c24a959739b2ca7410",
+    "text": "\u25cf The role of the design team",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "38deeefb23038df00c44783bbd069ec9",
+    "text": "\u25cf Determining the immediate and underlying challenges of design",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b0e54c204b1d8ebdd620413c57bed50e",
+    "text": "\u25cf Underlying considerations: usability and user experience",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "55578f7536b079d786eedc2e68f18f3c",
+    "text": "\u25cf Underlying considerations: materials and manufacturing processes",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "d162e8c121610ac2d6797f87dd959308",
+    "text": "\u25cf Underlying considerations: compliance and standards",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "d8191693f8478d214a9b23092e21be18",
+    "text": "\u25cf Determining root challenges: organizational factors",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "d9630d5f555c99e0ebfd3ed2bbca312e",
+    "text": "\u25cf The product development lifecycle",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "c231d386fbcb43063bc81b35dc7aa9e6",
+    "text": "\u25cf Collaboration, responsibilities, and training",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "6c58ee0126b63b631c451226f8bde105",
+    "text": "\u25cf Design thinking and innovation",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "6dcf8408c2911aca0ff98c250eaa67fc",
+    "text": "\u25cf Management of changes, feedback, and iterations",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "f2fadf69cb1587f9f9ce7817830f3c64",
+    "text": "\u25cf Determining root challenges: market factors",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "2a2700721e6e154c303b05e4bc5fb190",
+    "text": "\u25cf How will the product meet market needs?",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9d789dd4e0f8e45320491bb29f638490",
+    "text": "\u25cf Design considerations",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "e5910bac75ce8a970af05f6d03c6d122",
+    "text": "Case study",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "6e6cfeb42081bfd97b161a0d5d97f495",
+    "text": "\u25cf Prototyping methodologies",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "6b418b426d7f9644e5d642bc4009e2a0",
+    "text": "\u25cf Intellectual property considerations",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "01d93bfc939e475636b497d4d90e667b",
+    "text": "\u25cf Concept validation",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3a48033a1dc193bfb38bd4b203e1b4f9",
+    "text": "\u25cf Team collaboration and leadership",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "364607085f187579e9b16f81d2ef4e4a",
+    "text": "\u25cf Budgeting and resource planning",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5b962fabd05e57164b5dc81e395fe4b1",
+    "text": "\u25cf Technology and tools selection",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "8f86aa45566af2d354d62011946d4ea8",
+    "text": "]",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "8a569df606546dda3fe2cafde381480f",
+      "filename": "list-item-example.pdf",
+      "data_source": {}
+    }
+  }
+]

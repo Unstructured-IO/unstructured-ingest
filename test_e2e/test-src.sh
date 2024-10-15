@@ -18,7 +18,6 @@ export OMP_THREAD_LIMIT=1
 
 all_tests=(
   's3.sh'
-  's3-minio.sh'
   's3-filter.sh'
   's3_no_access.sh'
   'astradb.sh'

@@ -1,0 +1,176 @@
+[
+  {
+    "type": "Title",
+    "element_id": "63e8109b08db29d5c23d2fbd280a69ef",
+    "text": "Hello!\u00a0",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "fffe4c7cc427f86d52c7b5e00bc98be6",
+    "text": "Here's the attachments!",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "e8d4131f003bb9406e6e8b087df0ccb5",
+    "text": "It includes:",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "5c7e3e84bae08c01d9521126737d11e5",
+    "text": "Lots of whitespace",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "4e0a9538d20e883b8d111a5fa0fd5cf9",
+    "text": "Little\u00a0to no content",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "31853febd37f296c5e0ae3d6ba0f5be1",
+    "text": "and is a quick read",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "8f5a7788a8e7efeb360f6bff99eb3431",
+    "text": "Best,",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "63e8109b08db29d5c23d2fbd280a69ef",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "a4e6fbd0b1b1a32c8870d37823cef834",
+    "text": "Mallori",
+    "metadata": {
+      "filename": "fake-email-attachment.eml",
+      "email_message_id": "CAPgNNXSzLVJ-d1OCX_TjFgJU7ugtQrjFybPtAMmmYZzphxNFYg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Fake email with attachment",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  }
+]

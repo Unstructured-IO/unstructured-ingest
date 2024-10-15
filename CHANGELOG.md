@@ -1,8 +1,10 @@
-## 0.0.26-dev0
+## 0.0.26-dev1
 
 ### Enhancements
 
 * **Added MongoDB source V2 connector**
+
+## 0.0.26-dev0
 
 ## 0.0.25
 
