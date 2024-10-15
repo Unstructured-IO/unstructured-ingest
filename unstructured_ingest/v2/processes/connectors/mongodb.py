@@ -172,8 +172,9 @@ class MongoDBDownloader(Downloader):
     @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
-        from bson.objectid import ObjectId
         from datetime import datetime
+
+        from bson.objectid import ObjectId
 
         client = self.create_client()
         database = client[self.connection_config.database]
