@@ -160,6 +160,8 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
             yield pages
 
             next_cursor = response.get("next_cursor")
+            print("""here >>>> """)
+            print(next_cursor)
             if not response.get("has_more") or not next_cursor:
                 return
 

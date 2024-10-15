@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from time import time
 from typing import Any, Generator, List, Optional, Set, Tuple
+from uuid import UUID
 
 from pydantic import Field, SecretStr
 
@@ -46,6 +47,13 @@ class NotionIndexerConfig(IndexerConfig):
     recursive: bool = Field(
         default=False, description="Recursively process child pages and databases"
     )
+
+    def __post_init__(self):
+        if self.page_ids:
+            self.page_ids = [str(UUID(p.strip())) for p in self.page_ids]
+
+        if self.database_ids:
+            self.database_ids = [str(UUID(d.strip())) for d in self.database_ids]
 
 
 @dataclass
@@ -131,8 +139,8 @@ class NotionIndexer(Indexer):
     def get_page_file_data(self, page_id: str, client: "NotionClient") -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
-            date_created = page_metadata.get("created_time")
-            date_modified = page_metadata.get("last_edited_time")
+            date_created = page_metadata.created_time
+            date_modified = page_metadata.last_edited_time
             identifier = page_id
             source_identifiers = SourceIdentifiers(
                 filename=f"{page_id}.html",
@@ -163,8 +171,8 @@ class NotionIndexer(Indexer):
     ) -> Optional[FileData]:
         try:
             database_metadata = client.databases.retrieve(database_id=database_id)  # type: ignore
-            date_created = database_metadata.get("created_time")
-            date_modified = database_metadata.get("last_edited_time")
+            date_created = database_metadata.created_time
+            date_modified = database_metadata.last_edited_time
             identifier = database_id
             source_identifiers = SourceIdentifiers(
                 filename=f"{database_id}.html",

@@ -57,13 +57,14 @@ class Block(FromJSONMixin, GetHTMLMixin):
     created_by: PartialUser
     last_edited_time: str
     last_edited_by: PartialUser
+    # not_in_trash: bool
     archived: bool
+    in_trash: bool
     has_children: bool
     parent: Parent
     block: BlockBase
     object: str = "block"
     request_id: Optional[str] = None
-    # in_trash: bool
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type})"
@@ -75,8 +76,6 @@ class Block(FromJSONMixin, GetHTMLMixin):
         created_by = data.pop("created_by")
         last_edited_by = data.pop("last_edited_by")
         parent = data.pop("parent")
-        if "in_trash" in data:
-            data.pop("in_trash")
         try:
             block = cls(
                 created_by=PartialUser.from_dict(created_by),
