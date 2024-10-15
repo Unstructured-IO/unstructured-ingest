@@ -132,6 +132,7 @@ class MongoDBIndexer(Indexer):
 
             file_data = FileData(
                 identifier=batch_id,
+                doc_type="batch",
                 connector_type=self.connector_type,
                 metadata=metadata,
                 additional_metadata={
