@@ -1,8 +1,9 @@
-## 0.0.26-dev2
+## 0.0.26-dev3
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
+* **Add check that access config always wrapped in Secret**
 
 ## 0.0.25
 
