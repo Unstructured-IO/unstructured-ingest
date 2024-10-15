@@ -2,8 +2,9 @@ import json
 from dataclasses import dataclass, field
 from multiprocessing import Process
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
+import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -83,12 +84,40 @@ class DeltaTableUploader(Uploader):
     def precheck(self):
         pass
 
+    def process_csv(self, csv_paths: list[Path]) -> pd.DataFrame:
+        logger.debug(f"uploading content from {len(csv_paths)} csv files")
+        df = pd.concat((pd.read_csv(path) for path in csv_paths), ignore_index=True)
+        return df
+
+    def process_json(self, json_paths: list[Path]) -> pd.DataFrame:
+        logger.debug(f"uploading content from {len(json_paths)} json files")
+        all_records = []
+        for p in json_paths:
+            with open(p) as json_file:
+                all_records.extend(json.load(json_file))
+
+        return pd.DataFrame(data=all_records)
+
+    def process_parquet(self, parquet_paths: list[Path]) -> pd.DataFrame:
+        logger.debug(f"uploading content from {len(parquet_paths)} parquet files")
+        df = pd.concat((pd.read_parquet(path) for path in parquet_paths), ignore_index=True)
+        return df
+
+    def read_dataframe(self, path: Path) -> pd.DataFrame:
+        if path.suffix == ".csv":
+            return self.process_csv(csv_paths=[path])
+        elif path.suffix == ".json":
+            return self.process_json(json_paths=[path])
+        elif path.suffix == ".parquet":
+            return self.process_parquet(parquet_paths=[path])
+        else:
+            raise ValueError(f"Unsupported file type, must be parquet, json or csv file: {path}")
+
     @requires_dependencies(["deltalake"], extras="delta-table")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        import pandas as pd
         from deltalake.writer import write_deltalake
 
-        df = pd.read_parquet(path)
+        df = self.read_dataframe(path)
         logger.info(
             f"writing {len(df)} rows to destination table "
             f"at {self.connection_config.table_uri}\ndtypes: {df.dtypes}",
