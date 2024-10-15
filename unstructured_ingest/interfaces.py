@@ -100,7 +100,7 @@ class PartitionConfig(BaseConfig):
     flatten_metadata: bool = False
     metadata_exclude: list[str] = field(default_factory=list)
     metadata_include: list[str] = field(default_factory=list)
-    partition_endpoint: Optional[str] = "https://api.unstructured.io/general/v0/general"
+    partition_endpoint: Optional[str] = "https://api.unstructuredapp.io/general/v0/general"
     partition_by_api: bool = False
     api_key: Optional[str] = str(enhanced_field(default=None, sensitive=True)) or None
     hi_res_model_name: Optional[str] = None

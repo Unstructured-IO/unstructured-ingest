@@ -70,7 +70,6 @@ jobs:
           SHAREPOINT_PERMISSIONS_APP_CRED: ${{secrets.SHAREPOINT_PERMISSIONS_APP_CRED}}
           SHAREPOINT_PERMISSIONS_TENANT: ${{secrets.SHAREPOINT_PERMISSIONS_TENANT}}
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
-          UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
           UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

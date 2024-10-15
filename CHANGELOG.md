@@ -1,3 +1,8 @@
+## 0.0.26-dev3
+
+### Enhancements
+
+* **Move default API URL parameter value to serverless API**
 ## 0.0.26-dev2
 
 ### Fixes
