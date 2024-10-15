@@ -91,6 +91,11 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
                     predownload_filedata_check=validate_predownload_file_data,
                     postdownload_filedata_check=validate_postdownload_file_data,
                     expected_num_files=1,
+                    exclude_fields_extend=[
+                        "metadata.date_modified",
+                        "metadata.date_created",
+                        "additional_metadata.LastModified",
+                    ],
                 ),
             )
 

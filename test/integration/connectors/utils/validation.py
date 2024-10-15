@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -17,6 +17,15 @@ class ValidationConfigs:
     expected_num_files: Optional[int] = None
     predownload_filedata_check: Optional[Callable[[FileData], None]] = None
     postdownload_filedata_check: Optional[Callable[[FileData], None]] = None
+    exclude_fields: list[str] = field(
+        default_factory=lambda: ["local_download_path", "metadata.date_processed"]
+    )
+    exclude_fields_extend: list[str] = field(default_factory=list)
+
+    def get_exclude_fields(self) -> list[str]:
+        exclude_fields = self.exclude_fields
+        exclude_fields.extend(self.exclude_fields_extend)
+        return exclude_fields
 
     def run_file_data_validation(
         self, predownload_filedata: FileData, postdownload_file_data: FileData
@@ -34,6 +43,27 @@ class ValidationConfigs:
     def test_output_dir(self) -> Path:
         return expected_results_path / self.test_id
 
+    def omit_ignored_fields(self, data: dict) -> dict:
+        exclude_fields = self.get_exclude_fields()
+        # Ignore fields that dynamically change every time the tests run
+        copied_data = data.copy()
+        for exclude_field in exclude_fields:
+            exclude_field_vals = exclude_field.split(".")
+            if len(exclude_field_vals) == 1:
+                current_val = copied_data
+                drop_field = exclude_field_vals[0]
+                copied_data.pop(exclude_field_vals[0], None)
+            else:
+                current_val = copied_data
+                for val in exclude_field_vals[:-1]:
+                    current_val = current_val.get(val, {})
+                drop_field = exclude_field_vals[-1]
+            if drop_field == "*":
+                current_val.clear()
+            else:
+                current_val.pop(drop_field, None)
+        return copied_data
+
 
 def get_files(dir_path: Path) -> list[str]:
     return [
@@ -48,32 +78,34 @@ def check_files(expected_output_dir: Path, all_file_data: list[FileData]):
     assert not diff, "diff in files that exist: {}".format(", ".join(diff))
 
 
-def omit_ignored_fields(data: dict) -> None:
-    # Ignore fields that dynamically change every time the tests run
-    data.pop("local_download_path", None)
-    if metadata := data.get("metadata"):
-        metadata.pop("date_processed", None)
-
-
-def check_contents(expected_output_dir: Path, all_file_data: list[FileData]):
+def check_contents(
+    expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
+):
     found_diff = False
     for file_data in all_file_data:
         file_data_path = expected_output_dir / f"{file_data.identifier}.json"
         with file_data_path.open("r") as file:
             expected_file_data_contents = json.load(file)
         current_file_data_contents = file_data.to_dict()
-        omit_ignored_fields(expected_file_data_contents)
-        omit_ignored_fields(current_file_data_contents)
+        expected_file_data_contents = configs.omit_ignored_fields(expected_file_data_contents)
+        current_file_data_contents = configs.omit_ignored_fields(current_file_data_contents)
         diff = DeepDiff(expected_file_data_contents, current_file_data_contents)
+        print(diff)
         if diff:
             found_diff = True
+            print("DIFF")
             print(diff.to_json(indent=2))
-    assert not found_diff, "Diffs found between files"
+            print("END DIFF")
+    assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
-def run_expected_results_validation(expected_output_dir: Path, all_file_data: list[FileData]):
+def run_expected_results_validation(
+    expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
+):
     check_files(expected_output_dir=expected_output_dir, all_file_data=all_file_data)
-    check_contents(expected_output_dir=expected_output_dir, all_file_data=all_file_data)
+    check_contents(
+        expected_output_dir=expected_output_dir, all_file_data=all_file_data, configs=configs
+    )
 
 
 def run_directory_structure_validation(expected_output_dir: Path, download_files: list[str]):
@@ -110,6 +142,7 @@ async def source_connector_validation(
         run_expected_results_validation(
             expected_output_dir=configs.test_output_dir() / "file_data",
             all_file_data=persistent_file_data,
+            configs=configs,
         )
         download_files = get_files(dir_path=downloader.download_config.download_dir)
         download_files.sort()
