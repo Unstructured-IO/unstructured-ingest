@@ -65,7 +65,7 @@ jobs:
           make install-test
           make integration-test-embedders
 
-  connectors_integration_test:
+  source_connectors_integration_test:
     runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
@@ -84,8 +84,34 @@ jobs:
     - name: Test (end-to-end)
       run : |
         source .venv/bin/activate
+        sudo make install-docker-compose
+        docker compose version
         make install-test
-        make integration-test-connectors
+        make integration-test-connectors-src
+
+  destination_connectors_integration_test:
+    runs-on: ubuntu-latest-m
+    needs: [ setup ]
+    steps:
+    - uses: 'actions/checkout@v4'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Setup virtual environment
+      uses: ./.github/actions/base-cache
+      with:
+        python-version: "3.10"
+    - name: Test (end-to-end)
+      run : |
+        source .venv/bin/activate
+        sudo make install-docker-compose
+        docker compose version
+        make install-test
+        make integration-test-connectors-dest
 
   test_src:
     strategy:

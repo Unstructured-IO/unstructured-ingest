@@ -5,6 +5,12 @@ from pathlib import Path
 
 import pytest
 
+from test.integration.connectors.utils import (
+    DESTINATION_TAG,
+    SOURCE_TAG,
+    docker_compose_context,
+    env_setup_path,
+)
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
@@ -36,6 +42,7 @@ def anon_connection_config() -> S3ConnectionConfig:
 
 
 @pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
 async def test_s3_source(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/small-pdf-set/")
     with tempfile.TemporaryDirectory() as tempdir:
@@ -58,6 +65,34 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
         assert len(downloaded_files) == 4
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "minio")
+async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
+    anon_connection_config.endpoint_url = "http://localhost:9000"
+    indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/")
+    with docker_compose_context(docker_compose_path=env_setup_path / "minio"):
+        with tempfile.TemporaryDirectory() as tempdir:
+            tempdir_path = Path(tempdir)
+            download_config = S3DownloaderConfig(download_dir=tempdir_path)
+            indexer = S3Indexer(
+                connection_config=anon_connection_config, index_config=indexer_config
+            )
+            downloader = S3Downloader(
+                connection_config=anon_connection_config, download_config=download_config
+            )
+            for file_data in indexer.run():
+                assert file_data
+                validate_predownload_file_data(file_data=file_data)
+                if downloader.is_async():
+                    resp = await downloader.run_async(file_data=file_data)
+                else:
+                    resp = downloader.run(file_data=file_data)
+                postdownload_file_data = resp["file_data"]
+                validate_postdownload_file_data(file_data=postdownload_file_data)
+            downloaded_files = [p for p in tempdir_path.rglob("*") if p.is_file()]
+            assert len(downloaded_files) == 1
+
+
 def get_aws_credentials() -> dict:
     access_key = os.getenv("S3_INGEST_TEST_ACCESS_KEY", None)
     assert access_key
@@ -67,6 +102,7 @@ def get_aws_credentials() -> dict:
 
 
 @pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
 async def test_s3_destination(upload_file: Path):
     aws_credentials = get_aws_credentials()
