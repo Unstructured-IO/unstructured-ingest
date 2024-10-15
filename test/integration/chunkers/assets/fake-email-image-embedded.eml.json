@@ -1,0 +1,86 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "17311f283ba768b579b2eecfe9d79308",
+    "text": "This is a test email to use for unit tests. Important points:",
+    "metadata": {
+      "filename": "fake-email-image-embedded.eml",
+      "email_message_id": "CAPgNNXSUabyHhzHrDW3zBQ0Q2BVibVVrR+FpgtPGmXSXSX7XCg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "fake-email-image-embedded",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "d55f5009a9c509ce421483cfb03095d6",
+    "text": "hello\u00a0this is our logo.",
+    "metadata": {
+      "filename": "fake-email-image-embedded.eml",
+      "email_message_id": "CAPgNNXSUabyHhzHrDW3zBQ0Q2BVibVVrR+FpgtPGmXSXSX7XCg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "fake-email-image-embedded",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "53f5323cee9f10117e8e2fcae27a9f41",
+    "text": "Roses are red",
+    "metadata": {
+      "filename": "fake-email-image-embedded.eml",
+      "email_message_id": "CAPgNNXSUabyHhzHrDW3zBQ0Q2BVibVVrR+FpgtPGmXSXSX7XCg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "fake-email-image-embedded",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "07ee04ec458ec1f33e9bd3571a335771",
+    "text": "Violets are blue",
+    "metadata": {
+      "filename": "fake-email-image-embedded.eml",
+      "email_message_id": "CAPgNNXSUabyHhzHrDW3zBQ0Q2BVibVVrR+FpgtPGmXSXSX7XCg@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "fake-email-image-embedded",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  }
+]
