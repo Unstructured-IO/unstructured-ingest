@@ -46,7 +46,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.permissions_data \
   --strategy hi_res \
   --preserve-downloads \
   --reprocess \
