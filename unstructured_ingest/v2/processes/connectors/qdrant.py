@@ -224,17 +224,4 @@ class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationCon
             ) as pool:
                 pool.map(self.upsert_batch, list(batch_generator(elements_dict, qdrant_batch_size)))
 
-    # def normalize_dict(self, element_dict: dict) -> dict:
-    #     return {
-    #         "id": str(uuid.uuid4()),
-    #         "vector": element_dict.pop("embeddings", {}),
-    #         "payload": {
-    #             "text": element_dict.pop("text", None),
-    #             "element_serialized": json.dumps(element_dict),
-    #             **flatten_dict(
-    #                 element_dict,
-    #                 separator="-",
-    #                 flatten_lists=True,
-    #             ),
-    #         },
-    #     }
+
