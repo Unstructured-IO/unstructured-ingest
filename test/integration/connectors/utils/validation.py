@@ -90,12 +90,9 @@ def check_contents(
         expected_file_data_contents = configs.omit_ignored_fields(expected_file_data_contents)
         current_file_data_contents = configs.omit_ignored_fields(current_file_data_contents)
         diff = DeepDiff(expected_file_data_contents, current_file_data_contents)
-        print(diff)
         if diff:
             found_diff = True
-            print("DIFF")
             print(diff.to_json(indent=2))
-            print("END DIFF")
     assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
