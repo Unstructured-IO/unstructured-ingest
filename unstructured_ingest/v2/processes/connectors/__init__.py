@@ -89,6 +89,9 @@ add_destination_entry(destination_type=WEAVIATE_CONNECTOR_TYPE, entry=weaviate_d
 add_destination_entry(
     destination_type=DATABRICKS_VOLUMES_CONNECTOR_TYPE, entry=databricks_volumes_destination_entry
 )
+add_source_entry(
+    source_type=DATABRICKS_VOLUMES_CONNECTOR_TYPE, entry=databricks_volumes_source_entry
+)
 
 add_destination_entry(destination_type=SQL_CONNECTOR_TYPE, entry=sql_destination_entry)
 
