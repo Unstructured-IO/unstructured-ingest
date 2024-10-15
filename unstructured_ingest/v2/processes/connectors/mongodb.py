@@ -186,7 +186,6 @@ class MongoDBDownloader(Downloader):
         try:
             object_ids.append(ObjectId(doc_id))
         except InvalidId:
-            logger.error(f"Invalid ObjectId for doc_id: {doc_id}")
             raise ValueError(f"Invalid ObjectId for doc_id: {doc_id}")
 
         try:
