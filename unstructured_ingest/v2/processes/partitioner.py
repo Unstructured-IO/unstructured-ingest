@@ -55,7 +55,7 @@ class PartitionerConfig(BaseModel):
         "fields if they exist and drop all other fields. ",
     )
     partition_endpoint: Optional[str] = Field(
-        default="https://api.unstructured.io/general/v0/general",
+        default="https://api.unstructuredapp.io/general/v0/general",
         description="If partitioning via api, use the following host.",
     )
     partition_by_api: bool = Field(
