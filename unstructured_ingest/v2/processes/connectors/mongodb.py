@@ -19,7 +19,6 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -108,8 +107,6 @@ class MongoDBIndexer(Indexer):
 
     @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        from bson.objectid import ObjectId
-
         """Generates FileData objects for each document in the MongoDB collection."""
         client = self.create_client()
         database = client[self.connection_config.database]
