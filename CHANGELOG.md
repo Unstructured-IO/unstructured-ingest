@@ -1,7 +1,19 @@
-## 0.0.24-dev0
+## 0.0.25-dev0
 
 * **Added migration for GitHub Source V2**
   * **Updated the expected output for GitHub Source V2**
+
+## 0.0.25
+
+### Enhancements
+
+* **Support pinecone namespace on upload**
+* **Migrate Outlook Source Connector to V2**
+* **Support for Databricks Volumes source connector**
+
+### Fixes
+
+* **Update Sharepoint Creds and Expected docs**
 
 ## 0.0.24
 
@@ -20,8 +32,11 @@
 ### Enhancements
 
 * **Add documentation for developing sources/destinations**
+
 * **Leverage `uv` for pip compile**
+
 * **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
+
 * **Drop langchain as dependency for embedders**
 
 ## 0.0.21
