@@ -1,0 +1,39 @@
+{
+  "identifier": "ed83cc0e-d390-5018-bb74-bc4e2e46a206",
+  "connector_type": "s3",
+  "source_identifiers": {
+    "filename": "2023-Jan-economic-outlook.pdf",
+    "fullpath": "utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
+    "rel_path": "2023-Jan-economic-outlook.pdf"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
+    "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
+    "record_locator": {
+      "protocol": "s3",
+      "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
+      "metadata": {
+        "ingest-test": "custom metadata"
+      }
+    },
+    "date_created": "1720544414.0",
+    "date_modified": "1720544414.0",
+    "date_processed": "1729006180.411631",
+    "permissions_data": null,
+    "filesize_bytes": 2215938
+  },
+  "additional_metadata": {
+    "Key": "utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
+    "LastModified": "2024-07-09T17:00:14+00:00",
+    "ETag": "\"c7eed4fc056b089a98f6a3ad9ec9373e\"",
+    "Size": 2215938,
+    "StorageClass": "STANDARD",
+    "type": "file",
+    "size": 2215938,
+    "name": "utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
+    "original_file_path": "utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpqvtxwgph/2023-Jan-economic-outlook.pdf"
+}
