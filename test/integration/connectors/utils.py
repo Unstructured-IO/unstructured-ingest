@@ -17,6 +17,7 @@ def docker_compose_context(docker_compose_path: Path):
         elif (docker_compose_path / "docker-compose.yaml").exists():
             docker_compose_path = docker_compose_path / "docker-compose.yaml"
     assert docker_compose_path.is_file()
+    resp = None
     try:
         cmd = f"docker compose -f {docker_compose_path.resolve()} up -d --wait"
         print(f"Running command: {cmd}")
@@ -26,9 +27,12 @@ def docker_compose_context(docker_compose_path: Path):
             capture_output=True,
         )
         # Return code from docker compose using --wait can be 1 even if no error
-        print("STDOUT: {}".format(resp.stdout.decode("utf-8")))
-        print("STDERR: {}".format(resp.stderr.decode("utf-8")))
         yield
+    except Exception as e:
+        if resp:
+            print("STDOUT: {}".format(resp.stdout.decode("utf-8")))
+            print("STDERR: {}".format(resp.stderr.decode("utf-8")))
+        raise e
     finally:
         cmd = f"docker compose -f {docker_compose_path.resolve()} down --remove-orphans -v"
         print(f"Running command: {cmd}")
@@ -37,5 +41,6 @@ def docker_compose_context(docker_compose_path: Path):
             shell=True,
             capture_output=True,
         )
-        print("STDOUT: {}".format(final_resp.stdout.decode("utf-8")))
-        print("STDERR: {}".format(final_resp.stderr.decode("utf-8")))
+        if final_resp.returncode != 0:
+            print("STDOUT: {}".format(final_resp.stdout.decode("utf-8")))
+            print("STDERR: {}".format(final_resp.stderr.decode("utf-8")))
