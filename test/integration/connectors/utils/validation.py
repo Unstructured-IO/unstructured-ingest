@@ -15,8 +15,8 @@ from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 class ValidationConfigs:
     test_id: str
     expected_num_files: Optional[int] = None
-    predownload_filedata_check: Optional[Callable[[FileData], None]] = None
-    postdownload_filedata_check: Optional[Callable[[FileData], None]] = None
+    predownload_file_data_check: Optional[Callable[[FileData], None]] = None
+    postdownload_file_data_check: Optional[Callable[[FileData], None]] = None
     exclude_fields: list[str] = field(
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
@@ -28,12 +28,12 @@ class ValidationConfigs:
         return exclude_fields
 
     def run_file_data_validation(
-        self, predownload_filedata: FileData, postdownload_file_data: FileData
+        self, predownload_file_data: FileData, postdownload_file_data: FileData
     ):
-        if predownload_filedata_check := self.predownload_filedata_check:
-            predownload_filedata_check(predownload_filedata)
-        if postdownload_filedata_check := self.postdownload_filedata_check:
-            postdownload_filedata_check(postdownload_file_data)
+        if predownload_file_data_check := self.predownload_file_data_check:
+            predownload_file_data_check(predownload_file_data)
+        if postdownload_file_data_check := self.postdownload_file_data_check:
+            postdownload_file_data_check(postdownload_file_data)
 
     def run_download_dir_validation(self, download_dir: Path):
         if expected_num_files := self.expected_num_files:
@@ -113,55 +113,82 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
     assert directory_structure == download_files
 
 
+def update_fixtures(output_dir: Path, download_dir: Path, all_file_data: list[FileData]):
+    # Delete current files
+    shutil.rmtree(path=output_dir, ignore_errors=True)
+    output_dir.mkdir(parents=True)
+    # Rewrite the current file data
+    file_data_output_path = output_dir / "file_data"
+    file_data_output_path.mkdir(parents=True)
+    for file_data in all_file_data:
+        file_data_path = file_data_output_path / f"{file_data.identifier}.json"
+        with file_data_path.open(mode="w") as f:
+            json.dump(file_data.to_dict(), f, indent=2)
+
+    # Record file structure of download directory
+    download_files = get_files(dir_path=download_dir)
+    download_files.sort()
+    download_dir_record = output_dir / "directory_structure.json"
+    with download_dir_record.open(mode="w") as f:
+        json.dump({"directory_structure": download_files}, f, indent=2)
+
+
+def run_all_validations(
+    configs: ValidationConfigs,
+    predownload_file_data: list[FileData],
+    postdownload_file_data: list[FileData],
+    download_dir: Path,
+    test_output_dir: Path,
+):
+    for pre_data, post_data in zip(predownload_file_data, postdownload_file_data):
+        configs.run_file_data_validation(
+            predownload_file_data=pre_data, postdownload_file_data=post_data
+        )
+    configs.run_download_dir_validation(download_dir=download_dir)
+    run_expected_results_validation(
+        expected_output_dir=test_output_dir / "file_data",
+        all_file_data=postdownload_file_data,
+        configs=configs,
+    )
+    download_files = get_files(dir_path=download_dir)
+    download_files.sort()
+    run_directory_structure_validation(
+        expected_output_dir=configs.test_output_dir(), download_files=download_files
+    )
+
+
 async def source_connector_validation(
     indexer: Indexer,
     downloader: Downloader,
     configs: ValidationConfigs,
     overwrite_fixtures: bool = os.getenv("OVERWRITE_FIXTURES", "False").lower() == "true",
 ) -> None:
-    persistent_file_data = []
+    all_predownload_file_data = []
+    all_postdownload_file_data = []
+    indexer.precheck()
+    download_dir = downloader.download_config.download_dir
+    test_output_dir = configs.test_output_dir()
     for file_data in indexer.run():
         assert file_data
-        predownload_filedata = replace(file_data)
+        predownload_file_data = replace(file_data)
+        all_predownload_file_data.append(predownload_file_data)
         if downloader.is_async():
             resp = await downloader.run_async(file_data=file_data)
         else:
             resp = downloader.run(file_data=file_data)
         postdownload_file_data = replace(resp["file_data"])
-        if not overwrite_fixtures:
-            configs.run_file_data_validation(
-                predownload_filedata=predownload_filedata,
-                postdownload_file_data=postdownload_file_data,
-            )
-        persistent_file_data.append(postdownload_file_data)
+        all_postdownload_file_data.append(postdownload_file_data)
     if not overwrite_fixtures:
-        configs.run_download_dir_validation(download_dir=downloader.download_config.download_dir)
-        run_expected_results_validation(
-            expected_output_dir=configs.test_output_dir() / "file_data",
-            all_file_data=persistent_file_data,
+        run_all_validations(
             configs=configs,
-        )
-        download_files = get_files(dir_path=downloader.download_config.download_dir)
-        download_files.sort()
-        run_directory_structure_validation(
-            expected_output_dir=configs.test_output_dir(), download_files=download_files
+            predownload_file_data=all_predownload_file_data,
+            postdownload_file_data=all_postdownload_file_data,
+            download_dir=download_dir,
+            test_output_dir=test_output_dir,
         )
     else:
-        # Delete current files
-        output_dir = configs.test_output_dir()
-        shutil.rmtree(path=output_dir, ignore_errors=True)
-        output_dir.mkdir(parents=True)
-        # Rewrite the current file data
-        file_data_output_path = output_dir / "file_data"
-        file_data_output_path.mkdir(parents=True)
-        for file_data in persistent_file_data:
-            file_data_path = file_data_output_path / f"{file_data.identifier}.json"
-            with file_data_path.open(mode="w") as f:
-                json.dump(file_data.to_dict(), f, indent=2)
-
-        # Record file structure of download directory
-        download_files = get_files(dir_path=downloader.download_config.download_dir)
-        download_files.sort()
-        download_dir_record = output_dir / "directory_structure.json"
-        with download_dir_record.open(mode="w") as f:
-            json.dump({"directory_structure": download_files}, f, indent=2)
+        update_fixtures(
+            output_dir=test_output_dir,
+            download_dir=download_dir,
+            all_file_data=all_postdownload_file_data,
+        )

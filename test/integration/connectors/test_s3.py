@@ -61,8 +61,8 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
             downloader=downloader,
             configs=ValidationConfigs(
                 test_id="s3",
-                predownload_filedata_check=validate_predownload_file_data,
-                postdownload_filedata_check=validate_postdownload_file_data,
+                predownload_file_data_check=validate_predownload_file_data,
+                postdownload_file_data_check=validate_postdownload_file_data,
                 expected_num_files=4,
             ),
         )
@@ -88,8 +88,8 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
                 downloader=downloader,
                 configs=ValidationConfigs(
                     test_id="s3-minio",
-                    predownload_filedata_check=validate_predownload_file_data,
-                    postdownload_filedata_check=validate_postdownload_file_data,
+                    predownload_file_data_check=validate_predownload_file_data,
+                    postdownload_file_data_check=validate_postdownload_file_data,
                     expected_num_files=1,
                     exclude_fields_extend=[
                         "metadata.date_modified",
