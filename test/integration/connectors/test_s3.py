@@ -8,8 +8,10 @@ import pytest
 from test.integration.connectors.utils import (
     DESTINATION_TAG,
     SOURCE_TAG,
+    ValidationConfigs,
     docker_compose_context,
     env_setup_path,
+    source_connector_validation,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
@@ -52,17 +54,15 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
         downloader = S3Downloader(
             connection_config=anon_connection_config, download_config=download_config
         )
-        for file_data in indexer.run():
-            assert file_data
-            validate_predownload_file_data(file_data=file_data)
-            if downloader.is_async():
-                resp = await downloader.run_async(file_data=file_data)
-            else:
-                resp = downloader.run(file_data=file_data)
-            postdownload_file_data = resp["file_data"]
-            validate_postdownload_file_data(file_data=postdownload_file_data)
-        downloaded_files = [p for p in tempdir_path.rglob("*") if p.is_file()]
-        assert len(downloaded_files) == 4
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=ValidationConfigs(
+                predownload_filedata_check=validate_predownload_file_data,
+                postdownload_filedata_check=validate_postdownload_file_data,
+                expected_num_files=4,
+            ),
+        )
 
 
 @pytest.mark.asyncio
@@ -80,17 +80,15 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
             downloader = S3Downloader(
                 connection_config=anon_connection_config, download_config=download_config
             )
-            for file_data in indexer.run():
-                assert file_data
-                validate_predownload_file_data(file_data=file_data)
-                if downloader.is_async():
-                    resp = await downloader.run_async(file_data=file_data)
-                else:
-                    resp = downloader.run(file_data=file_data)
-                postdownload_file_data = resp["file_data"]
-                validate_postdownload_file_data(file_data=postdownload_file_data)
-            downloaded_files = [p for p in tempdir_path.rglob("*") if p.is_file()]
-            assert len(downloaded_files) == 1
+            await source_connector_validation(
+                indexer=indexer,
+                downloader=downloader,
+                configs=ValidationConfigs(
+                    predownload_filedata_check=validate_predownload_file_data,
+                    postdownload_filedata_check=validate_postdownload_file_data,
+                    expected_num_files=1,
+                ),
+            )
 
 
 def get_aws_credentials() -> dict:
