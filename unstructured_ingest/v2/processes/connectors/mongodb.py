@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
-
+import sys
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
@@ -121,34 +121,25 @@ class MongoDBIndexer(Indexer):
         id_batches = [ids[i : i + batch_size] for i in range(0, len(ids), batch_size)]
 
         for id_batch in id_batches:
-            for doc_id in id_batch:
-                # Handle ObjectId to get the creation time
-                date_created = None
-                if isinstance(doc_id, ObjectId):
-                    date_created = doc_id.generation_time.isoformat()
+            batch_id = str(hash(frozenset(id_batch)) + sys.maxsize + 1)
 
-                source_identifiers = SourceIdentifiers(
-                    fullpath=str(doc_id), filename=str(doc_id), rel_path=str(doc_id)
-                )
+            metadata = FileDataSourceMetadata(
+                date_processed=str(time()),
+                record_locator={
+                    "database": self.connection_config.database,
+                    "collection": self.connection_config.collection,
+                },
+            )
 
-                metadata = FileDataSourceMetadata(
-                    date_created=date_created,
-                    date_processed=str(time()),
-                    record_locator={
-                        "database": self.connection_config.database,
-                        "collection": self.connection_config.collection,
-                        "document_id": str(doc_id),
-                    },
-                )
-
-                file_data = FileData(
-                    identifier=str(doc_id),
-                    connector_type=self.connector_type,
-                    source_identifiers=source_identifiers,
-                    metadata=metadata,
-                    additional_metadata={},
-                )
-                yield file_data
+            file_data = FileData(
+                identifier=batch_id,
+                connector_type=self.connector_type,
+                metadata=metadata,
+                additional_metadata={
+                    "ids": [str(doc_id) for doc_id in id_batch],
+                },
+            )
+            yield file_data
 
 
 @dataclass
@@ -188,38 +179,63 @@ class MongoDBDownloader(Downloader):
         database = client[self.connection_config.database]
         collection = database[self.connection_config.collection]
 
-        # Convert the identifier back to an ObjectId if necessary
-        try:
-            document_id = ObjectId(file_data.identifier)
-        except Exception:
-            document_id = file_data.identifier  # Handle non-ObjectId identifiers
+        ids = file_data.additional_metadata.get("ids", [])
+        if not ids:
+            raise ValueError("No document IDs provided in additional_metadata")
+
+        object_ids = []
+        for doc_id in ids:
+            try:
+                object_ids.append(ObjectId(doc_id))
+            except Exception:
+                object_ids.append(doc_id)
 
         try:
-            doc = collection.find_one({"_id": document_id})
+            docs = list(collection.find({"_id": {"$in": object_ids}}))
         except Exception as e:
-            logger.error(f"Failed to fetch document with ID {document_id}: {e}", exc_info=True)
+            logger.error(f"Failed to fetch documents: {e}", exc_info=True)
             raise e
 
-        if doc is None:
-            raise FileNotFoundError(f"Document with ID {document_id} not found")
+        download_responses = []
+        for doc in docs:
+            doc_id = doc["_id"]
+            doc.pop("_id", None)
 
-        doc.pop("_id", None)
+            flattened_dict = flatten_dict(dictionary=doc)
+            concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
 
-        flattened_dict = flatten_dict(dictionary=doc)
-        concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
+            individual_file_data = FileData(
+                identifier=str(doc_id),
+                connector_type=self.connector_type,
+            )
 
-        download_path = self.get_download_path(file_data)
-        if download_path is None:
-            raise ValueError("Download path could not be determined")
+            download_path = self.get_download_path(individual_file_data)
+            if download_path is None:
+                raise ValueError("Download path could not be determined")
 
-        download_path.parent.mkdir(parents=True, exist_ok=True)
-        download_path = download_path.with_suffix(".txt")
-        with open(download_path, "w", encoding="utf8") as f:
-            f.write(concatenated_values)
+            download_path.parent.mkdir(parents=True, exist_ok=True)
+            download_path = download_path.with_suffix(".txt")
 
-        file_data.local_download_path = str(download_path)
+            with open(download_path, "w", encoding="utf8") as f:
+                f.write(concatenated_values)
 
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+            individual_file_data.local_download_path = str(download_path)
+
+            individual_file_data.metadata = FileDataSourceMetadata(
+                date_processed=str(time()),
+                record_locator={
+                    "database": self.connection_config.database,
+                    "collection": self.connection_config.collection,
+                    "document_id": str(doc_id),
+                },
+            )
+
+            download_response = self.generate_download_response(
+                file_data=individual_file_data, download_path=download_path
+            )
+            download_responses.append(download_response)
+
+        return download_responses
 
 
 @dataclass
