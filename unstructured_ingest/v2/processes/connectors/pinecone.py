@@ -94,6 +94,10 @@ class PineconeUploaderConfig(UploaderConfig):
     pool_threads: Optional[int] = Field(
         default=1, description="Optional limit on number of threads to use for upload"
     )
+    namespace: Optional[str] = Field(
+        default=None,
+        description="The namespace to write to. If not specified, the default namespace is used",
+    )
 
 
 @dataclass
@@ -183,7 +187,11 @@ class PineconeUploader(Uploader):
             pool_threads = max_pool_threads
         index = self.connection_config.get_index(pool_threads=pool_threads)
         with index:
-            async_results = [index.upsert(vectors=chunk, async_req=True) for chunk in chunks]
+            upsert_kwargs = [{"vectors": chunk, "async_req": True} for chunk in chunks]
+            if namespace := self.upload_config.namespace:
+                for kwargs in upsert_kwargs:
+                    kwargs["namespace"] = namespace
+            async_results = [index.upsert(**kwarg) for kwarg in upsert_kwargs]
             # Wait for and retrieve responses (this raises in case of error)
             try:
                 results = [async_result.get() for async_result in async_results]
