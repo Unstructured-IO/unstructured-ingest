@@ -70,9 +70,7 @@ class DeltaTableUploadStager(UploadStager):
 
 
 class DeltaTableUploaderConfig(UploaderConfig):
-    mode: Literal["error", "append", "overwrite", "ignore"] = "overwrite"
-    schema_mode: Optional[Literal["merge", "overwrite"]] = None
-    engine: Literal["pyarrow", "rust"] = "pyarrow"
+    pass
 
 
 @dataclass
@@ -109,12 +107,9 @@ class DeltaTableUploader(Uploader):
         writer_kwargs = {
             "table_or_uri": self.connection_config.table_uri,
             "data": df,
-            "mode": self.upload_config.mode,
-            "engine": self.upload_config.engine,
+            "mode": "overwrite",
             "storage_options": storage_options,
         }
-        if self.upload_config.schema_mode is not None:
-            writer_kwargs["schema_mode"] = self.upload_config.schema_mode
         # NOTE: deltalake writer on Linux sometimes can finish but still trigger a SIGABRT and cause
         # ingest to fail, even though all tasks are completed normally. Putting the writer into a
         # process mitigates this issue by ensuring python interpreter waits properly for deltalake's

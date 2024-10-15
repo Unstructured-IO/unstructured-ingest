@@ -41,7 +41,5 @@ if __name__ == "__main__":
             access_config=DeltaTableAccessConfig(), table_uri="example_uri"
         ),
         stager_config=DeltaTableUploadStagerConfig(),
-        uploader_config=DeltaTableUploaderConfig(
-            drop_empty_cols=False, mode="overwrite", schema_mode=None, engine="pyarrow"
-        ),
+        uploader_config=DeltaTableUploaderConfig(),
     ).run()
