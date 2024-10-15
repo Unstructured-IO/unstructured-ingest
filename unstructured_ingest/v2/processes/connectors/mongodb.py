@@ -1,10 +1,11 @@
 import json
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
-from datetime import datetime
+
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
@@ -172,8 +173,8 @@ class MongoDBDownloader(Downloader):
     @requires_dependencies(["bson"], extras="mongodb")
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
-        from bson.objectid import ObjectId
         from bson.errors import InvalidId
+        from bson.objectid import ObjectId
 
         client = self.create_client()
         database = client[self.connection_config.database]
@@ -184,10 +185,11 @@ class MongoDBDownloader(Downloader):
             raise ValueError("No document IDs provided in additional_metadata")
 
         object_ids = []
-        try:
-            object_ids.append(ObjectId(doc_id))
-        except InvalidId:
-            raise ValueError(f"Invalid ObjectId for doc_id: {doc_id}")
+        for doc_id in ids:
+            try:
+                object_ids.append(ObjectId(doc_id))
+            except InvalidId:
+                raise ValueError(f"Invalid ObjectId for doc_id: {doc_id}")
 
         try:
             docs = list(collection.find({"_id": {"$in": object_ids}}))
