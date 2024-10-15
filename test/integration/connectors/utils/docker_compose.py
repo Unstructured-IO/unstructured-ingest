@@ -1,42 +1,6 @@
 import subprocess
 from contextlib import contextmanager
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional
-
-from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
-
-SOURCE_TAG = "source"
-DESTINATION_TAG = "destination"
-
-env_setup_path = Path(__file__).parents[3] / "test_e2e" / "env_setup"
-
-
-@dataclass
-class ValidationConfigs:
-    expected_num_files: Optional[int] = None
-    predownload_filedata_check: Optional[Callable[[FileData], None]] = None
-    postdownload_filedata_check: Optional[Callable[[FileData], None]] = None
-
-
-async def source_connector_validation(
-    indexer: Indexer, downloader: Downloader, configs: ValidationConfigs
-) -> None:
-    for file_data in indexer.run():
-        assert file_data
-        if predownload_filedata_check := configs.predownload_filedata_check:
-            predownload_filedata_check(file_data)
-        if downloader.is_async():
-            resp = await downloader.run_async(file_data=file_data)
-        else:
-            resp = downloader.run(file_data=file_data)
-        postdownload_file_data = resp["file_data"]
-        if postdownload_filedata_check := configs.postdownload_filedata_check:
-            postdownload_filedata_check(postdownload_file_data)
-    download_dir = downloader.download_config.download_dir
-    downloaded_files = [p for p in download_dir.rglob("*") if p.is_file()]
-    if expected_num_files := configs.expected_num_files:
-        assert len(downloaded_files) == expected_num_files
 
 
 @contextmanager

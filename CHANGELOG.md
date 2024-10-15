@@ -1,4 +1,4 @@
-## 0.0.26-dev1
+## 0.0.26-dev2
 
 ### Enhancements
 
