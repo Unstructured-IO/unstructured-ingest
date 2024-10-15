@@ -1,9 +1,10 @@
 import json
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
-import sys
+
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
