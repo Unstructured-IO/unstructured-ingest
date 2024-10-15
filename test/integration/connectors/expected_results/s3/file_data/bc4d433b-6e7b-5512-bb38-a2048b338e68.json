@@ -16,7 +16,7 @@
     },
     "date_created": "1697584841.0",
     "date_modified": "1697584841.0",
-    "date_processed": "1729005916.863004",
+    "date_processed": "1729006181.875916",
     "permissions_data": null,
     "filesize_bytes": 138124
   },
@@ -32,5 +32,5 @@
     "original_file_path": "utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpxdfh_ycg/page-with-formula.pdf"
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpqvtxwgph/page-with-formula.pdf"
 }
