@@ -1,4 +1,8 @@
-## 0.0.26-dev1
+## 0.0.26-dev2
+
+### Enhancements
+
+* **Move default API URL parameter value to serverless API**
 
 ## 0.0.25
 

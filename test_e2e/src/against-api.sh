@@ -2,8 +2,8 @@
 
 set -e
 
-if [ -z "$UNS_API_KEY" ]; then
-  echo "Skipping ingest test against api because the UNS_API_KEY env var is not set."
+if [ -z "$UNS_PAID_API_KEY" ]; then
+  echo "Skipping ingest test against api because the UNS_PAID_API_KEY env var is not set."
   exit 8
 fi
 SRC_PATH=$(dirname "$(realpath "$0")")
@@ -30,12 +30,12 @@ TEST_FILE_NAME=layout-parser-paper-with-table.pdf
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \
-  --api-key "$UNS_API_KEY" \
+  --api-key "$UNS_PAID_API_KEY" \
   --metadata-exclude coordinates,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --partition-by-api \
   --strategy hi_res \
   --chunk-by-api \
-  --chunk-api-key "$UNS_API_KEY" \
+  --chunk-api-key "$UNS_PAID_API_KEY" \
   --chunking-strategy by_page \
   --chunk-max-characters 10000 \
   --reprocess \
