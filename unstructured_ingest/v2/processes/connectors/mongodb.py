@@ -20,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -202,11 +203,18 @@ class MongoDBDownloader(Downloader):
             flattened_dict = flatten_dict(dictionary=doc)
             concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
 
+            # Create a FileData object for each document with source_identifiers
             individual_file_data = FileData(
                 identifier=str(doc_id),
                 connector_type=self.connector_type,
+                source_identifiers=SourceIdentifiers(
+                    filename=str(doc_id),
+                    fullpath=str(doc_id),
+                    rel_path=str(doc_id),
+                ),
             )
 
+            # Determine the download path
             download_path = self.get_download_path(individual_file_data)
             if download_path is None:
                 raise ValueError("Download path could not be determined")
@@ -214,11 +222,13 @@ class MongoDBDownloader(Downloader):
             download_path.parent.mkdir(parents=True, exist_ok=True)
             download_path = download_path.with_suffix(".txt")
 
+            # Write the concatenated values to the file
             with open(download_path, "w", encoding="utf8") as f:
                 f.write(concatenated_values)
 
             individual_file_data.local_download_path = str(download_path)
 
+            # Update metadata
             individual_file_data.metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
