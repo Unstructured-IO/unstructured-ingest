@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
-
+from datetime import datetime
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
@@ -107,7 +107,6 @@ class MongoDBIndexer(Indexer):
                 server_api=ServerApi(version=SERVER_API_VERSION),
             )
 
-    @requires_dependencies(["pymongo"], extras="mongodb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
         client = self.create_client()
@@ -169,11 +168,9 @@ class MongoDBDownloader(Downloader):
             )
 
     @SourceConnectionError.wrap
-    @requires_dependencies(["pymongo"], extras="mongodb")
+    @requires_dependencies(["bson"], extras="mongodb")
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
-        from datetime import datetime
-
         from bson.objectid import ObjectId
 
         client = self.create_client()
