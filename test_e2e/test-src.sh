@@ -18,7 +18,6 @@ export OMP_THREAD_LIMIT=1
 
 all_tests=(
   's3.sh'
-  's3-minio.sh'
   's3-filter.sh'
   's3_no_access.sh'
   'astradb.sh'
@@ -31,6 +30,7 @@ all_tests=(
   'salesforce.sh'
   'box.sh'
   'discord.sh'
+  'databricks-volumes.sh'
   'dropbox.sh'
   'github.sh'
   'gitlab.sh'
@@ -58,8 +58,8 @@ all_tests=(
   'notion.sh'
   'delta-table.sh'
   'jira.sh'
-  # 'sharepoint.sh'
-  # 'sharepoint-with-permissions.sh'
+  'sharepoint.sh'
+  'sharepoint-with-permissions.sh'
   'hubspot.sh'
   'local-embed.sh'
   'local-embed-bedrock.sh'

@@ -1,0 +1,17 @@
+[
+  {
+    "type": "Title",
+    "element_id": "1fbc980fc6bcdef3dc432f5ffa6eb307",
+    "text": "Lorem ipsum dolor sit amet.",
+    "metadata": {
+      "category_depth": 0,
+      "filename": "fake.odt",
+      "languages": [
+        "por",
+        "cat"
+      ],
+      "filetype": "application/vnd.oasis.opendocument.text",
+      "data_source": {}
+    }
+  }
+]

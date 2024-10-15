@@ -1,0 +1,36 @@
+{
+  "identifier": "61ec39a6-5088-5edd-abd2-6c36aa996068",
+  "connector_type": "s3",
+  "source_identifiers": {
+    "filename": "wiki_movie_plots_small.csv",
+    "fullpath": "utic-dev-tech-fixtures/wiki_movie_plots_small.csv",
+    "rel_path": "wiki_movie_plots_small.csv"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "s3://utic-dev-tech-fixtures/wiki_movie_plots_small.csv",
+    "version": "4dee8982fe4fa0181e2fe224e6171dcc",
+    "record_locator": {
+      "protocol": "s3",
+      "remote_file_path": "s3://utic-dev-tech-fixtures/"
+    },
+    "date_created": "1729006188.606",
+    "date_modified": "1729006188.606",
+    "date_processed": "1729006189.131422",
+    "permissions_data": null,
+    "filesize_bytes": 19610
+  },
+  "additional_metadata": {
+    "Key": "utic-dev-tech-fixtures/wiki_movie_plots_small.csv",
+    "LastModified": "2024-10-15T15:29:48.606000+00:00",
+    "ETag": "\"4dee8982fe4fa0181e2fe224e6171dcc\"",
+    "Size": 19610,
+    "StorageClass": "STANDARD",
+    "type": "file",
+    "size": 19610,
+    "name": "utic-dev-tech-fixtures/wiki_movie_plots_small.csv",
+    "original_file_path": "utic-dev-tech-fixtures/wiki_movie_plots_small.csv"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpv41u8dsc/wiki_movie_plots_small.csv"
+}
