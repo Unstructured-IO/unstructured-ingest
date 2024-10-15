@@ -35,7 +35,7 @@ CONNECTOR_TYPE = "qdrant"
 
 
 class QdrantAccessConfig(AccessConfig):
-    api_key: Optional[str] = enhanced_field(sensitive=True)
+    api_key: Optional[str] = Field(default=None, sensitive=True, description="API Key")
 
 
 
@@ -111,45 +111,16 @@ class QdrantUploadStager(UploadStager):
 
 class QdrantUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="Number of records per batch")
-    pool_threads: Optional[int] = Field(
+    num_processes: Optional[int] = Field(
         default=1, description="Optional limit on number of threads to use for upload"
     )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
-#######################################
 @dataclass
-class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConnector):
-    write_config: QdrantWriteConfig
-    connector_config: SimpleQdrantConfig
+class QdrantUploader(Uploader):
+    connector_type: str = CONNECTOR_TYPE
+    upload_config: QdrantUploaderConfig
+    connection_config: QdrantConnectionConfig
     _client: Optional["QdrantClient"] = None
 
     @property
@@ -157,38 +128,43 @@ class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationCon
         if self._client is None:
             self._client = self.create_client()
         return self._client
-
-    def initialize(self):
-        ...  # fmt: skip
-
+    
     @requires_dependencies(["qdrant_client"], extras="qdrant")
     def create_client(self) -> "QdrantClient":
         from qdrant_client import QdrantClient
 
         client = QdrantClient(
-            location=self.connector_config.location,
-            url=self.connector_config.url,
-            port=self.connector_config.port,
-            grpc_port=self.connector_config.grpc_port,
-            prefer_grpc=self.connector_config.prefer_grpc,
-            https=self.connector_config.https,
+            location=self.connection_config.location,
+            url=self.connection_config.url,
+            port=self.connection_config.port,
+            grpc_port=self.connection_config.grpc_port,
+            prefer_grpc=self.connection_config.prefer_grpc,
+            https=self.connection_config.https,
             api_key=(
-                self.connector_config.access_config.api_key
-                if self.connector_config.access_config
+                self.connection_config.access_config.api_key
+                if self.connection_config.access_config
                 else None
             ),
-            prefix=self.connector_config.prefix,
-            timeout=self.connector_config.timeout,
-            host=self.connector_config.host,
-            path=self.connector_config.path,
-            force_disable_check_same_thread=self.connector_config.force_disable_check_same_thread,
+            prefix=self.connection_config.prefix,
+            timeout=self.connection_config.timeout,
+            host=self.connection_config.host,
+            path=self.connection_config.path,
+            force_disable_check_same_thread=self.connection_config.force_disable_check_same_thread,
         )
 
         return client
-
+    
     @DestinationConnectionError.wrap
     def check_connection(self):
         self.qdrant_client.get_collections()
+    
+
+    def precheck(self) -> None:
+        try:
+            self.check_connection()
+        except Exception as e:
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @DestinationConnectionError.wrap
     @requires_dependencies(["qdrant_client"], extras="qdrant")
@@ -199,7 +175,7 @@ class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationCon
         try:
             points: list[models.PointStruct] = [models.PointStruct(**item) for item in batch]
             response = client.upsert(
-                self.connector_config.collection_name, points=points, wait=True
+                self.connection_config.collection_name, points=points, wait=True
             )
         except Exception as api_error:
             raise WriteError(f"Qdrant error: {api_error}") from api_error
@@ -208,20 +184,40 @@ class QdrantDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationCon
     def write_dict(self, *args, elements_dict: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(
             f"Upserting {len(elements_dict)} elements to "
-            f"{self.connector_config.collection_name}",
+            f"{self.connection_config.collection_name}",
         )
 
-        qdrant_batch_size = self.write_config.batch_size
+        qdrant_batch_size = self.upload_config.batch_size
 
-        logger.info(f"using {self.write_config.num_processes} processes to upload")
-        if self.write_config.num_processes == 1:
+        logger.info(f"using {self.upload_config.num_processes} processes to upload")
+        if self.upload_config.num_processes == 1:
             for chunk in batch_generator(elements_dict, qdrant_batch_size):
                 self.upsert_batch(chunk)
 
         else:
             with mp.Pool(
-                processes=self.write_config.num_processes,
+                processes=self.upload_config.num_processes,
             ) as pool:
                 pool.map(self.upsert_batch, list(batch_generator(elements_dict, qdrant_batch_size)))
 
+    def run(
+        self,
+        path: Path,
+        file_data: FileData,
+        **kwargs: Any,
+    ) -> Path:
+        docs_list: Dict[Dict[str, Any]] = []
+
+        with path.open("r") as json_file:
+            docs_list = json.load(json_file)
+        self.write_dict(docs_list=docs_list)
+
+
+qdrant_destination_entry = DestinationRegistryEntry(
+    connection_config=QdrantConnectionConfig,
+    uploader=QdrantUploader,
+    uploader_config=QdrantUploaderConfig,
+    upload_stager=QdrantUploadStager,
+    upload_stager_config=QdrantUploadStagerConfig,
+)
 
