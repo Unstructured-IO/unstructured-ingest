@@ -3,13 +3,14 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import time
 from typing import Any, Generator, Optional
 from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData
+from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -95,6 +96,26 @@ class SftpIndexer(FsspecIndexer):
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def precheck(self) -> None:
         super().precheck()
+
+    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+        path = file_data["name"]
+        date_created = file_data.get("time").timestamp() if "time" in file_data else None
+        date_modified = file_data.get("mtime").timestamp() if "mtime" in file_data else None
+
+        file_size = file_data.get("size") if "size" in file_data else None
+
+        record_locator = {
+            "protocol": self.index_config.protocol,
+            "remote_file_path": self.index_config.remote_url,
+        }
+        return FileDataSourceMetadata(
+            date_created=date_created,
+            date_modified=date_modified,
+            date_processed=str(time()),
+            url=f"{self.index_config.protocol}://{path}",
+            record_locator=record_locator,
+            filesize_bytes=file_size,
+        )
 
 
 class SftpDownloaderConfig(FsspecDownloaderConfig):

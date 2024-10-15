@@ -38,16 +38,13 @@ class WeaviateAccessConfig(AccessConfig):
     password: Optional[str] = None
 
 
-SecretWeaviateAccessConfig = Secret[WeaviateAccessConfig]
-
-
 class WeaviateConnectionConfig(ConnectionConfig):
     host_url: str = Field(description="Weaviate instance url")
     class_name: str = Field(
         description="Name of the class to push the records into, e.g: Pdf-elements"
     )
-    access_config: SecretWeaviateAccessConfig = Field(
-        default_factory=lambda: SecretWeaviateAccessConfig(secret_value=WeaviateAccessConfig())
+    access_config: Secret[WeaviateAccessConfig] = Field(
+        default=WeaviateAccessConfig(), validate_default=True
     )
     username: Optional[str] = None
     anonymous: bool = Field(default=False, description="if set, all auth values will be ignored")

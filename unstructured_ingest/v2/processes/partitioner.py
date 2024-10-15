@@ -1,8 +1,7 @@
-import asyncio
 from abc import ABC
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -10,11 +9,7 @@ from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
-
-if TYPE_CHECKING:
-    from unstructured_client import UnstructuredClient
-    from unstructured_client.models.operations import PartitionRequest
-    from unstructured_client.models.shared import PartitionParameters
+from unstructured_ingest.v2.unstructured_api import call_api
 
 
 class PartitionerConfig(BaseModel):
@@ -154,60 +149,20 @@ class Partitioner(BaseProcess, ABC):
         )
         return self.postprocess(elements=elements_to_dicts(elements))
 
-    async def call_api(self, client: "UnstructuredClient", request: "PartitionRequest"):
-        # TODO when client supports async, run without using run_in_executor
-        # isolate the IO heavy call
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, client.general.partition, request)
-
-    def create_partition_parameters(self, filename: Path) -> "PartitionParameters":
-        from unstructured_client.models.shared import Files, PartitionParameters
-
-        partition_request = self.config.to_partition_kwargs()
-
-        # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
-        # Prior to this it was a dataclass which doesn't have .__fields
-        try:
-            possible_fields = PartitionParameters.__fields__
-        except AttributeError:
-            possible_fields = [f.name for f in fields(PartitionParameters)]
-
-        filtered_partition_request = {
-            k: v for k, v in partition_request.items() if k in possible_fields
-        }
-        if len(filtered_partition_request) != len(partition_request):
-            logger.debug(
-                "Following fields were omitted due to not being "
-                "supported by the currently used unstructured client: {}".format(
-                    ", ".join([v for v in partition_request if v not in filtered_partition_request])
-                )
-            )
-        logger.debug(f"using hosted partitioner with kwargs: {partition_request}")
-        with open(filename, "rb") as f:
-            files = Files(
-                content=f.read(),
-                file_name=str(filename.resolve()),
-            )
-            filtered_partition_request["files"] = files
-        partition_params = PartitionParameters(**filtered_partition_request)
-        return partition_params
-
     @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def partition_via_api(
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
-        from unstructured_client import UnstructuredClient
-        from unstructured_client.models.operations import PartitionRequest
-
+        metadata = metadata or {}
         logger.debug(f"partitioning file {filename} with metadata: {metadata}")
-        client = UnstructuredClient(
+
+        elements = await call_api(
             server_url=self.config.partition_endpoint,
-            api_key_auth=self.config.api_key.get_secret_value(),
+            api_key=self.config.api_key.get_secret_value(),
+            filename=filename,
+            api_parameters=self.config.to_partition_kwargs(),
         )
-        partition_params = self.create_partition_parameters(filename=filename)
-        partition_request = PartitionRequest(partition_params)
-        resp = await self.call_api(client=client, request=partition_request)
-        elements = resp.elements or []
+
         # Append the data source metadata the auto partition does for you
         for element in elements:
             element["metadata"]["data_source"] = metadata

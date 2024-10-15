@@ -1,4 +1,2 @@
--r ../common/base.in
-
 adlfs
 fsspec

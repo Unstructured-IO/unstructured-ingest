@@ -1,0 +1,36 @@
+{
+  "identifier": "4b30fb79-f071-557e-9357-ca8af7295ab2",
+  "connector_type": "s3",
+  "source_identifiers": {
+    "filename": "recalibrating-risk-report.pdf",
+    "fullpath": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+    "rel_path": "recalibrating-risk-report.pdf"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+    "version": "e690f37ef36368a509d150f373a0bbe0",
+    "record_locator": {
+      "protocol": "s3",
+      "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+    },
+    "date_created": "1676196572.0",
+    "date_modified": "1676196572.0",
+    "date_processed": "1729006182.0347571",
+    "permissions_data": null,
+    "filesize_bytes": 806335
+  },
+  "additional_metadata": {
+    "Key": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+    "LastModified": "2023-02-12T10:09:32+00:00",
+    "ETag": "\"e690f37ef36368a509d150f373a0bbe0\"",
+    "Size": 806335,
+    "StorageClass": "STANDARD",
+    "type": "file",
+    "size": 806335,
+    "name": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+    "original_file_path": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpqvtxwgph/recalibrating-risk-report.pdf"
+}

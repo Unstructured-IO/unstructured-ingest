@@ -39,12 +39,9 @@ class KdbaiAccessConfig(AccessConfig):
     )
 
 
-SecretKdbaiAccessConfig = Secret[KdbaiAccessConfig]
-
-
 class KdbaiConnectionConfig(ConnectionConfig):
-    access_config: SecretKdbaiAccessConfig = Field(
-        default=SecretKdbaiAccessConfig(secret_value=KdbaiAccessConfig())
+    access_config: Secret[KdbaiAccessConfig] = Field(
+        default=KdbaiAccessConfig(), validate_default=True
     )
     endpoint: str = Field(
         default="http://localhost:8082", description="Endpoint url where KDBAI is hosted."

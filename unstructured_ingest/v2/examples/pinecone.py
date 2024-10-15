@@ -37,7 +37,7 @@ if __name__ == "__main__":
         source_connection_config=LocalConnectionConfig(),
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
+        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         destination_connection_config=PineconeConnectionConfig(
             # You'll need to set PINECONE_API_KEY environment variable to run this example
             access_config=PineconeAccessConfig(pinecone_api_key=os.getenv("PINECONE_API_KEY")),

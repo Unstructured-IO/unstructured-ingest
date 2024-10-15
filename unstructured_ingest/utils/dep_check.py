@@ -20,6 +20,18 @@ def requires_dependencies(
     dependencies: str | list[str],
     extras: Optional[str] = None,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+    """Decorator ensuring required modules are installed.
+
+    Use on functions with local imports to ensure required modules are available and log
+    an installation instruction if they're not.
+
+    Args:
+        dependencies: Name(s) of module(s) required by the decorated function.
+        extras: unstructured-ingest extra which installs required `dependencies`. Defaults to None.
+
+    Raises:
+        ImportError: When at least one of the `dependencies` is not available.
+    """
     if isinstance(dependencies, str):
         dependencies = [dependencies]
 

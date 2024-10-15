@@ -40,7 +40,7 @@ if __name__ == "__main__":
             chunk_max_characters=1500,
             chunk_multipage_sections=True,
         ),
-        embedder_config=EmbedderConfig(embedding_provider="langchain-huggingface"),
+        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         destination_connection_config=MongoDBConnectionConfig(
             access_config=MongoDBAccessConfig(uri=None),
             host="localhost",

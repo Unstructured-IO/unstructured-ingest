@@ -1,0 +1,580 @@
+[
+  {
+    "type": "Image",
+    "element_id": "df0a11b7a494993e1c38391f56f4e3d2",
+    "text": "About Main C DLL Demo (=]",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "0de62ca7f5f41367a2c837ca2dd8a22b",
+    "text": "LEAD",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "ea609b11c357410ec20f5155af73ce0e",
+    "text": "LEADTOOLS C DLL Main Demo 32 Bit Version 1.0",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3cc9627a95f4dd9c69e8ab44781d5771",
+    "text": "Copyright \u00a9 1991-2014 LEAD Technologies, Inc. ALL RIGHTS RESERVED.",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "c28bc33a2d75a58c0fc30a563b13dd02",
+    "text": "Technical Support: 1927 South Tryon Street Charlotte, NC 26203 (704) 372-9681",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b43c6008096efd576f81df750b7339fa",
+    "text": "LEADTOOLS\u00ae for Win32 Raster Imaging Pro Version 18.0 Date: Feb 14 2014 Time: 16:52:29",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9f5c5272826b4f69dcf3554ea5d64f7e",
+    "text": "You are licensed to use this program as described in the license agreement contained in the help file",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "24d8f3910918466d5ff82cfa08c20013",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "fda4b0be4db57079e9bdfef8d2c487d1",
+    "text": "About Main C DLL Demo",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "2a51f01f09470edd5493b0aaa3243ca8",
+    "text": "L{E4AD) N O O e S",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "555ebbc9b9fa1dccf864622afe628126",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "27f4415d66d1045f282b7c6dae886e59",
+    "text": "LEADTOOLS C DLL Main Demo 32 Bit Version 1.0",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3df634ca9fc1363bd68f6a5c93928c97",
+    "text": "Copyright \u00a9 1991-2014 LEAD Technologies, Inc. ALL RIGHTS RESERVED.",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8694168e47d6504dfe85341e652089fa",
+    "text": "Technical Support: 1927 South Tryon Street Charlotte, NC 26203 (704) 372-9681",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "398ee76ff0fbac4603887aaded172049",
+    "text": "LEADTOOLS\u00ae for Win32 Raster Imaging Pro Version 18.0 Date: Feb 14 2014 Time: 16:52:29",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "680e2a93307af854b4c1a0eecb1fd7be",
+    "text": "You are licensed to use this program as described in the license agreement contained in the help file",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "ab86f932347173c8f621ca8b6be6811f",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "0d6dc4396122df202405ae73b2ce5580",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "1ae9b5696f054089d5798a763fc8d285",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "d9a4d0834a252e79cc0a7dcfb7494a35",
+    "text": "LEADTOOLS C DLL Main Demo 32 Bit Version 1.0",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b156a7efa9819bcecda2fb2f6b8b9481",
+    "text": "Copyright \u00a9 1991-2014 LEAD Technologies, Inc. ALL RIGHTS RESERVED.",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "d9a4d0834a252e79cc0a7dcfb7494a35",
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5a5b5dfc46c9f8ce4f79f0705d9ec036",
+    "text": "Technical Support: 1927 South Tryon Street Charlotte, NC 26203 (704) 372-9681",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "d9a4d0834a252e79cc0a7dcfb7494a35",
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "26586959ce73849037e4ee7fa5b5e267",
+    "text": "LEADTOOLS\u00ae for Win32 Raster Imaging Pro Version 18.0 Date: Feb 14 2014 Time: 16:52:29",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "d9a4d0834a252e79cc0a7dcfb7494a35",
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a497b3a2b37db99ddf6d8a7877feb78f",
+    "text": "You are licensed to use this program as described in the license agreement contained in the help file",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "d9a4d0834a252e79cc0a7dcfb7494a35",
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "ebb56060b56cb02a31c2e2a54d9a9925",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "685d23d5cb20698582edc8f9a431eee1",
+    "text": "0K",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "4f662b15b9b985c38585108fe56ae745",
+    "text": "You are licensed to use this program as described in the license agreement contained in the help file",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "c83f764b3b2cb2dabca0cba5f601c6c8",
+    "text": "LEADTOOLS\u00ae for Win32 Raster Imaging Pro Version 18.0 Date: Feb 14 2014 Time: 16:52:29",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "12a9799b5278cdeca626ba5092626387",
+    "text": "Technical Support: 1927 South Tryon Street Charlotte, NC 28203 (704) 372-9681",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "236c87d15c8b8a8a786fba73c46fdb5c",
+    "text": "Copyright \u00a9 1991-2014 LEAD Technologies, Inc. ALLRIGHTS RESERVED.",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "eddf62837db9480bfe065030ad97720b",
+    "text": "LEADTOOLS C DLL Main Demo 32 Bit Version 1.0",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "1df873fe24b59a73b6153a6ee4129669",
+    "text": "(G 2",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "0ad2e85767f3dbb38cf76daa68adacbc",
+    "text": "About Main C DLL Demo (=]",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "e2d016c1b2ff292028afe63ff12ae195",
+    "text": "LEAD",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "997b09ecf30e00610181b66b0a1147b7",
+    "text": "LEADTOOLS C DLL Main Demo 32 Bit Version 1.0",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "85ff857b3c998e92e0296ef8e4891e7b",
+    "text": "Copyright \u00a9 1991-2014 LEAD Technologies, Inc. ALL RIGHTS RESERVED.",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "f94085d1484d8f3486956a462a9a2cc2",
+    "text": "Technical Support: 1927 South Tryon Street Charlotte, NC 26203 (704) 372-9681",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "421fcd8c7a5471757356025f770621d9",
+    "text": "LEADTOOLS\u00ae for Win32 Raster Imaging Pro Version 18.0 Date: Feb 14 2014 Time: 16:52:29",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a62cda46f71db4b77cb2e5fee933ff7e",
+    "text": "You are licensed to use this program as described in the license agreement contained in the help file",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "0646dbcce8b952463818c53bc385f026",
+    "text": "",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "40508a4f1878d262953b0b7b15d208ed",
+    "text": "About Main C DLL Demo (=] LEAD LEADTOOLS C DLL Main Demo 32 Bit Version 1.0 Copyright \u00a9 1991-2014 LEAD Technologies, Inc. ALL RIGHTS RESERVED. Technical Support: 1927 South Tryon Street Charlotte, NC 26203 (704) 372-9681 LEADTOOLS\u00ae for Win32 Raster Imaging Pro Version 18.0 Date: Feb 14 2014 Time: 16:52:29 You are licensed to use this program as described in the license agreement contained in the help file",
+    "metadata": {
+      "filetype": "image/tiff",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 6,
+      "filename": "multi_page_image.tif",
+      "data_source": {}
+    }
+  }
+]

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import contextlib
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
-from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
 from uuid import NAMESPACE_DNS, uuid5
 
@@ -113,18 +110,13 @@ class FsspecIndexer(Indexer):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    def list_files(self) -> list[str]:
+    def get_file_data(self) -> list[dict[str, Any]]:
         if not self.index_config.recursive:
             # fs.ls does not walk directories
             # directories that are listed in cloud storage can cause problems
             # because they are seen as 0 byte files
-            found = self.fs.ls(self.index_config.path_without_protocol, detail=True)
-            if isinstance(found, list):
-                return [
-                    x.get("name") for x in found if x.get("size") > 0 and x.get("type") == "file"
-                ]
-            else:
-                raise TypeError(f"unhandled response type from ls: {type(found)}")
+            files = self.fs.ls(self.index_config.path_without_protocol, detail=True)
+
         else:
             # fs.find will recursively walk directories
             # "size" is a common key for all the cloud protocols with fs
@@ -132,84 +124,40 @@ class FsspecIndexer(Indexer):
                 self.index_config.path_without_protocol,
                 detail=True,
             )
-            if isinstance(found, dict):
-                return [
-                    k for k, v in found.items() if v.get("size") > 0 and v.get("type") == "file"
-                ]
-            else:
-                raise TypeError(f"unhandled response type from find: {type(found)}")
+            files = found.values()
+        filtered_files = [
+            file for file in files if file.get("size") > 0 and file.get("type") == "file"
+        ]
+        return filtered_files
 
-    def get_metadata(self, path: str) -> FileDataSourceMetadata:
-        date_created = None
-        date_modified = None
-        file_size = None
-        try:
-            created: Optional[Any] = self.fs.created(path)
-            if created:
-                if isinstance(created, datetime):
-                    date_created = str(created.timestamp())
-                else:
-                    date_created = str(created)
-        except NotImplementedError:
-            pass
+    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+        raise NotImplementedError()
 
-        try:
-            modified: Optional[Any] = self.fs.modified(path)
-            if modified:
-                if isinstance(modified, datetime):
-                    date_modified = str(modified.timestamp())
-                else:
-                    date_modified = str(modified)
-        except NotImplementedError:
-            pass
-        with contextlib.suppress(AttributeError):
-            file_size = self.fs.size(path)
+    def get_path(self, file_data: dict) -> str:
+        return file_data["name"]
 
-        version = self.fs.checksum(path)
-        metadata: dict[str, str] = {}
-        with contextlib.suppress(AttributeError):
-            metadata = self.fs.metadata(path)
-        record_locator = {
-            "protocol": self.index_config.protocol,
-            "remote_file_path": self.index_config.remote_url,
-        }
-        file_stat = self.fs.stat(path=path)
-        if file_id := file_stat.get("id"):
-            record_locator["file_id"] = file_id
-        if metadata:
-            record_locator["metadata"] = metadata
-        return FileDataSourceMetadata(
-            date_created=date_created,
-            date_modified=date_modified,
-            date_processed=str(time()),
-            version=str(version),
-            url=f"{self.index_config.protocol}://{path}",
-            record_locator=record_locator,
-            filesize_bytes=file_size,
-        )
-
-    def sterilize_info(self, path) -> dict:
-        info = self.fs.info(path=path)
-        return sterilize_dict(data=info)
+    def sterilize_info(self, file_data: dict) -> dict:
+        return sterilize_dict(data=file_data)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        files = self.list_files()
-        for file in files:
+        files = self.get_file_data()
+        for file_data in files:
+            file_path = self.get_path(file_data=file_data)
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
-            rel_path = file.replace(self.index_config.path_without_protocol, "").lstrip("/")
+            rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip("/")
 
-            additional_metadata = self.sterilize_info(path=file)
-            additional_metadata["original_file_path"] = file
+            additional_metadata = self.sterilize_info(file_data=file_data)
+            additional_metadata["original_file_path"] = file_path
             yield FileData(
-                identifier=str(uuid5(NAMESPACE_DNS, file)),
+                identifier=str(uuid5(NAMESPACE_DNS, file_path)),
                 connector_type=self.connector_type,
                 source_identifiers=SourceIdentifiers(
-                    filename=Path(file).name,
+                    filename=Path(file_path).name,
                     rel_path=rel_path or None,
-                    fullpath=file,
+                    fullpath=file_path,
                 ),
-                metadata=self.get_metadata(path=file),
+                metadata=self.get_metadata(file_data=file_data),
                 additional_metadata=additional_metadata,
             )
 

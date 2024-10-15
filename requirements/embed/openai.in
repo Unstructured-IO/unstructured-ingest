@@ -1,6 +1,4 @@
--r ../common/base.in
 -c ../common/constraints.txt
 
-langchain-community
-tiktoken
 openai
+tiktoken

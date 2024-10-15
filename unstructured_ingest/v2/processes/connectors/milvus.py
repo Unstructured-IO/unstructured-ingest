@@ -36,12 +36,9 @@ class MilvusAccessConfig(AccessConfig):
     token: Optional[str] = Field(default=None, description="Milvus access token")
 
 
-SecretMilvusAccessConfig = Secret[MilvusAccessConfig]
-
-
 class MilvusConnectionConfig(ConnectionConfig):
-    access_config: SecretMilvusAccessConfig = Field(
-        default_factory=lambda: SecretMilvusAccessConfig(secret_value=MilvusAccessConfig())
+    access_config: Secret[MilvusAccessConfig] = Field(
+        default=MilvusAccessConfig(), validate_default=True
     )
     uri: Optional[str] = Field(
         default=None, description="Milvus uri", examples=["http://localhost:19530"]
@@ -51,8 +48,8 @@ class MilvusConnectionConfig(ConnectionConfig):
 
     def get_connection_kwargs(self) -> dict[str, Any]:
         access_config = self.access_config.get_secret_value()
-        access_config_dict = access_config.dict()
-        connection_config_dict = self.dict()
+        access_config_dict = access_config.model_dump()
+        connection_config_dict = self.model_dump()
         connection_config_dict.pop("access_config", None)
         connection_config_dict.update(access_config_dict)
         # Drop any that were not set explicitly

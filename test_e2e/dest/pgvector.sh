@@ -42,7 +42,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --verbose \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   sql \
   --db-type "postgresql" \
   --username unstructured \

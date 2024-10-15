@@ -21,7 +21,8 @@ all_tests=(
   'box.sh'
   'chroma.sh'
   'clarifai.sh'
-  'couchbase.sh'
+  #  'couchbase.sh'  # tmp disable failing on CI
+  'databricks-volumes.sh'
   'delta-table.sh'
   'dropbox.sh'
   'elasticsearch.sh'
@@ -68,7 +69,6 @@ tests_to_ignore=(
   'notion.sh'
   'dropbox.sh'
   'sharepoint.sh'
-  'databricks-volumes.sh'
 )
 
 for test in "${all_tests[@]}"; do

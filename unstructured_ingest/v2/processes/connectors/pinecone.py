@@ -36,13 +36,10 @@ class PineconeAccessConfig(AccessConfig):
     )
 
 
-SecretPineconeAccessConfig = Secret[PineconeAccessConfig]
-
-
 class PineconeConnectionConfig(ConnectionConfig):
     index_name: str = Field(description="Name of the index to connect to.")
-    access_config: SecretPineconeAccessConfig = Field(
-        default_factory=lambda: SecretPineconeAccessConfig(secret_value=PineconeAccessConfig())
+    access_config: Secret[PineconeAccessConfig] = Field(
+        default=PineconeAccessConfig(), validate_default=True
     )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
@@ -61,20 +58,6 @@ class PineconeConnectionConfig(ConnectionConfig):
         return index
 
 
-class PineconeUploadStagerConfig(UploadStagerConfig):
-    pass
-
-
-class PineconeUploaderConfig(UploaderConfig):
-    batch_size: Optional[int] = Field(
-        default=None,
-        description="Optional number of records per batch. Will otherwise limit by size.",
-    )
-    pool_threads: Optional[int] = Field(
-        default=1, description="Optional limit on number of threads to use for upload"
-    )
-
-
 ALLOWED_FIELDS = (
     "element_id",
     "text",
@@ -89,7 +72,32 @@ ALLOWED_FIELDS = (
     "is_continuation",
     "link_urls",
     "link_texts",
+    "text_as_html",
 )
+
+
+class PineconeUploadStagerConfig(UploadStagerConfig):
+    metadata_fields: list[str] = Field(
+        default=str(ALLOWED_FIELDS),
+        description=(
+            "which metadata from the source element to map to the payload metadata being sent to "
+            "Pinecone."
+        ),
+    )
+
+
+class PineconeUploaderConfig(UploaderConfig):
+    batch_size: Optional[int] = Field(
+        default=None,
+        description="Optional number of records per batch. Will otherwise limit by size.",
+    )
+    pool_threads: Optional[int] = Field(
+        default=1, description="Optional limit on number of threads to use for upload"
+    )
+    namespace: Optional[str] = Field(
+        default=None,
+        description="The namespace to write to. If not specified, the default namespace is used",
+    )
 
 
 @dataclass
@@ -98,22 +106,26 @@ class PineconeUploadStager(UploadStager):
         default_factory=lambda: PineconeUploadStagerConfig()
     )
 
-    @staticmethod
-    def conform_dict(element_dict: dict) -> dict:
+    def conform_dict(self, element_dict: dict) -> dict:
         embeddings = element_dict.pop("embeddings", None)
         metadata: dict[str, Any] = element_dict.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
-
-        element_dict.update(metadata)
-        element_dict.update(data_source)
-        element_dict.update(coordinates)
+        pinecone_metadata = {}
+        for possible_meta in [element_dict, metadata, data_source, coordinates]:
+            pinecone_metadata.update(
+                {
+                    k: v
+                    for k, v in possible_meta.items()
+                    if k in self.upload_stager_config.metadata_fields
+                }
+            )
 
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
             "metadata": flatten_dict(
-                {k: v for k, v in element_dict.items() if k in ALLOWED_FIELDS},
+                pinecone_metadata,
                 separator="-",
                 flatten_lists=True,
                 remove_none=True,
@@ -175,7 +187,11 @@ class PineconeUploader(Uploader):
             pool_threads = max_pool_threads
         index = self.connection_config.get_index(pool_threads=pool_threads)
         with index:
-            async_results = [index.upsert(vectors=chunk, async_req=True) for chunk in chunks]
+            upsert_kwargs = [{"vectors": chunk, "async_req": True} for chunk in chunks]
+            if namespace := self.upload_config.namespace:
+                for kwargs in upsert_kwargs:
+                    kwargs["namespace"] = namespace
+            async_results = [index.upsert(**kwarg) for kwarg in upsert_kwargs]
             # Wait for and retrieve responses (this raises in case of error)
             try:
                 results = [async_result.get() for async_result in async_results]

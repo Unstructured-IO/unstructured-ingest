@@ -104,8 +104,8 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
         elif access_config.es_api_key:
             client_input_kwargs["api_key"] = access_config.es_api_key
         client_input = ElasticsearchClientInput(**client_input_kwargs)
-        logger.debug(f"elasticsearch client inputs mapped to: {client_input.dict()}")
-        client_kwargs = client_input.dict()
+        logger.debug(f"elasticsearch client inputs mapped to: {client_input.model_dump()}")
+        client_kwargs = client_input.model_dump()
         client_kwargs["basic_auth"] = (
             client_input.basic_auth.get_secret_value() if client_input.basic_auth else None
         )

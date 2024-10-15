@@ -24,6 +24,12 @@ RANDOM_SUFFIX=$((RANDOM % 100000 + 1))
 COLLECTION_NAME="astradb_test_output_$RANDOM_SUFFIX"
 EMBEDDING_DIMENSION=384
 
+python "$SCRIPT_DIR"/python/test-ingest-astradb-output.py \
+  --token "$ASTRA_DB_APPLICATION_TOKEN" \
+  --api-endpoint "$ASTRA_DB_API_ENDPOINT" \
+  --collection-name "$COLLECTION_NAME" \
+  --embedding-dimension "$EMBEDDING_DIMENSION" up
+
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 
@@ -50,7 +56,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --chunking-strategy by_title \
   --chunk-max-characters 1500 \
   --chunk-multipage-sections \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   astradb \
   --token "$ASTRA_DB_APPLICATION_TOKEN" \
   --api-endpoint "$ASTRA_DB_API_ENDPOINT" \

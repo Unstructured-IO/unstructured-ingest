@@ -11,7 +11,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -35,7 +35,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -49,319 +49,7 @@
   },
   {
     "type": "Title",
-    "element_id": "6dfc7a3d9e8efa9d69f84af51809ff3a",
-    "text": "(Rev. November 1987)",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "a961b748fb13f59f99a94e92f3f6a991",
-    "text": "Paperwork Reduction Act Notice",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "b69c7d60de40eb7d6a34a265ef2d7742",
-    "text": "We ask for this information to carry out the Internal Revenue laws of the United States. We need it to ensure that taxpayers are complying with these laws and to allow us to figure and collect the right amount of tax. You are required to give us this information.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "f452f31d0c849a4577d0bdc5f7e9a009",
-    "text": "General Instructions",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "c2897b4c189797d8376dd08b3a08965a",
-    "text": "Purpose of Form",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "a79f2b315fcf5636591175530efc38f4",
-    "text": "File this form to request a change in your accounting method, including the accounting treatment of any item. If you are requesting a change in accounting period, use Form 1128, Application for Change in Accounting Period. For more information, see Publication 538, Accounting Periods and Methods.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "d99fbda488bb271867a916508e142907",
-    "text": "When filing Form 3115, taxpayers are reminded to determine if IRS has published a ruling or procedure dealing with the specific type of change since November 1987 (the current revision date of Form 3115).",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "305878d35b898a48d875cdf53df212b8",
-    "text": "Generally, applicants must complete Section A. In addition, complete the appropriate sections (B-1 through H) for which a change 1s desired.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "e9ba498fafa85e9f9faa4e9cbd7d853e",
-    "text": "You must give all relevant facts, including a detailed description of your present and proposed methods. You must also state the reason(s) you believe approval to make the requested change should be granted. Attach additional pages if more space is needed for explanations. Each page should show your name, address, and identifying number.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "c59e40623f8de10970961e4e7049bddb",
-    "text": "State whether you desire a conference in the National Office if the Service proposes to disapprove your application.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "089f77e1d1430d6dea91e710a2ace3bd",
-    "text": "Changes to Accounting Methods Required Under the Tax Reform Act of 1986",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "c3b883d8044941371c89664a7cf8923f",
-    "text": "Uniform capitalization rules and limitation on cash method.\u2014If you are required to change your method of accounting under sectiort 263A (relating to the capitalization and inclusion in inventory costs of certain expenses) or 448 (limiting the use of the cash method of accounting by certain taxpayers) as added by the Tax Reform Act of 1986 (\u201cAct\u201d), the change 1s treated as initiated by the taxpayer, approved by the Commissioner, and the period for taking the adjustments under section 481(a) into account will not exceed 4 years. (Hospitals required to change from the cash method under section 448 have 10 years to take the adjustments into account.) Complete Section A and the appropriate sections (B-1 or C and D) for which the change is required.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "eda0d1c2799be55f55ec6d3fd22181f0",
-    "text": "Disregard the instructions under Time and Place for Filing and Late Applications. Instead, attach Form 3115 to your income tax return for the year of change; do not file it separately. Also include on a separate statement accompanying the Form 3115 the period over which the section 481(a) adjustment will be taken into account and the basis for that conclusion. Identify the automatic change being made at the top of page 1of Form 3115 (e \u201cAutomatic Change to Accrual Method\u2014 e tion 448\"). See Temporary Regulations sections 1.263A-1T and 1.448-1T for additional information.",
-    "metadata": {
-      "filetype": "image/png",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "data_source": {
-        "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
-        "record_locator": {
-          "protocol": "abfs",
-          "remote_file_path": "abfs://container1/"
-        },
-        "date_created": "1678441495.0",
-        "date_modified": "1678441495.0",
-        "permissions_data": null,
-        "filesize_bytes": 712624
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "98a66d1ccfd4bb33e35154ef4a7ce6fe",
+    "element_id": "212c979dff86722ad3fac2d21f38a5dc",
     "text": "Instructions for Form 3115",
     "metadata": {
       "filetype": "image/png",
@@ -371,7 +59,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -385,7 +73,31 @@
   },
   {
     "type": "Title",
-    "element_id": "279e562bae2ba72d386a72e228702b80",
+    "element_id": "1bbaf7a3e674a070c00be02358483633",
+    "text": "(Rev. November 1987)",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "8f4c9a99639a56c4b6d26da2d69ef7b8",
     "text": "Application for Change in Accounting Method",
     "metadata": {
       "filetype": "image/png",
@@ -395,7 +107,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -409,7 +121,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "9e82f85c90ca1bcc0aedee938e49e50e",
+    "element_id": "d49115b61dafa0e148c22a79bd2335f6",
     "text": "(Section references are to the Internal Revenue Code unless otherwise noted.)",
     "metadata": {
       "filetype": "image/png",
@@ -419,7 +131,31 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "b8bfbf4a30bcf311ebb8ce403fc1dece",
+    "text": "Paperwork Reduction Act Notice",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -433,7 +169,127 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "dcad523b4f591ab438c9f87e0b494e5f",
+    "element_id": "b62b6e9979b8a7f6c4456575f3a22884",
+    "text": "We ask for this information to carry out the Internal Revenue laws of the United States. We need it to ensure that taxpayers are complying with these laws and to allow us to figure and collect the right amount of tax. You are required to give us this information.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "dee25633a9bba9a77b6c9524b2bbb9c5",
+    "text": "General Instructions",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "744f66c909dc75329dd77b2915032e59",
+    "text": "Purpose of Form",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "0afec68d07578a22df1d5ba2fc497e0a",
+    "text": "File this form to request a change in your accounting method, including the accounting treatment of any item. If you are requesting a change in accounting period, use Form 1128, Application for Change in Accounting Period. For more information, see Publication 538, Accounting Periods and Methods.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "83f9d1666522812f45bbc7a2820605e2",
+    "text": "When filing Form 3115, taxpayers are reminded to determine if IRS has published a ruling or procedure dealing with the specific type of change since November 1987 (the current revision date of Form 3115).",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "6a371d4233a8f1d3e784b19f95bf2d31",
     "text": "Long-term contracts.\u2014If you are required to change your method of accounting for long-term contracts under section 460, see Notice 87-61 (9/21/87), 1987-38 IRB 40, for the notification procedures that must be followed.",
     "metadata": {
       "filetype": "image/png",
@@ -443,7 +299,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -457,7 +313,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "dd3e3c7a9a71a03270c4823edfc32683",
+    "element_id": "ba1e161829f7f67ce6185c2103049554",
     "text": "Other methods.\u2014Unless the Service has published a regulation or procedure to the ontrary, all other changes in accounting methods required by the Act are automatically considered to be approved by the Commissioner. Examples of method changes automatically approved by the Commissioner are those changes required to effect: (1) the repeal of the reserve method for bad debts of taxpayers other than financial institutions (Act section 805); (2) the repeal of the installment method for sales under a revolving credit plan (Act section 812); (3) the inclusion of income attributable to the sale or furnishing of utility services no later than the year in which the services were provided to customers (Act section 821); and (4) the repeal of the deduction for qualified discount coupons (Act section 823). Do not file Form 3115 for these changes.",
     "metadata": {
       "filetype": "image/png",
@@ -467,7 +323,151 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7906b3444dddda0127174fa5c39eeaaf",
+    "text": "Generally, applicants must complete Section A. In addition, complete the appropriate sections (B-1 through H) for which a change 1s desired.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "169b5b2e6b346bf4937d4e47736b0842",
+    "text": "You must give all relevant facts, including a detailed description of your present and proposed methods. You must also state the reason(s) you believe approval to make the requested change should be granted. Attach additional pages if more space is needed for explanations. Each page should show your name, address, and identifying number.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "637759c3cd2f9e9aefcd71a7968e4f5f",
+    "text": "State whether you desire a conference in the National Office if the Service proposes to disapprove your application.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "64edabd26ae1233ff23338c91a392363",
+    "text": "Changes to Accounting Methods Required Under the Tax Reform Act of 1986",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "10e96c0c96cbb0372d9aa0c53e4e22fd",
+    "text": "Uniform capitalization rules and limitation on cash method.\u2014If you are required to change your method of accounting under sectiort 263A (relating to the capitalization and inclusion in inventory costs of certain expenses) or 448 (limiting the use of the cash method of accounting by certain taxpayers) as added by the Tax Reform Act of 1986 (\u201cAct\u201d), the change 1s treated as initiated by the taxpayer, approved by the Commissioner, and the period for taking the adjustments under section 481(a) into account will not exceed 4 years. (Hospitals required to change from the cash method under section 448 have 10 years to take the adjustments into account.) Complete Section A and the appropriate sections (B-1 or C and D) for which the change is required.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
+        "record_locator": {
+          "protocol": "abfs",
+          "remote_file_path": "abfs://container1/"
+        },
+        "date_created": "1678441495.0",
+        "date_modified": "1678441495.0",
+        "permissions_data": null,
+        "filesize_bytes": 712624
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b708681dc3b4972238aa4adb68ce9d58",
+    "text": "Disregard the instructions under Time and Place for Filing and Late Applications. Instead, attach Form 3115 to your income tax return for the year of change; do not file it separately. Also include on a separate statement accompanying the Form 3115 the period over which the section 481(a) adjustment will be taken into account and the basis for that conclusion. Identify the automatic change being made at the top of page 1of Form 3115 (e \u201cAutomatic Change to Accrual Method\u2014 e tion 448\"). See Temporary Regulations sections 1.263A-1T and 1.448-1T for additional information.",
+    "metadata": {
+      "filetype": "image/png",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "data_source": {
+        "url": "abfs://container1/IRS-form-1987.png",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -491,7 +491,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -515,7 +515,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -539,7 +539,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -563,7 +563,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -587,7 +587,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -611,7 +611,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -635,7 +635,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -659,7 +659,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -683,7 +683,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -707,7 +707,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -731,7 +731,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -755,7 +755,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -779,7 +779,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -803,7 +803,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -827,7 +827,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -851,7 +851,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -875,7 +875,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -899,7 +899,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -923,7 +923,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -947,7 +947,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -971,7 +971,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"
@@ -995,7 +995,7 @@
       "page_number": 1,
       "data_source": {
         "url": "abfs://container1/IRS-form-1987.png",
-        "version": "178514357676599756686300559820761454543",
+        "version": "0x8DB214C1B270B0D",
         "record_locator": {
           "protocol": "abfs",
           "remote_file_path": "abfs://container1/"

@@ -34,12 +34,9 @@ class MongoDBAccessConfig(AccessConfig):
     uri: Optional[str] = Field(default=None, description="URI to user when connecting")
 
 
-SecretMongoDBAccessConfig = Secret[MongoDBAccessConfig]
-
-
 class MongoDBConnectionConfig(ConnectionConfig):
-    access_config: SecretMongoDBAccessConfig = Field(
-        default_factory=lambda: SecretMongoDBAccessConfig(secret_value=MongoDBAccessConfig())
+    access_config: Secret[MongoDBAccessConfig] = Field(
+        default=MongoDBAccessConfig(), validate_default=True
     )
     host: Optional[str] = Field(
         default=None,

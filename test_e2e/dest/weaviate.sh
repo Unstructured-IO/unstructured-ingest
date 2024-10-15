@@ -42,7 +42,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --reprocess \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
-  --embedding-provider "langchain-huggingface" \
+  --embedding-provider "huggingface" \
   weaviate \
   --host-url http://localhost:8080 \
   --class-name elements \
