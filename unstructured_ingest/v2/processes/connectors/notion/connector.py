@@ -22,12 +22,6 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-from unstructured_ingest.v2.processes.connectors.notion.helpers import (
-    extract_database_html,
-    extract_page_html,
-    get_recursive_content_from_database,
-    get_recursive_content_from_page,
-)
 
 if t.TYPE_CHECKING:
     from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
@@ -213,6 +207,10 @@ class NotionIndexer(Indexer):
         processed_pages: Set[str],
         processed_databases: Set[str],
     ) -> Tuple[Set[str], Set[str]]:
+        from unstructured_ingest.v2.processes.connectors.notion.helpers import (
+            get_recursive_content_from_page,
+        )
+
         child_content = get_recursive_content_from_page(
             client=client,
             page_id=page_id,
@@ -229,6 +227,10 @@ class NotionIndexer(Indexer):
         processed_pages: Set[str],
         processed_databases: Set[str],
     ) -> Tuple[Set[str], Set[str]]:
+        from unstructured_ingest.v2.processes.connectors.notion.helpers import (
+            get_recursive_content_from_database,
+        )
+
         child_content = get_recursive_content_from_database(
             client=client,
             database_id=database_id,
@@ -281,6 +283,7 @@ class NotionDownloader(Downloader):
     def download_page(
         self, client: "NotionClient", page_id: str, file_data: FileData
     ) -> DownloadResponse:
+        from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_page_html
 
         try:
             text_extraction = extract_page_html(
@@ -306,6 +309,8 @@ class NotionDownloader(Downloader):
     def download_database(
         self, client: "NotionClient", database_id: str, file_data: FileData
     ) -> DownloadResponse:
+        from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_database_html
+
         try:
             text_extraction = extract_database_html(
                 client=client,
