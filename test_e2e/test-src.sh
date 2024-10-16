@@ -56,7 +56,7 @@ all_tests=(
   'hubspot.sh'
   'sftp.sh'
   'opensearch.sh'
-  #'wikipedia.sh'
+  'mongodb.sh'
 )
 
 full_python_matrix_tests=(
