@@ -16,6 +16,7 @@ class Page(FromJSONMixin):
     last_edited_time: str
     last_edited_by: PartialUser
     archived: bool
+    in_trash: bool
     properties: dict
     parent: Parent
     url: str
