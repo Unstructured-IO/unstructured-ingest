@@ -1,0 +1,83 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "26315dce10e58d715437ae2209d87f7f",
+    "text": "This is a test document to use for unit tests.",
+    "metadata": {
+      "filename": "fake-text-utf-32.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Address",
+    "element_id": "1377b4588ebdf8225c53c364cd85731f",
+    "text": "Doylestown, PA 18901",
+    "metadata": {
+      "filename": "fake-text-utf-32.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "3f2f4a251a671c699e50172a67a77151",
+    "text": "Important points:",
+    "metadata": {
+      "filename": "fake-text-utf-32.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "ee890c4ae5b8aaf26cf7255669b85c59",
+    "text": "Hamburgers are delicious",
+    "metadata": {
+      "filename": "fake-text-utf-32.txt",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "3f2f4a251a671c699e50172a67a77151",
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "da226b021b39daa3f018f56d19f9e35b",
+    "text": "Dogs are the best",
+    "metadata": {
+      "filename": "fake-text-utf-32.txt",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "3f2f4a251a671c699e50172a67a77151",
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "74ab6bfc7709e6a3dd021fbc2048303c",
+    "text": "I love fuzzy blankets",
+    "metadata": {
+      "filename": "fake-text-utf-32.txt",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "3f2f4a251a671c699e50172a67a77151",
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  }
+]

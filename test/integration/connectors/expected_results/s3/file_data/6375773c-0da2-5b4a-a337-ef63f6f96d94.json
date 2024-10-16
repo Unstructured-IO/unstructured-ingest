@@ -1,0 +1,36 @@
+{
+  "identifier": "6375773c-0da2-5b4a-a337-ef63f6f96d94",
+  "connector_type": "s3",
+  "source_identifiers": {
+    "filename": "Silent-Giant-(1).pdf",
+    "fullpath": "utic-dev-tech-fixtures/small-pdf-set/Silent-Giant-(1).pdf",
+    "rel_path": "Silent-Giant-(1).pdf"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "s3://utic-dev-tech-fixtures/small-pdf-set/Silent-Giant-(1).pdf",
+    "version": "8570bd087066350a84dd8d0ea86f11c6",
+    "record_locator": {
+      "protocol": "s3",
+      "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+    },
+    "date_created": "1676196636.0",
+    "date_modified": "1676196636.0",
+    "date_processed": "1729006181.009969",
+    "permissions_data": null,
+    "filesize_bytes": 6164777
+  },
+  "additional_metadata": {
+    "Key": "utic-dev-tech-fixtures/small-pdf-set/Silent-Giant-(1).pdf",
+    "LastModified": "2023-02-12T10:10:36+00:00",
+    "ETag": "\"8570bd087066350a84dd8d0ea86f11c6\"",
+    "Size": 6164777,
+    "StorageClass": "STANDARD",
+    "type": "file",
+    "size": 6164777,
+    "name": "utic-dev-tech-fixtures/small-pdf-set/Silent-Giant-(1).pdf",
+    "original_file_path": "utic-dev-tech-fixtures/small-pdf-set/Silent-Giant-(1).pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpqvtxwgph/Silent-Giant-(1).pdf"
+}

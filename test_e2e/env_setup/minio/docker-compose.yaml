@@ -1,13 +1,35 @@
 services:
-  minio:
-    image: quay.io/minio/minio
-    container_name: minio-test
+  # run an S3 instance (minio)
+  s3:
+    image: minio/minio
+    container_name: minio-server
     ports:
-      - 9000:9000
-      - 9001:9001
-    command: server --console-address ":9001" /data
+      - ${S3_API_PORT}:${S3_API_PORT}
+      - ${S3_WEB_PORT}:${S3_WEB_PORT}
+    env_file: .env
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+      MINIO_SERVER_URL: ${S3_ENDPOINT_URL}
+      MINIO_BROWSER_REDIRECT_URL: ${S3_WEB_URL}
+    command: server /data --address ":${S3_API_PORT}" --console-address ":${S3_WEB_PORT}"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 5s
-      timeout: 20s
-      retries: 3
+      timeout: 1s
+    restart: always
+
+  # create the bucket
+  seed:
+    image: minio/mc
+    container_name: minio-client
+    env_file: .env
+    volumes:
+      - ./seed.sh:/init/seed.sh
+      - ./wiki_movie_plots_small.csv:/init/wiki_movie_plots_small.csv
+    depends_on:
+      s3:
+        condition: service_healthy
+    network_mode: service:s3
+    entrypoint: /init/seed.sh
+        

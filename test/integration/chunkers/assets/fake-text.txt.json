@@ -1,0 +1,70 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "fc01503614e0f12f585427cccf81cf86",
+    "text": "This is a test document to use for unit tests.",
+    "metadata": {
+      "filename": "fake-text.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "db0055e03e2787896ecc30e41304cf16",
+    "text": "Important points:",
+    "metadata": {
+      "filename": "fake-text.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "57c6ad0116be5121709b6d0ff6e8853c",
+    "text": "Hamburgers are delicious",
+    "metadata": {
+      "filename": "fake-text.txt",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "db0055e03e2787896ecc30e41304cf16",
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "3f08a0012563fa939a533515cede4992",
+    "text": "Dogs are the best",
+    "metadata": {
+      "filename": "fake-text.txt",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "db0055e03e2787896ecc30e41304cf16",
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "9b3d222b487937b843ff41138407211e",
+    "text": "I love fuzzy blankets",
+    "metadata": {
+      "filename": "fake-text.txt",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "db0055e03e2787896ecc30e41304cf16",
+      "filetype": "text/plain",
+      "data_source": {}
+    }
+  }
+]
