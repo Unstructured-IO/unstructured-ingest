@@ -1,3 +1,4 @@
+import typing as t
 from dataclasses import dataclass
 from time import time
 from typing import Any, Generator, List, Optional, Set, Tuple
@@ -21,13 +22,15 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
 from unstructured_ingest.v2.processes.connectors.notion.helpers import (
     extract_database_html,
     extract_page_html,
     get_recursive_content_from_database,
     get_recursive_content_from_page,
 )
+if t.TYPE_CHECKING:
+    from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
+
 
 NOTION_API_VERSION = "2022-06-28"
 CONNECTOR_TYPE = "notion"
