@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class VoyageAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
-    embedder_model_name: str = Field(alias="model_name")
+    embedder_model_name: str = Field(default="voyage-3", alias="model_name")
     batch_size: Optional[int] = Field(default=None)
     truncation: Optional[bool] = Field(default=None)
     max_retries: int = 0
