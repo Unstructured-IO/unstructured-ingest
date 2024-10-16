@@ -16,6 +16,9 @@ from test.integration.connectors.utils.validation import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.error import (
+    SourceConnectionError,
+)
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     CONNECTOR_TYPE,
@@ -66,6 +69,15 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
                 expected_num_files=4,
             ),
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+async def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
+    indexer_config = S3IndexerConfig(remote_url="s3://utic-ingest-test-fixtures/destination/")
+    indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
 
 
 @pytest.mark.asyncio
