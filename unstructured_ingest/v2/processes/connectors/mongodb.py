@@ -96,7 +96,7 @@ class MongoDBIndexer(Indexer):
         access_config = self.connection_config.access_config.get_secret_value()
 
         if access_config.uri:
-            return MongoClient(
+            return MongoClient( 
                 access_config.uri,
                 server_api=ServerApi(version=SERVER_API_VERSION),
                 driver=DriverInfo(name="unstructured", version=unstructured_version),
@@ -188,8 +188,10 @@ class MongoDBDownloader(Downloader):
         for doc_id in ids:
             try:
                 object_ids.append(ObjectId(doc_id))
-            except InvalidId:
-                raise ValueError(f"Invalid ObjectId for doc_id: {doc_id}")
+            except InvalidId as e:
+                error_message = f"Invalid ObjectId for doc_id '{doc_id}': {str(e)}"
+                logger.error(error_message)
+                raise ValueError(error_message) from e
 
         try:
             docs = list(collection.find({"_id": {"$in": object_ids}}))
