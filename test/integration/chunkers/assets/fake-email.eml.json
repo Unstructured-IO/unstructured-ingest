@@ -1,0 +1,88 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "d046dfe2b9749ebc9c64740858573863",
+    "text": "This is a test email to use for unit tests.",
+    "metadata": {
+      "filename": "fake-email.eml",
+      "email_message_id": "CADc-_xaLB2FeVQ7mNsoX+NJb_7hAJhBKa_zet-rtgPGenj0uVw@mail.gmail.com",
+      "sent_from": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "sent_to": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "subject": "Test Email",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "3af769629208842d7db0e738e5cbb812",
+    "text": "Important points:",
+    "metadata": {
+      "filename": "fake-email.eml",
+      "email_message_id": "CADc-_xaLB2FeVQ7mNsoX+NJb_7hAJhBKa_zet-rtgPGenj0uVw@mail.gmail.com",
+      "sent_from": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "sent_to": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "subject": "Test Email",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "0f794a21182c1fc069e732628b86e7cf",
+    "text": "Roses are red",
+    "metadata": {
+      "filename": "fake-email.eml",
+      "email_message_id": "CADc-_xaLB2FeVQ7mNsoX+NJb_7hAJhBKa_zet-rtgPGenj0uVw@mail.gmail.com",
+      "sent_from": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "sent_to": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "subject": "Test Email",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "3af769629208842d7db0e738e5cbb812",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "f8a8b34a8e43bc3b65f4efe82142f6c9",
+    "text": "Violets are blue",
+    "metadata": {
+      "filename": "fake-email.eml",
+      "email_message_id": "CADc-_xaLB2FeVQ7mNsoX+NJb_7hAJhBKa_zet-rtgPGenj0uVw@mail.gmail.com",
+      "sent_from": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "sent_to": [
+        "Matthew Robinson <mrobinson@unstructured.io>"
+      ],
+      "subject": "Test Email",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "3af769629208842d7db0e738e5cbb812",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  }
+]

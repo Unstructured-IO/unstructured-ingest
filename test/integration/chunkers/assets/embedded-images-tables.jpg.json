@@ -1,0 +1,143 @@
+[
+  {
+    "type": "PageNumber",
+    "element_id": "84853d4052e4d844b804eac1e3da0b24",
+    "text": "454",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "9ace2e8151d3432fdf05cd8aabf999b9",
+    "text": "0. Sanni, A.P1. Popoola / Data in Brief 22 (2019) 451-457",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "a72398443485c2eacc246d82b11f6d23",
+    "text": "15 - & \u2014 10g o \u2014_ B - 6g - Potential (V) \u20142g & = Control 3 \u2014 8 =25 0.0000001 0.00001 0.001 01 Current Density (A/cm2)",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "4b42cda2833680d4569d719963a0c719",
+    "text": "Fig. 4. Anodic and cathodic polarization curve of stainless steel in 0.5 M H,SO4 solution in the presence and absence of ES.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9ccd472aa9335a9a9381195b2160cc99",
+    "text": "Table 1",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "16d1b60df969d21f3a485b2725605d17",
+    "text": "Potentiodynamic polarization data for stainless steel in the absence and presence of ES in 0.5 M H,SO4 solution.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Table",
+    "element_id": "90e5d5e6af6354a6a4b92e9b11c5d6ce",
+    "text": "Inhibitor be (V/dec) ba (V/dec) Ecorr (V) icorr (Ajem?) Polarization Corrosion resistance (Q) concentration (g) rate (mm/year) 0.0335 0.0409 \u2014-0.9393 0.0003 24.0910 2.8163 1.9460 0.0596 \u20140.8276 0.0002 121.440 1.5054 0.0163 0.2369 \u20140.8825 0.0001 42121 0.9476 0.3233 0.0540 \u20140.8027 5.39E-05 373180 0.4318 0.1240 0.0556 \u20140.5896 5.46E-05 305.650 0.3772 =0 sNO 5 0.0382 0.0086 \u20140.5356 1.24E-05 246.080 0.0919",
+    "metadata": {
+      "text_as_html": "<table><thead><tr><th>Inhibitor concentration (g)</th><th>be (V/dec)</th><th>ba (V/dec)</th><th>Ecorr (V)</th><th>icorr (Ajem?)</th><th>Polarization resistance (Q)</th><th>Corrosion rate (mm/year)</th></tr></thead><tbody><tr><td></td><td>0.0335</td><td>0.0409</td><td>\u2014-0.9393</td><td>0.0003</td><td>24.0910</td><td>2.8163</td></tr><tr><td>sNO</td><td>1.9460</td><td>0.0596</td><td>\u20140.8276</td><td>0.0002</td><td>121.440</td><td>1.5054</td></tr><tr><td></td><td>0.0163</td><td>0.2369</td><td>\u20140.8825</td><td>0.0001</td><td>42121</td><td>0.9476</td></tr><tr><td></td><td>0.3233</td><td>0.0540</td><td>\u20140.8027</td><td>5.39E-05</td><td>373180</td><td>0.4318</td></tr><tr><td></td><td>0.1240</td><td>0.0556</td><td>\u20140.5896</td><td>5.46E-05</td><td>305.650</td><td>0.3772</td></tr><tr><td>=0 5</td><td>0.0382</td><td>0.0086</td><td>\u20140.5356</td><td>1.24E-05</td><td>246.080</td><td>0.0919</td></tr></tbody></table>",
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8da1bb2c6ef631499784bf496f660ec2",
+    "text": "The plot of inhibitor concentration over degree of surface coverage versus inhibitor concentration gives a straight line as shown in Fig. 5. The strong correlation reveals that egg shell adsorption on stainless surface in 0.5 M H,S0,4 follow Langmuir adsorption isotherm. Figs. 6-8 show the SEM/EDX surface morphology analysis of stainless steel. Figs. 7 and 8 are the SEM/EDX images of the stainless steel specimens without and with inhibitor after weight loss experiment in sulphuric acid medium. The stainless steel surface corrosion product layer in the absence of inhibitor was porous and as a result gives no corrosion protection. With the presence of ES, corrosion damage was minimized, with an evidence of ES present on the metal surface as shown in Fig. 8.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Image",
+    "element_id": "8280de3e5bf611dbd1912369b324aef0",
+    "text": "[ \u2014=Cl0 12 10 3 2+ 1 6 10 Concentration (g)",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e47614c33cce9df23075bbe549493b72",
+    "text": "Fig. 5. Langmuir adsorption isotherm of ES.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "embedded-images-tables.jpg",
+      "data_source": {}
+    }
+  }
+]
