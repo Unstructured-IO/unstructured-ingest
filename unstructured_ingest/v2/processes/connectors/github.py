@@ -83,33 +83,6 @@ class GitHubIndexer(Indexer):
     connection_config: GitHubConnectionConfig
     index_config: GitHubIndexerConfig
 
-    @staticmethod
-    def is_file_type_supported(path: str) -> bool:
-        # Workaround to ensure that auto.partition isn't fed with .yaml, .py, etc. files
-        # TODO: What to do with no filenames? e.g. LICENSE, Makefile, etc.
-        supported = path.endswith(
-            (
-                ".md",
-                ".txt",
-                ".pdf",
-                ".doc",
-                ".docx",
-                ".eml",
-                ".heic",
-                ".html",
-                ".png",
-                ".jpg",
-                ".ppt",
-                ".pptx",
-                ".xml",
-            ),
-        )
-        if not supported:
-            logger.debug(
-                f"The file {path!r} is discarded as it does not contain a supported filetype.",
-            )
-        return supported
-
     def precheck(self) -> None:
         from github import Auth, Consts
         from github.GithubRetry import GithubRetry
@@ -147,7 +120,7 @@ class GitHubIndexer(Indexer):
 
         for element in git_tree.tree:
             rel_path = element.path.replace(self.connection_config.repo_path, "").lstrip("/")
-            if element.type == "blob" and self.is_file_type_supported(element.path):
+            if element.type == "blob":
                 record_locator = {
                     "repo_path": self.connection_config.repo_path,
                     "file_path": element.path,
@@ -207,7 +180,7 @@ class GitHubDownloader(Downloader):
             content_file = self.connection_config.get_repo().get_contents(path)
         except UnknownObjectException:
             logger.error(f"File doesn't exists {self.connection_config.url}/{path}")
-            return None
+            raise UnknownObjectException
 
         return content_file
 
@@ -215,6 +188,7 @@ class GitHubDownloader(Downloader):
     @requires_dependencies(["requests"], extras="github")
     def _fetch_content(self, content_file):
         import requests
+        from github.GithubException import UnknownObjectException
 
         contents = b""
         if (
@@ -223,11 +197,11 @@ class GitHubDownloader(Downloader):
             and content_file.size  # type: ignore
         ):
             logger.info("File too large for the GitHub API, using direct download link instead.")
-            # NOTE: Maybe add a raise_for_status to catch connection timeout or HTTP Errors?
             response = requests.get(content_file.download_url)  # type: ignore
+            response.raise_for_status()
             if response.status_code != 200:
                 logger.info("Direct download link has failed... Skipping this file.")
-                return None
+                raise UnknownObjectException
             else:
                 contents = response.content
         else:
