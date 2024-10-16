@@ -1,0 +1,30 @@
+[
+  {
+    "type": "Title",
+    "element_id": "1b4295d468a6248d569a50400a5230fa",
+    "text": "My First Heading",
+    "metadata": {
+      "category_depth": 0,
+      "languages": [
+        "eng"
+      ],
+      "filename": "fake-doc.rtf",
+      "filetype": "text/rtf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "c6e3363e130bd2c32408010fa7658564",
+    "text": "My first paragraph.",
+    "metadata": {
+      "category_depth": 0,
+      "languages": [
+        "eng"
+      ],
+      "filename": "fake-doc.rtf",
+      "filetype": "text/rtf",
+      "data_source": {}
+    }
+  }
+]

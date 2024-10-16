@@ -1,0 +1,191 @@
+[
+  {
+    "type": "UncategorizedText",
+    "element_id": "feeab7f503d704f35d9186883ed99bb1",
+    "text": "Hi,",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3cd90739ebbb3eb7721453aaa4f60c35",
+    "text": "It has come to our attention that as of 9:00am this morning, Harold's lunch is missing. If this was done in error please return the lunch immediately to the fridge on the 2nd floor by noon.",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "63c414624d90040a9a7a664792820263",
+    "text": "If the lunch has not been returned by noon, we will be reviewing camera footage to determine who stole Harold's lunch.",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "074b7adc477196a996a365e2dc6a197b",
+    "text": "The perpetrators\u00a0will be PUNISHED to the full extent of our employee code of conduct handbook.",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "c0ae1422a14f901df4430c0d1fc234da",
+    "text": "Thank you for your time,",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "41a6bde65a0a891ee7e6b1296115606e",
+    "text": "--",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "31267c73609705d7ae9e13d216250efd",
+    "text": "Mallori Harrell",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "1340ccb85ce6e1957890e59943d81850",
+    "text": "Unstructured Technologies",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "4e569d806226f31e9b572f9a7267883a",
+    "text": "Data Scientist",
+    "metadata": {
+      "filename": "alert.eml",
+      "email_message_id": "CAPgNNXRkF42xx-fMFG62O-Wevj1GZKuG_SAHPF5-QrvfxbZXTA@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "ALERT: Stolen Lunch",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  }
+]

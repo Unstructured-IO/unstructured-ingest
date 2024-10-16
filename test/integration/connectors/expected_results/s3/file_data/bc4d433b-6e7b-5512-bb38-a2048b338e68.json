@@ -1,0 +1,36 @@
+{
+  "identifier": "bc4d433b-6e7b-5512-bb38-a2048b338e68",
+  "connector_type": "s3",
+  "source_identifiers": {
+    "filename": "page-with-formula.pdf",
+    "fullpath": "utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+    "rel_path": "page-with-formula.pdf"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "s3://utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+    "version": "f2819db63e5aa2a3a6b8ba305f1911ea",
+    "record_locator": {
+      "protocol": "s3",
+      "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+    },
+    "date_created": "1697584841.0",
+    "date_modified": "1697584841.0",
+    "date_processed": "1729006181.875916",
+    "permissions_data": null,
+    "filesize_bytes": 138124
+  },
+  "additional_metadata": {
+    "Key": "utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+    "LastModified": "2023-10-17T23:20:41+00:00",
+    "ETag": "\"f2819db63e5aa2a3a6b8ba305f1911ea\"",
+    "Size": 138124,
+    "StorageClass": "STANDARD",
+    "type": "file",
+    "size": 138124,
+    "name": "utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf",
+    "original_file_path": "utic-dev-tech-fixtures/small-pdf-set/page-with-formula.pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpqvtxwgph/page-with-formula.pdf"
+}

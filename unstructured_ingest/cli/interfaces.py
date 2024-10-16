@@ -341,9 +341,9 @@ class CliPartitionConfig(PartitionConfig, CliMixin):
             ),
             click.Option(
                 ["--partition-endpoint"],
-                default="https://api.unstructured.io/general/v0/general",
+                default="https://api.unstructuredapp.io/general/v0/general",
                 help="If partitioning via api, use the following host. "
-                "Default: https://api.unstructured.io/general/v0/general",
+                "Default: https://api.unstructuredapp.io/general/v0/general",
             ),
             click.Option(
                 ["--api-key"],
