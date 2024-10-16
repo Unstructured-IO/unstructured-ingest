@@ -1,9 +1,11 @@
-## 0.0.26-dev4
+## 0.0.26-dev5
+
+### Enhancements
 
 * **Added migration for GitHub Source V2**
   * **Updated the expected output for GitHub Source V2**
 
-## 0.0.26-dev3
+## 0.0.26-dev4
 
 ### Enhancements
 
