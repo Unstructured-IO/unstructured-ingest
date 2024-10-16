@@ -208,7 +208,7 @@ class GitHubDownloader(Downloader):
             contents = content_file.decoded_content  # type: ignore
         return contents
 
-    def _fetch_and_write(self, path) -> None:
+    def _fetch_and_write(self, path, download_path) -> None:
         content_file = self._fetch_file(path)
         contents = self._fetch_content(content_file)
         if contents is None:
@@ -216,7 +216,7 @@ class GitHubDownloader(Downloader):
                 f"Failed to retrieve file from repo "
                 f"{self.connector_config.url}/{self.path}. Check logs",
             )
-        with open(path, "wb") as f:
+        with open(download_path, "wb") as f:
             f.write(contents)
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
@@ -224,7 +224,7 @@ class GitHubDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         path = file_data.source_identifiers.fullpath
-        self._fetch_and_write(path)
+        self._fetch_and_write(path, download_path)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
