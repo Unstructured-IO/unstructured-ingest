@@ -62,6 +62,7 @@ jobs:
           MXBAI_API_KEY: ${{ secrets.MXBAI_API_KEY }}
           TOGETHERAI_API_KEY: ${{ secrets.TOGETHERAI_API_KEY }}
           VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
+          VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
         run: |
           make install-all-embedders
           make install-test

@@ -37,5 +37,5 @@ def test_raw_vertexai_embedder(embedder_file: Path):
         )
     )
     validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1408,)
+        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(768,)
     )
