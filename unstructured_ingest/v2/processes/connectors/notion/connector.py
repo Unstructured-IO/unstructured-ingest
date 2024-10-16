@@ -3,12 +3,13 @@ from time import time
 from typing import Any, Generator, List, Optional, Set, Tuple
 from uuid import UUID
 
-from pydantic import Field, SecretStr
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    ConnectionConfig,
     Downloader,
     DownloaderConfig,
     DownloadResponse,
@@ -32,8 +33,12 @@ NOTION_API_VERSION = "2022-06-28"
 CONNECTOR_TYPE = "notion"
 
 
-class NotionConnectionConfig(AccessConfig):
-    notion_api_key: SecretStr = Field(description="Notion API key")
+class NotionAccessConfig(AccessConfig):
+    notion_api_key: str = Field(description="Notion API key")
+
+
+class NotionConnectionConfig(ConnectionConfig):
+    access_config: Secret[NotionAccessConfig]
 
 
 class NotionIndexerConfig(IndexerConfig):
