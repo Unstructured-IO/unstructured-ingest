@@ -9,17 +9,6 @@ fsspec==2024.5.0
 numpy==1.26.4
     # via
     #   -c ./connectors/../common/constraints.txt
-    #   pandas
     #   pyarrow
-pandas==2.2.3
-    # via -r ./connectors/delta-table.in
 pyarrow==17.0.0
     # via deltalake
-python-dateutil==2.9.0.post0
-    # via pandas
-pytz==2024.2
-    # via pandas
-six==1.16.0
-    # via python-dateutil
-tzdata==2024.2
-    # via pandas
