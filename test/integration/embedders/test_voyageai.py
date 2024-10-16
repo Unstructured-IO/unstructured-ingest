@@ -19,7 +19,7 @@ def get_api_key() -> str:
 @requires_env(API_KEY)
 def test_voyageai_embedder(embedder_file: Path):
     api_key = get_api_key()
-    embedder_config = EmbedderConfig(embedding_provider="vertexai", embedding_api_key=api_key)
+    embedder_config = EmbedderConfig(embedding_provider="voyageai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
     results = embedder.run(elements_filepath=embedder_file)
     assert results
