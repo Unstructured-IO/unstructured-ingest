@@ -109,7 +109,7 @@ class DiscordDownloader(Downloader):
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
 
-    '''def precheck(self) -> None:
+    def precheck(self) -> None:
         """Check the connection to the Discord API."""
         try:
             client = self.get_client()
@@ -117,7 +117,7 @@ class DiscordDownloader(Downloader):
             client.run(self.connection_config.access_config.get_secret_value().token)
         except Exception as e:
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to validate connection: {e}")'''
+            raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     @requires_dependencies(["discord"], extras="discord")
     def get_client(self):
