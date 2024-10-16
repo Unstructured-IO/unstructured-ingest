@@ -119,4 +119,28 @@ check-version:
 ###########
 .PHONY: unit-test
 unit-test:
-	PYTHONPATH=. pytest test
+	PYTHONPATH=. pytest test/unit
+
+.PHONY: integration-test
+integration-test:
+	PYTHONPATH=. pytest -sv test/integration
+
+.PHONY: integration-test-partitioners
+integration-test-partitioners:
+	PYTHONPATH=. pytest -sv test/integration/partitioners
+
+.PHONY: integration-test-chunkers
+integration-test-chunkers:
+	PYTHONPATH=. pytest -sv test/integration/chunkers
+
+.PHONY: integration-test-embedders
+integration-test-embedders:
+	PYTHONPATH=. pytest -sv test/integration/embedders
+
+.PHONY: integration-test-connectors-src
+integration-test-connectors-src:
+	PYTHONPATH=. pytest --tags source -sv test/integration/connectors
+
+.PHONY: integration-test-connectors-dest
+integration-test-connectors-dest:
+	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors

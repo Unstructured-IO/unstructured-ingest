@@ -1,0 +1,617 @@
+[
+  {
+    "type": "Title",
+    "element_id": "f724c9ee76fd61a0859421f7ce8a0be4",
+    "text": "MAIN GAME",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "21f2456d64c75ce8648128a2432bbd06",
+    "text": "CREATURES",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "ce05ece0483ca478d79e503795557c02",
+    "text": "Abomination",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b94eee7f2b6eec51572f2799e1ea44ef",
+    "text": "\"We arrived in the dead of night. We had been tracking the maleficar for days, and finally had him cornered... or so we thought.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "1ac38b04fe347f00a3be2c470affe4e1",
+    "text": "As we approached, a home on the edge of the town exploded, sending splinters of wood and fist-sized chunks of rocks into our ranks. We had but moments to regroup before fire rained from the sky, the sounds of destruction wrapped in a hideous laughter from the center of the village.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7fd5cfa018144ec58e933ff271ce011d",
+    "text": "There, perched atop the spire of the village chantry, stood the mage. But he was human no longer.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "6ceb25f8069c102c27c8ceb8fd3df36f",
+    "text": "We shouted prayers to the Maker and deflected what magic we could, but as we fought, the creature fought harder. I saw my comrades fall, burned by the flaming sky or crushed by debris. The monstrous creature, looking as if a demon were wearing a man like a twisted suit of skin, spotted me and grinned. We had forced it to this, I realized; the mage had made this pact, given himself over to the demon to survive our assault.\"",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "341ca480383346eb057ba5d2ee1662c6",
+    "text": "\u2014Transcribed from a tale told by a former templar in Cumberland, 8:84 Blessed.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9b80c70837d481b2c51258204681edf6",
+    "text": "It is known that mages are able to walk the Fade while completely aware of their surroundings, unlike most others who may only enter the realm as dreamers and leave it scarcely aware of their experience. Demons are drawn to mages, though whether it is because of this awareness or simply by virtue of their magical power in our world is unknown.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5039416ae2da389b7b6628226928a273",
+    "text": "Regardless of the reason, a demon always attempts to possess a mage when it encounters one\u2014by force or by making some kind of deal depending on the strength of the mage. Should the demon get the upper hand, the result is an unholy union known as an abomination. Abominations have been responsible for some of the worst cataclysms in history, and the notion that some mage in a remote tower could turn into such a creature unbeknownst to any was the driving force behind the creation of the Circle of Magi.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b21852416763254ee88c8c32fd3d0046",
+    "text": "Thankfully, abominations are rare. The Circle has methods for weeding out those who are too at risk for demonic possession, and scant few mages would give up their free will to submit to such a bond with a demon. But once an abomination is created, it will do its best to create more. Considering that entire squads of templars have been known to fall at the hands of a single abomination, it is not surprising that the Chantry takes the business of the Circle of Magi very seriously indeed.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "ce05ece0483ca478d79e503795557c02",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "c30fd69029c1bc13c27e0bacae78cc0c",
+    "text": "Arcane Horror",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "fa54951929ec46ec4eaeaf03a3a1ec45",
+    "text": "\"Upon ascending to the second floor of the tower, we were greeted by a gruesome sight: a ragged collection of bones wearing the robes of one of the senior enchanters. I had known her for years, watched her raise countless apprentices, and now she was a mere puppet for some demon.\"",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "c30fd69029c1bc13c27e0bacae78cc0c",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "PageNumber",
+    "element_id": "8206efc67f3df633eb4ddd724c023bcf",
+    "text": "6",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e274df73a26bb8f35e609474ac34636b",
+    "text": "MAIN GAME",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e60898f9b5555da808d0b8ae5a5895c1",
+    "text": "CREATURES",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "b44c9596f61064b2c7394adbd810ac1b",
+    "text": "Abomination",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a77a667ad7575107a21e4899784cbad1",
+    "text": "\"We arrived in the dead of night. We had been tracking the maleficar for days, and finally had him cornered... or so we thought.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7aba95f44b0f02d79a9bc8eff1b629a9",
+    "text": "As we approached, a home on the edge of the town exploded, sending splinters of wood and fist-sized chunks of rocks into our ranks. We had but moments to regroup before fire rained from the sky, the sounds of destruction wrapped in a hideous laughter from the center of the village.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "e02917032021c3bd0b8193226b8b58df",
+    "text": "There, perched atop the spire of the village chantry, stood the mage. But he was human no longer.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7f5077a2949ca6c0fa0bb2343ea7c9f6",
+    "text": "We shouted prayers to the Maker and deflected what magic we could, but as we fought, the creature fought harder. I saw my comrades fall, burned by the flaming sky or crushed by debris. The monstrous creature, looking as if a demon were wearing a man like a twisted suit of skin, spotted me and grinned. We had forced it to this, I realized; the mage had made this pact, given himself over to the demon to survive our assault.\"",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8cef5506c1f09b957452e1010bb5da27",
+    "text": "\u2014Transcribed from a tale told by a former templar in Cumberland, 8:84 Blessed.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5bc050b1844b4c73d1271957ad2c403b",
+    "text": "It is known that mages are able to walk the Fade while completely aware of their surroundings, unlike most others who may only enter the realm as dreamers and leave it scarcely aware of their experience. Demons are drawn to mages, though whether it is because of this awareness or simply by virtue of their magical power in our world is unknown.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "64a6561dcd1a83600f839860047bdce6",
+    "text": "Regardless of the reason, a demon always attempts to possess a mage when it encounters one\u2014by force or by making some kind of deal depending on the strength of the mage. Should the demon get the upper hand, the result is an unholy union known as an abomination. Abominations have been responsible for some of the worst cataclysms in history, and the notion that some mage in a remote tower could turn into such a creature unbeknownst to any was the driving force behind the creation of the Circle of Magi.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "874543ce4e06cff2dbeb2d2e892bb409",
+    "text": "Thankfully, abominations are rare. The Circle has methods for weeding out those who are too at risk for demonic possession, and scant few mages would give up their free will to submit to such a bond with a demon. But once an abomination is created, it will do its best to create more. Considering that entire squads of templars have been known to fall at the hands of a single abomination, it is not surprising that the Chantry takes the business of the Circle of Magi very seriously indeed.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b44c9596f61064b2c7394adbd810ac1b",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "016fef8321dd052ca301607cd53d0914",
+    "text": "Arcane Horror",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "52e4dbc359b4231f2b4eda3d98dc172a",
+    "text": "\"Upon ascending to the second floor of the tower, we were greeted by a gruesome sight: a ragged collection of bones wearing the robes of one of the senior enchanters. I had known her for years, watched her raise countless apprentices, and now she was a mere puppet for some demon.\"",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "016fef8321dd052ca301607cd53d0914",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "PageNumber",
+    "element_id": "270896cb12e403bf3a6d7fe4c3071064",
+    "text": "6",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "05fe6f86963755b37b1f69892977ded9",
+    "text": "MAIN GAME",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "62e56e8c7918bee45b865cd268d06081",
+    "text": "CREATURES",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+    "text": "Abomination",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b6a8dffe3b4d5099057a021c547a3b61",
+    "text": "\"We arrived in the dead of night. We had been tracking the maleficar for days, and finally had him cornered... or so we thought.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3a856ca004fce6539143eab742d9d75c",
+    "text": "As we approached, a home on the edge of the town exploded, sending splinters of wood and fist-sized chunks of rocks into our ranks. We had but moments to regroup before fire rained from the sky, the sounds of destruction wrapped in a hideous laughter from the center of the village.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "440b1bb2099985cc48df3e21a2a8d329",
+    "text": "There, perched atop the spire of the village chantry, stood the mage. But he was human no longer.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "83b52fb7c57888df57b04685384e96af",
+    "text": "We shouted prayers to the Maker and deflected what magic we could, but as we fought, the creature fought harder. I saw my comrades fall, burned by the flaming sky or crushed by debris. The monstrous creature, looking as if a demon were wearing a man like a twisted suit of skin, spotted me and grinned. We had forced it to this, I realized; the mage had made this pact, given himself over to the demon to survive our assault.\"",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "ddecc8b621f4f8f1f0264d5dc169729f",
+    "text": "\u2014Transcribed from a tale told by a former templar in Cumberland, 8:84 Blessed.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "008c8f2e45e4d92d194086981d6700ed",
+    "text": "It is known that mages are able to walk the Fade while completely aware of their surroundings, unlike most others who may only enter the realm as dreamers and leave it scarcely aware of their experience. Demons are drawn to mages, though whether it is because of this awareness or simply by virtue of their magical power in our world is unknown.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "28333c832fd05e6c5853c8d60da48a38",
+    "text": "Regardless of the reason, a demon always attempts to possess a mage when it encounters one\u2014by force or by making some kind of deal depending on the strength of the mage. Should the demon get the upper hand, the result is an unholy union known as an abomination. Abominations have been responsible for some of the worst cataclysms in history, and the notion that some mage in a remote tower could turn into such a creature unbeknownst to any was the driving force behind the creation of the Circle of Magi.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7b5b044bc14be6705b57ef0ab58f7bc4",
+    "text": "Thankfully, abominations are rare. The Circle has methods for weeding out those who are too at risk for demonic possession, and scant few mages would give up their free will to submit to such a bond with a demon. But once an abomination is created, it will do its best to create more. Considering that entire squads of templars have been known to fall at the hands of a single abomination, it is not surprising that the Chantry takes the business of the Circle of Magi very seriously indeed.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "2a2e950f4cbeebbd7fbe8f12d7ed2c38",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "1209c3887443c128f144ad26666f2128",
+    "text": "Arcane Horror",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "819f1f24b8e400b946f4e4b80809cbe4",
+    "text": "\"Upon ascending to the second floor of the tower, we were greeted by a gruesome sight: a ragged collection of bones wearing the robes of one of the senior enchanters. I had known her for years, watched her raise countless apprentices, and now she was a mere puppet for some demon.\"",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "parent_id": "1209c3887443c128f144ad26666f2128",
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "PageNumber",
+    "element_id": "1674900bc991ed8c4d7833ab4c123194",
+    "text": "6",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "filename": "DA-1p-with-duplicate-pages.pdf",
+      "data_source": {}
+    }
+  }
+]
