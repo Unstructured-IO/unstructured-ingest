@@ -1,3 +1,9 @@
+## 0.0.30
+
+### Enhancements
+
+* **Migrate Discord Source Connector to V2**
+
 ## 0.0.26-dev4
 
 ### Enhancements

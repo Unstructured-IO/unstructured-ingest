@@ -21,6 +21,8 @@ from .databricks_volumes import (
     databricks_volumes_destination_entry,
     databricks_volumes_source_entry,
 )
+from .discord import CONNECTOR_TYPE as DISCORD_CONNECTOR_TYPE
+from .discord import discord_source_entry
 from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
@@ -106,3 +108,5 @@ add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destina
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
+
+add_source_entry(source_type=DISCORD_CONNECTOR_TYPE, entry=discord_source_entry)

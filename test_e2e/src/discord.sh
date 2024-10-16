@@ -22,7 +22,7 @@ function cleanup() {
     cleanup_dir "$DOWNLOAD_DIR"
   fi
 }
-trap cleanup EXIT
+#trap cleanup EXIT
 
 if [ -z "$DISCORD_TOKEN" ]; then
   echo "Skipping Discord ingest test because the DISCORD_TOKEN env var is not set."
