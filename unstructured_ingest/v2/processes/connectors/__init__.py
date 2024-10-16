@@ -49,6 +49,8 @@ from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
 from .sql import CONNECTOR_TYPE as SQL_CONNECTOR_TYPE
 from .sql import sql_destination_entry
+from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
+from .vectara import vectara_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
@@ -106,3 +108,5 @@ add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destina
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
+
+add_destination_entry(destination_type=VECTARA_CONNECTOR_TYPE, entry=vectara_destination_entry)
