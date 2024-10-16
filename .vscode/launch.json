@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Test ingest nomicdb",
+        "env": {"PYTHONPATH":"/workspaces/unstructured-ingest/"},
+        "type": "debugpy",
+        "request": "launch",
+        "program": "./test_e2e/python/test-ingest-nomicdb.py",
+        "console": "integratedTerminal",
+        "justMyCode": false
+      }
+    ]
+  }
