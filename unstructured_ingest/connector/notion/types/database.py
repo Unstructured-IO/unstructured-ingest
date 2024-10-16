@@ -26,6 +26,7 @@ class Database(FromJSONMixin, GetHTMLMixin):
     last_edited_time: str
     last_edited_by: PartialUser
     archived: bool
+    in_trash: bool
     parent: Parent
     url: str
     is_inline: bool

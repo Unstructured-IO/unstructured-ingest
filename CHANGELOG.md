@@ -1,14 +1,19 @@
-## 0.0.26-dev3
+## 0.0.27
 
 ### Enhancements
 
 * **Migrate Notion Source Connector to V2**
 
-## 0.0.26-dev2
+## 0.0.26-dev3
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
+* **Add check that access config always wrapped in Secret**
+
+### Fixes
+
+**Fix Notion Ingestion** Fix the Notion source connector to work with the latest version of the Notion API (added `in_trash` properties to `Page`, `Block` and `Database`).
 
 ## 0.0.25
 
