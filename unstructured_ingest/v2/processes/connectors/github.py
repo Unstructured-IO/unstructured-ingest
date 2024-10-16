@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import fnmatch
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
-from pydantic import Field, root_validator
+from pydantic import Field, Secret, root_validator
 
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -17,7 +15,6 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
-    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
@@ -35,16 +32,14 @@ if TYPE_CHECKING:
 
 class GitHubAccessConfig(AccessConfig):
     git_access_token: Optional[str] = Field(
-        default=None, sensitive=False, overload_name="git_access_token"
+        default=None,
     )
 
 
 class GitHubConnectionConfig(ConnectionConfig):
     url: str
-    access_config: GitHubAccessConfig
+    access_config: Secret[GitHubAccessConfig]
     branch: Optional[str] = Field(default=None, overload_name="git_branch")
-
-    git_file_glob: Optional[List[str]] = Field(default=None, overload_name="git_file_glob")
     repo_path: str = field(init=False, repr=False, default=None)
 
     @root_validator(pre=True)
@@ -75,7 +70,7 @@ class GitHubConnectionConfig(ConnectionConfig):
     def get_repo(self) -> "Repository":
         from github import Github
 
-        github = Github(self.access_config.git_access_token)
+        github = Github(self.access_config.get_secret_value().git_access_token)
         return github.get_repo(self.repo_path)
 
 
@@ -120,9 +115,7 @@ class GitHubIndexer(Indexer):
         from github.GithubRetry import GithubRetry
         from github.Requester import Requester
 
-        logger.debug("Running 'precheck'...")
-
-        auth = Auth.Token(self.connection_config.access_config.git_access_token)
+        auth = Auth.Token(self.connection_config.access_config.get_secret_value().git_access_token)
 
         try:
             requester = Requester(
@@ -144,18 +137,6 @@ class GitHubIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def does_path_match_glob(self, path: str) -> bool:
-        if not self.connection_config.git_file_glob:
-            return True
-
-        patterns = self.connection_config.git_file_glob
-        for pattern in patterns:
-            if fnmatch.filter([path], pattern):
-                return True
-
-        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
-        return False
-
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         repo = self.connection_config.get_repo()
 
@@ -166,14 +147,7 @@ class GitHubIndexer(Indexer):
 
         for element in git_tree.tree:
             rel_path = element.path.replace(self.connection_config.repo_path, "").lstrip("/")
-            if (
-                element.type == "blob"
-                and self.is_file_type_supported(element.path)
-                and (
-                    not self.connection_config.git_file_glob
-                    or self.does_path_match_glob(element.path)
-                )
-            ):
+            if element.type == "blob" and self.is_file_type_supported(element.path):
                 record_locator = {
                     "repo_path": self.connection_config.repo_path,
                     "file_path": element.path,
@@ -271,7 +245,6 @@ class GitHubDownloader(Downloader):
         with open(path, "wb") as f:
             f.write(contents)
 
-    @SourceConnectionError.wrap
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
@@ -279,7 +252,7 @@ class GitHubDownloader(Downloader):
         path = file_data.source_identifiers.fullpath
         self._fetch_and_write(path)
 
-        return DownloadResponse(file_data=file_data, path=Path(path))
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 github_source_entry = SourceRegistryEntry(
