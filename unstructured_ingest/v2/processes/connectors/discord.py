@@ -4,7 +4,6 @@ from typing import Any, Generator, List, Optional, Set
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -53,16 +52,6 @@ class DiscordIndexer(Indexer):
         intents = discord.Intents.default()
         intents.message_content = True
         return discord.Client(intents=intents)
-
-    def precheck(self) -> None:
-        """Check the connection to the Discord API."""
-        try:
-            client = self.get_client()
-            # Attempt a simple connection check
-            client.run(self.connection_config.access_config.get_secret_value().token)
-        except Exception as e:
-            logger.error(f"Failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.get_client()
@@ -120,6 +109,16 @@ class DiscordDownloader(Downloader):
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
 
+    '''def precheck(self) -> None:
+        """Check the connection to the Discord API."""
+        try:
+            client = self.get_client()
+            # Attempt a simple connection check
+            client.run(self.connection_config.access_config.get_secret_value().token)
+        except Exception as e:
+            logger.error(f"Failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"Failed to validate connection: {e}")'''
+
     @requires_dependencies(["discord"], extras="discord")
     def get_client(self):
         import discord
@@ -166,7 +165,6 @@ class DiscordDownloader(Downloader):
 
         with open(download_path, "w") as file:
             for message in messages:
-                print("HERE IT IS WORKING" + message)
                 file.write(f"{message.content}\n")
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
