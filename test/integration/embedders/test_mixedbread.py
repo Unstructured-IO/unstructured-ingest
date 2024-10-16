@@ -40,5 +40,8 @@ def test_raw_mixedbread_embedder(embedder_file: Path):
         )
     )
     validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(512,)
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimensions=(1024,),
+        expected_is_unit_vector=False,
     )

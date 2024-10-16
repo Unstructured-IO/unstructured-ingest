@@ -32,7 +32,9 @@ def validate_raw_embedder(
     single_text = all_text[0]
     num_of_dimensions = embedder.num_of_dimensions
     if expected_dimensions:
-        assert num_of_dimensions == expected_dimensions
+        assert (
+            num_of_dimensions == expected_dimensions
+        ), f"number of dimensions {num_of_dimensions} didn't match expected: {expected_dimensions}"
     is_unit_vector = embedder.is_unit_vector
     assert is_unit_vector == expected_is_unit_vector
     single_embedding = embedder.embed_query(query=single_text)
