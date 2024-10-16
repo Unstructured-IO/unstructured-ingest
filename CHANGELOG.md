@@ -1,10 +1,18 @@
-## 0.0.26-dev1
+## 0.0.26-dev4
 
 ### Enhancements
 
 * **Added MongoDB source V2 connector**
 
-## 0.0.26-dev0
+## 0.0.26-dev3
+
+### Enhancements
+
+* **Move default API URL parameter value to serverless API**
+
+### Fixes
+
+**Fix Notion Ingestion** Fix the Notion source connector to work with the latest version of the Notion API (added `in_trash` properties to `Page`, `Block` and `Database`).
 
 ## 0.0.25
 

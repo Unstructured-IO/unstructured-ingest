@@ -130,7 +130,7 @@ class DescribeChunker:
         _partition_via_api_.assert_called_once_with(
             filename=ELEMENTS_JSON_FILE,
             api_key="aaaaaaaaaaaaaaaaaaaaa",
-            api_url="https://api.unstructured.io/general/v0/general",
+            api_url="https://api.unstructuredapp.io/general/v0/general",
             chunking_strategy="by_similarity",
             # NOTE(jennings): the sdk uses combine_under_n_chars but the ChunkingConfig param is
             # combine_text_under_n_chars

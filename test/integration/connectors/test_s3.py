@@ -5,12 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from test.integration.connectors.utils import (
+from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
     SOURCE_TAG,
-    ValidationConfigs,
-    docker_compose_context,
     env_setup_path,
+)
+from test.integration.connectors.utils.docker_compose import docker_compose_context
+from test.integration.connectors.utils.validation import (
+    ValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -58,8 +60,9 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
             indexer=indexer,
             downloader=downloader,
             configs=ValidationConfigs(
-                predownload_filedata_check=validate_predownload_file_data,
-                postdownload_filedata_check=validate_postdownload_file_data,
+                test_id="s3",
+                predownload_file_data_check=validate_predownload_file_data,
+                postdownload_file_data_check=validate_postdownload_file_data,
                 expected_num_files=4,
             ),
         )
@@ -84,9 +87,15 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
                 indexer=indexer,
                 downloader=downloader,
                 configs=ValidationConfigs(
-                    predownload_filedata_check=validate_predownload_file_data,
-                    postdownload_filedata_check=validate_postdownload_file_data,
+                    test_id="s3-minio",
+                    predownload_file_data_check=validate_predownload_file_data,
+                    postdownload_file_data_check=validate_postdownload_file_data,
                     expected_num_files=1,
+                    exclude_fields_extend=[
+                        "metadata.date_modified",
+                        "metadata.date_created",
+                        "additional_metadata.LastModified",
+                    ],
                 ),
             )
 

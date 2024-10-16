@@ -20,7 +20,7 @@ class ChunkerConfig(BaseModel):
         default=None, description="The rule-set to use to form chunks. Omit to disable chunking."
     )
     chunking_endpoint: Optional[str] = Field(
-        default="https://api.unstructured.io/general/v0/general",
+        default="https://api.unstructuredapp.io/general/v0/general",
         description="If chunking via api, use the following host.",
     )
     chunk_by_api: bool = Field(default=False, description="Flag to use api for chunking")
