@@ -96,7 +96,7 @@ class MongoDBIndexer(Indexer):
         access_config = self.connection_config.access_config.get_secret_value()
 
         if access_config.uri:
-            return MongoClient( 
+            return MongoClient(
                 access_config.uri,
                 server_api=ServerApi(version=SERVER_API_VERSION),
                 driver=DriverInfo(name="unstructured", version=unstructured_version),
