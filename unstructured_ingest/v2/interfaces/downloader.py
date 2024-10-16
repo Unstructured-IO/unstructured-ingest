@@ -62,6 +62,7 @@ class Downloader(BaseProcess, BaseConnector, ABC):
             date_modified = float(file_data.metadata.date_modified)
             date_created = float(file_data.metadata.date_created)
             os.utime(download_path, times=(date_created, date_modified))
+        file_data.local_download_path = str(download_path.resolve())
         return DownloadResponse(file_data=file_data, path=download_path)
 
     @property

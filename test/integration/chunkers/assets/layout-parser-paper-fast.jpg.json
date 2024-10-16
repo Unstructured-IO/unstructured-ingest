@@ -1,0 +1,180 @@
+[
+  {
+    "type": "Title",
+    "element_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+    "text": "LayoutParser: A Unified Toolkit for Deep Learning Based Document Image Analysis",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "1ed3c54e3537f774599ac7f324d29ca0",
+    "text": "2103.15348v2 [cs.CV] 21 Jun 2021 . . v . ar",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "bff8dde88b64cbd42f47eea295e3ab05",
+    "text": "Zejiang Shen' (), Ruochen Zhang\u00ae, Melissa Dell\u00ae, Benjamin Charles Germain Lee*, Jacob Carlson\u00ae, and Weining Li\u00ae",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "39bb7e8bb322ebaa947412ee3e02e32b",
+    "text": "' Allen Institute for Al shannons\u00aeallenai.org",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9ce5d639fd9ee16e932fa9bc445bd04b",
+    "text": "? Brown University ruochen.zhang@broun. edu",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "afce5b6c75f1198c8a8f368e0b7657d5",
+    "text": "% Harvard University {nelizzadell, jacob.carlson}@fas.harvard.edu",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "2d34db2c7d18db10721c6e592226353f",
+    "text": "4 University of Washington bcgl@cs.vashington. edu",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "15f9d268606b1a80e0b5f08da376e072",
+    "text": "\u00ae University of Waterloo wi22liduvaterloo.ca",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "9aa51831836d6fe4b4d152daad14c1eb",
+    "text": "Abstract. Recent advances in document image analysis (DIA) have been primarily driven by the application of neural networks. Ideally, research outcomes could be easily deployed in production and extended for further investigation. However, various factors like loosely organized codebases and sophisticated model configurations complicate the easy reuse of im- portant innovations by a wide audience. Though there have been on-going efforts to improve reusability and simplify deep learning (DL) model development in disciplines like natural language processing and computer vision, none of them are optimized for challenges in the domain of DIA. This represents a major gap in the existing toolkit, as DIA is central to academic research across a wide range of disciplines in the social sciences and humanities. This paper introduces LayoutParser, an open-source library for streamlining the usage of DL in DIA research and applica- tions. The core LayoutParser library comes with a set of simple and intuitive interfaces for applying and customizing DL models for layout de- tection, character recognition, and many other document processing tasks. To promote extensibility, LayoutParser also incorporates a community platform for sharing both pre-trained models and full document digiti- zation pipelines. We demonstrate that LayoutParser is helpful for both lightweight and large scale digitization pipelines in real.word use cases. The library is publicly available at https://layout-parser.github.io",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "75695d02ca2e7bc57d728566e4cbeb5d",
+    "text": "Keywords: Document Image Analysis - Deep Learning - Layout Analysis + Character Recognition - Open Source library - Toolkit.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "20b623e1cb58bc0e17869b3af08f9fa3",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "746f072c6ec17bc09143bb70a68265fc",
+    "text": "1 Introduction",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5fd2d18499e5b2e434122216031d674f",
+    "text": "Deep Learning(DL)-based approaches are the state-of-the-art for a wide range of document image analysis (DIA) tasks including document image classification [11]",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "746f072c6ec17bc09143bb70a68265fc",
+      "filename": "layout-parser-paper-fast.jpg",
+      "data_source": {}
+    }
+  }
+]

@@ -1,9 +1,27 @@
-## 0.0.26
+## 0.0.27
 
 ### Features
 
 * **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+
+## 0.0.26-dev2
+
+### Enhancements
+
+* **Move default API URL parameter value to serverless API**
+
+## 0.0.25
+
+### Enhancements
+
+* **Support pinecone namespace on upload**
+* **Migrate Outlook Source Connector to V2**
+* **Support for Databricks Volumes source connector**
+
+### Fixes
+
+* **Update Sharepoint Creds and Expected docs**
 
 ## 0.0.24
 
@@ -22,8 +40,11 @@
 ### Enhancements
 
 * **Add documentation for developing sources/destinations**
+
 * **Leverage `uv` for pip compile**
+
 * **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
+
 * **Drop langchain as dependency for embedders**
 
 ## 0.0.21

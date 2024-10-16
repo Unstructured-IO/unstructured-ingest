@@ -17,7 +17,10 @@
           "server_path": "SitePages/This-is-a-title.aspx",
           "site_url": "https://unstructuredio.sharepoint.com"
         },
-        "date_modified": "1690787017.0"
+        "date_created": null,
+        "date_modified": "1690787017.0",
+        "permissions_data": null,
+        "filesize_bytes": 1452
       }
     }
   },
@@ -39,7 +42,10 @@
           "server_path": "SitePages/This-is-a-title.aspx",
           "site_url": "https://unstructuredio.sharepoint.com"
         },
-        "date_modified": "1690787017.0"
+        "date_created": null,
+        "date_modified": "1690787017.0",
+        "permissions_data": null,
+        "filesize_bytes": 1452
       }
     }
   },
@@ -61,7 +67,10 @@
           "server_path": "SitePages/This-is-a-title.aspx",
           "site_url": "https://unstructuredio.sharepoint.com"
         },
-        "date_modified": "1690787017.0"
+        "date_created": null,
+        "date_modified": "1690787017.0",
+        "permissions_data": null,
+        "filesize_bytes": 1452
       }
     }
   },
@@ -83,7 +92,10 @@
           "server_path": "SitePages/This-is-a-title.aspx",
           "site_url": "https://unstructuredio.sharepoint.com"
         },
-        "date_modified": "1690787017.0"
+        "date_created": null,
+        "date_modified": "1690787017.0",
+        "permissions_data": null,
+        "filesize_bytes": 1452
       }
     }
   }

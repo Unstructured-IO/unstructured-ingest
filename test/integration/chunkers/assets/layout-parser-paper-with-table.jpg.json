@@ -1,0 +1,210 @@
+[
+  {
+    "type": "Header",
+    "element_id": "f0f06acb07f135ca5bf2171b43d5a4f0",
+    "text": "LayoutParser: A Unified Toolkit for DL-Based DIA",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "d9d53799fbfc3f90096f9dc9d45ff667",
+    "text": "Table 1: Current layout detection models in the LayoutParser model zoo",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "f0f06acb07f135ca5bf2171b43d5a4f0",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Table",
+    "element_id": "2c9375e90d1df955e8e95c195e18492c",
+    "text": "Dataset | Base Model!| Large Model | Notes PubLayNet [33] F/M M Layouts of modern scientific documents M - Layouts of scanned modern magazines and scientific reports F - Newspaper [17] Layouts of scanned US newspapers from the 20th century TableBank (18] F F Table region on modern scientific and business document HJDataset [31) F/M - Layouts of history Japanese documents",
+    "metadata": {
+      "text_as_html": "<table><thead><tr><th>Dataset</th><th>| Base Model!|</th><th>Large Model</th><th>Notes</th></tr></thead><tbody><tr><td>PubLayNet [33]</td><td>F/M</td><td>M</td><td>Layouts of modern scientific documents</td></tr><tr><td>PRImA [3]</td><td>M</td><td>-</td><td>Layouts of scanned modern magazines and scientific reports</td></tr><tr><td>Newspaper [17]</td><td>F</td><td>-</td><td>Layouts of scanned US newspapers from the 20th century</td></tr><tr><td>TableBank (18]</td><td>F</td><td></td><td>Table region on modern scientific and business document</td></tr><tr><td>HJDataset [31)</td><td>F/M</td><td>-</td><td>Layouts of history Japanese documents</td></tr></tbody></table>",
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "d9d53799fbfc3f90096f9dc9d45ff667",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "e01f34b233ce82e29a3d00174e7025a0",
+    "text": "! For each datasst, we train several models of different sizes for different needs (the trade-off between accuracy vs. computational cost). For \u201cbase model\u201d and \u201clarge model\u201d, we refer to using the ResNet 50 or ResNet 101 backbones (13, respectively. One can train models of diffecent architectures, like Faster R-CNN (28] (F) and Mask R-CNN [12] (M). For example, an F in the Large Model column indicates it has a Faster R-CNN model trained using the ResNet 101 backbone. The platform is maintained and a number of additicas will be made to the model 200 in coming months.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "d9d53799fbfc3f90096f9dc9d45ff667",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "7eb11f02f79a2fd28e6781cd2b6ad802",
+    "text": "[",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "d9d53799fbfc3f90096f9dc9d45ff667",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "522f9e0268edf67723fe894cf0354422",
+    "text": "<}",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "d9d53799fbfc3f90096f9dc9d45ff667",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "5c45689857fcacbad0e8832c0b53db72",
+    "text": "w",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "f0f06acb07f135ca5bf2171b43d5a4f0",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "0180b0af97f7ad476057ad92e01a4992",
+    "text": "'S",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "f0f06acb07f135ca5bf2171b43d5a4f0",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "f8af6087cdc7a9d9d87858884810b725",
+    "text": "o",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "f0f06acb07f135ca5bf2171b43d5a4f0",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "570e0c4b58807d8bc144329039ad25f6",
+    "text": "layout data structures, which are optimized for efficiency and versatility. 3) When necessary, users can employ existing or customized OCR models via the unified API provided in the OCR module. 4) LayoutParser comes with a set of utility functions for the visualization and storage of the layout data. 5) LayoutParser is also highly customizable, via its integration with functions for layout data annotation and model training. We now provide detailed descriptions for each component.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "f8af6087cdc7a9d9d87858884810b725",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e956441714dec8a51651ef2b2498da9b",
+    "text": "3.1 Layout Detection Models",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "f0f06acb07f135ca5bf2171b43d5a4f0",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "d61c279f27492c66f528d3bc53a6d376",
+    "text": "In LayoutParser, a layout model takes a document image as an input and generates a list of rectangular boxes for the target content regions. Different from traditional methods, it relies on deep convolutional neural networks rather than manually curated rules to identify content regions. It is formulated as an object detection problem and state-of-the-art models like Faster R-CNN [28] and Mask R-CNN [12] are used. This yields prediction results of high accuracy and makes it possible to build a concise, generalized interface for layout detection. LayoutParser, built upon Detectron2 [35], provides a minimal API that can perform layout detection with only four lines of code in Python:",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "e956441714dec8a51651ef2b2498da9b",
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "CodeSnippet",
+    "element_id": "15694242048ed77ec0115597a63efe15",
+    "text": "import layoutparser as lp image = cv2.imread(\"image_file\") # load images model = lp.Detectron2LayoutModel( \"lp://PubLaylet/faster_rcnn_ R_60_FPN_3x/config\") layout = model.detect(image)",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "76315bd169809f7ea335719ce301f434",
+    "text": "LayoutParser provides a wealth of pre-trained model weights using various datasets covering different languages, time periods, and document types. Due to domain shift (7], the prediction performance can notably drop when models are ap- plied to target samples that are significantly different from the training dataset. As document structures and layouts vary greatly in different domains, it is important to select models trained on a dataset similar to the test samples. A semantic syntax is used for initializing the model weights in LayoutParser, using both the dataset name and model name lp://<dataset-name>/<model-architecture-name>.",
+    "metadata": {
+      "filetype": "image/jpeg",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-with-table.jpg",
+      "data_source": {}
+    }
+  }
+]

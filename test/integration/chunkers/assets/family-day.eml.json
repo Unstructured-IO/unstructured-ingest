@@ -1,0 +1,192 @@
+[
+  {
+    "type": "UncategorizedText",
+    "element_id": "d7f4a74eb36198f8619a7791ab846a7b",
+    "text": "Hi All,",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8950f0ac11929af5f475f47b16bc1df0",
+    "text": "Get excited for our first annual family day!\u00a0",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "1677f4238c2e0e9f06f5bf00ed9b96b9",
+    "text": "There will be face painting, a petting zoo, funnel cake and more.",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "55638e209974b70628a59dcc5d245cc1",
+    "text": "Make sure to RSVP!",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "5df38eba0ec073f8e5b0d4b891e0eede",
+    "text": "Best.",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "44d5c38b569e97034bf9ff5a49d25ded",
+    "text": "--",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "parent_id": "5df38eba0ec073f8e5b0d4b891e0eede",
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "1bc493e96c4480a28e7e5eba05aceded",
+    "text": "Mallori Harrell",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "66409f7d33d83d5c341fd192d87abee8",
+    "text": "Unstructured Technologies",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "aa8ea39b14459c95f345d44ddf92642a",
+    "text": "Data Scientist",
+    "metadata": {
+      "filename": "family-day.eml",
+      "email_message_id": "CAPgNNXQKR=o6AsOTr74VMrsDNhUJW0Keou9n3vLa2UO_Nv+tZw@mail.gmail.com",
+      "sent_from": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "sent_to": [
+        "Mallori Harrell <mallori@unstructured.io>"
+      ],
+      "subject": "Family Day",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "message/rfc822",
+      "data_source": {}
+    }
+  }
+]
