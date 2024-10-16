@@ -35,24 +35,24 @@ CONNECTOR_TYPE = "qdrant"
 
 
 class QdrantAccessConfig(AccessConfig):
-    api_key: Optional[str] = Field(default=None, sensitive=True, description="API Key")
+    api_key: Optional[str] = Field(default=None, description="API Key")
 
 
 
 class QdrantConnectionConfig(ConnectionConfig):
-    collection_name: str
-    location: Optional[str] = None
-    url: Optional[str] = None
-    port: Optional[int] = 6333
-    grpc_port: Optional[int] = 6334
-    prefer_grpc: Optional[bool] = False
-    https: Optional[bool] = None
-    prefix: Optional[str] = None
-    timeout: Optional[float] = None
-    host: Optional[str] = None
-    path: Optional[str] = None
-    force_disable_check_same_thread: Optional[bool] = False
-    access_config: Optional[QdrantAccessConfig] = None
+    collection_name: str = Field(description="API Key")
+    location: Optional[str] = Field(default=None, description="Location")
+    url: Optional[str] = Field(default=None, description="URL")
+    port: Optional[int] = Field(default=6333, description="Port")
+    grpc_port: Optional[int] = Field(default=6334, description="GRPC Port")
+    prefer_grpc: Optional[bool] = Field(default=False, description="Prefer GRCP")
+    https: Optional[bool] = Field(default=None, description="HTTPS")
+    prefix: Optional[str] = Field(default=None, description="Prefix")
+    timeout: Optional[float] = Field(default=None, description="TimeOut time")
+    host: Optional[str] = Field(default=None, description="Host")
+    path: Optional[str] = Field(default=None, description="Path")
+    force_disable_check_same_thread: Optional[bool] = Field(default=False, description="Force disable check for same thread")
+    access_config: Optional[QdrantAccessConfig] = Field(default=None, description="Access Config")
 
 class QdrantUploadStagerConfig(UploadStagerConfig):
     pass
