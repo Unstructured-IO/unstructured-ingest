@@ -48,6 +48,6 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --db-type "$DATABASE_TYPE" \
   --database "$DB_PATH"
 
-"$SCRIPT_DIR"/env_setup/duckdb/test_outputs.py \
+"$SCRIPT_DIR"/env_setup/duckdb/test-outputs.py \
   --database-type $DATABASE_TYPE \
   --database-path $DB_PATH
