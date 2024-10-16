@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Mapping, Optional
 from dateutil import parser
 from pydantic import Field
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -60,8 +59,6 @@ class VectaraUploadStager(UploadStager):
         except Exception as e:
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
-    
-    
 
     @staticmethod
     def conform_dict(data: dict) -> dict:
@@ -71,7 +68,7 @@ class VectaraUploadStager(UploadStager):
         Select which meta-data fields to include and optionally map them to a new new.
         remove the "metadata-" prefix from the keys
         """
-        metadata_map = {    
+        metadata_map = {
             "page_number": "page_number",
             "data_source-url": "url",
             "filename": "filename",
@@ -82,7 +79,7 @@ class VectaraUploadStager(UploadStager):
         md = {k.replace("metadata-", ""): v for k, v in md.items()}
         md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
         return md
-        
+
     def run(
         self,
         elements_filepath: Path,
@@ -94,18 +91,22 @@ class VectaraUploadStager(UploadStager):
         docs_list: Dict[Dict[str, Any]] = []
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-        
+
         docs_list: Dict[Dict[str, Any]] = []
         conformed_elements = {
             "documentId": str(uuid.uuid4()),
-            "title": elements_contents[0].get("metadata", {}).get("data_source", {}).get("record_locator", {}).get("path"),
+            "title": elements_contents[0]
+            .get("metadata", {})
+            .get("data_source", {})
+            .get("record_locator", {})
+            .get("path"),
             "section": [
-                    {
-                        "text": element.pop("text", None),
-                        "metadataJson": json.dumps(self.conform_dict(data=element)),
-                    }
-                    for element in elements_contents
-                ],
+                {
+                    "text": element.pop("text", None),
+                    "metadataJson": json.dumps(self.conform_dict(data=element)),
+                }
+                for element in elements_contents
+            ],
         }
         logger.info(
             f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}",
