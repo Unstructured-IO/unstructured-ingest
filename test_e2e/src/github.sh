@@ -53,7 +53,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --url dcneiner/Downloadify \
-  --git-file-glob '*.html,*.txt' \
+  --file-glob '*.html,*.txt' \
   --work-dir "$WORK_DIR" \
   $ACCESS_TOKEN_FLAGS
 
