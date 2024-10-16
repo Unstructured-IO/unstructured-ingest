@@ -28,6 +28,7 @@ from unstructured_ingest.v2.processes.connectors.notion.helpers import (
     get_recursive_content_from_database,
     get_recursive_content_from_page,
 )
+
 if t.TYPE_CHECKING:
     from unstructured_ingest.v2.processes.connectors.notion.client import Client as NotionClient
 
