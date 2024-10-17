@@ -124,7 +124,7 @@ class DiscordDownloader(Downloader):
         if not self.connection_config.channels:
             channel_id = file_data.metadata.record_locator["channel_id"]
         else:
-            channel_id = self.connection_config.channels #list of channels
+            channel_id = self.connection_config.channels  # list of channels
 
         intents = discord.Intents.default()
         intents.message_content = True
@@ -140,7 +140,9 @@ class DiscordDownloader(Downloader):
 
                     for message in messages:
                         download_responses.append(
-                            self.generate_download_response(message, self.get_download_path(message))
+                            self.generate_download_response(
+                                message, self.get_download_path(message)
+                            )
                         )
             else:
                 channel = await client.fetch_channel(int(channel_id))
