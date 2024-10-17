@@ -1,7 +1,6 @@
 import datetime as dt
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Generator, Optional, Dict
+from typing import Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -17,7 +16,6 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
@@ -112,6 +110,7 @@ class DiscordDownloader(Downloader):
     @requires_dependencies(["discord"], extras="discord")
     def load_async(self):
         import discord
+
         return discord.Client, None
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
