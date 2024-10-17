@@ -85,6 +85,11 @@ jobs:
       with:
         python-version: "3.10"
     - name: Test (end-to-end)
+      env:
+        DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
+        DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
+        DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
+        DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
       run : |
         source .venv/bin/activate
         sudo make install-docker-compose
@@ -109,6 +114,11 @@ jobs:
       with:
         python-version: "3.10"
     - name: Test (end-to-end)
+      env:
+        DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
+        DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
+        DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
+        DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
       run : |
         source .venv/bin/activate
         sudo make install-docker-compose
