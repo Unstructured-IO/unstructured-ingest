@@ -1,15 +1,23 @@
-## 0.0.30
+## 0.0.26-dev6
 
 ### Enhancements
 
 * **Migrate Discord Source Connector to V2**
 
-## 0.0.26-dev4
+
+## 0.0.26-dev5
+
+### Enhancements
+
+* **Added MongoDB source V2 connector**
+
+## 0.0.26-dev3
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
+* **Add togetherai embedder support**
 
 ### Fixes
 

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-import numpy as np
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
 
 class VoyageAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
-    embedder_model_name: str = Field(alias="model_name")
+    embedder_model_name: str = Field(default="voyage-3", alias="model_name")
     batch_size: Optional[int] = Field(default=None)
     truncation: Optional[bool] = Field(default=None)
     max_retries: int = 0
@@ -39,19 +38,6 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
 class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: VoyageAIEmbeddingConfig
 
-    def get_exemplary_embedding(self) -> list[float]:
-        return self.embed_query(query="A sample query.")
-
-    @property
-    def num_of_dimensions(self) -> tuple[int, ...]:
-        exemplary_embedding = self.get_exemplary_embedding()
-        return np.shape(exemplary_embedding)
-
-    @property
-    def is_unit_vector(self) -> bool:
-        exemplary_embedding = self.get_exemplary_embedding()
-        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
-
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client: VoyageAIClient = self.config.get_client()
         response = client.embed(texts=elements, model=self.config.embedder_model_name)
@@ -63,12 +49,3 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_query(self, query: str) -> list[float]:
         return self._embed_documents(elements=[query])[0]
-
-    @staticmethod
-    def _add_embeddings_to_elements(elements, embeddings) -> list[dict]:
-        assert len(elements) == len(embeddings)
-        elements_w_embedding = []
-        for i, element in enumerate(elements):
-            element["embeddings"] = embeddings[i]
-            elements_w_embedding.append(element)
-        return elements
