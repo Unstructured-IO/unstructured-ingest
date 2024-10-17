@@ -57,7 +57,6 @@ class Block(FromJSONMixin, GetHTMLMixin):
     created_by: PartialUser
     last_edited_time: str
     last_edited_by: PartialUser
-    # not_in_trash: bool
     archived: bool
     in_trash: bool
     has_children: bool
