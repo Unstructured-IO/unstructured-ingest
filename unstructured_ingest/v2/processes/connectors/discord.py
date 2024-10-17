@@ -4,7 +4,6 @@ from typing import Any, Generator, Optional
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -105,55 +104,47 @@ class DiscordDownloaderConfig(DownloaderConfig):
 
 @dataclass
 class DiscordDownloader(Downloader):
+
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
 
-    async def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        client = self.download_config.get_client()
-        record_locator = file_data.metadata.record_locator
-
-        if "channel_id" in record_locator:
-            return await self.download_channel(
-                client=client,
-                channel_id=record_locator["channel_id"],
-                file_data=file_data,
-            )
-        else:
-            raise ValueError("Invalid record_locator in file_data")
-
-    async def download_channel(
-        self, client, channel_id: str, file_data: FileData
-    ) -> DownloadResponse:
+    @requires_dependencies(["discord"], extras="discord")
+    def load_async(self):
         import discord
         from discord.ext import commands
 
-        bot = commands.Bot(command_prefix=">", intents=client.intents)
-        download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
+        return discord.Client, commands.Bot
 
-        messages: list[discord.Message] = []
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> list[DownloadResponse]:
+        import discord
 
-        @bot.event
-        async def on_ready():
-            try:
-                channel = bot.get_channel(int(channel_id))
-                async for msg in channel.history(limit=100):  # Example message limit
-                    messages.append(msg)
-            except Exception as e:
-                logger.error(f"Error fetching messages from channel {channel_id}: {e}")
-            finally:
-                await bot.close()
+        AsyncClient, AsyncBot = self.load_async()
 
-        try:
+        channel_id: str = file_data.metadata.record_locator["channel_id"]
+        message_limit: int = self.download_config.message_limit
+
+        download_responses = []
+        intents = discord.Intents.default()
+        intents.message_content = True
+
+        async with AsyncClient(intents=intents) as client:
+            bot = AsyncBot(command_prefix=">", intents=client.intents)
+
+            @bot.event
+            async def on_ready():
+                try:
+                    channel = bot.get_channel(int(channel_id))
+                    async for message in channel.history(limit=message_limit):
+                        download_response = self.generate_download_response(
+                            message=message, channel_id=channel_id, file_data=file_data
+                        )
+                        download_responses.append(download_response)
+                finally:
+                    await bot.close()
+
             await bot.start(self.connection_config.access_config.get_secret_value().token)
-        except Exception as e:
-            logger.error(f"Error starting bot: {e}")
 
-        with open(download_path, "w") as file:
-            for message in messages:
-                file.write(f"{message.content}\n")
-
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        return download_responses
 
 
 discord_source_entry = SourceRegistryEntry(
