@@ -1,6 +1,7 @@
 import datetime as dt
 from dataclasses import dataclass
-from typing import Any, Generator, Optional
+from pathlib import Path
+from typing import Any, Generator, Optional, Dict
 
 from pydantic import Field, Secret
 
@@ -111,34 +112,43 @@ class DiscordDownloader(Downloader):
     @requires_dependencies(["discord"], extras="discord")
     def load_async(self):
         import discord
-
         return discord.Client, None
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        # Synchronous run is not implemented
         raise NotImplementedError()
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> list[DownloadResponse]:
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         import discord
+        from discord.ext import commands
 
-        async_client, _ = self.load_async()
-        channel_id = file_data.metadata.record_locator["channel_id"]
+        client = self.download_config.get_client()
+        record_locator = file_data.metadata.record_locator
 
-        intents = discord.Intents.default()
-        intents.message_content = True
+        if "channel_id" in record_locator:
+            bot = commands.Bot(command_prefix=">", intents=client.intents)
+            download_path = self.get_download_path(file_data=file_data)
+            download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        download_responses = []
-        async with async_client(intents=intents) as client:
-            await client.login(self.connection_config.access_config.get_secret_value().token)
+            messages: list[discord.Message] = []
 
-            channel = await client.fetch_channel(int(channel_id))
-            messages = [message async for message in channel.history()]
+            @bot.event
+            async def on_ready():
+                channel = bot.get_channel(int(record_locator["channel_id"]))
+                if channel:
+                    async for msg in channel.history(limit=100):  # Specify message limit as needed
+                        messages.append(msg)
+                await bot.close()
 
-            for message in messages:
-                download_responses.append(
-                    self.generate_download_response(file_data, self.get_download_path(file_data))
-                )
+            await bot.start(self.connection_config.access_config.get_secret_value().token)
 
-        return download_responses
+            with open(download_path, "w") as file:
+                for message in messages:
+                    file.write(f"{message.content}\n")
+
+            return self.generate_download_response(file_data=file_data, download_path=download_path)
+        else:
+            raise ValueError("Invalid record_locator in file_data")
 
 
 discord_source_entry = SourceRegistryEntry(
