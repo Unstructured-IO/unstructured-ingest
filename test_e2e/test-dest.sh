@@ -24,6 +24,7 @@ all_tests=(
   'couchbase.sh'
   'databricks-volumes.sh'
   'delta-table.sh'
+  'delta-table-s3.sh'
   'dropbox.sh'
   'elasticsearch.sh'
   'gcs.sh'
