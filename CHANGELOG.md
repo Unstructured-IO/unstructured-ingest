@@ -1,8 +1,14 @@
-## 0.0.27
+## 0.0.26-dev6
 
 ### Enhancements
 
 * **Migrate Notion Source Connector to V2**
+
+## 0.0.26-dev5
+
+### Enhancements
+
+* **Added MongoDB source V2 connector**
 
 ## 0.0.26-dev3
 
