@@ -121,9 +121,10 @@ class DiscordDownloader(Downloader):
         import discord
 
         async_client, _ = self.load_async()
-
-        channel_id: str = file_data.metadata.record_locator["channel_id"]
-        message_limit: int = self.download_config.message_limit
+        if not self.connection_config.channels:
+            channel_id = file_data.metadata.record_locator["channel_id"]
+        else:
+            channel_id = self.connection_config.channels #list of channels
 
         intents = discord.Intents.default()
         intents.message_content = True
@@ -132,13 +133,23 @@ class DiscordDownloader(Downloader):
         async with async_client(intents=intents) as client:
             await client.login(self.connection_config.access_config.get_secret_value().token)
 
-            channel = await client.fetch_channel(int(channel_id))
-            messages = await channel.history(limit=message_limit).flatten()
+            if isinstance(channel_id, list):
+                for single_channel in channel_id:
+                    channel = await client.fetch_channel(int(single_channel))
+                    messages = await channel.history().flatten()
 
-            for message in messages:
-                download_responses.append(
-                    self.generate_download_response(message, self.get_download_path(message))
-                )
+                    for message in messages:
+                        download_responses.append(
+                            self.generate_download_response(message, self.get_download_path(message))
+                        )
+            else:
+                channel = await client.fetch_channel(int(channel_id))
+                messages = await channel.history().flatten()
+
+                for message in messages:
+                    download_responses.append(
+                        self.generate_download_response(message, self.get_download_path(message))
+                    )
 
         return download_responses
 
