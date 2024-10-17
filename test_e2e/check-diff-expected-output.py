@@ -28,6 +28,7 @@ def check_files(expected_output_dir: Path, current_output_dir: Path):
     diff = set(expected_files) ^ set(current_files)
     if diff:
         print("diff in files that exist: {}".format(", ".join(diff)))
+        print(f"expected files {expected_files}\nFiles obtained {current_files}")
         raise CheckError("The same files don't exist in both locations")
 
 

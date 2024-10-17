@@ -1,17 +1,12 @@
-## 0.0.24-dev1
-
-### Enhancements
-
-* **Added migration for GitLab Source V2**
-  * **Updated the expected output for GitLab Source V2**
-  
-## 0.0.26-dev4
+## 0.0.26-dev7
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
+* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
+* **Added MongoDB source V2 connector**
 
 ### Fixes
 
