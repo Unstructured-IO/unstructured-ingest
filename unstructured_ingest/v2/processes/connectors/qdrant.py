@@ -42,7 +42,7 @@ class QdrantConnectionConfig(ConnectionConfig):
     port: Optional[int] = Field(default=6333, description="Port")
     grpc_port: Optional[int] = Field(default=6334, description="GRPC Port")
     prefer_grpc: Optional[bool] = Field(default=False, description="Prefer GRCP")
-    https: Optional[bool] = Field(default=None, description="HTTPS")    
+    https: Optional[bool] = Field(default=None, description="HTTPS")
     prefix: Optional[str] = Field(default=None, description="Prefix")
     timeout: Optional[float] = Field(default=None, description="TimeOut time")
     host: Optional[str] = Field(default=None, description="Host")
