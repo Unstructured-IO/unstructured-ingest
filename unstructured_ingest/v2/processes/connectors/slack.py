@@ -29,8 +29,8 @@ from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEn
 
 if TYPE_CHECKING:
     # TODO: Move to async client
-    # from slack_sdk.web.async_client import AsyncWebClient
     from slack_sdk import WebClient
+    from slack_sdk.web.async_client import AsyncWebClient
 
 # Pagination limit set to the upper end of the recommended range
 # https://api.slack.com/apis/pagination#facts
@@ -53,6 +53,13 @@ class SlackConnectionConfig(ConnectionConfig):
         from slack_sdk import WebClient
 
         return WebClient(token=self.access_config.get_secret_value().token)
+
+    @requires_dependencies(["slack_sdk"], extras="slack")
+    @SourceConnectionError.wrap
+    def get_async_client(self) -> "AsyncWebClient":
+        from slack_sdk.web.async_client import AsyncWebClient
+
+        return AsyncWebClient(token=self.access_config.get_secret_value().token)
 
 
 class SlackIndexerConfig(IndexerConfig):
@@ -148,7 +155,10 @@ class SlackDownloader(Downloader):
     connection_config: SlackConnectionConfig
     download_config: SlackDownloaderConfig = field(default_factory=SlackDownloaderConfig)
 
-    def run(self, file_data: FileData, **kwargs) -> download_responses:
+    def run(self, file_data, **kwargs):
+        raise NotImplementedError
+
+    async def run_async(self, file_data: FileData, **kwargs) -> download_responses:
         # NOTE: Indexer should provide source identifiers required to generate the download path
         download_path = self.get_download_path(file_data)
         if download_path is None:
@@ -158,10 +168,13 @@ class SlackDownloader(Downloader):
             )
             raise ValueError("Generated invalid download path.")
 
-        self._download_conversation(file_data, download_path)
+        await self._download_conversation(file_data, download_path)
         return self.generate_download_response(file_data, download_path)
 
-    def _download_conversation(self, file_data: FileData, download_path: Path) -> None:
+    def is_async(self):
+        return True
+
+    async def _download_conversation(self, file_data: FileData, download_path: Path) -> None:
         # NOTE: Indexer should supply the record locator in metadata
         if (
             file_data.metadata.record_locator is None
@@ -175,9 +188,9 @@ class SlackDownloader(Downloader):
             )
             raise ValueError("Invalid record locator.")
 
-        client = self.connection_config.get_client()
+        client = self.connection_config.get_async_client()
         messages = []
-        for conversation_history in client.conversations_history(
+        async for conversation_history in client.conversations_history(
             channel=file_data.metadata.record_locator["channel"],
             oldest=file_data.metadata.record_locator["oldest"],
             latest=file_data.metadata.record_locator["latest"],
@@ -189,7 +202,7 @@ class SlackDownloader(Downloader):
         for message in messages:
             # NOTE: First reply is the original message
             replies = []
-            for conversations_replies in client.conversations_replies(
+            async for conversations_replies in client.conversations_replies(
                 channel=file_data.metadata.record_locator["channel"],
                 ts=message["ts"],
                 limit=PAGINATION_LIMIT,
