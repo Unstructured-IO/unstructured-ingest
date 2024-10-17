@@ -3,6 +3,7 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
@@ -17,6 +18,8 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
 
 @contextmanager
 def sqlite_setup() -> Path:
+    # Provision the local file that sqlite points to to have the desired schema for the integration
+    # tests and make sure the file and connection get cleaned up by using a context manager.
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "elements.db"
         db_init_path = env_setup_path / "sql" / "sqlite-schema.sql"
@@ -36,6 +39,8 @@ def sqlite_setup() -> Path:
 
 
 def validate_destination(db_path: Path, expected_num_elements: int):
+    # Run the following validations:
+    # * Check that the number of records in the table match the expected value
     connection = None
     try:
         connection = sqlite3.connect(database=db_path)
@@ -54,6 +59,8 @@ def validate_destination(db_path: Path, expected_num_elements: int):
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
 async def test_sqlite_destination(upload_file: Path):
+    # the sqlite destination connector doesn't leverage the file data but is required as an input,
+    # mocking it with arbitrary values to meet the base requirements:
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
     with sqlite_setup() as db_path:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -69,6 +76,7 @@ async def test_sqlite_destination(upload_file: Path):
             else:
                 staged_path = stager.run(**stager_params)
 
+            # The stager should append the `.json` suffix to the output filename passed in.
             assert staged_path.name == "test_db.json"
 
             uploader = SQLiteUploader(
@@ -78,4 +86,6 @@ async def test_sqlite_destination(upload_file: Path):
                 await uploader.run_async(path=staged_path, file_data=mock_file_data)
             else:
                 uploader.run(path=staged_path, file_data=mock_file_data)
-            validate_destination(db_path=db_path, expected_num_elements=22)
+
+            staged_df = pd.read_json(staged_path, orient="records", lines=True)
+            validate_destination(db_path=db_path, expected_num_elements=len(staged_df))

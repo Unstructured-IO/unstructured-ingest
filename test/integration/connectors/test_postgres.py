@@ -23,6 +23,9 @@ def validate_destination(
     test_embedding: list[float],
     expected_text: str,
 ):
+    # Run the following validations:
+    # * Check that the number of records in the table match the expected value
+    # * Given the embedding, make sure it matches the associated text it belongs to
     with connect(**connect_params) as connection:
         cursor = connection.cursor()
         query = "select count(*) from elements;"
@@ -44,6 +47,8 @@ def validate_destination(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
 async def test_postgres_destination(upload_file: Path):
+    # the postgres destination connector doesn't leverage the file data but is required as an input,
+    # mocking it with arbitrary values to meet the base requirements:
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
     with docker_compose_context(docker_compose_path=env_setup_path / "sql"):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -59,6 +64,7 @@ async def test_postgres_destination(upload_file: Path):
             else:
                 staged_path = stager.run(**stager_params)
 
+            # The stager should append the `.json` suffix to the output filename passed in.
             assert staged_path.name == "test_db.json"
 
             connect_params = {
@@ -85,9 +91,10 @@ async def test_postgres_destination(upload_file: Path):
 
             staged_df = pd.read_json(staged_path, orient="records", lines=True)
             sample_element = staged_df.iloc[0]
+            expected_num_elements = len(staged_df)
             validate_destination(
                 connect_params=connect_params,
-                expected_num_elements=22,
+                expected_num_elements=expected_num_elements,
                 expected_text=sample_element["text"],
                 test_embedding=sample_element["embeddings"],
             )
