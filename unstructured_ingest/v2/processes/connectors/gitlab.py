@@ -43,7 +43,7 @@ class GitLabConnectionConfig(ConnectionConfig):
     @root_validator(pre=True)
     def set_repo_path(cls, values):
         parsed_gh_url = urlparse(values.get("url"))
-        # If a scheme or netloc are provided, use the parsed base url
+
         if parsed_gh_url.scheme or parsed_gh_url.netloc:
             values["base_url"] = f"{parsed_gh_url.scheme}://{parsed_gh_url.netloc}"
         values["repo_path"] = parsed_gh_url.path
@@ -57,17 +57,14 @@ class GitLabConnectionConfig(ConnectionConfig):
     def get_project(self) -> "Project":
         from gitlab import Gitlab
 
-        logger.info(f"Accessing Base URL: '{self.base_url}'", extra={"base_url": self.base_url})
-
+        logger.info(f"Accessing Base URL: '{self.base_url}'")
         gitlab = Gitlab(
             self.base_url, private_token=self.access_config.get_secret_value().access_token
         )
-        logger.info(f"Accessing Project: '{self.repo_path}'", extra={"repo_path": self.repo_path})
 
+        logger.info(f"Accessing Project: '{self.repo_path}'")
         project = gitlab.projects.get(self.repo_path)
-        logger.info(
-            f"Successfully accessed project '{self.repo_path}'", extra={"repo_path": self.repo_path}
-        )
+        logger.info(f"Successfully accessed project '{self.repo_path}'")
         return project
 
 
@@ -95,19 +92,23 @@ class GitLabIndexer(Indexer):
                 gitlab.auth()
             else:
                 gitlab.projects.get(self.connection_config.repo_path)
+
         except GitlabError as gitlab_error:
             logger.error(f"Failed to validate connection: {gitlab_error}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {gitlab_error}")
+            raise SourceConnectionError(f"Failed to validate connection: {gitlab_error}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         project = self.connection_config.get_project()
+
         ref = self.connection_config.git_branch or project.default_branch
+
         git_tree = project.repository_tree(
             ref=ref,
             recursive=True,
             iterator=True,
             all=True,
         )
+
         for element in git_tree:
             rel_path = element["path"].replace(self.connection_config.repo_path, "").lstrip("/")
             if element["type"] == "blob":
@@ -158,10 +159,9 @@ class GitLabDownloader(Downloader):
                 ref=self.connection_config.git_branch or project.default_branch,
             )
         except GitlabHttpError as e:
-            if e.response_code == 404:
-                logger.error(f"File doesn't exists {self.connection_config.url}/{self.path}")
-                raise e
-            raise
+            logger.error(f"File doesn't exists {self.connection_config.url}/{self.path}")
+            raise e
+
         return content_file
 
     def _fetch_and_write(self, path, download_path) -> None:
