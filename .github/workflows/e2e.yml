@@ -60,6 +60,9 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           MXBAI_API_KEY: ${{ secrets.MXBAI_API_KEY }}
+          TOGETHERAI_API_KEY: ${{ secrets.TOGETHERAI_API_KEY }}
+          VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
+          VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
         run: |
           make install-all-embedders
           make install-test
@@ -175,12 +178,9 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
         AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        OCTOAI_API_KEY: ${{ secrets.OCTOAI_API_KEY }}
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
         ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
         ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
-        MXBAI_API_KEY: ${{ secrets.MXBAI_API_KEY }}
         TABLE_OCR: "tesseract"
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"

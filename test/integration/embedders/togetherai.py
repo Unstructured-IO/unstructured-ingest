@@ -4,10 +4,13 @@ from pathlib import Path
 
 from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
 from test.integration.utils import requires_env
-from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+from unstructured_ingest.embed.togetherai import (
+    TogetherAIEmbeddingConfig,
+    TogetherAIEmbeddingEncoder,
+)
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
-API_KEY = "OPENAI_API_KEY"
+API_KEY = "TOGETHERAI_API_KEY"
 
 
 def get_api_key() -> str:
@@ -17,9 +20,9 @@ def get_api_key() -> str:
 
 
 @requires_env(API_KEY)
-def test_openai_embedder(embedder_file: Path):
+def test_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
-    embedder_config = EmbedderConfig(embedding_provider="openai", embedding_api_key=api_key)
+    embedder_config = EmbedderConfig(embedding_provider="togetherai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
     results = embedder.run(elements_filepath=embedder_file)
     assert results
@@ -29,13 +32,12 @@ def test_openai_embedder(embedder_file: Path):
 
 
 @requires_env(API_KEY)
-def test_raw_openai_embedder(embedder_file: Path):
+def test_raw_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
-    embedder = OpenAIEmbeddingEncoder(
-        config=OpenAIEmbeddingConfig(
-            api_key=api_key,
-        )
-    )
+    embedder = TogetherAIEmbeddingEncoder(config=TogetherAIEmbeddingConfig(api_key=api_key))
     validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1536,)
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimensions=(768,),
+        expected_is_unit_vector=False,
     )

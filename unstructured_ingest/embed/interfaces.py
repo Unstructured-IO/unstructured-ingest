@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+import numpy as np
 from pydantic import BaseModel
 
 
@@ -17,14 +18,18 @@ class BaseEmbeddingEncoder(ABC):
         is properly configured: e.g., embed a single a element"""
 
     @property
-    @abstractmethod
     def num_of_dimensions(self) -> tuple[int, ...]:
-        """Number of dimensions for the embedding vector."""
+        exemplary_embedding = self.get_exemplary_embedding()
+        return np.shape(exemplary_embedding)
+
+    def get_exemplary_embedding(self) -> list[float]:
+        return self.embed_query(query="Q")
 
     @property
-    @abstractmethod
     def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
+        exemplary_embedding = self.get_exemplary_embedding()
+        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
     @abstractmethod
     def embed_documents(self, elements: list[dict]) -> list[dict]:
@@ -41,3 +46,24 @@ class BaseEmbeddingEncoder(ABC):
             results.append(response)
 
         return results
+
+    @staticmethod
+    def _add_embeddings_to_elements(
+        elements: list[dict], embeddings: list[list[float]]
+    ) -> list[dict]:
+        """
+        Add embeddings to elements.
+
+        Args:
+            elements (list[Element]): List of elements.
+            embeddings (list[list[float]]): List of embeddings.
+
+        Returns:
+            list[Element]: Elements with embeddings added.
+        """
+        assert len(elements) == len(embeddings)
+        elements_w_embedding = []
+        for i, element in enumerate(elements):
+            element["embeddings"] = embeddings[i]
+            elements_w_embedding.append(element)
+        return elements

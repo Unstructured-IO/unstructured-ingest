@@ -21,7 +21,7 @@ all_tests=(
   'box.sh'
   'chroma.sh'
   'clarifai.sh'
-  #  'couchbase.sh'  # tmp disable failing on CI
+  'couchbase.sh'
   'databricks-volumes.sh'
   'delta-table.sh'
   'delta-table-s3.sh'
@@ -41,7 +41,6 @@ all_tests=(
   'vectara.sh'
   'singlestore.sh'
   'weaviate.sh'
-  'databricks-volumes.sh'
   'milvus.sh'
   'kdbai.sh'
 )
