@@ -155,11 +155,6 @@ class DiscordDownloader(Downloader):
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
-    def generate_download_response(
-        self, file_data: FileData, download_path: Path
-    ) -> DownloadResponse:
-        return DownloadResponse(path=download_path, file_data=file_data)
-
 
 discord_source_entry = SourceRegistryEntry(
     indexer=DiscordIndexer,
