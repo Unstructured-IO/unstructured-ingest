@@ -117,9 +117,8 @@ class MongoDBIndexer(Indexer):
         # Get list of document IDs
         ids = collection.distinct("_id")
         batch_size = self.index_config.batch_size if self.index_config else 100
-        id_batches = [ids[i : i + batch_size] for i in range(0, len(ids), batch_size)]
 
-        for id_batch in id_batches:
+        for id_batch in batch_generator(ids, batch_size=batch_size):
             # Make sure the hash is always a positive number to create identifier
             batch_id = str(hash(frozenset(id_batch)) + sys.maxsize + 1)
 
