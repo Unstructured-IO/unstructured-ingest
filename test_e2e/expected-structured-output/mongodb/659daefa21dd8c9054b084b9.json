@@ -1,0 +1,202 @@
+[
+  {
+    "type": "UncategorizedText",
+    "element_id": "d028e645a83c39179e8093e6127e4252",
+    "text": "1908",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "d60952830458230b85edeaf78dde2541",
+    "text": "The Fight for Freedom",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "40be9d509e1a6d5934625bd3f208f84d",
+    "text": "American",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "2eff3f65f78812ca6ea5f89e26153e0a",
+    "text": "D. W. Griffith",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "65ef3dd175348dd68f5fc47db93b0a75",
+    "text": "Florence Auer, John G. Adolfi",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "54a5325e78f04c2b2fd3d814d5a9d8be",
+    "text": "western",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "ef11631c51b478def5a2560787a55891",
+    "text": "https://en.wikipedia.org/wiki/The_Fight_for_Freedom",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "41591609a51c69f5a9c19576b4a16520",
+    "text": "The film opens in a town on the Mexican border. A poker game is going on in the local saloon. One of the players cheats and is shot dead by another of the players, a Mexican named Pedro. In the uproar that follows Pedro is wounded as he escapes from the saloon. The sheriff is called, who tracks Pedro to his home but Pedro kills the sherriff too. While Pedro hides, his wife Juanita, is arrested on suspicion of murdering the sheriff. Pedro rescues her from the town jail and the two head for the Mexican border. Caught by the posse before they reach the border, Juanita is killed and the film ends with Pedro being arrested and taken back to town.",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b9.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b9"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 790
+      }
+    }
+  }
+]
