@@ -1,7 +1,9 @@
 import json
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from time import time
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -19,8 +21,8 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
-    DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     Uploader,
@@ -29,7 +31,6 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
     download_responses,
 )
-from unstructured_ingest.v2.interfaces.file_data import SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -38,13 +39,13 @@ from unstructured_ingest.v2.processes.connector_registry import (
 
 if TYPE_CHECKING:
     from astrapy import Collection as AstraDBCollection
+    from astrapy import DataAPIClient as AstraDBClient
 
 
 CONNECTOR_TYPE = "astradb"
 
 
 def get_astra_collection(connection_config, config) -> "AstraDBCollection":
-    from astrapy import DataAPIClient as AstraDBClient
 
     # Choose keyspace or deprecated namespace
     keyspace_param = config.keyspace or config.namespace
@@ -57,13 +58,10 @@ def get_astra_collection(connection_config, config) -> "AstraDBCollection":
 
     # Create a client object to interact with the Astra DB
     # caller_name/version for Astra DB tracking
-    my_client = AstraDBClient(
-        caller_name=integration_name,
-        caller_version=integration_version,
-    )
+    client = connection_config.get_client()
 
     # Get the database object
-    astra_db = my_client.get_database(
+    astra_db = client.get_database(
         api_endpoint=access_configs.api_endpoint,
         token=access_configs.token,
         keyspace=keyspace_param,
@@ -81,8 +79,19 @@ class AstraDBAccessConfig(AccessConfig):
 
 
 class AstraDBConnectionConfig(ConnectionConfig):
-    connection_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[AstraDBAccessConfig]
+
+    @requires_dependencies(["astrapy"], extras="astradb")
+    def get_client(self) -> "AstraDBClient":
+        from astrapy import DataAPIClient as AstraDBClient
+
+        # Create a client object to interact with the Astra DB
+        # caller_name/version for Astra DB tracking
+        return AstraDBClient(
+            caller_name=integration_name,
+            caller_version=integration_version,
+        )
 
 
 class AstraDBUploadStagerConfig(UploadStagerConfig):
@@ -101,6 +110,7 @@ class AstraDBIndexerConfig(IndexerConfig):
         description="The Astra DB connection namespace.",
         deprecated="Please use 'keyspace' instead.",
     )
+    batch_size: int = Field(default=20, description="Number of records per batch")
 
 
 class AstraDBDownloaderConfig(DownloaderConfig):
@@ -145,13 +155,6 @@ class AstraDBIndexer(Indexer):
     connection_config: AstraDBConnectionConfig
     index_config: AstraDBIndexerConfig
 
-    def precheck(self) -> None:
-        try:
-            get_astra_collection(connection_config=self.connection_config, config=self.index_config)
-        except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
-
     @requires_dependencies(["astrapy"], extras="astradb")
     def get_collection(self) -> "AstraDBCollection":
         return get_astra_collection(
@@ -159,25 +162,23 @@ class AstraDBIndexer(Indexer):
             config=self.index_config,
         )
 
-    @requires_dependencies(["astrapy"], extras="astradb")
-    def astra_record_to_file_data(self, astra_record: Dict[str, Any]) -> FileData:
-        return FileData(
-            identifier=astra_record["_id"],
-            connector_type=CONNECTOR_TYPE,
-            source_identifiers=SourceIdentifiers(
-                fullpath=astra_record["_id"] + ".txt",
-                filename=astra_record["_id"] + ".txt",
-                rel_path=astra_record["_id"] + ".txt",
-            ),
-            additional_metadata=astra_record.get("metadata", {}),
-        )
+    def precheck(self) -> None:
+        try:
+            self.get_collection()
+        except Exception as e:
+            logger.error(f"Failed to validate connection {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["astrapy"], extras="astradb")
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _get_doc_ids(self) -> set[str]:
+        """Fetches all document ids in an index"""
+        # Initialize set of ids
+        ids = set()
+
         # Get the collection
         collection = self.get_collection()
 
         # Perform the find operation to get all items
+        # TODO find just ids?
         astra_db_docs_cursor = collection.find({}, projection={"_id": True, "metadata": True})
 
         # Iterate over the cursor
@@ -187,9 +188,40 @@ class AstraDBIndexer(Indexer):
 
         # Create file data for each astra record
         for astra_record in astra_db_docs:
-            file_data = self.astra_record_to_file_data(astra_record=astra_record)
+            ids.add(astra_record["_id"])
 
-            yield file_data
+        return ids
+
+    @requires_dependencies(["astrapy"], extras="astradb")
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        all_ids = self._get_doc_ids()
+        ids = list(all_ids)  # TODO check for empty/none
+        id_batches: list[frozenset[str]] = [
+            frozenset(
+                ids[
+                    i
+                    * self.index_config.batch_size : (i + 1)  # noqa
+                    * self.index_config.batch_size
+                ]
+            )
+            for i in range(
+                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
+            )
+        ]
+        for batch in id_batches:
+            # Make sure the hash is always a positive number to create identified
+            identified = str(hash(batch) + sys.maxsize + 1)
+            yield FileData(
+                identifier=identified,
+                connector_type=CONNECTOR_TYPE,
+                metadata=FileDataSourceMetadata(
+                    url=f"{self.index_config.collection_name}",  # TODO figure out what goes here
+                    date_processed=str(time()),
+                ),
+                additional_metadata={
+                    "ids": list(batch),
+                },
+            )
 
 
 @dataclass
@@ -234,7 +266,7 @@ class AstraDBDownloader(Downloader):
             # List comp. to prevent newlines at the end of the file which affects partitioning
             file.write("\n".join([str(x) for x in record.values()]))
 
-        return DownloadResponse(file_data=file_data, path=download_path)
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 @dataclass
