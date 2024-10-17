@@ -1,18 +1,17 @@
 import json
 import multiprocessing as mp
-from typing import TYPE_CHECKING,Optional,List,Dict,Any
 import uuid
 from dataclasses import dataclass, field
-
-from pathlib import Path
-
 from datetime import date, datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from dateutil import parser
 from pydantic import Field
 
-from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError, WriteError
+from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -23,8 +22,6 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
@@ -36,7 +33,6 @@ CONNECTOR_TYPE = "qdrant"
 
 class QdrantAccessConfig(AccessConfig):
     api_key: Optional[str] = Field(default=None, description="API Key")
-
 
 
 class QdrantConnectionConfig(ConnectionConfig):
@@ -51,8 +47,11 @@ class QdrantConnectionConfig(ConnectionConfig):
     timeout: Optional[float] = Field(default=None, description="TimeOut time")
     host: Optional[str] = Field(default=None, description="Host")
     path: Optional[str] = Field(default=None, description="Path")
-    force_disable_check_same_thread: Optional[bool] = Field(default=False, description="Force disable check for same thread")
+    force_disable_check_same_thread: Optional[bool] = Field(
+        default=False, description="Force disable check for same thread"
+    )
     access_config: Optional[QdrantAccessConfig] = Field(default=None, description="Access Config")
+
 
 class QdrantUploadStagerConfig(UploadStagerConfig):
     pass
@@ -72,7 +71,7 @@ class QdrantUploadStager(UploadStager):
         except Exception as e:
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
-    
+
     @staticmethod
     def conform_dict(data: dict) -> dict:
         """
@@ -128,7 +127,7 @@ class QdrantUploader(Uploader):
         if self._client is None:
             self._client = self.create_client()
         return self._client
-    
+
     @requires_dependencies(["qdrant_client"], extras="qdrant")
     def create_client(self) -> "QdrantClient":
         from qdrant_client import QdrantClient
@@ -153,11 +152,10 @@ class QdrantUploader(Uploader):
         )
 
         return client
-    
+
     @DestinationConnectionError.wrap
     def check_connection(self):
         self.qdrant_client.get_collections()
-    
 
     def precheck(self) -> None:
         try:
@@ -220,4 +218,3 @@ qdrant_destination_entry = DestinationRegistryEntry(
     upload_stager=QdrantUploadStager,
     upload_stager_config=QdrantUploadStagerConfig,
 )
-
