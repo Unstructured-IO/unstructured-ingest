@@ -1,0 +1,202 @@
+[
+  {
+    "type": "UncategorizedText",
+    "element_id": "6348edcab6c40a10ee9bbfb4d5e126ac",
+    "text": "1908",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "582488b432d35a4dab6f95fe876455fe",
+    "text": "A Christmas Carol",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "ccff520c8628941452669265c640c163",
+    "text": "American",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "fc1f2cb4a18854b335a10ccf62ad0c7e",
+    "text": "Unknown",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "1f7fef494e76071da858f4f49843ffdb",
+    "text": "Tom Ricketts",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "82ee44adfe38fc5b3c0a43f561713f83",
+    "text": "drama",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e7ec50b573fe70eb1b41f7ca9634f48c",
+    "text": "https://en.wikipedia.org/wiki/A_Christmas_Carol_(1908_film)",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a6d58d6fe04b911bd8c6e23c2da5dfaa",
+    "text": "No prints of the first American film adaptation of A Christmas Carol are known to exist,[1] but The Moving Picture World magazine provided a scene-by-scene description before the film's release. [2] Scrooge goes into his office and begins working. His nephew, along with three women who wish for Scrooge to donate enter. However, Scrooge dismisses them. On the night of Christmas Eve, his long-dead partner Jacob Marley comes as a ghost, warning him of a horrible fate if he does not change his ways. Scrooge meets three spirits that show Scrooge the real meaning of Christmas, along with his grave, the result of his parsimonious ways. The next morning, he wakes and realizes the error of his ways. Scrooge was then euphoric and generous for the rest of his life.",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b8.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b8"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 882
+      }
+    }
+  }
+]
