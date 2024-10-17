@@ -1,4 +1,8 @@
-## 0.0.26-dev3
+## 0.0.26-dev4
+
+### Features
+
+* **Migrate Slack Source Connector to V2**
 
 ### Enhancements
 
