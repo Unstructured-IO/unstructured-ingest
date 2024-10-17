@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 
 from pydantic import Field, Secret
@@ -41,6 +42,7 @@ class DatabricksNativeVolumesIndexerConfig(DatabricksVolumesIndexerConfig):
     pass
 
 
+@dataclass
 class DatabricksNativeVolumesIndexer(DatabricksVolumesIndexer):
     connection_config: DatabricksNativeVolumesConnectionConfig
     index_config: DatabricksNativeVolumesIndexerConfig
@@ -51,6 +53,7 @@ class DatabricksNativeVolumesDownloaderConfig(DatabricksVolumesDownloaderConfig)
     pass
 
 
+@dataclass
 class DatabricksNativeVolumesDownloader(DatabricksVolumesDownloader):
     connection_config: DatabricksNativeVolumesConnectionConfig
     download_config: DatabricksVolumesDownloaderConfig
@@ -61,6 +64,7 @@ class DatabricksNativeVolumesUploaderConfig(DatabricksVolumesUploaderConfig):
     pass
 
 
+@dataclass
 class DatabricksNativeVolumesUploader(DatabricksVolumesUploader):
     connection_config: DatabricksNativeVolumesConnectionConfig
     upload_config: DatabricksNativeVolumesUploaderConfig

@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Optional
 
 from pydantic import Field, Secret
@@ -40,6 +41,7 @@ class DatabricksAWSVolumesIndexerConfig(DatabricksVolumesIndexerConfig):
     pass
 
 
+@dataclass
 class DatabricksAWSVolumesIndexer(DatabricksVolumesIndexer):
     connection_config: DatabricksAWSVolumesConnectionConfig
     index_config: DatabricksAWSVolumesIndexerConfig
@@ -50,6 +52,7 @@ class DatabricksAWSVolumesDownloaderConfig(DatabricksVolumesDownloaderConfig):
     pass
 
 
+@dataclass
 class DatabricksAWSVolumesDownloader(DatabricksVolumesDownloader):
     connection_config: DatabricksAWSVolumesConnectionConfig
     download_config: DatabricksVolumesDownloaderConfig
@@ -60,9 +63,13 @@ class DatabricksAWSVolumesUploaderConfig(DatabricksVolumesUploaderConfig):
     pass
 
 
+@dataclass
 class DatabricksAWSVolumesUploader(DatabricksVolumesUploader):
     connection_config: DatabricksAWSVolumesConnectionConfig
-    upload_config: DatabricksAWSVolumesUploaderConfig
+    upload_config: DatabricksAWSVolumesUploaderConfig = field(
+        default_factory=DatabricksAWSVolumesUploaderConfig
+    )
+    connector_type: str = CONNECTOR_TYPE
 
 
 databricks_aws_volumes_destination_entry = DestinationRegistryEntry(

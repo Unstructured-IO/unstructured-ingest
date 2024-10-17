@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Optional
 
 from pydantic import Field, Secret
@@ -38,6 +39,7 @@ class DatabricksGoogleVolumesIndexerConfig(DatabricksVolumesIndexerConfig):
     pass
 
 
+@dataclass
 class DatabricksGoogleVolumesIndexer(DatabricksVolumesIndexer):
     connection_config: DatabricksGoogleVolumesConnectionConfig
     index_config: DatabricksGoogleVolumesIndexerConfig
@@ -48,6 +50,7 @@ class DatabricksGoogleVolumesDownloaderConfig(DatabricksVolumesDownloaderConfig)
     pass
 
 
+@dataclass
 class DatabricksGoogleVolumesDownloader(DatabricksVolumesDownloader):
     connection_config: DatabricksGoogleVolumesConnectionConfig
     download_config: DatabricksVolumesDownloaderConfig
@@ -58,9 +61,13 @@ class DatabricksGoogleVolumesUploaderConfig(DatabricksVolumesUploaderConfig):
     pass
 
 
+@dataclass
 class DatabricksGoogleVolumesUploader(DatabricksVolumesUploader):
     connection_config: DatabricksGoogleVolumesConnectionConfig
-    upload_config: DatabricksGoogleVolumesUploaderConfig
+    upload_config: DatabricksGoogleVolumesUploaderConfig = field(
+        default_factory=DatabricksGoogleVolumesUploaderConfig
+    )
+    connector_type: str = CONNECTOR_TYPE
 
 
 databricks_gcp_volumes_destination_entry = DestinationRegistryEntry(
