@@ -22,6 +22,7 @@ class EmbedderConfig(BaseModel):
             "voyageai",
             "octoai",
             "mixedbread-ai",
+            "togetherai",
         ]
     ] = Field(default=None, description="Type of the embedding class to be used.")
     embedding_api_key: Optional[SecretStr] = Field(
@@ -107,6 +108,16 @@ class EmbedderConfig(BaseModel):
             config=MixedbreadAIEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
+    def get_togetherai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.togetherai import (
+            TogetherAIEmbeddingConfig,
+            TogetherAIEmbeddingEncoder,
+        )
+
+        return TogetherAIEmbeddingEncoder(
+            config=TogetherAIEmbeddingConfig.model_validate(embedding_kwargs)
+        )
+
     def get_embedder(self) -> "BaseEmbeddingEncoder":
         kwargs: dict[str, Any] = {}
         if self.embedding_api_key:
@@ -133,6 +144,8 @@ class EmbedderConfig(BaseModel):
             return self.get_voyageai_embedder(embedding_kwargs=kwargs)
         if self.embedding_provider == "mixedbread-ai":
             return self.get_mixedbread_embedder(embedding_kwargs=kwargs)
+        if self.embedding_provider == "togetherai":
+            return self.get_togetherai_embedder(embedding_kwargs=kwargs)
 
         raise ValueError(f"{self.embedding_provider} not a recognized encoder")
 

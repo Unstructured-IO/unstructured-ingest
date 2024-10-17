@@ -58,6 +58,7 @@ class Block(FromJSONMixin, GetHTMLMixin):
     last_edited_time: str
     last_edited_by: PartialUser
     archived: bool
+    in_trash: bool
     has_children: bool
     parent: Parent
     block: BlockBase

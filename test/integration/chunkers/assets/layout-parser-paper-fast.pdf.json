@@ -1,0 +1,343 @@
+[
+  {
+    "type": "Title",
+    "element_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+    "text": "LayoutParser: A Uni\ufb01ed Toolkit for Deep Learning Based Document Image Analysis",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "c13f3a1b27f753210a116ade30f27ccc",
+    "text": "2 0 2 n u J 1 2 ] V C . s c [ 2 v 8 4 3 5 1 . 3 0 1 2 : v i X r a",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "82fe9ede42902f237f796a5e4d8bd449",
+    "text": "Zejiang Shen\u00ae (<), Ruochen Zhang?, Melissa Dell\u00ae, Benjamin Charles Germain Lee?, Jacob Carlson\u00ae, and Weining Li\u00ae",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "821c9679d92092df90b07da4705a60eb",
+    "text": "1 Allen Institute for AI shannons@allenai.org",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "47c771b917713fa6268ac007d9a19767",
+    "text": "2 Brown University ruochen zhang@brown.edu",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "49590aa884d8a361c0e18aa2c84aaf22",
+    "text": "3 Harvard University {melissadell,jacob carlson}@fas.harvard.edu",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "3ef97a4a38db1149b93f72be798a91ec",
+    "text": "4 University of Washington bcgl@cs.washington.edu",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "58a35ebdd48103058291f1d986f9c940",
+    "text": "5 University of Waterloo w422li@uwaterloo.ca",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "1aa6f1cc7ab7852ab704f2bc71608a35",
+    "text": "Abstract. Recent advances in document image analysis (DIA) have been primarily driven by the application of neural networks. Ideally, research outcomes could be easily deployed in production and extended for further investigation. However, various factors like loosely organized codebases and sophisticated model con\ufb01gurations complicate the easy reuse of im- portant innovations by a wide audience. Though there have been on-going e\ufb00orts to improve reusability and simplify deep learning (DL) model development in disciplines like natural language processing and computer vision, none of them are optimized for challenges in the domain of DIA. This represents a major gap in the existing toolkit, as DIA is central to academic research across a wide range of disciplines in the social sciences and humanities. This paper introduces LayoutParser, an open-source library for streamlining the usage of DL in DIA research and applica- tions. The core LayoutParser library comes with a set of simple and intuitive interfaces for applying and customizing DL models for layout de- tection, character recognition, and many other document processing tasks. To promote extensibility, LayoutParser also incorporates a community platform for sharing both pre-trained models and full document digiti- zation pipelines. We demonstrate that LayoutParser is helpful for both lightweight and large-scale digitization pipelines in real-word use cases. The library is publicly available at https://layout-parser.github.io.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "4110bea017d2c042f0513af61c1da9d4",
+    "text": "Keywords: Document Image Analysis \u00b7 Deep Learning \u00b7 Layout Analysis \u00b7 Character Recognition \u00b7 Open Source library \u00b7 Toolkit.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "6aa0ff22f91bbe7e26e8e25ca8052acd",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "2a7d254781e9d3716682203d2953b9fa",
+    "text": "1 Introduction",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b22368515cfb0781c61a7661db2c9298",
+    "text": "Deep Learning(DL)-based approaches are the state-of-the-art for a wide range of document image analysis (DIA) tasks including document image classi\ufb01cation [11,",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "parent_id": "2a7d254781e9d3716682203d2953b9fa",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "PageNumber",
+    "element_id": "b3a902c115012daa709a9c7cd777b242",
+    "text": "2",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "Header",
+    "element_id": "b66a9f8fa364ad72576569067a422ff1",
+    "text": "Z. Shen et al.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "2441d40d811906ea94db40c8f4580686",
+    "text": "37], layout detection [38, 22], table detection [26], and scene text detection [4]. A generalized learning-based framework dramatically reduces the need for the manual speci\ufb01cation of complicated rules, which is the status quo with traditional methods. DL has the potential to transform DIA pipelines and bene\ufb01t a broad spectrum of large-scale document digitization projects.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5725ae5f56c2c5a5299b6f96402b434b",
+    "text": "However, there are several practical di\ufb03culties for taking advantages of re- cent advances in DL-based methods: 1) DL models are notoriously convoluted for reuse and extension. Existing models are developed using distinct frame- works like TensorFlow [1] or PyTorch [24], and the high-level parameters can be obfuscated by implementation details [8]. It can be a time-consuming and frustrating experience to debug, reproduce, and adapt existing models for DIA, and many researchers who would bene\ufb01t the most from using these methods lack the technical background to implement them from scratch. 2) Document images contain diverse and disparate patterns across domains, and customized training is often required to achieve a desirable detection accuracy. Currently there is no full-\ufb02edged infrastructure for easily curating the target document image datasets and \ufb01ne-tuning or re-training the models. 3) DIA usually requires a sequence of models and other processing to obtain the \ufb01nal outputs. Often research teams use DL models and then perform further document analyses in separate processes, and these pipelines are not documented in any central location (and often not documented at all). This makes it di\ufb03cult for research teams to learn about how full pipelines are implemented and leads them to invest signi\ufb01cant resources in reinventing the DIA wheel.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8d36c9686c4bdea3ae01348380b010d5",
+    "text": "LayoutParser provides a uni\ufb01ed toolkit to support DL-based document image analysis and processing. To address the aforementioned challenges, LayoutParser is built with the following components:",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a253249b0897ccc5453e781faa9c0765",
+    "text": "1. An o\ufb00-the-shelf toolkit for applying DL models for layout detection, character recognition, and other DIA tasks (Section 3)",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "03175388e102c6a26cd8241d30cc6341",
+    "text": "2. A rich repository of pre-trained neural network models (Model Zoo) that underlies the o\ufb00-the-shelf usage",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "96ec3b5f4cf2423ed82a9aecac480a2f",
+    "text": "3. Comprehensive tools for e\ufb03cient document image data annotation and model tuning to support di\ufb00erent levels of customization",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "26952fa9299fccac5ff1c152a631bfaa",
+    "text": "4. A DL model hub and community platform for the easy sharing, distribu- tion, and discussion of DIA models and pipelines, to promote reusability, reproducibility, and extensibility (Section 4)",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "24d5e9f73ea514def0132df096bdae5a",
+    "text": "The library implements simple and intuitive Python APIs without sacri\ufb01cing generalizability and versatility, and can be easily installed via pip. Its convenient functions for handling document image data can be seamlessly integrated with existing DIA pipelines. With detailed documentations and carefully curated tutorials, we hope this tool will bene\ufb01t a variety of end-users, and will lead to advances in applications in both industry and academic research.",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "5288a821267a2af98294aff7e4728916",
+    "text": "LayoutParser is well aligned with recent e\ufb00orts for improving DL model reusability in other disciplines like natural language processing [8, 34] and com- puter vision [35], but with a focus on unique challenges in DIA. We show LayoutParser can be applied in sophisticated and large-scale digitization projects",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 2,
+      "parent_id": "b66a9f8fa364ad72576569067a422ff1",
+      "filename": "layout-parser-paper-fast.pdf",
+      "data_source": {}
+    }
+  }
+]
