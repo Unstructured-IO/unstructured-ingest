@@ -9,6 +9,7 @@
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
+* **Databricks Delta Table destination to v2**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
 
