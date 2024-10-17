@@ -3,6 +3,7 @@ from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
+from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field
 
@@ -96,16 +97,14 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                 rel_path = rel_path[1:]
             filename = Path(file_info.path).name
             yield FileData(
-                identifier=file_info.path,
+                identifier=str(uuid5(NAMESPACE_DNS, file_info.path)),
                 connector_type=self.connector_type,
                 source_identifiers=SourceIdentifiers(
                     filename=filename,
                     rel_path=rel_path,
                     fullpath=file_info.path,
                 ),
-                additional_metadata={
-                    "catalog": self.index_config.catalog,
-                },
+                additional_metadata={"catalog": self.index_config.catalog, "path": file_info.path},
                 metadata=FileDataSourceMetadata(
                     url=file_info.path, date_modified=str(file_info.modification_time)
                 ),
@@ -134,9 +133,10 @@ class DatabricksVolumesDownloader(Downloader, ABC):
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
+        volumes_path = file_data.additional_metadata["path"]
         logger.info(f"Writing {file_data.identifier} to {download_path}")
         try:
-            with self.connection_config.get_client().dbfs.download(path=file_data.identifier) as c:
+            with self.connection_config.get_client().dbfs.download(path=volumes_path) as c:
                 read_content = c._read_handle.read()
             with open(download_path, "wb") as f:
                 f.write(read_content)
