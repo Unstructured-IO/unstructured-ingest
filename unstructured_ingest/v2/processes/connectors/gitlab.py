@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import fnmatch
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
-from pydantic import Field, root_validator
+from pydantic import Field, Secret, root_validator
 
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -32,19 +31,14 @@ if TYPE_CHECKING:
 
 
 class GitLabAccessConfig(AccessConfig):
-    access_token: Optional[str] = Field(
-        default=None, sensitive=False, overload_name="github_access_token"
-    )
+    access_token: Optional[str] = Field(default=None)
 
 
 class GitLabConnectionConfig(ConnectionConfig):
     url: str
     base_url: str = "https://gitlab.com"
-    access_config: GitLabAccessConfig
-
+    access_config: Secret[GitLabAccessConfig]
     git_branch: Optional[str] = Field(default=None)
-
-    git_file_glob: Optional[List[str]] = Field(default=None, overload_name="git_file_glob")
     repo_path: str = field(init=False, repr=False, default=None)
 
     @root_validator(pre=True)
@@ -66,12 +60,12 @@ class GitLabConnectionConfig(ConnectionConfig):
 
         logger.info(f"Accessing Base URL: '{self.base_url}'", extra={"base_url": self.base_url})
 
-        gitlab = Gitlab(self.base_url, private_token=self.access_config.access_token)
-
+        gitlab = Gitlab(
+            self.base_url, private_token=self.access_config.get_secret_value().access_token
+        )
         logger.info(f"Accessing Project: '{self.repo_path}'", extra={"repo_path": self.repo_path})
 
         project = gitlab.projects.get(self.repo_path)
-
         logger.info(
             f"Successfully accessed project '{self.repo_path}'", extra={"repo_path": self.repo_path}
         )
@@ -88,33 +82,6 @@ class GitLabIndexer(Indexer):
     index_config: GitLabIndexerConfig
     registry_name: str = "gitlab"
 
-    @staticmethod
-    def is_file_type_supported(path: str) -> bool:
-        # Workaround to ensure that auto.partition isn't fed with .yaml, .py, etc. files
-        # TODO: What to do with no filenames? e.g. LICENSE, Makefile, etc.
-        supported = path.endswith(
-            (
-                ".md",
-                ".txt",
-                ".pdf",
-                ".doc",
-                ".docx",
-                ".eml",
-                ".heic",
-                ".html",
-                ".png",
-                ".jpg",
-                ".ppt",
-                ".pptx",
-                ".xml",
-            ),
-        )
-        if not supported:
-            logger.debug(
-                f"The file {path!r} is discarded as it does not contain a supported filetype.",
-            )
-        return supported
-
     @requires_dependencies(["gitlab"], extras="gitlab")
     def precheck(self) -> None:
         from gitlab import Gitlab
@@ -123,27 +90,15 @@ class GitLabIndexer(Indexer):
         try:
             gitlab = Gitlab(
                 self.connection_config.base_url,
-                private_token=self.connection_config.access_config.access_token,
+                private_token=self.connection_config.access_config.get_secret_value().access_token,
             )
-            if self.connection_config.access_config.access_token is not None:
+            if self.connection_config.access_config.get_secret_value().access_token is not None:
                 gitlab.auth()
             else:
                 gitlab.projects.get(self.connection_config.repo_path)
         except GitlabError as gitlab_error:
-            logger.error(f"failed to validate connection: {gitlab_error}", exc_info=True)
+            logger.error(f"Failed to validate connection: {gitlab_error}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {gitlab_error}")
-
-    def does_path_match_glob(self, path: str) -> bool:
-        if not self.connection_config.git_file_glob:
-            return True
-
-        patterns = self.connection_config.git_file_glob
-        for pattern in patterns:
-            if fnmatch.filter([path], pattern):
-                return True
-
-        logger.debug(f"The file {path!r} is discarded as it does not match any given glob.")
-        return False
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         project = self.connection_config.get_project()
@@ -156,14 +111,7 @@ class GitLabIndexer(Indexer):
         )
         for element in git_tree:
             rel_path = element["path"].replace(self.connection_config.repo_path, "").lstrip("/")
-            if (
-                element["type"] == "blob"
-                and self.is_file_type_supported(element["path"])
-                and (
-                    not self.connection_config.git_file_glob
-                    or self.does_path_match_glob(element["path"])
-                )
-            ):
+            if element["type"] == "blob":
                 record_locator = {
                     "file_path": element["path"],
                     "file_name": element["name"],
@@ -213,7 +161,7 @@ class GitLabDownloader(Downloader):
         except GitlabHttpError as e:
             if e.response_code == 404:
                 logger.error(f"File doesn't exists {self.connection_config.url}/{self.path}")
-                return None
+                raise e
             raise
         return content_file
 
