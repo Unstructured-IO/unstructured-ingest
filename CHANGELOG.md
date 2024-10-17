@@ -1,3 +1,9 @@
+## 0.0.26-dev6
+
+### Enhancements
+
+* **Migrate Notion Source Connector to V2**
+
 ## 0.0.26-dev5
 
 ### Enhancements
@@ -10,7 +16,6 @@
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
-* **Add togetherai embedder support**
 
 ### Fixes
 
