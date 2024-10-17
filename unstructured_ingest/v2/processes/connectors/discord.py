@@ -131,7 +131,7 @@ class DiscordDownloader(Downloader):
             await client.login(self.connection_config.access_config.get_secret_value().token)
 
             channel = await client.fetch_channel(int(channel_id))
-            messages = await [channel.history()]
+            messages = [message async for message in channel.history()]
 
             for message in messages:
                 download_responses.append(
