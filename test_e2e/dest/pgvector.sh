@@ -43,8 +43,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
   --embedding-provider "huggingface" \
-  sql \
-  --db-type "postgresql" \
+  postgres \
   --username unstructured \
   --password test \
   --host localhost \

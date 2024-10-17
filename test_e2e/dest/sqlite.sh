@@ -44,9 +44,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --reprocess \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
-  sql \
-  --db-type "$DATABASE_TYPE" \
-  --username unstructured \
-  --database "$DB_PATH"
+  sqlite \
+  --database-path "$DB_PATH"
 
 "$SCRIPT_DIR"/python/test-ingest-sql-output.py "$DATABASE_TYPE" "$DB_PATH"
