@@ -135,7 +135,7 @@ class DiscordDownloader(Downloader):
 
             for message in messages:
                 download_responses.append(
-                    self.generate_download_response(message, self.get_download_path(message))
+                    self.generate_download_response(file_data, self.get_download_path(file_data))
                 )
 
         return download_responses
