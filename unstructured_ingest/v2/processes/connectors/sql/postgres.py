@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -27,7 +27,6 @@ CONNECTOR_TYPE = "postgres"
 
 
 class PostgresAccessConfig(SQLAccessConfig):
-    username: Optional[str] = Field(default=None, description="DB username")
     password: Optional[str] = Field(default=None, description="DB password")
 
 
@@ -39,6 +38,7 @@ class PostgresConnectionConfig(SQLConnectionConfig):
         default=None,
         description="Database name.",
     )
+    username: Optional[str] = Field(default=None, description="DB username")
     host: Optional[str] = Field(default=None, description="DB host")
     port: Optional[int] = Field(default=5432, description="DB host connection port")
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
@@ -49,7 +49,7 @@ class PostgresConnectionConfig(SQLConnectionConfig):
 
         access_config = self.access_config.get_secret_value()
         return connect(
-            user=access_config.username,
+            user=self.username,
             password=access_config.password,
             dbname=self.database,
             host=self.host,
@@ -71,7 +71,7 @@ class PostgresUploaderConfig(SQLUploaderConfig):
 
 @dataclass
 class PostgresUploader(SQLUploader):
-    upload_config: PostgresUploaderConfig
+    upload_config: PostgresUploaderConfig = field(default_factory=PostgresUploaderConfig)
     connection_config: PostgresConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 

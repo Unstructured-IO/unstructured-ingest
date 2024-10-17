@@ -19,7 +19,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
 def sqlite_setup() -> Path:
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "elements.db"
-        db_init_path = env_setup_path / "sql" / "create-sqlite-schema.sql"
+        db_init_path = env_setup_path / "sql" / "sqlite-schema.sql"
         assert db_init_path.exists()
         assert db_init_path.is_file()
         connection = None
@@ -35,7 +35,7 @@ def sqlite_setup() -> Path:
                 connection.close()
 
 
-def validate_desination(db_path: Path, expected_num_elements: int):
+def validate_destination(db_path: Path, expected_num_elements: int):
     connection = None
     try:
         connection = sqlite3.connect(database=db_path)
@@ -78,4 +78,4 @@ async def test_sqlite_destination(upload_file: Path):
                 await uploader.run_async(path=staged_path, file_data=mock_file_data)
             else:
                 uploader.run(path=staged_path, file_data=mock_file_data)
-            validate_desination(db_path=db_path, expected_num_elements=22)
+            validate_destination(db_path=db_path, expected_num_elements=22)

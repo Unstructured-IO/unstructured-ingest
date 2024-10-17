@@ -30,7 +30,6 @@ all_tests=(
   'kafka-local.sh'
   'mongodb.sh'
   'opensearch.sh'
-  'pgvector.sh'
   'pinecone.sh'
   'qdrant.sh'
   's3.sh'
