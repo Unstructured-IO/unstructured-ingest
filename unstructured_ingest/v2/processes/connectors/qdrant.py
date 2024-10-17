@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from dateutil import parser
-from pydantic import Field
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
@@ -50,7 +50,7 @@ class QdrantConnectionConfig(ConnectionConfig):
     force_disable_check_same_thread: Optional[bool] = Field(
         default=False, description="Force disable check for same thread"
     )
-    access_config: QdrantAccessConfig = Field(default=None, description="Access Config")
+    access_config: Secret[QdrantAccessConfig] = Field(default=None, description="Access Config")
 
 
 class QdrantUploadStagerConfig(UploadStagerConfig):
