@@ -1,6 +1,6 @@
 import datetime as dt
 from dataclasses import dataclass
-from typing import Any, Generator, List, Optional, Set
+from typing import Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -29,15 +29,13 @@ class DiscordAccessConfig(AccessConfig):
 
 class DiscordConnectionConfig(ConnectionConfig):
     access_config: Secret[DiscordAccessConfig]
-    channels: Optional[List[str]] = Field(
+    channels: Optional[list[str]] = Field(
         default=None, description="List of Discord channel IDs to process"
     )
 
 
 class DiscordIndexerConfig(IndexerConfig):
-    recursive: bool = Field(
-        default=False, description="Recursively process child channels and messages"
-    )
+    pass
 
 
 @dataclass
@@ -55,60 +53,47 @@ class DiscordIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.get_client()
-        processed_channels: Set[str] = set()
-        channels_to_process: Set[str] = set(self.connection_config.channels or [])
+        processed_channels: set[str] = set()
+        channels_to_process: set[str] = set(self.connection_config.channels or [])
 
-        while channels_to_process:
-            for channel_id in list(channels_to_process):
-                if channel_id in processed_channels:
-                    continue
+        for channel_id in list(channels_to_process):
+            if channel_id in processed_channels:
+                continue
 
-                processed_channels.add(channel_id)
-                channels_to_process.remove(channel_id)
-                file_data = self.get_channel_file_data(channel_id=channel_id, client=client)
-                if file_data:
-                    yield file_data
+            processed_channels.add(channel_id)
+            channels_to_process.remove(channel_id)
+            file_data = self.get_channel_file_data(channel_id=channel_id, client=client)
+            if file_data:
+                yield file_data
 
     @requires_dependencies(["discord"], extras="discord")
     def get_channel_file_data(self, channel_id: str, client) -> Optional[FileData]:
-        try:
-            # Fetch channel metadata
-            channel_metadata = {}  # Replace with actual metadata retrieval
-            date_created = dt.datetime.utcnow().isoformat()
-            identifier = channel_id
-            source_identifiers = SourceIdentifiers(
-                filename=f"{channel_id}.txt",
-                fullpath=channel_id,
-                rel_path=channel_id,
-            )
-            metadata = FileDataSourceMetadata(
-                date_created=date_created,
-                date_modified=date_created,
-                record_locator={"channel_id": channel_id},
-                date_processed=str(dt.datetime.utcnow().timestamp()),
-            )
-            additional_metadata = channel_metadata
-            return FileData(
-                identifier=identifier,
-                connector_type=CONNECTOR_TYPE,
-                source_identifiers=source_identifiers,
-                metadata=metadata,
-                additional_metadata=additional_metadata,
-            )
-        except Exception as e:
-            logger.error(f"Error retrieving channel {channel_id}: {e}")
-            return None
+        # Fetch channel metadata
+        channel_metadata = {}  # Replace with actual metadata retrieval
+        date_created = dt.datetime.utcnow().isoformat()
+        identifier = channel_id
+        source_identifiers = SourceIdentifiers(
+            filename=f"{channel_id}.txt",
+            fullpath=channel_id,
+            rel_path=channel_id,
+        )
+        metadata = FileDataSourceMetadata(
+            date_created=date_created,
+            date_modified=date_created,
+            record_locator={"channel_id": channel_id},
+            date_processed=str(dt.datetime.utcnow().timestamp()),
+        )
+        additional_metadata = channel_metadata
+        return FileData(
+            identifier=identifier,
+            connector_type=CONNECTOR_TYPE,
+            source_identifiers=source_identifiers,
+            metadata=metadata,
+            additional_metadata=additional_metadata,
+        )
 
 
 class DiscordDownloaderConfig(DownloaderConfig):
-    pass
-
-
-@dataclass
-class DiscordDownloader(Downloader):
-    connection_config: DiscordConnectionConfig
-    download_config: DiscordDownloaderConfig
-
     @requires_dependencies(["discord"], extras="discord")
     def get_client(self):
         import discord
@@ -117,8 +102,14 @@ class DiscordDownloader(Downloader):
         intents.message_content = True
         return discord.Client(intents=intents)
 
+
+@dataclass
+class DiscordDownloader(Downloader):
+    connection_config: DiscordConnectionConfig
+    download_config: DiscordDownloaderConfig
+
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        client = self.get_client()
+        client = self.download_config.get_client()
         record_locator = file_data.metadata.record_locator
 
         if "channel_id" in record_locator:
@@ -138,7 +129,7 @@ class DiscordDownloader(Downloader):
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        messages: List[discord.Message] = []
+        messages: list[discord.Message] = []
 
         @bot.event
         async def on_ready():
