@@ -5,6 +5,7 @@
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
+* **Migrate Slack Source Connector to V2**
 
 ### Fixes
 
