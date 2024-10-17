@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
     add_source_entry,
@@ -49,8 +50,6 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
-from .sql import CONNECTOR_TYPE as SQL_CONNECTOR_TYPE
-from .sql import sql_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
@@ -89,8 +88,6 @@ add_source_entry(
     source_type=DATABRICKS_VOLUMES_CONNECTOR_TYPE, entry=databricks_volumes_source_entry
 )
 
-
-add_destination_entry(destination_type=SQL_CONNECTOR_TYPE, entry=sql_destination_entry)
 
 add_destination_entry(destination_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_destination_entry)
 add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)

@@ -5,6 +5,9 @@ from pathlib import Path
 
 @contextmanager
 def docker_compose_context(docker_compose_path: Path):
+    # Dynamically run a specific docker compose file and make sure it gets cleanup by
+    # by leveraging a context manager. Uses subprocess to map docker compose commands
+    # to the underlying shell.
     assert docker_compose_path.exists()
     if docker_compose_path.is_dir():
         if (docker_compose_path / "docker-compose.yml").exists():
