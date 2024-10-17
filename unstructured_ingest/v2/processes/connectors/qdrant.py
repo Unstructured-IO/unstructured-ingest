@@ -32,11 +32,12 @@ CONNECTOR_TYPE = "qdrant"
 
 
 class QdrantAccessConfig(AccessConfig):
-    api_key: Optional[str] = Field(default=None, description="API Key")
-
+    pass
 
 class QdrantConnectionConfig(ConnectionConfig):
-    collection_name: str = Field(description="API Key")
+    api_key: Optional[str] = Field(default=None, description="API Key")
+
+    collection_name: str = Field(description="Collection Name")
     location: Optional[str] = Field(default=None, description="Location")
     url: Optional[str] = Field(default=None, description="URL")
     port: Optional[int] = Field(default=6333, description="Port")
