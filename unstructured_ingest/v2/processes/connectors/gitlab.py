@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
@@ -149,13 +148,13 @@ class GitLabDownloader(Downloader):
 
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
-    def _fetch_content(self):
+    def _fetch_content(self, path):
         from gitlab.exceptions import GitlabHttpError
 
         try:
             project = self.connection_config.get_project()
             content_file = project.files.get(
-                self.path,
+                path,
                 ref=self.connection_config.git_branch or project.default_branch,
             )
         except GitlabHttpError as e:
@@ -165,16 +164,15 @@ class GitLabDownloader(Downloader):
             raise
         return content_file
 
-    def _fetch_and_write(self, path) -> None:
-        content_file = self._fetch_content()
-        self.update_source_metadata(content_file=content_file)
+    def _fetch_and_write(self, path, download_path) -> None:
+        content_file = self._fetch_content(path)
         if content_file is None:
             raise ValueError(
                 f"Failed to retrieve file from repo "
                 f"{self.connection_config.url}/{self.path}. Check logs.",
             )
         contents = content_file.decode()
-        with open(self.filename, "wb") as f:
+        with open(download_path, "wb") as f:
             f.write(contents)
 
     @SourceConnectionError.wrap
@@ -183,9 +181,9 @@ class GitLabDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         path = file_data.source_identifiers.fullpath
-        self._fetch_and_write(path)
+        self._fetch_and_write(path, download_path)
 
-        return DownloadResponse(file_data=file_data, path=Path(path))
+        return DownloadResponse(file_data=file_data, path=download_path)
 
 
 gitlab_source_entry = SourceRegistryEntry(
