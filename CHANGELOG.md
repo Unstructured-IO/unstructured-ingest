@@ -2,6 +2,13 @@
 
 ### Enhancements
 
+* **Qdrant destination to v2**      
+
+
+## 0.0.26-dev4
+
+### Enhancements
+
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
