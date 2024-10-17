@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
-import numpy as np
 from pydantic import Field, Secret, ValidationError
 from pydantic.functional_validators import BeforeValidator
 
@@ -56,17 +55,6 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
 class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: VertexAIEmbeddingConfig
 
-    def get_exemplary_embedding(self) -> list[float]:
-        return self.embed_query(query="A sample query.")
-
-    def num_of_dimensions(self) -> tuple[int, ...]:
-        exemplary_embedding = self.get_exemplary_embedding()
-        return np.shape(exemplary_embedding)
-
-    def is_unit_vector(self) -> bool:
-        exemplary_embedding = self.get_exemplary_embedding()
-        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
-
     def embed_query(self, query):
         return self._embed_documents(elements=[query])[0]
 
@@ -86,11 +74,3 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
         inputs = [TextEmbeddingInput(text=element) for element in elements]
         embeddings = client.get_embeddings(inputs)
         return [e.values for e in embeddings]
-
-    def _add_embeddings_to_elements(self, elements, embeddings) -> list[dict]:
-        assert len(elements) == len(embeddings)
-        elements_w_embedding = []
-        for i, element in enumerate(elements):
-            element["embeddings"] = embeddings[i]
-            elements_w_embedding.append(element)
-        return elements

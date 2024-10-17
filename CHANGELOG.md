@@ -11,6 +11,7 @@
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
+* **Add togetherai embedder support**
 
 ### Fixes
 
