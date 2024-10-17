@@ -24,6 +24,8 @@ from .databricks_volumes import (
 )
 from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
+from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
+from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
@@ -105,3 +107,6 @@ add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destina
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
+
+
+add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)

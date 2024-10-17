@@ -39,7 +39,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --git-branch 'v0.0.7' \
-  --git-file-glob '*.md,*.txt' \
+  --file-glob '*.md,*.txt' \
   --url https://gitlab.com/gitlab-com/content-sites/docsy-gitlab \
   --work-dir "$WORK_DIR"
 
