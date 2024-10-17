@@ -2,7 +2,6 @@ import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
-import numpy as np
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
@@ -66,8 +65,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
     """
 
     config: MixedbreadAIEmbeddingConfig
-
-    _exemplary_embedding: Optional[list[float]] = field(init=False, default=None)
     _request_options: Optional["RequestOptions"] = field(init=False, default=None)
 
     def get_exemplary_embedding(self) -> list[float]:
@@ -89,18 +86,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             timeout_in_seconds=TIMEOUT,
             additional_headers={"User-Agent": USER_AGENT},
         )
-
-    @property
-    def num_of_dimensions(self) -> tuple[int, ...]:
-        """Get the number of dimensions for the embeddings."""
-        exemplary_embedding = self.get_exemplary_embedding()
-        return np.shape(exemplary_embedding)
-
-    @property
-    def is_unit_vector(self) -> bool:
-        """Check if the embedding is a unit vector."""
-        exemplary_embedding = self.get_exemplary_embedding()
-        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
     def _embed(self, texts: list[str]) -> list[list[float]]:
         """
@@ -129,27 +114,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             )
             responses.append(response)
         return [item.embedding for response in responses for item in response.data]
-
-    @staticmethod
-    def _add_embeddings_to_elements(
-        elements: list[dict], embeddings: list[list[float]]
-    ) -> list[dict]:
-        """
-        Add embeddings to elements.
-
-        Args:
-            elements (list[Element]): List of elements.
-            embeddings (list[list[float]]): List of embeddings.
-
-        Returns:
-            list[Element]: Elements with embeddings added.
-        """
-        assert len(elements) == len(embeddings)
-        elements_w_embedding = []
-        for i, element in enumerate(elements):
-            element["embeddings"] = embeddings[i]
-            elements_w_embedding.append(element)
-        return elements
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         """

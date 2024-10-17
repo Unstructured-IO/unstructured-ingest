@@ -134,6 +134,7 @@ embed_reqs = {
     "embed-mixedbreadai": load_requirements("requirements/embed/mixedbreadai.in"),
     "openai": load_requirements("requirements/embed/openai.in"),
     "bedrock": load_requirements("requirements/embed/aws-bedrock.in"),
+    "togetherai": load_requirements("requirements/embed/togetherai.in"),
 }
 
 docs_reqs = {
