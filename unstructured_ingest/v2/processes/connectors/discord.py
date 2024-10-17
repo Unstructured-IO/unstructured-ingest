@@ -16,6 +16,7 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
+    download_responses,
 )
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
@@ -111,12 +112,15 @@ class DiscordDownloader(Downloader):
     def load_async(self):
         import discord
 
-        return discord.Client
+        return discord.Client, None
 
-    async def run(self, file_data: FileData, **kwargs: Any) -> list[DownloadResponse]:
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        raise NotImplementedError()
+
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> list[DownloadResponse]:
         import discord
 
-        async_client = self.load_async()
+        async_client, _ = self.load_async()
 
         channel_id: str = file_data.metadata.record_locator["channel_id"]
         message_limit: int = self.download_config.message_limit
@@ -124,16 +128,17 @@ class DiscordDownloader(Downloader):
         intents = discord.Intents.default()
         intents.message_content = True
 
+        download_responses = []
         async with async_client(intents=intents) as client:
             await client.login(self.connection_config.access_config.get_secret_value().token)
 
             channel = await client.fetch_channel(int(channel_id))
             messages = await channel.history(limit=message_limit).flatten()
 
-            download_responses = [
-                self.generate_download_response(file_data, self.get_download_path(file_data))
-                for message in messages
-            ]
+            for message in messages:
+                download_responses.append(
+                    self.generate_download_response(message, self.get_download_path(message))
+                )
 
         return download_responses
 
