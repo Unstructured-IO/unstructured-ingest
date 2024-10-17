@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
     add_source_entry,
@@ -34,7 +35,7 @@ from .local import local_destination_entry, local_source_entry
 from .milvus import CONNECTOR_TYPE as MILVUS_CONNECTOR_TYPE
 from .milvus import milvus_destination_entry
 from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
-from .mongodb import mongodb_destination_entry
+from .mongodb import mongodb_destination_entry, mongodb_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_source_entry
 from .opensearch import CONNECTOR_TYPE as OPENSEARCH_CONNECTOR_TYPE
@@ -49,8 +50,6 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
-from .sql import CONNECTOR_TYPE as SQL_CONNECTOR_TYPE
-from .sql import sql_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
@@ -92,9 +91,9 @@ add_source_entry(
 )
 
 
-add_destination_entry(destination_type=SQL_CONNECTOR_TYPE, entry=sql_destination_entry)
-
 add_destination_entry(destination_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_destination_entry)
+add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)
+
 add_destination_entry(destination_type=PINECONE_CONNECTOR_TYPE, entry=pinecone_destination_entry)
 add_source_entry(source_type=SHAREPOINT_CONNECTOR_TYPE, entry=sharepoint_source_entry)
 add_destination_entry(

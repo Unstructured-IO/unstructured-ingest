@@ -1,17 +1,20 @@
-## 0.0.26-dev5
+## 0.0.26-dev7
 
 ### Enhancements
 
 * **Added migration for GitHub Source V2**
   * **Updated the expected output for GitHub Source V2**
 
-## 0.0.26-dev4
+
+## 0.0.26-dev6
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
+* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
+* **Added MongoDB source V2 connector**
 
 ### Fixes
 
