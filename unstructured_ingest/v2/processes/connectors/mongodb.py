@@ -120,6 +120,7 @@ class MongoDBIndexer(Indexer):
         id_batches = [ids[i : i + batch_size] for i in range(0, len(ids), batch_size)]
 
         for id_batch in id_batches:
+            # Make sure the hash is always a positive number to create identifier
             batch_id = str(hash(frozenset(id_batch)) + sys.maxsize + 1)
 
             metadata = FileDataSourceMetadata(
