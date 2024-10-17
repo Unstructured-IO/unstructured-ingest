@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from pinecone_text.sparse import SpladeEncoder
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -84,6 +85,10 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
             "Pinecone."
         ),
     )
+    extra_metadata: dict = Field(
+        default=dict(),
+        description="Extra metadata to add to the Pinecone payload.",
+    )
 
 
 class PineconeUploaderConfig(UploaderConfig):
@@ -105,13 +110,19 @@ class PineconeUploadStager(UploadStager):
     upload_stager_config: PineconeUploadStagerConfig = field(
         default_factory=lambda: PineconeUploadStagerConfig()
     )
+    sparse_embeddings_model: SpladeEncoder = field(
+        default_factory=lambda: SpladeEncoder(max_seq_length=512)
+    )
 
     def conform_dict(self, element_dict: dict) -> dict:
         embeddings = element_dict.pop("embeddings", None)
         metadata: dict[str, Any] = element_dict.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
-        pinecone_metadata = {}
+        pinecone_metadata = {
+            "context": element_dict.pop("text"),
+            **self.upload_stager_config.extra_metadata,
+        }
         for possible_meta in [element_dict, metadata, data_source, coordinates]:
             pinecone_metadata.update(
                 {
@@ -120,10 +131,13 @@ class PineconeUploadStager(UploadStager):
                     if k in self.upload_stager_config.metadata_fields
                 }
             )
-
+        sparse_vector = self.sparse_embeddings_model.encode_documents(
+            texts=pinecone_metadata["context"]
+        )
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
+            "sparse_values": sparse_vector,
             "metadata": flatten_dict(
                 pinecone_metadata,
                 separator="-",
@@ -178,7 +192,9 @@ class PineconeUploader(Uploader):
                 max_batch_size=self.upload_config.batch_size,
             )
         )
-        logger.info(f"split doc with {len(elements_dict)} elements into {len(chunks)} batches")
+        logger.info(
+            f"split doc with {len(elements_dict)} elements into {len(chunks)} batches"
+        )
 
         max_pool_threads = min(len(chunks), MAX_POOL_THREADS)
         if self.upload_config.pool_threads:
@@ -196,7 +212,9 @@ class PineconeUploader(Uploader):
             try:
                 results = [async_result.get() for async_result in async_results]
             except PineconeApiException as api_error:
-                raise DestinationConnectionError(f"http error: {api_error}") from api_error
+                raise DestinationConnectionError(
+                    f"http error: {api_error}"
+                ) from api_error
             logger.debug(f"results: {results}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
