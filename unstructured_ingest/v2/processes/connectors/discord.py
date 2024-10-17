@@ -108,12 +108,12 @@ class DiscordDownloader(Downloader):
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    async def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         client = self.download_config.get_client()
         record_locator = file_data.metadata.record_locator
 
         if "channel_id" in record_locator:
-            return self.download_channel(
+            return await self.download_channel(
                 client=client,
                 channel_id=record_locator["channel_id"],
                 file_data=file_data,
@@ -121,7 +121,9 @@ class DiscordDownloader(Downloader):
         else:
             raise ValueError("Invalid record_locator in file_data")
 
-    def download_channel(self, client, channel_id: str, file_data: FileData) -> DownloadResponse:
+    async def download_channel(
+        self, client, channel_id: str, file_data: FileData
+    ) -> DownloadResponse:
         import discord
         from discord.ext import commands
 
@@ -137,12 +139,15 @@ class DiscordDownloader(Downloader):
                 channel = bot.get_channel(int(channel_id))
                 async for msg in channel.history(limit=100):  # Example message limit
                     messages.append(msg)
-                await bot.close()
             except Exception as e:
                 logger.error(f"Error fetching messages from channel {channel_id}: {e}")
+            finally:
                 await bot.close()
 
-        bot.run(self.connection_config.access_config.get_secret_value().token)
+        try:
+            await bot.start(self.connection_config.access_config.get_secret_value().token)
+        except Exception as e:
+            logger.error(f"Error starting bot: {e}")
 
         with open(download_path, "w") as file:
             for message in messages:
