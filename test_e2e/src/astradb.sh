@@ -5,11 +5,15 @@ set -e
 SRC_PATH=$(dirname "$(realpath "$0")")
 SCRIPT_DIR=$(dirname "$SRC_PATH")
 cd "$SCRIPT_DIR"/.. || exit 1
+echo "SCRIPT_DIR: $SCRIPT_DIR"
 OUTPUT_FOLDER_NAME=astradb
-OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
-WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
+OUTPUT_ROOT=${OUTPUT_ROOT:-$SCRIPT_DIR}
+OUTPUT_DIR=$OUTPUT_ROOT/structured-output/$OUTPUT_FOLDER_NAME
+WORK_DIR=$OUTPUT_ROOT/workdir/$OUTPUT_FOLDER_NAME
 DOWNLOAD_DIR=$SCRIPT_DIR/download/$OUTPUT_FOLDER_NAME
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
+CI=${CI:-"false"}
+
 if [ -z "$ASTRA_DB_APPLICATION_TOKEN" ]; then
   echo "Skipping Astra DB source test because ASTRA_DB_APPLICATION_TOKEN env var is not set."
   exit 0
@@ -22,7 +26,8 @@ fi
 
 COLLECTION_NAME="ingest_test_src"
 
-PYTHONPATH=. ./unstructured_ingest/main.py \
+RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
+PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   astradb \
   --api-key "$UNS_PAID_API_KEY" \
   --partition-by-api \
