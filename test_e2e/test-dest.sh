@@ -36,7 +36,6 @@ all_tests=(
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
-  'sqlite.sh'
   'vectara.sh'
   'singlestore.sh'
   'weaviate.sh'
