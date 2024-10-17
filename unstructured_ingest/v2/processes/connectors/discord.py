@@ -104,45 +104,36 @@ class DiscordDownloaderConfig(DownloaderConfig):
 
 @dataclass
 class DiscordDownloader(Downloader):
-
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
 
     @requires_dependencies(["discord"], extras="discord")
     def load_async(self):
         import discord
-        from discord.ext import commands
 
-        return discord.Client, commands.Bot
+        return discord.Client
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> list[DownloadResponse]:
+    async def run(self, file_data: FileData, **kwargs: Any) -> list[DownloadResponse]:
         import discord
 
-        AsyncClient, AsyncBot = self.load_async()
+        async_client = self.load_async()
 
         channel_id: str = file_data.metadata.record_locator["channel_id"]
         message_limit: int = self.download_config.message_limit
 
-        download_responses = []
         intents = discord.Intents.default()
         intents.message_content = True
 
-        async with AsyncClient(intents=intents) as client:
-            bot = AsyncBot(command_prefix=">", intents=client.intents)
+        async with async_client(intents=intents) as client:
+            await client.login(self.connection_config.access_config.get_secret_value().token)
 
-            @bot.event
-            async def on_ready():
-                try:
-                    channel = bot.get_channel(int(channel_id))
-                    async for message in channel.history(limit=message_limit):
-                        download_response = self.generate_download_response(
-                            message=message, channel_id=channel_id, file_data=file_data
-                        )
-                        download_responses.append(download_response)
-                finally:
-                    await bot.close()
+            channel = await client.fetch_channel(int(channel_id))
+            messages = await channel.history(limit=message_limit).flatten()
 
-            await bot.start(self.connection_config.access_config.get_secret_value().token)
+            download_responses = [
+                self.generate_download_response(file_data, self.get_download_path(file_data))
+                for message in messages
+            ]
 
         return download_responses
 
