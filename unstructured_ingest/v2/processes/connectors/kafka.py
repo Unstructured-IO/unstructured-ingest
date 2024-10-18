@@ -295,7 +295,7 @@ class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConn
         self.write_dict(dict_list=content_list)
 
 
-Kafkasource_entry = SourceRegistryEntry(
+kafka_source_entry = SourceRegistryEntry(
     connection_config=KafkaConnectionConfig,
     indexer=KafkaIndexer,
     indexer_config=KafkaIndexerConfig,

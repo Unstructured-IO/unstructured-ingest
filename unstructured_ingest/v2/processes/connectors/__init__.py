@@ -29,6 +29,8 @@ from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
+from .kafka import CONNECTOR_TYPE as KAFKA_CONNECTOR_TYPE
+from .kafka import kafka_source_entry
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
 from .kdbai import kdbai_destination_entry
 from .local import CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE
@@ -99,6 +101,8 @@ add_destination_entry(
     destination_type=AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE,
     entry=azure_cognitive_search_destination_entry,
 )
+
+add_source_entry(source_type=KAFKA_CONNECTOR_TYPE, entry=kafka_source_entry)
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
