@@ -1,0 +1,26 @@
+{
+  "identifier": "9a6eb650-98d6-5465-8f1d-aa7118eee87e",
+  "connector_type": "databricks_volumes",
+  "source_identifiers": {
+    "filename": "fake-memo.pdf",
+    "fullpath": "/Volumes/utic-dev-tech-fixtures/default/test-platform/databricks-volumes-test-input/fake-memo.pdf",
+    "rel_path": "fake-memo.pdf"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "/Volumes/utic-dev-tech-fixtures/default/test-platform/databricks-volumes-test-input/fake-memo.pdf",
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": "1729186569000",
+    "date_processed": null,
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "catalog": "utic-dev-tech-fixtures",
+    "path": "/Volumes/utic-dev-tech-fixtures/default/test-platform/databricks-volumes-test-input/fake-memo.pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpv8xsw7kf/fake-memo.pdf"
+}

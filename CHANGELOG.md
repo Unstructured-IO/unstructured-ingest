@@ -1,4 +1,4 @@
-## 0.0.26-dev4
+## 0.1.0
 
 ### Enhancements
 
@@ -6,6 +6,10 @@
 * **Databricks Delta Table destination to v2**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
+* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
+* **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
+* **Refactor databricks into distinct connectors based on auth type**
 
 ### Fixes
 
