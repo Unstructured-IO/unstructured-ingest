@@ -1,15 +1,20 @@
-## 0.0.26-dev5
+## 0.1.01-dev0
 
 ### Enhancements
 
 * **Vectara destination to v2**
 
-## 0.0.26-dev4
+## 0.1.0
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
+* **Add togetherai embedder support**
+* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
+* **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
+* **Refactor databricks into distinct connectors based on auth type**
 
 ### Fixes
 
