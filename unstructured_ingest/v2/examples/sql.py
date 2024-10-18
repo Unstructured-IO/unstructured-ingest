@@ -59,7 +59,7 @@ if __name__ == "__main__":
     query = None
     script_path = (
         Path(__file__).parent.parent.parent.parent.parent
-        / Path("test_e2e/env_setup/sql/create-sqlite-schema.sql")
+        / Path("test_e2e/env_setup/sql/sqlite-schema.sql")
     ).resolve()
     with open(script_path) as f:
         query = f.read()
