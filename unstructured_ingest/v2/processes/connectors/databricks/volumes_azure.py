@@ -84,6 +84,7 @@ class DatabricksAzureVolumesUploader(DatabricksVolumesUploader):
     upload_config: DatabricksAzureVolumesUploaderConfig = field(
         default_factory=DatabricksAzureVolumesUploaderConfig
     )
+    connector_type: str = CONNECTOR_TYPE
 
 
 databricks_azure_volumes_destination_entry = DestinationRegistryEntry(
