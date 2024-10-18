@@ -140,7 +140,7 @@ class QdrantUploader(Uploader):
             prefer_grpc=self.connection_config.prefer_grpc,
             https=self.connection_config.https,
             api_key=(
-                self.connection_config.access_config.api_key
+                self.connection_config.access_config.get_secret_value().api_key
                 if self.connection_config.access_config
                 else None
             ),
