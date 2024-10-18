@@ -109,7 +109,7 @@ class VectaraUploadStager(UploadStager):
             ],
         }
         logger.info(
-            f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}",
+            f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}"
         )
         docs_list.append(conformed_elements)
 
