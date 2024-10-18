@@ -1,3 +1,9 @@
+## 0.1.0-dev0
+
+### Enhancements
+
+* **Migrate Notion Source Connector to V2**
+
 ## 0.1.0
 
 ### Enhancements
