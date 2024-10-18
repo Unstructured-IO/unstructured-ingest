@@ -197,7 +197,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases(
         self,
         page_id: str,
-        client: "connection_config.get_client()",
+        client: Client,
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
@@ -217,7 +217,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases_from_database(
         self,
         database_id: str,
-        client: "connection_config.get_client()",
+        client: Client,
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
