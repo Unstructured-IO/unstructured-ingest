@@ -24,7 +24,6 @@ CONNECTOR_TYPE = "delta_table"
 
 
 class DeltaTableAccessConfig(AccessConfig):
-    aws_region: Optional[str] = Field(default=None, description="AWS Region")
     aws_access_key_id: Optional[str] = Field(default=None, description="AWS Access Key Id")
     aws_secret_access_key: Optional[str] = Field(default=None, description="AWS Secret Access Key")
 
@@ -33,6 +32,7 @@ class DeltaTableConnectionConfig(ConnectionConfig):
     access_config: Secret[DeltaTableAccessConfig] = Field(
         default=DeltaTableAccessConfig(), validate_default=True
     )
+    aws_region: Optional[str] = Field(default=None, description="AWS Region")
     table_uri: str = Field(
         default=None,
         description="The path to the target folder in the S3 bucket,"
@@ -124,8 +124,12 @@ class DeltaTableUploader(Uploader):
         )
         storage_options = {}
         secrets = self.connection_config.access_config.get_secret_value()
-        if secrets.aws_region and secrets.aws_access_key_id and secrets.aws_secret_access_key:
-            storage_options["AWS_REGION"] = secrets.aws_region
+        if (
+            self.connection_config.aws_region
+            and secrets.aws_access_key_id
+            and secrets.aws_secret_access_key
+        ):
+            storage_options["AWS_REGION"] = self.connection_config.aws_region
             storage_options["AWS_ACCESS_KEY_ID"] = secrets.aws_access_key_id
             storage_options["AWS_SECRET_ACCESS_KEY"] = secrets.aws_secret_access_key
             # Delta-rs doesn't support concurrent S3 writes without external locks (DynamoDB).

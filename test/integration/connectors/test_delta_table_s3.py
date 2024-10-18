@@ -43,10 +43,10 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     destination_path = f"{s3_bucket}/destination/{uuid.uuid4()}"
     connection_config = DeltaTableConnectionConfig(
         access_config=DeltaTableAccessConfig(
-            aws_region=aws_credentials["AWS_REGION"],
             aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
         ),
+        aws_region=aws_credentials["AWS_REGION"],
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
