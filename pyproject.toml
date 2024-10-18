@@ -58,3 +58,15 @@ exclude= [
     "build",
     "migrations"
 ]
+
+# limit coverage to v2 code
+[tool.coverage.run]
+omit=[
+    "unstructured_ingest/connector/*",
+    "unstructured_ingest/pipeline/*",
+    "unstructured_ingest/cli/*",
+    "unstructured_ingest/runner/*",
+    "unstructured_ingest/utils/*",
+    "unstructured_ingest/ingest_backoff/*",
+    "unstructured_ingest/enhanced_dataclass/*"
+]
