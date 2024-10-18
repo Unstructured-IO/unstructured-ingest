@@ -50,7 +50,7 @@ async def test_postgres_destination(upload_file: Path):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
-    with docker_compose_context(docker_compose_path=env_setup_path / "sql"):
+    with docker_compose_context(docker_compose_path=env_setup_path / "sql" / "postgres" / "destination"):
         with tempfile.TemporaryDirectory() as tmpdir:
             stager = PostgresUploadStager()
             stager_params = {
