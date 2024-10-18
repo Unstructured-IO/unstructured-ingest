@@ -10,6 +10,8 @@ OUTPUT_ROOT=${OUTPUT_ROOT:-$SCRIPT_DIR}
 OUTPUT_DIR=$OUTPUT_ROOT/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$OUTPUT_ROOT/workdir/$OUTPUT_FOLDER_NAME
 DOWNLOAD_DIR=$OUTPUT_ROOT/download/$OUTPUT_FOLDER_NAME
+IS_CONFLUENT=false
+
 
 CI=${CI:-"false"}
 
@@ -48,28 +50,30 @@ python "$SCRIPT_DIR"/python/test-produce-kafka-message.py up \
   --input-file "example-docs/pdf/fake-memo.pdf" \
   --bootstrap-server localhost \
   --topic "$KAFKA_TOPIC" \
-  --confluent false \
+  --confluent "$IS_CONFLUENT" \
   --port 29092
 python "$SCRIPT_DIR"/python/test-produce-kafka-message.py up \
   --input-file "example-docs/pdf/fake-memo.pdf" \
   --bootstrap-server localhost \
   --topic "$KAFKA_TOPIC" \
-  --confluent false \
+  --confluent "$IS_CONFLUENT" \
   --port 29092
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   kafka \
-  --bootstrap-server localhost \
-  --download-dir "$DOWNLOAD_DIR" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
+  --bootstrap-server "localhost" \
   --topic "$KAFKA_TOPIC" \
+  --port "29092" \
+  --kafka-api-key "$UNS_PAID_API_KEY" \
+  --download-dir "$DOWNLOAD_DIR" \
   --num-messages-to-consume 1 \
-  --port 29092 \
   --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --reprocess \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
-  --work-dir "$WORK_DIR" \
-  --confluent false
+  --work-dir "$WORK_DIR"  \
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

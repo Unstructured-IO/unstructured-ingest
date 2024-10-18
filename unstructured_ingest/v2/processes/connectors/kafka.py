@@ -1,6 +1,7 @@
 import base64
 import json
 import socket
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
@@ -48,17 +49,17 @@ CONNECTOR_TYPE = "kafka"
 
 class KafkaAccessConfig(AccessConfig):
     kafka_api_key: Optional[SecretStr] = Field(description="Kafka API key to connect at the server")
-    secret: Optional[SecretStr] = Field(description="")
-
+    secret: Optional[SecretStr] = Field(description="", default=None)
+    
 
 class KafkaConnectionConfig(ConnectionConfig):
+    access_config: Secret[KafkaAccessConfig]
+    timeout: Optional[float] = 1.0
+    confluent: Optional[bool] = False
     bootstrap_server: str
     port: str
     topic: str
-    access_config: Secret[KafkaAccessConfig]
-    confluent: Optional[bool] = True
     num_messages_to_consume: Optional[int] = 1
-    timeout: Optional[float] = 1.0
 
     @requires_dependencies(["confluent_kafka"], extras="kafka")
     def get_client(self) -> "Consumer":
@@ -87,7 +88,7 @@ class KafkaConnectionConfig(ConnectionConfig):
 
         consumer = Consumer(conf)
         logger.debug(f"kafka consumer connected to bootstrap: {bootstrap}")
-        topic = self.connection_config.topic
+        topic = self.topic
         logger.info(f"subscribing to topic: {topic}")
         consumer.subscribe([topic])
         return consumer
@@ -96,7 +97,7 @@ class KafkaConnectionConfig(ConnectionConfig):
 class KafkaIndexerConfig(IndexerConfig):
     pass
 
-
+@dataclass
 class KafkaIndexer(Indexer):
     connection_config: KafkaConnectionConfig
     index_config: KafkaIndexerConfig
@@ -109,11 +110,11 @@ class KafkaIndexer(Indexer):
         running = True
 
         collected = {}
-        num_messages_to_consume = self.connector_config.num_messages_to_consume
+        num_messages_to_consume = self.connection_config.num_messages_to_consume
         logger.info(f"config set for blocking on {num_messages_to_consume} messages")
         # Consume specified number of messages
         while running:
-            msg = consumer.poll(timeout=self.connector_config.timeout)
+            msg = consumer.poll(timeout=self.connection_config.timeout)
             if msg is None:
                 logger.debug("No Kafka messages found")
                 continue
@@ -125,16 +126,16 @@ class KafkaIndexer(Indexer):
                         % (msg.topic(), msg.partition(), msg.offset())
                     )
             else:
-                collected[msg.key().decode("utf-8")] = json.loads(msg.value().decode("utf8"))
-                if len(collected) >= num_messages_to_consume:
-                    logger.debug(f"found {len(collected)} messages, stopping")
-                    consumer.commit(asynchronous=False)
-                    break
+                msg_content = json.loads(msg.value().decode("utf8"))
+                collected[f"{msg.topic()}-{msg.partition()}-{msg.offset()}-{msg_content['filename']}"] = msg_content
+                logger.debug(f"found {len(collected)} messages, stopping")
+                consumer.commit(asynchronous=False)
+                break
 
         return collected
 
     def run(self) -> Generator[FileData, None, None]:
-        messages_consumed = self._get_messages
+        messages_consumed = self._get_messages()
         for key in messages_consumed.keys():
             yield FileData(
                 identifier=key,
@@ -143,14 +144,14 @@ class KafkaIndexer(Indexer):
                     date_processed=str(time()),
                 ),
                 additional_metadata={
-                    "filename": messages_consumed[key].filename,
-                    "content": messages_consumed[key].content,
+                    "filename": messages_consumed[key]["filename"],
+                    "content": messages_consumed[key]["content"],
                 },
             )
 
     def precheck(self):
         try:
-            _ = self.create_client()
+            _ = self.connection_config.get_client()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -162,8 +163,8 @@ class KafkaDownloaderConfig(DownloaderConfig):
 
 @dataclass
 class KafkaDownloader(Downloader):
-    connection_config = KafkaConnectionConfig
-    download_config = KafkaDownloaderConfig = field(default_factory=lambda: KafkaDownloaderConfig)
+    connection_config: KafkaConnectionConfig
+    download_config: KafkaDownloaderConfig = field(default_factory=lambda: KafkaDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
     version: Optional[str] = None
     source_url: Optional[str] = None
@@ -187,7 +188,7 @@ class KafkaDownloader(Downloader):
         except Exception:
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
-        return DownloadResponse(file_data, path=download_path)
+        return DownloadResponse(file_date=file_data, path=download_path)
 
     @SourceConnectionError.wrap
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
@@ -226,7 +227,7 @@ class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConn
     def create_producer(self) -> "Producer":
         from confluent_kafka import Producer
 
-        is_confluent = self.connector_config.confluent
+        is_confluent = self.connector_config.access_config.confluent
         bootstrap = self.connector_config.bootstrap_server
         port = self.connector_config.port
 
