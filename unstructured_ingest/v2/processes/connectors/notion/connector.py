@@ -60,7 +60,7 @@ class NotionIndexer(Indexer):
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_client(self):
-        from unstructured_ingest.v2.processes.connectors.notion.client import Client
+        from unstructured_ingest.v2.processes.connectors.notion.client import AsyncClient as Client
 
         return Client(
             notion_version=NOTION_API_VERSION,
