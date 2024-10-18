@@ -29,7 +29,8 @@ def generate_partitioner_config_params() -> dict:
     if random_val < 0.5:
         params["fields_include"] = fake.words()
 
-    # Randomly set the metadata_exclude or metadata_include to a valid list[str] or don't set it at all
+    # Randomly set the metadata_exclude or metadata_include to a valid
+    # list[str] or don't set it at all
     if random.random() < (1 / 3):
         params["metadata_exclude"] = fake.words()
     elif random_val < (2 / 3):

@@ -46,4 +46,4 @@ def test_chunker_config(partition_config_params: dict):
 def test_chunker(partition_config_params: dict):
     chunker_config = ChunkerConfig.model_validate(partition_config_params)
     chunker = Chunker(config=chunker_config)
-    assert chunker_config
+    assert chunker
