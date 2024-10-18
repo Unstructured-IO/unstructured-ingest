@@ -100,6 +100,47 @@ class KafkaIndexer(Indexer):
         consumer = Consumer(conf)
         logger.debug(f"kafka consumer connected to bootstrap: {bootstrap}")
         return consumer
+    
+    def get_files(self):
+        from confluent_kafka import KafkaError
+
+        consumer = self.kafka_consumer
+        running = True
+
+        collected = []
+        num_messages_to_consume = self.connector_config.num_messages_to_consume
+        logger.info(f"config set for blocking on {num_messages_to_consume} messages")
+        # Consume specified number of messages
+        while running:
+            msg = consumer.poll(timeout=self.connector_config.timeout)
+            if msg is None:
+                logger.debug("No Kafka messages found")
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    # End of partition event
+                    logger.error(
+                        "%% %s [%d] reached end at offset %d\n"
+                        % (msg.topic(), msg.partition(), msg.offset())
+                    )
+            else:
+                collected.append(json.loads(msg.value().decode("utf8")))
+                if len(collected) >= num_messages_to_consume:
+                    logger.debug(f"found {len(collected)} messages, stopping")
+                    consumer.commit(asynchronous=False)
+                    break
+
+        print(collected)
+        return [
+            KafkaIngestDoc(
+                connector_config=self.connector_config,
+                processor_config=self.processor_config,
+                read_config=self.read_config,
+                raw_filename=msg["filename"],
+                raw_content=msg["content"],
+            )
+            for msg in collected
+        ]
 
 
     def precheck(self):
@@ -157,71 +198,6 @@ class KafkaDownloader(Downloader):
         self._get_file()
 
         return DownloadResponse(file_data=file_data, path=Path(self.filename))
-
-
-## OLD CODE
-@dataclass
-class KafkaSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
-    """Source connector for Kafka.
-    Main job is to consume from a Kafka topic and create instances of
-    KakfaIngestDoc.
-    Note that messages have the format of:
-    <filename>: the name of the file (with correct file extension)
-    <content>: base64 encoded (whether was binary or not)
-    """
-
-    connector_config: KafkaConnectionConfig
-    _consumer: t.Optional["Consumer"] = None
-
-    def check_connection(self):
-        try:
-            self.kafka_consumer
-        except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
-
-    
-
-    @SourceConnectionError.wrap
-    def get_ingest_docs(self):
-        from confluent_kafka import KafkaError
-
-        consumer = self.kafka_consumer
-        running = True
-
-        collected = []
-        num_messages_to_consume = self.connector_config.num_messages_to_consume
-        logger.info(f"config set for blocking on {num_messages_to_consume} messages")
-        # Consume specified number of messages
-        while running:
-            msg = consumer.poll(timeout=self.connector_config.timeout)
-            if msg is None:
-                logger.debug("No Kafka messages found")
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    # End of partition event
-                    logger.error(
-                        "%% %s [%d] reached end at offset %d\n"
-                        % (msg.topic(), msg.partition(), msg.offset())
-                    )
-            else:
-                collected.append(json.loads(msg.value().decode("utf8")))
-                if len(collected) >= num_messages_to_consume:
-                    logger.debug(f"found {len(collected)} messages, stopping")
-                    consumer.commit(asynchronous=False)
-                    break
-
-        return [
-            KafkaIngestDoc(
-                connector_config=self.connector_config,
-                processor_config=self.processor_config,
-                read_config=self.read_config,
-                raw_filename=msg["filename"],
-                raw_content=msg["content"],
-            )
-            for msg in collected
-        ]
 
 
 @dataclass
