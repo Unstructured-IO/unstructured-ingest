@@ -1,4 +1,4 @@
-## 0.0.26-dev6
+## 0.0.26-dev7
 
 ### Enhancements
 
@@ -7,6 +7,7 @@
 * **Add togetherai embedder support**
 * **Refactor sqlite and postgres to be distinct connectors to support better input validation**
 * **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
 
 ### Fixes
 
