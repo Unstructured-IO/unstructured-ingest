@@ -8,6 +8,7 @@ import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.table import convert_to_pandas_dataframe
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -59,8 +60,6 @@ class DeltaTableUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        from unstructured_ingest.utils.table import convert_to_pandas_dataframe
-
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
 
@@ -82,7 +81,6 @@ class DeltaTableUploader(Uploader):
     connection_config: DeltaTableConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["deltalake"], extras="delta-table")
     def precheck(self):
         pass
 
