@@ -2,9 +2,9 @@ import os
 import uuid
 from pathlib import Path
 
-import boto3
 import pytest
 from deltalake import DeltaTable
+from fsspec import get_filesystem_class
 
 from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
@@ -82,12 +82,8 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
             len(df.columns) == EXPECTED_COLUMNS
         ), f"Number of columns in table vs expected: {len(df.columns)}/{EXPECTED_COLUMNS}"
     finally:
-        bucket, prefix = destination_path.removeprefix("s3://").split("/", maxsplit=1)
-        client = boto3.client(
-            "s3",
-            aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+        s3fs = get_filesystem_class("s3")(
+            key=aws_credentials["AWS_ACCESS_KEY_ID"],
+            secret=aws_credentials["AWS_SECRET_ACCESS_KEY"],
         )
-        s3_objects = client.list_objects(Bucket=bucket, Prefix=prefix).get("Contents", [])
-        delete = {"Objects": [{"Key": s3_object["Key"]} for s3_object in s3_objects]}
-        client.delete_objects(Bucket=bucket, Delete=delete)
+        s3fs.rm(path=destination_path, recursive=True)
