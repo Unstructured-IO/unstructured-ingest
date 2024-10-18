@@ -1,3 +1,9 @@
+## 0.0.26-dev3
+
+### Enhancements
+
+* **KDB.AI vectorstore integration to 1.4**
+
 ## 0.0.26-dev2
 
 ### Enhancements
