@@ -202,6 +202,7 @@ class SQLDownloader(Downloader, ABC):
         copied_file_data = replace(file_data)
         copied_file_data.identifier = filename_id
         copied_file_data.doc_type = "file"
+        copied_file_data.additional_metadata.pop("ids", None)
         return super().generate_download_response(
             file_data=copied_file_data, download_path=download_path
         )

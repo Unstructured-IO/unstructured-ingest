@@ -94,7 +94,7 @@ class SQLiteDownloader(SQLDownloader):
         ids = file_data.additional_metadata["ids"]
         with self.connection_config.get_connection() as sqlite_connection:
             cursor = sqlite_connection.cursor()
-            fields = self.download_config.fields or "*"
+            fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
             query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
                 fields=fields,
                 table_name=table_name,
