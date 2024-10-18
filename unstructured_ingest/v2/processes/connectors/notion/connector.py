@@ -32,7 +32,7 @@ class NotionAccessConfig(AccessConfig):
 class NotionConnectionConfig(ConnectionConfig):
     access_config: Secret[NotionAccessConfig]
 
-    def get_client(self) -> "Client":
+    def get_client(self):
         from unstructured_ingest.v2.processes.connectors.notion.client import Client
 
         return Client(
@@ -134,7 +134,9 @@ class NotionIndexer(Indexer):
                     databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_page_file_data(self, page_id: str, client: "NotionClient") -> Optional[FileData]:
+    def get_page_file_data(
+        self, page_id: str, client: "connection_config.get_client()"
+    ) -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
             date_created = page_metadata.created_time
@@ -165,7 +167,7 @@ class NotionIndexer(Indexer):
 
     @requires_dependencies(["notion_client"], extras="notion")
     def get_database_file_data(
-        self, database_id: str, client: "NotionClient"
+        self, database_id: str, client: "connection_config.get_client()"
     ) -> Optional[FileData]:
         try:
             database_metadata = client.databases.retrieve(database_id=database_id)  # type: ignore
@@ -198,7 +200,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases(
         self,
         page_id: str,
-        client: "NotionClient",
+        client: "connection_config.get_client()",
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
