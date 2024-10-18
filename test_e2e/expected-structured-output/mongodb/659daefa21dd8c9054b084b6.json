@@ -1,0 +1,202 @@
+[
+  {
+    "type": "UncategorizedText",
+    "element_id": "856f774636df7b2b2890b24ff301ffe4",
+    "text": "1901",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "4e0ab9340e12b6dcb63b7d73609800a7",
+    "text": "Kansas Saloon Smashers",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "0585158089a673f256103b1a5dd3db04",
+    "text": "American",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "b6b7d57a720734817ef32e394f19adb3",
+    "text": "Unknown",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "a5c3443c6f728d9a03423dcbf2d5f56a",
+    "text": "nan",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "ca910ac27209076f5d89204740cd3924",
+    "text": "unknown",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "f6c84d7fb981b241b8183d1ef667c514",
+    "text": "https://en.wikipedia.org/wiki/Kansas_Saloon_Smashers",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "066fc79a65f3e610f323ad63c4a00950",
+    "text": "A bartender is working at a saloon, serving drinks to customers. After he fills a stereotypically Irish man's bucket with beer, Carrie Nation and her followers burst inside. They assault the Irish man, pulling his hat over his eyes and then dumping the beer over his head. The group then begin wrecking the bar, smashing the fixtures, mirrors, and breaking the cash register. The bartender then sprays seltzer water in Nation's face before a group of policemen appear and order everybody to leave. [1]",
+    "metadata": {
+      "filename": "659daefa21dd8c9054b084b6.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "database": "ingest-test-db",
+          "collection": "sample-mongodb-data",
+          "document_id": "659daefa21dd8c9054b084b6"
+        },
+        "date_created": "2024-01-09T20:39:22+00:00",
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 610
+      }
+    }
+  }
+]

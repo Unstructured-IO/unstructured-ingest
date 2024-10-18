@@ -1,14 +1,24 @@
-## 0.0.26-dev3
+## 0.1.1-dev1
 
 ### Enhancements
 
 * **KDB.AI vectorstore integration to 1.4**
 
-## 0.0.26-dev2
+## 0.1.0
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
+* **Add check that access config always wrapped in Secret**
+* **Add togetherai embedder support**
+* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
+* **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
+* **Refactor databricks into distinct connectors based on auth type**
+
+### Fixes
+
+**Fix Notion Ingestion** Fix the Notion source connector to work with the latest version of the Notion API (added `in_trash` properties to `Page`, `Block` and `Database`).
 
 ## 0.0.25
 
