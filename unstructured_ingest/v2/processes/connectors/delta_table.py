@@ -4,7 +4,6 @@ from multiprocessing import Process
 from pathlib import Path
 from typing import Any, Optional
 
-import fsspec
 import pandas as pd
 from pydantic import Field, Secret
 
@@ -91,6 +90,8 @@ class DeltaTableUploader(Uploader):
             and secrets.aws_access_key_id
             and secrets.aws_secret_access_key
         ):
+            import fsspec
+
             try:
                 fs = fsspec.filesystem(
                     "s3", key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
