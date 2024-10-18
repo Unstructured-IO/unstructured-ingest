@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from dateutil import parser
-from pydantic import Field
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import flatten_dict
@@ -34,7 +34,7 @@ class VectaraAccessConfig(AccessConfig):
 
 
 class VectaraConnectionConfig(ConnectionConfig):
-    access_config: VectaraAccessConfig
+    access_config: Secret[VectaraAccessConfig]
     customer_id: str
     corpus_name: Optional[str] = None
     corpus_id: Optional[str] = None
