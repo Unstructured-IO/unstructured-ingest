@@ -1,9 +1,14 @@
+## 0.1.1.dev0
+
+### Enhancements
+
+* **Add Databricks Delta Table destination to v2**
+
 ## 0.1.0
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
-* **Databricks Delta Table destination to v2**
 * **Add check that access config always wrapped in Secret**
 * **Add togetherai embedder support**
 * **Refactor sqlite and postgres to be distinct connectors to support better input validation**

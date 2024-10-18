@@ -8,7 +8,7 @@ cd "$SCRIPT_DIR"/.. || exit 1
 OUTPUT_FOLDER_NAME=delta-table-dest
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
-DESTINATION_TABLE=s3://utic-platform-test-destination/test-delta-tables/
+DESTINATION_TABLE=s3://utic-platform-test-destination/destination/test/
 AWS_REGION="us-east-2"
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 CI=${CI:-"false"}

@@ -4,9 +4,11 @@ from multiprocessing import Process
 from pathlib import Path
 from typing import Any, Optional
 
+import fsspec
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.table import convert_to_pandas_dataframe
 from unstructured_ingest.v2.interfaces import (
@@ -81,8 +83,22 @@ class DeltaTableUploader(Uploader):
     connection_config: DeltaTableConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
     def precheck(self):
-        pass
+        secrets = self.connection_config.access_config.get_secret_value()
+        if (
+            self.connection_config.aws_region
+            and secrets.aws_access_key_id
+            and secrets.aws_secret_access_key
+        ):
+            try:
+                fs = fsspec.filesystem(
+                    "s3", key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
+                )
+                fs.ls("s3://")
+            except Exception as e:
+                logger.error(f"failed to validate connection: {e}", exc_info=True)
+                raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def process_csv(self, csv_paths: list[Path]) -> pd.DataFrame:
         logger.debug(f"uploading content from {len(csv_paths)} csv files")
