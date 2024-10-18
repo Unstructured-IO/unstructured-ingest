@@ -6,7 +6,7 @@ charset-normalizer==3.3.2
     # via requests
 idna==3.10
     # via requests
-kdbai-client==1.3.0
+kdbai-client==1.4.0
     # via -r ./connectors/kdbai.in
 numpy==1.26.4
     # via

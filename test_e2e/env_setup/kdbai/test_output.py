@@ -8,8 +8,9 @@ import kdbai_client as kdbai
 @click.option("--endpoint", type=str, default="http://localhost:8082")
 def run_tests(endpoint: str):
     session = kdbai.Session(endpoint=endpoint)
+    db = session.database("default")
     print("Running document length check")
-    documents = session.table("unstructured_test")
+    documents = db.table("unstructured_test")
     retrieved_len = len(documents.query())
     expected_len = 5
     assert (

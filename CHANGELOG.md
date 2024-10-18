@@ -1,3 +1,9 @@
+## 0.1.1-dev1
+
+### Enhancements
+
+* **KDB.AI vectorstore integration to 1.4**
+
 ## 0.1.0
 
 ### Enhancements
