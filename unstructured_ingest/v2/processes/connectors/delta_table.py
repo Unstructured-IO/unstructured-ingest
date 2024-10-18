@@ -35,8 +35,10 @@ class DeltaTableConnectionConfig(ConnectionConfig):
     aws_region: Optional[str] = Field(default=None, description="AWS Region")
     table_uri: str = Field(
         default=None,
-        description="The path to the target folder in the S3 bucket,"
-        "formatted as s3://my-bucket/my-folder/ or local path",
+        description=(
+            "Local path or path to the target folder in the S3 bucket, "
+            "formatted as s3://my-bucket/my-folder/"
+        ),
     )
 
 
