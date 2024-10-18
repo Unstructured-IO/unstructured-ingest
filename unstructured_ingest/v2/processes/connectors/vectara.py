@@ -156,8 +156,8 @@ class VectaraUploader(Uploader):
         }
         data = {
             "grant_type": "client_credentials",
-            "client_id": self.connection_config.access_config.oauth_client_id,
-            "client_secret": self.connection_config.access_config.oauth_secret,
+            "client_id": self.connection_config.access_config.get_secret_value().oauth_client_id,
+            "client_secret": self.connection_config.access_config.get_secret_value().oauth_secret,
         }
 
         response = requests.request(method="POST", url=token_endpoint, headers=headers, data=data)
