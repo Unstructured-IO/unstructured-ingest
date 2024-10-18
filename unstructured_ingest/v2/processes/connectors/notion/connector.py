@@ -244,7 +244,6 @@ class NotionDownloader(Downloader):
     connection_config: NotionConnectionConfig
     download_config: NotionDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
-    from unstructured_ingest.v2.processes.connectors.notion.client import Client
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         client = self.connection_config.get_client()
