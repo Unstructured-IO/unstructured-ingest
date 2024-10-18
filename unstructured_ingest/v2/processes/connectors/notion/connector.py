@@ -67,6 +67,7 @@ class NotionIndexerConfig(IndexerConfig):
 class NotionIndexer(Indexer):
     connection_config: NotionConnectionConfig
     index_config: NotionIndexerConfig
+    from unstructured_ingest.v2.processes.connectors.notion.client import Client
 
     def precheck(self) -> None:
         """Check the connection to the Notion API."""
@@ -134,9 +135,7 @@ class NotionIndexer(Indexer):
                     databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_page_file_data(
-        self, page_id: str, client: "connection_config.get_client()"
-    ) -> Optional[FileData]:
+    def get_page_file_data(self, page_id: str, client: Client) -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
             date_created = page_metadata.created_time
@@ -165,10 +164,8 @@ class NotionIndexer(Indexer):
             logger.error(f"Error retrieving page {page_id}: {e}")
             return None
 
-    @requires_dependencies(["notion_client"], extras="notion")
-    def get_database_file_data(
-        self, database_id: str, client: "connection_config.get_client()"
-    ) -> Optional[FileData]:
+    @requires_dependencies(["Client"], extras="notion")
+    def get_database_file_data(self, database_id: str, client: Client) -> Optional[FileData]:
         try:
             database_metadata = client.databases.retrieve(database_id=database_id)  # type: ignore
             date_created = database_metadata.created_time
@@ -238,7 +235,6 @@ class NotionIndexer(Indexer):
         return child_pages, child_databases
 
 
-# @dataclass
 class NotionDownloaderConfig(DownloaderConfig):
     pass
 
@@ -248,6 +244,7 @@ class NotionDownloader(Downloader):
     connection_config: NotionConnectionConfig
     download_config: NotionDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
+    from unstructured_ingest.v2.processes.connectors.notion.client import Client
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         client = self.connection_config.get_client()
@@ -268,9 +265,7 @@ class NotionDownloader(Downloader):
         else:
             raise ValueError("Invalid record_locator in file_data")
 
-    def download_page(
-        self, client: "connection_config.get_client()", page_id: str, file_data: FileData
-    ) -> DownloadResponse:
+    def download_page(self, client, page_id: str, file_data: FileData) -> DownloadResponse:
         from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_page_html
 
         try:
@@ -295,7 +290,7 @@ class NotionDownloader(Downloader):
             return None
 
     def download_database(
-        self, client: "connection_config.get_client()", database_id: str, file_data: FileData
+        self, client: Client, database_id: str, file_data: FileData
     ) -> DownloadResponse:
         from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_database_html
 
