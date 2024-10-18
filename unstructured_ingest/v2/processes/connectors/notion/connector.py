@@ -288,9 +288,7 @@ class NotionDownloader(Downloader):
             logger.error(f"Error downloading page {page_id}: {e}")
             return None
 
-    def download_database(
-        self, client, database_id: str, file_data: FileData
-    ) -> DownloadResponse:
+    def download_database(self, client, database_id: str, file_data: FileData) -> DownloadResponse:
         from unstructured_ingest.v2.processes.connectors.notion.helpers import extract_database_html
 
         try:
