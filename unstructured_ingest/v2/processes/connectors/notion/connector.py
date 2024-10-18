@@ -32,16 +32,6 @@ class NotionAccessConfig(AccessConfig):
 class NotionConnectionConfig(ConnectionConfig):
     access_config: Secret[NotionAccessConfig]
 
-    def get_client(self):
-        from unstructured_ingest.v2.processes.connectors.notion.client import Client
-
-        return Client(
-            notion_version=NOTION_API_VERSION,
-            auth=self.connection_config.notion_api_key.get_secret_value(),
-            logger=logger,
-            log_level=logger.level,
-        )
-
 
 class NotionIndexerConfig(IndexerConfig):
     page_ids: Optional[list[str]] = Field(
@@ -67,12 +57,22 @@ class NotionIndexerConfig(IndexerConfig):
 class NotionIndexer(Indexer):
     connection_config: NotionConnectionConfig
     index_config: NotionIndexerConfig
-    from unstructured_ingest.v2.processes.connectors.notion.client import Client
+
+    @requires_dependencies(["notion_client"], extras="notion")
+    def get_client(self):
+        from unstructured_ingest.v2.processes.connectors.notion.client import Client
+
+        return Client(
+            notion_version=NOTION_API_VERSION,
+            auth=self.connection_config.notion_api_key.get_secret_value(),
+            logger=logger,
+            log_level=logger.level,
+        )
 
     def precheck(self) -> None:
         """Check the connection to the Notion API."""
         try:
-            client = self.connection_config.get_client()
+            client = self.get_client()
             # Perform a simple request to verify connection
             request = client._build_request("HEAD", "users")
             response = client.client.send(request)
@@ -83,7 +83,7 @@ class NotionIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        client = self.connection_config.get_client()
+        client = self.get_client()
         processed_pages: set[str] = set()
         processed_databases: set[str] = set()
 
@@ -135,7 +135,7 @@ class NotionIndexer(Indexer):
                     databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_page_file_data(self, page_id: str, client: Client) -> Optional[FileData]:
+    def get_page_file_data(self, page_id: str, client: get_client) -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
             date_created = page_metadata.created_time
@@ -165,7 +165,7 @@ class NotionIndexer(Indexer):
             return None
 
     @requires_dependencies(["Client"], extras="notion")
-    def get_database_file_data(self, database_id: str, client: Client) -> Optional[FileData]:
+    def get_database_file_data(self, database_id: str, client: get_client) -> Optional[FileData]:
         try:
             database_metadata = client.databases.retrieve(database_id=database_id)  # type: ignore
             date_created = database_metadata.created_time
@@ -197,7 +197,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases(
         self,
         page_id: str,
-        client: Client,
+        client: get_client,
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
@@ -217,7 +217,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases_from_database(
         self,
         database_id: str,
-        client: Client,
+        client: get_client,
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
