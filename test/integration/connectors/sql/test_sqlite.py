@@ -33,16 +33,14 @@ SEED_DATA_ROWS = 40
 def sqlite_download_setup() -> Path:
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "mock_database.db"
+        db_init_path = env_setup_path / "sql" / "sqlite" / "source" / "sqlite-schema.sql"
+        assert db_init_path.exists()
+        assert db_init_path.is_file()
         with sqlite3.connect(database=db_path) as sqlite_connection:
             cursor = sqlite_connection.cursor()
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS cars(
-                    car_id INTEGER PRIMARY KEY,
-                    brand TEXT NOT NULL,
-                    price INTEGER NOT NULL
-                )"""
-            )
+            with db_init_path.open("r") as f:
+                query = f.read()
+            cursor.executescript(query)
             for _ in range(SEED_DATA_ROWS):
                 sql_statment = f"INSERT INTO cars (brand, price) VALUES ('{faker.word()}', {faker.random_int()})"
                 cursor.execute(sql_statment)
@@ -86,7 +84,7 @@ def sqlite_upload_setup() -> Path:
     # tests and make sure the file and connection get cleaned up by using a context manager.
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = Path(tmpdir) / "elements.db"
-        db_init_path = env_setup_path / "sql" / "sqlite-schema.sql"
+        db_init_path = env_setup_path / "sql" / "sqlite" / "destination" / "sqlite-schema.sql"
         assert db_init_path.exists()
         assert db_init_path.is_file()
         with sqlite3.connect(database=db_path) as sqlite_connection:
