@@ -60,9 +60,6 @@ python "$SCRIPT_DIR"/python/test-produce-kafka-message.py up \
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   kafka \
-  --api-key "$UNS_PAID_API_KEY" \
-  --partition-by-api \
-  --partition-endpoint "https://api.unstructuredapp.io" \
   --bootstrap-server localhost \
   --download-dir "$DOWNLOAD_DIR" \
   --topic "$KAFKA_TOPIC" \
