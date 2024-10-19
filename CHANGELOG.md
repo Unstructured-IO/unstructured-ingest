@@ -1,3 +1,9 @@
+## 0.1.0-dev0
+
+### Fixes
+
+* **Fix Notion Pagination** Iterate on Notion paginated results using the `next_cursor` and `start_cursor` properties.
+
 ## 0.1.0
 
 ### Enhancements
