@@ -1,3 +1,9 @@
+## 0.1.0-dev2
+
+### Enhancements
+
+* **Qdrant destination to v2**
+
 ## 0.1.0
 
 ### Enhancements
