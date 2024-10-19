@@ -208,7 +208,7 @@ class QdrantUploader(Uploader):
 
         with path.open("r") as json_file:
             docs_list = json.load(json_file)
-        self.write_dict(docs_list=docs_list)
+        self.write_dict(elements_dict=docs_list)
 
 
 qdrant_destination_entry = DestinationRegistryEntry(
