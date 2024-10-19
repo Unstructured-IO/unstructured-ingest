@@ -169,6 +169,7 @@ class QdrantUploader(Uploader):
     def upsert_batch(self, batch: List[Dict[str, Any]]):
         from qdrant_client import models
 
+
         client = self.qdrant_client
         try:
             points: list[models.PointStruct] = [models.PointStruct(**item) for item in batch]
@@ -179,9 +180,9 @@ class QdrantUploader(Uploader):
             raise WriteError(f"Qdrant error: {api_error}") from api_error
         logger.debug(f"results: {response}")
 
-    def write_dict(self, *args, elements_dict: List[Dict[str, Any]], **kwargs) -> None:
+    def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(
-            f"Upserting {len(elements_dict)} elements to "
+            f"Upserting {len(docs_list)} elements to "
             f"{self.connection_config.collection_name}",
         )
 
@@ -189,14 +190,14 @@ class QdrantUploader(Uploader):
 
         logger.info(f"using {self.upload_config.num_processes} processes to upload")
         if self.upload_config.num_processes == 1:
-            for chunk in batch_generator(elements_dict, qdrant_batch_size):
+            for chunk in batch_generator(docs_list, qdrant_batch_size):
                 self.upsert_batch(chunk)
 
         else:
             with mp.Pool(
                 processes=self.upload_config.num_processes,
             ) as pool:
-                pool.map(self.upsert_batch, list(batch_generator(elements_dict, qdrant_batch_size)))
+                pool.map(self.upsert_batch, list(batch_generator(docs_list, qdrant_batch_size)))
 
     def run(
         self,
@@ -210,7 +211,7 @@ class QdrantUploader(Uploader):
         with path.open("r") as json_file:
             docs_list = json.load(json_file)
 
-        self.write_dict(elements_dict=docs_list)
+        self.write_dict(docs_list=docs_list)
 
 
 qdrant_destination_entry = DestinationRegistryEntry(
