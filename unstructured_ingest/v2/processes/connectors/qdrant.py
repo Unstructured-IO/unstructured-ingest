@@ -206,8 +206,14 @@ class QdrantUploader(Uploader):
     ) -> Path:
         docs_list: Dict[Dict[str, Any]] = []
 
+        print("self.upload_config.batch_size = " + str(self.upload_config.batch_size))
+        print("self.upload_config.num_processes = " + str(self.upload_config.num_processes))
+
         with path.open("r") as json_file:
             docs_list = json.load(json_file)
+        print('--------------------')
+        print(docs_list)
+        print('--------------------')
         self.write_dict(elements_dict=docs_list)
 
 
