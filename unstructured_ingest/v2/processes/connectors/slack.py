@@ -34,7 +34,6 @@ if TYPE_CHECKING:
 # Pagination limit set to the upper end of the recommended range
 # https://api.slack.com/apis/pagination#facts
 PAGINATION_LIMIT = 200
-SUPPORTED_DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
 CONNECTOR_TYPE = "slack"
 
