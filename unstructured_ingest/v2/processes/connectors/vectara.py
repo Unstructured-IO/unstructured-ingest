@@ -6,7 +6,6 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-import aiofiles
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -127,6 +126,8 @@ class VectaraUploaderConfig(UploaderConfig):
 
 @dataclass
 class VectaraUploader(Uploader):
+    import aiofiles
+    
     connector_type: str = CONNECTOR_TYPE
     upload_config: VectaraUploaderConfig
     connection_config: VectaraConnectionConfig
