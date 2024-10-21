@@ -41,11 +41,14 @@ CONNECTOR_TYPE = "slack"
 
 
 class SlackAccessConfig(AccessConfig):
-    token: str = Field(description="")  # TODO: Describe
+    token: str = Field(
+        description="Bot token used to access Slack API, must have channels:history scope for the"
+        " bot user."
+    )
 
 
 class SlackConnectionConfig(ConnectionConfig):
-    access_config: Secret[SlackAccessConfig] = Field(description="")  # TODO: Describe
+    access_config: Secret[SlackAccessConfig]
 
     @requires_dependencies(["slack_sdk"], extras="slack")
     @SourceConnectionError.wrap
@@ -63,9 +66,20 @@ class SlackConnectionConfig(ConnectionConfig):
 
 
 class SlackIndexerConfig(IndexerConfig):
-    channels: list[str] = Field(description="")  # TODO: Describe
-    start_date: Optional[datetime] = Field(default=None, description="")
-    end_date: Optional[datetime] = Field(default=None, description="")
+    channels: list[str] = Field(
+        description="Comma-delimited list of Slack channel IDs to pull messages from, can be"
+        " both public or private channels."
+    )
+    start_date: Optional[datetime] = Field(
+        default=None,
+        description="Start date/time in formats YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]"
+        " or YYYY-MM-DD",
+    )
+    end_date: Optional[datetime] = Field(
+        default=None,
+        description="End date/time in formats YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]"
+        " or YYYY-MM-DD",
+    )
 
 
 @dataclass
