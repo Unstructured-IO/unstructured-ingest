@@ -171,7 +171,8 @@ class NotionIndexer(Indexer):
         self, database_id: str, client: "get_client"
     ) -> Optional[FileData]:
         try:
-            database_metadata = await client.databases.retrieve(database_id=database_id)  # type: ignore
+            # type: ignore
+            database_metadata = await client.databases.retrieve(database_id=database_id)
             date_created = database_metadata.created_time
             date_modified = database_metadata.last_edited_time
             identifier = database_id
