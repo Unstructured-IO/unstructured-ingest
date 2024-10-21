@@ -116,7 +116,7 @@ class PineconeUploadStager(UploadStager):
         default_factory=lambda: SpladeEncoder(max_seq_length=512)
     )
 
-    def elements_from_base64_gzipped_json(orig_elements):
+    def elements_from_base64_gzipped_json(self, orig_elements):
         decoded_orig_elements = base64.b64decode(orig_elements)
         decompressed_orig_elements = zlib.decompress(decoded_orig_elements)
         return decompressed_orig_elements.decode("utf-8")
@@ -130,7 +130,9 @@ class PineconeUploadStager(UploadStager):
             "context": element_dict.pop("text"),
             **self.upload_stager_config.extra_metadata,
         }
-        orig_elements = self.elements_from_base64_gzipped_json(metadata["orig_elements"])
+        orig_elements = self.elements_from_base64_gzipped_json(
+            orig_elements=metadata["orig_elements"]
+        )
         filename = orig_elements[0].metadata.filename
         filetype = orig_elements[0].metadata.filetype
         metadata["filename"] = filename
