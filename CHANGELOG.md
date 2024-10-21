@@ -1,8 +1,14 @@
-## 0.1.0-dev2
+## 0.1.1-dev2
 
 ### Enhancements
 
 * **Vectara destination to v2**
+
+## 0.1.1-dev0
+
+### Enhancements
+
+* **Update KDB.AI vectorstore integration to 1.4**
 
 ## 0.1.0
 

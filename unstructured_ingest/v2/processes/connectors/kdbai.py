@@ -26,7 +26,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    from kdbai_client import Session, Table
+    from kdbai_client import Database, Session, Table
 
 CONNECTOR_TYPE = "kdbai"
 
@@ -99,6 +99,9 @@ class KdbaiUploadStager(UploadStager):
 
 
 class KdbaiUploaderConfig(UploaderConfig):
+    database_name: str = Field(
+        default="default", description="The name of the KDBAI database to write into."
+    )
     table_name: str = Field(description="The name of the KDBAI table to write into.")
     batch_size: int = Field(default=100, description="Number of records per batch")
 
@@ -111,24 +114,29 @@ class KdbaiUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            self.get_table()
+            self.get_database()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def get_table(self) -> "Table":
+    def get_database(self) -> "Database":
         session: Session = self.connection_config.get_session()
-        table = session.table(self.upload_config.table_name)
+        db = session.database(self.upload_config.database_name)
+        return db
+
+    def get_table(self) -> "Table":
+        db = self.get_database()
+        table = db.table(self.upload_config.table_name)
         return table
 
     def upsert_batch(self, batch: pd.DataFrame):
         table = self.get_table()
-        table.insert(data=batch)
+        table.insert(batch)
 
     def process_dataframe(self, df: pd.DataFrame):
         logger.debug(
             f"uploading {len(df)} entries to {self.connection_config.endpoint} "
-            f"db in table {self.upload_config.table_name}"
+            f"db {self.upload_config.database_name} in table {self.upload_config.table_name}"
         )
         for _, batch_df in df.groupby(np.arange(len(df)) // self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
