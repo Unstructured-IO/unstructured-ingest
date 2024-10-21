@@ -25,6 +25,7 @@ from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEn
 
 CONNECTOR_TYPE = "gitlab"
 if TYPE_CHECKING:
+    from gitlab import Gitlab
     from gitlab.v4.objects.projects import Project
 
 
@@ -99,6 +100,15 @@ class GitLabConnectionConfig(ConnectionConfig):
 
         return values
 
+    def get_client(self) -> "Gitlab":
+        from gitlab import Gitlab
+
+        logger.info(f"Connection to GitLab: {self.base_url!r}")
+        gitlab = Gitlab(
+            self.base_url, private_token=self.access_config.get_secret_value().access_token
+        )
+        return gitlab
+
     @SourceConnectionError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
     def get_project(self) -> "Project":
@@ -111,12 +121,7 @@ class GitLabConnectionConfig(ConnectionConfig):
             SourceConnectionError: If the GitLab API connection fails.
             gitlab.exceptions.GitlabGetError: If the project is not found.
         """
-        from gitlab import Gitlab
-
-        logger.info(f"Accessing Base URL: '{self.base_url}'")
-        gitlab = Gitlab(
-            self.base_url, private_token=self.access_config.get_secret_value().access_token
-        )
+        gitlab = self.get_client()
 
         logger.info(f"Accessing Project: '{self.repo_path}'")
         project = gitlab.projects.get(self.repo_path)
@@ -136,7 +141,8 @@ class GitLabIndexer(Indexer):
 
     @requires_dependencies(["gitlab"], extras="gitlab")
     def precheck(self) -> None:
-        """Validates the connection to the GitLab instance by authenticating or accessing the project.
+        """Validates the connection to the GitLab instance by authenticating or
+        accessing the project.
 
         This method ensures that the GitLab credentials and configuration are correct by
         either authenticating or attempting to fetch the specified project.
@@ -144,14 +150,10 @@ class GitLabIndexer(Indexer):
         Raises:
             SourceConnectionError: If the connection or authentication with GitLab fails.
         """
-        from gitlab import Gitlab
         from gitlab.exceptions import GitlabError
 
         try:
-            gitlab = Gitlab(
-                self.connection_config.base_url,
-                private_token=self.connection_config.access_config.get_secret_value().access_token,
-            )
+            gitlab = self.connection_config.get_client()
             if self.connection_config.access_config.get_secret_value().access_token is not None:
                 gitlab.auth()
             else:
@@ -172,7 +174,8 @@ class GitLabIndexer(Indexer):
             **kwargs (Any): Additional keyword arguments (if required).
 
         Yields:
-            FileData: A generator that yields `FileData` objects representing each file (blob) in the repository.
+            FileData: A generator that yields `FileData` objects representing each file (blob)
+            in the repository.
         """
         project = self.connection_config.get_project()
 
