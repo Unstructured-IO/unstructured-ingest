@@ -8,7 +8,9 @@ cd "$SCRIPT_DIR"/.. || exit 1
 OUTPUT_FOLDER_NAME=delta-table-dest
 OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
-DESTINATION_TABLE=$SCRIPT_DIR/delta-table-dest
+DESTINATION_TABLE=$SCRIPT_DIR/delta-table-dest/
+INPUT_FILE="fake-memo.pdf"
+INPUT_PATH="example-docs/pdf/$INPUT_FILE"
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 CI=${CI:-"false"}
 
@@ -38,9 +40,9 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --strategy fast \
   --verbose \
   --reprocess \
-  --input-path example-docs/pdf/fake-memo.pdf \
+  --input-path "$INPUT_PATH" \
   --work-dir "$WORK_DIR" \
   delta-table \
   --table-uri "$DESTINATION_TABLE"
 
-python "$SCRIPT_DIR"/python/test-ingest-delta-table-output.py --table-uri "$DESTINATION_TABLE"
+python "$SCRIPT_DIR"/python/test-ingest-delta-table-output.py --table-uri "$DESTINATION_TABLE$INPUT_FILE"
