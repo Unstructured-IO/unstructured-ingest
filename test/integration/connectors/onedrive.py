@@ -44,7 +44,7 @@ async def test_onedrive_destination(upload_file: Path):
     user_pname = os.environ["ONEDRIVE_TEST_USER_PRINCIPAL_NAME"]
 
     # Generate a unique destination path for the test
-    destination_folder = f"/unstructured_ingest_test/{uuid.uuid4()}"
+    destination_folder = f"/destination/{uuid.uuid4()}"
     destination_fullpath = f"{destination_folder}/{upload_file.name}"
 
     # Configure the connection to OneDrive
