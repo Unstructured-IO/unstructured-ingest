@@ -310,7 +310,11 @@ class GitHubDownloader(Downloader):
         with open(download_path, "wb") as f:
             f.write(contents)
 
-    async def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        # Synchronous run is not implemented
+        raise NotImplementedError()
+
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         """Asynchronously downloads a file from the GitHub repository and returns a
         `DownloadResponse`.
 
