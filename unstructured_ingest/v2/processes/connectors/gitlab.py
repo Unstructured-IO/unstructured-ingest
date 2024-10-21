@@ -75,14 +75,6 @@ class GitLabConnectionConfig(ConnectionConfig):
         Returns:
             dict: The updated dictionary with the `base_url` and `repo_path` set.
 
-        Example:
-            ```python
-            values = {"url": "https://gitlab.com/owner/repo"}
-            updated_values = ConfigModel.set_repo_path(values)
-            print(updated_values["base_url"])  # Output: 'https://gitlab.com'
-            print(updated_values["repo_path"])  # Output: 'owner/repo'
-            ```
-
         Notes:
             - If the URL contains both a scheme and network location, the `base_url` is
               extracted directly from the URL.
