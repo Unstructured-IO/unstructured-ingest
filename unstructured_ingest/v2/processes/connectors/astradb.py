@@ -21,6 +21,7 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
@@ -192,7 +193,6 @@ class AstraDBIndexer(Indexer):
 
         return ids
 
-    @requires_dependencies(["astrapy"], extras="astradb")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)  # TODO check for empty/none
@@ -211,7 +211,7 @@ class AstraDBIndexer(Indexer):
         for batch in id_batches:
             # Make sure the hash is always a positive number to create identified
             identified = str(hash(batch) + sys.maxsize + 1)
-            yield FileData(
+            fd = FileData(
                 identifier=identified,
                 connector_type=CONNECTOR_TYPE,
                 metadata=FileDataSourceMetadata(
@@ -222,6 +222,7 @@ class AstraDBIndexer(Indexer):
                     "ids": list(batch),
                 },
             )
+            yield fd
 
 
 @dataclass
@@ -230,43 +231,71 @@ class AstraDBDownloader(Downloader):
     download_config: AstraDBDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @SourceConnectionNetworkError.wrap
-    def _fetch_record(self, file_data: FileData):
-        collection = get_astra_collection(
-            connection_config=self.connection_config,
-            config=self.download_config,
-        )
+    def is_async(self) -> bool:
+        return False
 
-        record = collection.find_one({"_id": file_data.identifier})
+    def map_astra_results(self, record: dict) -> str:
+        # List comp. to prevent newlines at the end of the file which affects partitioning
+        return "\n".join([str(x) for x in record.values()])
 
-        return record
-
-    def get_download_path(self, file_data: FileData) -> Path:
-        # Get the relative path from the source identifiers
-        rel_path = ""
-        if file_data.source_identifiers and file_data.source_identifiers.rel_path:
-            rel_path = file_data.source_identifiers.rel_path
-
-        # Remove leading slash if present
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-
-        return self.download_dir / Path(rel_path)
-
-    @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def process_doc_id(self, collection, record_id: str) -> DownloadResponse:
         # Fetch the record from the collection
-        record = self._fetch_record(file_data=file_data)
+        record = collection.find_one({"_id": record_id})
 
         # Get the download path
-        download_path = self.get_download_path(file_data=file_data)
+        filename = f"{record_id}.txt"
+        download_path = self.download_dir / Path(filename)
+        logger.debug(f"Downloading results from astra id {record_id} to {download_path}")
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write "record" to a json file at download path
-        with open(download_path, "w") as file:
-            # List comp. to prevent newlines at the end of the file which affects partitioning
-            file.write("\n".join([str(x) for x in record.values()]))
+        try:
+            with open(download_path, "w", encoding="utf8") as f:
+                f.write(self.map_astra_results(record=record))
+        except Exception as e:
+            logger.error(
+                f"failed to download id {record_id} to {download_path}: {e}",
+                exc_info=True,
+            )
+            raise SourceConnectionNetworkError(f"failed to download file {filename}")
+            # TODO can the filename be included in this error? ^
 
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        return DownloadResponse(
+            file_data=FileData(
+                identifier=filename,
+                connector_type=CONNECTOR_TYPE,
+                metadata=FileDataSourceMetadata(
+                    version=None,
+                    date_processed=str(time()),
+                    record_locator={
+                        "collection": self.download_config.collection_name,
+                        "document_id": record_id,
+                    },
+                ),
+            ),
+            path=download_path,
+        )
+
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        # Connect to the collection
+        collection = get_astra_collection(
+            connection_config=self.connection_config,
+            config=self.download_config,
+            # NOTE will this ^ need to be the same values as the indexer config to work?
+        )
+
+        # FileData contains the batch info. Get each record in the batch
+        ids: list[str] = file_data.additional_metadata["ids"]
+
+        download_responses = []
+        for record_id in ids:
+            download_resp = self.process_doc_id(collection=collection, record_id=record_id)
+            download_responses.append(download_resp)
+
+        return download_responses
+
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        raise NotImplementedError()
 
 
 @dataclass

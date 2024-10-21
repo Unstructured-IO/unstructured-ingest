@@ -26,23 +26,27 @@ fi
 
 COLLECTION_NAME="ingest_test_src"
 
+echo "RUNNING script, OUTPUT_DIR: $OUTPUT_DIR, WORK_DIR: $WORK_DIR, DOWNLOAD_DIR: $DOWNLOAD_DIR"
+echo "uns api key: $UNS_PAID_API_KEY"
+echo "BEGIN"
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   astradb \
   --api-key "$UNS_PAID_API_KEY" \
   --partition-by-api \
   --partition-endpoint "https://api.unstructuredapp.io" \
+  --metadata-exclude coordinates,filename,file_directory,metadata.last_modified,metadata.data_source.date_processed,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --token "$ASTRA_DB_APPLICATION_TOKEN" \
   --api-endpoint "$ASTRA_DB_API_ENDPOINT" \
   --collection-name "$COLLECTION_NAME" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,filename,file_directory,metadata.last_modified,metadata.data_source.date_processed,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --num-processes "$max_processes" \
-  --strategy hi_res \
+  --download-dir "$DOWNLOAD_DIR" \
+  --output-dir "$OUTPUT_DIR" \
+  --work-dir "$WORK_DIR" \
+  --strategy fast \
   --preserve-downloads \
   --reprocess \
-  --output-dir "$OUTPUT_DIR" \
-  --verbose \
-  --work-dir "$WORK_DIR"
+  --batch-size 2 \
+  --verbose
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
