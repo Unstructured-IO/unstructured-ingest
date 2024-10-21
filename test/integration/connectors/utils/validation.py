@@ -180,8 +180,13 @@ async def source_connector_validation(
             resp = await downloader.run_async(file_data=file_data)
         else:
             resp = downloader.run(file_data=file_data)
-        postdownload_file_data = replace(resp["file_data"])
-        all_postdownload_file_data.append(postdownload_file_data)
+        if isinstance(resp, list):
+            for r in resp:
+                postdownload_file_data = replace(r["file_data"])
+                all_postdownload_file_data.append(postdownload_file_data)
+        else:
+            postdownload_file_data = replace(resp["file_data"])
+            all_postdownload_file_data.append(postdownload_file_data)
     if not overwrite_fixtures:
         run_all_validations(
             configs=configs,
