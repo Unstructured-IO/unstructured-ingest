@@ -59,7 +59,7 @@ class NotionIndexer(Indexer):
     index_config: NotionIndexerConfig
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_client(self):
+    async def get_client(self) -> "get_client":
         from unstructured_ingest.v2.processes.connectors.notion.client import AsyncClient as Client
 
         return Client(
@@ -69,21 +69,21 @@ class NotionIndexer(Indexer):
             log_level=logger.level,
         )
 
-    def precheck(self) -> None:
+    async def precheck(self) -> None:
         """Check the connection to the Notion API."""
         try:
-            client = self.get_client()
+            client = await self.get_client()
             # Perform a simple request to verify connection
             request = client._build_request("HEAD", "users")
-            response = client.client.send(request)
+            response = await client.client.send(request)
             response.raise_for_status()
 
         except Exception as e:
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        client = self.get_client()
+    async def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        client = await self.get_client()
         processed_pages: set[str] = set()
         processed_databases: set[str] = set()
 
@@ -98,12 +98,12 @@ class NotionIndexer(Indexer):
 
                 processed_pages.add(page_id)
                 pages_to_process.remove(page_id)
-                file_data = self.get_page_file_data(page_id=page_id, client=client)
+                file_data = await self.get_page_file_data(page_id=page_id, client=client)
                 if file_data:
                     yield file_data
 
                 if self.index_config.recursive:
-                    child_pages, child_databases = self.get_child_pages_and_databases(
+                    (child_pages, child_databases) = await self.get_child_pages_and_databases(
                         page_id=page_id,
                         client=client,
                         processed_pages=processed_pages,
@@ -118,14 +118,16 @@ class NotionIndexer(Indexer):
                     continue
                 processed_databases.add(database_id)
                 databases_to_process.remove(database_id)
-                file_data = self.get_database_file_data(database_id=database_id, client=client)
+                file_data = await self.get_database_file_data(
+                    database_id=database_id, client=client
+                )
                 if file_data:
                     yield file_data
                 if self.index_config.recursive:
                     (
                         child_pages,
                         child_databases,
-                    ) = self.get_child_pages_and_databases_from_database(
+                    ) = await self.get_child_pages_and_databases_from_database(
                         database_id=database_id,
                         client=client,
                         processed_pages=processed_pages,
@@ -135,9 +137,9 @@ class NotionIndexer(Indexer):
                     databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_page_file_data(self, page_id: str, client: get_client) -> Optional[FileData]:
+    async def get_page_file_data(self, page_id: str, client: "get_client") -> Optional[FileData]:
         try:
-            page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
+            page_metadata = await client.pages.retrieve(page_id=page_id)  # type: ignore
             date_created = page_metadata.created_time
             date_modified = page_metadata.last_edited_time
             identifier = page_id
@@ -165,9 +167,11 @@ class NotionIndexer(Indexer):
             return None
 
     @requires_dependencies(["Client"], extras="notion")
-    def get_database_file_data(self, database_id: str, client: get_client) -> Optional[FileData]:
+    async def get_database_file_data(
+        self, database_id: str, client: "get_client"
+    ) -> Optional[FileData]:
         try:
-            database_metadata = client.databases.retrieve(database_id=database_id)  # type: ignore
+            database_metadata = await client.databases.retrieve(database_id=database_id)  # type: ignore
             date_created = database_metadata.created_time
             date_modified = database_metadata.last_edited_time
             identifier = database_id
@@ -194,10 +198,10 @@ class NotionIndexer(Indexer):
             logger.error(f"Error retrieving database {database_id}: {e}")
             return None
 
-    def get_child_pages_and_databases(
+    async def get_child_pages_and_databases(
         self,
         page_id: str,
-        client: get_client,
+        client: "get_client",
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
@@ -205,7 +209,7 @@ class NotionIndexer(Indexer):
             get_recursive_content_from_page,
         )
 
-        child_content = get_recursive_content_from_page(
+        child_content = await get_recursive_content_from_page(
             client=client,
             page_id=page_id,
             logger=logger,
@@ -214,7 +218,7 @@ class NotionIndexer(Indexer):
         child_databases = set(child_content.child_databases) - processed_databases
         return child_pages, child_databases
 
-    def get_child_pages_and_databases_from_database(
+    async def get_child_pages_and_databases_from_database(
         self,
         database_id: str,
         client: get_client,
@@ -225,7 +229,7 @@ class NotionIndexer(Indexer):
             get_recursive_content_from_database,
         )
 
-        child_content = get_recursive_content_from_database(
+        child_content = await get_recursive_content_from_database(
             client=client,
             database_id=database_id,
             logger=logger,
