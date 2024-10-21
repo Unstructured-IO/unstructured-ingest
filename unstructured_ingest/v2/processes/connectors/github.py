@@ -195,6 +195,11 @@ class GitHubIndexer(Indexer):
                     "%a, %d %b %Y %H:%M:%S %Z",
                 ).isoformat()
 
+                additional_metadata = {}
+                for metadata in ["content-type", "mode", "type", "size"]:
+                    if metadata in element._headers:
+                        additional_metadata[metadata] = element._headers[metadata]
+
                 yield FileData(
                     identifier=element.sha,
                     connector_type=CONNECTOR_TYPE,
@@ -211,12 +216,7 @@ class GitHubIndexer(Indexer):
                         date_created=date_created,
                         date_processed=str(time()),
                     ),
-                    additional_metadata={
-                        "content-type": element._headers.get("content-type", ""),
-                        "mode": element._rawData.get("mode", ""),
-                        "type": element._rawData.get("type", ""),
-                        "size": element._rawData.get("size", ""),
-                    },
+                    additional_metadata=additional_metadata,
                 )
 
 
