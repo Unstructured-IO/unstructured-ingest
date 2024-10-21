@@ -11,7 +11,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "60297eea-73d7-4fca-a97e-ea73d7cfca62"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -31,7 +34,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "60297eea-73d7-4fca-a97e-ea73d7cfca62"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,

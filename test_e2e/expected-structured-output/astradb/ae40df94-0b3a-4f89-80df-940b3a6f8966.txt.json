@@ -11,7 +11,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -31,7 +34,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -51,7 +57,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -71,7 +80,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -91,7 +103,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -111,7 +126,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -131,7 +149,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -151,7 +172,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -171,7 +195,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -191,7 +218,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -211,7 +241,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -231,7 +264,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
