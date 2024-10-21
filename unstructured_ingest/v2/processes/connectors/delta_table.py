@@ -43,6 +43,17 @@ class DeltaTableConnectionConfig(ConnectionConfig):
         ),
     )
 
+    def update_storage_options(self, storage_options):
+        secrets = self.access_config.get_secret_value()
+        if self.aws_region and secrets.aws_access_key_id and secrets.aws_secret_access_key:
+            storage_options["AWS_REGION"] = self.aws_region
+            storage_options["AWS_ACCESS_KEY_ID"] = secrets.aws_access_key_id
+            storage_options["AWS_SECRET_ACCESS_KEY"] = secrets.aws_secret_access_key
+            # Delta-rs doesn't support concurrent S3 writes without external locks (DynamoDB).
+            # This flag allows single-writer uploads to S3 without using locks, according to:
+            # https://delta-io.github.io/delta-rs/usage/writing/writing-to-s3-with-locking-provider/
+            storage_options["AWS_S3_ALLOW_UNSAFE_RENAME"] = "true"
+
 
 class DeltaTableUploadStagerConfig(UploadStagerConfig):
     pass
@@ -140,19 +151,7 @@ class DeltaTableUploader(Uploader):
             f"at {self.connection_config.table_uri}\ndtypes: {df.dtypes}",
         )
         storage_options = {}
-        secrets = self.connection_config.access_config.get_secret_value()
-        if (
-            self.connection_config.aws_region
-            and secrets.aws_access_key_id
-            and secrets.aws_secret_access_key
-        ):
-            storage_options["AWS_REGION"] = self.connection_config.aws_region
-            storage_options["AWS_ACCESS_KEY_ID"] = secrets.aws_access_key_id
-            storage_options["AWS_SECRET_ACCESS_KEY"] = secrets.aws_secret_access_key
-            # Delta-rs doesn't support concurrent S3 writes without external locks (DynamoDB).
-            # This flag allows single-writer uploads to S3 without using locks, according to:
-            # https://delta-io.github.io/delta-rs/usage/writing/writing-to-s3-with-locking-provider/
-            storage_options["AWS_S3_ALLOW_UNSAFE_RENAME"] = "true"
+        self.connection_config.update_storage_options(storage_options=storage_options)
 
         writer_kwargs = {
             "table_or_uri": self.connection_config.table_uri,
