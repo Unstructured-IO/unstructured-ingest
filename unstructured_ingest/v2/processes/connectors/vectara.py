@@ -126,7 +126,6 @@ class VectaraUploaderConfig(UploaderConfig):
 
 @dataclass
 class VectaraUploader(Uploader):
-    import aiofiles
 
     connector_type: str = CONNECTOR_TYPE
     upload_config: VectaraUploaderConfig
@@ -298,6 +297,8 @@ class VectaraUploader(Uploader):
         file_data: FileData,
         **kwargs: Any,
     ) -> Path:
+        import aiofiles
+
         docs_list: Dict[Dict[str, Any]] = []
 
         async with aiofiles.open(path) as json_file:
