@@ -6,7 +6,7 @@ charset-normalizer==3.3.2
     # via requests
 idna==3.10
     # via requests
-python-gitlab==4.12.2
+python-gitlab==4.13.0
     # via -r ./connectors/gitlab.in
 requests==2.32.3
     # via
