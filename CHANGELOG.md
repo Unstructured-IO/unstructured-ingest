@@ -2,8 +2,8 @@
 
 ### Enhancements
 
-* **Added migration for GitHub Source V2**
-  * **Updated the expected output for GitHub Source V2**
+* **Added migration for GitLab Source V2**
+  * **Updated the expected output for GitLab Source V2**
 
 ## 0.1.0
 
