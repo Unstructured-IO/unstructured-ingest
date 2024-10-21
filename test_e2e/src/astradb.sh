@@ -5,7 +5,6 @@ set -e
 SRC_PATH=$(dirname "$(realpath "$0")")
 SCRIPT_DIR=$(dirname "$SRC_PATH")
 cd "$SCRIPT_DIR"/.. || exit 1
-echo "SCRIPT_DIR: $SCRIPT_DIR"
 OUTPUT_FOLDER_NAME=astradb
 OUTPUT_ROOT=${OUTPUT_ROOT:-$SCRIPT_DIR}
 OUTPUT_DIR=$OUTPUT_ROOT/structured-output/$OUTPUT_FOLDER_NAME
@@ -26,9 +25,6 @@ fi
 
 COLLECTION_NAME="ingest_test_src"
 
-echo "RUNNING script, OUTPUT_DIR: $OUTPUT_DIR, WORK_DIR: $WORK_DIR, DOWNLOAD_DIR: $DOWNLOAD_DIR"
-echo "uns api key: $UNS_PAID_API_KEY"
-echo "BEGIN"
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   astradb \
