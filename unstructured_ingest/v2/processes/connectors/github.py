@@ -82,22 +82,6 @@ class GitHubConnectionConfig(ConnectionConfig):
         Raises:
             ValueError: If the URL is not properly formatted or doesn't match the
             expected GitHub structure.
-
-        Example:
-            ```python
-            values = {"url": "https://github.com/owner/repo"}
-            updated_values = ConfigModel.set_repo_path(values)
-            print(updated_values["repo_path"])  # Output: 'owner/repo'
-            ```
-
-        Valid URLs:
-            - https://github.com/owner/repo
-            - owner/repo
-
-        Invalid URLs:
-            - http://github.com/owner/repo (Only HTTPS is allowed)
-            - https://github.com/owner (Must contain both owner and repository)
-            - https://bitbucket.org/owner/repo (Only GitHub URLs are allowed)
         """
         url = values.get("url")
         if url:
