@@ -42,7 +42,10 @@ def sqlite_download_setup() -> Path:
                 query = f.read()
             cursor.executescript(query)
             for _ in range(SEED_DATA_ROWS):
-                sql_statment = f"INSERT INTO cars (brand, price) VALUES ('{faker.word()}', {faker.random_int()})"
+                sql_statment = (
+                    f"INSERT INTO cars (brand, price) "
+                    f"VALUES ('{faker.word()}', {faker.random_int()})"
+                )
                 cursor.execute(sql_statment)
 
             sqlite_connection.commit()
@@ -52,7 +55,7 @@ def sqlite_download_setup() -> Path:
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
-async def test_sqlite_download():
+async def test_sqlite_source():
     with sqlite_download_setup() as db_path:
         with tempfile.TemporaryDirectory() as tmpdir:
             connection_config = SQLiteConnectionConfig(database_path=db_path)
