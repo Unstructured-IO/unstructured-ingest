@@ -119,7 +119,7 @@ class PineconeUploadStager(UploadStager):
     def elements_from_base64_gzipped_json(self, orig_elements):
         decoded_orig_elements = base64.b64decode(orig_elements)
         decompressed_orig_elements = zlib.decompress(decoded_orig_elements)
-        return decompressed_orig_elements.decode("utf-8")
+        return json.loads(decompressed_orig_elements.decode("utf-8"))
 
     def conform_dict(self, element_dict: dict) -> dict:
         embeddings = element_dict.pop("embeddings", None)
@@ -133,8 +133,8 @@ class PineconeUploadStager(UploadStager):
         orig_elements = self.elements_from_base64_gzipped_json(
             orig_elements=metadata["orig_elements"]
         )
-        filename = orig_elements[0].metadata.filename
-        filetype = orig_elements[0].metadata.filetype
+        filename = orig_elements[0]["metadata"]["filename"]
+        filetype = orig_elements[0]["metadata"]["filetype"]
         metadata["filename"] = filename
         metadata["filetype"] = filetype
         for possible_meta in [element_dict, metadata, data_source, coordinates]:
