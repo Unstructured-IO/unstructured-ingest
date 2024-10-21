@@ -10,6 +10,8 @@ OUTPUT_DIR=$SCRIPT_DIR/structured-output/$OUTPUT_FOLDER_NAME
 WORK_DIR=$SCRIPT_DIR/workdir/$OUTPUT_FOLDER_NAME
 DESTINATION_TABLE=s3://utic-platform-test-destination/destination/test/
 AWS_REGION="us-east-2"
+INPUT_FILE="fake-memo.pdf"
+INPUT_PATH="example-docs/pdf/$INPUT_FILE"
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 CI=${CI:-"false"}
 
@@ -38,7 +40,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --strategy fast \
   --verbose \
   --reprocess \
-  --input-path example-docs/pdf/fake-memo.pdf \
+  --input-path "$INPUT_PATH" \
   --work-dir "$WORK_DIR" \
   delta-table \
   --table-uri "$DESTINATION_TABLE" \
@@ -47,7 +49,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --aws-secret-access-key "$S3_INGEST_TEST_SECRET_KEY"
 
 python "$SCRIPT_DIR"/python/test-ingest-delta-table-output.py \
-  --table-uri "$DESTINATION_TABLE" \
+  --table-uri "$DESTINATION_TABLE$INPUT_FILE" \
   --aws-region "$AWS_REGION" \
   --aws-access-key-id "$S3_INGEST_TEST_ACCESS_KEY" \
   --aws-secret-access-key "$S3_INGEST_TEST_SECRET_KEY"

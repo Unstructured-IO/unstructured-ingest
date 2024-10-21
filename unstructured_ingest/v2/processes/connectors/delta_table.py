@@ -1,3 +1,4 @@
+import os
 import json
 from dataclasses import dataclass, field
 from multiprocessing import Process
@@ -146,15 +147,16 @@ class DeltaTableUploader(Uploader):
         from deltalake.writer import write_deltalake
 
         df = self.read_dataframe(path)
+        updated_upload_path = os.path.join(self.connection_config.table_uri, file_data.source_identifiers.relative_path)
         logger.info(
             f"writing {len(df)} rows to destination table "
-            f"at {self.connection_config.table_uri}\ndtypes: {df.dtypes}",
+            f"at {updated_upload_path}\ndtypes: {df.dtypes}",
         )
         storage_options = {}
         self.connection_config.update_storage_options(storage_options=storage_options)
 
         writer_kwargs = {
-            "table_or_uri": self.connection_config.table_uri,
+            "table_or_uri": updated_upload_path,
             "data": df,
             "mode": "overwrite",
             "storage_options": storage_options,

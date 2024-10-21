@@ -1,5 +1,4 @@
 import os
-import uuid
 from pathlib import Path
 
 import pytest
@@ -40,7 +39,7 @@ def get_aws_credentials() -> dict:
 async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     aws_credentials = get_aws_credentials()
     s3_bucket = "s3://utic-platform-test-destination"
-    destination_path = f"{s3_bucket}/destination/{uuid.uuid4()}"
+    destination_path = f"{s3_bucket}/destination/test"
     connection_config = DeltaTableConnectionConfig(
         access_config=DeltaTableAccessConfig(
             aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
@@ -51,26 +50,27 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
-    upload_file = stager.run(
+    new_upload_file = stager.run(
         elements_filepath=upload_file,
         output_dir=temp_dir,
-        output_filename="temp",
+        output_filename=upload_file.name,
     )
 
     upload_config = DeltaTableUploaderConfig()
     uploader = DeltaTableUploader(connection_config=connection_config, upload_config=upload_config)
     file_data = FileData(
-        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=new_upload_file.name),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
 
     try:
         if uploader.is_async():
-            await uploader.run_async(path=upload_file, file_data=file_data)
+            await uploader.run_async(path=new_upload_file, file_data=file_data)
         else:
-            uploader.run(path=upload_file, file_data=file_data)
-        delta_table = DeltaTable(table_uri=destination_path, storage_options=aws_credentials)
+            uploader.run(path=new_upload_file, file_data=file_data)
+        delta_table_path = os.path.join(destination_path, upload_file.name)
+        delta_table = DeltaTable(table_uri=delta_table_path, storage_options=aws_credentials)
         df = delta_table.to_pandas()
 
         EXPECTED_COLUMNS = 10
