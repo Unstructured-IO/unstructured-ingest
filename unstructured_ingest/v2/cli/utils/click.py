@@ -1,12 +1,13 @@
 import json
 import os.path
+from datetime import date, datetime
 from gettext import gettext, ngettext
 from gettext import gettext as _
 from pathlib import Path
 from typing import Any, Optional, Type, TypeVar, Union
 
 import click
-from pydantic import BaseModel, ConfigDict, Secret
+from pydantic import BaseModel, ConfigDict, Secret, TypeAdapter, ValidationError
 
 
 def conform_click_options(options: dict):
@@ -107,6 +108,36 @@ class DelimitedString(click.ParamType):
                     ctx,
                 )
         return split
+
+
+class PydanticDateTime(click.ParamType):
+    name = "datetime"
+
+    def convert(
+        self,
+        value: Any,
+        param: Optional[click.Parameter] = None,
+        ctx: Optional[click.Context] = None,
+    ) -> Any:
+        try:
+            return TypeAdapter(datetime).validate_strings(value)
+        except ValidationError:
+            self.fail(f"{value} is not a valid datetime", param, ctx)
+
+
+class PydanticDate(click.ParamType):
+    name = "date"
+
+    def convert(
+        self,
+        value: Any,
+        param: Optional[click.Parameter] = None,
+        ctx: Optional[click.Context] = None,
+    ) -> Any:
+        try:
+            return TypeAdapter(date).validate_strings(value)
+        except ValidationError:
+            self.fail(f"{value} is not a valid date", param, ctx)
 
 
 BaseModelT = TypeVar("BaseModelT", bound=BaseModel)

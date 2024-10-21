@@ -1,0 +1,102 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "0653d520c618b7c1805d2d83e63daf33",
+    "text": "<@U07AWSE7U4R> has joined the channel",
+    "metadata": {
+      "filename": "cce82000be81b105.xml",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "application/xml",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "channel": "C07ABKJ83C6",
+          "oldest": "1719844959.236409",
+          "latest": "1719845122.687169"
+        },
+        "date_created": "1719844959.236409",
+        "date_modified": "1719845122.687169",
+        "permissions_data": null,
+        "filesize_bytes": 333
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "7fede04474071a065d9fcbfb6fe9036c",
+    "text": "<@U07AWSE7U4R>",
+    "metadata": {
+      "filename": "cce82000be81b105.xml",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "application/xml",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "channel": "C07ABKJ83C6",
+          "oldest": "1719844959.236409",
+          "latest": "1719845122.687169"
+        },
+        "date_created": "1719844959.236409",
+        "date_modified": "1719845122.687169",
+        "permissions_data": null,
+        "filesize_bytes": 333
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "fa4f2f6b891dba81ed9478af9af4956d",
+    "text": "this is an unstructured CI test channel",
+    "metadata": {
+      "filename": "cce82000be81b105.xml",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "application/xml",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "channel": "C07ABKJ83C6",
+          "oldest": "1719844959.236409",
+          "latest": "1719845122.687169"
+        },
+        "date_created": "1719844959.236409",
+        "date_modified": "1719845122.687169",
+        "permissions_data": null,
+        "filesize_bytes": 333
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "838d614dd024359de9f1cb990310a89e",
+    "text": "<@U06EUA16DJ6> has joined the channel",
+    "metadata": {
+      "filename": "cce82000be81b105.xml",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "application/xml",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "channel": "C07ABKJ83C6",
+          "oldest": "1719844959.236409",
+          "latest": "1719845122.687169"
+        },
+        "date_created": "1719844959.236409",
+        "date_modified": "1719845122.687169",
+        "permissions_data": null,
+        "filesize_bytes": 333
+      }
+    }
+  }
+]
