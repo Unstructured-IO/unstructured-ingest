@@ -12,7 +12,6 @@ WORK_DIR=$OUTPUT_ROOT/workdir/$OUTPUT_FOLDER_NAME
 DOWNLOAD_DIR=$OUTPUT_ROOT/download/$OUTPUT_FOLDER_NAME
 IS_CONFLUENT=false
 
-
 CI=${CI:-"false"}
 
 RANDOM_SUFFIX=$((RANDOM % 100000 + 1))
@@ -74,6 +73,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --reprocess \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
-  --work-dir "$WORK_DIR"  \
+  --work-dir "$WORK_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
