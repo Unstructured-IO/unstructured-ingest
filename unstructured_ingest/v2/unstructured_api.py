@@ -1,6 +1,4 @@
-import asyncio
 from dataclasses import fields
-from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -73,15 +71,6 @@ async def call_api(
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
-
-    # TODO when client supports async, run without using run_in_executor
-    # isolate the IO heavy call
-    loop = asyncio.get_event_loop()
-
-    # Note(austin) - The partition calls needs request to be a keyword arg
-    # We have to use partial to do this, we can't pass request=request into run_in_executor
-    partition_call = partial(client.general.partition, request=partition_request)
-
-    res = await loop.run_in_executor(None, partition_call)
+    res = await client.general.partition_async(request=partition_request)
 
     return res.elements or []

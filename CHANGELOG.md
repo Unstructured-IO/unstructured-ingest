@@ -1,8 +1,10 @@
-## 0.1.1-dev0
+## 0.1.1-dev1
 
 ### Enhancements
 
 * **Update KDB.AI vectorstore integration to 1.4**
+* **Support native async requests from unstructured-client**
+* **Support filtering element types in partitioner step**
 
 ## 0.1.0
 
