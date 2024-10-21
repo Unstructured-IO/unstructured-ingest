@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from slack_sdk import WebClient
     from slack_sdk.web.async_client import AsyncWebClient
 
-# Pagination limit set to the upper end of the recommended range
+# NOTE: Pagination limit set to the upper end of the recommended range
 # https://api.slack.com/apis/pagination#facts
 PAGINATION_LIMIT = 200
 
