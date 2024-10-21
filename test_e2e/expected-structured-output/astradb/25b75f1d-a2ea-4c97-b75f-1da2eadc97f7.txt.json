@@ -11,7 +11,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -31,7 +34,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -51,7 +57,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -71,7 +80,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -91,7 +103,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -111,7 +126,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -131,7 +149,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
@@ -151,7 +172,10 @@
       "data_source": {
         "url": null,
         "version": null,
-        "record_locator": null,
+        "record_locator": {
+          "collection": "ingest_test_src",
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
