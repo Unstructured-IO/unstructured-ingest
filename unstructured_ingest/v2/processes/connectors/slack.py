@@ -28,7 +28,6 @@ from unstructured_ingest.v2.interfaces.file_data import (
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
 if TYPE_CHECKING:
-    # TODO: Move to async client
     from slack_sdk import WebClient
     from slack_sdk.web.async_client import AsyncWebClient
 
@@ -200,7 +199,7 @@ class SlackDownloader(Downloader):
 
         client = self.connection_config.get_async_client()
         messages = []
-        async for conversation_history in client.conversations_history(
+        async for conversation_history in await client.conversations_history(
             channel=file_data.metadata.record_locator["channel"],
             oldest=file_data.metadata.record_locator["oldest"],
             latest=file_data.metadata.record_locator["latest"],
@@ -214,7 +213,7 @@ class SlackDownloader(Downloader):
         conversation = []
         for message in messages:
             thread_messages = []
-            async for conversations_replies in client.conversations_replies(
+            async for conversations_replies in await client.conversations_replies(
                 channel=file_data.metadata.record_locator["channel"],
                 ts=message["ts"],
                 limit=PAGINATION_LIMIT,
