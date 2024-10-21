@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from dateutil import parser
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError, DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -22,11 +22,13 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
+    Uploader,
+    UploaderConfig,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
-    SourceRegistryEntry,
+    SourceRegistryEntry, DestinationRegistryEntry
 )
 
 if TYPE_CHECKING:
@@ -223,6 +225,76 @@ class OnedriveDownloader(Downloader):
                 file.download(f).execute_query()
         return DownloadResponse(file_data=file_data, path=download_path)
 
+class OnedriveUploaderConfig(UploaderConfig):
+    pass
+
+@dataclass
+class OnedriveUploader(Uploader):
+    connection_config: OnedriveConnectionConfig
+    upload_config: OnedriveUploaderConfig
+    connector_type: str = CONNECTOR_TYPE  # "onedrive"
+
+    @requires_dependencies(["office365"], extras="onedrive")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        from office365.graph_client import GraphClient
+
+        # Get the OneDrive client
+        client: GraphClient = self.connection_config.get_client()
+        drive = client.users[self.connection_config.user_pname].drive
+
+        # Determine the destination path using pathlib
+        if file_data.source_identifiers and file_data.source_identifiers.fullpath:
+            destination_path = Path(file_data.source_identifiers.fullpath)
+        else:
+            # Use a default path or raise an error
+            raise ValueError("File data does not have a valid destination path")
+
+        # Get the folder and file name using pathlib
+        destination_folder = destination_path.parent
+        file_name = destination_path.name
+
+        # Handle root directory case
+        if not destination_folder or str(destination_folder) == ".":
+            destination_folder = Path("/")
+
+        # Convert destination folder to a string suitable for OneDrive API
+        destination_folder_str = str(destination_folder).replace("\\", "/")
+
+        # Resolve the destination folder in OneDrive
+        try:
+            folder = drive.root.get_by_path(destination_folder_str).get().execute_query()
+        except Exception as e:
+            logger.error(f"Destination folder '{destination_folder_str}' not found: {e}")
+            raise DestinationConnectionError(
+                f"Destination folder '{destination_folder_str}' not found"
+            ) from e
+
+        # Check the size of the file
+        file_size = path.stat().st_size
+
+        if file_size < MAX_MB_SIZE:
+            # Use simple upload
+            with path.open("rb") as local_file:
+                content = local_file.read()
+                logger.info(f"Uploading {path} to {destination_path} using simple upload")
+                try:
+                    uploaded_file = folder.children.upload(file_name, content).execute_query()
+                except Exception as e:
+                    logger.error(f"Failed to upload file '{file_name}': {e}")
+                    raise DestinationConnectionError(
+                        f"Failed to upload file '{file_name}'"
+                    ) from e
+        else:
+            # Use resumable upload for large files
+            with path.open("rb") as local_file:
+                logger.info(f"Uploading {path} to {destination_path} using resumable upload")
+                try:
+                    uploaded_file = folder.resumable_upload(local_file, file_name).execute_query()
+                except Exception as e:
+                    logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
+                    raise DestinationConnectionError(
+                        f"Failed to upload file '{file_name}' using resumable upload"
+                    ) from e
 
 onedrive_source_entry = SourceRegistryEntry(
     connection_config=OnedriveConnectionConfig,
@@ -230,4 +302,10 @@ onedrive_source_entry = SourceRegistryEntry(
     indexer=OnedriveIndexer,
     downloader_config=OnedriveDownloaderConfig,
     downloader=OnedriveDownloader,
+)
+
+onedrive_destination_entry = DestinationRegistryEntry(
+    connection_config=OnedriveConnectionConfig,
+    uploader=OnedriveUploader,
+    uploader_config=OnedriveUploaderConfig,
 )
