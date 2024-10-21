@@ -48,7 +48,7 @@ CONNECTOR_TYPE = "kafka"
 
 
 class KafkaAccessConfig(AccessConfig):
-    kafka_api_key: Optional[SecretStr] = Field(description="Kafka API key to connect at the server")
+    kafka_api_key: Optional[SecretStr] = Field(description="Kafka API key to connect at the server", default = None)
     secret: Optional[SecretStr] = Field(description="", default=None)
     
 
@@ -127,7 +127,7 @@ class KafkaIndexer(Indexer):
                     )
             else:
                 msg_content = json.loads(msg.value().decode("utf8"))
-                collected[f"{msg.topic()}-{msg.partition()}-{msg.offset()}-{msg_content['filename']}"] = msg_content
+                collected[f"{msg.topic()}_{msg.partition()}_{msg.offset()}_{msg_content['filename']}"] = msg_content
                 logger.debug(f"found {len(collected)} messages, stopping")
                 consumer.commit(asynchronous=False)
                 break
@@ -138,7 +138,7 @@ class KafkaIndexer(Indexer):
         messages_consumed = self._get_messages()
         for key in messages_consumed.keys():
             yield FileData(
-                identifier=key,
+                identifier=key.split('_')[0],
                 connector_type=self.connector_type,
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
@@ -174,9 +174,10 @@ class KafkaDownloader(Downloader):
         return Path(self.download_dir) / topic_file
 
     def _create_full_tmp_dir_path(self, filename: str):
-        self._tmp_download_file(filename).parent.mkdir(parents=True, exist_ok=True)
+        self._tmp_download_file(filename).parent.mkdir(parents=True, exist_ok=True)       
 
-    def generate_download_response(self, file_data: FileData) -> DownloadResponse:
+    @SourceConnectionError.wrap
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         filename = file_data.additional_metadata["filename"]
         self._create_full_tmp_dir_path(filename)
         download_path = self._tmp_download_file(filename)
@@ -188,11 +189,7 @@ class KafkaDownloader(Downloader):
         except Exception:
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
-        return DownloadResponse(file_date=file_data, path=download_path)
-
-    @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        return self.generate_download_response(file_data=file_data)
+        return self.generate_download_response(file_data = file_data, download_path= download_path)
 
 
 # TODO address it in a separate PR -> destination
