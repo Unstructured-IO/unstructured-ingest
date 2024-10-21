@@ -46,6 +46,8 @@ class GitHubConnectionConfig(ConnectionConfig):
     )
 
     access_config: Secret[GitHubAccessConfig] = Field(
+        default=GitHubAccessConfig(),
+        validate_default=True,
         description="Secret configuration for accessing the GitHub API by authentication tokens."
     )
 
