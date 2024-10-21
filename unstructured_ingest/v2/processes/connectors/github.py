@@ -172,7 +172,8 @@ class GitHubIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        """Iterates over the GitHub repository tree, yielding `FileData` objects for all files (blobs).
+        """Iterates over the GitHub repository tree, yielding `FileData` objects for all
+        files (blobs).
 
         This method retrieves the entire repository tree for the specified branch or
         the default branch.
@@ -326,7 +327,8 @@ class GitHubDownloader(Downloader):
             f.write(contents)
 
     async def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        """Asynchronously downloads a file from the GitHub repository and returns a `DownloadResponse`.
+        """Asynchronously downloads a file from the GitHub repository and returns a
+        `DownloadResponse`.
 
         Args:
             file_data (FileData): Metadata about the file to be downloaded.
