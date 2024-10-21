@@ -55,7 +55,7 @@ class GitHubConnectionConfig(ConnectionConfig):
         description=(
             "The branch to interact with. If not provided, the default branch for the"
             " repository is used."
-        )
+        ),
     )
 
     repo_path: str = Field(
