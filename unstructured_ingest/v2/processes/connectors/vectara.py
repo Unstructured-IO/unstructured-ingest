@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -5,6 +6,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+import aiofiles
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -131,7 +133,7 @@ class VectaraUploader(Uploader):
     _jwt_token: Optional[str] = field(init=False, default=None)
     _jwt_token_expires_ts: Optional[float] = field(init=False, default=None)
 
-    def precheck(self) -> None:
+    async def precheck(self) -> None:
         try:
             self.vectara()
         except Exception as e:
@@ -139,15 +141,15 @@ class VectaraUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @property
-    def jwt_token(self):
+    async def jwt_token(self):
         if not self._jwt_token or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60:
             self._jwt_token = self._get_jwt_token()
         return self._jwt_token
 
     # Get Oauth2 JWT token
-    @requires_dependencies(["requests"], extras="vectara")
-    def _get_jwt_token(self):
-        import requests
+    @requires_dependencies(["httpx"], extras="vectara")
+    async def _get_jwt_token(self):
+        import httpx
 
         """Connect to the server and get a JWT token."""
         token_endpoint = self.connection_config.token_url.format(self.connection_config.customer_id)
@@ -160,9 +162,10 @@ class VectaraUploader(Uploader):
             "client_secret": self.connection_config.access_config.get_secret_value().oauth_secret,
         }
 
-        response = requests.request(method="POST", url=token_endpoint, headers=headers, data=data)
-        response.raise_for_status()
-        response_json = response.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(token_endpoint, headers=headers, data=data)
+            response.raise_for_status()
+            response_json = response.json()
 
         request_time = datetime.now().timestamp()
         self._jwt_token_expires_ts = request_time + response_json.get("expires_in")
@@ -170,7 +173,7 @@ class VectaraUploader(Uploader):
         return response_json.get("access_token")
 
     @DestinationConnectionError.wrap
-    def vectara(self):
+    async def vectara(self):
         """
         Check the connection for Vectara and validate corpus exists.
         - If more than one corpus with the same name exists - then return a message
@@ -178,9 +181,9 @@ class VectaraUploader(Uploader):
         - If does not exist - create it.
         """
         # Get token if not already set
-        self.jwt_token
+        await self.jwt_token
 
-        list_corpora_response = self._request(
+        list_corpora_response = await self._request(
             endpoint="list-corpora",
             data={"numResults": 1, "filter": self.connection_config.corpus_name},
         )
@@ -201,36 +204,37 @@ class VectaraUploader(Uploader):
                     "name": self.connection_config.corpus_name,
                 }
             }
-            create_corpus_response = self._request(endpoint="create-corpus", data=data)
+            create_corpus_response = await self._request(endpoint="create-corpus", data=data)
             self.connection_config.corpus_id = create_corpus_response.get("corpusId")
 
     @requires_dependencies(["requests"], extras="vectara")
-    def _request(
+    async def _request(
         self,
         endpoint: str,
         http_method: str = "POST",
         params: Mapping[str, Any] = None,
         data: Mapping[str, Any] = None,
     ):
-        import requests
+        import httpx
 
         url = f"{BASE_URL}/{endpoint}"
 
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
+            "Authorization": f"Bearer {await self.jwt_token}",
             "customer-id": self.connection_config.customer_id,
             "X-source": "unstructured",
         }
 
-        response = requests.request(
-            method=http_method, url=url, headers=headers, params=params, data=json.dumps(data)
-        )
-        response.raise_for_status()
-        return response.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.request(
+                method=http_method, url=url, headers=headers, params=params, json=data
+            )
+            response.raise_for_status()
+            return response.json()
 
-    def _delete_doc(self, doc_id: str) -> None:
+    async def _delete_doc(self, doc_id: str) -> None:
         """
         Delete a document from the Vectara corpus.
 
@@ -243,9 +247,9 @@ class VectaraUploader(Uploader):
             "corpus_id": self.connection_config.corpus_id,
             "document_id": doc_id,
         }
-        self._request(endpoint="delete-doc", data=body)
+        await self._request(endpoint="delete-doc", data=body)
 
-    def _index_document(self, document: Dict[str, Any]) -> None:
+    async def _index_document(self, document: Dict[str, Any]) -> None:
         """
         Index a document (by uploading it to the Vectara corpus) from the document dictionary
         """
@@ -256,7 +260,7 @@ class VectaraUploader(Uploader):
         }
 
         try:
-            result = self._request(endpoint="index", data=body, http_method="POST")
+            result = await self._request(endpoint="index", data=body, http_method="POST")
         except Exception as e:
             logger.info(f"exception {e} while indexing document {document['documentId']}")
             return
@@ -274,8 +278,8 @@ class VectaraUploader(Uploader):
             )
         ):
             logger.info(f"document {document['documentId']} already exists, re-indexing")
-            self._delete_doc(document["documentId"])
-            result = self._request(endpoint="index", data=body, http_method="POST")
+            await self._delete_doc(document["documentId"])
+            result = await self._request(endpoint="index", data=body, http_method="POST")
             return
 
         if "status" in result and result["status"] and "OK" in result["status"]["code"]:
@@ -283,12 +287,11 @@ class VectaraUploader(Uploader):
         else:
             logger.info(f"indexing document {document['documentId']} failed, response = {result}")
 
-    def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
+    async def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
-        for vdoc in docs_list:
-            self._index_document(vdoc)
+        await asyncio.gather(*(self._index_document(vdoc) for vdoc in docs_list))
 
-    def run(
+    async def run(
         self,
         path: Path,
         file_data: FileData,
@@ -296,9 +299,9 @@ class VectaraUploader(Uploader):
     ) -> Path:
         docs_list: Dict[Dict[str, Any]] = []
 
-        with path.open("r") as json_file:
-            docs_list = json.load(json_file)
-        self.write_dict(docs_list=docs_list)
+        async with aiofiles.open(path) as json_file:
+            docs_list = json.loads(await json_file.read())
+        await self.write_dict(docs_list=docs_list)
 
 
 vectara_destination_entry = DestinationRegistryEntry(
