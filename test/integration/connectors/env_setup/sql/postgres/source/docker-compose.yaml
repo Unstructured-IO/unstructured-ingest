@@ -1,0 +1,19 @@
+services:
+  pgvector:
+    image: postgres
+    restart: always
+    container_name: postgres_src
+    ports:
+     - 5433:5432
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: unstructured
+      POSTGRES_PASSWORD: test
+    volumes:
+      - ./postgres-schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "test_db", "-U", "unstructured"]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+      start_period: 5s

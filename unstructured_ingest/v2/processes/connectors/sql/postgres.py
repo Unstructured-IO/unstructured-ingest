@@ -7,12 +7,17 @@ import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     _DATE_COLUMNS,
     SQLAccessConfig,
     SQLConnectionConfig,
+    SQLDownloader,
+    SQLDownloaderConfig,
+    SQLIndexer,
+    SQLIndexerConfig,
     SQLUploader,
     SQLUploaderConfig,
     SQLUploadStager,
@@ -55,6 +60,57 @@ class PostgresConnectionConfig(SQLConnectionConfig):
             host=self.host,
             port=self.port,
         )
+
+
+class PostgresIndexerConfig(SQLIndexerConfig):
+    pass
+
+
+@dataclass
+class PostgresIndexer(SQLIndexer):
+    connection_config: PostgresConnectionConfig
+    index_config: PostgresIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
+
+    def _get_doc_ids(self) -> list[str]:
+        connection = self.connection_config.get_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
+            )
+            results = cursor.fetchall()
+            ids = [result[0] for result in results]
+            return ids
+
+
+class PostgresDownloaderConfig(SQLDownloaderConfig):
+    pass
+
+
+@dataclass
+class PostgresDownloader(SQLDownloader):
+    connection_config: PostgresConnectionConfig
+    download_config: PostgresDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
+
+    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+        table_name = file_data.additional_metadata["table_name"]
+        id_column = file_data.additional_metadata["id_column"]
+        ids = file_data.additional_metadata["ids"]
+        connection = self.connection_config.get_connection()
+        with connection.cursor() as cursor:
+            fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
+            query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
+                fields=fields,
+                table_name=table_name,
+                id_column=id_column,
+                ids=",".join([str(i) for i in ids]),
+            )
+            logger.debug(f"running query: {query}")
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            return rows, columns
 
 
 class PostgresUploadStagerConfig(SQLUploadStagerConfig):
