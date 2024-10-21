@@ -229,6 +229,9 @@ class GitHubDownloader(Downloader):
     connection_config: GitHubConnectionConfig
     download_config: GitHubDownloaderConfig
 
+    def is_async(self) -> bool:
+        return True
+
     @requires_dependencies(["github"], extras="github")
     def _fetch_file(self, path: str):
         """Fetches a file from the GitHub repository using the GitHub API.
