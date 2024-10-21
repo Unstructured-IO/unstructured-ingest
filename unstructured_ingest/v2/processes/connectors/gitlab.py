@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
@@ -19,7 +19,6 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
@@ -30,18 +29,66 @@ if TYPE_CHECKING:
 
 
 class GitLabAccessConfig(AccessConfig):
-    access_token: Optional[str] = Field(default=None)
+    access_token: Optional[str] = Field(
+        default=None,
+        description="Optional personal access token for authenticating with the GitLab API.",
+    )
 
 
 class GitLabConnectionConfig(ConnectionConfig):
-    url: str
-    base_url: str = "https://gitlab.com"
-    access_config: Secret[GitLabAccessConfig]
-    git_branch: Optional[str] = Field(default=None)
-    repo_path: str = field(init=False, repr=False, default=None)
+    url: str = Field(description="The full URL to the GitLab project or repository.")
+    base_url: str = Field(
+        default="https://gitlab.com",
+        description="The base URL for the GitLab instance (default is GitLab's public domain).",
+    )
+    access_config: Secret[GitLabAccessConfig] = Field(
+        default=GitLabAccessConfig(),
+        validate_default=True,
+        description="Secret configuration for accessing the GitLab API by authentication token.",
+    )
+    git_branch: Optional[str] = Field(
+        default=None,
+        overload_name="git_branch",
+        description="The name of the branch to interact with.",
+    )
+    repo_path: str = Field(
+        default=None,
+        init=False,
+        repr=False,
+        description="The normalized path extracted from the repository URL.",
+    )
 
     @root_validator(pre=True)
-    def set_repo_path(cls, values):
+    def set_repo_path(cls, values: dict) -> dict:
+        """
+        Parses the provided GitLab URL to extract the `base_url` and `repo_path`,
+        ensuring both are properly formatted for use.
+
+        If the URL contains a scheme (e.g., 'https') or a network location (e.g., 'gitlab.com'),
+        the `base_url` is set accordingly. The repository path is extracted and normalized
+        by removing any leading slashes.
+
+        Args:
+            values (dict): A dictionary of field values passed to the model.
+
+        Returns:
+            dict: The updated dictionary with the `base_url` and `repo_path` set.
+
+        Example:
+            ```python
+            values = {"url": "https://gitlab.com/owner/repo"}
+            updated_values = ConfigModel.set_repo_path(values)
+            print(updated_values["base_url"])  # Output: 'https://gitlab.com'
+            print(updated_values["repo_path"])  # Output: 'owner/repo'
+            ```
+
+        Notes:
+            - If the URL contains both a scheme and network location, the `base_url` is
+              extracted directly from the URL.
+            - The `repo_path` is adjusted to remove any leading slashes.
+            - This method assumes that the URL follows GitLab’s structure
+              (e.g., 'https://gitlab.com/owner/repo').
+        """
         parsed_gh_url = urlparse(values.get("url"))
 
         if parsed_gh_url.scheme or parsed_gh_url.netloc:
@@ -55,6 +102,15 @@ class GitLabConnectionConfig(ConnectionConfig):
     @SourceConnectionError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
     def get_project(self) -> "Project":
+        """Retrieves the specified GitLab project using the configured base URL and access token.
+
+        Returns:
+            Project: A GitLab `Project` object representing the specified repository.
+
+        Raises:
+            SourceConnectionError: If the GitLab API connection fails.
+            gitlab.exceptions.GitlabGetError: If the project is not found.
+        """
         from gitlab import Gitlab
 
         logger.info(f"Accessing Base URL: '{self.base_url}'")
@@ -64,6 +120,7 @@ class GitLabConnectionConfig(ConnectionConfig):
 
         logger.info(f"Accessing Project: '{self.repo_path}'")
         project = gitlab.projects.get(self.repo_path)
+
         logger.info(f"Successfully accessed project '{self.repo_path}'")
         return project
 
@@ -76,10 +133,17 @@ class GitLabIndexerConfig(IndexerConfig):
 class GitLabIndexer(Indexer):
     connection_config: GitLabConnectionConfig
     index_config: GitLabIndexerConfig
-    registry_name: str = "gitlab"
 
     @requires_dependencies(["gitlab"], extras="gitlab")
     def precheck(self) -> None:
+        """Validates the connection to the GitLab instance by authenticating or accessing the project.
+
+        This method ensures that the GitLab credentials and configuration are correct by
+        either authenticating or attempting to fetch the specified project.
+
+        Raises:
+            SourceConnectionError: If the connection or authentication with GitLab fails.
+        """
         from gitlab import Gitlab
         from gitlab.exceptions import GitlabError
 
@@ -98,6 +162,18 @@ class GitLabIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {gitlab_error}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        """Iterates over the GitLab repository tree and yields file metadata as `FileData` objects.
+
+        This method fetches the repository tree for the specified branch and iterates
+        over its contents. For each file (blob), it generates a `FileData` object containing
+        the file's metadata, path, and permissions.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments (if required).
+
+        Yields:
+            FileData: A generator that yields `FileData` objects representing each file (blob) in the repository.
+        """
         project = self.connection_config.get_project()
 
         ref = self.connection_config.git_branch or project.default_branch
@@ -149,41 +225,79 @@ class GitLabDownloader(Downloader):
 
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
-    def _fetch_content(self, path):
+    async def _fetch_content(self, path: str):
+        """Asynchronously fetches the content of a file from the GitLab repository.
+
+        This method retrieves a file from the repository for the specified path and branch.
+        If the file is not found, it logs an error and raises the corresponding exception.
+
+        Args:
+            path (str): The path to the file within the repository.
+
+        Returns:
+            content_file: The file content object retrieved from the GitLab API.
+
+        Raises:
+            GitlabHttpError: If the specified file does not exist.
+        """
         from gitlab.exceptions import GitlabHttpError
 
         try:
             project = self.connection_config.get_project()
+            ref_branch = self.connection_config.git_branch or project.default_branch
+            logger.info(f"Fetching file from path: {path!r} of branch: {ref_branch!r}")
             content_file = project.files.get(
                 path,
-                ref=self.connection_config.git_branch or project.default_branch,
+                ref=ref_branch,
             )
         except GitlabHttpError as e:
-            logger.error(f"File doesn't exists {self.connection_config.url}/{self.path}")
+            logger.error(f"File doesn't exists '{self.connection_config.url}/{self.path}'")
             raise e
 
         return content_file
 
-    def _fetch_and_write(self, path, download_path) -> None:
-        content_file = self._fetch_content(path)
+    async def _fetch_and_write(self, path: str, download_path: str) -> None:
+        """Fetches a file from the GitLab repository and writes its content to the specified path.
+
+        Args:
+            path (str): The path to the file within the repository.
+            download_path (str): The local path where the file will be saved.
+
+        Raises:
+            ValueError: If the file content could not be retrieved.
+
+        Notes:
+            - Decodes the file content before writing it to disk.
+            - Creates necessary parent directories if they do not exist.
+        """
+        content_file = await self._fetch_content(path)
         if content_file is None:
             raise ValueError(
                 f"Failed to retrieve file from repo "
-                f"{self.connection_config.url}/{self.path}. Check logs.",
+                f"'{self.connection_config.url}/{self.path}'. Check logs.",
             )
         contents = content_file.decode()
+        logger.info(f"Writing download file to path: {download_path!r}")
         with open(download_path, "wb") as f:
             f.write(contents)
 
-    @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        """Asynchronously downloads a file from the repository and returns a `DownloadResponse`.
+
+        Args:
+            file_data (FileData): Metadata about the file to be downloaded.
+            **kwargs (Any): Additional arguments (if required).
+
+        Returns:
+            DownloadResponse: A response object containing the download details.
+        """
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         path = file_data.source_identifiers.fullpath
-        self._fetch_and_write(path, download_path)
+        await self._fetch_and_write(path, download_path)
 
-        return DownloadResponse(file_data=file_data, path=download_path)
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 gitlab_source_entry = SourceRegistryEntry(
