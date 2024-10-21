@@ -59,7 +59,9 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     upload_config = DeltaTableUploaderConfig()
     uploader = DeltaTableUploader(connection_config=connection_config, upload_config=upload_config)
     file_data = FileData(
-        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=new_upload_file.name),
+        source_identifiers=SourceIdentifiers(
+            fullpath=upload_file.name, filename=new_upload_file.name
+        ),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )

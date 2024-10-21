@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from dataclasses import dataclass, field
 from multiprocessing import Process
 from pathlib import Path
@@ -147,7 +147,9 @@ class DeltaTableUploader(Uploader):
         from deltalake.writer import write_deltalake
 
         df = self.read_dataframe(path)
-        updated_upload_path = os.path.join(self.connection_config.table_uri, file_data.source_identifiers.relative_path)
+        updated_upload_path = os.path.join(
+            self.connection_config.table_uri, file_data.source_identifiers.relative_path
+        )
         logger.info(
             f"writing {len(df)} rows to destination table "
             f"at {updated_upload_path}\ndtypes: {df.dtypes}",
