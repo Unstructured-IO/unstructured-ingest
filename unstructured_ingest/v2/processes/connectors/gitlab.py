@@ -265,7 +265,7 @@ class GitLabDownloader(Downloader):
             - Decodes the file content before writing it to disk.
             - Creates necessary parent directories if they do not exist.
         """
-        content_file = await self._fetch_content(path)
+        content_file = self._fetch_content(path)
         if content_file is None:
             raise ValueError(
                 f"Failed to retrieve file from repo "
@@ -277,10 +277,6 @@ class GitLabDownloader(Downloader):
             f.write(contents)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        # Synchronous run is not implemented
-        raise NotImplementedError()
-
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         """Asynchronously downloads a file from the repository and returns a `DownloadResponse`.
 
         Args:
@@ -294,7 +290,7 @@ class GitLabDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         path = file_data.source_identifiers.fullpath
-        await self._fetch_and_write(path, download_path)
+        self._fetch_and_write(path, download_path)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
