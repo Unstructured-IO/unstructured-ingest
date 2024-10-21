@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pinecone_text.sparse import SpladeEncoder
 from pydantic import Field, Secret
+from unstructured.staging.base import elements_from_base64_gzipped_json
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
@@ -123,6 +124,11 @@ class PineconeUploadStager(UploadStager):
             "context": element_dict.pop("text"),
             **self.upload_stager_config.extra_metadata,
         }
+        orig_elements = elements_from_base64_gzipped_json(metadata["orig_elements"])
+        filename = orig_elements[0].metadata.filename
+        filetype = orig_elements[0].metadata.filetype
+        metadata["filename"] = filename
+        metadata["filetype"] = filetype
         for possible_meta in [element_dict, metadata, data_source, coordinates]:
             pinecone_metadata.update(
                 {
