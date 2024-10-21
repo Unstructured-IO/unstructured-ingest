@@ -1,9 +1,16 @@
-## 0.1.1-dev0
+## 0.1.1-dev3
 
 ### Enhancements
 
 * **Added migration for GitLab Source V2**
-  * **Updated the expected output for GitLab Source V2**
+* **Updated the expected output for GitLab Source V2**
+
+## 0.1.1-dev1
+
+### Enhancements
+
+* **Update KDB.AI vectorstore integration to 1.4**
+* **Add sqlite and postgres source connectors**
 
 ## 0.1.0
 
