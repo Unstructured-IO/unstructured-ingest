@@ -39,7 +39,10 @@ class GitHubAccessConfig(AccessConfig):
 
 class GitHubConnectionConfig(ConnectionConfig):
     url: str = Field(
-        description="The full URL to the GitHub project or repository, used to determine the base URL and repo path."
+        description=(
+            "The full URL to the GitHub project or repository, used to determine"
+            "the base URL and repo path."
+        )
     )
 
     access_config: Secret[GitHubAccessConfig] = Field(
@@ -49,7 +52,10 @@ class GitHubConnectionConfig(ConnectionConfig):
     branch: Optional[str] = Field(
         default=None,
         overload_name="git_branch",
-        description="The branch to interact with. If not provided, the default branch for the repository is used.",
+        description=(
+            "The branch to interact with. If not provided, the default branch for the"
+            " repository is used."
+        )
     )
 
     repo_path: str = Field(
@@ -168,7 +174,8 @@ class GitHubIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Iterates over the GitHub repository tree, yielding `FileData` objects for all files (blobs).
 
-        This method retrieves the entire repository tree for the specified branch or the default branch.
+        This method retrieves the entire repository tree for the specified branch or
+        the default branch.
         For each file (blob), it extracts relevant metadata and yields a `FileData` object.
 
         Args:
