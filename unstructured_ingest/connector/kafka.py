@@ -181,7 +181,6 @@ class KafkaSourceConnector(SourceConnectorCleanupMixin, BaseSourceConnector):
                     logger.debug(f"found {len(collected)} messages, stopping")
                     consumer.commit(asynchronous=False)
                     break
-
         return [
             KafkaIngestDoc(
                 connector_config=self.connector_config,
