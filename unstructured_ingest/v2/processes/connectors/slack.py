@@ -144,9 +144,6 @@ class SlackIndexer(Indexer):
             ),
         )
 
-    def _generate_id(self, channel: str, ts_oldest: str, ts_newest: str) -> str:
-        return hashlib.sha256(f"{channel}-{ts_oldest}-{ts_newest}".encode("utf-8")).hexdigest()[:16]
-
     @SourceConnectionError.wrap
     def precheck(self) -> None:
         client = self.connection_config.get_client()
