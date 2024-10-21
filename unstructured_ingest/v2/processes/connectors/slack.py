@@ -198,27 +198,30 @@ class SlackDownloader(Downloader):
         ):
             messages += conversation_history.get("messages", [])
 
-        messages_with_replies = []
+        conversation = []
         for message in messages:
-            # NOTE: First reply is the original message
-            replies = []
+            thread_messages = []
             async for conversations_replies in client.conversations_replies(
                 channel=file_data.metadata.record_locator["channel"],
                 ts=message["ts"],
                 limit=PAGINATION_LIMIT,
             ):
-                replies += conversations_replies.get("messages", [])
-            messages_with_replies.append((message, replies))
+                thread_messages += conversations_replies.get("messages", [])
 
-        conversation_xml = self._messages_with_replies_to_xml(messages_with_replies)
+            # NOTE: Replies contains the whole thread, including the message references by the `ts`
+            # parameter even if it's the only message (there were no replies).
+            # Reference: https://api.slack.com/methods/conversations.replies#markdown
+            conversation.append(thread_messages)
+
+        conversation_xml = self._conversation_to_xml(conversation)
         download_path.parent.mkdir(exist_ok=True, parents=True)
         conversation_xml.write(download_path, encoding="utf-8", xml_declaration=True)
 
-    def _messages_with_replies_to_xml(
-        self, messages_with_replies: list[tuple[dict, list[dict]]]
-    ) -> ET.ElementTree:
+    def _conversation_to_xml(self, conversation: list[list[dict]]) -> ET.ElementTree:
         root = ET.Element("messages")
-        for message, replies in messages_with_replies:
+
+        for thread in conversation:
+            message, *replies = thread
             message_elem = ET.SubElement(root, "message")
             text_elem = ET.SubElement(message_elem, "text")
             text_elem.text = message.get("text")
