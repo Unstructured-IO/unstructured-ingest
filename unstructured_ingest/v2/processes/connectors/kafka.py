@@ -16,13 +16,11 @@ from unstructured_ingest.error import (
 
 # TODO DEPRECATE IT ONCE FINISH THE DESTINATION
 from unstructured_ingest.interfaces import (
-    AccessConfig,
     BaseDestinationConnector,
     BaseIngestDoc,
     IngestDocSessionHandleMixin,
     WriteConfig,
 )
-from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
