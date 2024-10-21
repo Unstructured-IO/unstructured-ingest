@@ -47,7 +47,11 @@ class PartitionerConfig(BaseModel):
     )
     metadata_exclude: list[str] = Field(
         default_factory=list,
-        description="If set, drop the specified metadata " "fields if they exist.",
+        description="If set, drop the specified metadata fields if they exist.",
+    )
+    fields_exclude: list[str] = Field(
+        default_factory=list,
+        description="If set, drop the specified field types, if they exist.",
     )
     metadata_include: list[str] = Field(
         default_factory=list,
@@ -100,6 +104,12 @@ class Partitioner(BaseProcess, ABC):
 
     def postprocess(self, elements: list[dict]) -> list[dict]:
         element_dicts = [e.copy() for e in elements]
+        if self.config.fields_exclude:
+            element_dicts = list(
+                filter(
+                    lambda element: element["type"] not in self.config.fields_exclude, element_dicts
+                )
+            )
         for elem in element_dicts:
             if self.config.metadata_exclude:
                 ex_list = self.config.metadata_exclude
