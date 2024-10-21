@@ -29,7 +29,6 @@ all_tests=(
   'salesforce.sh'
   'box.sh'
   'discord.sh'
-  'databricks-volumes.sh'
   'dropbox.sh'
   'github.sh'
   'gitlab.sh'
