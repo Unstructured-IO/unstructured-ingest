@@ -1,3 +1,4 @@
+import hashlib
 import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -95,7 +96,7 @@ class SlackIndexer(Indexer):
             ):
                 messages = conversation_history.get("messages", [])
                 if messages:
-                    yield self._messages_to_file_data(messages, channel, oldest, latest)
+                    yield self._messages_to_file_data(messages, channel)
 
     def is_async(self):
         return False
@@ -104,31 +105,34 @@ class SlackIndexer(Indexer):
         self,
         messages: list[dict],
         channel: str,
-        oldest: Optional[str],
-        latest: Optional[str],
     ) -> FileData:
-        date_created = str(min(float(message["ts"]) for message in messages))
-        date_modified = str(max(float(message["ts"]) for message in messages))
+        ts_oldest = min((message["ts"] for message in messages), key=lambda m: float(m))
+        ts_newest = max((message["ts"] for message in messages), key=lambda m: float(m))
+
+        identifier_base = f"{channel}-{ts_oldest}-{ts_newest}"
+        identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
+        filename = identifier[:16]
 
         return FileData(
-            # NOTE: This isn't quite unique in this way, could consider adding
-            # a hash of earliest and latest timestamps?
-            identifier=channel,
+            identifier=identifier,
             connector_type=CONNECTOR_TYPE,
             source_identifiers=SourceIdentifiers(
-                filename=f"{channel}.xml", fullpath=f"{channel}.xml"
+                filename=f"{filename}.xml", fullpath=f"{filename}.xml"
             ),
             metadata=FileDataSourceMetadata(
-                date_created=date_created,
-                date_modified=date_modified,
+                date_created=ts_oldest,
+                date_modified=ts_newest,
                 date_processed=str(time.time()),
                 record_locator={
                     "channel": channel,
-                    "oldest": oldest,
-                    "latest": latest,
+                    "oldest": ts_oldest,
+                    "latest": ts_newest,
                 },
             ),
         )
+
+    def _generate_id(self, channel: str, ts_oldest: str, ts_newest: str) -> str:
+        return hashlib.sha256(f"{channel}-{ts_oldest}-{ts_newest}".encode("utf-8")).hexdigest()[:16]
 
     @SourceConnectionError.wrap
     def precheck(self) -> None:
@@ -187,6 +191,9 @@ class SlackDownloader(Downloader):
             oldest=file_data.metadata.record_locator["oldest"],
             latest=file_data.metadata.record_locator["latest"],
             limit=PAGINATION_LIMIT,
+            # NOTE: In order to get the exact same range of messages as indexer, it provides
+            # timestamps of oldest and newest messages, inclusive=True is necessary to include them
+            inclusive=True,
         ):
             messages += conversation_history.get("messages", [])
 
