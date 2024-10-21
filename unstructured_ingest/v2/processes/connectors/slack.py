@@ -5,11 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret, field_validator
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.data_prep import validate_date_args
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -64,15 +63,8 @@ class SlackConnectionConfig(ConnectionConfig):
 
 class SlackIndexerConfig(IndexerConfig):
     channels: list[str] = Field(description="")  # TODO: Describe
-    start_date: Optional[str] = Field(description="")
-    end_date: Optional[str] = Field(description="")
-
-    @field_validator("start_date", "end_date")
-    @classmethod
-    def validate_datetime(cls, datetime: Optional[str]) -> Optional[str]:
-        if datetime is None or validate_date_args(datetime):
-            return datetime
-        raise ValueError("Invalid datetime format")
+    start_date: Optional[datetime] = Field(default=None, description="")
+    end_date: Optional[datetime] = Field(default=None, description="")
 
 
 @dataclass
@@ -86,12 +78,12 @@ class SlackIndexer(Indexer):
         for channel in self.index_config.channels:
             messages = []
             oldest = (
-                str(_convert_datetime(self.index_config.start_date))
+                str(self.index_config.start_date.timestamp())
                 if self.index_config.start_date is not None
                 else None
             )
             latest = (
-                str(_convert_datetime(self.index_config.end_date))
+                str(self.index_config.end_date.timestamp())
                 if self.index_config.end_date is not None
                 else None
             )
@@ -231,15 +223,6 @@ class SlackDownloader(Downloader):
                 text_elem.text = "".join([str(text_elem.text), " <reply> ", reply_msg])
 
         return ET.ElementTree(root)
-
-
-def _convert_datetime(date_time: str) -> float:
-    for format in SUPPORTED_DATE_FORMATS:
-        try:
-            return datetime.strptime(date_time, format).timestamp()
-        except ValueError:
-            pass
-    raise ValueError("Invalid datetime format")
 
 
 slack_source_entry = SourceRegistryEntry(
