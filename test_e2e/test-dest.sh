@@ -23,6 +23,7 @@ all_tests=(
   'clarifai.sh'
   'couchbase.sh'
   'delta-table.sh'
+  'delta-table-s3.sh'
   'dropbox.sh'
   'elasticsearch.sh'
   'gcs.sh'
