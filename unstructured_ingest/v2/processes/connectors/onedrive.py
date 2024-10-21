@@ -242,14 +242,12 @@ class OnedriveUploader(Uploader):
         client: GraphClient = self.connection_config.get_client()
         drive = client.users[self.connection_config.user_pname].drive
 
-        # Determine the destination path using pathlib
         if file_data.source_identifiers and file_data.source_identifiers.fullpath:
-            destination_path = Path(file_data.source_identifiers.fullpath)
+            destination_path = Path(file_data.source_identifiers.relative_path)
         else:
             # Use a default path or raise an error
-            raise ValueError("File data does not have a valid destination path")
+            raise ValueError("File data does not have a valid sour path")
 
-        # Get the folder and file name using pathlib
         destination_folder = destination_path.parent
         file_name = destination_path.name
 
@@ -273,7 +271,7 @@ class OnedriveUploader(Uploader):
         file_size = path.stat().st_size
 
         if file_size < MAX_MB_SIZE:
-            # Use simple upload
+            # Use simple upload for small files
             with path.open("rb") as local_file:
                 content = local_file.read()
                 logger.info(f"Uploading {path} to {destination_path} using simple upload")
