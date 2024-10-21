@@ -10,4 +10,10 @@ services:
       POSTGRES_USER: unstructured
       POSTGRES_PASSWORD: test
     volumes:
-      - ./create-pgvector-schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./pgvector-schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "elements", "-U", "unstructured"]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+      start_period: 5s
