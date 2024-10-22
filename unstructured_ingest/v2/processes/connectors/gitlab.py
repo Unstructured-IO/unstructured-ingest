@@ -135,7 +135,7 @@ class GitLabIndexer(Indexer):
         description=(
             "Flag to control recursive operations when indexing. "
             "If True, the indexer will traverse directories recursively."
-        )
+        ),
     )
 
     @requires_dependencies(["gitlab"], extras="gitlab")
