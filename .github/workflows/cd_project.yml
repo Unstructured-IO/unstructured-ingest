@@ -1,0 +1,43 @@
+name: CD for platform-libs
+
+on:
+  workflow_call:
+    inputs:
+      work-dir:
+        description: "working directory for platform-libs"
+        required: true
+        type: string
+
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+
+  setup-environment:
+    uses: Unstructured-IO/github-workflows/.github/workflows/setup-environment.yml@main
+    with:
+      work-dir: ${{ inputs.work-dir }}
+    secrets: inherit
+
+  build:
+    needs: [setup-environment]
+    uses: Unstructured-IO/github-workflows/.github/workflows/build.yml@main
+    with:
+      build-targets: '["build-package"]'
+      work-dir: ${{ inputs.work-dir }}
+    secrets: inherit
+
+
+  publish-package:
+    needs: [setup-environment, build]
+    uses: Unstructured-IO/github-workflows/.github/workflows/publish.yml@main
+    with:
+      work-dir: ${{ inputs.work-dir }}
+      publish-targets: "publish-package"
+      twine-repository-url: https://pkgs.dev.azure.com/unstructured/_packaging/unstructured/pypi/upload/
+      twine-username: unstructured
+      package-name: ${{ needs.build.outputs.package-name }}
+    secrets:
+      twine-password: ${{ secrets.PRIVATE_PYPI_KEY }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

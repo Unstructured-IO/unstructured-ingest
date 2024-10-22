@@ -1,0 +1,29 @@
+name: CD
+
+on:
+  push:
+    branches:
+#      - connectors-dev
+
+jobs:
+  detect_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      unstructured_ingest_changed: ${{ steps.filter.outputs.unstructured_ingest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            unstructured_ingest:
+              - 'unstructured_ingest/**'
+
+  ci_unstructured_ingest:
+    needs: detect_changes
+    if: ${{ needs.detect_changes.outputs.unstructured_ingest_changed == 'true' }}
+    uses: ./.github/workflows/cd_project.yml
+    with:
+      work-dir: "."
+    secrets: inherit
