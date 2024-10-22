@@ -147,14 +147,13 @@ def validate_destination(
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
-# @requires_env("LOCALSTACK_AUTH_TOKEN")
+@requires_env("LOCALSTACK_AUTH_TOKEN")
 async def test_snowflake_destination(upload_file: Path):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
     docker_client = docker.from_env()
     token = os.getenv("LOCALSTACK_AUTH_TOKEN")
-    token = "ls-FeRE8657-LiRE-4212-JoPi-vIJaSeFoe5a3"
     with container_context(
         docker_client=docker_client,
         image="localstack/snowflake",
