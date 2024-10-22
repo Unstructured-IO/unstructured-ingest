@@ -145,7 +145,7 @@ class SlackIndexer(Indexer):
         client = self.connection_config.get_client()
         for channel in self.index_config.channels:
             # NOTE: Querying conversations history guarantees that the bot is in the channel
-            client.conversations_history(channel, limit=1)
+            client.conversations_history(channel=channel, limit=1)
 
 
 class SlackDownloaderConfig(DownloaderConfig):
