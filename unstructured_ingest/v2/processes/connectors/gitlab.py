@@ -226,8 +226,8 @@ class GitLabDownloader(Downloader):
 
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
-    async def _fetch_content(self, path: str):
-        """Asynchronously fetches the content of a file from the GitLab repository.
+    def _fetch_content(self, path: str):
+        """Fetches the content of a file from the GitLab repository.
 
         This method retrieves a file from the repository for the specified path and branch.
         If the file is not found, it logs an error and raises the corresponding exception.
@@ -257,7 +257,7 @@ class GitLabDownloader(Downloader):
 
         return content_file
 
-    async def _fetch_and_write(self, path: str, download_path: str) -> None:
+    def _fetch_and_write(self, path: str, download_path: str) -> None:
         """Fetches a file from the GitLab repository and writes its content to the specified path.
 
         Args:
@@ -283,7 +283,7 @@ class GitLabDownloader(Downloader):
             f.write(contents)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        """Asynchronously downloads a file from the repository and returns a `DownloadResponse`.
+        """Downloads a file from the repository and returns a `DownloadResponse`.
 
         Args:
             file_data (FileData): Metadata about the file to be downloaded.
