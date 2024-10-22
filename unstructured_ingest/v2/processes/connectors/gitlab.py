@@ -132,7 +132,10 @@ class GitLabIndexer(Indexer):
     index_config: GitLabIndexerConfig
     recursive: bool = Field(
         default=False,
-        description="Flag to control recursive operations when indexing. If True, the indexer will traverse directories recursively."
+        description=(
+            "Flag to control recursive operations when indexing. "
+            "If True, the indexer will traverse directories recursively."
+        )
     )
 
     @requires_dependencies(["gitlab"], extras="gitlab")
