@@ -124,7 +124,7 @@ class GitLabConnectionConfig(ConnectionConfig):
 
 class GitLabIndexerConfig(IndexerConfig):
     recursive: bool = Field(
-        default=False,
+        default=True,
         description=(
             "Flag to control recursive operations when indexing. "
             "If True, the indexer will traverse directories recursively."
