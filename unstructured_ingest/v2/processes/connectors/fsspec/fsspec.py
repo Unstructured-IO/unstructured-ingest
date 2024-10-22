@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
@@ -63,6 +64,7 @@ class FileConfig(BaseModel):
 
 class FsspecIndexerConfig(FileConfig, IndexerConfig):
     recursive: bool = False
+    sample_n_files: Optional[int] = None
 
 
 class FsspecAccessConfig(AccessConfig):
@@ -128,7 +130,22 @@ class FsspecIndexer(Indexer):
         filtered_files = [
             file for file in files if file.get("size") > 0 and file.get("type") == "file"
         ]
+
+        if self.index_config.sample_n_files:
+            filtered_files = self.sample_n_files(filtered_files, self.index_config.sample_n_files)
+
         return filtered_files
+
+    def sample_n_files(self, files: list[dict[str, Any]], n) -> list[dict[str, Any]]:
+        if len(files) <= n:
+            logger.warning(
+                f"number of files to be sampled={n} is not smaller than the number"
+                f" of files found ({len(files)}). Returning all of the files as the"
+                " sample."
+            )
+            return files
+
+        return random.sample(files, n)
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         raise NotImplementedError()
