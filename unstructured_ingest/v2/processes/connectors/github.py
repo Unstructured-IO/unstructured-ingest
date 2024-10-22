@@ -6,7 +6,8 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
-from pydantic import Field, Secret, root_validator
+from pathlib import Path
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -67,7 +68,7 @@ class GitHubConnectionConfig(ConnectionConfig):
         description="The normalized repository path extracted from the GitHub URL.",
     )
 
-    @root_validator(pre=True)
+    @model_validator(before=True)
     def set_repo_path(cls, values: dict) -> dict:
         """Parses the provided GitHub URL and sets the `repo_path` value.
 
@@ -293,12 +294,12 @@ class GitHubDownloader(Downloader):
                 contents = content_file.decoded_content
         return contents
 
-    async def _fetch_and_write(self, path: str, download_path: str) -> None:
+    async def _fetch_and_write(self, path: str, download_path: Path) -> None:
         """Fetches a file from GitHub and writes its content to the specified local path.
 
         Args:
             path (str): The path to the file in the repository.
-            download_path (str): The local path to save the downloaded file.
+            download_path (Path): The local path to save the downloaded file.
 
         Raises:
             ValueError: If the file content could not be retrieved.
