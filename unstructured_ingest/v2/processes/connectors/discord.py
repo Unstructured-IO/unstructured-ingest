@@ -65,9 +65,9 @@ class DiscordIndexer(Indexer):
         date_created = dt.datetime.utcnow().isoformat()
         identifier = channel_id
         source_identifiers = SourceIdentifiers(
-            filename=f"{channel_id}.txt",
+            filename=channel_id,
             fullpath=channel_id,
-            rel_path=channel_id,
+            rel_path=f"{channel_id}.txt",
         )
         metadata = FileDataSourceMetadata(
             date_created=date_created,
