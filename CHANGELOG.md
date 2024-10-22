@@ -1,7 +1,9 @@
-## 0.1.1.dev0
+## 0.1.1-dev2
 
 ### Enhancements
 
+* **Update KDB.AI vectorstore integration to 1.4**
+* **Add sqlite and postgres source connectors**
 * **Add Databricks Delta Table destination to v2**
 
 ## 0.1.0
