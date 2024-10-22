@@ -122,7 +122,10 @@ class GitHubIndexerConfig(IndexerConfig):
 class GitHubIndexer(Indexer):
     connection_config: GitHubConnectionConfig
     index_config: GitHubIndexerConfig
-    recursive: bool = False
+    recursive: bool = Field(
+        default=False,
+        description="Flag to control recursive operations when indexing. If True, the indexer will traverse directories recursively."
+    )
 
     def precheck(self) -> None:
         """Performs a precheck to validate the connection to the GitHub repository.
