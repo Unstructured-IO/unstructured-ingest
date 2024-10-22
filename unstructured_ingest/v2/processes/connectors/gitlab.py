@@ -59,7 +59,7 @@ class GitLabConnectionConfig(ConnectionConfig):
         description="The normalized path extracted from the repository URL.",
     )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def set_repo_path(cls, values: dict) -> dict:
         """
         Parses the provided GitLab URL to extract the `base_url` and `repo_path`,
