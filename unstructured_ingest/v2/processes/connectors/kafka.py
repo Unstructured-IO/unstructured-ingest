@@ -44,14 +44,16 @@ CONNECTOR_TYPE = "kafka"
 
 
 class KafkaAccessConfig(AccessConfig):
-    kafka_api_key: Optional[SecretStr] = Field(
-        description="Kafka API key to connect at the server", default=None
+    api_key: Optional[SecretStr] = Field(
+        description="Kafka API key to connect at the server", alias = "kafka_api_key", default=None
     )
     secret: Optional[SecretStr] = Field(description="", default=None)
 
 
 class KafkaConnectionConfig(ConnectionConfig):
-    access_config: Secret[KafkaAccessConfig]
+    access_config: Secret[KafkaAccessConfig] = Field(
+        default=KafkaAccessConfig(), validate_default=True
+    )
     timeout: Optional[float] = 1.0
     confluent: Optional[bool] = False
     bootstrap_server: str

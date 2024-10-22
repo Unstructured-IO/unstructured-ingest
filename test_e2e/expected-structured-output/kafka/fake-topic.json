@@ -1,9 +1,15 @@
 [
   {
-    "type": "UncategorizedText",
+    "type": "NarrativeText",
     "element_id": "8f574cb913e5d32ce4cea48cb73ef537",
     "metadata": {
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": null,
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 13374
       },
       "filetype": "application/pdf",
@@ -18,6 +24,12 @@
     "element_id": "929719c4916d0467030a4ca91645d4b6",
     "metadata": {
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": null,
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 13374
       },
       "filetype": "application/pdf",
@@ -27,12 +39,18 @@
       "page_number": 1
     },
     "text": "To Whom it May Concern:",
-    "type": "Title"
+    "type": "NarrativeText"
   },
   {
     "element_id": "0442d409994665cebb0374e563803d2d",
     "metadata": {
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": null,
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 13374
       },
       "filetype": "application/pdf",
@@ -48,6 +66,12 @@
     "element_id": "df197ce710970cdeccadd9d89229543b",
     "metadata": {
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": null,
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 13374
       },
       "filetype": "application/pdf",
@@ -57,12 +81,18 @@
       "page_number": 1
     },
     "text": "Best Regards,",
-    "type": "UncategorizedText"
+    "type": "NarrativeText"
   },
   {
     "element_id": "b017fcb835c7f553160252356420acd3",
     "metadata": {
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": null,
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
         "filesize_bytes": 13374
       },
       "filetype": "application/pdf",
@@ -72,6 +102,6 @@
       "page_number": 1
     },
     "text": "Mallori",
-    "type": "Title"
+    "type": "NarrativeText"
   }
 ]

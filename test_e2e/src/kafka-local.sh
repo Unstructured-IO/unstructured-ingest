@@ -66,7 +66,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --bootstrap-server "localhost" \
   --topic "$KAFKA_TOPIC" \
   --port "29092" \
-  --kafka-api-key "$UNS_PAID_API_KEY" \
+  --api-key "$UNS_PAID_API_KEY" \
   --download-dir "$DOWNLOAD_DIR" \
   --num-messages-to-consume 1 \
   --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
