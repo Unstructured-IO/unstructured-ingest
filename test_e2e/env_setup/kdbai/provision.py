@@ -7,23 +7,24 @@ import time
 import click
 import kdbai_client as kdbai
 
-schema = {
-    "columns": [
-        {"name": "id", "pytype": "str"},
-        {"name": "element_id", "pytype": "str"},
-        {"name": "document", "pytype": "str"},
-        {"name": "metadata", "pytype": "dict"},
-        {
-            "name": "embeddings",
-            "vectorIndex": {
-                "dims": 384,
-                "type": "hnsw",
-                "metric": "L2",
-                "efConstruction": 8,
-                "M": 8,
-            },
-        },
-    ]
+schema = [
+    {"name": "id", "type": "str"},
+    {"name": "element_id", "type": "str"},
+    {"name": "document", "type": "str"},
+    {"name": "metadata", "type": "general"},
+    {"name": "embeddings", "type": "float32s"},
+]
+
+INDEX_HNSW = {
+    "name": "hnsw",
+    "column": "embeddings",
+    "type": "hnsw",
+    "params": {
+        "dims": 384,
+        "metric": "L2",
+        "efConstruction": 8,
+        "M": 8,
+    },
 }
 
 
@@ -45,8 +46,10 @@ def get_session(endpoint: str) -> kdbai.Session:
 @click.option("--endpoint", type=str, default="http://localhost:8082")
 def create_table(endpoint: str):
     session = get_session(endpoint)
+    print("Connecting kdbai database: default")
+    db = session.database("default")
     print(f"Creating kdbai table with schema: {json.dumps(schema)}")
-    session.create_table("unstructured_test", schema)
+    db.create_table("unstructured_test", schema, indexes=[INDEX_HNSW])
     print("Finished provisioning table")
 
 

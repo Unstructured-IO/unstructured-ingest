@@ -52,15 +52,9 @@ class DiscordIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.get_client()
-        processed_channels: set[str] = set()
         channels_to_process: set[str] = set(self.connection_config.channels or [])
 
         for channel_id in list(channels_to_process):
-            if channel_id in processed_channels:
-                continue
-
-            processed_channels.add(channel_id)
-            channels_to_process.remove(channel_id)
             file_data = self.get_channel_file_data(channel_id=channel_id, client=client)
             if file_data:
                 yield file_data
@@ -72,7 +66,7 @@ class DiscordIndexer(Indexer):
         identifier = channel_id
         source_identifiers = SourceIdentifiers(
             filename=channel_id,
-            fullpath=channel_id,
+            fullpath=f"{channel_id}.txt",
             rel_path=channel_id,
         )
         metadata = FileDataSourceMetadata(

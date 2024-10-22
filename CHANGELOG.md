@@ -1,10 +1,17 @@
-## 0.0.26-dev8
+## 0.1.1-dev3
 
 ### Enhancements
 
 * **Migrate Discord Source Connector to V2**
 
-## 0.0.26-dev6
+## 0.1.1-dev1
+
+### Enhancements
+
+* **Update KDB.AI vectorstore integration to 1.4**
+* **Add sqlite and postgres source connectors**
+
+## 0.1.0
 
 ### Enhancements
 
@@ -13,6 +20,8 @@
 * **Add togetherai embedder support**
 * **Refactor sqlite and postgres to be distinct connectors to support better input validation**
 * **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
+* **Refactor databricks into distinct connectors based on auth type**
 
 ### Fixes
 
