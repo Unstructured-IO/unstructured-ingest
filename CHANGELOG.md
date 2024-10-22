@@ -1,9 +1,10 @@
-## 0.1.1-dev1
+## 0.1.1
 
 ### Enhancements
 
 * **Update KDB.AI vectorstore integration to 1.4**
 * **Add sqlite and postgres source connectors**
+* **Add sampling functionality for indexers in fsspec connectors**
 
 ## 0.1.0
 
