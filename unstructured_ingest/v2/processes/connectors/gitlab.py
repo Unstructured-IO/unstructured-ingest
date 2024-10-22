@@ -92,6 +92,8 @@ class GitLabConnectionConfig(ConnectionConfig):
 
         return values
 
+    @SourceConnectionError.wrap
+    @requires_dependencies(["gitlab"], extras="gitlab")
     def get_client(self) -> "Gitlab":
         from gitlab import Gitlab
 
@@ -101,8 +103,6 @@ class GitLabConnectionConfig(ConnectionConfig):
         )
         return gitlab
 
-    @SourceConnectionError.wrap
-    @requires_dependencies(["gitlab"], extras="gitlab")
     def get_project(self) -> "Project":
         """Retrieves the specified GitLab project using the configured base URL and access token.
 
