@@ -127,7 +127,7 @@ class GitHubIndexer(Indexer):
         description=(
             "Flag to control recursive operations when indexing. "
             "If True, the indexer will traverse directories recursively."
-        )
+        ),
     )
 
     def precheck(self) -> None:
