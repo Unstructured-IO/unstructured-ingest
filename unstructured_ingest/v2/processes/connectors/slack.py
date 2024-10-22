@@ -110,9 +110,6 @@ class SlackIndexer(Indexer):
                 if messages:
                     yield self._messages_to_file_data(messages, channel)
 
-    def is_async(self):
-        return False
-
     def _messages_to_file_data(
         self,
         messages: list[dict],
