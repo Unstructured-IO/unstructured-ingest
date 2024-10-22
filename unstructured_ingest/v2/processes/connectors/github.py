@@ -24,11 +24,13 @@ from unstructured_ingest.v2.interfaces import (
     SourceIdentifiers,
 )
 from unstructured_ingest.v2.logger import logger
+from typing import List
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
 CONNECTOR_TYPE = "github"
 if TYPE_CHECKING:
     from github.Repository import Repository
+    from github.ContentFile import ContentFile
 
 
 class GitHubAccessConfig(AccessConfig):
@@ -68,7 +70,7 @@ class GitHubConnectionConfig(ConnectionConfig):
         description="The normalized repository path extracted from the GitHub URL.",
     )
 
-    @model_validator(before=True)
+    @model_validator(mode="before")
     def set_repo_path(cls, values: dict) -> dict:
         """Parses the provided GitHub URL and sets the `repo_path` value.
 
@@ -121,6 +123,7 @@ class GitHubIndexerConfig(IndexerConfig):
 class GitHubIndexer(Indexer):
     connection_config: GitHubConnectionConfig
     index_config: GitHubIndexerConfig
+    recursive: bool = False
 
     def precheck(self) -> None:
         """Performs a precheck to validate the connection to the GitHub repository.
@@ -176,7 +179,7 @@ class GitHubIndexer(Indexer):
         sha = self.connection_config.branch or repo.default_branch
         logger.info(f"Starting to look for blob files on GitHub in branch: {sha!r}")
 
-        git_tree = repo.get_git_tree(sha, recursive=True)
+        git_tree = repo.get_git_tree(sha, recursive=self.recursive)
 
         for element in git_tree.tree:
             rel_path = element.path.replace(self.connection_config.repo_path, "").lstrip("/")
@@ -236,14 +239,15 @@ class GitHubDownloader(Downloader):
         return True
 
     @requires_dependencies(["github"], extras="github")
-    def _fetch_file(self, path: str):
+    def _fetch_file(self, path: str) -> ContentFile:
         """Fetches a file from the GitHub repository using the GitHub API.
 
         Args:
             path (str): The path to the file in the repository.
 
         Returns:
-            content_file: The file content object.
+            ContentFile: An object containing the file content.
+
 
         Raises:
             UnknownObjectException: If the file does not exist in the repository.
@@ -261,11 +265,11 @@ class GitHubDownloader(Downloader):
 
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["httpx", "github"], extras="github")
-    async def _fetch_content(self, content_file):
+    async def _fetch_content(self, content_file: ContentFile) -> bytes:
         """Asynchronously retrieves the content of a file, handling large files via direct download.
 
         Args:
-            content_file: The file object from the GitHub API.
+            content_file (ContentFile): The file object from the GitHub API.
 
         Returns:
             bytes: The content of the file as bytes.
