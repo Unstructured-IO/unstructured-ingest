@@ -85,7 +85,7 @@ class NotionIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def run(self, file_data: FileData, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         # Synchronous run is not implemented
         raise NotImplementedError()
 
