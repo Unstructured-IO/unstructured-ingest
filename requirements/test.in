@@ -5,6 +5,7 @@ pytest-mock
 unstructured
 pytest-asyncio
 pytest_tagging
+faker
 
 # Connector specific deps
 cryptography
