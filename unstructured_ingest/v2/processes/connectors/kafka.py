@@ -45,7 +45,7 @@ CONNECTOR_TYPE = "kafka"
 
 class KafkaAccessConfig(AccessConfig):
     api_key: Optional[SecretStr] = Field(
-        description="Kafka API key to connect at the server", alias = "kafka_api_key", default=None
+        description="Kafka API key to connect at the server", alias="kafka_api_key", default=None
     )
     secret: Optional[SecretStr] = Field(description="", default=None)
 
