@@ -130,6 +130,10 @@ class GitLabIndexerConfig(IndexerConfig):
 class GitLabIndexer(Indexer):
     connection_config: GitLabConnectionConfig
     index_config: GitLabIndexerConfig
+    recursive: bool = Field(
+        default=False,
+        description="Flag to control recursive operations when indexing. If True, the indexer will traverse directories recursively."
+    )
 
     @requires_dependencies(["gitlab"], extras="gitlab")
     def precheck(self) -> None:
@@ -175,7 +179,7 @@ class GitLabIndexer(Indexer):
 
         git_tree = project.repository_tree(
             ref=ref,
-            recursive=True,
+            recursive=self.recursive,
             iterator=True,
             all=True,
         )
