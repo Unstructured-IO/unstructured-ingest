@@ -1,4 +1,4 @@
-## 0.1.1-dev2
+## 0.1.1
 
 ### Enhancements
 
