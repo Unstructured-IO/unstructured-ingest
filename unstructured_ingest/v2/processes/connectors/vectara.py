@@ -133,6 +133,9 @@ class VectaraUploader(Uploader):
     _jwt_token: Optional[str] = field(init=False, default=None)
     _jwt_token_expires_ts: Optional[float] = field(init=False, default=None)
 
+    def is_async(self) -> bool:
+        return True
+
     async def precheck(self) -> None:
         try:
             self.vectara()
@@ -207,7 +210,7 @@ class VectaraUploader(Uploader):
             create_corpus_response = await self._request(endpoint="create-corpus", data=data)
             self.connection_config.corpus_id = create_corpus_response.get("corpusId")
 
-    @requires_dependencies(["requests"], extras="vectara")
+    @requires_dependencies(["httpx"], extras="vectara")
     async def _request(
         self,
         endpoint: str,
@@ -291,7 +294,7 @@ class VectaraUploader(Uploader):
         logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
         await asyncio.gather(*(self._index_document(vdoc) for vdoc in docs_list))
 
-    async def run(
+    async def run_async(
         self,
         path: Path,
         file_data: FileData,
