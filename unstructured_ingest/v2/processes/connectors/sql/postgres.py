@@ -1,6 +1,7 @@
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,10 @@ from pydantic import Field, Secret
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     _DATE_COLUMNS,
     SQLAccessConfig,
@@ -27,6 +31,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 
 if TYPE_CHECKING:
     from psycopg2.extensions import connection as PostgresConnection
+    from psycopg2.extensions import cursor as PostgresCursor
 
 CONNECTOR_TYPE = "postgres"
 
@@ -48,18 +53,32 @@ class PostgresConnectionConfig(SQLConnectionConfig):
     port: Optional[int] = Field(default=5432, description="DB host connection port")
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    @contextmanager
     @requires_dependencies(["psycopg2"], extras="postgres")
-    def get_connection(self) -> "PostgresConnection":
+    def get_connection(self) -> Generator["PostgresConnection", None, None]:
         from psycopg2 import connect
 
         access_config = self.access_config.get_secret_value()
-        return connect(
+        connection = connect(
             user=self.username,
             password=access_config.password,
             dbname=self.database,
             host=self.host,
             port=self.port,
         )
+        try:
+            yield connection
+        finally:
+            connection.close()
+
+    @contextmanager
+    def get_cursor(self) -> Generator["PostgresCursor", None, None]:
+        with self.get_connection() as connection:
+            cursor = connection.cursor()
+            try:
+                yield cursor
+            finally:
+                cursor.close()
 
 
 class PostgresIndexerConfig(SQLIndexerConfig):
@@ -71,16 +90,6 @@ class PostgresIndexer(SQLIndexer):
     connection_config: PostgresConnectionConfig
     index_config: PostgresIndexerConfig
     connector_type: str = CONNECTOR_TYPE
-
-    def _get_doc_ids(self) -> list[str]:
-        connection = self.connection_config.get_connection()
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
-            )
-            results = cursor.fetchall()
-            ids = [result[0] for result in results]
-            return ids
 
 
 class PostgresDownloaderConfig(SQLDownloaderConfig):
@@ -97,8 +106,7 @@ class PostgresDownloader(SQLDownloader):
         table_name = file_data.additional_metadata["table_name"]
         id_column = file_data.additional_metadata["id_column"]
         ids = file_data.additional_metadata["ids"]
-        connection = self.connection_config.get_connection()
-        with connection.cursor() as cursor:
+        with self.connection_config.get_cursor() as cursor:
             fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
             query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
                 fields=fields,
@@ -167,6 +175,14 @@ class PostgresUploader(SQLUploader):
 
                 conn.commit()
 
+
+postgres_source_entry = SourceRegistryEntry(
+    connection_config=PostgresConnectionConfig,
+    indexer_config=PostgresIndexerConfig,
+    indexer=PostgresIndexer,
+    downloader_config=PostgresDownloaderConfig,
+    downloader=PostgresDownloader,
+)
 
 postgres_destination_entry = DestinationRegistryEntry(
     connection_config=PostgresConnectionConfig,

@@ -3,6 +3,7 @@ import json
 import sys
 import uuid
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from pathlib import Path
@@ -94,7 +95,13 @@ class SQLConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[SQLAccessConfig] = Field(default=SQLAccessConfig(), validate_default=True)
 
     @abstractmethod
-    def get_connection(self) -> Any:
+    @contextmanager
+    def get_connection(self) -> Generator[Any, None, None]:
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def get_cursor(self) -> Generator[Any, None, None]:
         pass
 
 
@@ -108,16 +115,19 @@ class SQLIndexer(Indexer, ABC):
     connection_config: SQLConnectionConfig
     index_config: SQLIndexerConfig
 
-    @abstractmethod
     def _get_doc_ids(self) -> list[str]:
-        pass
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(
+                f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
+            )
+            results = cursor.fetchall()
+            ids = [result[0] for result in results]
+            return ids
 
     def precheck(self) -> None:
         try:
-            connection = self.connection_config.get_connection()
-            cursor = connection.cursor()
-            cursor.execute("SELECT 1;")
-            cursor.close()
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")

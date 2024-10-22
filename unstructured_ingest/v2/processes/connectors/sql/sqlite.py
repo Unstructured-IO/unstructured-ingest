@@ -1,7 +1,8 @@
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generator
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,10 @@ from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     _DATE_COLUMNS,
     SQLAccessConfig,
@@ -27,6 +31,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 
 if TYPE_CHECKING:
     from sqlite3 import Connection as SqliteConnection
+    from sqlite3 import Cursor as SqliteCursor
 
 CONNECTOR_TYPE = "sqlite"
 
@@ -51,10 +56,24 @@ class SQLiteConnectionConfig(SQLConnectionConfig):
             raise ValueError(f"{self.database_path} is not a valid file")
         return self
 
-    def get_connection(self) -> "SqliteConnection":
+    @contextmanager
+    def get_connection(self) -> Generator["SqliteConnection", None, None]:
         from sqlite3 import connect
 
-        return connect(database=self.database_path)
+        connection = connect(database=self.database_path)
+        try:
+            yield connection
+        finally:
+            connection.close()
+
+    @contextmanager
+    def get_cursor(self) -> Generator["SqliteCursor", None, None]:
+        with self.get_connection() as connection:
+            cursor = connection.cursor()
+            try:
+                yield cursor
+            finally:
+                cursor.close()
 
 
 class SQLiteIndexerConfig(SQLIndexerConfig):
@@ -66,16 +85,6 @@ class SQLiteIndexer(SQLIndexer):
     connection_config: SQLConnectionConfig
     index_config: SQLIndexerConfig
     connector_type: str = CONNECTOR_TYPE
-
-    def _get_doc_ids(self) -> list[str]:
-        with self.connection_config.get_connection() as sqlite_connection:
-            cursor = sqlite_connection.cursor()
-            cursor.execute(
-                f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
-            )
-            results = cursor.fetchall()
-            ids = [result[0] for result in results]
-            return ids
 
 
 class SQLiteDownloaderConfig(SQLDownloaderConfig):
@@ -162,6 +171,14 @@ class SQLiteUploader(SQLUploader):
                 conn.executemany(stmt, values)
                 conn.commit()
 
+
+sqlite_source_entry = SourceRegistryEntry(
+    connection_config=SQLiteConnectionConfig,
+    indexer_config=SQLiteIndexerConfig,
+    indexer=SQLIndexer,
+    downloader_config=SQLiteDownloaderConfig,
+    downloader=SQLiteDownloader,
+)
 
 sqlite_destination_entry = DestinationRegistryEntry(
     connection_config=SQLiteConnectionConfig,
