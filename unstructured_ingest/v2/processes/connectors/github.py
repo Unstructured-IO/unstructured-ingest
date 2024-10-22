@@ -313,7 +313,7 @@ class GitHubDownloader(Downloader):
             )
 
         logger.info(f"Writing download file to path: {download_path!r}")
-        with open(download_path, "wb") as f:
+        with download_path.open("wb") as f:
             f.write(contents)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
