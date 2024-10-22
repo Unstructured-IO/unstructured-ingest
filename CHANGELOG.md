@@ -1,3 +1,9 @@
+## 0.1.2
+
+### Enchancements
+
+* **Added OneDrive destination connector**
+
 ## 0.1.1-dev1
 
 ### Enhancements

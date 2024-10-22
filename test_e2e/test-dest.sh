@@ -29,6 +29,7 @@ all_tests=(
   'kafka-local.sh'
   'mongodb.sh'
   'opensearch.sh'
+  'onedrive.sh'
   'pinecone.sh'
   'qdrant.sh'
   's3.sh'
