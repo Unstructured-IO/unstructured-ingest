@@ -115,13 +115,6 @@ class GitHubConnectionConfig(ConnectionConfig):
 
 
 class GitHubIndexerConfig(IndexerConfig):
-    pass
-
-
-@dataclass
-class GitHubIndexer(Indexer):
-    connection_config: GitHubConnectionConfig
-    index_config: GitHubIndexerConfig
     recursive: bool = Field(
         default=False,
         description=(
@@ -129,6 +122,12 @@ class GitHubIndexer(Indexer):
             "If True, the indexer will traverse directories recursively."
         ),
     )
+
+
+@dataclass
+class GitHubIndexer(Indexer):
+    connection_config: GitHubConnectionConfig
+    index_config: GitHubIndexerConfig
 
     def precheck(self) -> None:
         """Performs a precheck to validate the connection to the GitHub repository.
@@ -184,7 +183,7 @@ class GitHubIndexer(Indexer):
         sha = self.connection_config.branch or repo.default_branch
         logger.info(f"Starting to look for blob files on GitHub in branch: {sha!r}")
 
-        git_tree = repo.get_git_tree(sha, recursive=self.recursive)
+        git_tree = repo.get_git_tree(sha, recursive=self.index_config.recursive)
 
         for element in git_tree.tree:
             rel_path = element.path.replace(self.connection_config.repo_path, "").lstrip("/")
