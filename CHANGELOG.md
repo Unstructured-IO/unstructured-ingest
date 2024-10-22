@@ -1,3 +1,10 @@
+## 0.1.1-dev2
+
+### Enhancements
+
+* **Qdrant destination to v2**
+
+
 ## 0.1.1-dev1
 
 ### Enhancements
