@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
-from pydantic import Field, Secret, root_validator
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -59,7 +59,7 @@ class GitLabConnectionConfig(ConnectionConfig):
         description="The normalized path extracted from the repository URL.",
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode='before')
     def set_repo_path(cls, values: dict) -> dict:
         """
         Parses the provided GitLab URL to extract the `base_url` and `repo_path`,
