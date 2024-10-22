@@ -68,7 +68,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --remote-url "$DESTINATION_FOLDER"
 
 # Check that the file was uploaded to OneDrive
-python "$SCRIPT_DIR"/python/test_onedrive_output.py check \
+python "$SCRIPT_DIR"/python/test-onedrive-output.py check \
   --client-id "$MS_CLIENT_ID" \
   --client-secret "$MS_CLIENT_CRED" \
   --tenant-id "$MS_TENANT_ID" \
