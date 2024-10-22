@@ -1,16 +1,28 @@
-## 0.0.27
+## 0.1.2
 
 ### Features
 
 * **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
 
-## 0.0.26-dev4
+## 0.1.1-dev1
+
+### Enhancements
+
+* **Update KDB.AI vectorstore integration to 1.4**
+* **Add sqlite and postgres source connectors**
+
+## 0.1.0
 
 ### Enhancements
 
 * **Move default API URL parameter value to serverless API**
 * **Add check that access config always wrapped in Secret**
+* **Add togetherai embedder support**
+* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
+* **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
+* **Refactor databricks into distinct connectors based on auth type**
 
 ### Fixes
 

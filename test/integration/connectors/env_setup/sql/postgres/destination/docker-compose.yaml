@@ -1,0 +1,19 @@
+services:
+  pgvector:
+    image: ankane/pgvector
+    restart: always
+    container_name: pgvector_dest
+    ports:
+     - 5433:5432
+    environment:
+      POSTGRES_DB: elements
+      POSTGRES_USER: unstructured
+      POSTGRES_PASSWORD: test
+    volumes:
+      - ./pgvector-schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "elements", "-U", "unstructured"]
+      interval: 5s
+      timeout: 60s
+      retries: 5
+      start_period: 5s
