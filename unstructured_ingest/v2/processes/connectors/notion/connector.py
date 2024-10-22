@@ -58,13 +58,16 @@ class NotionIndexer(Indexer):
     connection_config: NotionConnectionConfig
     index_config: NotionIndexerConfig
 
+    def is_async(self) -> bool:
+        return True
+
     @requires_dependencies(["notion_client"], extras="notion")
     async def get_client(self) -> "get_client":
         from unstructured_ingest.v2.processes.connectors.notion.client import AsyncClient as Client
 
         return Client(
             notion_version=NOTION_API_VERSION,
-            auth=self.connection_config.notion_api_key.get_secret_value(),
+            auth=self.connection_config.notion_api_key.get_secret_value().notion_api_key,
             logger=logger,
             log_level=logger.level,
         )
@@ -82,7 +85,11 @@ class NotionIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    async def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, file_data: FileData, **kwargs: Any) -> Generator[FileData, None, None]:
+        # Synchronous run is not implemented
+        raise NotImplementedError()
+
+    async def run_async(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = await self.get_client()
         processed_pages: set[str] = set()
         processed_databases: set[str] = set()
