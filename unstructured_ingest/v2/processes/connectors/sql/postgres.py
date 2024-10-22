@@ -1,10 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import numpy as np
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -69,6 +66,7 @@ class PostgresConnectionConfig(SQLConnectionConfig):
         try:
             yield connection
         finally:
+            connection.commit()
             connection.close()
 
     @contextmanager
@@ -138,6 +136,7 @@ class PostgresUploader(SQLUploader):
     upload_config: PostgresUploaderConfig = field(default_factory=PostgresUploaderConfig)
     connection_config: PostgresConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+    values_delimiter: str = "%s"
 
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
@@ -155,25 +154,6 @@ class PostgresUploader(SQLUploader):
                     parsed.append(value)
             output.append(tuple(parsed))
         return output
-
-    def upload_contents(self, path: Path) -> None:
-        df = pd.read_json(path, orient="records", lines=True)
-        logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")
-        df.replace({np.nan: None}, inplace=True)
-
-        columns = tuple(df.columns)
-        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) \
-                VALUES({','.join(['%s' for x in columns])})"  # noqa E501
-
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
-            with self.connection_config.get_connection() as conn:
-                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                with conn.cursor() as cur:
-                    cur.executemany(stmt, values)
-
-                conn.commit()
 
 
 postgres_source_entry = SourceRegistryEntry(

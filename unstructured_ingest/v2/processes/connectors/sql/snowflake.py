@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Generator, Optional
 
+import numpy as np
+import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -67,10 +70,13 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
         connect_kwargs = self.model_dump()
         connect_kwargs.pop("access_configs", None)
         connect_kwargs["password"] = self.access_config.get_secret_value().password
+        # https://peps.python.org/pep-0249/#paramstyle
+        connect_kwargs["paramstyle"] = "qmark"
         connection = connect(**connect_kwargs)
         try:
             yield connection
         finally:
+            connection.commit()
             connection.close()
 
     @contextmanager
@@ -122,6 +128,23 @@ class SnowflakeUploader(PostgresUploader):
     upload_config: SnowflakeUploaderConfig = field(default_factory=SnowflakeUploaderConfig)
     connection_config: SnowflakeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+    values_delimiter: str = "?"
+
+    def upload_contents(self, path: Path) -> None:
+        df = pd.read_json(path, orient="records", lines=True)
+        df.replace({np.nan: None}, inplace=True)
+
+        columns = list(df.columns)
+        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
+
+        for rows in pd.read_json(
+            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
+        ):
+            with self.connection_config.get_cursor() as cursor:
+                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # TODO: executemany break on 'Binding data in type (list) is not supported'
+                for val in values:
+                    cursor.execute(stmt, val)
 
 
 snowflake_source_entry = SourceRegistryEntry(

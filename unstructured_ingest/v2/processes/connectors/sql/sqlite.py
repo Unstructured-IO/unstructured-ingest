@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator
 
-import numpy as np
-import pandas as pd
 from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.v2.interfaces import FileData
@@ -64,6 +62,7 @@ class SQLiteConnectionConfig(SQLConnectionConfig):
         try:
             yield connection
         finally:
+            connection.commit()
             connection.close()
 
     @contextmanager
@@ -153,23 +152,6 @@ class SQLiteUploader(SQLUploader):
                     parsed.append(value)
             output.append(tuple(parsed))
         return output
-
-    def upload_contents(self, path: Path) -> None:
-        df = pd.read_json(path, orient="records", lines=True)
-        logger.debug(f"uploading {len(df)} entries to {self.connection_config.database_path} ")
-        df.replace({np.nan: None}, inplace=True)
-
-        columns = tuple(df.columns)
-        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) \
-                VALUES({','.join(['?' for x in columns])})"  # noqa E501
-
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
-            with self.connection_config.get_connection() as conn:
-                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                conn.executemany(stmt, values)
-                conn.commit()
 
 
 sqlite_source_entry = SourceRegistryEntry(

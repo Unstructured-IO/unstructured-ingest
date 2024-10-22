@@ -10,6 +10,7 @@ from pathlib import Path
 from time import time
 from typing import Any, Generator, Union
 
+import numpy as np
 import pandas as pd
 from dateutil import parser
 from pydantic import Field, Secret
@@ -295,6 +296,7 @@ class SQLUploaderConfig(UploaderConfig):
 class SQLUploader(Uploader):
     upload_config: SQLUploaderConfig
     connection_config: SQLConnectionConfig
+    values_delimiter: str = "?"
 
     def precheck(self) -> None:
         try:
@@ -312,9 +314,25 @@ class SQLUploader(Uploader):
     ) -> list[tuple[Any, ...]]:
         pass
 
-    @abstractmethod
     def upload_contents(self, path: Path) -> None:
-        pass
+        df = pd.read_json(path, orient="records", lines=True)
+        df.replace({np.nan: None}, inplace=True)
+
+        columns = list(df.columns)
+        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
+
+        for rows in pd.read_json(
+            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
+        ):
+            with self.connection_config.get_cursor() as cursor:
+                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # for val in values:
+                #     try:
+                #         cursor.execute(stmt, val)
+                #     except Exception as e:
+                #         print(f"Error: {e}")
+                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                cursor.executemany(stmt, values)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         self.upload_contents(path=path)
