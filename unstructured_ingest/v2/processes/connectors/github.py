@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
-from pathlib import Path
 from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
@@ -24,13 +24,12 @@ from unstructured_ingest.v2.interfaces import (
     SourceIdentifiers,
 )
 from unstructured_ingest.v2.logger import logger
-from typing import List
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
 CONNECTOR_TYPE = "github"
 if TYPE_CHECKING:
-    from github.Repository import Repository
     from github.ContentFile import ContentFile
+    from github.Repository import Repository
 
 
 class GitHubAccessConfig(AccessConfig):
