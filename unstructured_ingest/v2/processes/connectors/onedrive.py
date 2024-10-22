@@ -233,6 +233,18 @@ class OnedriveUploader(Uploader):
     connection_config: OnedriveConnectionConfig
     upload_config: OnedriveUploaderConfig
     connector_type: str = CONNECTOR_TYPE  # "onedrive"
+    
+    def precheck(self) -> None:
+        try:
+            token_resp: dict = self.connection_config.get_token()
+            if error := token_resp.get("error"):
+                raise SourceConnectionError(
+                    "{} ({})".format(error, token_resp.get("error_description"))
+                )
+            self.connection_config.get_client()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
