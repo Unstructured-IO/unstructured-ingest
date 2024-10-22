@@ -137,7 +137,7 @@ class KafkaIndexer(Indexer):
 
     def run(self) -> Generator[FileData, None, None]:
         messages_consumed = self._get_messages()
-        for key,value in messages_consumed.items():
+        for key, value in messages_consumed.items():
             yield FileData(
                 identifier=key.split("_")[0],
                 connector_type=self.connector_type,
