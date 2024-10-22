@@ -38,7 +38,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --remote-url s3://utic-dev-tech-fixtures/small-pdf-set/ \
   --anonymous \
   --work-dir "$WORK_DIR" \
-  --sample-n-files 3 \
+  --sample-n-files 3
 
 NUM_FILES=$(find "$OUTPUT_DIR" -type f | wc -l)
 EXPECTED_NUM_FILES=3

@@ -135,7 +135,7 @@ class FsspecIndexer(Indexer):
             filtered_files = self.sample_n_files(filtered_files, self.index_config.sample_n_files)
 
         return filtered_files
-    
+
     def sample_n_files(self, files: list[dict[str, Any]], n) -> list[dict[str, Any]]:
         if len(files) <= n:
             logger.warning(
@@ -144,7 +144,7 @@ class FsspecIndexer(Indexer):
                 " sample."
             )
             return files
-            
+
         return random.sample(files, n)
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
