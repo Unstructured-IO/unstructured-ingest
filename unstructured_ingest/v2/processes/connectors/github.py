@@ -124,7 +124,10 @@ class GitHubIndexer(Indexer):
     index_config: GitHubIndexerConfig
     recursive: bool = Field(
         default=False,
-        description="Flag to control recursive operations when indexing. If True, the indexer will traverse directories recursively."
+        description=(
+            "Flag to control recursive operations when indexing. "
+            "If True, the indexer will traverse directories recursively."
+        )
     )
 
     def precheck(self) -> None:
