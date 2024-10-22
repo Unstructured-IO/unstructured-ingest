@@ -77,11 +77,11 @@ class KafkaConnectionConfig(ConnectionConfig):
         }
 
         if is_confluent:
-            kafka_api_key = self.access_config.kafka_api_key
+            api_key = self.access_config.kafka_api_key
             secret = self.access_config.secret
             conf["sasl.mechanism"] = "PLAIN"
             conf["security.protocol"] = "SASL_SSL"
-            conf["sasl.username"] = kafka_api_key
+            conf["sasl.username"] = api_key
             conf["sasl.password"] = secret
 
         consumer = Consumer(conf)
@@ -137,7 +137,7 @@ class KafkaIndexer(Indexer):
 
     def run(self) -> Generator[FileData, None, None]:
         messages_consumed = self._get_messages()
-        for key in messages_consumed.keys():
+        for key,value in messages_consumed.items():
             yield FileData(
                 identifier=key.split("_")[0],
                 connector_type=self.connector_type,
@@ -145,10 +145,13 @@ class KafkaIndexer(Indexer):
                     date_processed=str(time()),
                 ),
                 additional_metadata={
-                    "filename": messages_consumed[key]["filename"],
-                    "content": messages_consumed[key]["content"],
+                    "filename": value["filename"],
+                    "content": value["content"],
                 },
             )
+
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        raise NotImplementedError()
 
     def precheck(self):
         try:
