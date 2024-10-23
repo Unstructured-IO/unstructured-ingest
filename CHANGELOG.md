@@ -1,4 +1,4 @@
-## 0.1.1-dev3
+## 0.1.1-dev4
 
 ### Enhancements
 
@@ -9,6 +9,9 @@
 * **Migrate Slack Source Connector to V2**
 * **Migrate Slack Source Connector to V2**
 * **Add Delta Table destination to v2**
+* **Migrate Slack Source Connector to V2**
+
+>>>>>>> 9214214 (bump changelog)
 
 ## 0.1.0
 

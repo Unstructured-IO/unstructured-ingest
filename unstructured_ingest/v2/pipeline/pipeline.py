@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import multiprocessing as mp
 import shutil
@@ -186,6 +187,14 @@ class Pipeline:
         filtered_records = [r for r in records if r["file_data_path"] in filtered_file_data_paths]
         return filtered_records
 
+    def get_indices(self) -> list[dict]:
+        if self.indexer_step.process.is_async():
+            indices = asyncio.run(self.indexer_step.run_async())
+        else:
+            indices = self.indexer_step.run()
+        indices_inputs = [{"file_data_path": i} for i in indices]
+        return indices_inputs
+
     def _run(self):
         logger.info(
             f"running local pipeline: {self} with configs: " f"{self.context.model_dump_json()}"
@@ -197,8 +206,7 @@ class Pipeline:
             self.context.status = {}
 
         # Index into data source
-        indices = self.indexer_step.run()
-        indices_inputs = [{"file_data_path": i} for i in indices]
+        indices_inputs = self.get_indices()
         if not indices_inputs:
             logger.info("No files to process after indexer, exiting")
             return
