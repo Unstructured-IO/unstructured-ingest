@@ -9,8 +9,8 @@ from unstructured_ingest.v2.processes.connectors.databricks.volumes_native impor
     CONNECTOR_TYPE,
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
-    DatabricksNativeVolumesIndexerConfig,
     DatabricksNativeVolumesDownloaderConfig,
+    DatabricksNativeVolumesIndexerConfig,
 )
 from unstructured_ingest.v2.processes.connectors.local import (
     LocalUploaderConfig,
@@ -33,9 +33,7 @@ if __name__ == "__main__":
             volume=os.environ["DATABRICKS_VOLUME"],
             volume_path=os.environ["DATABRICKS_VOLUME_PATH"],
         ),
-        downloader_config=DatabricksNativeVolumesDownloaderConfig(
-            download_dir=download_path
-        ),
+        downloader_config=DatabricksNativeVolumesDownloaderConfig(download_dir=download_path),
         source_connection_config=DatabricksNativeVolumesConnectionConfig(
             access_config=DatabricksNativeVolumesAccessConfig(
                 client_id=os.environ["DATABRICKS_CLIENT_ID"],
