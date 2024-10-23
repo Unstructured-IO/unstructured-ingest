@@ -6,7 +6,6 @@ import docker
 import pandas as pd
 import pytest
 import snowflake.connector as sf
-from faker import Faker
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
 from test.integration.connectors.utils.docker import container_context
@@ -28,9 +27,7 @@ from unstructured_ingest.v2.processes.connectors.sql.snowflake import (
     SnowflakeUploadStager,
 )
 
-Faker.seed(0)
-faker = Faker()
-SEED_DATA_ROWS = 40
+SEED_DATA_ROWS = 20
 
 
 def seed_data():
@@ -49,10 +46,8 @@ def seed_data():
 
     cur = conn.cursor()
     cur.execute(sql)
-    for _ in range(SEED_DATA_ROWS):
-        sql_statment = (
-            f"INSERT INTO cars (brand, price) VALUES " f"('{faker.word()}', {faker.random_int()})"
-        )
+    for i in range(SEED_DATA_ROWS):
+        sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
         cur.execute(sql_statment)
 
     cur.close()

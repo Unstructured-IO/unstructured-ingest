@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from faker import Faker
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
 from test.integration.connectors.utils.validation import (
@@ -24,10 +23,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
     SQLiteUploadStager,
 )
 
-Faker.seed(0)
-faker = Faker()
-
-SEED_DATA_ROWS = 40
+SEED_DATA_ROWS = 20
 
 
 @contextmanager
@@ -42,11 +38,8 @@ def sqlite_download_setup() -> Path:
             with db_init_path.open("r") as f:
                 query = f.read()
             cursor.executescript(query)
-            for _ in range(SEED_DATA_ROWS):
-                sql_statment = (
-                    f"INSERT INTO cars (brand, price) "
-                    f"VALUES ('{faker.word()}', {faker.random_int()})"
-                )
+            for i in range(SEED_DATA_ROWS):
+                sql_statment = f"INSERT INTO cars (brand, price) " f"VALUES ('brand{i}', {i})"
                 cursor.execute(sql_statment)
 
             sqlite_connection.commit()

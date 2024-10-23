@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from faker import Faker
 from psycopg2 import connect
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
@@ -26,10 +25,7 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploadStager,
 )
 
-Faker.seed(0)
-faker = Faker()
-
-SEED_DATA_ROWS = 40
+SEED_DATA_ROWS = 20
 
 
 @contextmanager
@@ -43,11 +39,8 @@ def postgres_download_setup() -> None:
             port=5433,
         )
         with connection.cursor() as cursor:
-            for _ in range(SEED_DATA_ROWS):
-                sql_statment = (
-                    f"INSERT INTO cars (brand, price) VALUES "
-                    f"('{faker.word()}', {faker.random_int()})"
-                )
+            for i in range(SEED_DATA_ROWS):
+                sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
                 cursor.execute(sql_statment)
             connection.commit()
         yield
