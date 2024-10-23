@@ -74,7 +74,7 @@ class DiscordIndexer(Indexer):
         metadata = FileDataSourceMetadata(
             date_created=date_created,
             date_modified=date_created,
-            record_locator={"channel_id": channel_id},
+            record_locator={"channel_id": identifier},
             date_processed=str(dt.datetime.utcnow().isoformat()),
         )
         return FileData(
