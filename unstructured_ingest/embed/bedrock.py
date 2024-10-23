@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_access_key_id: SecretStr
     aws_secret_access_key: SecretStr
-    region_name: str = "us-west-2"
-    embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
+    region_name: str = "us-east-1"
+    embed_model_name: str = Field(default="cohere.embed-multilingual-v3", alias="model_name")
 
     @requires_dependencies(
         ["boto3", "numpy", "botocore"],
