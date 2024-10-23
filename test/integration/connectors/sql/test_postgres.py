@@ -82,7 +82,9 @@ async def test_postgres_source():
                 downloader=downloader,
                 configs=ValidationConfigs(
                     test_id="postgres",
-                    expected_num_files=40,
+                    expected_num_files=SEED_DATA_ROWS,
+                    expected_number_indexed_file_data=4,
+                    validate_downloaded_files=True,
                 ),
             )
 
