@@ -26,5 +26,5 @@ class Indexer(BaseProcess, BaseConnector, ABC):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         pass
 
-    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None, None]:
+    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
         raise NotImplementedError()

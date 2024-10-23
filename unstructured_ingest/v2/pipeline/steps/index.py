@@ -52,7 +52,7 @@ class IndexStep(PipelineStep):
                     raise e
                 continue
 
-    async def run_async(self) -> AsyncGenerator[str, None, None]:
+    async def run_async(self) -> AsyncGenerator[str, None]:
         async for file_data in self.process.run_async():
             logger.debug(f"generated file data: {file_data.to_dict()}")
             try:
