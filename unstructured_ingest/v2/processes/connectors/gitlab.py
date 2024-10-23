@@ -273,7 +273,7 @@ class GitLabDownloader(Downloader):
         if content_file is None:
             raise ValueError(
                 f"Failed to retrieve file from repo "
-                f"'{self.connection_config.url}/{self.path}'. Check logs.",
+                f"'{self.connection_config.url}/{path}'. Check logs.",
             )
         contents = content_file.decode()
         logger.info(f"Writing download file to path: {download_path!r}")
