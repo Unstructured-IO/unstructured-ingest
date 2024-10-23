@@ -256,14 +256,12 @@ class GitHubDownloader(Downloader):
         Raises:
             UnknownObjectException: If the file does not exist in the repository.
         """
-        from github.GithubException import UnknownObjectException
-
         try:
             logger.info(f"Fetching file from path: {path!r}")
             content_file = self.connection_config.get_repo().get_contents(path)
-        except UnknownObjectException:
-            logger.error(f"File doesn't exist: {self.connection_config.url}/{path}")
-            raise UnknownObjectException
+        except Exception as e:
+            logger.error(f"Failed to download {content_file.download_url}: {e}")
+            raise e
 
         return content_file
 
