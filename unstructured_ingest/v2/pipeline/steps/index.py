@@ -1,7 +1,7 @@
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Generator, Optional, TypeVar
+from typing import AsyncGenerator, Generator, Optional, TypeVar
 
 from unstructured_ingest.v2.interfaces.indexer import Indexer
 from unstructured_ingest.v2.logger import logger
@@ -37,6 +37,23 @@ class IndexStep(PipelineStep):
     @instrument(span_name=STEP_ID)
     def run(self) -> Generator[str, None, None]:
         for file_data in self.process.run():
+            logger.debug(f"generated file data: {file_data.to_dict()}")
+            try:
+                record_hash = self.get_hash(extras=[file_data.identifier])
+                filename = f"{record_hash}.json"
+                filepath = (self.cache_dir / filename).resolve()
+                filepath.parent.mkdir(parents=True, exist_ok=True)
+                with open(str(filepath), "w") as f:
+                    json.dump(file_data.to_dict(), f, indent=2)
+                yield str(filepath)
+            except Exception as e:
+                logger.error(f"failed to create index for file data: {file_data}", exc_info=True)
+                if self.context.raise_on_error:
+                    raise e
+                continue
+
+    async def run_async(self) -> AsyncGenerator[str, None]:
+        async for file_data in self.process.run_async():
             logger.debug(f"generated file data: {file_data.to_dict()}")
             try:
                 record_hash = self.get_hash(extras=[file_data.identifier])
