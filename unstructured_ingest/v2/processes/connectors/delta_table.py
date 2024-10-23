@@ -102,13 +102,14 @@ class DeltaTableUploader(Uploader):
             and secrets.aws_access_key_id
             and secrets.aws_secret_access_key
         ):
-            import fsspec
+            from fsspec import get_filesystem_class
 
             try:
-                fs = fsspec.filesystem(
-                    "s3", key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
+                fs = get_filesystem_class("s3")(
+                    key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
                 )
-                fs.ls("s3://")
+
+                fs.write_bytes(path=self.connection_config.table_uri, value=b"")
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
