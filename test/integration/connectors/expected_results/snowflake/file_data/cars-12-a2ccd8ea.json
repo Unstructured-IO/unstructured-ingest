@@ -1,0 +1,22 @@
+{
+  "identifier": "cars-12-a2ccd8ea",
+  "connector_type": "snowflake",
+  "source_identifiers": null,
+  "doc_type": "file",
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1729697906.7148118",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "table_name": "cars",
+    "id_column": "CAR_ID"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpflnm4ljj/cars-12-a2ccd8ea.csv"
+}
