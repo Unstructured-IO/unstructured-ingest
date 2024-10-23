@@ -4,24 +4,14 @@ import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret, SecretStr
 
 from unstructured_ingest.error import (
-    DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
-
-# TODO DEPRECATE IT ONCE FINISH THE DESTINATION
-from unstructured_ingest.interfaces import (
-    BaseDestinationConnector,
-    BaseIngestDoc,
-    IngestDocSessionHandleMixin,
-    WriteConfig,
-)
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -38,7 +28,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
 if TYPE_CHECKING:
-    from confluent_kafka import Consumer, Producer
+    from confluent_kafka import Consumer
 
 CONNECTOR_TYPE = "kafka"
 
@@ -196,107 +186,6 @@ class KafkaDownloader(Downloader):
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
-
-
-# TODO address it in a separate PR -> destination
-@dataclass
-class KafkaWriteConfig(WriteConfig):
-    batch_size: int = 4
-
-
-@dataclass
-class KafkaDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationConnector):
-    """Connector to write BaseIngestDoc types to Kafka
-    Writes messages to Kafka in the format:
-    "type"<type>
-    "text":<the partitioned text>
-    "filename":<name of the upstream file>
-    """
-
-    write_config: KafkaWriteConfig
-    connector_config: KafkaConnectionConfig
-    _producer: Optional["Producer"] = None
-
-    @property
-    def kafka_producer(self):
-        if self._producer is None:
-            self._producer = self.create_producer()
-        return self._producer
-
-    def initialize(self):
-        pass
-
-    @requires_dependencies(["confluent_kafka"], extras="kafka")
-    def create_producer(self) -> "Producer":
-        from confluent_kafka import Producer
-
-        is_confluent = self.connector_config.access_config.confluent
-        bootstrap = self.connector_config.bootstrap_server
-        port = self.connector_config.port
-
-        conf = {
-            "bootstrap.servers": f"{bootstrap}:{port}",
-            "client.id": socket.gethostname(),
-        }
-
-        if is_confluent:
-            api_key = self.connector_config.access_config.kafka_api_key
-            secret = self.connector_config.access_config.secret
-            conf["sasl.mechanism"] = "PLAIN"
-            conf["security.protocol"] = "SASL_SSL"
-            conf["sasl.username"] = api_key
-            conf["sasl.password"] = secret
-
-        producer = Producer(conf)
-        logger.debug(f"connected to bootstrap: {bootstrap}")
-        return producer
-
-    def check_connection(self):
-        try:
-            self.kafka_producer
-        except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    @DestinationConnectionError.wrap
-    def upload_msg(self, batch) -> int:
-        logger.debug(f"uploading batch: {batch}")
-        topic = self.connector_config.topic
-        producer = self.kafka_producer
-        uploaded = 0
-        for i in range(len(batch)):
-            filename = f'{batch[i].pop("filename")}'
-            producer.produce(topic, key=filename, value=str(batch[i]))
-            uploaded += 1
-        return uploaded
-
-    @DestinationConnectionError.wrap
-    def write_dict(self, *args, dict_list: List[Dict[str, Any]], **kwargs) -> None:
-        logger.info(f"writing {len(dict_list)} documents to Kafka")
-        num_uploaded = 0
-
-        for chunk in batch_generator(dict_list, self.write_config.batch_size):
-            num_uploaded += self.upload_msg(chunk)  # noqa: E203
-
-        producer = self.kafka_producer
-        producer.flush()
-        logger.info(f"uploaded {num_uploaded} documents to Kafka")
-
-    def write(self, docs: List[BaseIngestDoc]) -> None:
-        content_list: List[Dict[str, Any]] = []
-        for doc in docs:
-            local_path = doc._output_filename
-            with open(local_path) as json_file:
-                dict_content = json.load(json_file)
-                for content in dict_content:
-                    content_list.append(
-                        {
-                            "type": content["type"],
-                            "text": content["text"],
-                            "filename": content["metadata"]["filename"],
-                        }
-                    )
-        self.write_dict(dict_list=content_list)
 
 
 kafka_source_entry = SourceRegistryEntry(
