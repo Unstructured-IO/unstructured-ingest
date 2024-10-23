@@ -124,7 +124,6 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig):
         )
 
 
-@dataclass
 class DatabricksVolumesIndexerConfig(IndexerConfig):
     recursive: bool = False
 
@@ -169,7 +168,6 @@ class DatabricksVolumesIndexer(Indexer):
             )
 
 
-@dataclass
 class DatabricksVolumesDownloaderConfig(DownloaderConfig):
     pass
 
