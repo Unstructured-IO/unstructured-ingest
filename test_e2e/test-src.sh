@@ -80,9 +80,7 @@ trap print_last_run EXIT
 
 python_version=$(python --version 2>&1)
 
-tests_to_ignore=(
-  'notion.sh'
-)
+tests_to_ignore=()
 
 for test in "${all_tests[@]}"; do
   CURRENT_TEST="$test"
