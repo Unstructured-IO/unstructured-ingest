@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generator, Optional, TypeVar
+from typing import Any, AsyncGenerator, Generator, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -25,3 +25,6 @@ class Indexer(BaseProcess, BaseConnector, ABC):
     @abstractmethod
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         pass
+
+    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
+        raise NotImplementedError()

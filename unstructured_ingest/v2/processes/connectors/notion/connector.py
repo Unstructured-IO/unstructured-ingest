@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from time import time
-from typing import Any, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional
 
 from pydantic import UUID4, Field, Secret
 
@@ -89,7 +89,7 @@ class NotionIndexer(Indexer):
         # Synchronous run is not implemented
         raise NotImplementedError()
 
-    async def run_async(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    async def run_async(self, **kwargs: Any) -> AsyncGenerator[None, None]:
         client = await self.get_client()
         processed_pages: set[str] = set()
         processed_databases: set[str] = set()
