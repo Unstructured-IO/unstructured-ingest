@@ -6,10 +6,25 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Optional
 
+import pandas as pd
 from deepdiff import DeepDiff
 
 from test.integration.connectors.utils.constants import expected_results_path
 from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
+
+
+def pandas_df_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    expected_df = pd.read_csv(expected_filepath)
+    current_df = pd.read_csv(current_filepath)
+    if expected_df.equals(current_df):
+        return True
+    # Print diff
+    diff = expected_df.merge(current_df, indicator=True, how="left").loc[
+        lambda x: x["_merge"] != "both"
+    ]
+    print("diff between expected and current df:")
+    print(diff)
+    return False
 
 
 @dataclass
@@ -24,6 +39,7 @@ class ValidationConfigs:
     )
     exclude_fields_extend: list[str] = field(default_factory=list)
     validate_downloaded_files: bool = False
+    downloaded_file_equality_check: Optional[Callable[[Path, Path], bool]] = None
 
     def get_exclude_fields(self) -> list[str]:
         exclude_fields = self.exclude_fields
@@ -106,14 +122,25 @@ def check_contents(
     assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
-def check_raw_file_contents(expected_output_dir: Path, current_output_dir: Path):
+def check_raw_file_contents(
+    expected_output_dir: Path,
+    current_output_dir: Path,
+    configs: ValidationConfigs,
+):
     current_files = get_files(dir_path=current_output_dir)
     found_diff = False
     files = []
     for current_file in current_files:
         current_file_path = current_output_dir / current_file
         expected_file_path = expected_output_dir / current_file
-        is_different = not filecmp.cmp(expected_file_path, current_file_path, shallow=False)
+        if downloaded_file_equality_check := configs.downloaded_file_equality_check:
+            is_different = downloaded_file_equality_check(expected_file_path, current_file_path)
+        elif expected_file_path.suffix == ".csv" and current_file_path.suffix == ".csv":
+            is_different = not pandas_df_equality_check(
+                expected_filepath=expected_file_path, current_filepath=current_file_path
+            )
+        else:
+            is_different = not filecmp.cmp(expected_file_path, current_file_path, shallow=False)
         if is_different:
             found_diff = True
             files.append(str(expected_file_path))
@@ -130,12 +157,18 @@ def run_expected_results_validation(
     )
 
 
-def run_expected_download_files_validation(expected_output_dir: Path, current_download_dir: Path):
+def run_expected_download_files_validation(
+    expected_output_dir: Path,
+    current_download_dir: Path,
+    configs: ValidationConfigs,
+):
     check_files_in_paths(
         expected_output_dir=expected_output_dir, current_output_dir=current_download_dir
     )
     check_raw_file_contents(
-        expected_output_dir=expected_output_dir, current_output_dir=current_download_dir
+        expected_output_dir=expected_output_dir,
+        current_output_dir=current_download_dir,
+        configs=configs,
     )
 
 
@@ -208,7 +241,9 @@ def run_all_validations(
     )
     if configs.validate_downloaded_files:
         run_expected_download_files_validation(
-            expected_output_dir=test_output_dir / "downloads", current_download_dir=download_dir
+            expected_output_dir=test_output_dir / "downloads",
+            current_download_dir=download_dir,
+            configs=configs,
         )
 
 
