@@ -104,7 +104,4 @@ add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entr
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 
-
-add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
-
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)

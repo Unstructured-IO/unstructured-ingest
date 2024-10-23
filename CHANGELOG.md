@@ -1,3 +1,9 @@
+## 0.1.2-dev0
+
+### Enhancements
+
+* **Migrate Slack Source Connector to V2**
+
 ## 0.1.1
 
 ### Enhancements
