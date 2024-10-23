@@ -16,7 +16,7 @@ from test.integration.connectors.utils.validation import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.databricks.volumes_native import (
     CONNECTOR_TYPE,
     DatabricksNativeVolumesAccessConfig,
@@ -139,7 +139,11 @@ def validate_upload(client: WorkspaceClient, catalog: str, volume: str, volume_p
 async def test_volumes_native_destination(upload_file: Path):
     env_data = get_env_data()
     volume_path = f"databricks-volumes-test-output-{uuid.uuid4()}"
-    mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
     with databricks_destination_context(
         volume="test-platform", volume_path=volume_path, env_data=env_data
     ) as workspace_client:
@@ -153,9 +157,9 @@ async def test_volumes_native_destination(upload_file: Path):
             ),
         )
         if uploader.is_async():
-            await uploader.run_async(path=upload_file, file_data=mock_file_data)
+            await uploader.run_async(path=upload_file, file_data=file_data)
         else:
-            uploader.run(path=upload_file, file_data=mock_file_data)
+            uploader.run(path=upload_file, file_data=file_data)
 
         validate_upload(
             client=workspace_client,
