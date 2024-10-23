@@ -63,7 +63,7 @@ class DiscordIndexer(Indexer):
     @requires_dependencies(["discord"], extras="discord")
     def get_channel_file_data(self, channel_id: str, client) -> Optional[FileData]:
         # Fetch channel metadata
-        date_created = dt.datetime.utcnow().isoformat()
+        dt.datetime.utcnow().isoformat()
         identifier = channel_id
         channel_id = f"{channel_id}.txt"
         source_identifiers = SourceIdentifiers(
@@ -72,8 +72,6 @@ class DiscordIndexer(Indexer):
             rel_path=identifier,
         )
         metadata = FileDataSourceMetadata(
-            date_created=date_created,
-            date_modified=date_created,
             record_locator={"channel_id": identifier},
             date_processed=str(dt.datetime.utcnow().isoformat()),
         )
