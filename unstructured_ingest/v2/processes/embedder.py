@@ -55,12 +55,18 @@ class EmbedderConfig(BaseModel):
         )
 
     def get_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+        from unstructured_ingest.embed.openai import (
+            OpenAIEmbeddingConfig,
+            OpenAIEmbeddingEncoder,
+        )
 
         return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig.model_validate(embedding_kwargs))
 
     def get_octoai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
-        from unstructured_ingest.embed.octoai import OctoAiEmbeddingConfig, OctoAIEmbeddingEncoder
+        from unstructured_ingest.embed.octoai import (
+            OctoAiEmbeddingConfig,
+            OctoAIEmbeddingEncoder,
+        )
 
         return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig.model_validate(embedding_kwargs))
 
@@ -75,6 +81,7 @@ class EmbedderConfig(BaseModel):
                 aws_access_key_id=self.embedding_aws_access_key_id,
                 aws_secret_access_key=self.embedding_aws_secret_access_key.get_secret_value(),
                 region_name=self.embedding_aws_region,
+                embed_model_name=self.embedding_model_name,
             )
         )
 
