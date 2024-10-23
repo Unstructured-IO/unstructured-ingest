@@ -1,16 +1,23 @@
-## 0.1.1-dev2
+## 0.1.2-dev1
 
 ### Enhancements
 
 * **Added migration for GitHub Source V2**
   * **Updated the expected output for GitHub Source V2**
 
-## 0.1.1-dev1
+## 0.1.2-dev0
+
+### Enhancements
+
+* **Migrate Slack Source Connector to V2**
+
+## 0.1.1
 
 ### Enhancements
 
 * **Update KDB.AI vectorstore integration to 1.4**
 * **Add sqlite and postgres source connectors**
+* **Add sampling functionality for indexers in fsspec connectors**
 
 ## 0.1.0
 
