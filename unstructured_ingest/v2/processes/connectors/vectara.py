@@ -146,7 +146,7 @@ class VectaraUploader(Uploader):
     @property
     async def jwt_token(self):
         if not self._jwt_token or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60:
-            self._jwt_token = self._get_jwt_token()
+            self._jwt_token = await self._get_jwt_token()
         return self._jwt_token
 
     # Get Oauth2 JWT token
