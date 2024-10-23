@@ -209,7 +209,7 @@ class SQLDownloader(Downloader, ABC):
             f"Downloading results from table {table_name} and id {record_id} to {download_path}"
         )
         download_path.parent.mkdir(parents=True, exist_ok=True)
-        result.to_csv(download_path)
+        result.to_csv(download_path, index=False)
         copied_file_data = replace(file_data)
         copied_file_data.identifier = filename_id
         copied_file_data.doc_type = "file"

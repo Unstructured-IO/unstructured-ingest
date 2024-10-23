@@ -3,9 +3,9 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-import faker
 import pandas as pd
 import pytest
+from faker import Faker
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
 from test.integration.connectors.utils.validation import (
@@ -24,7 +24,8 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
     SQLiteUploadStager,
 )
 
-faker = faker.Faker()
+Faker.seed(0)
+faker = Faker()
 
 SEED_DATA_ROWS = 40
 
@@ -77,6 +78,8 @@ async def test_sqlite_source():
                 configs=ValidationConfigs(
                     test_id="sqlite",
                     expected_num_files=40,
+                    expected_number_indexed_file_data=8,
+                    validate_downloaded_files=True,
                 ),
             )
 

@@ -1,3 +1,4 @@
+import filecmp
 import json
 import os
 import shutil
@@ -14,6 +15,7 @@ from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 @dataclass
 class ValidationConfigs:
     test_id: str
+    expected_number_indexed_file_data: Optional[int] = None
     expected_num_files: Optional[int] = None
     predownload_file_data_check: Optional[Callable[[FileData], None]] = None
     postdownload_file_data_check: Optional[Callable[[FileData], None]] = None
@@ -21,6 +23,7 @@ class ValidationConfigs:
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
     exclude_fields_extend: list[str] = field(default_factory=list)
+    validate_downloaded_files: bool = False
 
     def get_exclude_fields(self) -> list[str]:
         exclude_fields = self.exclude_fields
@@ -78,6 +81,13 @@ def check_files(expected_output_dir: Path, all_file_data: list[FileData]):
     assert not diff, "diff in files that exist: {}".format(", ".join(diff))
 
 
+def check_files_in_paths(expected_output_dir: Path, current_output_dir: Path):
+    expected_files = get_files(dir_path=expected_output_dir)
+    current_files = get_files(dir_path=current_output_dir)
+    diff = set(expected_files) ^ set(current_files)
+    assert not diff, "diff in files that exist: {}".format(", ".join(diff))
+
+
 def check_contents(
     expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
 ):
@@ -96,12 +106,36 @@ def check_contents(
     assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
+def check_raw_file_contents(expected_output_dir: Path, current_output_dir: Path):
+    current_files = get_files(dir_path=current_output_dir)
+    found_diff = False
+    files = []
+    for current_file in current_files:
+        current_file_path = current_output_dir / current_file
+        expected_file_path = expected_output_dir / current_file
+        is_different = not filecmp.cmp(expected_file_path, current_file_path, shallow=False)
+        if is_different:
+            found_diff = True
+            files.append(str(expected_file_path))
+            print(f"diffs between files {expected_file_path} and {current_file_path}")
+    assert not found_diff, "Diffs found between files: {}".format(", ".join(files))
+
+
 def run_expected_results_validation(
     expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
 ):
     check_files(expected_output_dir=expected_output_dir, all_file_data=all_file_data)
     check_contents(
         expected_output_dir=expected_output_dir, all_file_data=all_file_data, configs=configs
+    )
+
+
+def run_expected_download_files_validation(expected_output_dir: Path, current_download_dir: Path):
+    check_files_in_paths(
+        expected_output_dir=expected_output_dir, current_output_dir=current_download_dir
+    )
+    check_raw_file_contents(
+        expected_output_dir=expected_output_dir, current_output_dir=current_download_dir
     )
 
 
@@ -113,13 +147,18 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
     assert directory_structure == download_files
 
 
-def update_fixtures(output_dir: Path, download_dir: Path, all_file_data: list[FileData]):
+def update_fixtures(
+    output_dir: Path,
+    download_dir: Path,
+    all_file_data: list[FileData],
+    save_downloads: bool = False,
+):
     # Delete current files
     shutil.rmtree(path=output_dir, ignore_errors=True)
     output_dir.mkdir(parents=True)
     # Rewrite the current file data
     file_data_output_path = output_dir / "file_data"
-    file_data_output_path.mkdir(parents=True)
+    file_data_output_path.mkdir(parents=True, exist_ok=True)
     for file_data in all_file_data:
         file_data_path = file_data_output_path / f"{file_data.identifier}.json"
         with file_data_path.open(mode="w") as f:
@@ -132,6 +171,11 @@ def update_fixtures(output_dir: Path, download_dir: Path, all_file_data: list[Fi
     with download_dir_record.open(mode="w") as f:
         json.dump({"directory_structure": download_files}, f, indent=2)
 
+    # If applicable, save raw downloads
+    if save_downloads:
+        raw_download_output_path = output_dir / "downloads"
+        shutil.copytree(download_dir, raw_download_output_path)
+
 
 def run_all_validations(
     configs: ValidationConfigs,
@@ -140,6 +184,13 @@ def run_all_validations(
     download_dir: Path,
     test_output_dir: Path,
 ):
+    if expected_number_indexed_file_data := configs.expected_number_indexed_file_data:
+        assert (
+            len(predownload_file_data) == expected_number_indexed_file_data
+        ), f"expected {expected_number_indexed_file_data} but got {len(predownload_file_data)}"
+    if expected_num_files := configs.expected_num_files:
+        assert len(postdownload_file_data) == expected_num_files
+
     for pre_data, post_data in zip(predownload_file_data, postdownload_file_data):
         configs.run_file_data_validation(
             predownload_file_data=pre_data, postdownload_file_data=post_data
@@ -155,6 +206,10 @@ def run_all_validations(
     run_directory_structure_validation(
         expected_output_dir=configs.test_output_dir(), download_files=download_files
     )
+    if configs.validate_downloaded_files:
+        run_expected_download_files_validation(
+            expected_output_dir=test_output_dir / "downloads", current_download_dir=download_dir
+        )
 
 
 async def source_connector_validation(
@@ -200,4 +255,5 @@ async def source_connector_validation(
             output_dir=test_output_dir,
             download_dir=download_dir,
             all_file_data=all_postdownload_file_data,
+            save_downloads=configs.validate_downloaded_files,
         )

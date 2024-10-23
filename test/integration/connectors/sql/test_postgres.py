@@ -2,9 +2,9 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-import faker
 import pandas as pd
 import pytest
+from faker import Faker
 from psycopg2 import connect
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
@@ -26,7 +26,8 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploadStager,
 )
 
-faker = faker.Faker()
+Faker.seed(0)
+faker = Faker()
 
 SEED_DATA_ROWS = 40
 

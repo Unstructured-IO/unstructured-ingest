@@ -3,10 +3,10 @@ import tempfile
 from pathlib import Path
 
 import docker
-import faker
 import pandas as pd
 import pytest
 import snowflake.connector as sf
+from faker import Faker
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
 from test.integration.connectors.utils.docker import container_context
@@ -28,8 +28,8 @@ from unstructured_ingest.v2.processes.connectors.sql.snowflake import (
     SnowflakeUploadStager,
 )
 
-faker = faker.Faker()
-
+Faker.seed(0)
+faker = Faker()
 SEED_DATA_ROWS = 40
 
 
@@ -120,6 +120,8 @@ async def test_snowflake_source():
                 configs=ValidationConfigs(
                     test_id="snowflake",
                     expected_num_files=40,
+                    expected_number_indexed_file_data=8,
+                    validate_downloaded_files=True,
                 ),
             )
 
