@@ -22,6 +22,10 @@ def pandas_df_equality_check(expected_filepath: Path, current_filepath: Path) ->
     diff = expected_df.merge(current_df, indicator=True, how="left").loc[
         lambda x: x["_merge"] != "both"
     ]
+    print("expected dataframe:")
+    print(expected_df)
+    print("current dataframe:")
+    print(current_df)
     print("diff between expected and current df:")
     print(diff)
     return False
