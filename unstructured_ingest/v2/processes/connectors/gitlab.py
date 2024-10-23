@@ -252,7 +252,7 @@ class GitLabDownloader(Downloader):
                 ref=ref_branch,
             )
         except GitlabHttpError as e:
-            logger.error(f"File doesn't exists '{self.connection_config.url}/{self.path}'")
+            logger.error(f"File doesn't exists '{self.connection_config.url}/{path}'")
             raise e
 
         return content_file
