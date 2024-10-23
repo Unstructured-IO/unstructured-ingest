@@ -44,7 +44,7 @@ class DeltaTableConnectionConfig(ConnectionConfig):
         ),
     )
 
-    def update_storage_options(self, storage_options):
+    def update_storage_options(self, storage_options: dict) -> None:
         secrets = self.access_config.get_secret_value()
         if self.aws_region and secrets.aws_access_key_id and secrets.aws_secret_access_key:
             storage_options["AWS_REGION"] = self.aws_region
