@@ -1,8 +1,9 @@
-## 0.1.2-dev0
+## 0.1.2-dev1
 
 ### Enhancements
 
 * **Migrate Slack Source Connector to V2**
+* **Migrate Kafka Source Connector to V2**
 
 ## 0.1.1
 
