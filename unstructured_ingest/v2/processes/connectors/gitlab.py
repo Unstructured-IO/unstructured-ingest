@@ -241,8 +241,6 @@ class GitLabDownloader(Downloader):
         Raises:
             GitlabHttpError: If the specified file does not exist.
         """
-        from gitlab.exceptions import GitlabHttpError
-
         try:
             project = self.connection_config.get_project()
             ref_branch = self.connection_config.git_branch or project.default_branch
@@ -251,8 +249,8 @@ class GitLabDownloader(Downloader):
                 path,
                 ref=ref_branch,
             )
-        except GitlabHttpError as e:
-            logger.error(f"File doesn't exists '{self.connection_config.url}/{path}'")
+        except Exception as e:
+            logger.error(f"Failed to download: {e}")
             raise e
 
         return content_file
