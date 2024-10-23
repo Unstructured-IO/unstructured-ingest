@@ -1,8 +1,14 @@
-## 0.1.1-dev2
+## 0.1.2-dev2
 
 ### Enhancements
 
 * **Migrate Notion Source Connector to V2**
+
+## 0.1.2-dev1
+
+### Enhancements
+
+* **Migrate Slack Source Connector to V2**
 
 ## 0.1.1-dev1
 
@@ -10,6 +16,7 @@
 
 * **Update KDB.AI vectorstore integration to 1.4**
 * **Add sqlite and postgres source connectors**
+* **Add sampling functionality for indexers in fsspec connectors**
 
 ## 0.1.0
 

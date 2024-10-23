@@ -46,6 +46,8 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
+from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
+from .slack import slack_source_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
@@ -96,3 +98,5 @@ add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entr
 add_source_entry(source_type=NOTION_CONNECTOR_TYPE, entry=notion_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
+
+add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
