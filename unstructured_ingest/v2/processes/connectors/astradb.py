@@ -1,3 +1,4 @@
+import csv
 import json
 import sys
 from dataclasses import dataclass, field
@@ -46,34 +47,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "astradb"
 
 
-def get_astra_collection(connection_config, config) -> "AstraDBCollection":
-
-    # Choose keyspace or deprecated namespace
-    keyspace_param = config.keyspace or config.namespace
-
-    # Get the collection_name
-    collection_name = config.collection_name
-
-    # Build the Astra DB object.
-    access_configs = connection_config.access_config.get_secret_value()
-
-    # Create a client object to interact with the Astra DB
-    # caller_name/version for Astra DB tracking
-    client = connection_config.get_client()
-
-    # Get the database object
-    astra_db = client.get_database(
-        api_endpoint=access_configs.api_endpoint,
-        token=access_configs.token,
-        keyspace=keyspace_param,
-    )
-
-    # Connect to the newly created collection
-    astra_db_collection = astra_db.get_collection(name=collection_name)
-
-    return astra_db_collection
-
-
 class AstraDBAccessConfig(AccessConfig):
     token: str = Field(description="Astra DB Token with access to the database.")
     api_endpoint: str = Field(description="The API endpoint for the Astra DB.")
@@ -93,6 +66,29 @@ class AstraDBConnectionConfig(ConnectionConfig):
             caller_name=integration_name,
             caller_version=integration_version,
         )
+
+
+def get_astra_collection(
+    connection_config: AstraDBConnectionConfig, collection_name: str, keyspace: str
+) -> "AstraDBCollection":
+    # Build the Astra DB object.
+    access_configs = connection_config.access_config.get_secret_value()
+
+    # Create a client object to interact with the Astra DB
+    # caller_name/version for Astra DB tracking
+    client = connection_config.get_client()
+
+    # Get the database object
+    astra_db = client.get_database(
+        api_endpoint=access_configs.api_endpoint,
+        token=access_configs.token,
+        keyspace=keyspace,
+    )
+
+    # Connect to the newly created collection
+    astra_db_collection = astra_db.get_collection(name=collection_name)
+
+    return astra_db_collection
 
 
 class AstraDBUploadStagerConfig(UploadStagerConfig):
@@ -115,17 +111,7 @@ class AstraDBIndexerConfig(IndexerConfig):
 
 
 class AstraDBDownloaderConfig(DownloaderConfig):
-    collection_name: str = Field(
-        description="The name of the Astra DB collection. "
-        "Note that the collection name must only include letters, "
-        "numbers, and underscores."
-    )
-    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
-    namespace: Optional[str] = Field(
-        default=None,
-        description="The Astra DB connection namespace.",
-        deprecated="Please use 'keyspace' instead.",
-    )
+    fields: list[str] = field(default_factory=list)
 
 
 class AstraDBUploaderConfig(UploaderConfig):
@@ -156,11 +142,11 @@ class AstraDBIndexer(Indexer):
     connection_config: AstraDBConnectionConfig
     index_config: AstraDBIndexerConfig
 
-    @requires_dependencies(["astrapy"], extras="astradb")
     def get_collection(self) -> "AstraDBCollection":
         return get_astra_collection(
             connection_config=self.connection_config,
-            config=self.index_config,
+            collection_name=self.index_config.collection_name,
+            keyspace=self.index_config.keyspace or self.index_config.namespace,
         )
 
     def precheck(self) -> None:
@@ -179,8 +165,7 @@ class AstraDBIndexer(Indexer):
         collection = self.get_collection()
 
         # Perform the find operation to get all items
-        # TODO find just ids?
-        astra_db_docs_cursor = collection.find({}, projection={"_id": True, "metadata": True})
+        astra_db_docs_cursor = collection.find({}, projection={"_id": True})
 
         # Iterate over the cursor
         astra_db_docs = []
@@ -214,12 +199,14 @@ class AstraDBIndexer(Indexer):
             fd = FileData(
                 identifier=identified,
                 connector_type=CONNECTOR_TYPE,
+                doc_type="batch",
                 metadata=FileDataSourceMetadata(
-                    url=f"{self.index_config.collection_name}",  # TODO figure out what goes here
                     date_processed=str(time()),
                 ),
                 additional_metadata={
                     "ids": list(batch),
+                    "collection_name": self.index_config.collection_name,
+                    "keyspace": self.index_config.keyspace or self.index_config.namespace,
                 },
             )
             yield fd
@@ -234,32 +221,36 @@ class AstraDBDownloader(Downloader):
     def is_async(self) -> bool:
         return False
 
-    def map_astra_results(self, record: dict) -> str:
-        # List comp. to prevent newlines at the end of the file which affects partitioning
-        return "\n".join([str(x) for x in record.values()])
+    def get_identifier(self, record_id: str) -> str:
+        f = f"{record_id}"
+        if self.download_config.fields:  # is this used??
+            f = "{}-{}".format(
+                f,
+                hashlib.sha256(",".join(self.download_config.fields).encode()).hexdigest()[:8],
+            )
+        return f
 
-    def process_doc_id(self, collection, record_id: str) -> DownloadResponse:
-        # Fetch the record from the collection
-        record = collection.find_one({"_id": record_id})
+    def write_astra_result_to_csv(self, astra_result: dict, download_path: str) -> str:
+        with open(download_path, "w", encoding="utf8") as f:
+            writer = csv.writer(f)
+            writer.writerow(astra_result.keys())
+            writer.writerow(astra_result.values())
 
-        # Get the download path
-        filename = f"{record_id}.txt"
+    def generate_download_response(self, result: dict, file_data: FileData) -> DownloadResponse:
+        record_id = result["_id"]
+        filename_id = self.get_identifier(record_id=record_id)
+        filename = f"{filename_id}.csv"  # csv to preserve column info
         download_path = self.download_dir / Path(filename)
-        logger.debug(f"Downloading results from astra id {record_id} to {download_path}")
+        logger.debug(f"Downloading results from record {record_id} as csv to {download_path}")
         download_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Write "record" to a json file at download path
         try:
-            with open(download_path, "w", encoding="utf8") as f:
-                f.write(self.map_astra_results(record=record))
+            self.write_astra_result_to_csv(astra_result=result, download_path=download_path)
         except Exception as e:
             logger.error(
-                f"failed to download id {record_id} to {download_path}: {e}",
+                f"failed to download from record {record_id} to {download_path}: {e}",
                 exc_info=True,
             )
-            raise SourceConnectionNetworkError(f"failed to download file {filename}")
-            # TODO can the filename be included in this error? ^
-
+            raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
         return DownloadResponse(
             file_data=FileData(
                 identifier=filename,
@@ -268,7 +259,7 @@ class AstraDBDownloader(Downloader):
                     version=None,
                     date_processed=str(time()),
                     record_locator={
-                        "collection": self.download_config.collection_name,
+                        # add keyspace / collection name? available from file_data
                         "document_id": record_id,
                     },
                 ),
@@ -277,22 +268,26 @@ class AstraDBDownloader(Downloader):
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        # Get metadata from file_data
+        ids: list[str] = file_data.additional_metadata["ids"]
+        collection_name: str = file_data.additional_metadata["collection_name"]
+        keyspace: str = file_data.additional_metadata["keyspace"]
+
         # Connect to the collection
         collection = get_astra_collection(
             connection_config=self.connection_config,
-            config=self.download_config,
-            # NOTE will this ^ need to be the same values as the indexer config to work?
+            collection_name=collection_name,
+            keyspace=keyspace,
         )
 
-        # FileData contains the batch info. Get each record in the batch
-        ids: list[str] = file_data.additional_metadata["ids"]
+        download_resp = self.process_batch_record_ids(ids, collection, file_data)
+        return list(download_resp)
 
-        download_responses = []
-        for record_id in ids:
-            download_resp = self.process_doc_id(collection=collection, record_id=record_id)
-            download_responses.append(download_resp)
-
-        return download_responses
+    def process_batch_record_ids(self, ids, collection, file_data):
+        batch_filter = {"_id": {"$in": ids}}
+        batch_results = collection.find(batch_filter)
+        for result in batch_results:
+            yield self.generate_download_response(result=result, file_data=file_data)
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError()
