@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 from dataclasses import dataclass
 from typing import Any, Generator, Optional
 
@@ -125,10 +126,16 @@ class DiscordDownloader(Downloader):
 
             @bot.event
             async def on_ready():
+                logging.info("Bot is ready")
+                record_locator["channel_id"] = record_locator["channel_id"].split(".")[0]
                 channel = bot.get_channel(int(record_locator["channel_id"]))
                 if channel:
-                    async for msg in channel.history(limit=100):  # Specify message limit as needed
+                    logging.info(f"Processing messages for channel: {channel.name}")
+                    async for msg in channel.history(limit=100):
                         messages.append(msg)
+                    logging.info(f"Fetched {len(messages)} messages")
+                else:
+                    logging.warning(f"Channel with ID {record_locator['channel_id']} not found")
                 await bot.close()
 
             await bot.start(self.connection_config.access_config.get_secret_value().token)
