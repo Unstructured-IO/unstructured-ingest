@@ -1,3 +1,9 @@
+## 0.1.2-dev0
+
+### Fixes
+
+* **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
+
 ## 0.1.1
 
 ### Enhancements
