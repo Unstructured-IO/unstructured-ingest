@@ -1,8 +1,9 @@
+import json
 from dataclasses import dataclass, field
-from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from cymple import QueryBuilder
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -16,6 +17,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
 )
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
@@ -52,7 +54,6 @@ class Neo4jConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["neo4j"], extras="neo4j")
     @DestinationConnectionError.wrap
-    @lru_cache(maxsize=1)
     def get_async_driver(self) -> "AsyncDriver":
         from neo4j import AsyncGraphDatabase
 
@@ -77,7 +78,9 @@ class Neo4jUploadStager(UploadStager):
     def is_async(self):
         return True
 
-    def run_async(self, elements_filepath, file_data, output_dir, output_filename, **kwargs):
+    def run_async(
+        self, elements_filepath, file_data: FileData, output_dir, output_filename, **kwargs
+    ):
         return super().run_async(
             elements_filepath, file_data, output_dir, output_filename, **kwargs
         )
@@ -103,7 +106,62 @@ class Neo4jUploader(Uploader):
         raise NotImplementedError
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore[override]
-        raise NotImplementedError
+        driver = self.connection_config.get_async_driver()
+        logger.info("Creating new File node")
+        await self._create_file_node(driver, file_data)
+
+        with open(path) as file:
+            element_dicts = json.load(file)
+            for element_dict in element_dicts:
+                logger.info("Creating new Element node")
+                await self._create_element_node(driver, element_dict, file_data.identifier)
+
+        await driver.close()
+
+    def is_async(self):
+        return True
+
+    async def _create_file_node(
+        self,
+        driver: "AsyncDriver",
+        file_data: FileData,
+    ) -> None:
+        properties = {"id": file_data.identifier}
+
+        if file_data.source_identifiers:
+            properties["name"] = file_data.source_identifiers.filename
+        if file_data.metadata.date_created:
+            properties["date_created"] = file_data.metadata.date_created.isoformat()
+        if file_data.metadata.date_modified:
+            properties["date_created"] = file_data.metadata.date_modified.isoformat()
+
+        builder = QueryBuilder()
+        query = builder.create().node(labels="File", properties=properties)
+
+        print(query)
+
+        await driver.execute_query(query.get())
+
+    async def _create_element_node(
+        self, driver: "AsyncDriver", element_dict: dict, file_id: str
+    ) -> None:
+        properties = {"id": element_dict["element_id"], "text": element_dict["text"]}
+
+        if embeddings := element_dict.get("embeddings"):
+            properties["embeddings"] = embeddings
+
+        builder = QueryBuilder()
+        match_query = (
+            builder.match().node(labels="File", properties={"id": file_id}, ref_name="f").with_("f")
+        )
+        query = match_query + (
+            builder.create()
+            .node(labels="Element", properties=properties)
+            .related_from("element_of")
+            .node(ref_name="f")
+        )
+
+        await driver.execute_query(query)
 
 
 neo4j_destination_entry = DestinationRegistryEntry(
