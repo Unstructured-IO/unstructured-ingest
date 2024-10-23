@@ -6,9 +6,10 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connectors.databricks.volumes_native import (
+    CONNECTOR_TYPE,
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
-    DatabricksNativeVolumesUploaderConfig, CONNECTOR_TYPE,
+    DatabricksNativeVolumesUploaderConfig,
 )
 from unstructured_ingest.v2.processes.connectors.local import (
     LocalConnectionConfig,
