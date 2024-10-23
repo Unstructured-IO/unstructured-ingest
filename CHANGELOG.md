@@ -1,4 +1,4 @@
-## 0.1.1-dev4
+## 0.1.1-dev5
 
 ### Enhancements
 
@@ -11,7 +11,9 @@
 * **Add Delta Table destination to v2**
 * **Migrate Slack Source Connector to V2**
 
->>>>>>> 9214214 (bump changelog)
+### Fixes
+
+* **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
 
 ## 0.1.0
 
