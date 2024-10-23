@@ -72,10 +72,13 @@ ALLOWED_FIELDS = (
     "last_modified",
     "page_number",
     "filename",
+    "filetype",
     "is_continuation",
     "link_urls",
     "link_texts",
     "text_as_html",
+    "languages",
+    "page_name",
 )
 
 
