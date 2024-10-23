@@ -67,9 +67,9 @@ class DiscordIndexer(Indexer):
         identifier = channel_id
         channel_id = f"{channel_id}.txt"
         source_identifiers = SourceIdentifiers(
-            filename=channel_id,
+            filename=identifier,
             fullpath=channel_id,
-            rel_path=channel_id,
+            rel_path=identifier,
         )
         metadata = FileDataSourceMetadata(
             date_created=date_created,
