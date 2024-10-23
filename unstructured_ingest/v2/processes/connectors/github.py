@@ -315,7 +315,7 @@ class GitHubDownloader(Downloader):
         if contents is None:
             raise ValueError(
                 f"Failed to retrieve file from repo "
-                f"{self.connection_config.url}/{self.path}. Check logs",
+                f"{self.connection_config.url}/{path}. Check logs",
             )
 
         logger.info(f"Writing download file to path: {download_path!r}")
