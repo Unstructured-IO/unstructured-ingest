@@ -8,10 +8,7 @@ from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 from unstructured_ingest.v2.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesAccessConfig,
     DatabricksNativeVolumesConnectionConfig,
-    DatabricksNativeVolumesUploaderConfig,
-)
-from unstructured_ingest.v2.processes.connectors.databricks_volumes import (
-    CONNECTOR_TYPE,
+    DatabricksNativeVolumesUploaderConfig, CONNECTOR_TYPE,
 )
 from unstructured_ingest.v2.processes.connectors.local import (
     LocalConnectionConfig,
