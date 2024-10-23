@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 from pathlib import Path
 
@@ -19,6 +20,52 @@ from unstructured_ingest.v2.processes.connectors.delta_table import (
     DeltaTableUploadStager,
     DeltaTableUploadStagerConfig,
 )
+
+multiprocessing.set_start_method("spawn")
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
+    destination_path = str(temp_dir)
+    connection_config = DeltaTableConnectionConfig(
+        access_config=DeltaTableAccessConfig(),
+        table_uri=destination_path,
+    )
+    stager_config = DeltaTableUploadStagerConfig()
+    stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+    )
+
+    upload_config = DeltaTableUploaderConfig()
+    uploader = DeltaTableUploader(connection_config=connection_config, upload_config=upload_config)
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(
+            fullpath=upload_file.name, filename=new_upload_file.name
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+
+    if uploader.is_async():
+        await uploader.run_async(path=new_upload_file, file_data=file_data)
+    else:
+        uploader.run(path=new_upload_file, file_data=file_data)
+    delta_table_path = os.path.join(destination_path, upload_file.name)
+    delta_table = DeltaTable(table_uri=delta_table_path)
+    df = delta_table.to_pandas()
+
+    EXPECTED_COLUMNS = 10
+    EXPECTED_ROWS = 22
+    assert (
+        len(df) == EXPECTED_ROWS
+    ), f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
+    assert (
+        len(df.columns) == EXPECTED_COLUMNS
+    ), f"Number of columns in table vs expected: {len(df.columns)}/{EXPECTED_COLUMNS}"
 
 
 def get_aws_credentials() -> dict:
