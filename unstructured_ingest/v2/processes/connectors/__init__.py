@@ -18,6 +18,8 @@ from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
+from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
+from .delta_table import delta_table_destination_entry
 from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
@@ -44,6 +46,8 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
+from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
+from .slack import slack_source_entry
 from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
 from .vectara import vectara_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
@@ -55,6 +59,10 @@ add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_desti
 
 add_source_entry(source_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_source_entry)
 add_destination_entry(destination_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_destination_entry)
+
+add_destination_entry(
+    destination_type=DELTA_TABLE_CONNECTOR_TYPE, entry=delta_table_destination_entry
+)
 
 add_source_entry(source_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_source_entry)
 add_destination_entry(
@@ -95,5 +103,7 @@ add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destina
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
+
+add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
 
 add_destination_entry(destination_type=VECTARA_CONNECTOR_TYPE, entry=vectara_destination_entry)

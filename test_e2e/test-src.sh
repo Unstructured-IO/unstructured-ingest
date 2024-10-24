@@ -34,7 +34,7 @@ all_tests=(
   'gitlab.sh'
   'google-drive.sh'
   'wikipedia.sh'
-  # 'slack.sh'
+  'slack.sh'
   #  'against-api.sh'
   'gcs.sh'
   'kafka-local.sh'
