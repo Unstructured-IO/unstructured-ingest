@@ -263,7 +263,8 @@ class VectaraUploader(Uploader):
         }
 
         logger.debug(
-            f"Indexing document {document['documentId']} to corpus ID {self.connection_config.corpus_id}"
+            f"Indexing document {document['documentId']}" + \
+            " to corpus ID {self.connection_config.corpus_id}"
         )
 
         try:
