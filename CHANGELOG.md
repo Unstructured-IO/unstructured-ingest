@@ -4,7 +4,6 @@
 ### Enhancements
 
 * **Added migration for GitLab Source V2**
-* **Updated the expected output for GitLab Source V2**
 
 
 ## 0.2.0
