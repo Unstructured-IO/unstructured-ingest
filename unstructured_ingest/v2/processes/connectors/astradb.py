@@ -106,12 +106,11 @@ async def get_async_astra_collection(
     client = connection_config.get_client()  # ASYNC?
 
     # Get the async database object
-    astra_db = client.get_database(
+    async_astra_db = client.get_async_database(
         api_endpoint=access_configs.api_endpoint,
         token=access_configs.token,
         keyspace=keyspace,
     )
-    async_astra_db = astra_db.to_async()
 
     # Get async collection from AsyncDatabase
     async_astra_db_collection = await async_astra_db.get_collection(name=collection_name)
@@ -208,18 +207,8 @@ class AstraDBIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)  # TODO check for empty/none
-        id_batches: list[frozenset[str]] = [
-            frozenset(
-                ids[
-                    i
-                    * self.index_config.batch_size : (i + 1)  # noqa
-                    * self.index_config.batch_size
-                ]
-            )
-            for i in range(
-                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
-            )
-        ]
+        id_batches = batch_generator(ids, self.index_config.batch_size)
+
         for batch in id_batches:
             # Make sure the hash is always a positive number to create identified
             identified = str(hash(batch) + sys.maxsize + 1)
@@ -257,7 +246,7 @@ class AstraDBDownloader(Downloader):
             )
         return f
 
-    def write_astra_result_to_csv(self, astra_result: dict, download_path: str) -> str:
+    def write_astra_result_to_csv(self, astra_result: dict, download_path: str) -> None:
         with open(download_path, "w", encoding="utf8") as f:
             writer = csv.writer(f)
             writer.writerow(astra_result.keys())
@@ -278,44 +267,21 @@ class AstraDBDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-        return DownloadResponse(
-            file_data=FileData(
-                identifier=filename,
-                connector_type=CONNECTOR_TYPE,
-                metadata=FileDataSourceMetadata(
-                    version=None,
-                    date_processed=str(time()),
-                    record_locator={
-                        # add keyspace / collection name? available from file_data
-                        "document_id": record_id,
-                    },
-                ),
-            ),
+
+        # modify input file_data for download_response
+        file_data.identifier = filename
+        # todo set doc_type? currently "batch"
+        file_data.metadata.date_processed = str(time())
+        file_data.metadata.record_locator = {"document_id": record_id}
+        download_response = DownloadResponse(
+            file_data=file_data,
             path=download_path,
         )
+        return download_response
+        # return super().generate_download_response(file_data=file_data, download_path=download_path)
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        logger.info("Running AstraDBDownloader non-async, when async download is enabled")
-        # Get metadata from file_data
-        ids: list[str] = file_data.additional_metadata["ids"]
-        collection_name: str = file_data.additional_metadata["collection_name"]
-        keyspace: str = file_data.additional_metadata["keyspace"]
-
-        # Connect to the collection
-        collection = get_astra_collection(
-            connection_config=self.connection_config,
-            collection_name=collection_name,
-            keyspace=keyspace,
-        )
-
-        download_resp = self.process_batch_record_ids(ids, collection, file_data)
-        return list(download_resp)
-
-    def process_batch_record_ids(self, ids, collection, file_data):
-        batch_filter = {"_id": {"$in": ids}}
-        batch_results = collection.find(batch_filter)
-        for result in batch_results:
-            yield self.generate_download_response(result=result, file_data=file_data)
+        raise NotImplementedError("Use astradb run_async instead")
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         # Get metadata from file_data
@@ -334,6 +300,7 @@ class AstraDBDownloader(Downloader):
             download_responses.append(
                 self.generate_download_response(result=result, file_data=file_data)
             )
+        # needs await?? files don't always finish downloading
         return download_responses
 
 
