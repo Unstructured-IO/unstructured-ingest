@@ -136,9 +136,9 @@ class VectaraUploader(Uploader):
     def is_async(self) -> bool:
         return True
 
-    async def precheck(self) -> None:
+    def precheck(self) -> None:
         try:
-            self.vectara()
+            asyncio.run(self.vectara())
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
