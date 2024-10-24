@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import sys
 from dataclasses import dataclass, field
@@ -40,6 +41,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
+    from astrapy import AsyncCollection as AstraDBAsyncCollection
     from astrapy import Collection as AstraDBCollection
     from astrapy import DataAPIClient as AstraDBClient
 
@@ -69,7 +71,9 @@ class AstraDBConnectionConfig(ConnectionConfig):
 
 
 def get_astra_collection(
-    connection_config: AstraDBConnectionConfig, collection_name: str, keyspace: str
+    connection_config: AstraDBConnectionConfig,
+    collection_name: str,
+    keyspace: str,
 ) -> "AstraDBCollection":
     # Build the Astra DB object.
     access_configs = connection_config.access_config.get_secret_value()
@@ -85,10 +89,33 @@ def get_astra_collection(
         keyspace=keyspace,
     )
 
-    # Connect to the newly created collection
+    # Connect to the collection
     astra_db_collection = astra_db.get_collection(name=collection_name)
-
     return astra_db_collection
+
+
+async def get_async_astra_collection(
+    connection_config: AstraDBConnectionConfig,
+    collection_name: str,
+    keyspace: str,
+) -> "AstraDBAsyncCollection":
+    # Build the Astra DB object.
+    access_configs = connection_config.access_config.get_secret_value()
+
+    # Create a client object to interact with the Astra DB
+    client = connection_config.get_client()  # ASYNC?
+
+    # Get the async database object
+    astra_db = client.get_database(
+        api_endpoint=access_configs.api_endpoint,
+        token=access_configs.token,
+        keyspace=keyspace,
+    )
+    async_astra_db = astra_db.to_async()
+
+    # Get async collection from AsyncDatabase
+    async_astra_db_collection = await async_astra_db.get_collection(name=collection_name)
+    return async_astra_db_collection
 
 
 class AstraDBUploadStagerConfig(UploadStagerConfig):
@@ -219,7 +246,7 @@ class AstraDBDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def is_async(self) -> bool:
-        return False
+        return True
 
     def get_identifier(self, record_id: str) -> str:
         f = f"{record_id}"
@@ -268,6 +295,7 @@ class AstraDBDownloader(Downloader):
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        logger.info("Running AstraDBDownloader non-async, when async download is enabled")
         # Get metadata from file_data
         ids: list[str] = file_data.additional_metadata["ids"]
         collection_name: str = file_data.additional_metadata["collection_name"]
@@ -290,7 +318,23 @@ class AstraDBDownloader(Downloader):
             yield self.generate_download_response(result=result, file_data=file_data)
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        raise NotImplementedError()
+        # Get metadata from file_data
+        ids: list[str] = file_data.additional_metadata["ids"]
+        collection_name: str = file_data.additional_metadata["collection_name"]
+        keyspace: str = file_data.additional_metadata["keyspace"]
+
+        # Retrieve results from async collection
+        download_responses = []
+        async_astra_collection = await get_async_astra_collection(
+            connection_config=self.connection_config,
+            collection_name=collection_name,
+            keyspace=keyspace,
+        )
+        async for result in async_astra_collection.find({"_id": {"$in": ids}}):
+            download_responses.append(
+                self.generate_download_response(result=result, file_data=file_data)
+            )
+        return download_responses
 
 
 @dataclass
