@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from sys import version
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import Field, SecretStr
 
@@ -7,18 +8,23 @@ from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, Embedding
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
-    from openai import OpenAI
+    from openai import OpenAI, AzureOpenAI
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
+    azure_base_url: Optional[str] = Field(default=None, description="URL to external Azure OpenAI provider")
+    azure_api_version: Optional[str] = Field(default=None, description="Holds version string")
 
     @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "OpenAI":
-        from openai import OpenAI
-
-        return OpenAI(api_key=self.api_key.get_secret_value())
+        from openai import OpenAI, AzureOpenAI
+         
+        if self.base_url:
+            return AzureOpenAI(api_key=self.api_key.get_secret_value(), azure_endpoint=self.base_url, version=self.api_version)
+        else:
+            return OpenAI(api_key=self.api_key.get_secret_value())
 
 
 @dataclass
