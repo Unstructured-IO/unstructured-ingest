@@ -22,8 +22,6 @@ all_tests=(
   'chroma.sh'
   'clarifai.sh'
   'couchbase.sh'
-  'databricks-volumes.sh'
-  'delta-table.sh'
   'dropbox.sh'
   'elasticsearch.sh'
   'gcs.sh'

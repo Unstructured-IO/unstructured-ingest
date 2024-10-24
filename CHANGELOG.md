@@ -1,4 +1,26 @@
-## 0.0.26-dev7
+## 0.2.0
+
+### Enhancements
+
+* **Add snowflake source and destination connectors**
+* **Migrate Slack Source Connector to V2**
+* **Migrate Slack Source Connector to V2**
+* **Add Delta Table destination to v2**
+* **Migrate Slack Source Connector to V2**
+
+## 0.1.1
+
+### Enhancements
+
+* **Update KDB.AI vectorstore integration to 1.4**
+* **Add sqlite and postgres source connectors**
+* **Add sampling functionality for indexers in fsspec connectors**
+
+### Fixes
+
+* **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
+
+## 0.1.0
 
 ### Enhancements
 
@@ -7,6 +29,8 @@
 * **Add togetherai embedder support**
 * **Refactor sqlite and postgres to be distinct connectors to support better input validation**
 * **Added MongoDB source V2 connector**
+* **Support optional access configs on connection configs**
+* **Refactor databricks into distinct connectors based on auth type**
 
 ### Fixes
 

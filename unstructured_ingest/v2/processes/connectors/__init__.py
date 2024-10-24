@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -17,11 +18,8 @@ from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
-from .databricks_volumes import CONNECTOR_TYPE as DATABRICKS_VOLUMES_CONNECTOR_TYPE
-from .databricks_volumes import (
-    databricks_volumes_destination_entry,
-    databricks_volumes_source_entry,
-)
+from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
+from .delta_table import delta_table_destination_entry
 from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
 from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
@@ -50,6 +48,8 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
+from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
+from .slack import slack_source_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
@@ -59,6 +59,10 @@ add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_desti
 
 add_source_entry(source_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_source_entry)
 add_destination_entry(destination_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_destination_entry)
+
+add_destination_entry(
+    destination_type=DELTA_TABLE_CONNECTOR_TYPE, entry=delta_table_destination_entry
+)
 
 add_source_entry(source_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_source_entry)
 add_destination_entry(
@@ -81,14 +85,6 @@ add_source_entry(source_type=SALESFORCE_CONNECTOR_TYPE, entry=salesforce_source_
 
 add_destination_entry(destination_type=WEAVIATE_CONNECTOR_TYPE, entry=weaviate_destination_entry)
 
-add_destination_entry(
-    destination_type=DATABRICKS_VOLUMES_CONNECTOR_TYPE, entry=databricks_volumes_destination_entry
-)
-add_source_entry(
-    source_type=DATABRICKS_VOLUMES_CONNECTOR_TYPE, entry=databricks_volumes_source_entry
-)
-
-
 add_destination_entry(destination_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_destination_entry)
 add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)
 
@@ -110,3 +106,5 @@ add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 
 
 add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
+
+add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)

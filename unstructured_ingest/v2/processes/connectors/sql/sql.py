@@ -1,24 +1,36 @@
+import hashlib
 import json
+import sys
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from contextlib import contextmanager
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Union
+from time import time
+from typing import Any, Generator, Union
 
+import numpy as np
 import pandas as pd
 from dateutil import parser
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
+    Downloader,
+    DownloaderConfig,
+    DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
+    Indexer,
+    IndexerConfig,
     Uploader,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
+    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 
@@ -84,8 +96,136 @@ class SQLConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[SQLAccessConfig] = Field(default=SQLAccessConfig(), validate_default=True)
 
     @abstractmethod
-    def get_connection(self) -> Any:
+    @contextmanager
+    def get_connection(self) -> Generator[Any, None, None]:
         pass
+
+    @abstractmethod
+    @contextmanager
+    def get_cursor(self) -> Generator[Any, None, None]:
+        pass
+
+
+class SQLIndexerConfig(IndexerConfig):
+    table_name: str
+    id_column: str
+    batch_size: int = 100
+
+
+class SQLIndexer(Indexer, ABC):
+    connection_config: SQLConnectionConfig
+    index_config: SQLIndexerConfig
+
+    def _get_doc_ids(self) -> list[str]:
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(
+                f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
+            )
+            results = cursor.fetchall()
+            ids = [result[0] for result in results]
+            return ids
+
+    def precheck(self) -> None:
+        try:
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
+
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        ids = self._get_doc_ids()
+        id_batches: list[frozenset[str]] = [
+            frozenset(
+                ids[
+                    i
+                    * self.index_config.batch_size : (i + 1)  # noqa
+                    * self.index_config.batch_size
+                ]
+            )
+            for i in range(
+                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
+            )
+        ]
+        for batch in id_batches:
+            # Make sure the hash is always a positive number to create identified
+            identified = str(hash(batch) + sys.maxsize + 1)
+            yield FileData(
+                identifier=identified,
+                connector_type=self.connector_type,
+                metadata=FileDataSourceMetadata(
+                    date_processed=str(time()),
+                ),
+                doc_type="batch",
+                additional_metadata={
+                    "ids": list(batch),
+                    "table_name": self.index_config.table_name,
+                    "id_column": self.index_config.id_column,
+                },
+            )
+
+
+class SQLDownloaderConfig(DownloaderConfig):
+    fields: list[str] = field(default_factory=list)
+
+
+class SQLDownloader(Downloader, ABC):
+    connection_config: SQLConnectionConfig
+    download_config: SQLDownloaderConfig
+
+    @abstractmethod
+    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+        pass
+
+    def sql_to_df(self, rows: list[tuple], columns: list[str]) -> list[pd.DataFrame]:
+        data = [dict(zip(columns, row)) for row in rows]
+        df = pd.DataFrame(data)
+        dfs = [pd.DataFrame([row.values], columns=df.columns) for index, row in df.iterrows()]
+        return dfs
+
+    def get_data(self, file_data: FileData) -> list[pd.DataFrame]:
+        rows, columns = self.query_db(file_data=file_data)
+        return self.sql_to_df(rows=rows, columns=columns)
+
+    def get_identifier(self, table_name: str, record_id: str) -> str:
+        f = f"{table_name}-{record_id}"
+        if self.download_config.fields:
+            f = "{}-{}".format(
+                f,
+                hashlib.sha256(",".join(self.download_config.fields).encode()).hexdigest()[:8],
+            )
+        return f
+
+    def generate_download_response(
+        self, result: pd.DataFrame, file_data: FileData
+    ) -> DownloadResponse:
+        id_column = file_data.additional_metadata["id_column"]
+        table_name = file_data.additional_metadata["table_name"]
+        record_id = result.iloc[0][id_column]
+        filename_id = self.get_identifier(table_name=table_name, record_id=record_id)
+        filename = f"{filename_id}.csv"
+        download_path = self.download_dir / Path(filename)
+        logger.debug(
+            f"Downloading results from table {table_name} and id {record_id} to {download_path}"
+        )
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+        result.to_csv(download_path, index=False)
+        copied_file_data = replace(file_data)
+        copied_file_data.identifier = filename_id
+        copied_file_data.doc_type = "file"
+        copied_file_data.additional_metadata.pop("ids", None)
+        return super().generate_download_response(
+            file_data=copied_file_data, download_path=download_path
+        )
+
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+        data_dfs = self.get_data(file_data=file_data)
+        download_responses = []
+        for df in data_dfs:
+            download_responses.append(
+                self.generate_download_response(result=df, file_data=file_data)
+            )
+        return download_responses
 
 
 class SQLUploadStagerConfig(UploadStagerConfig):
@@ -156,6 +296,7 @@ class SQLUploaderConfig(UploaderConfig):
 class SQLUploader(Uploader):
     upload_config: SQLUploaderConfig
     connection_config: SQLConnectionConfig
+    values_delimiter: str = "?"
 
     def precheck(self) -> None:
         try:
@@ -173,9 +314,25 @@ class SQLUploader(Uploader):
     ) -> list[tuple[Any, ...]]:
         pass
 
-    @abstractmethod
     def upload_contents(self, path: Path) -> None:
-        pass
+        df = pd.read_json(path, orient="records", lines=True)
+        df.replace({np.nan: None}, inplace=True)
+
+        columns = list(df.columns)
+        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
+
+        for rows in pd.read_json(
+            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
+        ):
+            with self.connection_config.get_cursor() as cursor:
+                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # for val in values:
+                #     try:
+                #         cursor.execute(stmt, val)
+                #     except Exception as e:
+                #         print(f"Error: {e}")
+                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                cursor.executemany(stmt, values)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         self.upload_contents(path=path)

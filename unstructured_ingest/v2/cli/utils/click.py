@@ -1,12 +1,13 @@
 import json
 import os.path
+from datetime import date, datetime
 from gettext import gettext, ngettext
 from gettext import gettext as _
 from pathlib import Path
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar, Union
 
 import click
-from pydantic import BaseModel, ConfigDict, Secret
+from pydantic import BaseModel, ConfigDict, Secret, TypeAdapter, ValidationError
 
 
 def conform_click_options(options: dict):
@@ -109,7 +110,51 @@ class DelimitedString(click.ParamType):
         return split
 
 
+class PydanticDateTime(click.ParamType):
+    name = "datetime"
+
+    def convert(
+        self,
+        value: Any,
+        param: Optional[click.Parameter] = None,
+        ctx: Optional[click.Context] = None,
+    ) -> Any:
+        try:
+            return TypeAdapter(datetime).validate_strings(value)
+        except ValidationError:
+            self.fail(f"{value} is not a valid datetime", param, ctx)
+
+
+class PydanticDate(click.ParamType):
+    name = "date"
+
+    def convert(
+        self,
+        value: Any,
+        param: Optional[click.Parameter] = None,
+        ctx: Optional[click.Context] = None,
+    ) -> Any:
+        try:
+            return TypeAdapter(date).validate_strings(value)
+        except ValidationError:
+            self.fail(f"{value} is not a valid date", param, ctx)
+
+
 BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
+
+
+def unwrap_optional(val: Any) -> tuple[Any, bool]:
+    if (
+        hasattr(val, "__origin__")
+        and hasattr(val, "__args__")
+        and val.__origin__ is Union
+        and len(val.__args__) == 2
+        and type(None) in val.__args__
+    ):
+        args = val.__args__
+        args = [a for a in args if a is not None]
+        return args[0], True
+    return val, False
 
 
 def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
@@ -119,6 +164,7 @@ def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
     data = {k: v for k, v in flat_data.items() if k in field_names and v is not None}
     if access_config := fields.get("access_config"):
         access_config_type = access_config.annotation
+        access_config_type, is_optional = unwrap_optional(access_config_type)
         # Check if raw type is wrapped by a secret
         if (
             hasattr(access_config_type, "__origin__")
@@ -132,9 +178,13 @@ def extract_config(flat_data: dict, config: Type[BaseModelT]) -> BaseModelT:
         else:
             raise TypeError(f"Unrecognized access_config type: {access_config_type}")
         ac_field_names = [v.alias or k for k, v in ac_fields.items()]
-        data["access_config"] = {
+        access_config_data = {
             k: v for k, v in flat_data.items() if k in ac_field_names and v is not None
         }
+        if not access_config_data and is_optional:
+            data["access_config"] = None
+        else:
+            data["access_config"] = access_config_data
     return config.model_validate(obj=data)
 
 
