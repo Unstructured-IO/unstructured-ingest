@@ -273,8 +273,10 @@ class AstraDBDownloader(Downloader):
         copied_file_data.identifier = filename
         # todo set doc_type? currently "batch"
         copied_file_data.metadata.date_processed = str(time())
-        copied_file_data.metadata.record_locator = {"document_id": record_id} # getting mixed??
-        return super().generate_download_response(file_data=copied_file_data, download_path=download_path)
+        copied_file_data.metadata.record_locator = {"document_id": record_id}  # getting mixed??
+        return super().generate_download_response(
+            file_data=copied_file_data, download_path=download_path
+        )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError("Use astradb run_async instead")
