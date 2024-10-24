@@ -30,6 +30,13 @@ def docker_compose_context(docker_compose_path: Path):
         if resp:
             print("STDOUT: {}".format(resp.stdout.decode("utf-8")))
             print("STDERR: {}".format(resp.stderr.decode("utf-8")))
+        cmd = f"docker compose -f {docker_compose_path.resolve()} logs"
+        logs = subprocess.run(
+            cmd,
+            shell=True,
+            capture_output=True,
+        )
+        print("DOCKER LOGS: {}".format(logs.stdout.decode("utf-8")))
         raise e
     finally:
         cmd = f"docker compose -f {docker_compose_path.resolve()} down --remove-orphans -v"
