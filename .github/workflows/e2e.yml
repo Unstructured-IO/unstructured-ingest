@@ -88,7 +88,6 @@ jobs:
       run: |
         sudo make install-docker-compose
         docker compose version
-        make integration-test-connectors-src-docker-pull
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
@@ -120,7 +119,6 @@ jobs:
       run: |
         sudo make install-docker-compose
         docker compose version
-        make integration-test-connectors-dest-docker-pull
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
