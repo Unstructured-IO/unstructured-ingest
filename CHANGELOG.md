@@ -1,23 +1,30 @@
-## 0.1.2-dev5
+## 0.2.1-dev0
 
 ### Enhancements
 
 * **Migrate Discord Source Connector to V2**
-
-## 0.1.1-dev4
+* 
+## 0.2.0
 
 ### Enhancements
 
-* **Update KDB.AI vectorstore integration to 1.4**
-* **Add sqlite and postgres source connectors**
-* **Add sampling functionality for indexers in fsspec connectors**
 * **Add snowflake source and destination connectors**
 * **Migrate Slack Source Connector to V2**
 * **Migrate Slack Source Connector to V2**
 * **Add Delta Table destination to v2**
 * **Migrate Slack Source Connector to V2**
 
->>>>>>> 9214214 (bump changelog)
+## 0.1.1
+
+### Enhancements
+
+* **Update KDB.AI vectorstore integration to 1.4**
+* **Add sqlite and postgres source connectors**
+* **Add sampling functionality for indexers in fsspec connectors**
+
+### Fixes
+
+* **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
 
 ## 0.1.0
 
