@@ -378,7 +378,9 @@ class AstraDBUploader(Uploader):
     def precheck(self) -> None:
         try:
             get_astra_collection(
-                connection_config=self.connection_config, config=self.upload_config
+                connection_config=self.connection_config,
+                collection_name=self.upload_config.collection_name,
+                keyspace=self.upload_config.keyspace or self.upload_config.namespace,
             )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
@@ -388,7 +390,8 @@ class AstraDBUploader(Uploader):
     def get_collection(self) -> "AstraDBCollection":
         return get_astra_collection(
             connection_config=self.connection_config,
-            config=self.upload_config,
+            collection_name=self.upload_config.collection_name,
+            keyspace=self.upload_config.keyspace or self.upload_config.namespace,
         )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
