@@ -84,6 +84,11 @@ jobs:
       uses: ./.github/actions/base-cache
       with:
         python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
+        make integration-test-connectors-src-docker-pull
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
@@ -92,8 +97,6 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
       run : |
         source .venv/bin/activate
-        sudo make install-docker-compose
-        docker compose version
         make install-test
         make integration-test-connectors-src
 
@@ -113,6 +116,11 @@ jobs:
       uses: ./.github/actions/base-cache
       with:
         python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
+        make integration-test-connectors-dest-docker-pull
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
@@ -123,8 +131,6 @@ jobs:
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
       run : |
         source .venv/bin/activate
-        sudo make install-docker-compose
-        docker compose version
         make install-test
         make integration-test-connectors-dest
 
