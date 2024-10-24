@@ -260,7 +260,7 @@ class GitHubDownloader(Downloader):
             logger.info(f"Fetching file from path: {path!r}")
             content_file = self.connection_config.get_repo().get_contents(path)
         except Exception as e:
-            logger.error(f"Failed to download {content_file.download_url}: {e}")
+            logger.error(f"Failed to download {path}: {e}")
             raise e
 
         return content_file
