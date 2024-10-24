@@ -2,7 +2,7 @@ import csv
 import hashlib
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -269,16 +269,12 @@ class AstraDBDownloader(Downloader):
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
         # modify input file_data for download_response
-        file_data.identifier = filename
+        copied_file_data = replace(file_data)
+        copied_file_data.identifier = filename
         # todo set doc_type? currently "batch"
-        file_data.metadata.date_processed = str(time())
-        file_data.metadata.record_locator = {"document_id": record_id}
-        download_response = DownloadResponse(
-            file_data=file_data,
-            path=download_path,
-        )
-        return download_response
-        # return super().generate_download_response(file_data=file_data, download_path=download_path)
+        copied_file_data.metadata.date_processed = str(time())
+        copied_file_data.metadata.record_locator = {"document_id": record_id} # getting mixed??
+        return super().generate_download_response(file_data=copied_file_data, download_path=download_path)
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError("Use astradb run_async instead")
@@ -300,7 +296,7 @@ class AstraDBDownloader(Downloader):
             download_responses.append(
                 self.generate_download_response(result=result, file_data=file_data)
             )
-        # needs await?? files don't always finish downloading
+        # TODO not all the file datas are getting updated by the time this returns. await?
         return download_responses
 
 
