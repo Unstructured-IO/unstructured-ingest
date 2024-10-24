@@ -45,7 +45,7 @@ if __name__ == "__main__":
             access_config=VectaraAccessConfig(uri=None),
             customer_id="2268229652",
             corpus_name=f"test-corpus-vectara-{random.randint(1000,9999)}",
-            corpus_id='3232',
+            corpus_id="3232",
             token_url="https://vectara-prod-{}.auth.us-west-2.amazoncognito.com/oauth2/token",
         ),
         stager_config=VectaraUploadStagerConfig(),
