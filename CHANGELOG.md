@@ -1,3 +1,10 @@
+## 0.2.0-dev0
+
+### Enhancements
+
+* **Vectara destination to v2**
+
+
 ## 0.2.0
 
 ### Enhancements
