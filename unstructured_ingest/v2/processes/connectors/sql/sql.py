@@ -308,11 +308,22 @@ class SQLUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @abstractmethod
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
-        pass
+        output = []
+        for row in data:
+            parsed = []
+            for column_name, value in zip(columns, row):
+                if column_name in _DATE_COLUMNS:
+                    if value is None:
+                        parsed.append(None)
+                    else:
+                        parsed.append(parse_date_string(value))
+                else:
+                    parsed.append(value)
+            output.append(tuple(parsed))
+        return output
 
     def upload_contents(self, path: Path) -> None:
         df = pd.read_json(path, orient="records", lines=True)

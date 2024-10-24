@@ -51,10 +51,7 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
         default=None,
         description="Database name.",
     )
-    schema: str = Field(
-        default=None,
-        description="Database schema.",
-    )
+    db_schema: str = Field(default=None, description="Database schema.", alias="schema")
     role: str = Field(
         default=None,
         description="Database role.",
@@ -68,6 +65,7 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
         from snowflake.connector import connect
 
         connect_kwargs = self.model_dump()
+        connect_kwargs["schema"] = connect_kwargs.pop("db_schema")
         connect_kwargs.pop("access_configs", None)
         connect_kwargs["password"] = self.access_config.get_secret_value().password
         # https://peps.python.org/pep-0249/#paramstyle

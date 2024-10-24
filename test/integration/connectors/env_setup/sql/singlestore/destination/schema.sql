@@ -2,7 +2,7 @@ CREATE DATABASE ingest_test;
 USE ingest_test;
 
 CREATE TABLE elements (
-    id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    id TEXT PRIMARY KEY NOT NULL,
     element_id TEXT,
     text TEXT,
     embeddings Vector(384),

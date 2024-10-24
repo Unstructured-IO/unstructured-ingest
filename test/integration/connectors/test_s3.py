@@ -85,7 +85,7 @@ async def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
 async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
     anon_connection_config.endpoint_url = "http://localhost:9000"
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/")
-    with docker_compose_context(docker_compose_path=env_setup_path / "minio"):
+    with docker_compose_context(docker_compose_path=env_setup_path / "minio" / "source"):
         with tempfile.TemporaryDirectory() as tempdir:
             tempdir_path = Path(tempdir)
             download_config = S3DownloaderConfig(download_dir=tempdir_path)

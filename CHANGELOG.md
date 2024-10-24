@@ -1,3 +1,9 @@
+## 0.2.1-dev0
+
+### Enhancements
+
+* **Add singlestore source connector**
+
 ## 0.2.0
 
 ### Enhancements
