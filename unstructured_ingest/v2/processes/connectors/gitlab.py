@@ -20,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
     IndexerConfig,
     SourceIdentifiers,
 )
+from pathlib import Path
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
@@ -157,9 +158,9 @@ class GitLabIndexer(Indexer):
             else:
                 gitlab.projects.get(self.connection_config.repo_path)
 
-        except GitlabError as gitlab_error:
-            logger.error(f"Failed to validate connection: {gitlab_error}", exc_info=True)
-            raise SourceConnectionError(f"Failed to validate connection: {gitlab_error}")
+        except Exception as e:
+            logger.error(f"Failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Iterates over the GitLab repository tree and yields file metadata as `FileData` objects.
@@ -255,12 +256,12 @@ class GitLabDownloader(Downloader):
 
         return content_file
 
-    def _fetch_and_write(self, path: str, download_path: str) -> None:
+    def _fetch_and_write(self, path: str, download_path: Path) -> None:
         """Fetches a file from the GitLab repository and writes its content to the specified path.
 
         Args:
             path (str): The path to the file within the repository.
-            download_path (str): The local path where the file will be saved.
+            download_path (Path): The local path where the file will be saved.
 
         Raises:
             ValueError: If the file content could not be retrieved.
@@ -277,7 +278,7 @@ class GitLabDownloader(Downloader):
             )
         contents = content_file.decode()
         logger.info(f"Writing download file to path: {download_path!r}")
-        with open(download_path, "wb") as f:
+        with download_path.open("wb") as f:
             f.write(contents)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
