@@ -262,6 +262,8 @@ class VectaraUploader(Uploader):
             "document": document,
         }
 
+        logger.debug(f"Indexing document {document['documentId']} to corpus ID {self.connection_config.corpus_id}")
+        
         try:
             result = await self._request(endpoint="index", data=body, http_method="POST")
         except Exception as e:
