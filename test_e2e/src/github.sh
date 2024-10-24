@@ -46,14 +46,14 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.date_created,metadata.data_source.date_modified \
   --strategy hi_res \
   --preserve-downloads \
   --reprocess \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --url dcneiner/Downloadify \
-  --git-file-glob '*.html,*.txt' \
+  --file-glob '*.html,*.txt' \
   --work-dir "$WORK_DIR" \
   $ACCESS_TOKEN_FLAGS
 
