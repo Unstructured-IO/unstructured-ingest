@@ -280,7 +280,6 @@ class GitHubDownloader(Downloader):
             UnknownObjectException: If the download or content retrieval fails.
         """
         import httpx
-        from github.GithubException import UnknownObjectException
 
         contents = b""
         async with httpx.AsyncClient() as client:
@@ -291,9 +290,9 @@ class GitHubDownloader(Downloader):
                 try:
                     response = await client.get(content_file.download_url, timeout=10.0)
                     response.raise_for_status()
-                except (httpx.HTTPStatusError, httpx.RequestError) as e:
-                    logger.error(f"Failed to download {content_file.download_url}: {e}")
-                    raise UnknownObjectException
+                except Exception as e:
+                    logger.error(f"Failed to download: {e}")
+                    raise e
 
                 contents = response.content
             else:
