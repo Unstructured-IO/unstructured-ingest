@@ -28,10 +28,20 @@ class DiscordAccessConfig(AccessConfig):
 
 
 class DiscordConnectionConfig(ConnectionConfig):
-    access_config: Secret[DiscordAccessConfig]
+    access_config: Secret[DiscordAccessConfig] = Field(
+        default=DiscordAccessConfig, validate_default=True
+    )
     channels: Optional[list[str]] = Field(
         default=None, description="List of Discord channel IDs to process"
     )
+
+    @requires_dependencies(["discord"], extras="discord")
+    def get_client(self):
+        import discord
+
+        intents = discord.Intents.default()
+        intents.message_content = True
+        return discord.Client(intents=intents)
 
 
 class DiscordIndexerConfig(IndexerConfig):
@@ -43,16 +53,8 @@ class DiscordIndexer(Indexer):
     connection_config: DiscordConnectionConfig
     index_config: DiscordIndexerConfig
 
-    @requires_dependencies(["discord"], extras="discord")
-    def get_client(self):
-        import discord
-
-        intents = discord.Intents.default()
-        intents.message_content = True
-        return discord.Client(intents=intents)
-
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        client = self.get_client()
+        client = self.connection_config.get_client()
         channels_to_process: set[str] = set(self.connection_config.channels or [])
 
         for channel_id in list(channels_to_process):
@@ -60,10 +62,8 @@ class DiscordIndexer(Indexer):
             if file_data:
                 yield file_data
 
-    @requires_dependencies(["discord"], extras="discord")
     def get_channel_file_data(self, channel_id: str, client) -> Optional[FileData]:
         # Fetch channel metadata
-        dt.datetime.utcnow().isoformat()
         identifier = channel_id
         channel_id = f"{channel_id}.txt"
         source_identifiers = SourceIdentifiers(
@@ -84,13 +84,7 @@ class DiscordIndexer(Indexer):
 
 
 class DiscordDownloaderConfig(DownloaderConfig):
-    @requires_dependencies(["discord"], extras="discord")
-    def get_client(self):
-        import discord
-
-        intents = discord.Intents.default()
-        intents.message_content = True
-        return discord.Client(intents=intents)
+    pass
 
 
 @dataclass
@@ -98,21 +92,19 @@ class DiscordDownloader(Downloader):
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
 
-    @requires_dependencies(["discord"], extras="discord")
-    def load_async(self):
-        import discord
-
-        return discord.Client, None
+    def is_async(self) -> bool:
+        return True
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         # Synchronous run is not implemented
         raise NotImplementedError()
 
+    @requires_dependencies(["discord"], extras="discord")
     async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         import discord
         from discord.ext import commands
 
-        client = self.download_config.get_client()
+        client = self.connection_config.get_client()
         record_locator = file_data.metadata.record_locator
 
         if "channel_id" in record_locator:
@@ -144,7 +136,7 @@ class DiscordDownloader(Downloader):
 
             return self.generate_download_response(file_data=file_data, download_path=download_path)
         else:
-            raise ValueError("Invalid record_locator in file_data")
+            raise ValueError("No channel id in file data record locator: {record_locator}")
 
 
 discord_source_entry = SourceRegistryEntry(
