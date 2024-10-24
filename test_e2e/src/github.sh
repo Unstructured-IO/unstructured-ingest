@@ -2,6 +2,7 @@
 
 set -e
 
+export OVERWRITE_FIXTURES=true
 SRC_PATH=$(dirname "$(realpath "$0")")
 SCRIPT_DIR=$(dirname "$SRC_PATH")
 cd "$SCRIPT_DIR"/.. || exit 1
