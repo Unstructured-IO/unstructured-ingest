@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def docker_compose_down(docker_compose_path: Path):
-    cmd = f"docker compose -f {docker_compose_path.resolve()} down --remove-orphans -v --rmi"
+    cmd = f"docker compose -f {docker_compose_path.resolve()} down --remove-orphans -v --rmi all"
     print(f"Running command: {cmd}")
     final_resp = subprocess.run(
         cmd,
