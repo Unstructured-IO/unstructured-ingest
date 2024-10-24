@@ -137,17 +137,10 @@ integration-test-chunkers:
 integration-test-embedders:
 	PYTHONPATH=. pytest -sv test/integration/embedders
 
-.PHONY: integration-test-connectors-src-docker-pull
-integration-test-connectors-src-docker-pull:
-	./scripts/docker-compose-pull.sh ./test/integration/connectors/env_setup source
-
 .PHONY: integration-test-connectors-src
 integration-test-connectors-src:
 	PYTHONPATH=. pytest --tags source -sv test/integration/connectors
 
-.PHONY: integration-test-connectors-dest-docker-pull
-integration-test-connectors-dest-docker-pull:
-	./scripts/docker-compose-pull.sh ./test/integration/connectors/env_setup destination
 
 .PHONY: integration-test-connectors-dest
 integration-test-connectors-dest:
