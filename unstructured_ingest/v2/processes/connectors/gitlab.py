@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
@@ -20,7 +21,6 @@ from unstructured_ingest.v2.interfaces import (
     IndexerConfig,
     SourceIdentifiers,
 )
-from pathlib import Path
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
@@ -149,7 +149,6 @@ class GitLabIndexer(Indexer):
         Raises:
             SourceConnectionError: If the connection or authentication with GitLab fails.
         """
-        from gitlab.exceptions import GitlabError
 
         try:
             gitlab = self.connection_config.get_client()
