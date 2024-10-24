@@ -9,7 +9,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1729522956.358926",
+    "date_processed": "1729697888.056792",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -18,5 +18,5 @@
     "id_column": "car_id"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpxvakfpd4/cars-1-5fb93ce5.csv"
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp7xzr7b5v/cars-1-5fb93ce5.csv"
 }
