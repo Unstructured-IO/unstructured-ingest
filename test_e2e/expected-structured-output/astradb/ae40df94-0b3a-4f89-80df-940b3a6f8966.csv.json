@@ -1,0 +1,25 @@
+[
+  {
+    "type": "Table",
+    "element_id": "66bb3ffa7d2c80ee4a227d8a76fc1777",
+    "text": "\n\n\n_id\ntitle\nreviewid\ncreationdate\ncriticname\noriginalscore\nreviewstate\nreviewtext\n\n\nae40df94-0b3a-4f89-80df-940b3a6f8966\nDangerous Men\n2504681\n2018-08-29\nPat Padua\n\nfresh\nIts clumsy determination is endearing and sometimes wildly entertaining\n\n\n",
+    "metadata": {
+      "text_as_html": "<table border=\"1\" class=\"dataframe\">\n  <tbody>\n    <tr>\n      <td>_id</td>\n      <td>title</td>\n      <td>reviewid</td>\n      <td>creationdate</td>\n      <td>criticname</td>\n      <td>originalscore</td>\n      <td>reviewstate</td>\n      <td>reviewtext</td>\n    </tr>\n    <tr>\n      <td>ae40df94-0b3a-4f89-80df-940b3a6f8966</td>\n      <td>Dangerous Men</td>\n      <td>2504681</td>\n      <td>2018-08-29</td>\n      <td>Pat Padua</td>\n      <td></td>\n      <td>fresh</td>\n      <td>Its clumsy determination is endearing and sometimes wildly entertaining</td>\n    </tr>\n  </tbody>\n</table>",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/csv",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "document_id": "ae40df94-0b3a-4f89-80df-940b3a6f8966"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 241
+      }
+    }
+  }
+]
