@@ -1,3 +1,9 @@
+# 0.2.0-dev0
+
+### Enhancements
+
+* **Added migration for GitHub Source V2**
+
 ## 0.2.0
 
 ### Enhancements
