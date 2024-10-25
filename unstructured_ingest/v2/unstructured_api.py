@@ -26,7 +26,7 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
     # Prior to this it was a dataclass which doesn't have .__fields
     try:
-        possible_fields = PartitionParameters.__fields__
+        possible_fields = PartitionParameters.model_fields
     except AttributeError:
         possible_fields = [f.name for f in fields(PartitionParameters)]
 
