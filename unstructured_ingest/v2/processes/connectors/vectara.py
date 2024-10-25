@@ -30,8 +30,8 @@ CONNECTOR_TYPE = "vectara"
 
 
 class VectaraAccessConfig(AccessConfig):
-    oauth_client_id: Optional[str] = Field(default=None, sensitive=True, description="Client ID")
-    oauth_secret: Optional[str] = Field(default=None, sensitive=True, description="Client Secret")
+    oauth_client_id: Optional[str] = Field(default=None, description="Client ID")
+    oauth_secret: Optional[str] = Field(default=None, description="Client Secret")
 
 
 class VectaraConnectionConfig(ConnectionConfig):
@@ -89,11 +89,10 @@ class VectaraUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        docs_list: Dict[Dict[str, Any]] = []
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
 
-        docs_list: Dict[Dict[str, Any]] = []
+        docs_list: list[dict[str, Any]] = []
         conformed_elements = {
             "documentId": str(uuid.uuid4()),
             "title": elements_contents[0]
@@ -287,7 +286,7 @@ class VectaraUploader(Uploader):
         ):
             logger.info(f"document {document['documentId']} already exists, re-indexing")
             await self._delete_doc(document["documentId"])
-            result = await self._request(endpoint="index", data=body, http_method="POST")
+            await self._request(endpoint="index", data=body, http_method="POST")
             return
 
         if "status" in result and result["status"] and "OK" in result["status"]["code"]:
