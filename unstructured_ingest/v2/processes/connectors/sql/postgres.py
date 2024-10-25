@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -12,7 +12,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
-    _DATE_COLUMNS,
     SQLAccessConfig,
     SQLConnectionConfig,
     SQLDownloader,
@@ -23,7 +22,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
-    parse_date_string,
 )
 
 if TYPE_CHECKING:
@@ -137,23 +135,6 @@ class PostgresUploader(SQLUploader):
     connection_config: PostgresConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "%s"
-
-    def prepare_data(
-        self, columns: list[str], data: tuple[tuple[Any, ...], ...]
-    ) -> list[tuple[Any, ...]]:
-        output = []
-        for row in data:
-            parsed = []
-            for column_name, value in zip(columns, row):
-                if column_name in _DATE_COLUMNS:
-                    if value is None:
-                        parsed.append(None)
-                    else:
-                        parsed.append(parse_date_string(value))
-                else:
-                    parsed.append(value)
-            output.append(tuple(parsed))
-        return output
 
 
 postgres_source_entry = SourceRegistryEntry(
