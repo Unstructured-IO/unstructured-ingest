@@ -1,0 +1,25 @@
+[
+  {
+    "type": "Table",
+    "element_id": "9b09654fc0b4ed4058a4e2d3a5d16632",
+    "text": "\n\n\n_id\ntitle\nreviewid\ncreationdate\ncriticname\noriginalscore\nreviewstate\nreviewtext\n\n\n641d99e3-9941-4c18-9d99-e399414c183d\nBeavers\n1145982\n2003-05-23\nIvan M. Lincoln\n3.5/4\nfresh\nTimed to be just long enough for most youngsters' brief attention spans -- and it's packed with plenty of interesting activity, both on land and under the water.\n\n\n",
+    "metadata": {
+      "text_as_html": "<table border=\"1\" class=\"dataframe\">\n  <tbody>\n    <tr>\n      <td>_id</td>\n      <td>title</td>\n      <td>reviewid</td>\n      <td>creationdate</td>\n      <td>criticname</td>\n      <td>originalscore</td>\n      <td>reviewstate</td>\n      <td>reviewtext</td>\n    </tr>\n    <tr>\n      <td>641d99e3-9941-4c18-9d99-e399414c183d</td>\n      <td>Beavers</td>\n      <td>1145982</td>\n      <td>2003-05-23</td>\n      <td>Ivan M. Lincoln</td>\n      <td>3.5/4</td>\n      <td>fresh</td>\n      <td>Timed to be just long enough for most youngsters' brief attention spans -- and it's packed with plenty of interesting activity, both on land and under the water.</td>\n    </tr>\n  </tbody>\n</table>",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/csv",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "document_id": "641d99e3-9941-4c18-9d99-e399414c183d"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 338
+      }
+    }
+  }
+]
