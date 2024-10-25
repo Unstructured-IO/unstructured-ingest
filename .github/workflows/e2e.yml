@@ -69,7 +69,7 @@ jobs:
           make integration-test-embedders
 
   source_connectors_integration_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -84,6 +84,10 @@ jobs:
       uses: ./.github/actions/base-cache
       with:
         python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
@@ -92,13 +96,11 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
       run : |
         source .venv/bin/activate
-        sudo make install-docker-compose
-        docker compose version
         make install-test
         make integration-test-connectors-src
 
   destination_connectors_integration_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -113,6 +115,10 @@ jobs:
       uses: ./.github/actions/base-cache
       with:
         python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
@@ -123,8 +129,6 @@ jobs:
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
       run : |
         source .venv/bin/activate
-        sudo make install-docker-compose
-        docker compose version
         make install-test
         make integration-test-connectors-dest
 
