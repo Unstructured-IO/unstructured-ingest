@@ -1,8 +1,12 @@
-## 0.2.1-dev0
+## 0.2.1-dev1
+
+### Enhancements
+
+* **Add singlestore source connector**
 
 ### Fixes
 
-* **Fix Databricks Volumes file nameing** Add .json to end of upload file.
+* **Fix Databricks Volumes file naming** Add .json to end of upload file.
 
 ## 0.2.0
 
