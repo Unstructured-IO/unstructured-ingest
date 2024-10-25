@@ -272,7 +272,7 @@ class AstraDBDownloader(Downloader):
         # modify input file_data for download_response
         copied_file_data = copy.deepcopy(file_data)
         copied_file_data.identifier = filename
-        copied_file_data.doc_type = "csv"
+        copied_file_data.doc_type = "file"
         copied_file_data.metadata.date_processed = str(time())
         copied_file_data.metadata.record_locator = {"document_id": record_id}
         copied_file_data.additional_metadata.pop("ids", None)
