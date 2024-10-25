@@ -1,9 +1,15 @@
-## 0.2.1-dev0
+## 0.2.2-dev0
 
 ### Enhancements
 
 * **Migrate Discord Source Connector to V2**
-* 
+
+## 0.2.1-dev0
+
+### Fixes
+
+* **Fix Databricks Volumes file nameing** Add .json to end of upload file.
+
 ## 0.2.0
 
 ### Enhancements
