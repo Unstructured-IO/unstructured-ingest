@@ -1,7 +1,6 @@
 import datetime as dt
-import logging
 from dataclasses import dataclass
-from typing import Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -20,6 +19,9 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
+if TYPE_CHECKING:
+    from discord import Client as DiscordClient
+
 CONNECTOR_TYPE = "discord"
 
 
@@ -36,7 +38,7 @@ class DiscordConnectionConfig(ConnectionConfig):
     )
 
     @requires_dependencies(["discord"], extras="discord")
-    def get_client(self):
+    def get_client(self) -> "DiscordClient":
         import discord
 
         intents = discord.Intents.default()
@@ -54,15 +56,15 @@ class DiscordIndexer(Indexer):
     index_config: DiscordIndexerConfig
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        client = self.connection_config.get_client()
+        self.connection_config.get_client()
         channels_to_process: set[str] = set(self.connection_config.channels or [])
 
         for channel_id in list(channels_to_process):
-            file_data = self.get_channel_file_data(channel_id=channel_id, client=client)
+            file_data = self.get_channel_file_data(channel_id=channel_id)
             if file_data:
                 yield file_data
 
-    def get_channel_file_data(self, channel_id: str, client) -> Optional[FileData]:
+    def get_channel_file_data(self, channel_id: str) -> Optional[FileData]:
         # Fetch channel metadata
         identifier = channel_id
         channel_id = f"{channel_id}.txt"
@@ -102,41 +104,23 @@ class DiscordDownloader(Downloader):
     @requires_dependencies(["discord"], extras="discord")
     async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         import discord
-        from discord.ext import commands
 
-        client = self.connection_config.get_client()
         record_locator = file_data.metadata.record_locator
 
+        if "channel_id" not in record_locator:
+            raise ValueError(f"No channel id in file data record locator: {record_locator}")
+
         if "channel_id" in record_locator:
-            bot = commands.Bot(command_prefix=">", intents=client.intents)
             download_path = self.get_download_path(file_data=file_data)
             download_path.parent.mkdir(parents=True, exist_ok=True)
 
             messages: list[discord.Message] = []
-
-            @bot.event
-            async def on_ready():
-                logging.info("Bot is ready")
-                record_locator["channel_id"] = record_locator["channel_id"].split(".")[0]
-                channel = bot.get_channel(int(record_locator["channel_id"]))
-                if channel:
-                    logging.info(f"Processing messages for channel: {channel.name}")
-                    async for msg in channel.history(limit=100):
-                        messages.append(msg)
-                    logging.info(f"Fetched {len(messages)} messages")
-                else:
-                    logging.warning(f"Channel with ID {record_locator['channel_id']} not found")
-                await bot.close()
-
-            await bot.start(self.connection_config.access_config.get_secret_value().token)
 
             with open(download_path, "w") as file:
                 for message in messages:
                     file.write(f"{message.content}\n")
 
             return self.generate_download_response(file_data=file_data, download_path=download_path)
-        else:
-            raise ValueError("No channel id in file data record locator: {record_locator}")
 
 
 discord_source_entry = SourceRegistryEntry(
