@@ -251,10 +251,6 @@ class GitHubDownloader(Downloader):
 
         Returns:
             ContentFile: An object containing the file content.
-
-
-        Raises:
-            UnknownObjectException: If the file does not exist in the repository.
         """
         try:
             logger.info(f"Fetching file from path: {path!r}")
@@ -275,9 +271,6 @@ class GitHubDownloader(Downloader):
 
         Returns:
             bytes: The content of the file as bytes.
-
-        Raises:
-            UnknownObjectException: If the download or content retrieval fails.
         """
         import httpx
 
