@@ -1,8 +1,9 @@
-## 0.2.1-dev1
+## 0.2.1-dev2
 
 ### Enhancements
 
 * **Add singlestore source connector**
+* **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 
 ### Fixes
 
