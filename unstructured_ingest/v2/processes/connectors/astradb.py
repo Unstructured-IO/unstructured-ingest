@@ -1,8 +1,9 @@
+import copy
 import csv
 import hashlib
 import json
 import sys
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -103,7 +104,7 @@ async def get_async_astra_collection(
     access_configs = connection_config.access_config.get_secret_value()
 
     # Create a client object to interact with the Astra DB
-    client = connection_config.get_client()  # ASYNC?
+    client = connection_config.get_client()
 
     # Get the async database object
     async_astra_db = client.get_async_database(
@@ -206,7 +207,7 @@ class AstraDBIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         all_ids = self._get_doc_ids()
-        ids = list(all_ids)  # TODO check for empty/none
+        ids = list(all_ids)
         id_batches = batch_generator(ids, self.index_config.batch_size)
 
         for batch in id_batches:
@@ -239,7 +240,7 @@ class AstraDBDownloader(Downloader):
 
     def get_identifier(self, record_id: str) -> str:
         f = f"{record_id}"
-        if self.download_config.fields:  # is this used??
+        if self.download_config.fields:
             f = "{}-{}".format(
                 f,
                 hashlib.sha256(",".join(self.download_config.fields).encode()).hexdigest()[:8],
@@ -269,11 +270,12 @@ class AstraDBDownloader(Downloader):
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
         # modify input file_data for download_response
-        copied_file_data = replace(file_data)
+        copied_file_data = copy.deepcopy(file_data)
         copied_file_data.identifier = filename
-        # todo set doc_type? currently "batch"
+        copied_file_data.doc_type = "csv"
         copied_file_data.metadata.date_processed = str(time())
-        copied_file_data.metadata.record_locator = {"document_id": record_id}  # getting mixed??
+        copied_file_data.metadata.record_locator = {"document_id": record_id}
+        copied_file_data.additional_metadata.pop("ids", None)
         return super().generate_download_response(
             file_data=copied_file_data, download_path=download_path
         )
@@ -298,7 +300,6 @@ class AstraDBDownloader(Downloader):
             download_responses.append(
                 self.generate_download_response(result=result, file_data=file_data)
             )
-        # TODO not all the file datas are getting updated by the time this returns. await?
         return download_responses
 
 
