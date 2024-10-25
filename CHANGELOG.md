@@ -6,7 +6,7 @@
 
 ### Fixes
 
-* **Fix Databricks Volumes file nameing** Add .json to end of upload file.
+* **Fix Databricks Volumes file naming** Add .json to end of upload file.
 
 ## 0.2.0
 
