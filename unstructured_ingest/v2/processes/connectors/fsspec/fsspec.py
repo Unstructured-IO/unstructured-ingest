@@ -166,6 +166,7 @@ class FsspecIndexer(Indexer):
 
             additional_metadata = self.sterilize_info(file_data=file_data)
             additional_metadata["original_file_path"] = file_path
+            additional_metadata["record_display_name"] = file_path
             yield FileData(
                 identifier=str(uuid5(NAMESPACE_DNS, file_path)),
                 connector_type=self.connector_type,
