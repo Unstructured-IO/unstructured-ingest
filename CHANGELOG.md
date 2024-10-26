@@ -1,4 +1,10 @@
-## 0.2.2
+## 0.2.1-dev3
+
+### Enhancements
+
+* **File system based indexers return a record display name**
+
+## 0.2.1-dev2
 
 ### Enhancements
 
