@@ -3,12 +3,6 @@
 ### Enhancements
 
 * **File system based indexers return a record display name**
-
-## 0.2.1-dev2
-
-### Enhancements
-
-* **File system based indexers return a record display name**
 * **Add singlestore source connector**
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 
