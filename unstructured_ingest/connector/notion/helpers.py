@@ -469,12 +469,18 @@ def build_columned_list(client: Client, column_parent: Block) -> HtmlTag:
         for column_content_chunk in client.blocks.children.iterate_list(  # type: ignore
             block_id=column.id,
         ):
+            # Filter out None values and replace them with empty strings
+            content_html = [
+                content.block.get_html() if content.block.get_html() is not None else ''
+                for content in column_content_chunk
+            ]
             columns_content.append(
                 Div(
                     [Style(f"width:{100/num_columns}%; float: left")],
-                    [content.block.get_html() for content in column_content_chunk],
+                    content_html,
                 ),
             )
+
 
     return Div([], columns_content)
 
