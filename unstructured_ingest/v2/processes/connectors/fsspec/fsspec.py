@@ -176,6 +176,7 @@ class FsspecIndexer(Indexer):
                 ),
                 metadata=self.get_metadata(file_data=file_data),
                 additional_metadata=additional_metadata,
+                display_name=file_path,
             )
 
 

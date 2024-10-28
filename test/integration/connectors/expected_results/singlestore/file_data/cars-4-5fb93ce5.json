@@ -18,5 +18,6 @@
     "id_column": "car_id"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp0rf9htg5/cars-4-5fb93ce5.csv"
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp0rf9htg5/cars-4-5fb93ce5.csv",
+  "display_name": null
 }

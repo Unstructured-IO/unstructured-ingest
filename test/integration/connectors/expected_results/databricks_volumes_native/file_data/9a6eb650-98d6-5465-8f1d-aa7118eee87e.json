@@ -22,5 +22,6 @@
     "path": "/Volumes/utic-dev-tech-fixtures/default/test-platform/databricks-volumes-test-input/fake-memo.pdf"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpv8xsw7kf/fake-memo.pdf"
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpv8xsw7kf/fake-memo.pdf",
+  "display_name": null
 }
