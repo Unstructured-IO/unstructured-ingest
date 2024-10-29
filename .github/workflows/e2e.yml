@@ -127,6 +127,7 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
         S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+        GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
       run : |
         source .venv/bin/activate
         make install-test
