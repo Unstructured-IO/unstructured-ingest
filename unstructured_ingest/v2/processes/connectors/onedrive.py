@@ -296,15 +296,19 @@ class OnedriveUploader(Uploader):
                     ) from e
         else:
             # Use resumable upload for large files
-            with path.open("rb") as local_file:
-                logger.info(f"Uploading {path} to {destination_path} using resumable upload")
-                try:
-                    uploaded_file = folder.resumable_upload(local_file, file_name).execute_query()
-                except Exception as e:
-                    logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
-                    raise DestinationConnectionError(
-                        f"Failed to upload file '{file_name}' using resumable upload"
-                    ) from e
+            destination_fullpath = f"{destination_folder_str}/{file_name}"
+            destination_drive_item = drive.root.item_with_path(destination_fullpath)
+
+            logger.info(f"Uploading {path} to {destination_fullpath} using resumable upload")
+            try:
+                uploaded_file = destination_drive_item.resumable_upload(
+                    source_path=str(path)
+                ).execute_query()
+            except Exception as e:
+                logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
+                raise DestinationConnectionError(
+                    f"Failed to upload file '{file_name}' using resumable upload: {e}"
+                ) from e
 
 onedrive_source_entry = SourceRegistryEntry(
     connection_config=OnedriveConnectionConfig,
