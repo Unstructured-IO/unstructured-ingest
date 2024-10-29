@@ -74,7 +74,7 @@ async def connection_with_uri(request, tmp_path: Path):
         uri=uri,
         storage_options=storage_options,
     )
-    await connection.create_table(name=TABLE_NAME, schema=TableSchema, mode="overwrite")
+    await connection.create_table(name=TABLE_NAME, schema=TableSchema)
 
     yield connection, uri
 
