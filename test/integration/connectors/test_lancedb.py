@@ -74,6 +74,14 @@ async def test_lancedb_destination(
     tmp_path: Path,
 ) -> None:
     connection, uri = connection_with_uri
+    if uri.startswith("s3"):
+        assert "S3_INGEST_TEST_ACCESS_KEY" in os.environ, "Missing S3_INGEST_TEST_ACCESS_KEY"
+        assert "S3_INGEST_TEST_SECRET_KEY" in os.environ, "Missing S3_INGEST_TEST_SECRET_KEY"
+    elif uri.startswith("gs"):
+        assert "GCP_INGEST_SERVICE_KEY" in os.environ, "Missing GCP_INGEST_SERVICE_KEY"
+    elif uri.startswith("az"):
+        assert "AZURE_STORAGE_ACCOUNT_NAME" in os.environ, "Missing AZURE_STORAGE_ACCOUNT_NAME"
+        assert "AZURE_STORAGE_ACCOUNT_KEY" in os.environ, "Missing AZURE_STORAGE_ACCOUNT_KEY"
 
     access_config = LanceDBAccessConfig(
         s3_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
