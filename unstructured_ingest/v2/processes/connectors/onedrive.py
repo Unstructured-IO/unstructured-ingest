@@ -298,7 +298,9 @@ class OnedriveUploader(Uploader):
                     if not uploaded_file or uploaded_file.name != file_name:
                         raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
                     # Log details about the uploaded file
-                    logger.info(f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'")
+                    logger.info(
+                        f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'"
+                    )
                 except Exception as e:
                     logger.error(f"Failed to upload file '{file_name}': {e}", exc_info=True)
                     raise DestinationConnectionError(
@@ -314,7 +316,7 @@ class OnedriveUploader(Uploader):
                 uploaded_file = destination_drive_item.resumable_upload(
                     source_path=str(path)
                 ).execute_query()
-                 # Validate the upload
+                # Validate the upload
                 if not uploaded_file or uploaded_file.name != file_name:
                     raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
                 # Log details about the uploaded file
