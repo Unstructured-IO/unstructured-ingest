@@ -288,11 +288,11 @@ class OnedriveUploader(Uploader):
                 content = local_file.read()
                 logger.info(f"Uploading {path} to {destination_path} using simple upload")
                 try:
-                    uploaded_file = folder.children.upload(file_name, content).execute_query()
+                    uploaded_file = folder.upload(file_name, content).execute_query()
                 except Exception as e:
-                    logger.error(f"Failed to upload file '{file_name}': {e}")
+                    logger.error(f"Failed to upload file '{file_name}': {e}", exc_info=True)
                     raise DestinationConnectionError(
-                        f"Failed to upload file '{file_name}'"
+                        f"Failed to upload file '{file_name}': {e}"
                     ) from e
         else:
             # Use resumable upload for large files
