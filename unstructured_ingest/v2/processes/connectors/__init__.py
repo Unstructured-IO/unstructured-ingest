@@ -26,6 +26,8 @@ from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
 from .kdbai import kdbai_destination_entry
+from .lancedb import CONNECTOR_TYPE as LANCEDB_CONNECTOR_TYPE
+from .lancedb import lancedb_table_destination_entry
 from .local import CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE
 from .local import local_destination_entry, local_source_entry
 from .milvus import CONNECTOR_TYPE as MILVUS_CONNECTOR_TYPE
@@ -100,3 +102,7 @@ add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entr
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
+
+add_destination_entry(
+    destination_type=LANCEDB_CONNECTOR_TYPE, entry=lancedb_table_destination_entry
+)
