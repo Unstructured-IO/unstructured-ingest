@@ -38,7 +38,7 @@ def temp_dir() -> Generator[Path, None, None]:
 @pytest.fixture
 def onedrive_test_folder(onedrive_connection_config):
     """
-    Pytest fixture that creates a test folder in OneDrive before the test and deletes it after the test.
+    Pytest fixture that creates a test folder in OneDrive and deletes it after test run.
     """
     user_pname = onedrive_connection_config.user_pname
 
