@@ -46,15 +46,17 @@ class TableSchema(LanceModel):
 @pytest_asyncio.fixture
 async def connection_with_uri(request, tmp_path: Path):
     uri = _get_uri(request.param, local_base_path=tmp_path)
+    storage_options = {
+        "aws_access_key_id": os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
+        "aws_secret_access_key": os.getenv("S3_INGEST_TEST_SECRET_KEY"),
+        "google_service_account_key": os.getenv("GCP_INGEST_SERVICE_KEY"),
+        "azure_storage_account_name": os.getenv("AZURE_STORAGE_ACCOUNT_NAME"),
+        "azure_storage_account_key": os.getenv("AZURE_STORAGE_ACCOUNT_KEY"),
+    }
+    storage_options = {key: value for key, value in storage_options.items() if value is not None}
     connection = await lancedb.connect_async(
         uri=uri,
-        storage_options={
-            "aws_access_key_id": os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
-            "aws_secret_access_key": os.getenv("S3_INGEST_TEST_SECRET_KEY"),
-            "google_service_account_key": os.getenv("GCP_INGEST_SERVICE_KEY"),
-            "azure_storage_account_name": os.getenv("AZURE_STORAGE_ACCOUNT_NAME"),
-            "azure_storage_account_key": os.getenv("AZURE_STORAGE_ACCOUNT_KEY"),
-        },
+        storage_options=storage_options,
     )
     await connection.create_table(name=TABLE_NAME, schema=TableSchema, mode="overwrite")
 

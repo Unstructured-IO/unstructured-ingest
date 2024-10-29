@@ -43,13 +43,14 @@ class LanceDBAccessConfig(AccessConfig):
 
     @property
     def storage_options(self) -> dict:
-        return {
+        storage_options = {
             "aws_access_key_id": self.s3_access_key_id,
             "aws_secret_access_key": self.s3_secret_access_key,
             "google_service_account_key": self.google_service_account_key,
             "azure_storage_account_name": self.azure_storage_account_name,
             "azure_storage_account_key": self.azure_storage_account_key,
         }
+        return {key: value for key, value in storage_options.items() if value is not None}
 
 
 class LanceDBConnectionConfig(ConnectionConfig):
