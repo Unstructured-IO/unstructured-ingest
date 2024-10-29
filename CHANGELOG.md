@@ -1,9 +1,10 @@
-## 0.2.1-dev2
+## 0.2.1-dev3
 
 ### Enhancements
 
 * **Add singlestore source connector**
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+* **LanceDB V2 Destination Connector**
 
 ### Fixes
 
