@@ -129,6 +129,11 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
         S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+        MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
+        MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+        MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+        MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+        MS_USER_PNAME: ${{ secrets.MS_USER_PNAME }}
       run : |
         source .venv/bin/activate
         make install-test
