@@ -263,7 +263,7 @@ unstructured==0.15.10
     # via
     #   -c ./common/constraints.txt
     #   -r test.in
-unstructured-client==0.26.1
+unstructured-client==0.26.2
     # via
     #   -c ./common/constraints.txt
     #   unstructured
