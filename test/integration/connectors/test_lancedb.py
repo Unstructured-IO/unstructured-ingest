@@ -29,6 +29,12 @@ NUMBER_EXPECTED_COLUMNS = 9
 S3_BUCKET = "s3://utic-ingest-test-fixtures/"
 GS_BUCKET = "gs://utic-test-ingest-fixtures-output/"
 AZURE_BUCKET = "az://utic-ingest-test-fixtures-output/"
+REQUIRED_ENV_VARS = {
+    "s3": ("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY"),
+    "gcs": ("GCP_INGEST_SERVICE_KEY",),
+    "az": ("AZURE_STORAGE_ACCOUNT_NAME", "AZURE_STORAGE_ACCOUNT_KEY"),
+    "local": (),
+}
 
 
 class TableSchema(LanceModel):
@@ -45,7 +51,16 @@ class TableSchema(LanceModel):
 
 @pytest_asyncio.fixture
 async def connection_with_uri(request, tmp_path: Path):
-    uri = _get_uri(request.param, local_base_path=tmp_path)
+    target = request.param
+    uri = _get_uri(target, local_base_path=tmp_path)
+
+    unset_variables = [env for env in REQUIRED_ENV_VARS[target] if env not in os.environ]
+    if unset_variables:
+        pytest.skip(
+            reason="Following required environment variables were not set: "
+            + f"{', '.join(unset_variables)}"
+        )
+
     storage_options = {
         "aws_access_key_id": os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
         "aws_secret_access_key": os.getenv("S3_INGEST_TEST_SECRET_KEY"),
@@ -53,6 +68,7 @@ async def connection_with_uri(request, tmp_path: Path):
         "azure_storage_account_name": os.getenv("AZURE_STORAGE_ACCOUNT_NAME"),
         "azure_storage_account_key": os.getenv("AZURE_STORAGE_ACCOUNT_KEY"),
     }
+
     storage_options = {key: value for key, value in storage_options.items() if value is not None}
     connection = await lancedb.connect_async(
         uri=uri,
@@ -74,14 +90,6 @@ async def test_lancedb_destination(
     tmp_path: Path,
 ) -> None:
     connection, uri = connection_with_uri
-    if uri.startswith("s3"):
-        assert "S3_INGEST_TEST_ACCESS_KEY" in os.environ, "Missing S3_INGEST_TEST_ACCESS_KEY"
-        assert "S3_INGEST_TEST_SECRET_KEY" in os.environ, "Missing S3_INGEST_TEST_SECRET_KEY"
-    elif uri.startswith("gs"):
-        assert "GCP_INGEST_SERVICE_KEY" in os.environ, "Missing GCP_INGEST_SERVICE_KEY"
-    elif uri.startswith("az"):
-        assert "AZURE_STORAGE_ACCOUNT_NAME" in os.environ, "Missing AZURE_STORAGE_ACCOUNT_NAME"
-        assert "AZURE_STORAGE_ACCOUNT_KEY" in os.environ, "Missing AZURE_STORAGE_ACCOUNT_KEY"
 
     access_config = LanceDBAccessConfig(
         s3_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
