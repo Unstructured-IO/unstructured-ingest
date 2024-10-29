@@ -1,18 +1,17 @@
+import os
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Generator
-import uuid
-import os
-from office365.graph_client import GraphClient
 
 import pytest
 
 from test.integration.utils import requires_env
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connectors.onedrive import (
     OnedriveAccessConfig,
     OnedriveConnectionConfig,
 )
-from unstructured_ingest.v2.logger import logger
 
 FILENAME = "DA-1p-with-duplicate-pages.pdf.json"
 
@@ -78,15 +77,10 @@ def onedrive_test_folder(onedrive_connection_config):
         print(f"Test folder '{test_folder_path}' deleted from OneDrive.")
     except Exception as e:
         print(f"Failed to delete test folder '{test_folder_path}': {e}")
-        
+
 
 @pytest.fixture(scope="session")
-@requires_env(
-    "MS_CLIENT_CRED",
-    "MS_CLIENT_ID",
-    "MS_TENANT_ID",
-    "MS_USER_PNAME"
-)
+@requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
 def onedrive_connection_config():
     """
     Pytest fixture that provides the OnedriveConnectionConfig for tests.

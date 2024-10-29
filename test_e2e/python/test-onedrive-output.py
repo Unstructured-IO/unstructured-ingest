@@ -1,13 +1,9 @@
 import argparse
-import os
 import sys
 
 from office365.graph_client import GraphClient
 from office365.runtime.auth.client_credential import ClientCredential
-from office365.runtime.auth.user_credential import UserCredential
-from office365.runtime.auth.authentication_context import AuthenticationContext
-from office365.runtime.http.request_options import RequestOptions
-from office365.runtime.http.http_method import HttpMethod
+
 
 def get_client(client_id, client_secret, tenant_id):
     authority_url = f"https://login.microsoftonline.com/{tenant_id}"
@@ -15,15 +11,17 @@ def get_client(client_id, client_secret, tenant_id):
     client = GraphClient(acquire_token_func=lambda: credentials.acquire_token(authority_url))
     return client
 
+
 def check_file_exists(client, user_pname, destination_path):
     drive = client.users[user_pname].drive
     try:
         file_item = drive.root.get_by_path(destination_path).get().execute_query()
         print(f"File '{destination_path}' exists in OneDrive.")
         return True
-    except Exception as e:
+    except Exception:
         print(f"File '{destination_path}' does not exist in OneDrive.")
         return False
+
 
 def delete_file(client, user_pname, destination_path):
     drive = client.users[user_pname].drive
@@ -33,6 +31,7 @@ def delete_file(client, user_pname, destination_path):
         print(f"File '{destination_path}' deleted from OneDrive.")
     except Exception as e:
         print(f"Failed to delete file '{destination_path}' from OneDrive: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Test OneDrive Output")
@@ -62,6 +61,7 @@ def main():
             sys.exit(1)
     elif args.command == "delete":
         delete_file(client, args.user_pname, args.destination_path)
+
 
 if __name__ == "__main__":
     main()

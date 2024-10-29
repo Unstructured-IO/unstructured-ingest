@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from dateutil import parser
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError, DestinationConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -28,7 +32,8 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
-    SourceRegistryEntry, DestinationRegistryEntry
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
 )
 
 if TYPE_CHECKING:
@@ -225,15 +230,17 @@ class OnedriveDownloader(Downloader):
                 file.download(f).execute_query()
         return DownloadResponse(file_data=file_data, path=download_path)
 
+
 class OnedriveUploaderConfig(UploaderConfig):
     pass
+
 
 @dataclass
 class OnedriveUploader(Uploader):
     connection_config: OnedriveConnectionConfig
     upload_config: OnedriveUploaderConfig
     connector_type: str = CONNECTOR_TYPE  # "onedrive"
-    
+
     def precheck(self) -> None:
         try:
             token_resp: dict = self.connection_config.get_token()
@@ -248,7 +255,6 @@ class OnedriveUploader(Uploader):
 
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from office365.graph_client import GraphClient
 
         # Get the OneDrive client
         client: GraphClient = self.connection_config.get_client()
@@ -309,6 +315,7 @@ class OnedriveUploader(Uploader):
                 raise DestinationConnectionError(
                     f"Failed to upload file '{file_name}' using resumable upload: {e}"
                 ) from e
+
 
 onedrive_source_entry = SourceRegistryEntry(
     connection_config=OnedriveConnectionConfig,

@@ -1,25 +1,18 @@
-import os
-import uuid
 from pathlib import Path
 
 import pytest
 
-from unstructured_ingest.v2.processes.connectors.onedrive import (
-    OnedriveAccessConfig,
-    OnedriveConnectionConfig,
-    OnedriveUploader,
-    OnedriveUploaderConfig,
-    CONNECTOR_TYPE,
-)
-from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
-from unstructured_ingest.logger import logger
-from test.integration.utils import requires_env
-
 from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
-    env_setup_path,
 )
+from unstructured_ingest.logger import logger
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
+from unstructured_ingest.v2.processes.connectors.onedrive import (
+    CONNECTOR_TYPE,
+    OnedriveUploader,
+    OnedriveUploaderConfig,
+)
+
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 def test_onedrive_destination(upload_file: Path, onedrive_connection_config, onedrive_test_folder):
