@@ -85,10 +85,10 @@ def onedrive_connection_config():
     """
     Pytest fixture that provides the OnedriveConnectionConfig for tests.
     """
-    client_id = os.environ["MS_CLIENT_ID"]
-    client_secret = os.environ["MS_CLIENT_CRED"]
-    tenant_id = os.environ["MS_TENANT_ID"]
-    user_pname = os.environ["MS_USER_PNAME"]
+    client_id = os.getenv("MS_CLIENT_ID")
+    client_secret = os.getenv("MS_CLIENT_CRED")
+    tenant_id = os.getenv("MS_TENANT_ID")
+    user_pname = os.getenv("MS_USER_PNAME")
 
     connection_config = OnedriveConnectionConfig(
         client_id=client_id,
