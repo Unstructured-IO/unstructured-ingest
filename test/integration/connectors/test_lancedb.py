@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import lancedb
 import pandas as pd
 import pytest
+import pytest_asyncio
+from lancedb import AsyncConnection
 from lancedb.pydantic import LanceModel, Vector
 from upath import UPath
 
@@ -41,13 +43,9 @@ class TableSchema(LanceModel):
     page_number: Optional[int]
 
 
-@pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-@pytest.mark.parametrize("target", ["local", "s3", "gcs", "az"])
-async def test_lancedb_destination(upload_file: Path, target: str, tmp_path: Path) -> None:
-    assert tmp_path.exists()
-    assert tmp_path.is_dir()
-    uri = _get_uri(target, tmp_path)
+@pytest_asyncio.fixture
+async def connection_with_uri(request, tmp_path: Path):
+    uri = _get_uri(request.param, local_base_path=tmp_path)
     connection = await lancedb.connect_async(
         uri=uri,
         storage_options={
@@ -59,6 +57,21 @@ async def test_lancedb_destination(upload_file: Path, target: str, tmp_path: Pat
         },
     )
     await connection.create_table(name=TABLE_NAME, schema=TableSchema, mode="overwrite")
+
+    yield connection, uri
+
+    await connection.drop_database()
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.parametrize("connection_with_uri", ["local", "s3", "gcs", "az"], indirect=True)
+async def test_lancedb_destination(
+    upload_file: Path,
+    connection_with_uri: tuple[AsyncConnection, str],
+    tmp_path: Path,
+) -> None:
+    connection, uri = connection_with_uri
 
     access_config = LanceDBAccessConfig(
         s3_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
@@ -82,37 +95,34 @@ async def test_lancedb_destination(upload_file: Path, target: str, tmp_path: Pat
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
-    try:
-        staged_file_path = stager.run(
-            elements_filepath=upload_file,
-            file_data=file_data,
-            output_dir=tmp_path,
-            output_filename=upload_file.name,
-        )
-        await uploader.run_async(path=staged_file_path, file_data=file_data)
+    staged_file_path = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+    await uploader.run_async(path=staged_file_path, file_data=file_data)
 
-        table = await connection.open_table(TABLE_NAME)
-        table_df: pd.DataFrame = await table.to_pandas()
+    table = await connection.open_table(TABLE_NAME)
+    table_df: pd.DataFrame = await table.to_pandas()
 
-        assert len(table_df) == NUMBER_EXPECTED_ROWS
-        assert len(table_df.columns) == NUMBER_EXPECTED_COLUMNS
+    assert len(table_df) == NUMBER_EXPECTED_ROWS
+    assert len(table_df.columns) == NUMBER_EXPECTED_COLUMNS
 
-        assert table_df["element_id"][0] == "2470d8dc42215b3d68413b55bf00fed2"
-        assert table_df["type"][0] == "CompositeElement"
-        assert table_df["filename"][0] == "DA-1p-with-duplicate-pages.pdf.json"
-        assert table_df["text_as_html"][0] is None
-    finally:
-        await connection.drop_database()
+    assert table_df["element_id"][0] == "2470d8dc42215b3d68413b55bf00fed2"
+    assert table_df["type"][0] == "CompositeElement"
+    assert table_df["filename"][0] == "DA-1p-with-duplicate-pages.pdf.json"
+    assert table_df["text_as_html"][0] is None
 
 
-def _get_uri(target: str, tmp_path: Path) -> str:
+def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path) -> str:
     if target == "local":
-        return str(tmp_path / DATABASE_NAME)
-
+        return str(local_base_path / DATABASE_NAME)
     if target == "s3":
-        bucket = UPath(S3_BUCKET)
-    if target == "gcs":
-        bucket = UPath(GS_BUCKET)
-    if target == "az":
-        bucket = UPath(AZURE_BUCKET)
-    return str(bucket / "destination" / "lancedb" / DATABASE_NAME)
+        base_uri = UPath(S3_BUCKET)
+    elif target == "gcs":
+        base_uri = UPath(GS_BUCKET)
+    elif target == "az":
+        base_uri = UPath(AZURE_BUCKET)
+
+    return str(base_uri / "destination" / "lancedb" / DATABASE_NAME)
