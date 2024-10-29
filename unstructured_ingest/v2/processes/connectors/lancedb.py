@@ -105,10 +105,10 @@ class LanceDBUploadStager(UploadStager):
 
     def _conform_element_contents(self, element: dict) -> dict:
         conformed_contents = {"vector": element.get("embeddings")}
-        for field in SUPPORTED_ELEMENT_FIELDS:
-            conformed_contents[field] = element.get(field)
-        for field in SUPPORTED_ELEMENT_METADATA_FIELDS:
-            conformed_contents[field] = element.get("metadata", {}).get(field)
+        for key in SUPPORTED_ELEMENT_FIELDS:
+            conformed_contents[key] = element.get(key)
+        for key in SUPPORTED_ELEMENT_METADATA_FIELDS:
+            conformed_contents[key] = element.get("metadata", {}).get(key)
 
         return conformed_contents
 
