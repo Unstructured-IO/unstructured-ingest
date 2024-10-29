@@ -1,10 +1,17 @@
-## 0.2.1-dev3
+
+## 0.2.2-dev0
+
+### Enhancements
+* **LanceDB V2 Destination Connector**
+
+## 0.2.1
 
 ### Enhancements
 
+* **File system based indexers return a record display name**
 * **Add singlestore source connector**
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
-* **LanceDB V2 Destination Connector**
+
 
 ### Fixes
 

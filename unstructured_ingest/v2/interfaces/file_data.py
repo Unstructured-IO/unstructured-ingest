@@ -43,6 +43,7 @@ class FileData(DataClassJsonMixin):
     additional_metadata: dict[str, Any] = field(default_factory=dict)
     reprocess: bool = False
     local_download_path: Optional[str] = None
+    display_name: Optional[str] = None
 
     @classmethod
     def from_file(cls, path: str) -> "FileData":
