@@ -69,8 +69,8 @@ class KafkaConnectionConfig(ConnectionConfig):
         }
 
         if is_confluent:
-            api_key = self.access_config.kafka_api_key
-            secret = self.access_config.secret
+            api_key = self.access_config.get_secret_value().api_key
+            secret = self.access_config.get_secret_value().secret
             conf["sasl.mechanism"] = "PLAIN"
             conf["security.protocol"] = "SASL_SSL"
             conf["sasl.username"] = api_key
