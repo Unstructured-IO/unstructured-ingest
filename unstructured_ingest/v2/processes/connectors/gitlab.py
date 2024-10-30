@@ -174,7 +174,7 @@ class GitLabIndexer(Indexer):
         ref = self.connection_config.git_branch or project.default_branch
 
         git_tree = project.repository_tree(
-            path=self.index_config.path,
+            path=str(self.index_config.path),
             ref=ref,
             recursive=self.index_config.recursive,
             iterator=True,
