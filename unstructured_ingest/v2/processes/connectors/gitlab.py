@@ -44,7 +44,7 @@ class GitLabConnectionConfig(ConnectionConfig):
         description="The base URL for the GitLab instance (default is GitLab's public domain).",
     )
     access_config: Secret[GitLabAccessConfig] = Field(
-        default=GitLabAccessConfig(),
+        default_factory=GitLabAccessConfig,
         validate_default=True,
         description="Secret configuration for accessing the GitLab API by authentication token.",
     )
