@@ -17,9 +17,7 @@ class CheckError(Exception):
 
 
 def get_files(dir_path: Path) -> list[str]:
-    return [
-        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.iterdir() if f.is_file()
-    ]
+    return [str(f.relative_to(dir_path)) for f in dir_path.rglob("*") if f.is_file()]
 
 
 def check_files(expected_output_dir: Path, current_output_dir: Path):
