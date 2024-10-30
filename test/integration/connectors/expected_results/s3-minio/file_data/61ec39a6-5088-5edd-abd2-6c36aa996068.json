@@ -32,5 +32,6 @@
     "original_file_path": "utic-dev-tech-fixtures/wiki_movie_plots_small.csv"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpv41u8dsc/wiki_movie_plots_small.csv"
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpv41u8dsc/wiki_movie_plots_small.csv",
+  "display_name": "utic-dev-tech-fixtures/wiki_movie_plots_small.csv"
 }

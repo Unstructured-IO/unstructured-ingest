@@ -11,7 +11,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 from .airtable import CONNECTOR_TYPE as AIRTABLE_CONNECTOR_TYPE
 from .airtable import airtable_source_entry
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
-from .astradb import astra_db_destination_entry
+from .astradb import astra_db_destination_entry, astra_db_source_entry
 from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE
 from .azure_cognitive_search import azure_cognitive_search_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
@@ -46,13 +46,12 @@ from .salesforce import CONNECTOR_TYPE as SALESFORCE_CONNECTOR_TYPE
 from .salesforce import salesforce_source_entry
 from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
-from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
-from .singlestore import singlestore_destination_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
 
+add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
 
 add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_destination_entry)
@@ -90,9 +89,7 @@ add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)
 
 add_destination_entry(destination_type=PINECONE_CONNECTOR_TYPE, entry=pinecone_destination_entry)
 add_source_entry(source_type=SHAREPOINT_CONNECTOR_TYPE, entry=sharepoint_source_entry)
-add_destination_entry(
-    destination_type=SINGLESTORE_CONNECTOR_TYPE, entry=singlestore_destination_entry
-)
+
 add_destination_entry(destination_type=MILVUS_CONNECTOR_TYPE, entry=milvus_destination_entry)
 add_destination_entry(
     destination_type=AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE,
