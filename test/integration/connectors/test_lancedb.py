@@ -32,7 +32,7 @@ AZURE_BUCKET = "az://utic-ingest-test-fixtures-output/"
 REQUIRED_ENV_VARS = {
     "s3": ("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY"),
     "gcs": ("GCP_INGEST_SERVICE_KEY",),
-    "az": ("AZURE_STORAGE_ACCOUNT_NAME", "AZURE_STORAGE_ACCOUNT_KEY"),
+    "az": ("AZURE_DEST_CONNECTION_STR",),
     "local": (),
 }
 
@@ -65,9 +65,10 @@ async def connection_with_uri(request, tmp_path: Path):
         "aws_access_key_id": os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
         "aws_secret_access_key": os.getenv("S3_INGEST_TEST_SECRET_KEY"),
         "google_service_account_key": os.getenv("GCP_INGEST_SERVICE_KEY"),
-        "azure_storage_account_name": os.getenv("AZURE_STORAGE_ACCOUNT_NAME"),
-        "azure_storage_account_key": os.getenv("AZURE_STORAGE_ACCOUNT_KEY"),
     }
+    azure_connection_string = os.getenv("AZURE_DEST_CONNECTION_STR")
+    if azure_connection_string:
+        storage_options.update(_parse_azure_connection_string(azure_connection_string))
 
     storage_options = {key: value for key, value in storage_options.items() if value is not None}
     connection = await lancedb.connect_async(
@@ -91,13 +92,16 @@ async def test_lancedb_destination(
 ) -> None:
     connection, uri = connection_with_uri
 
-    access_config = LanceDBAccessConfig(
-        s3_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
-        s3_secret_access_key=os.getenv("S3_INGEST_TEST_SECRET_KEY"),
-        google_service_account_key=os.getenv("GCP_INGEST_SERVICE_KEY"),
-        azure_storage_account_name=os.getenv("AZURE_STORAGE_ACCOUNT_NAME"),
-        azure_storage_account_key=os.getenv("AZURE_STORAGE_ACCOUNT_KEY"),
-    )
+    access_config_kwargs = {
+        "aws_access_key_id": os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
+        "aws_secret_access_key": os.getenv("S3_INGEST_TEST_SECRET_KEY"),
+        "google_service_account_key": os.getenv("GCP_INGEST_SERVICE_KEY"),
+    }
+    azure_connection_string = os.getenv("AZURE_DEST_CONNECTION_STR")
+    if azure_connection_string:
+        access_config_kwargs.update(_parse_azure_connection_string(azure_connection_string))
+
+    access_config = LanceDBAccessConfig(**access_config_kwargs)
     connection_config = LanceDBConnectionConfig(
         access_config=access_config,
         uri=uri,
@@ -144,3 +148,13 @@ def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path)
         base_uri = UPath(AZURE_BUCKET)
 
     return str(base_uri / "destination" / "lancedb" / DATABASE_NAME)
+
+
+def _parse_azure_connection_string(
+    connection_str: str,
+) -> dict[Literal["azure_storage_account_name", "azure_storage_account_key"], str]:
+    parameters = dict(keyvalue.split("=", maxsplit=1) for keyvalue in connection_str.split(";"))
+    return {
+        "azure_storage_account_name": parameters.get("AccountName"),
+        "azure_storage_account_key": parameters.get("AccountKey"),
+    }
