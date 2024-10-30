@@ -1,3 +1,9 @@
+## 0.2.2-dev0
+
+### Fixes
+
+* **Fix file comparison in E2E test** Compare all files recursively instead of only files in the root directory.
+
 ## 0.2.1
 
 ### Enhancements
