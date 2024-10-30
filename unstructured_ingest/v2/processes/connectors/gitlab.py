@@ -173,7 +173,7 @@ class GitLabIndexer(Indexer):
 
         ref = self.connection_config.git_branch or project.default_branch
 
-        git_tree = project.repository_tree(
+        files = project.repository_tree(
             path=str(self.index_config.path),
             ref=ref,
             recursive=self.index_config.recursive,
@@ -181,31 +181,30 @@ class GitLabIndexer(Indexer):
             all=True,
         )
 
-        for element in git_tree:
-            logger.info("Files found")
-            rel_path = element["path"].replace(self.connection_config.repo_path, "").lstrip("/")
-            if element["type"] == "blob":
+        for file in files:
+            relative_path = str(Path(file["path"]).relative_to(self.index_config.path))
+            if file["type"] == "blob":
                 record_locator = {
-                    "file_path": element["path"],
-                    "file_name": element["name"],
-                    "file_type": element["type"],
+                    "file_path": file["path"],
+                    "file_name": file["name"],
+                    "file_type": file["type"],
                     "repo_path": self.connection_config.repo_path,
                 }
                 if self.connection_config.git_branch is not None:
                     record_locator["branch"] = self.connection_config.git_branch
 
                 yield FileData(
-                    identifier=element["id"],
+                    identifier=file["id"],
                     connector_type=CONNECTOR_TYPE,
                     source_identifiers=SourceIdentifiers(
-                        fullpath=element["path"],
-                        filename=element["path"].split("/")[-1],
-                        rel_path=rel_path,
+                        fullpath=file["path"],
+                        filename=Path(file["path"]).name,
+                        rel_path=relative_path,
                     ),
                     metadata=FileDataSourceMetadata(
-                        url=element["id"],
+                        url=file["id"],
                         record_locator=record_locator,
-                        permissions_data=[{"mode": element["mode"]}],
+                        permissions_data=[{"mode": file["mode"]}],
                     ),
                     additional_metadata={},
                 )
