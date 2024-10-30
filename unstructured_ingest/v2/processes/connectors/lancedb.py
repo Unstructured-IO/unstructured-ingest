@@ -35,8 +35,8 @@ SUPPORTED_ELEMENT_METADATA_FIELDS = (
 
 
 class LanceDBAccessConfig(AccessConfig):
-    s3_access_key_id: Optional[str] = Field(default=None)
-    s3_secret_access_key: Optional[str] = Field(default=None)
+    aws_access_key_id: Optional[str] = Field(default=None)
+    aws_secret_access_key: Optional[str] = Field(default=None)
     google_service_account_key: Optional[str] = Field(default=None)
     azure_storage_account_name: Optional[str] = Field(default=None)
     azure_storage_account_key: Optional[str] = Field(default=None)
@@ -44,8 +44,8 @@ class LanceDBAccessConfig(AccessConfig):
     @property
     def storage_options(self) -> dict:
         storage_options = {
-            "aws_access_key_id": self.s3_access_key_id,
-            "aws_secret_access_key": self.s3_secret_access_key,
+            "aws_access_key_id": self.aws_access_key_id,
+            "aws_secret_access_key": self.aws_secret_access_key,
             "google_service_account_key": self.google_service_account_key,
             "azure_storage_account_name": self.azure_storage_account_name,
             "azure_storage_account_key": self.azure_storage_account_key,
