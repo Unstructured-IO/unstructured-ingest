@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -23,11 +24,12 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploadStagerConfig,
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import SQLAccessConfig, SQLConnectionConfig
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+
 if TYPE_CHECKING:
     from snowflake.connector import SnowflakeConnection
     from snowflake.connector.cursor import SnowflakeCursor
 from unstructured_ingest.v2.logger import logger
+
 CONNECTOR_TYPE = "snowflake"
 
 
@@ -70,9 +72,9 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
         connect_kwargs["password"] = self.access_config.get_secret_value().password
         # https://peps.python.org/pep-0249/#paramstyle
         connect_kwargs["paramstyle"] = "qmark"
-        connect_kwargs2={k: v for k, v in connect_kwargs.items() if v is not None}
-        connection = connect(**connect_kwargs2)
-        # need to remove anything that is none
+        # remove anything that is none
+        active_kwargs = {k: v for k, v in connect_kwargs.items() if v is not None}
+        connection = connect(**active_kwargs)
         try:
             yield connection
         finally:
@@ -133,10 +135,7 @@ class SnowflakeUploader(PostgresUploader):
     def precheck(self) -> None:
         with self.connection_config.get_cursor() as cursor:
             try:
-                # connection = self.connection_config.get_cursor()
-                # cursor = connection.cursor()
                 cursor.execute("SELECT 1;")
-                # cursor.close()
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -147,7 +146,6 @@ class SnowflakeUploader(PostgresUploader):
 
         columns = list(df.columns)
         stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
-        breakpoint()
 
         for rows in pd.read_json(
             path, orient="records", lines=True, chunksize=self.upload_config.batch_size
