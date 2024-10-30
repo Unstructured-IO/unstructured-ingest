@@ -60,38 +60,30 @@ class GitLabConnectionConfig(ConnectionConfig):
         description="The normalized path extracted from the repository URL.",
     )
 
-    @model_validator(mode="before")
-    def set_repo_path(cls, values: dict) -> dict:
+    @model_validator(mode="after")
+    def set_repo_path(self):
         """
         Parses the provided GitLab URL to extract the `base_url` and `repo_path`,
         ensuring both are properly formatted for use.
 
-        If the URL contains a scheme (e.g., 'https') or a network location (e.g., 'gitlab.com'),
+        If the URL contains a scheme (e.g., 'https') and a network location (e.g., 'gitlab.com'),
         the `base_url` is set accordingly. The repository path is extracted and normalized
         by removing any leading slashes.
-
-        Args:
-            values (dict): A dictionary of field values passed to the model.
-
-        Returns:
-            dict: The updated dictionary with the `base_url` and `repo_path` set.
 
         Notes:
             - If the URL contains both a scheme and network location, the `base_url` is
               extracted directly from the URL.
             - The `repo_path` is adjusted to remove any leading slashes.
-            - This method assumes that the URL follows GitLab’s structure
+            - This method assumes that the URL follows GitLab's structure
               (e.g., 'https://gitlab.com/owner/repo').
         """
-        parsed_gh_url = urlparse(values.get("url"))
+        parsed_gh_url = urlparse(self.url)
 
-        if parsed_gh_url.scheme or parsed_gh_url.netloc:
-            values["base_url"] = f"{parsed_gh_url.scheme}://{parsed_gh_url.netloc}"
-        values["repo_path"] = parsed_gh_url.path
-        while values["repo_path"].startswith("/"):
-            values["repo_path"] = values["repo_path"][1:]
+        if parsed_gh_url.scheme and parsed_gh_url.netloc:
+            self.base_url = f"{parsed_gh_url.scheme}://{parsed_gh_url.netloc}"
+        self.repo_path = parsed_gh_url.path.lstrip("/")
 
-        return values
+        return self
 
     @SourceConnectionError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
