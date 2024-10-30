@@ -133,7 +133,6 @@ class GitLabIndexer(Indexer):
     connection_config: GitLabConnectionConfig
     index_config: GitLabIndexerConfig
 
-    @requires_dependencies(["gitlab"], extras="gitlab")
     def precheck(self) -> None:
         """Validates the connection to the GitLab instance by authenticating or
         accessing the project.
@@ -222,7 +221,6 @@ class GitLabDownloader(Downloader):
     download_config: GitLabDownloaderConfig
 
     @SourceConnectionNetworkError.wrap
-    @requires_dependencies(["gitlab"], extras="gitlab")
     def _fetch_content(self, path: str):
         """Fetches the content of a file from the GitLab repository.
 
