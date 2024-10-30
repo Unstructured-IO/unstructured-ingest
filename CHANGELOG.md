@@ -1,3 +1,9 @@
+## 0.2.2-dev0
+
+### Fixes
+
+* **Fix Snowflake Destination precheck**
+
 ## 0.2.1
 
 ### Enhancements
