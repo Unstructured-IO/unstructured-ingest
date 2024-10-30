@@ -116,6 +116,9 @@ class GitLabConnectionConfig(ConnectionConfig):
 
 
 class GitLabIndexerConfig(IndexerConfig):
+    path: Path = Field(
+        default="/", description=("Path to the location in the repository that will be processed.")
+    )
     recursive: bool = Field(
         default=True,
         description=(
@@ -172,6 +175,7 @@ class GitLabIndexer(Indexer):
         ref = self.connection_config.git_branch or project.default_branch
 
         git_tree = project.repository_tree(
+            path=self.index_config.path,
             ref=ref,
             recursive=self.index_config.recursive,
             iterator=True,
@@ -179,6 +183,7 @@ class GitLabIndexer(Indexer):
         )
 
         for element in git_tree:
+            logger.info("Files found")
             rel_path = element["path"].replace(self.connection_config.repo_path, "").lstrip("/")
             if element["type"] == "blob":
                 record_locator = {
