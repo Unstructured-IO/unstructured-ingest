@@ -240,7 +240,7 @@ class GitLabDownloader(Downloader):
         if (
             file_data.metadata.record_locator is None
             or "ref" not in file_data.metadata.record_locator
-            or "path" not in file_data.metadata.record_locator
+            or "file_path" not in file_data.metadata.record_locator
         ):
             logger.error(
                 f"Invalid record locator in metadata: {file_data.metadata.record_locator}."
@@ -249,7 +249,7 @@ class GitLabDownloader(Downloader):
             raise ValueError("Invalid record locator.")
 
         ref = file_data.metadata.record_locator["ref"]
-        path = file_data.metadata.record_locator["path"]
+        path = file_data.metadata.record_locator["file_path"]
 
         project_file = self.connection_config.get_project().files.get(file_path=path, ref=ref)
         download_path.parent.mkdir(exist_ok=True, parents=True)
