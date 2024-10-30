@@ -38,20 +38,15 @@ class GitLabAccessConfig(AccessConfig):
 
 
 class GitLabConnectionConfig(ConnectionConfig):
-    url: str = Field(description="The full URL to the GitLab project or repository.")
-    base_url: str = Field(
-        default="https://gitlab.com",
-        description="The base URL for the GitLab instance (default is GitLab's public domain).",
-    )
     access_config: Secret[GitLabAccessConfig] = Field(
         default_factory=GitLabAccessConfig,
         validate_default=True,
         description="Secret configuration for accessing the GitLab API by authentication token.",
     )
-    git_branch: Optional[str] = Field(
-        default=None,
-        overload_name="git_branch",
-        description="The name of the branch to interact with.",
+    url: str = Field(description="The full URL to the GitLab project or repository.")
+    base_url: str = Field(
+        default="https://gitlab.com",
+        description="The base URL for the GitLab instance (default is GitLab's public domain).",
     )
     repo_path: str = Field(
         default=None,
@@ -126,6 +121,10 @@ class GitLabIndexerConfig(IndexerConfig):
             "If True, the indexer will traverse directories recursively."
         ),
     )
+    git_branch: Optional[str] = Field(
+        default=None,
+        description="The name of the branch to interact with.",
+    )
 
 
 @dataclass
@@ -171,7 +170,7 @@ class GitLabIndexer(Indexer):
         """
         project = self.connection_config.get_project()
 
-        ref = self.connection_config.git_branch or project.default_branch
+        ref = self.index_config.git_branch or project.default_branch
 
         files = project.repository_tree(
             path=str(self.index_config.path),
