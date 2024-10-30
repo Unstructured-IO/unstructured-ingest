@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, Secret, model_validator
 
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -186,12 +186,8 @@ class GitLabIndexer(Indexer):
             if file["type"] == "blob":
                 record_locator = {
                     "file_path": file["path"],
-                    "file_name": file["name"],
-                    "file_type": file["type"],
-                    "repo_path": self.connection_config.repo_path,
+                    "ref": ref,
                 }
-                if self.connection_config.git_branch is not None:
-                    record_locator["branch"] = self.connection_config.git_branch
 
                 yield FileData(
                     identifier=file["id"],
@@ -219,61 +215,6 @@ class GitLabDownloader(Downloader):
     connection_config: GitLabConnectionConfig
     download_config: GitLabDownloaderConfig
 
-    @SourceConnectionNetworkError.wrap
-    def _fetch_content(self, path: str):
-        """Fetches the content of a file from the GitLab repository.
-
-        This method retrieves a file from the repository for the specified path and branch.
-        If the file is not found, it logs an error and raises the corresponding exception.
-
-        Args:
-            path (str): The path to the file within the repository.
-
-        Returns:
-            content_file: The file content object retrieved from the GitLab API.
-
-        Raises:
-            GitlabHttpError: If the specified file does not exist.
-        """
-        try:
-            project = self.connection_config.get_project()
-            ref_branch = self.connection_config.git_branch or project.default_branch
-            logger.info(f"Fetching file from path: {path!r} of branch: {ref_branch!r}")
-            content_file = project.files.get(
-                path,
-                ref=ref_branch,
-            )
-        except Exception as e:
-            logger.error(f"Failed to download: {e}")
-            raise e
-
-        return content_file
-
-    def _fetch_and_write(self, path: str, download_path: Path) -> None:
-        """Fetches a file from the GitLab repository and writes its content to the specified path.
-
-        Args:
-            path (str): The path to the file within the repository.
-            download_path (Path): The local path where the file will be saved.
-
-        Raises:
-            ValueError: If the file content could not be retrieved.
-
-        Notes:
-            - Decodes the file content before writing it to disk.
-            - Creates necessary parent directories if they do not exist.
-        """
-        content_file = self._fetch_content(path)
-        if content_file is None:
-            raise ValueError(
-                f"Failed to retrieve file from repo "
-                f"'{self.connection_config.url}/{path}'. Check logs.",
-            )
-        contents = content_file.decode()
-        logger.info(f"Writing download file to path: {download_path!r}")
-        with download_path.open("wb") as f:
-            f.write(contents)
-
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         """Downloads a file from the repository and returns a `DownloadResponse`.
 
@@ -285,12 +226,37 @@ class GitLabDownloader(Downloader):
             DownloadResponse: A response object containing the download details.
         """
         download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
+        if download_path is None:
+            logger.error(
+                "Generated download path is None, source_identifiers might be missing"
+                "from FileData."
+            )
+            raise ValueError("Generated invalid download path.")
 
-        path = file_data.source_identifiers.fullpath
-        self._fetch_and_write(path, download_path)
-
+        self._download_file(file_data, download_path)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
+
+    def _download_file(self, file_data: FileData, download_path: Path) -> None:
+        # NOTE: Indexer should supply the record locator in metadata
+        if (
+            file_data.metadata.record_locator is None
+            or "ref" not in file_data.metadata.record_locator
+            or "path" not in file_data.metadata.record_locator
+        ):
+            logger.error(
+                f"Invalid record locator in metadata: {file_data.metadata.record_locator}."
+                "Keys 'ref' and 'path' must be present."
+            )
+            raise ValueError("Invalid record locator.")
+
+        ref = file_data.metadata.record_locator["ref"]
+        path = file_data.metadata.record_locator["path"]
+
+        project_file = self.connection_config.get_project().files.get(file_path=path, ref=ref)
+        download_path.parent.mkdir(exist_ok=True, parents=True)
+
+        with open(download_path, "wb") as file:
+            file.write(project_file.decode())
 
 
 gitlab_source_entry = SourceRegistryEntry(
