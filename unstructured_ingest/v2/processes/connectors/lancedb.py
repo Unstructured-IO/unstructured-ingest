@@ -43,13 +43,13 @@ class LanceDBAccessConfig(AccessConfig):
         default=None, description="The AWS secret access key to use."
     )
     google_service_account_key: Optional[str] = Field(
-        default=None, description="The serialized service account key."
+        default=None, description="The serialized google service account key."
     )
     azure_storage_account_name: Optional[str] = Field(
         default=None, description="The name of the azure storage account."
     )
     azure_storage_account_key: Optional[str] = Field(
-        default=None, description="The serialized service account key."
+        default=None, description="The serialized azure service account key."
     )
 
     @property
