@@ -143,28 +143,7 @@ def extract_page_html(
         parent_block=parent_block,
         start_level=0,
     )
-
-    # Join list items
-    joined_html_elements = []
-    numbered_list_items = []
-    bullet_list_items = []
-    for block, html in process_block_response.html_elements:
-        if isinstance(block, notion_blocks.BulletedListItem):
-            bullet_list_items.append(html)
-            continue
-        if isinstance(block, notion_blocks.NumberedListItem):
-            numbered_list_items.append(html)
-            continue
-        # TODO: how would this ever work?
-        if len(numbered_list_items) > 0:
-            joined_html_elements.append(Ol([], numbered_list_items))
-            numbered_list_items = []
-        if len(bullet_list_items) > 0:
-            joined_html_elements.append(Ul([], bullet_list_items))
-            bullet_list_items = []
-        joined_html_elements.append(html)
-
-    body = Body([], joined_html_elements)
+    body = Body([], [html for block, html in process_block_response.html_elements])
     all_elements = [body]
     if head:
         all_elements = [head] + all_elements
@@ -520,7 +499,7 @@ def build_columned_list(client: Client, logger: logging.Logger, column_parent: B
         columns_content.append(
             Div(
                 [Style(f"width:{100/num_columns}%; float: left")],
-                [html for (block, html) in column_content_response.html_elements],
+                [html for block, html in column_content_response.html_elements],
             ),
         )
 
