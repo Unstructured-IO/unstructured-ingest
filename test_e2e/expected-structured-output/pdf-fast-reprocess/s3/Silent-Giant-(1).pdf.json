@@ -10,6 +10,8 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -33,6 +35,8 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -56,6 +60,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -79,6 +85,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -102,6 +110,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -125,6 +135,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -148,6 +160,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -171,6 +185,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -194,6 +210,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -217,6 +235,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -240,6 +260,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -263,6 +285,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -286,6 +310,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -309,6 +335,8 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -332,6 +360,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -355,6 +385,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -378,6 +410,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -401,6 +435,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -424,6 +460,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -447,6 +485,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -470,6 +510,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -493,6 +535,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -516,6 +560,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -539,6 +585,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -562,6 +610,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -585,6 +635,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -608,6 +660,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -631,6 +685,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -654,6 +710,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -677,6 +735,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -700,6 +760,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -723,6 +785,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -746,6 +810,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -769,6 +835,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -792,6 +860,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -815,6 +885,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -838,6 +910,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -861,6 +935,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -884,6 +960,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -907,6 +985,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -930,6 +1010,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -953,6 +1035,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -976,6 +1060,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -999,6 +1085,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1022,6 +1110,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1045,6 +1135,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1068,29 +1160,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "d6ff5d09e3ea7dccfdcc62f58dc6b827",
-    "text": "30,000,000",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1105,76 +1176,7 @@
   },
   {
     "type": "Title",
-    "element_id": "2a26a49470422616eb2789804f5c8e76",
-    "text": "\uf067 High-carbon \uf067 Low-carbon",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "4b3535a170470607e2fbe21d0c63f5c6",
-    "text": "25,000,000",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "515b512a7836bf9a5f1eb21c23d6f296",
-    "text": "20,000,000",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "3f1d6f3e961851f438d705cc2cce053c",
+    "element_id": "ebdddd585ae737ead4ba67c78cd907b6",
     "text": "h W G",
     "metadata": {
       "languages": [
@@ -1183,6 +1185,108 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "91342946bdbbfbab1dd7fe94b2ef6120",
+    "text": "30,000,000",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "2a6d6ef503d5661cc4252fc801f22897",
+    "text": "\uf067 High-carbon \uf067 Low-carbon",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "9a34ae3b1ab7ecb1b950c05164b5a83a",
+    "text": "25,000,000",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "69035e26889924e1283763355fdcb71f",
+    "text": "20,000,000",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1206,6 +1310,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1229,6 +1335,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1252,6 +1360,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1275,6 +1385,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1298,6 +1410,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1321,6 +1435,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1344,6 +1460,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1367,52 +1485,8 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "22990408e2240ba88b0652b808f31bac",
-    "text": "2010",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "a1a68e141590e6d1177e11de0911b5b4",
-    "text": "2015",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1427,7 +1501,7 @@
   },
   {
     "type": "Title",
-    "element_id": "a00e9275ff4a7c8f3db22aac5ad8b4aa",
+    "element_id": "598e057bce44940211822b8828f35e25",
     "text": "Figure 2. Worldwide electricity generation by fuel (1990-2016)ii",
     "metadata": {
       "languages": [
@@ -1436,6 +1510,58 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "e6cc06ae94ca528e62b0207263426247",
+    "text": "2010",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "e9df4078d47e2f0aed1eb18604d49319",
+    "text": "2015",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1459,6 +1585,8 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1482,6 +1610,8 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1505,6 +1635,8 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1528,6 +1660,8 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1551,6 +1685,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1574,6 +1710,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1597,6 +1735,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1620,6 +1760,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1643,6 +1785,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1666,6 +1810,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1689,6 +1835,8 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1712,6 +1860,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1735,6 +1885,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1758,6 +1910,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1781,6 +1935,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1804,6 +1960,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1827,6 +1985,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1850,6 +2010,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1873,6 +2035,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1896,6 +2060,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1919,6 +2085,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1942,6 +2110,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1965,6 +2135,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -1988,6 +2160,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2011,6 +2185,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2034,6 +2210,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2057,6 +2235,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2080,6 +2260,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2103,6 +2285,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2126,6 +2310,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2149,6 +2335,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2172,6 +2360,8 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2195,6 +2385,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2218,29 +2410,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "c4ea2d62a084a0ed632f56396b2b93d8",
-    "text": "140",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "filetype": "application/pdf",
-      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2255,7 +2426,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "ff300ef7a936a82104bf89668428c28c",
+    "element_id": "508dcbb422fd015eacd50b9063b9895f",
     "text": "r a e y",
     "metadata": {
       "languages": [
@@ -2264,6 +2435,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2278,7 +2451,7 @@
   },
   {
     "type": "Title",
-    "element_id": "79f841e1d37ecfd8784ae973690d1ec5",
+    "element_id": "5d470e7931abf335b4afb653924e523b",
     "text": "e",
     "metadata": {
       "languages": [
@@ -2287,98 +2460,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "7134cee10997fe9e51fad1015727eff1",
-    "text": "120",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "12fccf8e709ce3a4f1f933c95073c106",
-    "text": "100",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "77ffbf6cf6036f74cd3769484f249fa7",
-    "text": "120",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "2c2ff48ef301a979bf2bfbddc3ec468e",
-    "text": "99.5",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "filetype": "application/pdf",
-      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2393,7 +2476,7 @@
   },
   {
     "type": "Title",
-    "element_id": "2564c9377fc604401ffe06ea1749d6c0",
+    "element_id": "f6ad5695f9388190089a73994c4afbf3",
     "text": "W T",
     "metadata": {
       "languages": [
@@ -2402,6 +2485,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2416,7 +2501,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "c6310389f5d96fa9b491f689db571510",
+    "element_id": "54f6293185bdb444eb1802ba80bee640",
     "text": "r e p s e i t i l",
     "metadata": {
       "languages": [
@@ -2425,6 +2510,33 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "a98bee8174850612900731525ab6659a",
+    "text": "a t a F",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2439,7 +2551,132 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "e1bf585fc859d0af7217b1b7a1662c21",
+    "element_id": "a13066a98a7e39de64d142db41e2ec71",
+    "text": "140",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "b1145ac22c655c115bf9e03cfabed3b5",
+    "text": "120",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "6179bcd4b751231cc13b3c11d6c3b40e",
+    "text": "120",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "216dab660befc6ab0e6f16f9d6c72d46",
+    "text": "100",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "e1e5676a3b989db6c7787d21a24946d0",
+    "text": "99.5",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 8,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33188
+          }
+        ],
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "2056e550010e4fa2a70a36a810052ecb",
     "text": "80",
     "metadata": {
       "languages": [
@@ -2448,29 +2685,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 6164777
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "5b6cbda9e4489c71563c5f7b0127ae05",
-    "text": "60",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 8,
-      "filetype": "application/pdf",
-      "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2494,6 +2710,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2507,9 +2725,9 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "c931e8cef0651941ebd82cdb01032297",
-    "text": "a t a F",
+    "type": "UncategorizedText",
+    "element_id": "0c6ba6678cd896f65cb8510b6c73c851",
+    "text": "60",
     "metadata": {
       "languages": [
         "eng"
@@ -2517,6 +2735,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2540,6 +2760,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2563,6 +2785,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2586,6 +2810,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2609,6 +2835,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2632,6 +2860,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2655,6 +2885,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2678,6 +2910,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2701,6 +2935,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2724,6 +2960,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2747,6 +2985,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2770,6 +3010,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2793,6 +3035,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2816,6 +3060,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2839,6 +3085,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2862,6 +3110,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2885,6 +3135,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2908,6 +3160,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2931,6 +3185,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2954,6 +3210,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -2977,6 +3235,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3000,6 +3260,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3023,6 +3285,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3046,6 +3310,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3069,6 +3335,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3092,6 +3360,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3115,6 +3385,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3138,6 +3410,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3161,6 +3435,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3184,6 +3460,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3207,6 +3485,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3230,6 +3510,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3253,6 +3535,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3276,6 +3560,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3299,6 +3585,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3322,6 +3610,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3345,6 +3635,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3368,6 +3660,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3391,6 +3685,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3414,6 +3710,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3437,6 +3735,8 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3460,6 +3760,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3483,6 +3785,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3506,6 +3810,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3529,6 +3835,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3552,6 +3860,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3575,6 +3885,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3598,6 +3910,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3621,6 +3935,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3644,6 +3960,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3667,6 +3985,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3690,6 +4010,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3713,6 +4035,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3736,6 +4060,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3759,6 +4085,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3782,6 +4110,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3805,6 +4135,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3828,6 +4160,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3851,6 +4185,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3874,6 +4210,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3897,6 +4235,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3920,6 +4260,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3943,6 +4285,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3966,6 +4310,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -3989,6 +4335,8 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4012,6 +4360,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4035,6 +4385,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4058,6 +4410,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4081,6 +4435,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4104,6 +4460,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4127,6 +4485,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4150,6 +4510,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4173,6 +4535,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4196,6 +4560,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4219,6 +4585,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4242,6 +4610,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4265,6 +4635,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4288,6 +4660,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4311,6 +4685,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4334,6 +4710,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4357,6 +4735,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4380,6 +4760,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4403,6 +4785,8 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4426,6 +4810,8 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4449,6 +4835,8 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4472,6 +4860,8 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
@@ -4495,6 +4885,8 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
           "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/Silent-Giant-(1).pdf"
         },
