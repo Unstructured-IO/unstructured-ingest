@@ -124,6 +124,7 @@
 
 * **Drop use of unstructued in embed** Remove remnant import from unstructured dependency in embed implementations.
 
+
 ## 0.0.16
 
 ### Fixes
@@ -136,7 +137,7 @@
 
 * **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
 * **Sharepoint permission config requirement** The sharepoint connector was expecting the permission config, even though it should have been optional.
-* \*\*Sharepoint CLI permission params made optional
+* **Sharepoint CLI permission params made optional**
 
 ### Enhancements
 
@@ -186,12 +187,13 @@
 
 * **Chroma dict settings should allow string inputs**
 * **Move opensearch non-secret fields out of access config**
-* **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided.
-* \*\*Move opensearch non-secret fields out of access config
+* **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided. 
+* **Move opensearch non-secret fields out of access config**
 
 ### Fixes
 
 **Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.
+
 
 ## 0.0.8
 
@@ -204,12 +206,12 @@
 
 ### Enhancements
 
-* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.
-* **OTEL support** If endpoint supplied, publish all traces to an otel collector.
+* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.  
+* **OTEL support** If endpoint supplied, publish all traces to an otel collector. 
 
 ### Fixes
 
-* **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed.
+* **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed. 
 * **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
 
 ## 0.0.6
@@ -228,7 +230,7 @@
 
 ### Fixes
 
-* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models.
+* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models. 
 * **Local indexer recursive behavior** Local indexer was indexing directories as well as files. This was filtered out.
 
 ## 0.0.4
@@ -246,7 +248,7 @@
 ### Enhancements
 
 * **Improve documentation** Update the README's.
-* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones.
+* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones. 
 * **Add missing fsspec destination precheck** check connection in precheck for all fsspec-based destination connectors
 
 ## 0.0.2
@@ -254,7 +256,7 @@
 ### Enhancements
 
 * **Use uuid for s3 identifiers** Update unique id to use uuid derived from file path rather than the filepath itself.
-* **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality.
+* **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality. 
 * **Filter Step** Support dedicated step as part of the pipeline to filter documents.
 
 ## 0.0.1
@@ -267,7 +269,7 @@
 
 ### Fixes
 
-* **Remove old repo references** Any mention of the repo this project came from was removed.
+* **Remove old repo references** Any mention of the repo this project came from was removed. 
 
 ## 0.0.0
 
