@@ -86,7 +86,7 @@
 
 * **Leverage `uv` for pip compile**
 
-* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata.
+* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
 
 * **Drop langchain as dependency for embedders**
 
@@ -192,7 +192,7 @@
 
 ### Fixes
 
-**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.
+**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.  
 
 
 ## 0.0.8
