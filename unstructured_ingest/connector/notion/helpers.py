@@ -132,8 +132,6 @@ def extract_page_html(
     page_id: str,
     logger: logging.Logger,
 ) -> HtmlExtractionResponse:
-    # page_id_uuid = UUID(page_id)
-    # html_elements: List[Tuple[BlockBase, HtmlTag]] = []
     parent_block: Block = client.blocks.retrieve(block_id=page_id)  # type: ignore
     head = None
     if isinstance(parent_block.block, notion_blocks.ChildPage):
