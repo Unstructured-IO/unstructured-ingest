@@ -105,11 +105,10 @@ async def test_lancedb_destination(
     connection_config = LanceDBConnectionConfig(
         access_config=access_config,
         uri=uri,
-        table_name=TABLE_NAME,
     )
     stager = LanceDBUploadStager()
     uploader = LanceDBUploader(
-        upload_config=LanceDBUploaderConfig(),
+        upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
         connection_config=connection_config,
     )
     file_data = FileData(
@@ -123,6 +122,7 @@ async def test_lancedb_destination(
         output_dir=tmp_path,
         output_filename=upload_file.name,
     )
+
     await uploader.run_async(path=staged_file_path, file_data=file_data)
 
     table = await connection.open_table(TABLE_NAME)

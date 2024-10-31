@@ -1,3 +1,4 @@
+import asyncio
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -35,11 +36,21 @@ SUPPORTED_ELEMENT_METADATA_FIELDS = (
 
 
 class LanceDBAccessConfig(AccessConfig):
-    aws_access_key_id: Optional[str] = Field(default=None)
-    aws_secret_access_key: Optional[str] = Field(default=None)
-    google_service_account_key: Optional[str] = Field(default=None)
-    azure_storage_account_name: Optional[str] = Field(default=None)
-    azure_storage_account_key: Optional[str] = Field(default=None)
+    aws_access_key_id: Optional[str] = Field(
+        default=None, description="The AWS access key ID to use."
+    )
+    aws_secret_access_key: Optional[str] = Field(
+        default=None, description="The AWS secret access key to use."
+    )
+    google_service_account_key: Optional[str] = Field(
+        default=None, description="The serialized service account key."
+    )
+    azure_storage_account_name: Optional[str] = Field(
+        default=None, description="The name of the azure storage account."
+    )
+    azure_storage_account_key: Optional[str] = Field(
+        default=None, description="The serialized service account key."
+    )
 
     @property
     def storage_options(self) -> dict:
@@ -57,8 +68,7 @@ class LanceDBConnectionConfig(ConnectionConfig):
     access_config: Secret[LanceDBAccessConfig] = Field(
         default_factory=LanceDBAccessConfig, validate_default=True
     )
-    uri: str
-    table_name: str
+    uri: str = Field(description="The uri of the database.")
 
     @requires_dependencies(["lancedb"], extras="lancedb")
     @DestinationConnectionError.wrap
@@ -115,7 +125,7 @@ class LanceDBUploadStager(UploadStager):
 
 
 class LanceDBUploaderConfig(UploaderConfig):
-    pass
+    table_name: str = Field(description="The name of the table.")
 
 
 @dataclass
@@ -125,11 +135,21 @@ class LanceDBUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     async def run_async(self, path, file_data, **kwargs):
-        async_connection = await self.connection_config.get_async_connection()
         df = pd.read_feather(path)
 
-        table = await async_connection.open_table(self.connection_config.table_name)
-        await table.add(data=df)
+        with await self.connection_config.get_async_connection() as conn:
+            with await conn.open_table(self.upload_config.table_name) as table:
+                await table.add(data=df)
+
+    @DestinationConnectionError.wrap
+    def precheck(self):
+        async def _precheck() -> None:
+            conn = await self.connection_config.get_async_connection()
+            table = await conn.open_table(self.upload_config.table_name)
+            table.close()
+            conn.close()
+
+        asyncio.run(_precheck())
 
 
 lancedb_table_destination_entry = DestinationRegistryEntry(
