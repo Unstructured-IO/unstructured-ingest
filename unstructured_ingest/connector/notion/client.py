@@ -78,11 +78,12 @@ class BlocksChildrenEndpoint(NotionBlocksChildrenEndpoint):
         block_id: str,
         **kwargs: Any,
     ) -> Generator[List[Block], None, None]:
+        next_cursor = None
         while True:
             response: dict = (
-                self.retry_handler(super().list, block_id=block_id, **kwargs)
+                self.retry_handler(super().list, block_id=block_id, start_cursor=next_cursor, **kwargs)
                 if self.retry_handler
-                else super().list(block_id=block_id, **kwargs)
+                else super().list(block_id=block_id, start_cursor=next_cursor, **kwargs)
             )  # type: ignore
             child_blocks = [Block.from_dict(data=b) for b in response.pop("results", [])]
             yield child_blocks
@@ -149,11 +150,12 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
         return pages, resp
 
     def iterate_query(self, database_id: str, **kwargs: Any) -> Generator[List[Page], None, None]:
+        next_cursor = None
         while True:
             response: dict = (
-                self.retry_handler(super().query, database_id=database_id, **kwargs)
+                self.retry_handler(super().query, database_id=database_id, start_cursor=next_cursor, **kwargs)
                 if (self.retry_handler)
-                else (super().query(database_id=database_id, **kwargs))
+                else (super().query(database_id=database_id, start_cursor=next_cursor, **kwargs))
             )  # type: ignore
             pages = [Page.from_dict(data=p) for p in response.pop("results", [])]
             for p in pages:
