@@ -2,7 +2,7 @@
 
 ### Fixes
 
-* **Fix file comparison in E2E test** Compare all files recursively instead of only files in the root directory.
+* **Fix file comparison in E2E test** Compare all files recursively instead of only files in the root directory, update E2E expected outputs.
 
 ## 0.2.1
 
