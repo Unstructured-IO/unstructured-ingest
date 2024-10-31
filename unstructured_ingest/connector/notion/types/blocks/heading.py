@@ -17,7 +17,7 @@ class Heading(BlockBase):
 
     @staticmethod
     def can_have_children() -> bool:
-        return False
+        return True
 
     @classmethod
     def from_dict(cls, data: dict):
