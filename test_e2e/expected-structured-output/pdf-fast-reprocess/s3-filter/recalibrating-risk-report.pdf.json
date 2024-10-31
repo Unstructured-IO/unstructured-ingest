@@ -10,12 +10,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -33,12 +35,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -56,12 +60,14 @@
       "page_number": 2,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -79,12 +85,14 @@
       "page_number": 2,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -102,12 +110,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -125,12 +135,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -148,12 +160,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -171,12 +185,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -194,12 +210,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -217,12 +235,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -240,12 +260,14 @@
       "page_number": 3,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -263,12 +285,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -286,12 +310,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -309,12 +335,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -332,12 +360,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -355,12 +385,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -378,12 +410,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -392,8 +426,8 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "7224bd043ff3385128603da2f79ffe5a",
-    "text": "20",
+    "element_id": "fed95e1020d09af007d09bcbe377f453",
+    "text": "1",
     "metadata": {
       "languages": [
         "eng"
@@ -401,12 +435,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -424,12 +460,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -438,8 +476,8 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "f4f1ed7d41f9d59a7fa026e4691a44ad",
-    "text": "1",
+    "element_id": "187e47fa0bedecafbf5054f1f4a4691a",
+    "text": "20",
     "metadata": {
       "languages": [
         "eng"
@@ -447,35 +485,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "3103c9b3c68800a4c18d5277b865eacb",
-    "text": "1",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -484,7 +501,7 @@
   },
   {
     "type": "Title",
-    "element_id": "804fcd51ee1e5d5602fcb9473c0f102f",
+    "element_id": "30485626382c61744b5a75197b02c8ec",
     "text": "Motor vehicles",
     "metadata": {
       "languages": [
@@ -493,12 +510,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -507,7 +526,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "1900ed258c167f8bafbd8ed1925e176d",
+    "element_id": "776cff84f184a6c903e4ff974bce026d",
     "text": "2",
     "metadata": {
       "languages": [
@@ -516,12 +535,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -530,8 +551,8 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "8e4004d681d241450ad3f98973e2139d",
-    "text": "4",
+    "element_id": "04749ff62685091cae6bfe6bdd9b0227",
+    "text": "1",
     "metadata": {
       "languages": [
         "eng"
@@ -539,12 +560,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -553,7 +576,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "9001e9360f153c1015bc8aeb9aafdb19",
+    "element_id": "37dd78f724de7016b1f26eb1c08d1573",
     "text": "3",
     "metadata": {
       "languages": [
@@ -562,12 +585,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -576,7 +601,7 @@
   },
   {
     "type": "Title",
-    "element_id": "fbbd25426798feb36f4a908cfbfb65b0",
+    "element_id": "8e117150ed88d380bcf52074a4764bea",
     "text": "Handguns",
     "metadata": {
       "languages": [
@@ -585,12 +610,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -599,8 +626,8 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "0cf1000bd6460a5dc4bb008a991e0956",
-    "text": "2",
+    "element_id": "3b3d24ee3db1c86fd5807c9918792ef4",
+    "text": "4",
     "metadata": {
       "languages": [
         "eng"
@@ -608,12 +635,39 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "e5e48f9556e6b5ca04107ae2c8a76edb",
+    "text": "Smoking",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -631,12 +685,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -644,9 +700,9 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "b02c47fa996a27837d1748f5c36e3469",
-    "text": "Smoking",
+    "type": "UncategorizedText",
+    "element_id": "a8f8d99cc87beaf33b0a1f5e84cd5c0c",
+    "text": "2",
     "metadata": {
       "languages": [
         "eng"
@@ -654,12 +710,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -677,12 +735,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -700,12 +760,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -713,9 +775,9 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "3f2e2e9fbb71b7534f8c706d1381819c",
-    "text": "Electric power (non-nuclear)",
+    "type": "UncategorizedText",
+    "element_id": "ea53a1b88ba23c4cfaa2d74e310e6393",
+    "text": "17",
     "metadata": {
       "languages": [
         "eng"
@@ -723,12 +785,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -746,12 +810,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -759,9 +825,9 @@
     }
   },
   {
-    "type": "UncategorizedText",
-    "element_id": "b236a2a96e6662a4959116caef21d24a",
-    "text": "17",
+    "type": "Title",
+    "element_id": "1291a87dffa192318ccf1ebfae1a2157",
+    "text": "Electric power (non-nuclear)",
     "metadata": {
       "languages": [
         "eng"
@@ -769,12 +835,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -792,12 +860,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -815,58 +885,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "fe92e7b03dd01503ea1e016c14cb3497",
-    "text": "22",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "c5d62140ba375d471679e3a90f673d5c",
-    "text": "7",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -875,7 +901,7 @@
   },
   {
     "type": "Title",
-    "element_id": "d0282b64f27dd6bacbd0f8c41f0e25ec",
+    "element_id": "65049240dd87fba36b17da7ae9c099cf",
     "text": "X-rays",
     "metadata": {
       "languages": [
@@ -884,12 +910,64 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "b13787b1428381f388200c5e4cb463e6",
+    "text": "22",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33204
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "b73b47ada72066d740f880033cfccadf",
+    "text": "7",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -907,12 +985,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -930,35 +1010,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "2da091576169a29be7c95436e7004ec4",
-    "text": "Vaccinations",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -967,7 +1026,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "80918f5dcc4b0297cfa957e7cb4f648b",
+    "element_id": "900e63b51b28446209278ea5224cb242",
     "text": "30",
     "metadata": {
       "languages": [
@@ -976,12 +1035,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -990,7 +1051,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "bc1c523a0f95d819a9a49355bfb3bdb9",
+    "element_id": "744d6a58ea8373555c2d0ff205c552a7",
     "text": "25",
     "metadata": {
       "languages": [
@@ -999,12 +1060,39 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "d3984b0b335e7a16dae633be606ec2d5",
+    "text": "Vaccinations",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1022,12 +1110,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1045,12 +1135,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1068,12 +1160,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1091,12 +1185,14 @@
       "page_number": 4,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1114,35 +1210,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "7da4c5414e76d77d311e3a0640cb5a5a",
-    "text": "Artificial",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1151,7 +1226,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "84a6145b34cad14a69230eaadfe330b3",
+    "element_id": "9fdb8e52f5d8c7cf8af8fc650b6acd78",
     "text": "\uf06e 48% Radon \uf06e 14% Buildings & soil \uf06e 12% Food & water \uf06e 10% Cosmic \uf06e 4% Thoron",
     "metadata": {
       "languages": [
@@ -1160,12 +1235,39 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
+          }
+        ],
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "6fbbc6f1a33bd4e8355682363051839f",
+    "text": "Artificial",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 5,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1183,12 +1285,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1206,12 +1310,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1229,12 +1335,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1252,12 +1360,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1275,12 +1385,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1298,12 +1410,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1321,12 +1435,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1344,12 +1460,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1367,12 +1485,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1390,12 +1510,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1413,12 +1535,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1436,12 +1560,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1459,12 +1585,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1482,12 +1610,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1505,12 +1635,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1528,12 +1660,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1551,12 +1685,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1574,12 +1710,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1597,12 +1735,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1620,12 +1760,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1643,12 +1785,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1666,12 +1810,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1689,12 +1835,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1712,12 +1860,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1735,12 +1885,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1758,12 +1910,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1781,12 +1935,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1804,12 +1960,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1827,12 +1985,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1850,12 +2010,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1873,12 +2035,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1896,12 +2060,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1919,12 +2085,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1942,12 +2110,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1965,12 +2135,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -1988,12 +2160,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2011,12 +2185,14 @@
       "page_number": 5,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2034,12 +2210,14 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2057,12 +2235,14 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2080,12 +2260,14 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2103,12 +2285,14 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2126,12 +2310,14 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2149,12 +2335,14 @@
       "page_number": 6,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2172,12 +2360,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2195,12 +2385,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2218,12 +2410,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2241,12 +2435,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2264,12 +2460,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2287,12 +2485,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2310,12 +2510,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2333,12 +2535,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2356,12 +2560,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2379,12 +2585,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2402,12 +2610,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2425,12 +2635,14 @@
       "page_number": 7,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2448,12 +2660,14 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2471,12 +2685,14 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2494,12 +2710,14 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2517,12 +2735,14 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2540,12 +2760,14 @@
       "page_number": 8,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2563,12 +2785,14 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2586,12 +2810,14 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2609,12 +2835,14 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2632,12 +2860,14 @@
       "page_number": 9,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2655,12 +2885,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2678,12 +2910,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2701,12 +2935,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2724,12 +2960,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2747,12 +2985,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2770,12 +3010,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2793,12 +3035,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2816,12 +3060,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2839,12 +3085,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2862,12 +3110,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2885,12 +3135,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2908,12 +3160,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2931,12 +3185,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2954,12 +3210,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -2977,12 +3235,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3000,12 +3260,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3023,12 +3285,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3046,12 +3310,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3069,12 +3335,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3092,12 +3360,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3115,12 +3385,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3138,12 +3410,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3161,12 +3435,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3184,12 +3460,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3207,12 +3485,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3230,12 +3510,14 @@
       "page_number": 10,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3253,12 +3535,14 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3276,12 +3560,14 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3299,12 +3585,14 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335
@@ -3322,12 +3610,14 @@
       "page_number": 12,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3-filter/recalibrating-risk-report.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 806335

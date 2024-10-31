@@ -17,12 +17,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -40,12 +42,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -63,12 +67,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -86,12 +92,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -109,12 +117,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -132,12 +142,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -155,12 +167,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -178,12 +192,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -201,12 +217,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -224,12 +242,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -247,12 +267,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -270,12 +292,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -293,12 +317,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -316,12 +342,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -356,12 +384,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -379,12 +409,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -409,12 +441,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -432,12 +466,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -455,12 +491,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -478,35 +516,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
-          }
-        ],
-        "filesize_bytes": 138124
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "93809163645d98d16c899470797bb3bc",
-    "text": "(2)",
-    "metadata": {
-      "languages": [
-        "eng"
-      ],
-      "page_number": 1,
-      "filetype": "application/pdf",
-      "data_source": {
-        "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
-        },
-        "permissions_data": [
-          {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -515,7 +532,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "3852fd6db06da49daea4a417344ab7bc",
+    "element_id": "c565478472ddf96590b17a258aecd573",
     "text": "While the linear transformations are the same across different positions, they use different parameters from layer to layer. Another way of describing this is as two convolutions with kernel size 1. The dimensionality of input and output is dmodel = 512, and the inner-layer has dimensionality df f = 2048.",
     "metadata": {
       "languages": [
@@ -524,12 +541,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -538,7 +557,7 @@
   },
   {
     "type": "Title",
-    "element_id": "f1bd60eb761bba59cdbdcd3f00ecd10e",
+    "element_id": "a5425926d9cf8785c64f16d599164a58",
     "text": "3.4 Embeddings and Softmax",
     "metadata": {
       "languages": [
@@ -547,12 +566,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -561,7 +582,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "65bfc591bfe9b5b267cdba5557b01313",
+    "element_id": "9fe8bddb6f9dcdb36c6b807320561c13",
     "text": "Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension dmodel. We also use the usual learned linear transfor- mation and softmax function to convert the decoder output to predicted next-token probabilities. In our model, we share the same weight matrix between the two embedding layers and the pre-softmax dmodel. linear transformation, similar to [30]. In the embedding layers, we multiply those weights by",
     "metadata": {
       "languages": [
@@ -577,12 +598,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -591,7 +614,7 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "ba39d029c21581fd00f99ef5a9498850",
+    "element_id": "6f204768173df8e3bacbfb8839e9c18c",
     "text": "\u221a",
     "metadata": {
       "languages": [
@@ -600,12 +623,39 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
+          }
+        ],
+        "filesize_bytes": 138124
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "4a52d668b472e0acf56db199f3373954",
+    "text": "(2)",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "page_number": 1,
+      "filetype": "application/pdf",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+        },
+        "permissions_data": [
+          {
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
@@ -623,12 +673,14 @@
       "page_number": 1,
       "filetype": "application/pdf",
       "data_source": {
+        "url": null,
+        "version": null,
         "record_locator": {
-          "path": "/home/runner/work/unstructured-ingest/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
+          "path": "/home/filip/Unstructured/unstructured-ingest/test_e2e/download/s3/page-with-formula.pdf"
         },
         "permissions_data": [
           {
-            "mode": 33188
+            "mode": 33204
           }
         ],
         "filesize_bytes": 138124
