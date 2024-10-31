@@ -33,6 +33,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 
+CONNECTOR_TYPE = "confluence"
 
 @dataclass
 class ConfluenceAccessConfig(AccessConfig):

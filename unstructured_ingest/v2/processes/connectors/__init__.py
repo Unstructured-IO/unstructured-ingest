@@ -46,6 +46,8 @@ from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
 from .singlestore import singlestore_destination_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
+from .confluence import CONNECTOR_TYPE as CONFLUENCE_CONNECTOR_TYPE
+from .confluence import confluence_source_entry
 
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
 
@@ -93,3 +95,4 @@ add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destina
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
+add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
