@@ -1,3 +1,9 @@
+## 0.2.2-dev0
+
+### Enhancements
+
+* **Added migration for GitLab Source V2**
+
 ## 0.2.1
 
 ### Enhancements
