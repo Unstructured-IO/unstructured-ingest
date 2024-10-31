@@ -1,3 +1,6 @@
+## 0.2.2-dev
+* **Installing code coverage**
+
 ## 0.2.1
 
 ### Enhancements
