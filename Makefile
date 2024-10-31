@@ -119,4 +119,4 @@ check-version:
 ###########
 .PHONY: unit-test
 unit-test:
-	PYTHONPATH=. pytest test
+	PYTHONPATH=. pytest test  --cov --cov-report=xml
