@@ -149,7 +149,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
 
 class DatabricksVolumesUploaderConfig(UploaderConfig, DatabricksPathMixin):
     overwrite: bool = Field(
-        default=False, description="If true, an existing file will be overwritten."
+        default=True, description="If true, an existing file will be overwritten."
     )
 
 

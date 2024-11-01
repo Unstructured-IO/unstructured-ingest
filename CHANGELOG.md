@@ -2,6 +2,7 @@
 
 ### Enhancements
 
+* **Default overwrite to true**
 * **Added migration for GitLab Source V2**
 
 ## 0.2.1
