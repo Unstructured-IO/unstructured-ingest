@@ -148,9 +148,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
 
 
 class DatabricksVolumesUploaderConfig(UploaderConfig, DatabricksPathMixin):
-    overwrite: bool = Field(
-        default=True, description="If true, an existing file will be overwritten."
-    )
+    pass
 
 
 @dataclass
@@ -173,5 +171,5 @@ class DatabricksVolumesUploader(Uploader, ABC):
             self.connection_config.get_client().files.upload(
                 file_path=output_path,
                 contents=elements_file,
-                overwrite=self.upload_config.overwrite,
+                overwrite=True,
             )
