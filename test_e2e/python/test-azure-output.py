@@ -1,7 +1,7 @@
 #!/usr/bin/env python
+import azure.core.exceptions
 import click
 from azure.storage.blob import ContainerClient
-import azure.core.exceptions
 
 
 @click.group(name="azure-ingest")
