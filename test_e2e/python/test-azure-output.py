@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import click
 from azure.storage.blob import ContainerClient
+import azure.core.exceptions
 
 
 @click.group(name="azure-ingest")
@@ -22,7 +23,10 @@ def down(connection_string: str, container: str, blob_path: str):
     container_client.delete_blobs(*[b for b in blob_list if b != blob_path])
 
     # Delete folder itself
-    container_client.delete_blob(blob_path)
+    try:
+        container_client.delete_blob(blob_path)
+    except azure.core.exceptions.ResourceNotFoundError:
+        print(f"folder {blob_path} not found")
 
 
 @cli.command()
