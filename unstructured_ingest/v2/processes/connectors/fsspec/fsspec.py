@@ -231,9 +231,7 @@ class FsspecDownloader(Downloader):
 
 
 class FsspecUploaderConfig(FileConfig, UploaderConfig):
-    overwrite: bool = Field(
-        default=False, description="If true, an existing file will be overwritten."
-    )
+    pass
 
 
 FsspecUploaderConfigT = TypeVar("FsspecUploaderConfigT", bound=FsspecUploaderConfig)
@@ -288,9 +286,6 @@ class FsspecUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        if self.fs.exists(path=str(upload_path)) and not self.upload_config.overwrite:
-            logger.debug(f"skipping upload of {path} to {upload_path}, file already exists")
-            return
         logger.debug(f"writing local file {path_str} to {upload_path}")
         self.fs.upload(lpath=path_str, rpath=str(upload_path))
 
@@ -298,9 +293,5 @@ class FsspecUploader(Uploader):
         upload_path = self.get_upload_path(file_data=file_data)
         path_str = str(path.resolve())
         # Odd that fsspec doesn't run exists() as async even when client support async
-        already_exists = self.fs.exists(path=str(upload_path))
-        if already_exists and not self.upload_config.overwrite:
-            logger.debug(f"skipping upload of {path} to {upload_path}, file already exists")
-            return
         logger.debug(f"writing local file {path_str} to {upload_path}")
         self.fs.upload(lpath=path_str, rpath=str(upload_path))
