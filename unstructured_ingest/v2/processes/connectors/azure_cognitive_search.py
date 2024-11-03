@@ -82,8 +82,13 @@ class AzureCognitiveSearchUploadStager(UploadStager):
         into a dictionary that conforms to the schema expected by the
         Azure Cognitive Search index
         """
-
-        data["id"] = str(uuid.uuid4())
+        
+        # https://docs.unstructured.io/open-source/concepts/document-elements#element-id
+        # By default, the element ID is a SHA-256 hash of the element’s text, its position on the page, page number it’s on, and the name of the document file - this is to ensure that the ID is deterministic and unique at the document level. 
+        # To obtain globally unique IDs in the output (UUIDs), you can pass unique_element_ids=True into any of the partition functions. This can be helpful if you’d like to use the IDs as a primary key in a database, for example.
+        # For AzureCognitiveSearch we desire the index to reuse items in the index, and update them if there is a change, therefore we will keep the element_id as the key for the index instead of a unique id each time which adds duplicate entries.
+        data["id"] = data.get("element_id")
+        #data["id"] = str(uuid.uuid4()) // Consider using this if unique_element_ids=True
 
         if points := data.get("metadata", {}).get("coordinates", {}).get("points"):
             data["metadata"]["coordinates"]["points"] = json.dumps(points)
