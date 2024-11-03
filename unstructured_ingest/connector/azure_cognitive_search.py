@@ -1,94 +1,83 @@
 import json
+import typing as t
 import uuid
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import TYPE_CHECKING, Any
 
-from pydantic import Field, Secret
-
+from unstructured_ingest.enhanced_dataclass import enhanced_field
 from unstructured_ingest.error import DestinationConnectionError, WriteError
-from unstructured_ingest.utils.data_prep import batch_generator
-from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import (
+from unstructured_ingest.interfaces import (
     AccessConfig,
-    ConnectionConfig,
-    FileData,
-    Uploader,
-    UploaderConfig,
-    UploadStager,
-    UploadStagerConfig,
+    BaseConnectorConfig,
+    BaseDestinationConnector,
+    WriteConfig,
 )
-from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-)
-from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
+from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.dep_check import requires_dependencies
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from azure.search.documents import SearchClient
 
 
-CONNECTOR_TYPE = "azure_cognitive_search"
-
-
+@dataclass
 class AzureCognitiveSearchAccessConfig(AccessConfig):
-    azure_cognitive_search_key: str = Field(
-        alias="key", description="Credential that is used for authenticating to an Azure service"
-    )
+    key: str = enhanced_field(sensitive=True)
 
 
-class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
-    endpoint: str = Field(
-        description="The URL endpoint of an Azure AI (Cognitive) search service. "
-        "In the form of https://{{service_name}}.search.windows.net"
-    )
-    index: str = Field(
-        description="The name of the Azure AI (Cognitive) Search index to connect to."
-    )
-    access_config: Secret[AzureCognitiveSearchAccessConfig]
+@dataclass
+class SimpleAzureCognitiveSearchStorageConfig(BaseConnectorConfig):
+    endpoint: str
+    access_config: AzureCognitiveSearchAccessConfig
 
-    @requires_dependencies(["azure.search", "azure.core"], extras="azure-cognitive-search")
+
+@dataclass
+class AzureCognitiveSearchWriteConfig(WriteConfig):
+    index: str
+
+
+@dataclass
+class AzureCognitiveSearchDestinationConnector(BaseDestinationConnector):
+    write_config: AzureCognitiveSearchWriteConfig
+    connector_config: SimpleAzureCognitiveSearchStorageConfig
+    _client: t.Optional["SearchClient"] = field(init=False, default=None)
+
+    @requires_dependencies(["azure.search"], extras="azure-cognitive-search")
     def generate_client(self) -> "SearchClient":
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
 
+        # Create a client
+        credential = AzureKeyCredential(self.connector_config.access_config.key)
         return SearchClient(
-            endpoint=self.endpoint,
-            index_name=self.index,
-            credential=AzureKeyCredential(
-                self.access_config.get_secret_value().azure_cognitive_search_key
-            ),
+            endpoint=self.connector_config.endpoint,
+            index_name=self.write_config.index,
+            credential=credential,
         )
 
+    @property
+    def client(self) -> "SearchClient":
+        if self._client is None:
+            self._client = self.generate_client()
+        return self._client
 
-class AzureCognitiveSearchUploadStagerConfig(UploadStagerConfig):
-    pass
+    def check_connection(self):
+        try:
+            self.client.get_document_count()
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
+    def initialize(self):
+        _ = self.client
 
-class AzureCognitiveSearchUploaderConfig(UploaderConfig):
-    batch_size: int = Field(default=100, description="Number of records per batch")
-
-
-@dataclass
-class AzureCognitiveSearchUploadStager(UploadStager):
-    upload_stager_config: AzureCognitiveSearchUploadStagerConfig = field(
-        default_factory=lambda: AzureCognitiveSearchUploadStagerConfig()
-    )
-
-    @staticmethod
-    def conform_dict(data: dict) -> dict:
+    def conform_dict(self, data: dict) -> None:
         """
         updates the dictionary that is from each Element being converted into a dict/json
         into a dictionary that conforms to the schema expected by the
         Azure Cognitive Search index
         """
-        
-        # https://docs.unstructured.io/open-source/concepts/document-elements#element-id
-        # By default, the element ID is a SHA-256 hash of the element’s text, its position on the page, page number it’s on, and the name of the document file - this is to ensure that the ID is deterministic and unique at the document level. 
-        # To obtain globally unique IDs in the output (UUIDs), you can pass unique_element_ids=True into any of the partition functions. This can be helpful if you’d like to use the IDs as a primary key in a database, for example.
-        # For AzureCognitiveSearch we desire the index to reuse items in the index, and update them if there is a change, therefore we will keep the element_id as the key for the index instead of a unique id each time which adds duplicate entries.
-        data["id"] = data.get("element_id")
-        #data["id"] = str(uuid.uuid4()) // Consider using this if unique_element_ids=True
+        from dateutil import parser  # type: ignore
+
+        data["id"] = str(uuid.uuid4())
 
         if points := data.get("metadata", {}).get("coordinates", {}).get("points"):
             data["metadata"]["coordinates"]["points"] = json.dumps(points)
@@ -103,67 +92,36 @@ class AzureCognitiveSearchUploadStager(UploadStager):
         if links := data.get("metadata", {}).get("links"):
             data["metadata"]["links"] = [json.dumps(link) for link in links]
         if last_modified := data.get("metadata", {}).get("last_modified"):
-            data["metadata"]["last_modified"] = parse_datetime(last_modified).strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"
+            data["metadata"]["last_modified"] = parser.parse(last_modified).strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ",
             )
         if date_created := data.get("metadata", {}).get("data_source", {}).get("date_created"):
-            data["metadata"]["data_source"]["date_created"] = parse_datetime(date_created).strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"
+            data["metadata"]["data_source"]["date_created"] = parser.parse(date_created).strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ",
             )
-
         if date_modified := data.get("metadata", {}).get("data_source", {}).get("date_modified"):
-            data["metadata"]["data_source"]["date_modified"] = parse_datetime(
-                date_modified
-            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
+            data["metadata"]["data_source"]["date_modified"] = parser.parse(date_modified).strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+            )
         if date_processed := data.get("metadata", {}).get("data_source", {}).get("date_processed"):
-            data["metadata"]["data_source"]["date_processed"] = parse_datetime(
-                date_processed
+            data["metadata"]["data_source"]["date_processed"] = parser.parse(
+                date_processed,
             ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
         if regex_metadata := data.get("metadata", {}).get("regex_metadata"):
             data["metadata"]["regex_metadata"] = json.dumps(regex_metadata)
         if page_number := data.get("metadata", {}).get("page_number"):
             data["metadata"]["page_number"] = str(page_number)
-        return data
 
-    def run(
-        self,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
-        return output_path
-
-
-@dataclass
-class AzureCognitiveSearchUploader(Uploader):
-    upload_config: AzureCognitiveSearchUploaderConfig
-    connection_config: AzureCognitiveSearchConnectionConfig
-    connector_type: str = CONNECTOR_TYPE
-
-    @DestinationConnectionError.wrap
     @requires_dependencies(["azure"], extras="azure-cognitive-search")
-    def write_dict(self, *args, elements_dict: list[dict[str, Any]], **kwargs) -> None:
+    def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
         import azure.core.exceptions
 
         logger.info(
             f"writing {len(elements_dict)} documents to destination "
-            f"index at {self.connection_config.index}",
+            f"index at {self.write_config.index}",
         )
         try:
-            results = self.connection_config.generate_client().upload_documents(
-                documents=elements_dict
-            )
+            results = self.client.upload_documents(documents=elements_dict)
 
         except azure.core.exceptions.HttpResponseError as http_error:
             raise WriteError(f"http error: {http_error}") from http_error
@@ -179,44 +137,8 @@ class AzureCognitiveSearchUploader(Uploader):
             raise WriteError(
                 ", ".join(
                     [
-                        f"{error.azure_cognitive_search_key}: "
-                        f"[{error.status_code}] {error.error_message}"
+                        f"{error.key}: [{error.status_code}] {error.error_message}"
                         for error in errors
                     ],
                 ),
             )
-
-    def precheck(self) -> None:
-        try:
-            client = self.connection_config.generate_client()
-            client.get_document_count()
-        except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    def write_dict_wrapper(self, elements_dict):
-        return self.write_dict(elements_dict=elements_dict)
-
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
-        logger.info(
-            f"writing document batches to destination"
-            f" endpoint at {str(self.connection_config.endpoint)}"
-            f" index at {str(self.connection_config.index)}"
-            f" with batch size {str(self.upload_config.batch_size)}"
-        )
-
-        batch_size = self.upload_config.batch_size
-
-        for chunk in batch_generator(elements_dict, batch_size):
-            self.write_dict(elements_dict=chunk)  # noqa: E203
-
-
-azure_cognitive_search_destination_entry = DestinationRegistryEntry(
-    connection_config=AzureCognitiveSearchConnectionConfig,
-    uploader=AzureCognitiveSearchUploader,
-    uploader_config=AzureCognitiveSearchUploaderConfig,
-    upload_stager=AzureCognitiveSearchUploadStager,
-    upload_stager_config=AzureCognitiveSearchUploadStagerConfig,
-)
