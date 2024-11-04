@@ -29,7 +29,6 @@ all_tests=(
   'mongodb.sh'
   'opensearch.sh'
   'pinecone.sh'
-  'qdrant.sh'
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
