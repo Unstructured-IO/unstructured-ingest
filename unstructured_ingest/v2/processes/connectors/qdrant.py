@@ -84,9 +84,7 @@ class QdrantUploadStager(UploadStager):
 
     @staticmethod
     def conform_dict(data: dict) -> dict:
-        """
-        Prepares dictionary in the format that Chroma requires
-        """
+        """Prepares dictionary in the format that Chroma requires"""
         return {
             "id": str(uuid.uuid4()),
             "vector": data.pop("embeddings", {}),
