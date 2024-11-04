@@ -16,6 +16,8 @@ from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONN
 from .azure_cognitive_search import azure_cognitive_search_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
+from .confluence import CONNECTOR_TYPE as CONFLUENCE_CONNECTOR_TYPE
+from .confluence import confluence_source_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
 from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
@@ -105,3 +107,5 @@ add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
+
+add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
