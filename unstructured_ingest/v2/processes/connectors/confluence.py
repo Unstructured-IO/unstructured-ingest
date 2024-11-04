@@ -1,56 +1,51 @@
-import math
-import json
-import sys
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
-from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional, List
+from typing import Any, Generator, List, Optional
 
-from unstructured_ingest.__version__ import __version__ as unstructured_version
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
-from unstructured_ingest.utils.dep_check import requires_dependencies
-from dataclasses import dataclass 
-from pydantic import Field, Secret
-from unstructured_ingest.v2.logger import logger
+from pydantic import Field
 
+from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
     FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     download_responses,
 )
-
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
     SourceRegistryEntry,
 )
 
 CONNECTOR_TYPE = "confluence"
 
+
 @dataclass
 class ConfluenceAccessConfig(AccessConfig):
     api_token: Field(default=..., repr=False, description="Confluence API token")
+
 
 @dataclass
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(..., description="URL of the Confluence instance")
     user_email: str = Field(..., description="User email for authentication")
-    access_config: ConfluenceAccessConfig = Field(..., description="Access configuration for Confluence")
-    
+    access_config: ConfluenceAccessConfig = Field(
+        ..., description="Access configuration for Confluence"
+    )
+
+
 @dataclass
 class ConfluenceIndexerConfig(IndexerConfig):
     max_num_of_spaces: int = Field(500, description="Maximum number of spaces to index")
-    max_num_of_docs_from_each_space: int = Field(100, description="Maximum number of documents to fetch from each space")
+    max_num_of_docs_from_each_space: int = Field(
+        100, description="Maximum number of documents to fetch from each space"
+    )
     spaces: Optional[List[str]] = Field(None, description="List of specific space keys to index")
-    
+
+
 @dataclass
 class ConfluenceIndexer(Indexer):
     connection_config: ConfluenceConnectionConfig
@@ -65,6 +60,7 @@ class ConfluenceIndexer(Indexer):
     def confluence(self):
         if self._confluence is None:
             from atlassian import Confluence
+
             self._confluence = Confluence(
                 url=self.connection_config.url,
                 username=self.connection_config.user_email,
@@ -76,7 +72,9 @@ class ConfluenceIndexer(Indexer):
         try:
             # Attempt to retrieve the current user to verify credentials
             current_user = self.confluence.get_current_user()
-            logger.info(f"Connection to Confluence successful. Logged in as: {current_user['displayName']}")
+            logger.info(
+                f"Connection to Confluence successful. Logged in as: {current_user['displayName']}"
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
@@ -97,7 +95,7 @@ class ConfluenceIndexer(Indexer):
             start=0,
             limit=self.indexer_config.max_num_of_docs_from_each_space,
             expand=None,
-            content_type='page',
+            content_type="page",
             status=None,
             label=None,
         )
@@ -127,10 +125,13 @@ class ConfluenceIndexer(Indexer):
 class ConfluenceDownloaderConfig(DownloaderConfig):
     pass
 
+
 @dataclass
 class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
-    downloader_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
+    downloader_config: ConfluenceDownloaderConfig = field(
+        default_factory=ConfluenceDownloaderConfig
+    )
     connector_type: str = "confluence"
     _confluence: Any = field(init=False, default=None)
 
@@ -141,6 +142,7 @@ class ConfluenceDownloader(Downloader):
     def confluence(self):
         if self._confluence is None:
             from atlassian import Confluence
+
             self._confluence = Confluence(
                 url=self.connection_config.url,
                 username=self.connection_config.user_email,
@@ -175,15 +177,18 @@ class ConfluenceDownloader(Downloader):
             f.write(content)
 
         # Update file_data with metadata
-        file_data.metadata.update({
-            "date_created": page["history"]["createdDate"],
-            "date_modified": page["version"]["when"],
-            "version": page["version"]["number"],
-            "title": page["title"],
-        })
+        file_data.metadata.update(
+            {
+                "date_created": page["history"]["createdDate"],
+                "date_modified": page["version"]["when"],
+                "version": page["version"]["number"],
+                "title": page["title"],
+            }
+        )
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
-    
+
+
 confluence_source_entry = SourceRegistryEntry(
     connection_config=ConfluenceConnectionConfig,
     indexer_config=ConfluenceIndexerConfig,
