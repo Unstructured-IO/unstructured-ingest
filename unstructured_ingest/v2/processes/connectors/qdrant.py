@@ -42,7 +42,7 @@ class QdrantConnectionConfig(ConnectionConfig):
     )
     url: Optional[str] = Field(
         default=None,
-        description='either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]"',
+        description='Either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]"',
     )
     port: Optional[int] = Field(default=6333, description="Port of the REST API interface.")
     grpc_port: Optional[int] = Field(default=6334, description="Port of the gRPC interface.")
