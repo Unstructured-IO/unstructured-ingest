@@ -32,7 +32,9 @@ class ConfluenceAccessConfig(AccessConfig):
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
     user_email: str = Field(description="User email for authentication")
-    access_config: Secret[ConfluenceAccessConfig] = Field(description="Access configuration for Confluence")
+    access_config: Secret[ConfluenceAccessConfig] = Field(
+        description="Access configuration for Confluence"
+    )
 
 
 @dataclass
