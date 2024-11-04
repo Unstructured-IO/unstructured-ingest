@@ -1,8 +1,9 @@
-
-## 0.2.2-dev0
+## 0.2.2-dev1
 
 ### Enhancements
 * **LanceDB V2 Destination Connector**
+* **Remove `overwrite` field** from fsspec and databricks connectors
+* **Added migration for GitLab Source V2**
 
 ## 0.2.1
 

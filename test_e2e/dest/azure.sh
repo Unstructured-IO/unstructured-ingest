@@ -46,7 +46,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
   azure \
-  --overwrite \
   --remote-url "$REMOTE_URL" \
   --connection-string "$AZURE_DEST_CONNECTION_STR"
 
