@@ -1,3 +1,9 @@
+## 0.2.2-dev0
+
+## Enchancements
+
+* **Added V2 confluence source connector**
+
 ## 0.2.1
 
 ### Enhancements
