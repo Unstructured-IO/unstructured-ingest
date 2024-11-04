@@ -1,12 +1,10 @@
+import asyncio
 import json
-import multiprocessing as mp
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, WriteError
@@ -25,7 +23,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
-    from qdrant_client import QdrantClient
+    from qdrant_client import AsyncQdrantClient
 
 
 CONNECTOR_TYPE = "qdrant"
@@ -52,6 +50,27 @@ class QdrantConnectionConfig(ConnectionConfig):
     )
     access_config: Secret[QdrantAccessConfig] = Field(default=None, description="Access Config")
 
+    @requires_dependencies(["qdrant_client"], extras="qdrant")
+    def get_async_client(self) -> "AsyncQdrantClient":
+        from qdrant_client.async_qdrant_client import AsyncQdrantClient
+
+        client = AsyncQdrantClient(
+            location=self.location,
+            url=self.url,
+            port=self.port,
+            grpc_port=self.grpc_port,
+            prefer_grpc=self.prefer_grpc,
+            https=self.https,
+            api_key=(self.access_config.get_secret_value().api_key if self.access_config else None),
+            prefix=self.prefix,
+            timeout=self.timeout,
+            host=self.host,
+            path=self.path,
+            force_disable_check_same_thread=self.force_disable_check_same_thread,
+        )
+
+        return client
+
 
 class QdrantUploadStagerConfig(UploadStagerConfig):
     pass
@@ -62,15 +81,6 @@ class QdrantUploadStager(UploadStager):
     upload_stager_config: QdrantUploadStagerConfig = field(
         default_factory=lambda: QdrantUploadStagerConfig()
     )
-
-    @staticmethod
-    def parse_date_string(date_string: str) -> date:
-        try:
-            timestamp = float(date_string)
-            return datetime.fromtimestamp(timestamp)
-        except Exception as e:
-            logger.debug(f"date {date_string} string not a timestamp: {e}")
-        return parser.parse(date_string)
 
     @staticmethod
     def conform_dict(data: dict) -> dict:
@@ -101,8 +111,10 @@ class QdrantUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
+
         conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
+
         with open(output_path, "w") as output_file:
             json.dump(conformed_elements, output_file)
         return output_path
@@ -111,7 +123,9 @@ class QdrantUploadStager(UploadStager):
 class QdrantUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="Number of records per batch")
     num_processes: Optional[int] = Field(
-        default=1, description="Optional limit on number of threads to use for upload"
+        default=1,
+        description="Optional limit on number of threads to use for upload",
+        deprecated=True,
     )
 
 
@@ -120,98 +134,60 @@ class QdrantUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: QdrantUploaderConfig
     connection_config: QdrantConnectionConfig
-    _client: Optional["QdrantClient"] = None
-
-    @property
-    def qdrant_client(self):
-        if self._client is None:
-            self._client = self.create_client()
-        return self._client
-
-    @requires_dependencies(["qdrant_client"], extras="qdrant")
-    def create_client(self) -> "QdrantClient":
-        from qdrant_client import QdrantClient
-
-        client = QdrantClient(
-            location=self.connection_config.location,
-            url=self.connection_config.url,
-            port=self.connection_config.port,
-            grpc_port=self.connection_config.grpc_port,
-            prefer_grpc=self.connection_config.prefer_grpc,
-            https=self.connection_config.https,
-            api_key=(
-                self.connection_config.access_config.get_secret_value().api_key
-                if self.connection_config.access_config
-                else None
-            ),
-            prefix=self.connection_config.prefix,
-            timeout=self.connection_config.timeout,
-            host=self.connection_config.host,
-            path=self.connection_config.path,
-            force_disable_check_same_thread=self.connection_config.force_disable_check_same_thread,
-        )
-
-        return client
 
     @DestinationConnectionError.wrap
-    def check_connection(self):
-        self.qdrant_client.get_collections()
-
     def precheck(self) -> None:
-        try:
-            self.check_connection()
-        except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+        async def check_connection():
+            async_client = self.connection_config.get_async_client()
+            await async_client.get_collections()
 
-    @DestinationConnectionError.wrap
-    @requires_dependencies(["qdrant_client"], extras="qdrant")
-    def upsert_batch(self, batch: List[Dict[str, Any]]):
-        from qdrant_client import models
+        asyncio.run(check_connection())
 
+    def is_async(self):
+        return True
 
-        client = self.qdrant_client
-        try:
-            points: list[models.PointStruct] = [models.PointStruct(**item) for item in batch]
-            response = client.upsert(
-                self.connection_config.collection_name, points=points, wait=True
-            )
-        except Exception as api_error:
-            raise WriteError(f"Qdrant error: {api_error}") from api_error
-        logger.debug(f"results: {response}")
-
-    def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
-        logger.info(
-            f"Upserting {len(docs_list)} elements to "
-            f"{self.connection_config.collection_name}",
-        )
-
-        qdrant_batch_size = self.upload_config.batch_size
-
-        logger.info(f"using {self.upload_config.num_processes} processes to upload")
-        if self.upload_config.num_processes == 1:
-            for chunk in batch_generator(docs_list, qdrant_batch_size):
-                self.upsert_batch(chunk)
-
-        else:
-            with mp.Pool(
-                processes=self.upload_config.num_processes,
-            ) as pool:
-                pool.map(self.upsert_batch, list(batch_generator(docs_list, qdrant_batch_size)))
-
-    def run(
+    async def run_async(
         self,
         path: Path,
         file_data: FileData,
         **kwargs: Any,
     ) -> Path:
-        docs_list: Dict[Dict[str, Any]] = []
+        with path.open("r") as file:
+            elements: list[dict] = json.load(file)
 
+        logger.debug("Loaded %i elements from %s", len(elements), path)
 
-        with path.open("r") as json_file:
-            docs_list = json.load(json_file)
+        batches = list(batch_generator(elements, batch_size=self.upload_config.batch_size))
+        logger.debug(
+            "Elements split into %i batches of size %i.",
+            len(batches),
+            self.upload_config.batch_size,
+        )
+        await asyncio.gather(*[self._upsert_batch(batch) for batch in batches])
 
-        self.write_dict(docs_list=docs_list)
+    async def _upsert_batch(self, batch: list[dict]) -> None:
+        from qdrant_client import models
+
+        client = self.connection_config.get_async_client()
+        points: list[models.PointStruct] = [models.PointStruct(**item) for item in batch]
+        try:
+            logger.debug(
+                "Upserting %i points to the '%s' collection.",
+                len(points),
+                self.connection_config.collection_name,
+            )
+            response = await client.upsert(
+                self.connection_config.collection_name, points=points, wait=True
+            )
+        except Exception as api_error:
+            logger.debug("Upsert response: %s", response)
+            logger.error(
+                "Failed to upsert points to the collection due to the following error %s", api_error
+            )
+
+            raise WriteError(f"Qdrant error: {api_error}") from api_error
+
+        logger.debug("Successfully upsert points to the collection.")
 
 
 qdrant_destination_entry = DestinationRegistryEntry(
