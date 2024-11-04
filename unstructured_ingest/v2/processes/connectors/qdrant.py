@@ -170,7 +170,7 @@ class QdrantUploader(Uploader):
         path: Path,
         file_data: FileData,
         **kwargs: Any,
-    ) -> Path:
+    ) -> None:
         with path.open("r") as file:
             elements: list[dict] = json.load(file)
 
