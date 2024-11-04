@@ -129,7 +129,7 @@ class ConfluenceDownloaderConfig(DownloaderConfig):
 @dataclass
 class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
-    downloader_config: ConfluenceDownloaderConfig = field(
+    download_config: ConfluenceDownloaderConfig = field(
         default_factory=ConfluenceDownloaderConfig
     )
     connector_type: str = "confluence"
