@@ -25,15 +25,15 @@ CONNECTOR_TYPE = "confluence"
 
 @dataclass
 class ConfluenceAccessConfig(AccessConfig):
-    api_token: Field(default=..., repr=False, description="Confluence API token")
+    api_token: Field(description="Confluence API token")
 
 
 @dataclass
 class ConfluenceConnectionConfig(ConnectionConfig):
-    url: str = Field(..., description="URL of the Confluence instance")
-    user_email: str = Field(..., description="User email for authentication")
+    url: str = Field(description="URL of the Confluence instance")
+    user_email: str = Field(description="User email for authentication")
     access_config: ConfluenceAccessConfig = Field(
-        ..., description="Access configuration for Confluence"
+        description="Access configuration for Confluence"
     )
 
 
