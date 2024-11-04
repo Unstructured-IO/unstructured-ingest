@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Generator, List, Optional
 
-from pydantic import Field
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.v2.interfaces import (
@@ -25,16 +25,14 @@ CONNECTOR_TYPE = "confluence"
 
 @dataclass
 class ConfluenceAccessConfig(AccessConfig):
-    api_token: Field(description="Confluence API token")
+    api_token: str = Field(description="Confluence API token")
 
 
 @dataclass
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
     user_email: str = Field(description="User email for authentication")
-    access_config: ConfluenceAccessConfig = Field(
-        description="Access configuration for Confluence"
-    )
+    access_config: Secret[ConfluenceAccessConfig] = Field(description="Access configuration for Confluence")
 
 
 @dataclass
