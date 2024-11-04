@@ -22,6 +22,8 @@ from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
 from .delta_table import delta_table_destination_entry
 from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
 from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
+from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
+from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
@@ -101,5 +103,8 @@ add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entr
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
+
+
+add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
