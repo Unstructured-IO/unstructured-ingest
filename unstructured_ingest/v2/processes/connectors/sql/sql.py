@@ -3,12 +3,14 @@ import json
 import sys
 import uuid
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from pathlib import Path
 from time import time
 from typing import Any, Generator, Union
 
+import numpy as np
 import pandas as pd
 from dateutil import parser
 from pydantic import Field, Secret
@@ -94,7 +96,13 @@ class SQLConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[SQLAccessConfig] = Field(default=SQLAccessConfig(), validate_default=True)
 
     @abstractmethod
-    def get_connection(self) -> Any:
+    @contextmanager
+    def get_connection(self) -> Generator[Any, None, None]:
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def get_cursor(self) -> Generator[Any, None, None]:
         pass
 
 
@@ -108,16 +116,19 @@ class SQLIndexer(Indexer, ABC):
     connection_config: SQLConnectionConfig
     index_config: SQLIndexerConfig
 
-    @abstractmethod
     def _get_doc_ids(self) -> list[str]:
-        pass
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(
+                f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
+            )
+            results = cursor.fetchall()
+            ids = [result[0] for result in results]
+            return ids
 
     def precheck(self) -> None:
         try:
-            connection = self.connection_config.get_connection()
-            cursor = connection.cursor()
-            cursor.execute("SELECT 1;")
-            cursor.close()
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -198,7 +209,7 @@ class SQLDownloader(Downloader, ABC):
             f"Downloading results from table {table_name} and id {record_id} to {download_path}"
         )
         download_path.parent.mkdir(parents=True, exist_ok=True)
-        result.to_csv(download_path)
+        result.to_csv(download_path, index=False)
         copied_file_data = replace(file_data)
         copied_file_data.identifier = filename_id
         copied_file_data.doc_type = "file"
@@ -285,6 +296,7 @@ class SQLUploaderConfig(UploaderConfig):
 class SQLUploader(Uploader):
     upload_config: SQLUploaderConfig
     connection_config: SQLConnectionConfig
+    values_delimiter: str = "?"
 
     def precheck(self) -> None:
         try:
@@ -296,15 +308,42 @@ class SQLUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @abstractmethod
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
-        pass
+        output = []
+        for row in data:
+            parsed = []
+            for column_name, value in zip(columns, row):
+                if column_name in _DATE_COLUMNS:
+                    if value is None:
+                        parsed.append(None)
+                    else:
+                        parsed.append(parse_date_string(value))
+                else:
+                    parsed.append(value)
+            output.append(tuple(parsed))
+        return output
 
-    @abstractmethod
     def upload_contents(self, path: Path) -> None:
-        pass
+        df = pd.read_json(path, orient="records", lines=True)
+        df.replace({np.nan: None}, inplace=True)
+
+        columns = list(df.columns)
+        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
+
+        for rows in pd.read_json(
+            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
+        ):
+            with self.connection_config.get_cursor() as cursor:
+                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # for val in values:
+                #     try:
+                #         cursor.execute(stmt, val)
+                #     except Exception as e:
+                #         print(f"Error: {e}")
+                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                cursor.executemany(stmt, values)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         self.upload_contents(path=path)

@@ -166,7 +166,9 @@ class DatabricksVolumesUploader(Uploader, ABC):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        output_path = os.path.join(self.upload_config.path, path.name)
+        output_path = os.path.join(
+            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
+        )
         with open(path, "rb") as elements_file:
             self.connection_config.get_client().files.upload(
                 file_path=output_path,

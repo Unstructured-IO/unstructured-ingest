@@ -25,7 +25,12 @@ from pydantic.fields import FieldInfo
 from pydantic.types import _SecretBase
 from pydantic_core import PydanticUndefined
 
-from unstructured_ingest.v2.cli.utils.click import DelimitedString, Dict
+from unstructured_ingest.v2.cli.utils.click import (
+    DelimitedString,
+    Dict,
+    PydanticDate,
+    PydanticDateTime,
+)
 
 NoneType = type(None)
 
@@ -135,8 +140,10 @@ def get_type_from_annotation(field_type: Any) -> click.ParamType:
         return click.UUID
     if field_type is Path:
         return click.Path(path_type=Path)
-    if field_type in (datetime.datetime, datetime.date):
-        return click.DateTime()
+    if field_type is datetime.datetime:
+        return PydanticDateTime()
+    if field_type is datetime.date:
+        return PydanticDate()
     if field_origin is Literal:
         return click.Choice(field_args)
     if isinstance(field_type, EnumMeta):

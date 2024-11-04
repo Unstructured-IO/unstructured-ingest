@@ -2,7 +2,6 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-import faker
 import pandas as pd
 import pytest
 from psycopg2 import connect
@@ -26,9 +25,7 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploadStager,
 )
 
-faker = faker.Faker()
-
-SEED_DATA_ROWS = 40
+SEED_DATA_ROWS = 20
 
 
 @contextmanager
@@ -42,11 +39,8 @@ def postgres_download_setup() -> None:
             port=5433,
         )
         with connection.cursor() as cursor:
-            for _ in range(SEED_DATA_ROWS):
-                sql_statment = (
-                    f"INSERT INTO cars (brand, price) VALUES "
-                    f"('{faker.word()}', {faker.random_int()})"
-                )
+            for i in range(SEED_DATA_ROWS):
+                sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
                 cursor.execute(sql_statment)
             connection.commit()
         yield
@@ -88,7 +82,9 @@ async def test_postgres_source():
                 downloader=downloader,
                 configs=ValidationConfigs(
                     test_id="postgres",
-                    expected_num_files=40,
+                    expected_num_files=SEED_DATA_ROWS,
+                    expected_number_indexed_file_data=4,
+                    validate_downloaded_files=True,
                 ),
             )
 

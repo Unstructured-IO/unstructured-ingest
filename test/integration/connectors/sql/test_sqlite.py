@@ -3,7 +3,6 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-import faker
 import pandas as pd
 import pytest
 
@@ -24,9 +23,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
     SQLiteUploadStager,
 )
 
-faker = faker.Faker()
-
-SEED_DATA_ROWS = 40
+SEED_DATA_ROWS = 20
 
 
 @contextmanager
@@ -41,11 +38,8 @@ def sqlite_download_setup() -> Path:
             with db_init_path.open("r") as f:
                 query = f.read()
             cursor.executescript(query)
-            for _ in range(SEED_DATA_ROWS):
-                sql_statment = (
-                    f"INSERT INTO cars (brand, price) "
-                    f"VALUES ('{faker.word()}', {faker.random_int()})"
-                )
+            for i in range(SEED_DATA_ROWS):
+                sql_statment = f"INSERT INTO cars (brand, price) " f"VALUES ('brand{i}', {i})"
                 cursor.execute(sql_statment)
 
             sqlite_connection.commit()
@@ -76,7 +70,9 @@ async def test_sqlite_source():
                 downloader=downloader,
                 configs=ValidationConfigs(
                     test_id="sqlite",
-                    expected_num_files=40,
+                    expected_num_files=SEED_DATA_ROWS,
+                    expected_number_indexed_file_data=4,
+                    validate_downloaded_files=True,
                 ),
             )
 
