@@ -49,7 +49,7 @@ class ConfluenceIndexerConfig(IndexerConfig):
 @dataclass
 class ConfluenceIndexer(Indexer):
     connection_config: ConfluenceConnectionConfig
-    indexer_config: ConfluenceIndexerConfig
+    index_config: ConfluenceIndexerConfig
     connector_type: str = "confluence"
     _confluence: Any = field(init=False, default=None)
 
