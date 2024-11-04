@@ -72,10 +72,12 @@ class ConfluenceIndexer(Indexer):
             )
         return self._confluence
 
-    def precheck(self) -> None:
+    def precheck(self) -> bool:
         try:
-            self.confluence.get_space(space_key="TEST", expand=None)
-            logger.info("Connection to Confluence successful.")
+            # Attempt to retrieve the current user to verify credentials
+            current_user = self.confluence.get_current_user()
+            logger.info(f"Connection to Confluence successful. Logged in as: {current_user['displayName']}")
+            return True
         except Exception as e:
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to connect to Confluence: {e}")
