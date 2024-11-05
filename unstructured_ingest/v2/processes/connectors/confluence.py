@@ -70,11 +70,10 @@ class ConfluenceIndexer(Indexer):
 
     def precheck(self) -> bool:
         try:
-            # Attempt to retrieve the current user to verify credentials
-            current_user = self.confluence.get_current_user()
-            logger.info(
-                f"Connection to Confluence successful. Logged in as: {current_user['displayName']}"
-            )
+
+            # Attempt to retrieve a list of spaces with limit=1. This should only succeed if all creds are valid
+            spaces = self.confluence.get_all_spaces(limit=1)
+            logger.info("Connection to Confluence successful.")
             return True
         except Exception as e:
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
