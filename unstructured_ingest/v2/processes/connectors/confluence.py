@@ -12,9 +12,9 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     FileData,
     FileDataSourceMetadata,
-    SourceIdentifiers,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
