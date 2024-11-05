@@ -81,11 +81,11 @@ class ConfluenceIndexer(Indexer):
             raise SourceConnectionError(f"Failed to connect to Confluence: {e}")
 
     def _get_space_ids(self) -> List[str]:
-        spaces = self.indexer_config.spaces
+        spaces = self.index_config.spaces
         if spaces:
             return spaces
         else:
-            all_spaces = self.confluence.get_all_spaces(limit=self.indexer_config.max_num_of_spaces)
+            all_spaces = self.confluence.get_all_spaces(limit=self.index_config.max_num_of_spaces)
             space_ids = [space["key"] for space in all_spaces["results"]]
             return space_ids
 
@@ -93,7 +93,7 @@ class ConfluenceIndexer(Indexer):
         pages = self.confluence.get_all_pages_from_space(
             space=space_id,
             start=0,
-            limit=self.indexer_config.max_num_of_docs_from_each_space,
+            limit=self.index_config.max_num_of_docs_from_each_space,
             expand=None,
             content_type="page",
             status=None,
