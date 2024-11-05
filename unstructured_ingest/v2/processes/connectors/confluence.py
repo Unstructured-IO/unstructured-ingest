@@ -97,7 +97,6 @@ class ConfluenceIndexer(Indexer):
             expand=None,
             content_type="page",
             status=None,
-            label=None,
         )
         doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
         return doc_ids
