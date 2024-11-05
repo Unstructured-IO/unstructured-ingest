@@ -132,6 +132,7 @@ class DiscordDownloader(Downloader):
             else:
                 logger.warning(f"Channel with ID {record_locator['channel_id']} not found")
             await bot.close()
+
         await bot.start(self.connection_config.access_config.get_secret_value().token)
 
         with open(download_path, "w") as file:
