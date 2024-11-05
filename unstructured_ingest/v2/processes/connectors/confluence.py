@@ -71,8 +71,9 @@ class ConfluenceIndexer(Indexer):
     def precheck(self) -> bool:
         try:
 
-            # Attempt to retrieve a list of spaces with limit=1. This should only succeed if all creds are valid
-            spaces = self.confluence.get_all_spaces(limit=1)
+            # Attempt to retrieve a list of spaces with limit=1.
+            # This should only succeed if all creds are valid
+            self.confluence.get_all_spaces(limit=1)
             logger.info("Connection to Confluence successful.")
             return True
         except Exception as e:
