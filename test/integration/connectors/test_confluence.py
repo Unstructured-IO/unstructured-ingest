@@ -1,24 +1,26 @@
 import os
-import pytest
 import tempfile
 from pathlib import Path
-from unstructured_ingest.v2.processes.connectors.confluence import (
-    ConfluenceConnectionConfig,
-    ConfluenceIndexerConfig,
-    ConfluenceDownloaderConfig,
-    ConfluenceIndexer,
-    ConfluenceDownloader,
-    ConfluenceAccessConfig,
-    CONNECTOR_TYPE,
+
+import pytest
+
+from test.integration.connectors.utils.constants import (
+    SOURCE_TAG,
 )
 from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
-from test.integration.connectors.utils.constants import (
-    SOURCE_TAG,
-)
 from test.integration.utils import requires_env
+from unstructured_ingest.v2.processes.connectors.confluence import (
+    CONNECTOR_TYPE,
+    ConfluenceAccessConfig,
+    ConfluenceConnectionConfig,
+    ConfluenceDownloader,
+    ConfluenceDownloaderConfig,
+    ConfluenceIndexer,
+    ConfluenceIndexerConfig,
+)
 
 
 @pytest.mark.asyncio
@@ -30,7 +32,7 @@ async def test_confluence_source():
     user_email = os.environ["CONFLUENCE_USER_EMAIL"]
     api_token = os.environ["CONFLUENCE_API_TOKEN"]
     spaces = "testteamsp,MFS"
-    
+
     # Create connection and indexer configurations
     access_config = ConfluenceAccessConfig(api_token=api_token)
     connection_config = ConfluenceConnectionConfig(
@@ -43,12 +45,12 @@ async def test_confluence_source():
         max_num_of_docs_from_each_space=100,
         spaces=spaces,
     )
-    
+
     # Create a temporary directory for downloads
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         download_config = ConfluenceDownloaderConfig(download_dir=tempdir_path)
-        
+
         # Instantiate indexer and downloader
         indexer = ConfluenceIndexer(
             connection_config=connection_config,
@@ -58,7 +60,7 @@ async def test_confluence_source():
             connection_config=connection_config,
             download_config=download_config,
         )
-        
+
         # Run the source connector validation
         await source_connector_validation(
             indexer=indexer,
