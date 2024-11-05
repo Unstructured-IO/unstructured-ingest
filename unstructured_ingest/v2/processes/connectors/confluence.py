@@ -186,14 +186,10 @@ class ConfluenceDownloader(Downloader):
             f.write(content)
 
         # Update file_data with metadata
-        file_data.metadata.update(
-            {
-                "date_created": page["history"]["createdDate"],
-                "date_modified": page["version"]["when"],
-                "version": page["version"]["number"],
-                "title": page["title"],
-            }
-        )
+        file_data.metadata.date_created = page["history"]["createdDate"]
+        file_data.metadata.date_modified = page["version"]["when"]
+        file_data.metadata.version = str(page["version"]["number"])
+        file_data.display_name = page["title"]
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
