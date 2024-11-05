@@ -25,12 +25,10 @@ from unstructured_ingest.v2.processes.connector_registry import (
 CONNECTOR_TYPE = "confluence"
 
 
-@dataclass
 class ConfluenceAccessConfig(AccessConfig):
     api_token: str = Field(description="Confluence API token")
 
 
-@dataclass
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
     user_email: str = Field(description="User email for authentication")
@@ -39,7 +37,6 @@ class ConfluenceConnectionConfig(ConnectionConfig):
     )
 
 
-@dataclass
 class ConfluenceIndexerConfig(IndexerConfig):
     max_num_of_spaces: int = Field(500, description="Maximum number of spaces to index")
     max_num_of_docs_from_each_space: int = Field(
