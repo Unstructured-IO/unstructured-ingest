@@ -1,14 +1,22 @@
-## 0.2.2-dev0
+## 0.2.2-dev1
 
 ### Enhancements
 
+* **Remove `overwrite` field** from fsspec and databricks connectors
+* **Added migration for GitLab Source V2**
 * **Migrate Discord Source Connector to V2**
 
-## 0.2.1-dev0
+## 0.2.1
+
+### Enhancements
+
+* **File system based indexers return a record display name**
+* **Add singlestore source connector**
+* **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 
 ### Fixes
 
-* **Fix Databricks Volumes file nameing** Add .json to end of upload file.
+* **Fix Databricks Volumes file naming** Add .json to end of upload file.
 
 ## 0.2.0
 

@@ -1,0 +1,25 @@
+[
+  {
+    "type": "Table",
+    "element_id": "54075fb278986da7463a8714d103fe91",
+    "text": "\n\n\n_id\ntitle\nreviewid\ncreationdate\ncriticname\noriginalscore\nreviewstate\nreviewtext\n\n\n60297eea-73d7-4fca-a97e-ea73d7cfca62\nCity Hunter: Shinjuku Private Eyes\n2590987\n2019-05-28\nReuben Baron\n\nfresh\nThe choreography is so precise and lifelike at points one might wonder whether the movie was rotoscoped, but no live-action reference footage was used. The quality is due to the skill of the animators and Kodama's love for professional wrestling.\n\n\n",
+    "metadata": {
+      "text_as_html": "<table border=\"1\" class=\"dataframe\">\n  <tbody>\n    <tr>\n      <td>_id</td>\n      <td>title</td>\n      <td>reviewid</td>\n      <td>creationdate</td>\n      <td>criticname</td>\n      <td>originalscore</td>\n      <td>reviewstate</td>\n      <td>reviewtext</td>\n    </tr>\n    <tr>\n      <td>60297eea-73d7-4fca-a97e-ea73d7cfca62</td>\n      <td>City Hunter: Shinjuku Private Eyes</td>\n      <td>2590987</td>\n      <td>2019-05-28</td>\n      <td>Reuben Baron</td>\n      <td></td>\n      <td>fresh</td>\n      <td>The choreography is so precise and lifelike at points one might wonder whether the movie was rotoscoped, but no live-action reference footage was used. The quality is due to the skill of the animators and Kodama's love for professional wrestling.</td>\n    </tr>\n  </tbody>\n</table>",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/csv",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "document_id": "60297eea-73d7-4fca-a97e-ea73d7cfca62"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 442
+      }
+    }
+  }
+]
