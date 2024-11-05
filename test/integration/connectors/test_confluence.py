@@ -40,7 +40,7 @@ async def test_confluence_source():
         user_email=user_email,
         access_config=access_config,
     )
-    indexer_config = ConfluenceIndexerConfig(
+    index_config = ConfluenceIndexerConfig(
         max_num_of_spaces=500,
         max_num_of_docs_from_each_space=100,
         spaces=spaces,
@@ -54,7 +54,7 @@ async def test_confluence_source():
         # Instantiate indexer and downloader
         indexer = ConfluenceIndexer(
             connection_config=connection_config,
-            indexer_config=indexer_config,
+            index_config=index_config,
         )
         downloader = ConfluenceDownloader(
             connection_config=connection_config,
