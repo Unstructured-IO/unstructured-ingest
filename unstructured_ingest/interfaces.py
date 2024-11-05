@@ -21,6 +21,7 @@ from unstructured_ingest.enhanced_dataclass.core import _asdict
 from unstructured_ingest.error import PartitionError, SourceConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.v2.unstructured_api import call_api
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -565,6 +566,7 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
     ) -> list["Element"]:
         from unstructured.documents.elements import DataSourceMetadata
         from unstructured.partition.auto import partition
+        from unstructured.staging.base import elements_from_dicts
 
         if not partition_config.partition_by_api:
             logger.debug("Using local partition")
@@ -582,18 +584,16 @@ class BaseSingleIngestDoc(BaseIngestDoc, IngestDocJsonMixin, ABC):
                 **partition_kwargs,
             )
         else:
-            from unstructured.partition.api import partition_via_api
-
             endpoint = partition_config.partition_endpoint
 
             logger.debug(f"using remote partition ({endpoint})")
-
-            elements = partition_via_api(
-                filename=str(self.filename),
+            elements_dicts = call_api(
+                server_url=endpoint,
                 api_key=partition_config.api_key,
-                api_url=endpoint,
-                **partition_kwargs,
+                filename=Path(self.filename),
+                api_parameters=partition_kwargs,
             )
+            elements = elements_from_dicts(elements_dicts)
             # TODO: add m_data_source_metadata to unstructured-api pipeline_api and then
             # pass the stringified json here
         return elements

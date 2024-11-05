@@ -9,7 +9,7 @@ from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.unstructured_api import call_api
+from unstructured_ingest.v2.unstructured_api import call_api_async
 
 
 class PartitionerConfig(BaseModel):
@@ -167,7 +167,7 @@ class Partitioner(BaseProcess, ABC):
         metadata = metadata or {}
         logger.debug(f"partitioning file {filename} with metadata: {metadata}")
 
-        elements = await call_api(
+        elements = await call_api_async(
             server_url=self.config.partition_endpoint,
             api_key=self.config.api_key.get_secret_value(),
             filename=filename,

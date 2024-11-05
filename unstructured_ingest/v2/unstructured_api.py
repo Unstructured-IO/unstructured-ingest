@@ -51,7 +51,7 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     return PartitionRequest(partition_parameters=partition_params)
 
 
-async def call_api(
+async def call_api_async(
     server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
 ) -> list[dict]:
     """Call the Unstructured API using unstructured-client.
@@ -72,5 +72,30 @@ async def call_api(
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     res = await client.general.partition_async(request=partition_request)
+
+    return res.elements or []
+
+
+def call_api(
+    server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
+) -> list[dict]:
+    """Call the Unstructured API using unstructured-client.
+
+    Args:
+        server_url: The base URL where the API is hosted
+        api_key: The user's API key (can be empty if this is a self hosted API)
+        filename: Path to the file being partitioned
+        api_parameters: A dict containing the requested API parameters
+
+    Returns: A list of the file's elements, or an empty list if there was an error
+    """
+    from unstructured_client import UnstructuredClient
+
+    client = UnstructuredClient(
+        server_url=server_url,
+        api_key_auth=api_key,
+    )
+    partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
+    res = client.general.partition(request=partition_request)
 
     return res.elements or []
