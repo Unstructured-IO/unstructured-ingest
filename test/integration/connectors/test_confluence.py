@@ -31,7 +31,7 @@ async def test_confluence_source():
     confluence_url = "https://unstructured-ingest-test.atlassian.net"
     user_email = os.environ["CONFLUENCE_USER_EMAIL"]
     api_token = os.environ["CONFLUENCE_API_TOKEN"]
-    spaces = ["testteamsp","MFS"]
+    spaces = ["testteamsp", "MFS"]
 
     # Create connection and indexer configurations
     access_config = ConfluenceAccessConfig(api_token=api_token)
