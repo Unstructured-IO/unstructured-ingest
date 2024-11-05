@@ -264,7 +264,7 @@ class OnedriveUploader(Uploader):
             destination_path = Path(file_data.source_identifiers.relative_path)
         else:
             # Use a default path or raise an error
-            raise ValueError("File data does not have a valid sour path")
+            raise ValueError("File data does not have a valid source path")
 
         destination_folder = destination_path.parent
         file_name = destination_path.name
