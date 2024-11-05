@@ -142,7 +142,6 @@ class ConfluenceIndexer(Indexer):
                 yield file_data
 
 
-@dataclass
 class ConfluenceDownloaderConfig(DownloaderConfig):
     pass
 
