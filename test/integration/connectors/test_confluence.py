@@ -25,7 +25,7 @@ from unstructured_ingest.v2.processes.connectors.confluence import (
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-@requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN", "CONFLUENCE_SPACES")
+@requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
 async def test_confluence_source():
     # Retrieve environment variables
     confluence_url = "https://unstructured-ingest-test.atlassian.net"
