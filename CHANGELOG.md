@@ -1,10 +1,10 @@
-## 0.2.2-dev1
+## 0.2.2-dev2
 
 ## Enchancement
 
 * **Added V2 confluence source connector**
 
-## 0.2.2-dev0
+## 0.2.2-dev1
 
 ### Enhancements
 
@@ -18,6 +18,8 @@
 * **File system based indexers return a record display name**
 * **Add singlestore source connector**
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+* **Support native async requests from unstructured-client**
+* **Support filtering element types in partitioner step**
 
 ### Fixes
 
