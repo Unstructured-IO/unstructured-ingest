@@ -23,6 +23,7 @@ from unstructured_ingest.v2.processes.connector_registry import DestinationRegis
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
+    from pinecone import Pinecone
 
 
 CONNECTOR_TYPE = "pinecone"
@@ -43,15 +44,18 @@ class PineconeConnectionConfig(ConnectionConfig):
     )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
-    def get_index(self, **index_kwargs) -> "PineconeIndex":
+    def get_client(self, **index_kwargs) -> "Pinecone":
         from pinecone import Pinecone
 
         from unstructured_ingest import __version__ as unstructured_version
 
-        pc = Pinecone(
+        return Pinecone(
             api_key=self.access_config.get_secret_value().pinecone_api_key,
             source_tag=f"unstructured_ingest=={unstructured_version}",
         )
+
+    def get_index(self, **index_kwargs) -> "PineconeIndex":
+        pc = self.get_client()
 
         index = pc.Index(name=self.index_name, **index_kwargs)
         logger.debug(f"connected to index: {pc.describe_index(self.index_name)}")
@@ -106,7 +110,7 @@ class PineconeUploadStager(UploadStager):
         default_factory=lambda: PineconeUploadStagerConfig()
     )
 
-    def conform_dict(self, element_dict: dict) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         embeddings = element_dict.pop("embeddings", None)
         metadata: dict[str, Any] = element_dict.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
@@ -121,19 +125,23 @@ class PineconeUploadStager(UploadStager):
                 }
             )
 
+        metadata = flatten_dict(
+            pinecone_metadata,
+            separator="-",
+            flatten_lists=True,
+            remove_none=True,
+        )
+        metadata["file_id"] = file_data.identifier
+
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
-            "metadata": flatten_dict(
-                pinecone_metadata,
-                separator="-",
-                flatten_lists=True,
-                remove_none=True,
-            ),
+            "metadata": metadata,
         }
 
     def run(
         self,
+        file_data: FileData,
         elements_filepath: Path,
         output_dir: Path,
         output_filename: str,
@@ -166,6 +174,21 @@ class PineconeUploader(Uploader):
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+    def delete_by_record_id(self, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with metadata file_id={file_data.identifier} from pinecone index"
+        )
+        index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
+        delete_kwargs = {"filter": {"file_id": {"$eq": file_data.identifier}}}
+        if namespace := self.upload_config.namespace:
+            delete_kwargs["namespace"] = namespace
+
+        resp = index.delete(filter={"file_id": {"$eq": file_data.identifier}})
+        logger.debug(
+            f"deleted any content with metadata file_id={file_data.identifier} "
+            f"from pinecone index: {resp}"
+        )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
     def upsert_batches_async(self, elements_dict: list[dict]):
@@ -208,7 +231,7 @@ class PineconeUploader(Uploader):
             f" index named {self.connection_config.index_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-
+        self.delete_by_record_id(file_data=file_data)
         self.upsert_batches_async(elements_dict=elements_dict)
 
 
