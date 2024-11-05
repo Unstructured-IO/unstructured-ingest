@@ -64,7 +64,7 @@ class ConfluenceIndexer(Indexer):
             self._confluence = Confluence(
                 url=self.connection_config.url,
                 username=self.connection_config.user_email,
-                password=self.connection_config.access_config.api_token.get_secret_value(),
+                password=self.connection_config.access_config.get_secret_value().api_token,
             )
         return self._confluence
 
@@ -144,7 +144,7 @@ class ConfluenceDownloader(Downloader):
             self._confluence = Confluence(
                 url=self.connection_config.url,
                 username=self.connection_config.user_email,
-                password=self.connection_config.access_config.api_token.get_secret_value(),
+                password=self.connection_config.access_config.get_secret_value().api_token,
             )
         return self._confluence
 
