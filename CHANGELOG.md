@@ -1,8 +1,9 @@
-## 0.2.3-dev0
+## 0.2.3-dev1
 
 ### Enhancements
 
 * **Added V2 kafka destination connector**
+* **Persist file id in pinecone metadata, use it to delete previous content to prevent duplicates.**
 
 ## 0.2.2
 
