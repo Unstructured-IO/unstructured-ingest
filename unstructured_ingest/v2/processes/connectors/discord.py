@@ -17,6 +17,7 @@ from unstructured_ingest.v2.interfaces import (
     IndexerConfig,
     SourceIdentifiers,
 )
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
 if TYPE_CHECKING:
@@ -104,23 +105,40 @@ class DiscordDownloader(Downloader):
     @requires_dependencies(["discord"], extras="discord")
     async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         import discord
+        from discord.ext import commands
 
         record_locator = file_data.metadata.record_locator
 
         if "channel_id" not in record_locator:
             raise ValueError(f"No channel id in file data record locator: {record_locator}")
 
-        if "channel_id" in record_locator:
-            download_path = self.get_download_path(file_data=file_data)
-            download_path.parent.mkdir(parents=True, exist_ok=True)
+        client = self.connection_config.get_client()
+        bot = commands.Bot(command_prefix=">", intents=client.intents)
+        download_path = self.get_download_path(file_data=file_data)
+        download_path.parent.mkdir(parents=True, exist_ok=True)
 
-            messages: list[discord.Message] = []
+        messages: list[discord.Message] = []
 
-            with open(download_path, "w") as file:
-                for message in messages:
-                    file.write(f"{message.content}\n")
+        @bot.event
+        async def on_ready():
+            logger.debug("Discord Bot is ready")
+            record_locator["channel_id"] = record_locator["channel_id"].split(".")[0]
+            channel = bot.get_channel(int(record_locator["channel_id"]))
+            if channel:
+                logger.debug(f"Processing messages for channel: {channel.name}")
+                async for msg in channel.history(limit=100):
+                    messages.append(msg)
+                logger.debug(f"Fetched {len(messages)} messages")
+            else:
+                logger.warning(f"Channel with ID {record_locator['channel_id']} not found")
+            await bot.close()
+        await bot.start(self.connection_config.access_config.get_secret_value().token)
 
-            return self.generate_download_response(file_data=file_data, download_path=download_path)
+        with open(download_path, "w") as file:
+            for message in messages:
+                file.write(f"{message.content}\n")
+
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 discord_source_entry = SourceRegistryEntry(
