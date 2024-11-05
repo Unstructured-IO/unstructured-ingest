@@ -110,7 +110,7 @@ class ConfluenceIndexer(Indexer):
             doc_ids = self._get_docs_ids_within_one_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
-                # Build metadata
+
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
@@ -159,10 +159,6 @@ class ConfluenceDownloader(Downloader):
             )
         return self._confluence
 
-    def precheck(self) -> None:
-        # Optional: Implement any necessary prechecks
-        pass
-
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         doc_id = file_data.identifier
         try:
@@ -178,7 +174,7 @@ class ConfluenceDownloader(Downloader):
             raise ValueError(f"Page with ID {doc_id} does not exist.")
 
         content = page["body"]["view"]["value"]
-        # Save content to a temporary file
+
         filename = f"{doc_id}.html"
         download_path = Path(self.download_dir) / filename
         download_path.parent.mkdir(parents=True, exist_ok=True)
