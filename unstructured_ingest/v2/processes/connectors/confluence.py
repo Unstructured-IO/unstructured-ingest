@@ -11,6 +11,7 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     download_responses,
@@ -102,12 +103,23 @@ class ConfluenceIndexer(Indexer):
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
+        from time import time
+
         space_ids = self._get_space_ids()
         for space_id in space_ids:
             doc_ids = self._get_docs_ids_within_one_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
-                metadata = {
+                # Build metadata
+                metadata = FileDataSourceMetadata(
+                    date_processed=str(time()),
+                    url=f"{self.connection_config.url}/pages/{doc_id}",
+                    record_locator={
+                        "space_id": space_id,
+                        "document_id": doc_id,
+                    },
+                )
+                additional_metadata = {
                     "space_id": space_id,
                     "document_id": doc_id,
                 }
@@ -115,7 +127,7 @@ class ConfluenceIndexer(Indexer):
                     identifier=doc_id,
                     connector_type=self.connector_type,
                     metadata=metadata,
-                    source_url=f"{self.connection_config.url}/pages/{doc_id}",
+                    additional_metadata=additional_metadata,
                 )
                 yield file_data
 
