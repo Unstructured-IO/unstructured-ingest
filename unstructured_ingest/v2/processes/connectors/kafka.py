@@ -20,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     FileData,
     FileDataSourceMetadata,
+    SourceIdentifiers,
     Indexer,
     IndexerConfig,
     download_responses,
@@ -94,11 +95,11 @@ class KafkaIndexer(Indexer):
     index_config: KafkaIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def _get_messages(self):
+    def _get_messages(self) -> Dict[str, Dict[str, Any]]:
         from confluent_kafka import KafkaError
 
         consumer = self.connection_config.get_client()
-        collected = {}
+        collected: Dict[str, Dict[str, Any]] = {}
         num_messages_to_consume = self.connection_config.num_messages_to_consume
         logger.info(f"Config set for consuming {num_messages_to_consume} messages")
 
@@ -125,10 +126,13 @@ class KafkaIndexer(Indexer):
                 empty_polls = 0
                 try:
                     msg_content = json.loads(msg.value().decode("utf8"))
-                    collected[
-                        f"{msg.topic()}_{msg.partition()}_{msg.offset()}_\
-                        {msg_content.get('filename', '')}"
-                    ] = msg_content
+                    key = f"{msg.topic()}_{msg.partition()}_{msg.offset()}_{msg_content.get('filename', '')}"
+                    collected[key] = {
+                        "msg_content": msg_content,
+                        "topic": msg.topic(),
+                        "partition": msg.partition(),
+                        "offset": msg.offset(),
+                    }
                     messages_consumed += 1
                     logger.debug(f"Collected {messages_consumed} messages")
                     consumer.commit(asynchronous=False)
@@ -143,16 +147,42 @@ class KafkaIndexer(Indexer):
     def run(self) -> Generator[FileData, None, None]:
         messages_consumed = self._get_messages()
         for key, value in messages_consumed.items():
+            msg_content = value["msg_content"]
+            topic = value["topic"]
+            partition = value["partition"]
+            offset = value["offset"]
+            filename = msg_content.get("filename", "")
+            content = msg_content.get("content", "")
+
+            # Construct file paths
+            fullpath = f"{topic}/{partition}/{filename}"
+            rel_path = fullpath  # Assuming fullpath is suitable as rel_path
+
+            # Generate a unique identifier
+            identifier = f"{topic}_{partition}_{offset}"
+
+            # Prepare additional metadata
+            additional_metadata = {
+                "topic": topic,
+                "partition": partition,
+                "offset": offset,
+                "filename": filename,
+                "content": content,
+            }
+
             yield FileData(
-                identifier=key.split("_")[0],
+                identifier=identifier,
                 connector_type=self.connector_type,
+                source_identifiers=SourceIdentifiers(
+                    filename=filename,
+                    rel_path=rel_path,
+                    fullpath=fullpath,
+                ),
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
                 ),
-                additional_metadata={
-                    "filename": value["filename"],
-                    "content": value["content"],
-                },
+                additional_metadata=additional_metadata,
+                display_name=fullpath,
             )
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
@@ -173,29 +203,29 @@ class KafkaDownloaderConfig(DownloaderConfig):
 @dataclass
 class KafkaDownloader(Downloader):
     connection_config: KafkaConnectionConfig
-    download_config: KafkaDownloaderConfig = field(default_factory=lambda: KafkaDownloaderConfig)
+    download_config: KafkaDownloaderConfig = field(default_factory=KafkaDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
     version: Optional[str] = None
     source_url: Optional[str] = None
 
-    def _tmp_download_file(self, filename: str):
-        topic_file = self.connection_config.topic + "-" + filename
-        return Path(self.download_dir) / topic_file
-
-    def _create_full_tmp_dir_path(self, filename: str):
-        self._tmp_download_file(filename).parent.mkdir(parents=True, exist_ok=True)
-
     @SourceConnectionError.wrap
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        filename = file_data.additional_metadata["filename"]
-        self._create_full_tmp_dir_path(filename)
-        download_path = self._tmp_download_file(filename)
+        source_identifiers = file_data.source_identifiers
+        if source_identifiers is None:
+            raise ValueError("FileData is missing source_identifiers")
+
+        # Build the download path using source_identifiers
+        rel_path = source_identifiers.rel_path or source_identifiers.filename
+        download_path = Path(self.download_dir) / rel_path
+        download_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            pdf_data = base64.b64decode(file_data.additional_metadata["content"])
+            content_b64 = file_data.additional_metadata["content"]
+            file_data_bytes = base64.b64decode(content_b64)
             with open(download_path, "wb") as file:
-                file.write(pdf_data)
-        except Exception:
+                file.write(file_data_bytes)
+        except Exception as e:
+            logger.error(f"Failed to download file {file_data.identifier}: {e}")
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
