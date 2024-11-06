@@ -34,9 +34,6 @@ class DiscordConnectionConfig(ConnectionConfig):
     access_config: Secret[DiscordAccessConfig] = Field(
         default=DiscordAccessConfig, validate_default=True
     )
-    channels: Optional[list[str]] = Field(
-        default=None, description="List of Discord channel IDs to process"
-    )
 
     @requires_dependencies(["discord"], extras="discord")
     def get_client(self) -> "DiscordClient":
@@ -48,7 +45,9 @@ class DiscordConnectionConfig(ConnectionConfig):
 
 
 class DiscordIndexerConfig(IndexerConfig):
-    pass
+    channels: Optional[list[str]] = Field(
+        default=None, description="List of Discord channel IDs to process"
+    )
 
 
 @dataclass
@@ -58,7 +57,7 @@ class DiscordIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         self.connection_config.get_client()
-        channels_to_process: set[str] = set(self.connection_config.channels or [])
+        channels_to_process: set[str] = set(self.index_config.channels or [])
 
         for channel_id in list(channels_to_process):
             file_data = self.get_channel_file_data(channel_id=channel_id)
@@ -70,9 +69,8 @@ class DiscordIndexer(Indexer):
         identifier = channel_id
         channel_id = f"{channel_id}.txt"
         source_identifiers = SourceIdentifiers(
-            filename=identifier,
+            filename=channel_id,
             fullpath=channel_id,
-            rel_path=identifier,
         )
         metadata = FileDataSourceMetadata(
             record_locator={"channel_id": identifier},
@@ -87,7 +85,9 @@ class DiscordIndexer(Indexer):
 
 
 class DiscordDownloaderConfig(DownloaderConfig):
-    pass
+    limit: Optional[int] = Field(
+        default=100, description="Limit on how many messages per channel to pull in"
+    )
 
 
 @dataclass
@@ -102,42 +102,40 @@ class DiscordDownloader(Downloader):
         # Synchronous run is not implemented
         raise NotImplementedError()
 
-    @requires_dependencies(["discord"], extras="discord")
     async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        import discord
-        from discord.ext import commands
-
         record_locator = file_data.metadata.record_locator
 
         if "channel_id" not in record_locator:
             raise ValueError(f"No channel id in file data record locator: {record_locator}")
 
         client = self.connection_config.get_client()
-        bot = commands.Bot(command_prefix=">", intents=client.intents)
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        messages: list[discord.Message] = []
+        messages = []
+        channel_id = record_locator["channel_id"]
 
-        @bot.event
+        @client.event
         async def on_ready():
             logger.debug("Discord Bot is ready")
-            record_locator["channel_id"] = record_locator["channel_id"].split(".")[0]
-            channel = bot.get_channel(int(record_locator["channel_id"]))
-            if channel:
-                logger.debug(f"Processing messages for channel: {channel.name}")
-                async for msg in channel.history(limit=100):
-                    messages.append(msg)
-                logger.debug(f"Fetched {len(messages)} messages")
-            else:
-                logger.warning(f"Channel with ID {record_locator['channel_id']} not found")
-            await bot.close()
+            channel = client.get_channel(int(channel_id))
+            if not channel:
+                raise ValueError(f"channel not found for id: {channel_id}")
+            logger.debug(f"Processing messages for channel: {channel.name}")
+            async for msg in channel.history(limit=self.download_config.limit):
+                messages.append(msg)
+            logger.debug(f"Fetched {len(messages)} messages")
+            await client.close()
 
-        await bot.start(self.connection_config.access_config.get_secret_value().token)
+        try:
+            await client.start(self.connection_config.access_config.get_secret_value().token)
+        finally:
+            await client.close()
+
+        content = "\n".join([message.content for message in messages])
 
         with open(download_path, "w") as file:
-            for message in messages:
-                file.write(f"{message.content}\n")
+            file.write(content)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
