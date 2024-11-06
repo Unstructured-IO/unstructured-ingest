@@ -151,10 +151,15 @@ class PineconeUploadStager(UploadStager):
             elements_contents = json.load(elements_file)
 
         conformed_elements = [
-            self.conform_dict(element_dict=element) for element in elements_contents
+            self.conform_dict(element_dict=element, file_data=file_data)
+            for element in elements_contents
         ]
 
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
+        if Path(output_filename).suffix != ".json":
+            output_filename = f"{output_filename}.json"
+        else:
+            output_filename = f"{Path(output_filename).stem}.json"
+        output_path = Path(output_dir) / Path(f"{output_filename}")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(output_path, "w") as output_file:
@@ -175,19 +180,53 @@ class PineconeUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def delete_by_record_id(self, file_data: FileData) -> None:
+    def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata file_id={file_data.identifier} from pinecone index"
+            f"deleting any content with metadata file_id={file_data.identifier} "
+            f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
         delete_kwargs = {"filter": {"file_id": {"$eq": file_data.identifier}}}
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
 
-        resp = index.delete(filter={"file_id": {"$eq": file_data.identifier}})
+        resp = index.delete(**delete_kwargs)
         logger.debug(
             f"deleted any content with metadata file_id={file_data.identifier} "
             f"from pinecone index: {resp}"
+        )
+
+    def serverless_delete_by_record_id(self, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with metadata file_id={file_data.identifier} "
+            f"from pinecone serverless index"
+        )
+        index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
+        index_stats = index.describe_index_stats()
+        total_vectors = index_stats["total_vector_count"]
+        if total_vectors == 0:
+            return
+        dimension = index_stats["dimension"]
+        query_params = {
+            "filter": {"file_id": {"$eq": file_data.identifier}},
+            "vector": [0] * dimension,
+            "top_k": total_vectors,
+        }
+        if namespace := self.upload_config.namespace:
+            query_params["namespace"] = namespace
+        while True:
+            query_results = index.query(**query_params)
+            matches = query_results.get("matches", [])
+            if not matches:
+                break
+            ids = [match["id"] for match in matches]
+            delete_params = {"ids": ids}
+            if namespace := self.upload_config.namespace:
+                delete_params["namespace"] = namespace
+            index.delete(**delete_params)
+        logger.debug(
+            f"deleted any content with metadata file_id={file_data.identifier} "
+            f"from pinecone index"
         )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
@@ -231,7 +270,16 @@ class PineconeUploader(Uploader):
             f" index named {self.connection_config.index_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-        self.delete_by_record_id(file_data=file_data)
+        # Determine if serverless or pod based index
+        pinecone_client = self.connection_config.get_client()
+        index_description = pinecone_client.describe_index(name=self.connection_config.index_name)
+        if "serverless" in index_description.get("spec"):
+            self.serverless_delete_by_record_id(file_data=file_data)
+        elif "pod" in index_description.get("spec"):
+            self.pod_delete_by_record_id(file_data=file_data)
+        else:
+            raise ValueError(f"unexpected spec type in index description: {index_description}")
+        self.serverless_delete_by_record_id(file_data=file_data)
         self.upsert_batches_async(elements_dict=elements_dict)
 
 
