@@ -38,11 +38,16 @@ class QdrantAccessConfig(AccessConfig):
 class QdrantConnectionConfig(ConnectionConfig):
     location: Optional[str] = Field(
         default=None,
-        description="If `str` - use it as a `url` parameter.\nIf `None` - use default values for `host` and `port`.",
+        description=(
+            "If `str` - use it as a `url` parameter.\nIf `None` - use default values for `host`"
+            "and `port`."
+        ),
     )
     url: Optional[str] = Field(
         default=None,
-        description='Either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]"',
+        description=(
+            'Either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]"'
+        ),
     )
     port: int = Field(default=6333, description="Port of the REST API interface.")
     grpc_port: int = Field(default=6334, description="Port of the gRPC interface.")
@@ -58,7 +63,10 @@ class QdrantConnectionConfig(ConnectionConfig):
     )
     timeout: Optional[float] = Field(
         default=None,
-        description="Timeout for REST and gRPC API requests. 5 seconds for REST and unlimited for gRPC by default.",
+        description=(
+            "Timeout for REST and gRPC API requests. 5 seconds for REST and unlimited for"
+            "gRPC by default."
+        ),
     )
     host: Optional[str] = Field(
         default=None,
