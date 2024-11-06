@@ -93,7 +93,7 @@ def pinecone_index() -> str:
 
 
 def validate_pinecone_index(
-    index_name: str, expected_num_of_vectors: int, retries=10, interval=1
+    index_name: str, expected_num_of_vectors: int, retries=30, interval=1
 ) -> None:
     # Because there's a delay for the index to catch up to the recent writes, add in a retry
     pinecone = Pinecone(api_key=get_api_key())
@@ -103,9 +103,10 @@ def validate_pinecone_index(
         index_stats = index.describe_index_stats()
         vector_count = index_stats["total_vector_count"]
         if vector_count == expected_num_of_vectors:
+            logger.info(f"expected {expected_num_of_vectors} == vector count {vector_count}")
             break
         logger.info(
-            f"retry attempt {i}: expected {expected_num_of_vectors} != vector count {vector_count} "
+            f"retry attempt {i}: expected {expected_num_of_vectors} != vector count {vector_count}"
         )
         time.sleep(interval)
     assert vector_count == expected_num_of_vectors
@@ -144,6 +145,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
     with new_upload_file.open() as f:
         staged_content = json.load(f)
     expected_num_of_vectors = len(staged_content)
+    logger.info("validating first upload")
     validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
@@ -153,6 +155,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
         await uploader.run_async(path=new_upload_file, file_data=file_data)
     else:
         uploader.run(path=new_upload_file, file_data=file_data)
+    logger.info("validating second upload")
     validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
