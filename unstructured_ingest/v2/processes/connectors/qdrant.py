@@ -38,15 +38,15 @@ class QdrantAccessConfig(AccessConfig):
 class QdrantConnectionConfig(ConnectionConfig):
     location: Optional[str] = Field(
         default=None,
-        description='If `":memory:"` - use in-memory Qdrant instance.\nIf `str` - use it as a `url` parameter.\nIf `None` - use default values for `host` and `port`.',
+        description="If `str` - use it as a `url` parameter.\nIf `None` - use default values for `host` and `port`.",
     )
     url: Optional[str] = Field(
         default=None,
         description='Either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]"',
     )
-    port: Optional[int] = Field(default=6333, description="Port of the REST API interface.")
-    grpc_port: Optional[int] = Field(default=6334, description="Port of the gRPC interface.")
-    prefer_grpc: Optional[bool] = Field(
+    port: int = Field(default=6333, description="Port of the REST API interface.")
+    grpc_port: int = Field(default=6334, description="Port of the gRPC interface.")
+    prefer_grpc: bool = Field(
         default=False,
         description="If `true` - use gPRC interface whenever possible in custom methods.",
     )
@@ -65,10 +65,12 @@ class QdrantConnectionConfig(ConnectionConfig):
         description="Host name of Qdrant service. If url and host are None, set to 'localhost'",
     )
     path: Optional[str] = Field(default=None, description="Persistence path for QdrantLocal.")
-    force_disable_check_same_thread: Optional[bool] = Field(
+    force_disable_check_same_thread: bool = Field(
         default=False, description="For QdrantLocal, force disable check_same_thread."
     )
-    access_config: Secret[QdrantAccessConfig] = Field(default=None, description="Access Config")
+    access_config: Secret[QdrantAccessConfig] = Field(
+        default_factory=QdrantAccessConfig, validate_default=True, description="Access Config"
+    )
 
     @requires_dependencies(["qdrant_client"], extras="qdrant")
     def get_async_client(self) -> "AsyncQdrantClient":
@@ -193,13 +195,10 @@ class QdrantUploader(Uploader):
             logger.debug(
                 "Upserting %i points to the '%s' collection.",
                 len(points),
-                self.connection_config.collection_name,
+                self.upload_config.collection_name,
             )
-            response = await client.upsert(
-                self.connection_config.collection_name, points=points, wait=True
-            )
+            await client.upsert(self.upload_config.collection_name, points=points, wait=True)
         except Exception as api_error:
-            logger.debug("Upsert response: %s", response)
             logger.error(
                 "Failed to upsert points to the collection due to the following error %s", api_error
             )
