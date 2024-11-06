@@ -9,6 +9,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -131,7 +132,7 @@ class PineconeUploadStager(UploadStager):
             flatten_lists=True,
             remove_none=True,
         )
-        metadata["file_id"] = file_data.identifier
+        metadata[RECORD_ID_LABEL] = file_data.identifier
 
         return {
             "id": str(uuid.uuid4()),
@@ -182,23 +183,23 @@ class PineconeUploader(Uploader):
 
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata file_id={file_data.identifier} "
+            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
             f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        delete_kwargs = {"filter": {"file_id": {"$eq": file_data.identifier}}}
+        delete_kwargs = {"filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}}}
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
 
         resp = index.delete(**delete_kwargs)
         logger.debug(
-            f"deleted any content with metadata file_id={file_data.identifier} "
+            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
             f"from pinecone index: {resp}"
         )
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata file_id={file_data.identifier} "
+            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
             f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
@@ -208,7 +209,7 @@ class PineconeUploader(Uploader):
             return
         dimension = index_stats["dimension"]
         query_params = {
-            "filter": {"file_id": {"$eq": file_data.identifier}},
+            "filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}},
             "vector": [0] * dimension,
             "top_k": total_vectors,
         }
@@ -225,7 +226,7 @@ class PineconeUploader(Uploader):
                 delete_params["namespace"] = namespace
             index.delete(**delete_params)
         logger.debug(
-            f"deleted any content with metadata file_id={file_data.identifier} "
+            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
             f"from pinecone index"
         )
 
@@ -279,7 +280,6 @@ class PineconeUploader(Uploader):
             self.pod_delete_by_record_id(file_data=file_data)
         else:
             raise ValueError(f"unexpected spec type in index description: {index_description}")
-        self.serverless_delete_by_record_id(file_data=file_data)
         self.upsert_batches_async(elements_dict=elements_dict)
 
 
