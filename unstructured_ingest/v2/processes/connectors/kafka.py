@@ -4,7 +4,7 @@ import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
 
 from pydantic import Field, Secret, SecretStr
 
@@ -20,9 +20,9 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     FileData,
     FileDataSourceMetadata,
-    SourceIdentifiers,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
@@ -126,7 +126,8 @@ class KafkaIndexer(Indexer):
                 empty_polls = 0
                 try:
                     msg_content = json.loads(msg.value().decode("utf8"))
-                    key = f"{msg.topic()}_{msg.partition()}_{msg.offset()}_{msg_content.get('filename', '')}"
+                    key = f"{msg.topic()}_{msg.partition()}_{msg.offset()}_\
+                    {msg_content.get('filename', '')}"
                     collected[key] = {
                         "msg_content": msg_content,
                         "topic": msg.topic(),
