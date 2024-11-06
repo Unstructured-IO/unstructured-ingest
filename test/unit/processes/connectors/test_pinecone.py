@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 
 from unstructured_ingest.v2.interfaces import FileData
@@ -13,6 +15,7 @@ def test_element_dict():
     return {
         "embeddings": [0, 1],
         "text": "test dict",
+        "element_id": str(uuid4()),
         "metadata": {
             "text_as_html": "text as html",
             "foo": "foo",
