@@ -69,5 +69,4 @@ async def test_confluence_source():
                 test_id="confluence_source_test",
                 expected_num_files=11, 
             ),
-            overwrite_fixtures=True
         )

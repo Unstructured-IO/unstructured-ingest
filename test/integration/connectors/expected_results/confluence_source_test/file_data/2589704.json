@@ -1,0 +1,30 @@
+{
+  "identifier": "2589704",
+  "connector_type": "confluence",
+  "source_identifiers": {
+    "filename": "2589704",
+    "fullpath": "testteamsp/2589704",
+    "rel_path": "testteamsp/2589704"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "https://unstructured-ingest-test.atlassian.net/pages/2589704",
+    "version": "3",
+    "record_locator": {
+      "space_id": "testteamsp",
+      "document_id": "2589704"
+    },
+    "date_created": "2023-07-13T14:28:06.310Z",
+    "date_modified": "2023-07-14T22:16:58.907Z",
+    "date_processed": "1730880586.7275255",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "space_id": "testteamsp",
+    "document_id": "2589704"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmpi1d4c37d/2589704.html",
+  "display_name": "Testdoc5"
+}
