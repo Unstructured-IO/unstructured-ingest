@@ -152,7 +152,9 @@ class KafkaIndexer(Indexer):
             topic = value["topic"]
             partition = value["partition"]
             offset = value["offset"]
-            filename = msg_content.get("filename", "") or topic  # Default to topic if filename is missing
+            filename = (
+                msg_content.get("filename", "") or topic
+            )  # Default to topic if filename is missing
             content = msg_content.get("content", "")
 
             # Construct file paths
