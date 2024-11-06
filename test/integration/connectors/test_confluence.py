@@ -67,6 +67,7 @@ async def test_confluence_source():
             downloader=downloader,
             configs=ValidationConfigs(
                 test_id="confluence_source_test",
-                expected_num_files=11,  # Adjust based on expected number of files
+                expected_num_files=11, 
             ),
+            overwrite_fixtures=True
         )
