@@ -145,7 +145,7 @@ class KafkaIndexer(Indexer):
         consumer.close()
         return collected
 
-        def run(self) -> Generator[FileData, None, None]:
+    def run(self) -> Generator[FileData, None, None]:
         messages_consumed = self._get_messages()
         for key, value in messages_consumed.items():
             msg_content = value["msg_content"]
