@@ -126,7 +126,8 @@ class KafkaIndexer(Indexer):
                 try:
                     msg_content = json.loads(msg.value().decode("utf8"))
                     collected[
-                        f"{msg.topic()}_{msg.partition()}_{msg.offset()}_{msg_content.get('filename', '')}"
+                        f"{msg.topic()}_{msg.partition()}_{msg.offset()}_\
+                        {msg_content.get('filename', '')}"
                     ] = msg_content
                     messages_consumed += 1
                     logger.debug(f"Collected {messages_consumed} messages")
