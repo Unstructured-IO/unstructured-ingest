@@ -1,9 +1,10 @@
-## 0.2.2-dev1
+## 0.2.2-dev2
 
 ### Enhancements
 
 * **Remove `overwrite` field** from fsspec and databricks connectors
 * **Added migration for GitLab Source V2**
+* **Use deterministic element ids for pinecone entries to support upserting**
 
 ## 0.2.1
 
