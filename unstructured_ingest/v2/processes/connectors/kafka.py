@@ -62,7 +62,7 @@ class KafkaConnectionConfig(ConnectionConfig):
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
             "client.id": socket.gethostname(),
-            "group.id": "your_group_id",
+            "group.id": "default_group_id",
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
             "message.max.bytes": 10485760,
@@ -98,33 +98,45 @@ class KafkaIndexer(Indexer):
         from confluent_kafka import KafkaError
 
         consumer = self.connection_config.get_client()
-        running = True
-
         collected = {}
         num_messages_to_consume = self.connection_config.num_messages_to_consume
-        logger.info(f"config set for blocking on {num_messages_to_consume} messages")
-        # Consume specified number of messages
-        while running:
+        logger.info(f"Config set for consuming {num_messages_to_consume} messages")
+
+        messages_consumed = 0
+        max_empty_polls = 10
+        empty_polls = 0
+
+        while messages_consumed < num_messages_to_consume and empty_polls < max_empty_polls:
             msg = consumer.poll(timeout=self.connection_config.timeout)
             if msg is None:
                 logger.debug("No Kafka messages found")
+                empty_polls += 1
                 continue
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
-                    # End of partition event
-                    logger.error(
-                        "%% %s [%d] reached end at offset %d\n"
+                    logger.info(
+                        "Reached end of partition for topic %s [%d] at offset %d"
                         % (msg.topic(), msg.partition(), msg.offset())
                     )
+                else:
+                    logger.error(f"Kafka error: {msg.error()}")
+                continue
             else:
-                msg_content = json.loads(msg.value().decode("utf8"))
-                collected[
-                    f"{msg.topic()}_{msg.partition()}_{msg.offset()}_{msg_content['filename']}"
-                ] = msg_content
-                logger.debug(f"found {len(collected)} messages, stopping")
-                consumer.commit(asynchronous=False)
-                break
+                empty_polls = 0
+                try:
+                    msg_content = json.loads(msg.value().decode("utf8"))
+                    collected[
+                        f"{msg.topic()}_{msg.partition()}_{msg.offset()}_{msg_content.get('filename', '')}"
+                    ] = msg_content
+                    messages_consumed += 1
+                    logger.debug(f"Collected {messages_consumed} messages")
+                    consumer.commit(asynchronous=False)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to decode message: {e}")
+                except Exception as e:
+                    logger.error(f"Unexpected error: {e}")
 
+        consumer.close()
         return collected
 
     def run(self) -> Generator[FileData, None, None]:
