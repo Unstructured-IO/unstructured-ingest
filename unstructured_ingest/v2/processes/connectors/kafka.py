@@ -145,19 +145,19 @@ class KafkaIndexer(Indexer):
         consumer.close()
         return collected
 
-    def run(self) -> Generator[FileData, None, None]:
+        def run(self) -> Generator[FileData, None, None]:
         messages_consumed = self._get_messages()
         for key, value in messages_consumed.items():
             msg_content = value["msg_content"]
             topic = value["topic"]
             partition = value["partition"]
             offset = value["offset"]
-            filename = msg_content.get("filename", "")
+            filename = msg_content.get("filename", "") or topic  # Default to topic if filename is missing
             content = msg_content.get("content", "")
 
             # Construct file paths
-            fullpath = f"{topic}/{partition}/{filename}"
-            rel_path = fullpath  # Assuming fullpath is suitable as rel_path
+            fullpath = filename
+            rel_path = fullpath
 
             # Generate a unique identifier
             identifier = f"{topic}_{partition}_{offset}"
@@ -183,7 +183,7 @@ class KafkaIndexer(Indexer):
                     date_processed=str(time()),
                 ),
                 additional_metadata=additional_metadata,
-                display_name=fullpath,
+                display_name=filename,
             )
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
@@ -209,15 +209,14 @@ class KafkaDownloader(Downloader):
     version: Optional[str] = None
     source_url: Optional[str] = None
 
-    @SourceConnectionError.wrap
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         source_identifiers = file_data.source_identifiers
         if source_identifiers is None:
             raise ValueError("FileData is missing source_identifiers")
 
         # Build the download path using source_identifiers
-        rel_path = source_identifiers.rel_path or source_identifiers.filename
-        download_path = Path(self.download_dir) / rel_path
+        filename = source_identifiers.filename
+        download_path = Path(self.download_dir) / filename
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
