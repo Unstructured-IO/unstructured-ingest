@@ -25,7 +25,6 @@ from unstructured_ingest.v2.processes.connectors.pinecone import (
 )
 
 API_KEY = "PINECONE_API_KEY"
-os.environ[API_KEY] = "0944d32b-d70c-4fa5-a4ec-cfd3395eb80c"
 
 
 def get_api_key() -> str:
@@ -93,18 +92,21 @@ def pinecone_index() -> str:
             return
 
 
-def validate_pincone_index(
+def validate_pinecone_index(
     index_name: str, expected_num_of_vectors: int, retries=10, interval=1
 ) -> None:
     # Because there's a delay for the index to catch up to the recent writes, add in a retry
     pinecone = Pinecone(api_key=get_api_key())
     index = pinecone.Index(name=index_name)
     vector_count = -1
-    for _ in range(retries):
+    for i in range(retries):
         index_stats = index.describe_index_stats()
         vector_count = index_stats["total_vector_count"]
         if vector_count == expected_num_of_vectors:
             break
+        logger.info(
+            f"retry attempt {i}: expected {expected_num_of_vectors} != vector count {vector_count} "
+        )
         time.sleep(interval)
     assert vector_count == expected_num_of_vectors
 
@@ -142,7 +144,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
     with new_upload_file.open() as f:
         staged_content = json.load(f)
     expected_num_of_vectors = len(staged_content)
-    validate_pincone_index(
+    validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
 
@@ -151,6 +153,6 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
         await uploader.run_async(path=new_upload_file, file_data=file_data)
     else:
         uploader.run(path=new_upload_file, file_data=file_data)
-    validate_pincone_index(
+    validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
