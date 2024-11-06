@@ -106,7 +106,7 @@ class PineconeUploadStager(UploadStager):
         default_factory=lambda: PineconeUploadStagerConfig()
     )
 
-    def conform_dict(self, element_dict: dict) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         embeddings = element_dict.pop("embeddings", None)
         metadata: dict[str, Any] = element_dict.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
@@ -120,9 +120,11 @@ class PineconeUploadStager(UploadStager):
                     if k in self.upload_stager_config.metadata_fields
                 }
             )
-
+        element_id = element_dict["element_id"]
+        hashable_string = f"{element_id}{file_data.identifier}"
+        record_id = uuid.uuid5(uuid.NAMESPACE_DNS, hashable_string)
         return {
-            "id": str(uuid.uuid4()),
+            "id": str(record_id),
             "values": embeddings,
             "metadata": flatten_dict(
                 pinecone_metadata,
@@ -134,6 +136,7 @@ class PineconeUploadStager(UploadStager):
 
     def run(
         self,
+        file_data: FileData,
         elements_filepath: Path,
         output_dir: Path,
         output_filename: str,
@@ -143,7 +146,8 @@ class PineconeUploadStager(UploadStager):
             elements_contents = json.load(elements_file)
 
         conformed_elements = [
-            self.conform_dict(element_dict=element) for element in elements_contents
+            self.conform_dict(element_dict=element, file_data=file_data)
+            for element in elements_contents
         ]
 
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
