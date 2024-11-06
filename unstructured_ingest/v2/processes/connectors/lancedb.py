@@ -1,8 +1,9 @@
 import asyncio
 import json
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import pandas as pd
 from pydantic import Field, Secret
@@ -70,15 +71,20 @@ class LanceDBConnectionConfig(ConnectionConfig):
     )
     uri: str = Field(description="The uri of the database.")
 
+    @asynccontextmanager
     @requires_dependencies(["lancedb"], extras="lancedb")
     @DestinationConnectionError.wrap
-    async def get_async_connection(self) -> "AsyncConnection":
+    async def get_async_connection(self) -> AsyncGenerator["AsyncConnection", None]:
         import lancedb
 
-        return await lancedb.connect_async(
+        connection = await lancedb.connect_async(
             self.uri,
             storage_options=self.access_config.get_secret_value().storage_options,
         )
+        try:
+            yield connection
+        finally:
+            connection.close()
 
 
 class LanceDBUploadStagerConfig(UploadStagerConfig):
@@ -137,17 +143,17 @@ class LanceDBUploader(Uploader):
     async def run_async(self, path, file_data, **kwargs):
         df = pd.read_feather(path)
 
-        with await self.connection_config.get_async_connection() as conn:
-            with await conn.open_table(self.upload_config.table_name) as table:
-                await table.add(data=df)
+        async with self.connection_config.get_async_connection() as conn:
+            table = await conn.open_table(self.upload_config.table_name)
+            await table.add(data=df)
+            table.close()
 
     @DestinationConnectionError.wrap
     def precheck(self):
         async def _precheck() -> None:
-            conn = await self.connection_config.get_async_connection()
-            table = await conn.open_table(self.upload_config.table_name)
-            table.close()
-            conn.close()
+            async with self.connection_config.get_async_connection() as conn:
+                table = await conn.open_table(self.upload_config.table_name)
+                table.close()
 
         asyncio.run(_precheck())
 
