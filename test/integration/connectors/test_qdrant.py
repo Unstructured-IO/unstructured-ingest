@@ -28,7 +28,7 @@ VECTORS_CONFIG = {"size": 384, "distance": "Cosine"}
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 @pytest.mark.parametrize("mode", ["remote", "local"])
-async def test_qdrant_destination_remote(
+async def test_qdrant_destination(
     upload_file: Path, tmp_path: Path, mode: Literal["remote", "local"]
 ):
     connection_kwargs = (
