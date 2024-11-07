@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generator, List, Optional
+from typing import TYPE_CHECKING, Generator, List, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -22,6 +23,9 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 
+if TYPE_CHECKING:
+    from atlassian import Confluence
+
 CONNECTOR_TYPE = "confluence"
 
 
@@ -36,6 +40,17 @@ class ConfluenceConnectionConfig(ConnectionConfig):
         description="Access configuration for Confluence"
     )
 
+    @requires_dependencies(["atlassian"], extras="confluence")
+    def get_client(self) -> "Confluence":
+        from atlassian import Confluence
+
+        access_configs = self.access_config.get_secret_value()
+        return Confluence(
+            url=self.url,
+            username=self.user_email,
+            password=access_configs.api_token,
+        )
+
 
 class ConfluenceIndexerConfig(IndexerConfig):
     max_num_of_spaces: int = Field(500, description="Maximum number of spaces to index")
@@ -49,30 +64,15 @@ class ConfluenceIndexerConfig(IndexerConfig):
 class ConfluenceIndexer(Indexer):
     connection_config: ConfluenceConnectionConfig
     index_config: ConfluenceIndexerConfig
-    connector_type: str = "confluence"
-    _confluence: Any = field(init=False, default=None)
-
-    def __post_init__(self):
-        self._confluence = None
-
-    @property
-    def confluence(self):
-        if self._confluence is None:
-            from atlassian import Confluence
-
-            self._confluence = Confluence(
-                url=self.connection_config.url,
-                username=self.connection_config.user_email,
-                password=self.connection_config.access_config.get_secret_value().api_token,
-            )
-        return self._confluence
+    connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> bool:
         try:
 
             # Attempt to retrieve a list of spaces with limit=1.
             # This should only succeed if all creds are valid
-            self.confluence.get_all_spaces(limit=1)
+            client = self.connection_config.get_client()
+            client.get_all_spaces(limit=1)
             logger.info("Connection to Confluence successful.")
             return True
         except Exception as e:
@@ -84,12 +84,14 @@ class ConfluenceIndexer(Indexer):
         if spaces:
             return spaces
         else:
-            all_spaces = self.confluence.get_all_spaces(limit=self.index_config.max_num_of_spaces)
+            client = self.connection_config.get_client()
+            all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
             space_ids = [space["key"] for space in all_spaces["results"]]
             return space_ids
 
     def _get_docs_ids_within_one_space(self, space_id: str) -> List[dict]:
-        pages = self.confluence.get_all_pages_from_space(
+        client = self.connection_config.get_client()
+        pages = client.get_all_pages_from_space(
             space=space_id,
             start=0,
             limit=self.index_config.max_num_of_docs_from_each_space,
@@ -123,7 +125,7 @@ class ConfluenceIndexer(Indexer):
                 }
 
                 # Construct relative path and filename
-                filename = f"{doc_id}"
+                filename = f"{doc_id}.html"
                 relative_path = str(Path(space_id) / filename)
 
                 source_identifiers = SourceIdentifiers(
@@ -150,28 +152,13 @@ class ConfluenceDownloaderConfig(DownloaderConfig):
 class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
-    connector_type: str = "confluence"
-    _confluence: Any = field(init=False, default=None)
-
-    def __post_init__(self):
-        self._confluence = None
-
-    @property
-    def confluence(self):
-        if self._confluence is None:
-            from atlassian import Confluence
-
-            self._confluence = Confluence(
-                url=self.connection_config.url,
-                username=self.connection_config.user_email,
-                password=self.connection_config.access_config.get_secret_value().api_token,
-            )
-        return self._confluence
+    connector_type: str = CONNECTOR_TYPE
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         doc_id = file_data.identifier
         try:
-            page = self.confluence.get_page_by_id(
+            client = self.connection_config.get_client()
+            page = client.get_page_by_id(
                 page_id=doc_id,
                 expand="history.lastUpdated,version,body.view",
             )
@@ -184,8 +171,8 @@ class ConfluenceDownloader(Downloader):
 
         content = page["body"]["view"]["value"]
 
-        filename = f"{doc_id}.html"
-        download_path = Path(self.download_dir) / filename
+        filepath = file_data.source_identifiers.relative_path
+        download_path = Path(self.download_dir) / filepath
         download_path.parent.mkdir(parents=True, exist_ok=True)
         with open(download_path, "w", encoding="utf8") as f:
             f.write(content)

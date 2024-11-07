@@ -2,9 +2,9 @@
   "identifier": "1605859",
   "connector_type": "confluence",
   "source_identifiers": {
-    "filename": "1605859",
-    "fullpath": "testteamsp/1605859",
-    "rel_path": "testteamsp/1605859"
+    "filename": "1605859.html",
+    "fullpath": "testteamsp/1605859.html",
+    "rel_path": "testteamsp/1605859.html"
   },
   "doc_type": "file",
   "metadata": {
@@ -16,7 +16,7 @@
     },
     "date_created": "2023-07-09T12:54:40.304Z",
     "date_modified": "2023-07-13T14:13:27.275Z",
-    "date_processed": "1730880585.097199",
+    "date_processed": "1730941318.136835",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -25,6 +25,6 @@
     "document_id": "1605859"
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmpi1d4c37d/1605859.html",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmps813_egb/testteamsp/1605859.html",
   "display_name": "test-teamspace"
 }

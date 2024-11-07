@@ -1,6 +1,4 @@
 import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -26,7 +24,7 @@ from unstructured_ingest.v2.processes.connectors.confluence import (
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
 @requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
-async def test_confluence_source():
+async def test_confluence_source(temp_dir):
     # Retrieve environment variables
     confluence_url = "https://unstructured-ingest-test.atlassian.net"
     user_email = os.environ["CONFLUENCE_USER_EMAIL"]
@@ -46,27 +44,25 @@ async def test_confluence_source():
         spaces=spaces,
     )
 
-    # Create a temporary directory for downloads
-    with tempfile.TemporaryDirectory() as tempdir:
-        tempdir_path = Path(tempdir)
-        download_config = ConfluenceDownloaderConfig(download_dir=tempdir_path)
+    download_config = ConfluenceDownloaderConfig(download_dir=temp_dir)
 
-        # Instantiate indexer and downloader
-        indexer = ConfluenceIndexer(
-            connection_config=connection_config,
-            index_config=index_config,
-        )
-        downloader = ConfluenceDownloader(
-            connection_config=connection_config,
-            download_config=download_config,
-        )
+    # Instantiate indexer and downloader
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = ConfluenceDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
 
-        # Run the source connector validation
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=ValidationConfigs(
-                test_id="confluence_source_test",
-                expected_num_files=11,
-            ),
-        )
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=ValidationConfigs(
+            test_id="confluence",
+            expected_num_files=11,
+            validate_downloaded_files=True,
+        ),
+    )

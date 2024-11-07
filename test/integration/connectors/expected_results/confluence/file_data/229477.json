@@ -2,9 +2,9 @@
   "identifier": "229477",
   "connector_type": "confluence",
   "source_identifiers": {
-    "filename": "229477",
-    "fullpath": "MFS/229477",
-    "rel_path": "MFS/229477"
+    "filename": "229477.html",
+    "fullpath": "MFS/229477.html",
+    "rel_path": "MFS/229477.html"
   },
   "doc_type": "file",
   "metadata": {
@@ -16,7 +16,7 @@
     },
     "date_created": "2023-06-30T17:25:25.504Z",
     "date_modified": "2023-06-30T17:25:30.898Z",
-    "date_processed": "1730880587.3718941",
+    "date_processed": "1730941319.820111",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -25,6 +25,6 @@
     "document_id": "229477"
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmpi1d4c37d/229477.html",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmps813_egb/MFS/229477.html",
   "display_name": "My first space"
 }

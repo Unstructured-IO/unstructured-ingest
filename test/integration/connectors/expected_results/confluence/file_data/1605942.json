@@ -2,9 +2,9 @@
   "identifier": "1605942",
   "connector_type": "confluence",
   "source_identifiers": {
-    "filename": "1605942",
-    "fullpath": "MFS/1605942",
-    "rel_path": "MFS/1605942"
+    "filename": "1605942.html",
+    "fullpath": "MFS/1605942.html",
+    "rel_path": "MFS/1605942.html"
   },
   "doc_type": "file",
   "metadata": {
@@ -16,7 +16,7 @@
     },
     "date_created": "2023-07-09T12:54:45.226Z",
     "date_modified": "2023-07-09T12:54:45.226Z",
-    "date_processed": "1730880588.3897097",
+    "date_processed": "1730941320.5346189",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -25,6 +25,6 @@
     "document_id": "1605942"
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmpi1d4c37d/1605942.html",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmps813_egb/MFS/1605942.html",
   "display_name": "Template - Weekly status report"
 }

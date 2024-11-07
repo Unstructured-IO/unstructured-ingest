@@ -86,7 +86,7 @@ class ValidationConfigs:
 
 def get_files(dir_path: Path) -> list[str]:
     return [
-        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.iterdir() if f.is_file()
+        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.rglob("*") if f.is_file()
     ]
 
 
