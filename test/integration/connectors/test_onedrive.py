@@ -99,9 +99,7 @@ def test_onedrive_destination(upload_file: Path, onedrive_connection_config, one
     destination_fullpath = f"{destination_folder}/{upload_file.name}"
 
     # Configure the uploader with remote_url
-    upload_config = OnedriveUploaderConfig(
-        remote_url=f"onedrive://{destination_folder}"
-    )
+    upload_config = OnedriveUploaderConfig(remote_url=f"onedrive://{destination_folder}")
 
     uploader = OnedriveUploader(
         connection_config=onedrive_connection_config,

@@ -232,7 +232,7 @@ class OnedriveDownloader(Downloader):
 
 
 class OnedriveUploaderConfig(UploaderConfig):
-        remote_url: str = Field(
+    remote_url: str = Field(
         description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'"
     )
 
@@ -257,7 +257,6 @@ class OnedriveUploader(Uploader):
 
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from office365.graph_client import GraphClient
 
         client: GraphClient = self.connection_config.get_client()
         drive = client.users[self.connection_config.user_pname].drive
@@ -268,7 +267,9 @@ class OnedriveUploader(Uploader):
         # Use the file's relative path to maintain directory structure, if needed
         if file_data.source_identifiers and file_data.source_identifiers.rel_path:
             # Combine the base destination folder with the file's relative path
-            destination_path = Path(base_destination_folder) / Path(file_data.source_identifiers.rel_path)
+            destination_path = Path(base_destination_folder) / Path(
+                file_data.source_identifiers.rel_path
+            )
         else:
             # If no relative path is provided, upload directly to the base destination folder
             destination_path = Path(base_destination_folder) / path.name
