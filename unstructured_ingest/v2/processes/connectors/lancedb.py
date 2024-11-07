@@ -22,20 +22,6 @@ if TYPE_CHECKING:
     from lancedb import AsyncConnection
 
 
-SUPPORTED_ELEMENT_FIELDS = (
-    "text",
-    "element_id",
-    "type",
-)
-SUPPORTED_ELEMENT_METADATA_FIELDS = (
-    "filename",
-    "is_continuation",
-    "file_type",
-    "page_number",
-    "text_as_html",
-)
-
-
 class LanceDBAccessConfig(AccessConfig):
     aws_access_key_id: Optional[str] = Field(
         default=None, description="The AWS access key ID to use."
@@ -121,13 +107,16 @@ class LanceDBUploadStager(UploadStager):
         return output_path
 
     def _conform_element_contents(self, element: dict) -> dict:
-        conformed_contents = {"vector": element.get("embeddings")}
-        for key in SUPPORTED_ELEMENT_FIELDS:
-            conformed_contents[key] = element.get(key)
-        for key in SUPPORTED_ELEMENT_METADATA_FIELDS:
-            conformed_contents[key] = element.get("metadata", {}).get(key)
-
-        return conformed_contents
+        metadata = element.pop("metadata")
+        data_sources = metadata.pop("data_sources", {})
+        coordinates = metadata.pop("coordinates", {})
+        return {
+            "vector": element.pop("embeddings", None),
+            **metadata,
+            **data_sources,
+            **coordinates,
+            **element,
+        }
 
 
 class LanceDBUploaderConfig(UploaderConfig):
@@ -145,8 +134,23 @@ class LanceDBUploader(Uploader):
 
         async with self.connection_config.get_async_connection() as conn:
             table = await conn.open_table(self.upload_config.table_name)
+            schema = await table.schema()
+            df = self._fit_to_schema(df, schema)
             await table.add(data=df)
             table.close()
+
+    def _fit_to_schema(self, df: pd.DataFrame, schema) -> pd.DataFrame:
+        columns = set(df.columns)
+        schema_fields = set(schema.names)
+        columns_to_drop = columns - schema_fields
+        missing_columns = schema_fields - columns
+
+        df = df.drop(columns=columns_to_drop)
+
+        for column in missing_columns:
+            df[column] = pd.Series()
+
+        return df
 
     @DestinationConnectionError.wrap
     def precheck(self):
