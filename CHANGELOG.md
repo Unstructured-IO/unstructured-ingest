@@ -1,15 +1,10 @@
 ## 0.2.2-dev2
 
-## Enchancement
-
-* **Added V2 confluence source connector**
-
-## 0.2.2-dev1
-
 ### Enhancements
 
 * **Remove `overwrite` field** from fsspec and databricks connectors
 * **Added migration for GitLab Source V2**
+* **Added V2 confluence source connector**
 
 ## 0.2.1
 
