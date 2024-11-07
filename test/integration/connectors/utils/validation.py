@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import pandas as pd
+from bs4 import BeautifulSoup
 from deepdiff import DeepDiff
 
 from test.integration.connectors.utils.constants import expected_results_path
@@ -25,6 +26,14 @@ def pandas_df_equality_check(expected_filepath: Path, current_filepath: Path) ->
     print("diff between expected and current df:")
     print(diff)
     return False
+
+
+def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    with expected_filepath.open() as expected_f:
+        expected_soup = BeautifulSoup(expected_f, "html.parser")
+    with current_filepath.open() as current_f:
+        current_soup = BeautifulSoup(current_f, "html.parser")
+    return expected_soup.text == current_soup.text
 
 
 @dataclass
@@ -138,6 +147,10 @@ def check_raw_file_contents(
             is_different = downloaded_file_equality_check(expected_file_path, current_file_path)
         elif expected_file_path.suffix == ".csv" and current_file_path.suffix == ".csv":
             is_different = not pandas_df_equality_check(
+                expected_filepath=expected_file_path, current_filepath=current_file_path
+            )
+        elif expected_file_path.suffix == ".html" and current_file_path.suffix == ".html":
+            is_different = not html_equality_check(
                 expected_filepath=expected_file_path, current_filepath=current_file_path
             )
         else:
