@@ -1,20 +1,22 @@
+from __future__ import annotations
+
 import asyncio
 import json
+from abc import ABC
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator
 
 import pandas as pd
-from pydantic import Field, Secret
+from pydantic import Field
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces.connector import AccessConfig, ConnectionConfig
+from unstructured_ingest.v2.interfaces.connector import ConnectionConfig
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.upload_stager import UploadStager, UploadStagerConfig
 from unstructured_ingest.v2.interfaces.uploader import Uploader, UploaderConfig
-from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 CONNECTOR_TYPE = "lancedb"
 
@@ -22,39 +24,7 @@ if TYPE_CHECKING:
     from lancedb import AsyncConnection
 
 
-class LanceDBAccessConfig(AccessConfig):
-    aws_access_key_id: Optional[str] = Field(
-        default=None, description="The AWS access key ID to use."
-    )
-    aws_secret_access_key: Optional[str] = Field(
-        default=None, description="The AWS secret access key to use."
-    )
-    google_service_account_key: Optional[str] = Field(
-        default=None, description="The serialized google service account key."
-    )
-    azure_storage_account_name: Optional[str] = Field(
-        default=None, description="The name of the azure storage account."
-    )
-    azure_storage_account_key: Optional[str] = Field(
-        default=None, description="The serialized azure service account key."
-    )
-
-    @property
-    def storage_options(self) -> dict:
-        storage_options = {
-            "aws_access_key_id": self.aws_access_key_id,
-            "aws_secret_access_key": self.aws_secret_access_key,
-            "google_service_account_key": self.google_service_account_key,
-            "azure_storage_account_name": self.azure_storage_account_name,
-            "azure_storage_account_key": self.azure_storage_account_key,
-        }
-        return {key: value for key, value in storage_options.items() if value is not None}
-
-
-class LanceDBConnectionConfig(ConnectionConfig):
-    access_config: Secret[LanceDBAccessConfig] = Field(
-        default_factory=LanceDBAccessConfig, validate_default=True
-    )
+class LanceDBConnectionConfig(ConnectionConfig, ABC):
     uri: str = Field(description="The uri of the database.")
 
     @asynccontextmanager
@@ -65,7 +35,7 @@ class LanceDBConnectionConfig(ConnectionConfig):
 
         connection = await lancedb.connect_async(
             self.uri,
-            storage_options=self.access_config.get_secret_value().storage_options,
+            storage_options=self.access_config.get_secret_value().model_dump(),
         )
         try:
             yield connection
@@ -160,12 +130,3 @@ class LanceDBUploader(Uploader):
                 table.close()
 
         asyncio.run(_precheck())
-
-
-lancedb_table_destination_entry = DestinationRegistryEntry(
-    connection_config=LanceDBConnectionConfig,
-    uploader=LanceDBUploader,
-    uploader_config=LanceDBUploaderConfig,
-    upload_stager=LanceDBUploadStager,
-    upload_stager_config=LanceDBUploadStagerConfig,
-)

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import lancedb
 import pandas as pd
@@ -12,13 +12,30 @@ from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.lancedb import (
+from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
     CONNECTOR_TYPE,
-    LanceDBAccessConfig,
-    LanceDBConnectionConfig,
-    LanceDBUploader,
     LanceDBUploaderConfig,
     LanceDBUploadStager,
+)
+from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_aws import (
+    LanceDBS3AccessConfig,
+    LanceDBS3ConnectionConfig,
+    LanceDBS3Uploader,
+)
+from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_azure import (
+    LanceDBAzureAccessConfig,
+    LanceDBAzureConnectionConfig,
+    LanceDBAzureUploader,
+)
+from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_gcp import (
+    LanceDBGCSAccessConfig,
+    LanceDBGCSConnectionConfig,
+    LanceDBGSPUploader,
+)
+from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_local import (
+    LanceDBLocalAccessConfig,
+    LanceDBLocalConnectionConfig,
+    LanceDBLocalUploader,
 )
 
 DATABASE_NAME = "database"
@@ -91,31 +108,13 @@ async def test_lancedb_destination(
     tmp_path: Path,
 ) -> None:
     connection, uri = connection_with_uri
-
-    access_config_kwargs = {
-        "aws_access_key_id": os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
-        "aws_secret_access_key": os.getenv("S3_INGEST_TEST_SECRET_KEY"),
-        "google_service_account_key": os.getenv("GCP_INGEST_SERVICE_KEY"),
-    }
-    azure_connection_string = os.getenv("AZURE_DEST_CONNECTION_STR")
-    if azure_connection_string:
-        access_config_kwargs.update(_parse_azure_connection_string(azure_connection_string))
-
-    access_config = LanceDBAccessConfig(**access_config_kwargs)
-    connection_config = LanceDBConnectionConfig(
-        access_config=access_config,
-        uri=uri,
-    )
-    stager = LanceDBUploadStager()
-    uploader = LanceDBUploader(
-        upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
-        connection_config=connection_config,
-    )
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
+    stager = LanceDBUploadStager()
+    uploader = _get_uploader(uri)
     staged_file_path = stager.run(
         elements_filepath=upload_file,
         file_data=file_data,
@@ -148,6 +147,52 @@ def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path)
         base_uri = UPath(AZURE_BUCKET)
 
     return str(base_uri / "destination" / "lancedb" / DATABASE_NAME)
+
+
+def _get_uploader(
+    uri: str,
+) -> Union[LanceDBAzureUploader, LanceDBAzureUploader, LanceDBS3Uploader, LanceDBGSPUploader]:
+    target = uri.split("://", maxsplit=1)[0] if uri.startswith(("s3", "az", "gs")) else "local"
+    if target == "az":
+        azure_connection_string = os.getenv("AZURE_DEST_CONNECTION_STR")
+        access_config_kwargs = _parse_azure_connection_string(azure_connection_string)
+        return LanceDBAzureUploader(
+            upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
+            connection_config=LanceDBAzureConnectionConfig(
+                access_config=LanceDBAzureAccessConfig(**access_config_kwargs),
+                uri=uri,
+            ),
+        )
+
+    elif target == "s3":
+        return LanceDBS3Uploader(
+            upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
+            connection_config=LanceDBS3ConnectionConfig(
+                access_config=LanceDBS3AccessConfig(
+                    aws_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
+                    aws_secret_access_key=os.getenv("S3_INGEST_TEST_SECRET_KEY"),
+                ),
+                uri=uri,
+            ),
+        )
+    elif target == "gs":
+        return LanceDBGSPUploader(
+            upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
+            connection_config=LanceDBGCSConnectionConfig(
+                access_config=LanceDBGCSAccessConfig(
+                    google_service_account_key=os.getenv("GCP_INGEST_SERVICE_KEY")
+                ),
+                uri=uri,
+            ),
+        )
+    else:
+        return LanceDBLocalUploader(
+            upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
+            connection_config=LanceDBLocalConnectionConfig(
+                access_config=LanceDBLocalAccessConfig(),
+                uri=uri,
+            ),
+        )
 
 
 def _parse_azure_connection_string(
