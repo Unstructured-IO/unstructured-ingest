@@ -256,90 +256,90 @@ class OnedriveUploader(Uploader):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
 
-@requires_dependencies(["office365"], extras="onedrive")
-def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    @requires_dependencies(["office365"], extras="onedrive")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
 
-    client: GraphClient = self.connection_config.get_client()
-    drive = client.users[self.connection_config.user_pname].drive
+        client: GraphClient = self.connection_config.get_client()
+        drive = client.users[self.connection_config.user_pname].drive
 
-    # Use the remote_url from upload_config as the base destination folder
-    base_destination_folder = self.upload_config.remote_url.replace("onedrive://", "", 1)
+        # Use the remote_url from upload_config as the base destination folder
+        base_destination_folder = self.upload_config.remote_url.replace("onedrive://", "", 1)
 
-    # Use the file's relative path to maintain directory structure, if needed
-    if file_data.source_identifiers and file_data.source_identifiers.rel_path:
-        # Combine the base destination folder with the file's relative path
-        destination_path = Path(base_destination_folder) / Path(
-            file_data.source_identifiers.rel_path
-        )
-    else:
-        # If no relative path is provided, upload directly to the base destination folder
-        destination_path = Path(base_destination_folder) / path.name
-
-    destination_folder = destination_path.parent
-    file_name = destination_path.name
-
-    # Convert destination folder to a string suitable for OneDrive API
-    destination_folder_str = str(destination_folder).replace("\\", "/")
-
-    # Resolve the destination folder in OneDrive, creating it if necessary
-    try:
-        # Attempt to get the folder
-        folder = drive.root.get_by_path(destination_folder_str)
-        folder.get().execute_query()
-    except Exception:
-        # Folder doesn't exist, create it recursively
-        current_folder = drive.root
-        for part in destination_folder.parts:
-            # Use filter to find the folder by name
-            folders = (
-                current_folder.children.filter(f"name eq '{part}' and folder ne null")
-                .get()
-                .execute_query()
+        # Use the file's relative path to maintain directory structure, if needed
+        if file_data.source_identifiers and file_data.source_identifiers.rel_path:
+            # Combine the base destination folder with the file's relative path
+            destination_path = Path(base_destination_folder) / Path(
+                file_data.source_identifiers.rel_path
             )
-            if folders:
-                current_folder = folders[0]
-            else:
-                # Folder doesn't exist, create it
-                current_folder = current_folder.create_folder(part).execute_query()
-        folder = current_folder
+        else:
+            # If no relative path is provided, upload directly to the base destination folder
+            destination_path = Path(base_destination_folder) / path.name
 
-    # Check the size of the file
-    file_size = path.stat().st_size
+        destination_folder = destination_path.parent
+        file_name = destination_path.name
 
-    if file_size < MAX_MB_SIZE:
-        # Use simple upload for small files
-        with path.open("rb") as local_file:
-            content = local_file.read()
-            logger.info(f"Uploading {path} to {destination_path} using simple upload")
+        # Convert destination folder to a string suitable for OneDrive API
+        destination_folder_str = str(destination_folder).replace("\\", "/")
+
+        # Resolve the destination folder in OneDrive, creating it if necessary
+        try:
+            # Attempt to get the folder
+            folder = drive.root.get_by_path(destination_folder_str)
+            folder.get().execute_query()
+        except Exception:
+            # Folder doesn't exist, create it recursively
+            current_folder = drive.root
+            for part in destination_folder.parts:
+                # Use filter to find the folder by name
+                folders = (
+                    current_folder.children.filter(f"name eq '{part}' and folder ne null")
+                    .get()
+                    .execute_query()
+                )
+                if folders:
+                    current_folder = folders[0]
+                else:
+                    # Folder doesn't exist, create it
+                    current_folder = current_folder.create_folder(part).execute_query()
+            folder = current_folder
+
+        # Check the size of the file
+        file_size = path.stat().st_size
+
+        if file_size < MAX_MB_SIZE:
+            # Use simple upload for small files
+            with path.open("rb") as local_file:
+                content = local_file.read()
+                logger.info(f"Uploading {path} to {destination_path} using simple upload")
+                try:
+                    uploaded_file = folder.upload(file_name, content).execute_query()
+                    if not uploaded_file or uploaded_file.name != file_name:
+                        raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
+                    # Log details about the uploaded file
+                    logger.info(f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'")
+                except Exception as e:
+                    logger.error(f"Failed to upload file '{file_name}': {e}", exc_info=True)
+                    raise DestinationConnectionError(f"Failed to upload file '{file_name}': {e}") from e
+        else:
+            # Use resumable upload for large files
+            destination_fullpath = f"{destination_folder_str}/{file_name}"
+            destination_drive_item = drive.root.item_with_path(destination_fullpath)
+
+            logger.info(f"Uploading {path} to {destination_fullpath} using resumable upload")
             try:
-                uploaded_file = folder.upload(file_name, content).execute_query()
+                uploaded_file = destination_drive_item.resumable_upload(
+                    source_path=str(path)
+                ).execute_query()
+                # Validate the upload
                 if not uploaded_file or uploaded_file.name != file_name:
                     raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
                 # Log details about the uploaded file
-                logger.info(f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'")
+                logger.info(f"Uploaded file {uploaded_file.name} with ID {uploaded_file.id}")
             except Exception as e:
-                logger.error(f"Failed to upload file '{file_name}': {e}", exc_info=True)
-                raise DestinationConnectionError(f"Failed to upload file '{file_name}': {e}") from e
-    else:
-        # Use resumable upload for large files
-        destination_fullpath = f"{destination_folder_str}/{file_name}"
-        destination_drive_item = drive.root.item_with_path(destination_fullpath)
-
-        logger.info(f"Uploading {path} to {destination_fullpath} using resumable upload")
-        try:
-            uploaded_file = destination_drive_item.resumable_upload(
-                source_path=str(path)
-            ).execute_query()
-            # Validate the upload
-            if not uploaded_file or uploaded_file.name != file_name:
-                raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
-            # Log details about the uploaded file
-            logger.info(f"Uploaded file {uploaded_file.name} with ID {uploaded_file.id}")
-        except Exception as e:
-            logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
-            raise DestinationConnectionError(
-                f"Failed to upload file '{file_name}' using resumable upload: {e}"
-            ) from e
+                logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
+                raise DestinationConnectionError(
+                    f"Failed to upload file '{file_name}' using resumable upload: {e}"
+                ) from e
 
 
 onedrive_source_entry = SourceRegistryEntry(
