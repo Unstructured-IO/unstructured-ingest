@@ -1,11 +1,11 @@
-import socket
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, ContextManager, Generator, Optional
 
-from pydantic import Field, Secret, SecretStr
+from pydantic import Secret
 
 from unstructured_ingest.error import (
     SourceConnectionError,
@@ -33,51 +33,28 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "kafka"
 
 
-class KafkaAccessConfig(AccessConfig):
-    api_key: Optional[SecretStr] = Field(
-        description="Kafka API key to connect at the server", alias="kafka_api_key", default=None
-    )
-    secret: Optional[SecretStr] = Field(description="", default=None)
+class KafkaAccessConfig(AccessConfig, ABC):
+    pass
 
 
-class KafkaConnectionConfig(ConnectionConfig):
-    access_config: Secret[KafkaAccessConfig] = Field(
-        default=KafkaAccessConfig(), validate_default=True
-    )
+class KafkaConnectionConfig(ConnectionConfig, ABC):
+    access_config: Secret[KafkaAccessConfig]
     timeout: Optional[float] = 1.0
-    confluent: Optional[bool] = False
     bootstrap_server: str
     port: int
 
-    @requires_dependencies(["confluent_kafka"], extras="kafka")
+    @abstractmethod
+    def get_consumer_configuration(self) -> dict:
+        pass
+
     @contextmanager
+    @requires_dependencies(["confluent_kafka"], extras="kafka")
     def get_consumer(self) -> ContextManager["Consumer"]:
         from confluent_kafka import Consumer
 
-        is_confluent = self.confluent
-        bootstrap = self.bootstrap_server
-        port = self.port
-
-        conf = {
-            "bootstrap.servers": f"{bootstrap}:{port}",
-            "client.id": socket.gethostname(),
-            "group.id": "default_group_id",
-            "enable.auto.commit": "false",
-            "auto.offset.reset": "earliest",
-            "message.max.bytes": 10485760,
-        }
-
-        if is_confluent:
-            api_key = self.access_config.get_secret_value().api_key
-            secret = self.access_config.get_secret_value().secret
-            conf["sasl.mechanism"] = "PLAIN"
-            conf["security.protocol"] = "SASL_SSL"
-            conf["sasl.username"] = api_key
-            conf["sasl.password"] = secret
-
-        consumer = Consumer(conf)
+        consumer = Consumer(self.get_consumer_configuration())
         try:
-            logger.debug(f"kafka consumer connected to bootstrap: {bootstrap}")
+            logger.debug("kafka consumer connected")
             yield consumer
         finally:
             consumer.close()

@@ -14,13 +14,13 @@ from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
-from unstructured_ingest.v2.processes.connectors.kafka import (
+from unstructured_ingest.v2.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,
-    KafkaConnectionConfig,
-    KafkaDownloader,
-    KafkaDownloaderConfig,
-    KafkaIndexer,
-    KafkaIndexerConfig,
+    LocalKafkaConnectionConfig,
+    LocalKafkaDownloader,
+    LocalKafkaDownloaderConfig,
+    LocalKafkaIndexer,
+    LocalKafkaIndexerConfig,
 )
 
 SEED_MESSAGES = 20
@@ -47,15 +47,17 @@ def kafka_seed_topic() -> str:
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
 async def test_kafka_source_local(kafka_seed_topic: str):
-    connection_config = KafkaConnectionConfig(bootstrap_server="localhost", port=29092)
+    connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
-        download_config = KafkaDownloaderConfig(download_dir=tempdir_path)
-        indexer = KafkaIndexer(
+        download_config = LocalKafkaDownloaderConfig(download_dir=tempdir_path)
+        indexer = LocalKafkaIndexer(
             connection_config=connection_config,
-            index_config=KafkaIndexerConfig(topic=kafka_seed_topic, num_messages_to_consume=10),
+            index_config=LocalKafkaIndexerConfig(
+                topic=kafka_seed_topic, num_messages_to_consume=10
+            ),
         )
-        downloader = KafkaDownloader(
+        downloader = LocalKafkaDownloader(
             connection_config=connection_config, download_config=download_config
         )
         await source_connector_validation(
