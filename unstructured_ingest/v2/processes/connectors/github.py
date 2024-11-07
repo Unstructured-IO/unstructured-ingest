@@ -143,7 +143,10 @@ class GitHubIndexer(Indexer):
         from github.GithubRetry import GithubRetry
         from github.Requester import Requester
 
-        auth = Auth.Token(self.connection_config.access_config.get_secret_value().git_access_token)
+        access_token = self.connection_config.access_config.get_secret_value().git_access_token
+        if not access_token:
+            raise AssertionError('github access token is not provided')
+        auth = Auth.Token(access_token)
 
         try:
             requester = Requester(
