@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import pandas as pd
+from bs4 import BeautifulSoup
 from deepdiff import DeepDiff
 
 from test.integration.connectors.utils.constants import expected_results_path
@@ -27,6 +28,14 @@ def pandas_df_equality_check(expected_filepath: Path, current_filepath: Path) ->
     return False
 
 
+def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    with expected_filepath.open() as expected_f:
+        expected_soup = BeautifulSoup(expected_f, "html.parser")
+    with current_filepath.open() as current_f:
+        current_soup = BeautifulSoup(current_f, "html.parser")
+    return expected_soup.text == current_soup.text
+
+
 @dataclass
 class ValidationConfigs:
     test_id: str
@@ -39,6 +48,7 @@ class ValidationConfigs:
     )
     exclude_fields_extend: list[str] = field(default_factory=list)
     validate_downloaded_files: bool = False
+    validate_file_data: bool = True
     downloaded_file_equality_check: Optional[Callable[[Path, Path], bool]] = None
 
     def get_exclude_fields(self) -> list[str]:
@@ -86,7 +96,7 @@ class ValidationConfigs:
 
 def get_files(dir_path: Path) -> list[str]:
     return [
-        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.iterdir() if f.is_file()
+        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.rglob("*") if f.is_file()
     ]
 
 
@@ -139,6 +149,10 @@ def check_raw_file_contents(
             is_different = not pandas_df_equality_check(
                 expected_filepath=expected_file_path, current_filepath=current_file_path
             )
+        elif expected_file_path.suffix == ".html" and current_file_path.suffix == ".html":
+            is_different = not html_equality_check(
+                expected_filepath=expected_file_path, current_filepath=current_file_path
+            )
         else:
             is_different = not filecmp.cmp(expected_file_path, current_file_path, shallow=False)
         if is_different:
@@ -185,17 +199,19 @@ def update_fixtures(
     download_dir: Path,
     all_file_data: list[FileData],
     save_downloads: bool = False,
+    save_filedata: bool = True,
 ):
     # Delete current files
     shutil.rmtree(path=output_dir, ignore_errors=True)
     output_dir.mkdir(parents=True)
     # Rewrite the current file data
-    file_data_output_path = output_dir / "file_data"
-    file_data_output_path.mkdir(parents=True, exist_ok=True)
-    for file_data in all_file_data:
-        file_data_path = file_data_output_path / f"{file_data.identifier}.json"
-        with file_data_path.open(mode="w") as f:
-            json.dump(file_data.to_dict(), f, indent=2)
+    if save_filedata:
+        file_data_output_path = output_dir / "file_data"
+        file_data_output_path.mkdir(parents=True, exist_ok=True)
+        for file_data in all_file_data:
+            file_data_path = file_data_output_path / f"{file_data.identifier}.json"
+            with file_data_path.open(mode="w") as f:
+                json.dump(file_data.to_dict(), f, indent=2)
 
     # Record file structure of download directory
     download_files = get_files(dir_path=download_dir)
@@ -229,11 +245,12 @@ def run_all_validations(
             predownload_file_data=pre_data, postdownload_file_data=post_data
         )
     configs.run_download_dir_validation(download_dir=download_dir)
-    run_expected_results_validation(
-        expected_output_dir=test_output_dir / "file_data",
-        all_file_data=postdownload_file_data,
-        configs=configs,
-    )
+    if configs.validate_file_data:
+        run_expected_results_validation(
+            expected_output_dir=test_output_dir / "file_data",
+            all_file_data=postdownload_file_data,
+            configs=configs,
+        )
     download_files = get_files(dir_path=download_dir)
     download_files.sort()
     run_directory_structure_validation(
@@ -291,4 +308,5 @@ async def source_connector_validation(
             download_dir=download_dir,
             all_file_data=all_postdownload_file_data,
             save_downloads=configs.validate_downloaded_files,
+            save_filedata=configs.validate_file_data,
         )

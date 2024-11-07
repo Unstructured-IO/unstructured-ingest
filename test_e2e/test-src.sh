@@ -41,8 +41,6 @@ all_tests=(
   'onedrive.sh'
   'outlook.sh'
   'elasticsearch.sh'
-  'confluence-diff.sh'
-  'confluence-large.sh'
   'couchbase.sh'
   'airtable-diff.sh'
   # # NOTE(ryan): This test is disabled because it is triggering too many requests to the API
