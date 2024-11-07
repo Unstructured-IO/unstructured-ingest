@@ -1,0 +1,29 @@
+{
+  "identifier": "fake-topic_0_5",
+  "connector_type": "kafka",
+  "source_identifiers": {
+    "filename": "fake-topic_0_5.txt",
+    "fullpath": "fake-topic_0_5.txt",
+    "rel_path": null
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1731013709.7484028",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "topic": "fake-topic",
+    "partition": 0,
+    "offset": 5,
+    "content": "This is some text for message 5"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpay_j62mi/fake-topic_0_5.txt",
+  "display_name": "fake-topic_0_5.txt"
+}

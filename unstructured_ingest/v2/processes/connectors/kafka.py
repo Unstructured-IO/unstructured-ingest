@@ -1,10 +1,9 @@
-import base64
-import json
 import socket
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, ContextManager, Generator, Optional
 
 from pydantic import Field, Secret, SecretStr
 
@@ -48,12 +47,11 @@ class KafkaConnectionConfig(ConnectionConfig):
     timeout: Optional[float] = 1.0
     confluent: Optional[bool] = False
     bootstrap_server: str
-    port: str
-    topic: str
-    num_messages_to_consume: Optional[int] = 1
+    port: int
 
     @requires_dependencies(["confluent_kafka"], extras="kafka")
-    def get_client(self) -> "Consumer":
+    @contextmanager
+    def get_consumer(self) -> ContextManager["Consumer"]:
         from confluent_kafka import Consumer
 
         is_confluent = self.confluent
@@ -78,15 +76,19 @@ class KafkaConnectionConfig(ConnectionConfig):
             conf["sasl.password"] = secret
 
         consumer = Consumer(conf)
-        logger.debug(f"kafka consumer connected to bootstrap: {bootstrap}")
-        topic = self.topic
-        logger.info(f"subscribing to topic: {topic}")
-        consumer.subscribe([topic])
-        return consumer
+        try:
+            logger.debug(f"kafka consumer connected to bootstrap: {bootstrap}")
+            yield consumer
+        finally:
+            consumer.close()
 
 
 class KafkaIndexerConfig(IndexerConfig):
-    pass
+    topic: str
+    num_messages_to_consume: Optional[int] = 100
+
+    def update_consumer(self, consumer: "Consumer") -> None:
+        consumer.subscribe([self.topic])
 
 
 @dataclass
@@ -95,105 +97,82 @@ class KafkaIndexer(Indexer):
     index_config: KafkaIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def _get_messages(self) -> Dict[str, Dict[str, Any]]:
-        from confluent_kafka import KafkaError
+    @contextmanager
+    def get_consumer(self) -> ContextManager["Consumer"]:
+        with self.connection_config.get_consumer() as consumer:
+            self.index_config.update_consumer(consumer=consumer)
+            yield consumer
 
-        consumer = self.connection_config.get_client()
-        collected: Dict[str, Dict[str, Any]] = {}
-        num_messages_to_consume = self.connection_config.num_messages_to_consume
-        logger.info(f"Config set for consuming {num_messages_to_consume} messages")
+    @requires_dependencies(["confluent_kafka"], extras="kafka")
+    def generate_messages(self) -> Generator[Any, None, None]:
+        from confluent_kafka import KafkaError, KafkaException
 
         messages_consumed = 0
         max_empty_polls = 10
         empty_polls = 0
-
-        while messages_consumed < num_messages_to_consume and empty_polls < max_empty_polls:
-            msg = consumer.poll(timeout=self.connection_config.timeout)
-            if msg is None:
-                logger.debug("No Kafka messages found")
-                empty_polls += 1
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    logger.info(
-                        "Reached end of partition for topic %s [%d] at offset %d"
-                        % (msg.topic(), msg.partition(), msg.offset())
-                    )
-                else:
-                    logger.error(f"Kafka error: {msg.error()}")
-                continue
-            else:
-                empty_polls = 0
+        num_messages_to_consume = self.index_config.num_messages_to_consume
+        with self.get_consumer() as consumer:
+            while messages_consumed < num_messages_to_consume and empty_polls < max_empty_polls:
+                msg = consumer.poll(timeout=self.connection_config.timeout)
+                if msg is None:
+                    logger.debug("No Kafka messages found")
+                    empty_polls += 1
+                    continue
+                if msg.error():
+                    if msg.error().code() == KafkaError._PARTITION_EOF:
+                        logger.info(
+                            "Reached end of partition for topic %s [%d] at offset %d"
+                            % (msg.topic(), msg.partition(), msg.offset())
+                        )
+                        break
+                    else:
+                        raise KafkaException(msg.error())
                 try:
-                    msg_content = json.loads(msg.value().decode("utf8"))
-                    key = f"{msg.topic()}_{msg.partition()}_{msg.offset()}_\
-                    {msg_content.get('filename', '')}"
-                    collected[key] = {
-                        "msg_content": msg_content,
-                        "topic": msg.topic(),
-                        "partition": msg.partition(),
-                        "offset": msg.offset(),
-                    }
+                    empty_polls = 0
                     messages_consumed += 1
-                    logger.debug(f"Collected {messages_consumed} messages")
+                    yield msg
+                finally:
                     consumer.commit(asynchronous=False)
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to decode message: {e}")
-                except Exception as e:
-                    logger.error(f"Unexpected error: {e}")
 
-        consumer.close()
-        return collected
+    def generate_file_data(self, msg) -> FileData:
+        msg_content = msg.value().decode("utf8")
+        identifier = f"{msg.topic()}_{msg.partition()}_{msg.offset()}"
+        additional_metadata = {
+            "topic": msg.topic(),
+            "partition": msg.partition(),
+            "offset": msg.offset(),
+            "content": msg_content,
+        }
+        filename = f"{identifier}.txt"
+        return FileData(
+            identifier=identifier,
+            connector_type=self.connector_type,
+            source_identifiers=SourceIdentifiers(
+                filename=filename,
+                fullpath=filename,
+            ),
+            metadata=FileDataSourceMetadata(
+                date_processed=str(time()),
+            ),
+            additional_metadata=additional_metadata,
+            display_name=filename,
+        )
 
     def run(self) -> Generator[FileData, None, None]:
-        messages_consumed = self._get_messages()
-        for key, value in messages_consumed.items():
-            msg_content = value["msg_content"]
-            topic = value["topic"]
-            partition = value["partition"]
-            offset = value["offset"]
-            filename = (
-                msg_content.get("filename", "") or topic
-            )  # Default to topic if filename is missing
-            content = msg_content.get("content", "")
-
-            # Construct file paths
-            fullpath = filename
-            rel_path = fullpath
-
-            # Generate a unique identifier
-            identifier = f"{topic}_{partition}_{offset}"
-
-            # Prepare additional metadata
-            additional_metadata = {
-                "topic": topic,
-                "partition": partition,
-                "offset": offset,
-                "filename": filename,
-                "content": content,
-            }
-
-            yield FileData(
-                identifier=identifier,
-                connector_type=self.connector_type,
-                source_identifiers=SourceIdentifiers(
-                    filename=filename,
-                    rel_path=rel_path,
-                    fullpath=fullpath,
-                ),
-                metadata=FileDataSourceMetadata(
-                    date_processed=str(time()),
-                ),
-                additional_metadata=additional_metadata,
-                display_name=filename,
-            )
+        for message in self.generate_messages():
+            yield self.generate_file_data(message)
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError()
 
     def precheck(self):
         try:
-            _ = self.connection_config.get_client()
+            with self.get_consumer() as consumer:
+                cluster_meta = consumer.list_topics(timeout=self.connection_config.timeout)
+                current_topics = [
+                    topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
+                ]
+                logger.info(f"successfully checked available topics: {current_topics}")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -217,15 +196,13 @@ class KafkaDownloader(Downloader):
             raise ValueError("FileData is missing source_identifiers")
 
         # Build the download path using source_identifiers
-        filename = source_identifiers.filename
-        download_path = Path(self.download_dir) / filename
+        download_path = Path(self.download_dir) / source_identifiers.relative_path
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            content_b64 = file_data.additional_metadata["content"]
-            file_data_bytes = base64.b64decode(content_b64)
-            with open(download_path, "wb") as file:
-                file.write(file_data_bytes)
+            content = file_data.additional_metadata["content"]
+            with open(download_path, "w") as file:
+                file.write(content)
         except Exception as e:
             logger.error(f"Failed to download file {file_data.identifier}: {e}")
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
