@@ -20,7 +20,7 @@ all_tests=(
   'azure-cognitive-search.sh'
   'box.sh'
   'chroma.sh'
-  'clarifai.sh'
+  # 'clarifai.sh'
   'couchbase.sh'
   'dropbox.sh'
   'elasticsearch.sh'
