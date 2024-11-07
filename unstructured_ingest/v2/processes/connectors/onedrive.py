@@ -232,7 +232,9 @@ class OnedriveDownloader(Downloader):
 
 
 class OnedriveUploaderConfig(UploaderConfig):
-    pass
+        remote_url: str = Field(
+        description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'"
+    )
 
 
 @dataclass
@@ -255,35 +257,44 @@ class OnedriveUploader(Uploader):
 
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        from office365.graph_client import GraphClient
 
-        # Get the OneDrive client
         client: GraphClient = self.connection_config.get_client()
         drive = client.users[self.connection_config.user_pname].drive
 
-        if file_data.source_identifiers and file_data.source_identifiers.fullpath:
-            destination_path = Path(file_data.source_identifiers.relative_path)
+        # Use the remote_url from upload_config as the base destination folder
+        base_destination_folder = self.upload_config.remote_url.strip("onedrive://")
+
+        # Use the file's relative path to maintain directory structure, if needed
+        if file_data.source_identifiers and file_data.source_identifiers.rel_path:
+            # Combine the base destination folder with the file's relative path
+            destination_path = Path(base_destination_folder) / Path(file_data.source_identifiers.rel_path)
         else:
-            # Use a default path or raise an error
-            raise ValueError("File data does not have a valid source path")
+            # If no relative path is provided, upload directly to the base destination folder
+            destination_path = Path(base_destination_folder) / path.name
 
         destination_folder = destination_path.parent
         file_name = destination_path.name
 
-        # Handle root directory case
-        if not destination_folder or str(destination_folder) == ".":
-            destination_folder = Path("/")
-
         # Convert destination folder to a string suitable for OneDrive API
         destination_folder_str = str(destination_folder).replace("\\", "/")
 
-        # Resolve the destination folder in OneDrive
+        # Resolve the destination folder in OneDrive, creating it if necessary
         try:
-            folder = drive.root.get_by_path(destination_folder_str).get().execute_query()
-        except Exception as e:
-            logger.error(f"Destination folder '{destination_folder_str}' not found: {e}")
-            raise DestinationConnectionError(
-                f"Destination folder '{destination_folder_str}' not found"
-            ) from e
+            # Attempt to get the folder
+            folder = drive.root.get_by_path(destination_folder_str)
+            folder.get().execute_query()
+        except Exception:
+            # Folder doesn't exist, create it recursively
+            current_folder = drive.root
+            for part in destination_folder.parts:
+                current_folder = current_folder.children.get_by_name(part)
+                try:
+                    current_folder.get().execute_query()
+                except Exception:
+                    # Create the folder
+                    current_folder = current_folder.create_folder(part).execute_query()
+            folder = current_folder
 
         # Check the size of the file
         file_size = path.stat().st_size
