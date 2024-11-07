@@ -255,7 +255,6 @@ class OnedriveUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
 
@@ -316,10 +315,14 @@ class OnedriveUploader(Uploader):
                     if not uploaded_file or uploaded_file.name != file_name:
                         raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
                     # Log details about the uploaded file
-                    logger.info(f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'")
+                    logger.info(
+                        f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'"
+                    )
                 except Exception as e:
                     logger.error(f"Failed to upload file '{file_name}': {e}", exc_info=True)
-                    raise DestinationConnectionError(f"Failed to upload file '{file_name}': {e}") from e
+                    raise DestinationConnectionError(
+                        f"Failed to upload file '{file_name}': {e}"
+                    ) from e
         else:
             # Use resumable upload for large files
             destination_fullpath = f"{destination_folder_str}/{file_name}"
