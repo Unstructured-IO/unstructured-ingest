@@ -79,7 +79,8 @@ jobs:
       - name: Validate --help
         run: |
           pip install .
-          python ./test_e2e/test-help.py
+          PYTHONPATH=. python ./test_e2e/test-help.py
+          PYTHONPATH=. python ./test_e2e/test-help.py --local-code
 
   test_install_cli:
     environment: ci
