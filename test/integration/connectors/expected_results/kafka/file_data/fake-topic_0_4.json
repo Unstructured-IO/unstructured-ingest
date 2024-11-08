@@ -1,6 +1,6 @@
 {
   "identifier": "fake-topic_0_4",
-  "connector_type": "kafka",
+  "connector_type": "kafka-local",
   "source_identifiers": {
     "filename": "fake-topic_0_4.txt",
     "fullpath": "fake-topic_0_4.txt",
@@ -13,7 +13,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1731013709.746925",
+    "date_processed": "1731074369.189026",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -24,6 +24,6 @@
     "content": "This is some text for message 4"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpay_j62mi/fake-topic_0_4.txt",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmprfm2jt0h/fake-topic_0_4.txt",
   "display_name": "fake-topic_0_4.txt"
 }

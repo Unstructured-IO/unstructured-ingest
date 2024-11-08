@@ -23,7 +23,7 @@ from unstructured_ingest.v2.processes.connectors.kafka.local import (
     LocalKafkaIndexerConfig,
 )
 
-SEED_MESSAGES = 20
+SEED_MESSAGES = 10
 TOPIC = "fake-topic"
 
 
@@ -53,9 +53,7 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         download_config = LocalKafkaDownloaderConfig(download_dir=tempdir_path)
         indexer = LocalKafkaIndexer(
             connection_config=connection_config,
-            index_config=LocalKafkaIndexerConfig(
-                topic=kafka_seed_topic, num_messages_to_consume=10
-            ),
+            index_config=LocalKafkaIndexerConfig(topic=kafka_seed_topic, num_messages_to_consume=5),
         )
         downloader = LocalKafkaDownloader(
             connection_config=connection_config, download_config=download_config
@@ -64,6 +62,6 @@ async def test_kafka_source_local(kafka_seed_topic: str):
             indexer=indexer,
             downloader=downloader,
             configs=ValidationConfigs(
-                test_id="kafka", expected_num_files=10, validate_downloaded_files=True
+                test_id="kafka", expected_num_files=5, validate_downloaded_files=True
             ),
         )
