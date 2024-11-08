@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
@@ -103,7 +104,6 @@ add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destina
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
-
 
 add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 
