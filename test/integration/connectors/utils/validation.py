@@ -14,7 +14,7 @@ from test.integration.connectors.utils.constants import expected_results_path
 from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 
 
-def pandas_df_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+def json_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
     expected_df = pd.read_csv(expected_filepath)
     current_df = pd.read_csv(current_filepath)
     if expected_df.equals(current_df):
@@ -34,6 +34,34 @@ def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool
     with current_filepath.open() as current_f:
         current_soup = BeautifulSoup(current_f, "html.parser")
     return expected_soup.text == current_soup.text
+
+
+def txt_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    with expected_filepath.open() as expected_f:
+        expected_text_lines = expected_f.readlines()
+    with current_filepath.open() as current_f:
+        current_text_lines = current_f.readlines()
+    if len(expected_text_lines) != len(current_text_lines):
+        print(
+            f"Lines in expected text file ({len(expected_text_lines)}) "
+            f"don't match current text file ({len(current_text_lines)})"
+        )
+        return False
+    expected_text = "\n".join(expected_text_lines)
+    current_text = "\n".join(current_text_lines)
+    if expected_text == current_text:
+        return True
+    print("txt content don't match:")
+    print(f"expected: {expected_text}")
+    print(f"current: {current_text}")
+    return False
+
+
+file_type_equality_check = {
+    ".json": json_equality_check,
+    ".html": html_equality_check,
+    ".txt": txt_equality_check,
+}
 
 
 @dataclass
@@ -132,6 +160,23 @@ def check_contents(
     assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
+def detect_diff(
+    configs: ValidationConfigs, expected_filepath: Path, current_filepath: Path
+) -> bool:
+    if expected_filepath.suffix != current_filepath.suffix:
+        return True
+    if downloaded_file_equality_check := configs.downloaded_file_equality_check:
+        return not downloaded_file_equality_check(expected_filepath, current_filepath)
+    current_suffix = expected_filepath.suffix
+    if current_suffix in file_type_equality_check:
+        equality_check_callable = file_type_equality_check[current_suffix]
+        return not equality_check_callable(
+            expected_filepath=expected_filepath, current_filepath=current_filepath
+        )
+    # Fallback is using filecmp.cmp to compare the files
+    return not filecmp.cmp(expected_filepath, current_filepath, shallow=False)
+
+
 def check_raw_file_contents(
     expected_output_dir: Path,
     current_output_dir: Path,
@@ -143,19 +188,7 @@ def check_raw_file_contents(
     for current_file in current_files:
         current_file_path = current_output_dir / current_file
         expected_file_path = expected_output_dir / current_file
-        if downloaded_file_equality_check := configs.downloaded_file_equality_check:
-            is_different = downloaded_file_equality_check(expected_file_path, current_file_path)
-        elif expected_file_path.suffix == ".csv" and current_file_path.suffix == ".csv":
-            is_different = not pandas_df_equality_check(
-                expected_filepath=expected_file_path, current_filepath=current_file_path
-            )
-        elif expected_file_path.suffix == ".html" and current_file_path.suffix == ".html":
-            is_different = not html_equality_check(
-                expected_filepath=expected_file_path, current_filepath=current_file_path
-            )
-        else:
-            is_different = not filecmp.cmp(expected_file_path, current_file_path, shallow=False)
-        if is_different:
+        if detect_diff(configs, expected_file_path, current_file_path):
             found_diff = True
             files.append(str(expected_file_path))
             print(f"diffs between files {expected_file_path} and {current_file_path}")

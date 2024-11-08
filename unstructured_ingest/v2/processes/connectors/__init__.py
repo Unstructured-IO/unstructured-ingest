@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
