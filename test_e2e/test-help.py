@@ -2,6 +2,8 @@ import multiprocessing as mp
 import subprocess
 from pathlib import Path
 
+import click
+
 from unstructured_ingest.cli.cli import get_cmd
 
 
@@ -31,7 +33,14 @@ def run_command(cmd):
         raise subprocess.CalledProcessError(resp.returncode, resp.args, resp.stdout, resp.stderr)
 
 
-if __name__ == "__main__":
+@click.command()
+@click.option(
+    "--local-code",
+    is_flag=True,
+    default=False,
+    help="If set, will use the local main.py file to invoke rather than cli directly",
+)
+def run_check(local_code: bool = False):
     cmd = get_cmd()
     src_command_dict = cmd.commands
     src_command_labels = list(src_command_dict.keys())
@@ -49,9 +58,18 @@ if __name__ == "__main__":
         cmds.append(f"{main_file} {src_command_label} --help")
 
     for dest_command_label in dest_command_labels:
-        cmds.append(
-            f"PYTHONPATH={project_path} {main_file} {first_src_command_label} {dest_command_label} --help"
-        )
+        if local_code:
+            cmds.append(
+                f"PYTHONPATH={project_path} {main_file} {first_src_command_label} {dest_command_label} --help"  # noqa: E501
+            )
+        else:
+            cmds.append(
+                f"unstructured-ingest {first_src_command_label} {dest_command_label} --help"
+            )
 
     with mp.Pool(processes=mp.cpu_count()) as pool:
         pool.map(run_command, cmds)
+
+
+if __name__ == "__main__":
+    run_check()
