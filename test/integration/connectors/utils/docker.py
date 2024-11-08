@@ -47,14 +47,15 @@ def healthcheck_wait(container: Container, timeout: int = 10) -> None:
 
 @contextmanager
 def container_context(
-    docker_client: docker.DockerClient,
     image: str,
     ports: dict,
     environment: Optional[dict] = None,
     volumes: Optional[dict] = None,
     healthcheck: Optional[dict] = None,
     healthcheck_timeout: int = 10,
+    docker_client: Optional[docker.DockerClient] = None,
 ):
+    docker_client = docker_client or docker.from_env()
     container: Optional[Container] = None
     try:
         container = get_container(
