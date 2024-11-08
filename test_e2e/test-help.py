@@ -5,12 +5,17 @@ from pathlib import Path
 from unstructured_ingest.cli.cli import get_cmd
 
 
+def get_project_path() -> Path:
+    project_path = Path(__file__).parents[1]
+    return project_path.resolve()
+
+
 def get_main_file() -> Path:
-    script_path = Path(__file__).parents[1]
-    main_file = script_path / "unstructured_ingest" / "main.py"
+    project_path = get_project_path()
+    main_file = project_path / "unstructured_ingest" / "main.py"
     assert main_file.exists()
     assert main_file.is_file()
-    return main_file
+    return main_file.resolve()
 
 
 def run_command(cmd):
@@ -38,12 +43,15 @@ if __name__ == "__main__":
     dest_command_labels = list(dest_command_dict.keys())
 
     cmds = []
+    project_path = get_project_path()
     main_file = get_main_file()
     for src_command_label in src_command_labels:
         cmds.append(f"{main_file} {src_command_label} --help")
 
     for dest_command_label in dest_command_labels:
-        cmds.append(f"{main_file} {first_src_command_label} {dest_command_label} --help")
+        cmds.append(
+            f"PYTHONPATH={project_path} {main_file} {first_src_command_label} {dest_command_label} --help"
+        )
 
     with mp.Pool(processes=mp.cpu_count()) as pool:
         pool.map(run_command, cmds)
