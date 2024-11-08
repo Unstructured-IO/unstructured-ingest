@@ -1,9 +1,11 @@
 import asyncio
 import json
 import uuid
+from abc import ABC, abstractmethod
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 from pydantic import Field, Secret
 
@@ -20,86 +22,35 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
     from qdrant_client import AsyncQdrantClient
 
 
-CONNECTOR_TYPE = "qdrant"
+class QdrantAccessConfig(AccessConfig, ABC):
+    pass
 
 
-class QdrantAccessConfig(AccessConfig):
-    api_key: Optional[str] = Field(
-        default=None, description="API key for authentication in Qdrant Cloud."
-    )
-
-
-class QdrantConnectionConfig(ConnectionConfig):
-    location: Optional[str] = Field(
-        default=None,
-        description=(
-            "If `str` - use it as a `url` parameter.\nIf `None` - use default values for `host`"
-            "and `port`."
-        ),
-    )
-    url: Optional[str] = Field(
-        default=None,
-        description=(
-            'Either host or str of "Optional[scheme], host, Optional[port], Optional[prefix]"'
-        ),
-    )
-    port: int = Field(default=6333, description="Port of the REST API interface.")
-    grpc_port: int = Field(default=6334, description="Port of the gRPC interface.")
-    prefer_grpc: bool = Field(
-        default=False,
-        description="If `true` - use gPRC interface whenever possible in custom methods.",
-    )
-    https: Optional[bool] = Field(default=None, description="If `true` - use HTTPS(SSL) protocol.")
-    prefix: Optional[str] = Field(
-        default=None,
-        description="If not `None` - add `prefix` to the REST URL path. For example `service/v1`"
-        " will result in `http://localhost:6333/service/v1/{endpoint}` for REST API.",
-    )
-    timeout: Optional[float] = Field(
-        default=None,
-        description=(
-            "Timeout for REST and gRPC API requests. 5 seconds for REST and unlimited for"
-            "gRPC by default."
-        ),
-    )
-    host: Optional[str] = Field(
-        default=None,
-        description="Host name of Qdrant service. If url and host are None, set to 'localhost'",
-    )
-    path: Optional[str] = Field(default=None, description="Persistence path for QdrantLocal.")
-    force_disable_check_same_thread: bool = Field(
-        default=False, description="For QdrantLocal, force disable check_same_thread."
-    )
+class QdrantConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[QdrantAccessConfig] = Field(
         default_factory=QdrantAccessConfig, validate_default=True, description="Access Config"
     )
 
+    @abstractmethod
+    def get_client_kwargs(self) -> dict:
+        pass
+
     @requires_dependencies(["qdrant_client"], extras="qdrant")
-    def get_async_client(self) -> "AsyncQdrantClient":
+    @asynccontextmanager
+    async def get_client(self) -> AsyncGenerator["AsyncQdrantClient", None]:
         from qdrant_client.async_qdrant_client import AsyncQdrantClient
 
-        client = AsyncQdrantClient(
-            location=self.location,
-            url=self.url,
-            port=self.port,
-            grpc_port=self.grpc_port,
-            prefer_grpc=self.prefer_grpc,
-            https=self.https,
-            api_key=(self.access_config.get_secret_value().api_key if self.access_config else None),
-            prefix=self.prefix,
-            timeout=self.timeout,
-            host=self.host,
-            path=self.path,
-            force_disable_check_same_thread=self.force_disable_check_same_thread,
-        )
-
-        return client
+        client_kwargs = self.get_client_kwargs()
+        client = AsyncQdrantClient(**client_kwargs)
+        try:
+            yield client
+        finally:
+            await client.close()
 
 
 class QdrantUploadStagerConfig(UploadStagerConfig):
@@ -107,7 +58,7 @@ class QdrantUploadStagerConfig(UploadStagerConfig):
 
 
 @dataclass
-class QdrantUploadStager(UploadStager):
+class QdrantUploadStager(UploadStager, ABC):
     upload_stager_config: QdrantUploadStagerConfig = field(
         default_factory=lambda: QdrantUploadStagerConfig()
     )
@@ -159,16 +110,15 @@ class QdrantUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class QdrantUploader(Uploader):
-    connector_type: str = CONNECTOR_TYPE
+class QdrantUploader(Uploader, ABC):
     upload_config: QdrantUploaderConfig
     connection_config: QdrantConnectionConfig
 
     @DestinationConnectionError.wrap
     def precheck(self) -> None:
         async def check_connection():
-            async_client = self.connection_config.get_async_client()
-            await async_client.get_collections()
+            async with self.connection_config.get_client() as async_client:
+                await async_client.get_collections()
 
         asyncio.run(check_connection())
 
@@ -197,7 +147,6 @@ class QdrantUploader(Uploader):
     async def _upsert_batch(self, batch: list[dict]) -> None:
         from qdrant_client import models
 
-        client = self.connection_config.get_async_client()
         points: list[models.PointStruct] = [models.PointStruct(**item) for item in batch]
         try:
             logger.debug(
@@ -205,7 +154,10 @@ class QdrantUploader(Uploader):
                 len(points),
                 self.upload_config.collection_name,
             )
-            await client.upsert(self.upload_config.collection_name, points=points, wait=True)
+            async with self.connection_config.get_client() as async_client:
+                await async_client.upsert(
+                    self.upload_config.collection_name, points=points, wait=True
+                )
         except Exception as api_error:
             logger.error(
                 "Failed to upsert points to the collection due to the following error %s", api_error
@@ -214,12 +166,3 @@ class QdrantUploader(Uploader):
             raise WriteError(f"Qdrant error: {api_error}") from api_error
 
         logger.debug("Successfully upsert points to the collection.")
-
-
-qdrant_destination_entry = DestinationRegistryEntry(
-    connection_config=QdrantConnectionConfig,
-    uploader=QdrantUploader,
-    uploader_config=QdrantUploaderConfig,
-    upload_stager=QdrantUploadStager,
-    upload_stager_config=QdrantUploadStagerConfig,
-)
