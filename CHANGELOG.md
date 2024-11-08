@@ -1,4 +1,4 @@
-## 0.2.2-dev4
+## 0.2.2-dev5
 
 ### Enhancements
 
@@ -7,6 +7,7 @@
 * **Added V2 confluence source connector**
 * **Added OneDrive destination connector**
 * **Qdrant destination to v2**
+* **Migrate Kafka Source Connector to V2**
 
 ## 0.2.1
 
