@@ -1,4 +1,4 @@
-## 0.2.2-dev3
+## 0.2.2-dev4
 
 ### Enhancements
 
@@ -20,6 +20,7 @@
 ### Fixes
 
 * **Fix Databricks Volumes file naming** Add .json to end of upload file.
+* **Fix SQL Type destination precheck** Change to context manager "with".
 
 ## 0.2.0
 
