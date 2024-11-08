@@ -9,7 +9,7 @@ from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.unstructured_api import call_api
+from unstructured_ingest.v2.unstructured_api import call_api_async
 
 CHUNK_MAX_CHARS_DEFAULT: int = 500
 CHUNK_MULTI_PAGE_DEFAULT: bool = True
@@ -112,7 +112,7 @@ class Chunker(BaseProcess, ABC):
 
     @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
     async def run_async(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
-        elements = await call_api(
+        elements = await call_api_async(
             server_url=self.config.chunking_endpoint,
             api_key=self.config.chunk_api_key.get_secret_value(),
             filename=elements_filepath,

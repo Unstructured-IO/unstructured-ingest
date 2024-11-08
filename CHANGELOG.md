@@ -1,8 +1,11 @@
-## 0.2.2-dev0
+## 0.2.2-dev3
 
-### Fixes
+### Enhancements
 
-* **Fix Snowflake Destination precheck**
+* **Remove `overwrite` field** from fsspec and databricks connectors
+* **Added migration for GitLab Source V2**
+* **Added V2 confluence source connector**
+* **Added OneDrive destination connector**
 
 ## 0.2.1
 
@@ -11,6 +14,8 @@
 * **File system based indexers return a record display name**
 * **Add singlestore source connector**
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+* **Support native async requests from unstructured-client**
+* **Support filtering element types in partitioner step**
 
 ### Fixes
 

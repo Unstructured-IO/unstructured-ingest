@@ -1,0 +1,549 @@
+[
+  {
+    "type": "Title",
+    "element_id": "d67115ff539b6cadff0729c6992393c9",
+    "text": "title: Contributing Guidelines",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "98f3cb2d480685ad55c67bc572360e7b",
+    "text": "menu:",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "449603f7ae61cefaa3de9a9591222c13",
+    "text": "main:",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "a7812dfdb2505abab9e0d96fd1c5fe07",
+    "text": "name: Contribute",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "0669685c21e2d08bcb0fcd7c54de99fe",
+    "text": "weight: -20",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "879a9e950e9697e992b4b98302873b74",
+    "text": "pre: ''",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "c6fef0df4e1e4c52df600a714fbc8051",
+    "text": "In general, content management on the internal handbook is very similar to the public handbook. The key differences are described on this page.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "9195babb29cebe7a8a4e0e16075b5530",
+    "text": "Differences from Public handbook",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "57c85c53e65f329cfbf0bb74ce97bc9b",
+    "text": "Content is maintained in the /content directory, not /source. See the directory structure below.",
+    "metadata": {
+      "emphasized_text_contents": [
+        "/content",
+        "directory, not",
+        "/source"
+      ],
+      "emphasized_text_tags": [
+        "b",
+        "b",
+        "b"
+      ],
+      "link_texts": [
+        "the directory structure"
+      ],
+      "link_urls": [
+        "{{< relref \"#content-structure\" >}}"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "727b61df184ee50d3a3c483a0f48e068",
+    "text": "Child pages of a section and their summary are automatically listed at the bottom of each section page.",
+    "metadata": {
+      "link_texts": [
+        "section page"
+      ],
+      "link_urls": [
+        "{{< relref \"#section-pages\" >}}"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "6a23f36ed6fdccb28af132dd8a90ecae",
+    "text": "Pages can only be authored as .html or .md and you should use only one file extension or the other. Instead of creating my-team/about/index.html.md simply use my-team/about.md.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "731b33a048c80efea83a483ec4d400fc",
+    "text": "Section Pages",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "ad26ac4ff3a67ca7a2d83cb4003a2c32",
+    "text": "Section pages (i.e. _index.md) are a bit special. If you are creating a new section (i.e. a directory that will have child pages), you should always include a _index.md in the same directory. By default, the bottom of your \"section\" page will include a list of child pages within the section. See as an example.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "Title",
+    "element_id": "8c2d52d8440df0f7586edba64fce0aac",
+    "text": "Content Structure",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "a1f054f08505ec459ac4c961c970ccb4",
+    "text": "Below is an example of the content structure used for this site:",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "8861599afdaf53f75211493ce02f0a67",
+    "text": "plain content \u251c\u2500\u2500 docs \u2502 \u2514\u2500\u2500 _index.md \u251c\u2500\u2500 handbook \u2502 \u251c\u2500\u2500 alliances \u2502 \u2502 \u251c\u2500\u2500 _index.md \u2502 \u2502 \u251c\u2500\u2500 aws.md \u2502 \u2502 \u251c\u2500\u2500 ecosystempartners.md \u2502 \u2502 \u251c\u2500\u2500 gcp.md \u2502 \u2502 \u251c\u2500\u2500 ibm.md \u2502 \u2502 \u2514\u2500\u2500 redhat.md \u2502 \u251c\u2500\u2500 company \u2502 \u2502 \u251c\u2500\u2500 _index.md \u2502 \u2502 \u251c\u2500\u2500 communication \u2502 \u2502 \u2502 \u251c\u2500\u2500 _index.md \u2502 \u2502 \u2502 \u2514\u2500\u2500 project-code-names.md \u2502 \u2502 \u251c\u2500\u2500 crisis-process.md \u2502 \u2502 \u2514\u2500\u2500 performance-indicators \u2502 \u2502 \u251c\u2500\u2500 _index.md \u2502 \u2502 \u251c\u2500\u2500 product \u2502 \u2502 \u2502 \u251c\u2500\u2500 _index.md \u2502 \u2502 \u2502 \u251c\u2500\u2500 dev-section.md \u2502 \u2502 \u2502 \u251c\u2500\u2500 enablement-section.md \u2502 \u2502 \u2502 \u251c\u2500\u2500 modelops-section.md \u2502 \u2502 \u2502 \u251c\u2500\u2500 ops-section.md \u2502 \u2502 \u2502 \u251c\u2500\u2500 sec-section.md \u2502 \u2502 \u2502 \u2514\u2500\u2500 stages-and-groups.md \u2502 \u2502 \u2514\u2500\u2500 sales.md \u2502 \u2514\u2500\u2500 ...",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "fcb9b566baac7426c18f0290cbd8203d",
+    "text": "{{< alert title=\"Under Construction\" color=\"warning\" >}} Contributing guidelines are WIP. If you are feeling ambitious here are some useful links:",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "b03d2064d3aa298a27c686065e11933d",
+    "text": "Hugo Docs",
+    "metadata": {
+      "link_texts": [
+        "Hugo Docs"
+      ],
+      "link_urls": [
+        "https://gohugo.io/documentation/"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  },
+  {
+    "type": "ListItem",
+    "element_id": "7a7a527749f05a090e62b5c9c43892a3",
+    "text": "Docsy Shortcodes {{</ alert >}}",
+    "metadata": {
+      "link_texts": [
+        "Docsy Shortcodes"
+      ],
+      "link_urls": [
+        "https://www.docsy.dev/docs/adding-content/shortcodes/"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/markdown",
+      "data_source": {
+        "url": "ea3fe5b0916b8c9771f223918b420c9ab7cc2154",
+        "version": null,
+        "record_locator": {
+          "file_path": "content/docs/_index.md",
+          "ref": "v0.0.7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": [
+          {
+            "mode": "100644"
+          }
+        ],
+        "filesize_bytes": 2542
+      }
+    }
+  }
+]
