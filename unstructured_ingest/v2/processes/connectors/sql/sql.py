@@ -300,10 +300,8 @@ class SQLUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            connection = self.connection_config.get_connection()
-            cursor = connection.cursor()
-            cursor.execute("SELECT 1;")
-            cursor.close()
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")

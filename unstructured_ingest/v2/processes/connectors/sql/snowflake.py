@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -28,7 +27,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import SQLAccessConfig,
 if TYPE_CHECKING:
     from snowflake.connector import SnowflakeConnection
     from snowflake.connector.cursor import SnowflakeCursor
-from unstructured_ingest.v2.logger import logger
 
 CONNECTOR_TYPE = "snowflake"
 
@@ -131,14 +129,6 @@ class SnowflakeUploader(PostgresUploader):
     connection_config: SnowflakeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
-
-    def precheck(self) -> None:
-        with self.connection_config.get_cursor() as cursor:
-            try:
-                cursor.execute("SELECT 1;")
-            except Exception as e:
-                logger.error(f"failed to validate connection: {e}", exc_info=True)
-                raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def upload_contents(self, path: Path) -> None:
         df = pd.read_json(path, orient="records", lines=True)
