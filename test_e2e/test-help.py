@@ -41,6 +41,7 @@ def run_command(cmd):
     help="If set, will use the local main.py file to invoke rather than cli directly",
 )
 def run_check(local_code: bool = False):
+    print("running --help check")
     cmd = get_cmd()
     src_command_dict = cmd.commands
     src_command_labels = list(src_command_dict.keys())
@@ -66,6 +67,10 @@ def run_check(local_code: bool = False):
             cmds.append(
                 f"unstructured-ingest {first_src_command_label} {dest_command_label} --help"
             )
+
+    print("testing the following commands:")
+    for cmd in cmds:
+        print(cmd)
 
     with mp.Pool(processes=mp.cpu_count()) as pool:
         pool.map(run_command, cmds)
