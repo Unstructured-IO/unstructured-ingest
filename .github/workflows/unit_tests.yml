@@ -79,7 +79,7 @@ jobs:
       - name: Validate --help
         run: |
           make install-base
-          ./test_e2e/test-help.sh
+          PYTHON_PATH=. python ./test_e2e/test-help.py
 
   test_install_cli:
     environment: ci
