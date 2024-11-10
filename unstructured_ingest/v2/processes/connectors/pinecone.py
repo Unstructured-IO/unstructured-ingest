@@ -1,9 +1,12 @@
+import base64
 import json
 import uuid
+import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from pinecone_text.sparse import SpladeEncoder
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -69,10 +72,13 @@ ALLOWED_FIELDS = (
     "last_modified",
     "page_number",
     "filename",
+    "filetype",
     "is_continuation",
     "link_urls",
     "link_texts",
     "text_as_html",
+    "languages",
+    "page_name",
 )
 
 
@@ -83,6 +89,10 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
             "which metadata from the source element to map to the payload metadata being sent to "
             "Pinecone."
         ),
+    )
+    extra_metadata: dict = Field(
+        default=dict(),
+        description="Extra metadata to add to the Pinecone payload.",
     )
 
 
@@ -105,13 +115,31 @@ class PineconeUploadStager(UploadStager):
     upload_stager_config: PineconeUploadStagerConfig = field(
         default_factory=lambda: PineconeUploadStagerConfig()
     )
+    sparse_embeddings_model: SpladeEncoder = field(
+        default_factory=lambda: SpladeEncoder(max_seq_length=512)
+    )
+
+    def elements_from_base64_gzipped_json(self, orig_elements):
+        decoded_orig_elements = base64.b64decode(orig_elements)
+        decompressed_orig_elements = zlib.decompress(decoded_orig_elements)
+        return json.loads(decompressed_orig_elements.decode("utf-8"))
 
     def conform_dict(self, element_dict: dict) -> dict:
         embeddings = element_dict.pop("embeddings", None)
         metadata: dict[str, Any] = element_dict.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
-        pinecone_metadata = {}
+        pinecone_metadata = {
+            "context": element_dict.pop("text"),
+            **self.upload_stager_config.extra_metadata,
+        }
+        orig_elements = self.elements_from_base64_gzipped_json(
+            orig_elements=metadata["orig_elements"]
+        )
+        filename = orig_elements[0]["metadata"]["filename"]
+        filetype = orig_elements[0]["metadata"]["filetype"]
+        metadata["filename"] = filename
+        metadata["filetype"] = filetype
         for possible_meta in [element_dict, metadata, data_source, coordinates]:
             pinecone_metadata.update(
                 {
@@ -120,10 +148,13 @@ class PineconeUploadStager(UploadStager):
                     if k in self.upload_stager_config.metadata_fields
                 }
             )
-
+        sparse_vector = self.sparse_embeddings_model.encode_documents(
+            texts=pinecone_metadata["context"]
+        )
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
+            "sparse_values": sparse_vector,
             "metadata": flatten_dict(
                 pinecone_metadata,
                 separator="-",
@@ -178,7 +209,9 @@ class PineconeUploader(Uploader):
                 max_batch_size=self.upload_config.batch_size,
             )
         )
-        logger.info(f"split doc with {len(elements_dict)} elements into {len(chunks)} batches")
+        logger.info(
+            f"split doc with {len(elements_dict)} elements into {len(chunks)} batches"
+        )
 
         max_pool_threads = min(len(chunks), MAX_POOL_THREADS)
         if self.upload_config.pool_threads:
@@ -196,7 +229,9 @@ class PineconeUploader(Uploader):
             try:
                 results = [async_result.get() for async_result in async_results]
             except PineconeApiException as api_error:
-                raise DestinationConnectionError(f"http error: {api_error}") from api_error
+                raise DestinationConnectionError(
+                    f"http error: {api_error}"
+                ) from api_error
             logger.debug(f"results: {results}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
