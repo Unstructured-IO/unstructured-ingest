@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from dateutil import parser
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -22,16 +26,20 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
+    Uploader,
+    UploaderConfig,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
     SourceRegistryEntry,
 )
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
     from office365.onedrive.driveitems.driveItem import DriveItem
+    from office365.onedrive.drives.drive import Drive
 
 CONNECTOR_TYPE = "onedrive"
 MAX_MB_SIZE = 512_000_000
@@ -54,6 +62,11 @@ class OnedriveConnectionConfig(ConnectionConfig):
         description="Authentication token provider for Microsoft apps",
     )
     access_config: Secret[OnedriveAccessConfig]
+
+    def get_drive(self) -> "Drive":
+        client = self.get_client()
+        drive = client.users[self.user_pname].drive
+        return drive
 
     @requires_dependencies(["msal"], extras="onedrive")
     def get_token(self):
@@ -100,7 +113,6 @@ class OnedriveIndexer(Indexer):
                 raise SourceConnectionError(
                     "{} ({})".format(error, token_resp.get("error_description"))
                 )
-            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -224,10 +236,159 @@ class OnedriveDownloader(Downloader):
         return DownloadResponse(file_data=file_data, path=download_path)
 
 
+class OnedriveUploaderConfig(UploaderConfig):
+    remote_url: str = Field(
+        description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'"
+    )
+    prefix: str = "onedrive://"
+
+    @property
+    def root_folder(self) -> str:
+        url = (
+            self.remote_url.replace(self.prefix, "", 1)
+            if self.remote_url.startswith(self.prefix)
+            else self.remote_url
+        )
+        return url.split("/")[0]
+
+    @property
+    def url(self) -> str:
+        url = (
+            self.remote_url.replace(self.prefix, "", 1)
+            if self.remote_url.startswith(self.prefix)
+            else self.remote_url
+        )
+        return url
+
+
+@dataclass
+class OnedriveUploader(Uploader):
+    connection_config: OnedriveConnectionConfig
+    upload_config: OnedriveUploaderConfig
+    connector_type: str = CONNECTOR_TYPE
+
+    @requires_dependencies(["office365"], extras="onedrive")
+    def precheck(self) -> None:
+        from office365.runtime.client_request_exception import ClientRequestException
+
+        try:
+            token_resp: dict = self.connection_config.get_token()
+            if error := token_resp.get("error"):
+                raise SourceConnectionError(
+                    "{} ({})".format(error, token_resp.get("error_description"))
+                )
+            drive = self.connection_config.get_drive()
+            root = drive.root
+            root_folder = self.upload_config.root_folder
+            folder = root.get_by_path(root_folder)
+            try:
+                folder.get().execute_query()
+            except ClientRequestException as e:
+                if e.message != "The resource could not be found.":
+                    raise e
+                folder = root.create_folder(root_folder).execute_query()
+                logger.info(f"successfully created folder: {folder.name}")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise SourceConnectionError(f"failed to validate connection: {e}")
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        drive = self.connection_config.get_drive()
+
+        # Use the remote_url from upload_config as the base destination folder
+        base_destination_folder = self.upload_config.url
+
+        # Use the file's relative path to maintain directory structure, if needed
+        if file_data.source_identifiers and file_data.source_identifiers.rel_path:
+            # Combine the base destination folder with the file's relative path
+            destination_path = Path(base_destination_folder) / Path(
+                file_data.source_identifiers.rel_path
+            )
+        else:
+            # If no relative path is provided, upload directly to the base destination folder
+            destination_path = Path(base_destination_folder) / path.name
+
+        destination_folder = destination_path.parent
+        file_name = destination_path.name
+
+        # Convert destination folder to a string suitable for OneDrive API
+        destination_folder_str = str(destination_folder).replace("\\", "/")
+
+        # Resolve the destination folder in OneDrive, creating it if necessary
+        try:
+            # Attempt to get the folder
+            folder = drive.root.get_by_path(destination_folder_str)
+            folder.get().execute_query()
+        except Exception:
+            # Folder doesn't exist, create it recursively
+            current_folder = drive.root
+            for part in destination_folder.parts:
+                # Use filter to find the folder by name
+                folders = (
+                    current_folder.children.filter(f"name eq '{part}' and folder ne null")
+                    .get()
+                    .execute_query()
+                )
+                if folders:
+                    current_folder = folders[0]
+                else:
+                    # Folder doesn't exist, create it
+                    current_folder = current_folder.create_folder(part).execute_query()
+            folder = current_folder
+
+        # Check the size of the file
+        file_size = path.stat().st_size
+
+        if file_size < MAX_MB_SIZE:
+            # Use simple upload for small files
+            with path.open("rb") as local_file:
+                content = local_file.read()
+                logger.info(f"Uploading {path} to {destination_path} using simple upload")
+                try:
+                    uploaded_file = folder.upload(file_name, content).execute_query()
+                    if not uploaded_file or uploaded_file.name != file_name:
+                        raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
+                    # Log details about the uploaded file
+                    logger.info(
+                        f"Uploaded file '{uploaded_file.name}' with ID '{uploaded_file.id}'"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to upload file '{file_name}': {e}", exc_info=True)
+                    raise DestinationConnectionError(
+                        f"Failed to upload file '{file_name}': {e}"
+                    ) from e
+        else:
+            # Use resumable upload for large files
+            destination_fullpath = f"{destination_folder_str}/{file_name}"
+            destination_drive_item = drive.root.item_with_path(destination_fullpath)
+
+            logger.info(f"Uploading {path} to {destination_fullpath} using resumable upload")
+            try:
+                uploaded_file = destination_drive_item.resumable_upload(
+                    source_path=str(path)
+                ).execute_query()
+                # Validate the upload
+                if not uploaded_file or uploaded_file.name != file_name:
+                    raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
+                # Log details about the uploaded file
+                logger.info(f"Uploaded file {uploaded_file.name} with ID {uploaded_file.id}")
+            except Exception as e:
+                logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
+                raise DestinationConnectionError(
+                    f"Failed to upload file '{file_name}' using resumable upload: {e}"
+                ) from e
+
+
 onedrive_source_entry = SourceRegistryEntry(
     connection_config=OnedriveConnectionConfig,
     indexer_config=OnedriveIndexerConfig,
     indexer=OnedriveIndexer,
     downloader_config=OnedriveDownloaderConfig,
     downloader=OnedriveDownloader,
+)
+
+onedrive_destination_entry = DestinationRegistryEntry(
+    connection_config=OnedriveConnectionConfig,
+    uploader=OnedriveUploader,
+    uploader_config=OnedriveUploaderConfig,
 )

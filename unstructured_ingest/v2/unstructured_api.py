@@ -1,6 +1,4 @@
-import asyncio
 from dataclasses import fields
-from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -53,7 +51,7 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     return PartitionRequest(partition_parameters=partition_params)
 
 
-async def call_api(
+async def call_api_async(
     server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
 ) -> list[dict]:
     """Call the Unstructured API using unstructured-client.
@@ -73,15 +71,31 @@ async def call_api(
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
+    res = await client.general.partition_async(request=partition_request)
 
-    # TODO when client supports async, run without using run_in_executor
-    # isolate the IO heavy call
-    loop = asyncio.get_event_loop()
+    return res.elements or []
 
-    # Note(austin) - The partition calls needs request to be a keyword arg
-    # We have to use partial to do this, we can't pass request=request into run_in_executor
-    partition_call = partial(client.general.partition, request=partition_request)
 
-    res = await loop.run_in_executor(None, partition_call)
+def call_api(
+    server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
+) -> list[dict]:
+    """Call the Unstructured API using unstructured-client.
+
+    Args:
+        server_url: The base URL where the API is hosted
+        api_key: The user's API key (can be empty if this is a self hosted API)
+        filename: Path to the file being partitioned
+        api_parameters: A dict containing the requested API parameters
+
+    Returns: A list of the file's elements, or an empty list if there was an error
+    """
+    from unstructured_client import UnstructuredClient
+
+    client = UnstructuredClient(
+        server_url=server_url,
+        api_key_auth=api_key,
+    )
+    partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
+    res = client.general.partition(request=partition_request)
 
     return res.elements or []
