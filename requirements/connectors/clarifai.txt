@@ -2,7 +2,7 @@
 #    uv pip compile ./connectors/clarifai.in --output-file ./connectors/clarifai.txt --no-strip-extras --python-version 3.9
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 clarifai==10.7.0
     # via -r ./connectors/clarifai.in
@@ -12,7 +12,7 @@ contextlib2==21.6.0
     # via schema
 googleapis-common-protos==1.65.0
     # via clarifai-grpc
-grpcio==1.66.2
+grpcio==1.67.1
     # via
     #   -c ./connectors/../common/constraints.txt
     #   clarifai-grpc
@@ -31,7 +31,7 @@ numpy==1.26.4
     #   tritonclient
 pfzy==0.3.4
     # via inquirerpy
-pillow==10.4.0
+pillow==11.0.0
     # via clarifai
 prompt-toolkit==3.0.48
     # via inquirerpy
@@ -48,13 +48,13 @@ pyyaml==6.0.2
     # via clarifai
 requests==2.32.3
     # via clarifai-grpc
-rich==13.9.1
+rich==13.9.4
     # via clarifai
 schema==0.7.5
     # via clarifai
 tabulate==0.9.0
     # via clarifai
-tqdm==4.66.5
+tqdm==4.67.0
     # via clarifai
 tritonclient==2.41.1
     # via clarifai

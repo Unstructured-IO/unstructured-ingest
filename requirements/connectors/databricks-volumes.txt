@@ -4,11 +4,11 @@ cachetools==5.5.0
     # via google-auth
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
-databricks-sdk==0.33.0
+databricks-sdk==0.36.0
     # via -r ./connectors/databricks-volumes.in
-google-auth==2.35.0
+google-auth==2.36.0
     # via databricks-sdk
 idna==3.10
     # via requests

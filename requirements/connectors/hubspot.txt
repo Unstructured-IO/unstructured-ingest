@@ -2,7 +2,7 @@
 #    uv pip compile ./connectors/hubspot.in --output-file ./connectors/hubspot.txt --no-strip-extras --python-version 3.9
 certifi==2024.8.30
     # via hubspot-api-client
-hubspot-api-client==9.0.0
+hubspot-api-client==10.0.0
     # via -r ./connectors/hubspot.in
 python-dateutil==2.9.0.post0
     # via hubspot-api-client

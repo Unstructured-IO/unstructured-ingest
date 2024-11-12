@@ -8,7 +8,7 @@ dataclasses-json==0.6.7
     # via -r ./common/base.in
 deprecated==1.2.14
     # via opentelemetry-api
-marshmallow==3.22.0
+marshmallow==3.23.1
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
@@ -22,10 +22,8 @@ opentelemetry-sdk==1.16.0
     # via -r ./common/base.in
 opentelemetry-semantic-conventions==0.37b0
     # via opentelemetry-sdk
-packaging==23.2
-    # via
-    #   -c ./common/constraints.txt
-    #   marshmallow
+packaging==24.2
+    # via marshmallow
 pandas==2.2.3
     # via -r ./common/base.in
 pydantic==2.9.2
@@ -38,13 +36,13 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2024.2
     # via pandas
-setuptools==75.1.0
+setuptools==75.4.0
     # via
     #   opentelemetry-api
     #   opentelemetry-sdk
 six==1.16.0
     # via python-dateutil
-tqdm==4.66.5
+tqdm==4.67.0
     # via -r ./common/base.in
 typing-extensions==4.12.2
     # via

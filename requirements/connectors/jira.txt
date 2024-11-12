@@ -6,7 +6,7 @@ beautifulsoup4==4.12.3
     # via atlassian-python-api
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 deprecated==1.2.14
     # via atlassian-python-api

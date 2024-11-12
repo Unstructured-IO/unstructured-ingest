@@ -2,20 +2,30 @@
 #    uv pip compile ./release.in --output-file ./release.txt --no-strip-extras --python-version 3.9
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+cffi==1.17.1
+    # via cryptography
+charset-normalizer==3.4.0
     # via requests
 colorama==0.4.6
     # via twine
+cryptography==43.0.3
+    # via secretstorage
 docutils==0.21.2
     # via readme-renderer
 idna==3.10
     # via requests
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 keyring==22.3.0
     # via twine
 nh3==0.2.18
     # via readme-renderer
-pkginfo==1.11.1
+pkginfo==1.11.2
     # via twine
+pycparser==2.22
+    # via cffi
 pygments==2.18.0
     # via readme-renderer
 readme-renderer==44.0
@@ -28,9 +38,11 @@ requests-toolbelt==1.0.0
     # via twine
 rfc3986==2.0.0
     # via twine
-setuptools==75.1.0
+secretstorage==3.3.3
+    # via keyring
+setuptools==75.4.0
     # via twine
-tqdm==4.66.5
+tqdm==4.67.0
     # via twine
 twine==3.3.0
     # via -r ./release.in
@@ -38,5 +50,5 @@ urllib3==1.26.20
     # via
     #   -c ././common/constraints.txt
     #   requests
-wheel==0.44.0
+wheel==0.45.0
     # via -r ./release.in

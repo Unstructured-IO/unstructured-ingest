@@ -2,7 +2,7 @@
 #    uv pip compile ./connectors/gcs.in --output-file ./connectors/gcs.txt --no-strip-extras --python-version 3.9
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.10.8
+aiohttp==3.10.10
     # via gcsfs
 aiosignal==1.3.1
     # via aiohttp
@@ -18,11 +18,11 @@ cachetools==5.5.0
     # via google-auth
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 decorator==5.1.1
     # via gcsfs
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
@@ -33,11 +33,11 @@ fsspec==2024.5.0
     #   gcsfs
 gcsfs==2024.5.0
     # via -r ./connectors/gcs.in
-google-api-core==2.20.0
+google-api-core==2.23.0
     # via
     #   google-cloud-core
     #   google-cloud-storage
-google-auth==2.35.0
+google-auth==2.36.0
     # via
     #   gcsfs
     #   google-api-core
@@ -68,7 +68,9 @@ multidict==6.1.0
     #   yarl
 oauthlib==3.2.2
     # via requests-oauthlib
-proto-plus==1.24.0
+propcache==0.2.0
+    # via yarl
+proto-plus==1.25.0
     # via google-api-core
 protobuf==4.23.4
     # via
@@ -100,5 +102,5 @@ urllib3==1.26.20
     # via
     #   -c ./connectors/../common/constraints.txt
     #   requests
-yarl==1.13.1
+yarl==1.17.1
     # via aiohttp

@@ -6,7 +6,7 @@ bs4==0.0.2
     # via -r ./connectors/biomed.in
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 idna==3.10
     # via requests
