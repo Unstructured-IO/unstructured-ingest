@@ -37,12 +37,9 @@ all_tests=(
   'slack.sh'
   #  'against-api.sh'
   'gcs.sh'
-  'kafka-local.sh'
   'onedrive.sh'
   'outlook.sh'
   'elasticsearch.sh'
-  'confluence-diff.sh'
-  'confluence-large.sh'
   'couchbase.sh'
   'airtable-diff.sh'
   # # NOTE(ryan): This test is disabled because it is triggering too many requests to the API
@@ -83,6 +80,11 @@ python_version=$(python --version 2>&1)
 tests_to_ignore=(
   'notion.sh'
 )
+
+if [ -z "$UNS_PAID_API_KEY" ]; then
+  echo "Skipping source ingest tests because UNS_PAID_API_KEY env var is not set"
+  exit
+fi
 
 for test in "${all_tests[@]}"; do
   CURRENT_TEST="$test"

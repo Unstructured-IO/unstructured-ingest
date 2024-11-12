@@ -3,6 +3,8 @@ from __future__ import annotations
 import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.lancedb  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
@@ -17,6 +19,8 @@ from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONN
 from .azure_cognitive_search import azure_cognitive_search_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
+from .confluence import CONNECTOR_TYPE as CONFLUENCE_CONNECTOR_TYPE
+from .confluence import confluence_source_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
 from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
@@ -36,7 +40,7 @@ from .milvus import milvus_destination_entry
 from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
-from .onedrive import onedrive_source_entry
+from .onedrive import onedrive_destination_entry, onedrive_source_entry
 from .opensearch import CONNECTOR_TYPE as OPENSEARCH_CONNECTOR_TYPE
 from .opensearch import opensearch_destination_entry, opensearch_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
@@ -75,6 +79,7 @@ add_source_entry(source_type=LOCAL_CONNECTOR_TYPE, entry=local_source_entry)
 add_destination_entry(destination_type=LOCAL_CONNECTOR_TYPE, entry=local_destination_entry)
 
 add_source_entry(source_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_source_entry)
+add_destination_entry(destination_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_destination_entry)
 
 add_source_entry(source_type=OPENSEARCH_CONNECTOR_TYPE, entry=opensearch_source_entry)
 add_destination_entry(
@@ -102,7 +107,8 @@ add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entr
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 
-
 add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
+
+add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)

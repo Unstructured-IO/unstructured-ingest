@@ -1,9 +1,14 @@
-## 0.2.2-dev1
+## 0.2.3-dev0
+
 
 ### Enhancements
 * **LanceDB V2 Destination Connector**
 * **Remove `overwrite` field** from fsspec and databricks connectors
 * **Added migration for GitLab Source V2**
+* **Added V2 confluence source connector**
+* **Added OneDrive destination connector**
+* **Qdrant destination to v2**
+* **Migrate Kafka Source Connector to V2**
 
 ## 0.2.1
 
@@ -12,11 +17,14 @@
 * **File system based indexers return a record display name**
 * **Add singlestore source connector**
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+* **Support native async requests from unstructured-client**
+* **Support filtering element types in partitioner step**
 
 
 ### Fixes
 
 * **Fix Databricks Volumes file naming** Add .json to end of upload file.
+* **Fix SQL Type destination precheck** Change to context manager "with".
 
 ## 0.2.0
 

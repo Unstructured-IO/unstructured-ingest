@@ -70,7 +70,9 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
         connect_kwargs["password"] = self.access_config.get_secret_value().password
         # https://peps.python.org/pep-0249/#paramstyle
         connect_kwargs["paramstyle"] = "qmark"
-        connection = connect(**connect_kwargs)
+        # remove anything that is none
+        active_kwargs = {k: v for k, v in connect_kwargs.items() if v is not None}
+        connection = connect(**active_kwargs)
         try:
             yield connection
         finally:

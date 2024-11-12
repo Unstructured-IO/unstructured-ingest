@@ -94,6 +94,8 @@ jobs:
         DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
         DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
+        CONFLUENCE_USER_EMAIL: ${{secrets.CONFLUENCE_USER_EMAIL}}
+        CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
       run : |
         source .venv/bin/activate
         make install-test
@@ -129,6 +131,11 @@ jobs:
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
         GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
         AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
+        MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
+        MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+        MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+        MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+        MS_USER_PNAME: ${{ secrets.MS_USER_PNAME }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -158,8 +165,6 @@ jobs:
       env:
         AIRTABLE_PERSONAL_ACCESS_TOKEN: ${{ secrets.AIRTABLE_PERSONAL_ACCESS_TOKEN }}
         BOX_APP_CONFIG: ${{ secrets.BOX_APP_CONFIG }}
-        CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
-        CONFLUENCE_USER_EMAIL: ${{ secrets.CONFLUENCE_USER_EMAIL }}
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
         DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
         DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
