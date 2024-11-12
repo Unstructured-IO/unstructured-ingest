@@ -1,4 +1,7 @@
+import base64
 import hashlib
+import json
+import zlib
 from itertools import groupby
 
 
@@ -43,3 +46,11 @@ def assign_and_map_hash_ids(elements: list[dict]) -> list[dict]:
         e["metadata"]["parent_id"] = old_to_new_mapping[parent_id]
 
     return elements
+
+
+def elements_from_base64_gzipped_json(raw_s: str) -> list[dict]:
+    decoded_b64_bytes = base64.b64decode(raw_s)
+    elements_json_bytes = zlib.decompress(decoded_b64_bytes)
+    elements_json_str = elements_json_bytes.decode("utf-8")
+    element_dicts = json.loads(elements_json_str)
+    return element_dicts
