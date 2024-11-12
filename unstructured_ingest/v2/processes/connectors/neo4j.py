@@ -3,15 +3,19 @@ import json
 import uuid
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Union
+from typing import TYPE_CHECKING, Any, AsyncGenerator
 
 import networkx as nx
 from cymple import QueryBuilder
+from cymple.typedefs import Properties
+from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -73,12 +77,23 @@ class Neo4jUploadStagerConfig(UploadStagerConfig):
 
 
 class Node(BaseModel):
-    ref_name: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    labels: Union[list[str], str] = Field(default_factory=list)
+    node_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    labels: list[str] = Field(default_factory=list)
     properties: dict = Field(default_factory=dict)
 
     def __hash__(self):
-        return hash(self.ref_name)
+        return hash(self.node_id)
+
+
+class Edge(BaseModel):
+    from_node: str
+    to_node: str
+    relationship: str
+
+
+class GraphData(BaseModel):
+    nodes: dict[str, Node]
+    edges: list[Edge]
 
 
 @dataclass
@@ -98,29 +113,47 @@ class Neo4jUploadStager(UploadStager):
         if embeddings := element.get("embeddings"):
             properties["embeddings"] = embeddings
 
-        return Node(
-            properties=properties,
-        )
+        return Node(node_id=element["element_id"], properties=properties, labels=["element"])
 
     def create_graph(self, elements: list[dict], parent_node: Node) -> nx.Graph:
         graph = nx.Graph()
-        graph.add_node(parent_node)
+        if parent_node not in graph.nodes:
+            graph.add_node(parent_node)
         for element in elements:
             element_type = element["type"]
-            element_type_node = Node(ref_name=element_type)
+            element_type_node = Node(node_id=element_type)
             if element_type_node not in graph.nodes:
                 graph.add_node(element_type_node)
             element_node = self.element_to_node(element=element)
-            graph.add_edge(element_node, element_type_node)
+            graph.add_edge(element_node, element_type_node, relationship="element type")
             if self.has_children(element):
                 element_node.labels.append("chunked_element")
                 graph.add_node(element_node)
                 for child in self.get_children(element):
                     child_element_node = self.element_to_node(element=child)
                     graph.add_node(child_element_node)
-                    graph.add_edge(element_node, child_element_node)
-            graph.add_edge(element_node, parent_node)
+                    graph.add_edge(element_node, child_element_node, relationship="chunked from")
+            graph.add_edge(element_node, parent_node, relationship="belongs to")
         return graph
+
+    @staticmethod
+    def parse_date_string(date_string: str) -> date:
+        try:
+            timestamp = float(date_string)
+            return datetime.fromtimestamp(timestamp)
+        except Exception as e:
+            logger.debug(f"date {date_string} string not a timestamp: {e}")
+        return parser.parse(date_string)
+
+    def file_data_to_node(self, file_data: FileData) -> Node:
+        properties = {
+            "name": file_data.source_identifiers.filename,
+        }
+        if date_created := file_data.metadata.date_created:
+            properties["date_created"] = parser.parse(date_created).isoformat()
+        if date_modified := file_data.metadata.date_modified:
+            properties["date_modified"] = parser.parse(date_modified).isoformat()
+        return Node(node_id=file_data.identifier, properties=properties, labels=["file"])
 
     def run(
         self,
@@ -132,23 +165,30 @@ class Neo4jUploadStager(UploadStager):
     ) -> Path:
         with elements_filepath.open() as file:
             elements = json.load(file)
-        file_node = Node(ref_name="file")
-        graph = self.create_graph(elements, file_node)
-        nodes = graph.nodes()
-        file_node.model_dump()
-        nodes_dict = [n.model_dump() for n in nodes]
-        edges = list(graph.edges())
-        edges_dict = [[edge[0].ref_name, edge[1].ref_name] for edge in edges]
-        data = {"nodes": nodes_dict, "edges": edges_dict}
+        graph = self.create_graph(elements, self.file_data_to_node(file_data=file_data))
+        nodes = list(graph.nodes())
+        node_dict = {node.node_id: node for node in nodes}
+        edges = list(graph.edges(data=True))
+        edges_dict = [
+            Edge(
+                from_node=edge[0].node_id,
+                to_node=edge[1].node_id,
+                relationship=edge[2]["relationship"],
+            )
+            for edge in edges
+        ]
+        data = GraphData(nodes=node_dict, edges=edges_dict)
+        # data = {"nodes": nodes_dict, "edges": edges_dict}
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as output_file:
-            json.dump(data, output_file, indent=2)
+            json.dump(data.model_dump(), output_file, indent=2)
         return output_path
 
 
 class Neo4jUploaderConfig(UploaderConfig):
     database: str = Field(description="database to write to")
+    batch_size: int = Field(default=100, description="batch size")
 
 
 @dataclass
@@ -169,25 +209,30 @@ class Neo4jUploader(Uploader):
 
         asyncio.run(verify_auth())
 
-    def get_elements(self, path: Path) -> dict:
-        with path.open() as file:
-            return json.load(file)
+    async def create_node(self, client: "AsyncDriver", node: Node) -> None:
+        pass
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:
+        with path.open() as file:
+            staged_data = json.load(file)
+        graph_data = GraphData.model_validate(staged_data)
         async with self.connection_config.get_client() as client:
             logger.info("Creating new file node")
-            await self._create_file_node(client, file_data)
+            for batch_nodes in batch_generator(graph_data.nodes.values()):
+                await self.create_nodes(client=client, batch_nodes=batch_nodes)
 
-            elements = self.get_elements(path=path)
-            file_id = file_data.identifier
-            await asyncio.gather(
-                *[
-                    self._create_element_node(
-                        client=client, element_dict=element_dict, file_id=file_id
-                    )
-                    for element_dict in elements
-                ]
-            )
+            # await self._create_file_node(client, file_data)
+            #
+            # elements = self.get_elements(path=path)
+            # file_id = file_data.identifier
+            # await asyncio.gather(
+            #     *[
+            #         self._create_element_node(
+            #             client=client, element_dict=element_dict, file_id=file_id
+            #         )
+            #         for element_dict in elements
+            #     ]
+            # )
 
     async def _create_file_node(
         self,
@@ -204,7 +249,7 @@ class Neo4jUploader(Uploader):
             properties["date_created"] = file_data.metadata.date_modified.isoformat()
 
         builder = QueryBuilder()
-        query = builder.create().node(labels="File", properties=properties)
+        query = builder.create().node(labels=["file"], properties=properties)
 
         await client.execute_query(query.get())
 
@@ -215,6 +260,24 @@ class Neo4jUploader(Uploader):
             properties["embeddings"] = embeddings
 
         return properties
+
+    def create_node_cql(self, node: Node) -> str:
+        identifier = node.node_id
+        labels = node.labels
+        labels_string = f':{"&".join(labels).strip()}'
+
+        properties = node.properties
+        if not properties:
+            property_string = ""
+        else:
+            property_string = f" {{{Properties(properties).to_str()}}}"
+
+        return f"({identifier}{labels_string}{property_string})"
+
+    async def create_nodes(self, client: "AsyncDriver", batch_nodes: list[Node]) -> None:
+        node_cqls = [self.create_node_cql(node=node) for node in batch_nodes]
+        cql = "MERGE {}".format(", ".join(node_cqls))
+        print(cql)
 
     async def _create_element_node(
         self, client: "AsyncDriver", element_dict: dict, file_id: str
