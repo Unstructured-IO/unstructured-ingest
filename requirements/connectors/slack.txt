@@ -21,7 +21,7 @@ botocore==1.34.131
     #   s3transfer
 cffi==1.17.1
     # via pycares
-frozenlist==1.5.0
+frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
@@ -49,7 +49,7 @@ s3transfer==0.10.3
     # via boto3
 six==1.16.0
     # via python-dateutil
-slack-sdk[optional]==3.33.3
+slack-sdk[optional]==3.33.1
     # via -r ./connectors/slack.in
 sqlalchemy==2.0.36
     # via slack-sdk
@@ -65,5 +65,5 @@ websocket-client==1.8.0
     # via slack-sdk
 websockets==13.1
     # via slack-sdk
-yarl==1.17.1
+yarl==1.15.5
     # via aiohttp

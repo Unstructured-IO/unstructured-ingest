@@ -4,13 +4,13 @@ annotated-types==0.7.0
     # via pydantic
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.3.2
     # via requests
 idna==3.10
     # via requests
 inflection==0.5.1
     # via pyairtable
-pyairtable==2.3.6
+pyairtable==2.3.3
     # via -r ./connectors/airtable.in
 pydantic==2.9.2
     # via pyairtable

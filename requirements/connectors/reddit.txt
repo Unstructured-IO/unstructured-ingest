@@ -2,11 +2,11 @@
 #    uv pip compile ./connectors/reddit.in --output-file ./connectors/reddit.txt --no-strip-extras --python-version 3.9
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.3.2
     # via requests
 idna==3.10
     # via requests
-praw==7.8.1
+praw==7.7.1
     # via -r ./connectors/reddit.in
 prawcore==2.4.0
     # via praw

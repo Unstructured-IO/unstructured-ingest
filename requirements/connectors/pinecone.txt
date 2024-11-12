@@ -10,7 +10,7 @@ pinecone-plugin-interface==0.0.7
     # via
     #   pinecone-client
     #   pinecone-plugin-inference
-tqdm==4.67.0
+tqdm==4.66.5
     # via pinecone-client
 typing-extensions==4.12.2
     # via pinecone-client

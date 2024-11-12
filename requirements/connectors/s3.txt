@@ -4,7 +4,7 @@ aiobotocore==2.13.3
     # via s3fs
 aiohappyeyeballs==2.4.3
     # via aiohttp
-aiohttp==3.10.10
+aiohttp==3.10.8
     # via
     #   aiobotocore
     #   s3fs
@@ -20,7 +20,7 @@ botocore==1.34.131
     # via
     #   -c ./connectors/../common/constraints.txt
     #   aiobotocore
-frozenlist==1.5.0
+frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
@@ -37,8 +37,6 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-propcache==0.2.0
-    # via yarl
 python-dateutil==2.9.0.post0
     # via botocore
 s3fs==2024.5.0
@@ -57,5 +55,5 @@ wrapt==1.16.0
     # via
     #   -c ./connectors/../common/constraints.txt
     #   aiobotocore
-yarl==1.17.1
+yarl==1.13.1
     # via aiohttp
