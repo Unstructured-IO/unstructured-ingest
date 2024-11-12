@@ -1,3 +1,10 @@
+## 0.2.3-dev1
+
+### Enhancements
+
+* **Weaviate client** limit to version less than 4.0.0, to avoid warnings.
+
+
 ## 0.2.2
 
 ### Enhancements
