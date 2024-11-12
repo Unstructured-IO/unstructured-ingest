@@ -1,3 +1,5 @@
 -c ../common/constraints.txt
 
-weaviate-client
+# NOTE: Python client v3 weaviate.Client connections and methods are deprecated and will be removed by 2024-11-30
+# TODO: Upgrade to v4
+weaviate-client>=3.26.7,<4.0.0

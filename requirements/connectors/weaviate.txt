@@ -23,6 +23,4 @@ urllib3==1.26.20
 validators==0.34.0
     # via weaviate-client
 weaviate-client==3.26.7
-    # via
-    #   -c ./connectors/../common/constraints.txt
-    #   -r ./connectors/weaviate.in
+    # via -r ./connectors/weaviate.in
