@@ -67,13 +67,15 @@ def check(ctx, expected_docs):
     scope_name = ctx.parent.params["scope"]
     collection_name = ctx.parent.params["collection"]
 
+    breakpoint()
+
     print(
         f"Checking that the number of docs match expected "
         f"at {bucket_name}.{scope_name}.{collection_name}: {expected_docs}"
     )
     # Tally up the embeddings
     query_result = cluster.query(f"Select * from {bucket_name}.{scope_name}.{collection_name}")
-    docs = list(query_result)
+    docs = [row for row in query_result.rows()]
     number_of_docs = len(docs)
 
     # Check that the assertion is true
