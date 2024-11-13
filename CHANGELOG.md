@@ -1,3 +1,9 @@
+## 0.2.3-dev0
+
+### Enhancements
+
+* **Added V2 kafka destination connector**
+
 ## 0.2.2
 
 ### Enhancements

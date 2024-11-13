@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -5,12 +6,13 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, ContextManager, Generator, Optional
 
-from pydantic import Secret
+from pydantic import Field, Secret
 
 from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -22,15 +24,14 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
+    Uploader,
+    UploaderConfig,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
 if TYPE_CHECKING:
-    from confluent_kafka import Consumer
-
-CONNECTOR_TYPE = "kafka"
+    from confluent_kafka import Consumer, Producer
 
 
 class KafkaAccessConfig(AccessConfig, ABC):
@@ -47,6 +48,10 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
     def get_consumer_configuration(self) -> dict:
         pass
 
+    @abstractmethod
+    def get_producer_configuration(self) -> dict:
+        pass
+
     @contextmanager
     @requires_dependencies(["confluent_kafka"], extras="kafka")
     def get_consumer(self) -> ContextManager["Consumer"]:
@@ -59,9 +64,16 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
         finally:
             consumer.close()
 
+    @requires_dependencies(["confluent_kafka"], extras="kafka")
+    def get_producer(self) -> "Producer":
+        from confluent_kafka import Producer
+
+        producer = Producer(self.get_producer_configuration())
+        return producer
+
 
 class KafkaIndexerConfig(IndexerConfig):
-    topic: str
+    topic: str = Field(description="which topic to consume from")
     num_messages_to_consume: Optional[int] = 100
 
     def update_consumer(self, consumer: "Consumer") -> None:
@@ -69,10 +81,9 @@ class KafkaIndexerConfig(IndexerConfig):
 
 
 @dataclass
-class KafkaIndexer(Indexer):
+class KafkaIndexer(Indexer, ABC):
     connection_config: KafkaConnectionConfig
     index_config: KafkaIndexerConfig
-    connector_type: str = CONNECTOR_TYPE
 
     @contextmanager
     def get_consumer(self) -> ContextManager["Consumer"]:
@@ -160,10 +171,9 @@ class KafkaDownloaderConfig(DownloaderConfig):
 
 
 @dataclass
-class KafkaDownloader(Downloader):
+class KafkaDownloader(Downloader, ABC):
     connection_config: KafkaConnectionConfig
     download_config: KafkaDownloaderConfig = field(default_factory=KafkaDownloaderConfig)
-    connector_type: str = CONNECTOR_TYPE
     version: Optional[str] = None
     source_url: Optional[str] = None
 
@@ -187,10 +197,42 @@ class KafkaDownloader(Downloader):
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
-kafka_source_entry = SourceRegistryEntry(
-    connection_config=KafkaConnectionConfig,
-    indexer=KafkaIndexer,
-    indexer_config=KafkaIndexerConfig,
-    downloader=KafkaDownloader,
-    downloader_config=KafkaDownloaderConfig,
-)
+class KafkaUploaderConfig(UploaderConfig):
+    batch_size: int = Field(default=100, description="Batch size")
+    topic: str = Field(description="which topic to write to")
+    timeout: Optional[float] = Field(
+        default=10.0, description="Timeout in seconds to flush batch of messages"
+    )
+
+
+@dataclass
+class KafkaUploader(Uploader, ABC):
+    connection_config: KafkaConnectionConfig
+    upload_config: KafkaUploaderConfig
+
+    def produce_batch(self, elements: list[dict]) -> None:
+        from confluent_kafka.error import KafkaException
+
+        producer = self.connection_config.get_producer()
+        failed_producer = False
+
+        def acked(err, msg):
+            if err is not None:
+                logger.error("Failed to deliver message: %s: %s" % (str(msg), str(err)))
+
+        for element in elements:
+            producer.produce(
+                topic=self.upload_config.topic,
+                value=json.dumps(element),
+                callback=acked,
+            )
+
+        producer.flush(timeout=self.upload_config.timeout)
+        if failed_producer:
+            raise KafkaException("failed to produce all messages in batch")
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        with path.open("r") as elements_file:
+            elements = json.load(elements_file)
+        for element_batch in batch_generator(elements, batch_size=self.upload_config.batch_size):
+            self.produce_batch(elements=element_batch)
