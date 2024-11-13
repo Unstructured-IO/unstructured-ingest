@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, ContextManager, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import (
+    DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
@@ -209,6 +210,18 @@ class KafkaUploaderConfig(UploaderConfig):
 class KafkaUploader(Uploader, ABC):
     connection_config: KafkaConnectionConfig
     upload_config: KafkaUploaderConfig
+
+    def precheck(self):
+        try:
+            with self.connection_config.get_consumer() as consumer:
+                cluster_meta = consumer.list_topics(timeout=self.upload_config.timeout)
+                current_topics = [
+                    topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
+                ]
+                logger.info(f"successfully checked available topics: {current_topics}")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def produce_batch(self, elements: list[dict]) -> None:
         from confluent_kafka.error import KafkaException

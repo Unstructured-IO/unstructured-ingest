@@ -16,6 +16,7 @@ from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,
@@ -86,6 +87,17 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_kafak_source_local_precheck_fail():
+    connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
+    indexer = LocalKafkaIndexer(
+        connection_config=connection_config,
+        index_config=LocalKafkaIndexerConfig(topic=TOPIC, num_messages_to_consume=5),
+    )
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
+
+
 def get_all_messages(topic: str, max_empty_messages: int = 5) -> list[dict]:
     conf = {
         "bootstrap.servers": "localhost:29092",
@@ -139,4 +151,17 @@ async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: st
     all_messages = get_all_messages(topic=kafka_upload_topic)
     with upload_file.open("r") as upload_fs:
         content_to_upload = json.load(upload_fs)
-    assert len(all_messages) == len(content_to_upload)
+    assert len(all_messages) == len(content_to_upload), (
+        f"expected number of messages ({len(content_to_upload)}) doesn't "
+        f"match how many messages read off of kakfa topic {kafka_upload_topic}: {len(all_messages)}"
+    )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_kafak_destination_local_precheck_fail():
+    uploader = LocalKafkaUploader(
+        connection_config=LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092),
+        upload_config=LocalKafkaUploaderConfig(topic=TOPIC, batch_size=10),
+    )
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
