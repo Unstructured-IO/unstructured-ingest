@@ -1,3 +1,8 @@
+## 0.2.3-dev0
+
+### Fixes
+* **Make AstraDB precheck fail on non-existant collections**
+
 ## 0.2.2
 
 ### Enhancements
