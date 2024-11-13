@@ -2,3 +2,4 @@
 
 deltalake
 fsspec
+boto3
