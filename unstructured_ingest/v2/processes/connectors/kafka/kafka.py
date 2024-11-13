@@ -40,7 +40,6 @@ class KafkaAccessConfig(AccessConfig, ABC):
 
 class KafkaConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[KafkaAccessConfig]
-    timeout: Optional[float] = 1.0
     bootstrap_server: str
     port: int
 
@@ -75,6 +74,7 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
 class KafkaIndexerConfig(IndexerConfig):
     topic: str = Field(description="which topic to consume from")
     num_messages_to_consume: Optional[int] = 100
+    timeout: Optional[float] = Field(default=1.0, description="polling timeout")
 
     def update_consumer(self, consumer: "Consumer") -> None:
         consumer.subscribe([self.topic])
@@ -101,7 +101,7 @@ class KafkaIndexer(Indexer, ABC):
         num_messages_to_consume = self.index_config.num_messages_to_consume
         with self.get_consumer() as consumer:
             while messages_consumed < num_messages_to_consume and empty_polls < max_empty_polls:
-                msg = consumer.poll(timeout=self.connection_config.timeout)
+                msg = consumer.poll(timeout=self.index_config.timeout)
                 if msg is None:
                     logger.debug("No Kafka messages found")
                     empty_polls += 1
@@ -156,7 +156,7 @@ class KafkaIndexer(Indexer, ABC):
     def precheck(self):
         try:
             with self.get_consumer() as consumer:
-                cluster_meta = consumer.list_topics(timeout=self.connection_config.timeout)
+                cluster_meta = consumer.list_topics(timeout=self.index_config.timeout)
                 current_topics = [
                     topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
                 ]
