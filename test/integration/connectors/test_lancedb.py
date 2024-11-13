@@ -12,27 +12,27 @@ from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
+    LanceDBS3AccessConfig,
+    LanceDBS3ConnectionConfig,
+    LanceDBS3Uploader,
+)
+from unstructured_ingest.v2.processes.connectors.lancedb.azure import (
+    LanceDBAzureAccessConfig,
+    LanceDBAzureConnectionConfig,
+    LanceDBAzureUploader,
+)
+from unstructured_ingest.v2.processes.connectors.lancedb.gcp import (
+    LanceDBGCSAccessConfig,
+    LanceDBGCSConnectionConfig,
+    LanceDBGSPUploader,
+)
 from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
     CONNECTOR_TYPE,
     LanceDBUploaderConfig,
     LanceDBUploadStager,
 )
-from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_aws import (
-    LanceDBS3AccessConfig,
-    LanceDBS3ConnectionConfig,
-    LanceDBS3Uploader,
-)
-from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_azure import (
-    LanceDBAzureAccessConfig,
-    LanceDBAzureConnectionConfig,
-    LanceDBAzureUploader,
-)
-from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_gcp import (
-    LanceDBGCSAccessConfig,
-    LanceDBGCSConnectionConfig,
-    LanceDBGSPUploader,
-)
-from unstructured_ingest.v2.processes.connectors.lancedb.lancedb_local import (
+from unstructured_ingest.v2.processes.connectors.lancedb.local import (
     LanceDBLocalAccessConfig,
     LanceDBLocalConnectionConfig,
     LanceDBLocalUploader,

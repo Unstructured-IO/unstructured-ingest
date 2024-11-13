@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret
 
@@ -14,9 +13,6 @@ from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
 )
 
 CONNECTOR_TYPE = "lancedb_azure"
-
-if TYPE_CHECKING:
-    pass
 
 
 class LanceDBAzureAccessConfig(AccessConfig):
