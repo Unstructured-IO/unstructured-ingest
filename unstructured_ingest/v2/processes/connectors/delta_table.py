@@ -94,7 +94,7 @@ class DeltaTableUploader(Uploader):
     connection_config: DeltaTableConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
+    @requires_dependencies(["s3fs", "fsspec", "boto3"], extras="s3")
     def precheck(self):
         secrets = self.connection_config.access_config.get_secret_value()
         if (
@@ -102,6 +102,9 @@ class DeltaTableUploader(Uploader):
             and secrets.aws_access_key_id
             and secrets.aws_secret_access_key
         ):
+            from urllib.parse import urlparse
+
+            from boto3 import client
             from fsspec import get_filesystem_class
 
             try:
@@ -109,6 +112,17 @@ class DeltaTableUploader(Uploader):
                     key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
                 )
                 fs.write_bytes(path=self.connection_config.table_uri, value=b"")
+
+                bucket_name = urlparse(self.connection_config.table_uri).netloc
+                s3_client = client(
+                    "s3",
+                    aws_access_key_id=secrets.aws_access_key_id,
+                    aws_secret_access_key=secrets.aws_secret_access_key,
+                )
+                response = s3_client.get_bucket_location(Bucket=bucket_name)
+                assert self.connection_config.aws_region == response.get(
+                    "LocationConstraint"
+                ), "Wrong AWS Region was provided."
 
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)

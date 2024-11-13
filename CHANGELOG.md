@@ -1,3 +1,9 @@
+## 0.2.3
+
+### Fixes
+
+* **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
+
 ## 0.2.2
 
 ### Enhancements
