@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "pinecone"
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_POOL_THREADS = 100
+MAX_METADATA_BYTES = 40960  # https://docs.pinecone.io/reference/quotas-and-limits#hard-limits
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -120,16 +121,35 @@ class PineconeUploadStager(UploadStager):
                     if k in self.upload_stager_config.metadata_fields
                 }
             )
+        metadata = flatten_dict(
+            pinecone_metadata,
+            separator="-",
+            flatten_lists=True,
+            remove_none=True,
+        )
+        metadata_size_bytes = len(json.dumps(metadata).encode())
+        if metadata_size_bytes > MAX_METADATA_BYTES:
+            logger.info(
+                f"Metadata size is {metadata_size_bytes} bytes, which exceeds the limit of"
+                f" {MAX_METADATA_BYTES} bytes per vector. Dropping keys to fit inside the limit."
+            )
+            keys_by_size = sorted(
+                metadata.keys(),
+                key=lambda k: len(str(metadata[k]).encode()),
+            )
+            while metadata_size_bytes > MAX_METADATA_BYTES:
+                dropped_key = keys_by_size.pop()
+                metadata.pop(dropped_key)
+                metadata_size_bytes = len(json.dumps(metadata).encode())
+                logger.info(
+                    f"Dropped {dropped_key} from metadata, reducing the size to"
+                    f" {metadata_size_bytes} bytes."
+                )
 
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
-            "metadata": flatten_dict(
-                pinecone_metadata,
-                separator="-",
-                flatten_lists=True,
-                remove_none=True,
-            ),
+            "metadata": metadata,
         }
 
     def run(
