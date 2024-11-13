@@ -96,6 +96,8 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
         CONFLUENCE_USER_EMAIL: ${{secrets.CONFLUENCE_USER_EMAIL}}
         CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
+        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -134,6 +136,8 @@ jobs:
         MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
         MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
         MS_USER_PNAME: ${{ secrets.MS_USER_PNAME }}
+        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
       run : |
         source .venv/bin/activate
         make install-test
