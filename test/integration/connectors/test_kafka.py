@@ -76,6 +76,7 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         downloader = LocalKafkaDownloader(
             connection_config=connection_config, download_config=download_config
         )
+        indexer.precheck()
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
@@ -130,6 +131,7 @@ async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: st
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
+    uploader.precheck()
     if uploader.is_async():
         await uploader.run_async(path=upload_file, file_data=file_data)
     else:
