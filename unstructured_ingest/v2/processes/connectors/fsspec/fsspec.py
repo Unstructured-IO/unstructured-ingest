@@ -212,7 +212,8 @@ class FsspecDownloader(Downloader):
 
     def handle_directory_download(self, lpath: Path) -> None:
         # When the extension has odd characters in it (i.e. ???,gz), it
-        # gets downloaded in a new directory rather than as a file. This reconciles that with what is expected.
+        # gets downloaded in a new directory rather than as a file. This reconciles
+        # that with what is expected.
         if not lpath.is_dir():
             return
         desired_name = lpath.name
