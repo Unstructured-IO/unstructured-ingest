@@ -1,3 +1,9 @@
+## 0.2.3-dev0
+
+### Fixes
+
+* **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+
 ## 0.2.2
 
 ### Enhancements
