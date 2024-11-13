@@ -39,8 +39,11 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --git-branch 'v0.0.7' \
-  --git-file-glob '*.md,*.txt' \
+  --file-glob '*.md,*.txt' \
   --url https://gitlab.com/gitlab-com/content-sites/docsy-gitlab \
+  --path "content" \
+  --recursive \
   --work-dir "$WORK_DIR"
 
-"$SCRIPT_DIR"/check-num-files-output.sh 2 $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-num-files-output.sh 1 $OUTPUT_FOLDER_NAME
+"$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

@@ -6,6 +6,7 @@ unstructured
 pytest-asyncio
 pytest_tagging
 faker
+docker
 
 # Connector specific deps
 cryptography

@@ -1,16 +1,57 @@
-## 0.1.2
+## 0.2.3
 
 ### Features
 
 * **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
 
-## 0.1.1-dev1
+## 0.2.2
+
+### Enhancements
+
+* **Remove `overwrite` field** from fsspec and databricks connectors
+* **Added migration for GitLab Source V2**
+* **Added V2 confluence source connector**
+* **Added OneDrive destination connector**
+* **Qdrant destination to v2**
+* **Migrate Kafka Source Connector to V2**
+
+## 0.2.1
+
+### Enhancements
+
+* **File system based indexers return a record display name**
+* **Add singlestore source connector**
+* **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
+* **Support native async requests from unstructured-client**
+* **Support filtering element types in partitioner step**
+
+### Fixes
+
+* **Fix Databricks Volumes file naming** Add .json to end of upload file.
+* **Fix SQL Type destination precheck** Change to context manager "with".
+
+## 0.2.0
+
+### Enhancements
+
+* **Add snowflake source and destination connectors**
+* **Migrate Slack Source Connector to V2**
+* **Migrate Slack Source Connector to V2**
+* **Add Delta Table destination to v2**
+* **Migrate Slack Source Connector to V2**
+
+## 0.1.1
 
 ### Enhancements
 
 * **Update KDB.AI vectorstore integration to 1.4**
 * **Add sqlite and postgres source connectors**
+* **Add sampling functionality for indexers in fsspec connectors**
+
+### Fixes
+
+* **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
 
 ## 0.1.0
 

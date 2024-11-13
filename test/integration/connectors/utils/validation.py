@@ -1,3 +1,4 @@
+import filecmp
 import json
 import os
 import shutil
@@ -5,15 +6,68 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Optional
 
+import pandas as pd
+from bs4 import BeautifulSoup
 from deepdiff import DeepDiff
 
 from test.integration.connectors.utils.constants import expected_results_path
 from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 
 
+def json_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    expected_df = pd.read_csv(expected_filepath)
+    current_df = pd.read_csv(current_filepath)
+    if expected_df.equals(current_df):
+        return True
+    # Print diff
+    diff = expected_df.merge(current_df, indicator=True, how="left").loc[
+        lambda x: x["_merge"] != "both"
+    ]
+    print("diff between expected and current df:")
+    print(diff)
+    return False
+
+
+def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    with expected_filepath.open() as expected_f:
+        expected_soup = BeautifulSoup(expected_f, "html.parser")
+    with current_filepath.open() as current_f:
+        current_soup = BeautifulSoup(current_f, "html.parser")
+    return expected_soup.text == current_soup.text
+
+
+def txt_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
+    with expected_filepath.open() as expected_f:
+        expected_text_lines = expected_f.readlines()
+    with current_filepath.open() as current_f:
+        current_text_lines = current_f.readlines()
+    if len(expected_text_lines) != len(current_text_lines):
+        print(
+            f"Lines in expected text file ({len(expected_text_lines)}) "
+            f"don't match current text file ({len(current_text_lines)})"
+        )
+        return False
+    expected_text = "\n".join(expected_text_lines)
+    current_text = "\n".join(current_text_lines)
+    if expected_text == current_text:
+        return True
+    print("txt content don't match:")
+    print(f"expected: {expected_text}")
+    print(f"current: {current_text}")
+    return False
+
+
+file_type_equality_check = {
+    ".json": json_equality_check,
+    ".html": html_equality_check,
+    ".txt": txt_equality_check,
+}
+
+
 @dataclass
 class ValidationConfigs:
     test_id: str
+    expected_number_indexed_file_data: Optional[int] = None
     expected_num_files: Optional[int] = None
     predownload_file_data_check: Optional[Callable[[FileData], None]] = None
     postdownload_file_data_check: Optional[Callable[[FileData], None]] = None
@@ -21,6 +75,9 @@ class ValidationConfigs:
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
     exclude_fields_extend: list[str] = field(default_factory=list)
+    validate_downloaded_files: bool = False
+    validate_file_data: bool = True
+    downloaded_file_equality_check: Optional[Callable[[Path, Path], bool]] = None
 
     def get_exclude_fields(self) -> list[str]:
         exclude_fields = self.exclude_fields
@@ -67,13 +124,20 @@ class ValidationConfigs:
 
 def get_files(dir_path: Path) -> list[str]:
     return [
-        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.iterdir() if f.is_file()
+        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.rglob("*") if f.is_file()
     ]
 
 
 def check_files(expected_output_dir: Path, all_file_data: list[FileData]):
     expected_files = get_files(dir_path=expected_output_dir)
     current_files = [f"{file_data.identifier}.json" for file_data in all_file_data]
+    diff = set(expected_files) ^ set(current_files)
+    assert not diff, "diff in files that exist: {}".format(", ".join(diff))
+
+
+def check_files_in_paths(expected_output_dir: Path, current_output_dir: Path):
+    expected_files = get_files(dir_path=expected_output_dir)
+    current_files = get_files(dir_path=current_output_dir)
     diff = set(expected_files) ^ set(current_files)
     assert not diff, "diff in files that exist: {}".format(", ".join(diff))
 
@@ -96,12 +160,62 @@ def check_contents(
     assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
+def detect_diff(
+    configs: ValidationConfigs, expected_filepath: Path, current_filepath: Path
+) -> bool:
+    if expected_filepath.suffix != current_filepath.suffix:
+        return True
+    if downloaded_file_equality_check := configs.downloaded_file_equality_check:
+        return not downloaded_file_equality_check(expected_filepath, current_filepath)
+    current_suffix = expected_filepath.suffix
+    if current_suffix in file_type_equality_check:
+        equality_check_callable = file_type_equality_check[current_suffix]
+        return not equality_check_callable(
+            expected_filepath=expected_filepath, current_filepath=current_filepath
+        )
+    # Fallback is using filecmp.cmp to compare the files
+    return not filecmp.cmp(expected_filepath, current_filepath, shallow=False)
+
+
+def check_raw_file_contents(
+    expected_output_dir: Path,
+    current_output_dir: Path,
+    configs: ValidationConfigs,
+):
+    current_files = get_files(dir_path=current_output_dir)
+    found_diff = False
+    files = []
+    for current_file in current_files:
+        current_file_path = current_output_dir / current_file
+        expected_file_path = expected_output_dir / current_file
+        if detect_diff(configs, expected_file_path, current_file_path):
+            found_diff = True
+            files.append(str(expected_file_path))
+            print(f"diffs between files {expected_file_path} and {current_file_path}")
+    assert not found_diff, "Diffs found between files: {}".format(", ".join(files))
+
+
 def run_expected_results_validation(
     expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
 ):
     check_files(expected_output_dir=expected_output_dir, all_file_data=all_file_data)
     check_contents(
         expected_output_dir=expected_output_dir, all_file_data=all_file_data, configs=configs
+    )
+
+
+def run_expected_download_files_validation(
+    expected_output_dir: Path,
+    current_download_dir: Path,
+    configs: ValidationConfigs,
+):
+    check_files_in_paths(
+        expected_output_dir=expected_output_dir, current_output_dir=current_download_dir
+    )
+    check_raw_file_contents(
+        expected_output_dir=expected_output_dir,
+        current_output_dir=current_download_dir,
+        configs=configs,
     )
 
 
@@ -113,17 +227,24 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
     assert directory_structure == download_files
 
 
-def update_fixtures(output_dir: Path, download_dir: Path, all_file_data: list[FileData]):
+def update_fixtures(
+    output_dir: Path,
+    download_dir: Path,
+    all_file_data: list[FileData],
+    save_downloads: bool = False,
+    save_filedata: bool = True,
+):
     # Delete current files
     shutil.rmtree(path=output_dir, ignore_errors=True)
     output_dir.mkdir(parents=True)
     # Rewrite the current file data
-    file_data_output_path = output_dir / "file_data"
-    file_data_output_path.mkdir(parents=True)
-    for file_data in all_file_data:
-        file_data_path = file_data_output_path / f"{file_data.identifier}.json"
-        with file_data_path.open(mode="w") as f:
-            json.dump(file_data.to_dict(), f, indent=2)
+    if save_filedata:
+        file_data_output_path = output_dir / "file_data"
+        file_data_output_path.mkdir(parents=True, exist_ok=True)
+        for file_data in all_file_data:
+            file_data_path = file_data_output_path / f"{file_data.identifier}.json"
+            with file_data_path.open(mode="w") as f:
+                json.dump(file_data.to_dict(), f, indent=2)
 
     # Record file structure of download directory
     download_files = get_files(dir_path=download_dir)
@@ -131,6 +252,11 @@ def update_fixtures(output_dir: Path, download_dir: Path, all_file_data: list[Fi
     download_dir_record = output_dir / "directory_structure.json"
     with download_dir_record.open(mode="w") as f:
         json.dump({"directory_structure": download_files}, f, indent=2)
+
+    # If applicable, save raw downloads
+    if save_downloads:
+        raw_download_output_path = output_dir / "downloads"
+        shutil.copytree(download_dir, raw_download_output_path)
 
 
 def run_all_validations(
@@ -140,21 +266,35 @@ def run_all_validations(
     download_dir: Path,
     test_output_dir: Path,
 ):
+    if expected_number_indexed_file_data := configs.expected_number_indexed_file_data:
+        assert (
+            len(predownload_file_data) == expected_number_indexed_file_data
+        ), f"expected {expected_number_indexed_file_data} but got {len(predownload_file_data)}"
+    if expected_num_files := configs.expected_num_files:
+        assert len(postdownload_file_data) == expected_num_files
+
     for pre_data, post_data in zip(predownload_file_data, postdownload_file_data):
         configs.run_file_data_validation(
             predownload_file_data=pre_data, postdownload_file_data=post_data
         )
     configs.run_download_dir_validation(download_dir=download_dir)
-    run_expected_results_validation(
-        expected_output_dir=test_output_dir / "file_data",
-        all_file_data=postdownload_file_data,
-        configs=configs,
-    )
+    if configs.validate_file_data:
+        run_expected_results_validation(
+            expected_output_dir=test_output_dir / "file_data",
+            all_file_data=postdownload_file_data,
+            configs=configs,
+        )
     download_files = get_files(dir_path=download_dir)
     download_files.sort()
     run_directory_structure_validation(
         expected_output_dir=configs.test_output_dir(), download_files=download_files
     )
+    if configs.validate_downloaded_files:
+        run_expected_download_files_validation(
+            expected_output_dir=test_output_dir / "downloads",
+            current_download_dir=download_dir,
+            configs=configs,
+        )
 
 
 async def source_connector_validation(
@@ -200,4 +340,6 @@ async def source_connector_validation(
             output_dir=test_output_dir,
             download_dir=download_dir,
             all_file_data=all_postdownload_file_data,
+            save_downloads=configs.validate_downloaded_files,
+            save_filedata=configs.validate_file_data,
         )

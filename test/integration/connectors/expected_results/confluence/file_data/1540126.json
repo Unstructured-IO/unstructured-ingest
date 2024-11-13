@@ -1,0 +1,30 @@
+{
+  "identifier": "1540126",
+  "connector_type": "confluence",
+  "source_identifiers": {
+    "filename": "1540126.html",
+    "fullpath": "MFS/1540126.html",
+    "rel_path": "MFS/1540126.html"
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": "https://unstructured-ingest-test.atlassian.net/pages/1540126",
+    "version": "1",
+    "record_locator": {
+      "space_id": "MFS",
+      "document_id": "1540126"
+    },
+    "date_created": "2023-07-09T12:55:50.911Z",
+    "date_modified": "2023-07-09T12:56:10.564Z",
+    "date_processed": "1730944047.443586",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "space_id": "MFS",
+    "document_id": "1540126"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmphgt576pl/MFS/1540126.html",
+  "display_name": "Template - Project plan"
+}

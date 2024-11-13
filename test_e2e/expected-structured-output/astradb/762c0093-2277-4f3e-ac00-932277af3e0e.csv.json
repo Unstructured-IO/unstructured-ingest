@@ -1,0 +1,25 @@
+[
+  {
+    "type": "Table",
+    "element_id": "18e1b77953bbbff2822a8c2038971b51",
+    "text": "\n\n\n_id\ntitle\nreviewid\ncreationdate\ncriticname\noriginalscore\nreviewstate\nreviewtext\n\n\n762c0093-2277-4f3e-ac00-932277af3e0e\nBlood Mask\n1636744\n2007-06-02\nThe Foywonder\n1/5\nrotten\nIt doesn't matter if a movie costs 300 million or only 300 dollars; good is good and bad is bad, and Bloodmask: The Possession of Nicole Lameroux is just plain bad.\n\n\n",
+    "metadata": {
+      "text_as_html": "<table border=\"1\" class=\"dataframe\">\n  <tbody>\n    <tr>\n      <td>_id</td>\n      <td>title</td>\n      <td>reviewid</td>\n      <td>creationdate</td>\n      <td>criticname</td>\n      <td>originalscore</td>\n      <td>reviewstate</td>\n      <td>reviewtext</td>\n    </tr>\n    <tr>\n      <td>762c0093-2277-4f3e-ac00-932277af3e0e</td>\n      <td>Blood Mask</td>\n      <td>1636744</td>\n      <td>2007-06-02</td>\n      <td>The Foywonder</td>\n      <td>1/5</td>\n      <td>rotten</td>\n      <td>It doesn't matter if a movie costs 300 million or only 300 dollars; good is good and bad is bad, and Bloodmask: The Possession of Nicole Lameroux is just plain bad.</td>\n    </tr>\n  </tbody>\n</table>",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/csv",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "document_id": "762c0093-2277-4f3e-ac00-932277af3e0e"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 341
+      }
+    }
+  }
+]
