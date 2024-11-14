@@ -5,12 +5,12 @@ from unstructured_ingest.v2.interfaces import ProcessorConfig
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
-from unstructured_ingest.v2.processes.connectors.azure_cognitive_search import (
+from unstructured_ingest.v2.processes.connectors.azure_ai_search import (
     CONNECTOR_TYPE,
-    AzureCognitiveSearchAccessConfig,
-    AzureCognitiveSearchConnectionConfig,
-    AzureCognitiveSearchUploaderConfig,
-    AzureCognitiveSearchUploadStagerConfig,
+    AzureAISearchAccessConfig,
+    AzureAISearchConnectionConfig,
+    AzureAISearchUploaderConfig,
+    AzureAISearchUploadStagerConfig,
 )
 from unstructured_ingest.v2.processes.connectors.local import (
     LocalConnectionConfig,
@@ -43,13 +43,13 @@ if __name__ == "__main__":
         embedder_config=EmbedderConfig(
             embedding_provider="openai", embedding_api_key=os.getenv("OPENAI_API_KEY")
         ),
-        destination_connection_config=AzureCognitiveSearchConnectionConfig(
-            access_config=AzureCognitiveSearchAccessConfig(
-                azure_cognitive_search_key=os.getenv("AZURE_SEARCH_API_KEY")
+        destination_connection_config=AzureAISearchConnectionConfig(
+            access_config=AzureAISearchAccessConfig(
+                azure_ai_search_key=os.getenv("AZURE_SEARCH_API_KEY")
             ),
             index=os.getenv("AZURE_SEARCH_INDEX"),
             endpoint=os.getenv("AZURE_SEARCH_ENDPOINT"),
         ),
-        uploader_config=AzureCognitiveSearchUploaderConfig(batch_size=10),
-        stager_config=AzureCognitiveSearchUploadStagerConfig(),
+        uploader_config=AzureAISearchUploaderConfig(batch_size=10),
+        stager_config=AzureAISearchUploadStagerConfig(),
     ).run()
