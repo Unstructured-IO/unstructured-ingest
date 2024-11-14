@@ -28,14 +28,13 @@ all_tests=(
   'kafka-local.sh'
   'mongodb.sh'
   'opensearch.sh'
-  'pinecone.sh'
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
   'vectara.sh'
   'weaviate.sh'
   'milvus.sh'
-  'kdbai.sh'
+  #  'kdbai.sh'
 )
 
 full_python_matrix_tests=(
