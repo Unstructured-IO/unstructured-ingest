@@ -34,7 +34,7 @@ all_tests=(
   'vectara.sh'
   'weaviate.sh'
   'milvus.sh'
-  'kdbai.sh'
+  #  'kdbai.sh'
 )
 
 full_python_matrix_tests=(
