@@ -107,6 +107,7 @@ connectors_reqs = {
     "kdbai": load_requirements("requirements/connectors/kdbai.in"),
     "milvus": load_requirements("requirements/connectors/milvus.in"),
     "mongodb": load_requirements("requirements/connectors/mongodb.in"),
+    "motherduck": load_requirements("requirements/connectors/motherduck.in"),
     "notion": load_requirements("requirements/connectors/notion.in"),
     "onedrive": load_requirements("requirements/connectors/onedrive.in"),
     "opensearch": load_requirements("requirements/connectors/opensearch.in"),

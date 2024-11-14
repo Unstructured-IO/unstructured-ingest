@@ -183,7 +183,7 @@ class MotherDuckUploader(Uploader):
     def connection(self) -> Callable[[], "MotherDuckConnection"]:
         return self._make_motherduck_connection
 
-    @requires_dependencies(["duckdb"], extras="duckdb")
+    @requires_dependencies(["duckdb"], extras="motherduck")
     def _make_motherduck_connection(self) -> "MotherDuckConnection":
         import duckdb
 
