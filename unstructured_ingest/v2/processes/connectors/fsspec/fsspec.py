@@ -213,7 +213,7 @@ class FsspecDownloader(Downloader):
     def handle_directory_download(self, lpath: Path) -> None:
         # If the object's name contains certain characters (i.e. '?'), it
         # gets downloaded into a new directory of the same name. This
-        # reconciles that with what is expected, which is to download it 
+        # reconciles that with what is expected, which is to download it
         # as a file that is not within a directory.
         if not lpath.is_dir():
             return
