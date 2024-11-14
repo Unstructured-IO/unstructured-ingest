@@ -1,5 +1,4 @@
 -c ../common/constraints.txt
 
 deltalake
-fsspec
 boto3
