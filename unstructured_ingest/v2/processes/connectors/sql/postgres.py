@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generator, Optional
 
+from psycopg2 import sql
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -101,18 +102,22 @@ class PostgresDownloader(SQLDownloader):
     def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
         table_name = file_data.additional_metadata["table_name"]
         id_column = file_data.additional_metadata["id_column"]
-        ids = file_data.additional_metadata["ids"]
-        quoted_ids = ",".join([f"'{i}'" for i in ids])
+        ids = tuple(file_data.additional_metadata["ids"])
+
         with self.connection_config.get_cursor() as cursor:
-            fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
-            query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
-                fields=fields,
-                table_name=table_name,
-                id_column=id_column,
-                ids=quoted_ids,
+            fields = (
+                sql.SQL(",").join(sql.Identifier(field) for field in self.download_config.fields)
+                if self.download_config.fields
+                else sql.SQL("*")
             )
-            logger.debug(f"running query: {query}")
-            cursor.execute(query)
+
+            query = sql.SQL("SELECT {fields} FROM {table_name} WHERE {id_column} IN %s").format(
+                fields=fields,
+                table_name=sql.Identifier(table_name),
+                id_column=sql.Identifier(id_column),
+            )
+            logger.debug(f"running query: {cursor.mogrify(query, (ids,))}")
+            cursor.execute(query, (ids,))
             rows = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
             return rows, columns
