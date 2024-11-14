@@ -94,7 +94,7 @@ class DeltaTableUploader(Uploader):
     connection_config: DeltaTableConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["s3fs", "fsspec", "boto3"], extras="s3")
+    @requires_dependencies(["boto3"], extras="delta-table")
     def precheck(self):
         secrets = self.connection_config.access_config.get_secret_value()
         if (
@@ -105,20 +105,19 @@ class DeltaTableUploader(Uploader):
             from urllib.parse import urlparse
 
             from boto3 import client
-            from fsspec import get_filesystem_class
 
             try:
-                fs = get_filesystem_class("s3")(
-                    key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
-                )
-                fs.write_bytes(path=self.connection_config.table_uri, value=b"")
+                url = urlparse(self.connection_config.table_uri)
+                bucket_name = url.netloc
+                dir_path = url.path.lstrip("/")
 
-                bucket_name = urlparse(self.connection_config.table_uri).netloc
                 s3_client = client(
                     "s3",
                     aws_access_key_id=secrets.aws_access_key_id,
                     aws_secret_access_key=secrets.aws_secret_access_key,
                 )
+                s3_client.put_object(Bucket=bucket_name, Key=dir_path, Body=b"")
+
                 response = s3_client.get_bucket_location(Bucket=bucket_name)
                 assert self.connection_config.aws_region == response.get(
                     "LocationConstraint"
