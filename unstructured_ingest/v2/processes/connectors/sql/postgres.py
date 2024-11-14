@@ -102,13 +102,14 @@ class PostgresDownloader(SQLDownloader):
         table_name = file_data.additional_metadata["table_name"]
         id_column = file_data.additional_metadata["id_column"]
         ids = file_data.additional_metadata["ids"]
+        quoted_ids = ",".join([f"'{i}'" for i in ids])
         with self.connection_config.get_cursor() as cursor:
             fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
             query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
                 fields=fields,
                 table_name=table_name,
                 id_column=id_column,
-                ids=",".join([str(i) for i in ids]),
+                ids=quoted_ids,
             )
             logger.debug(f"running query: {query}")
             cursor.execute(query)
