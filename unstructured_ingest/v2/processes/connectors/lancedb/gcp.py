@@ -5,7 +5,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.v2.interfaces.connector import AccessConfig
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
-    LanceDBConnectionConfig,
+    LanceDBRemoteConnectionConfig,
     LanceDBUploader,
     LanceDBUploaderConfig,
     LanceDBUploadStager,
@@ -21,8 +21,11 @@ class LanceDBGCSAccessConfig(AccessConfig):
     )
 
 
-class LanceDBGCSConnectionConfig(LanceDBConnectionConfig):
+class LanceDBGCSConnectionConfig(LanceDBRemoteConnectionConfig):
     access_config: Secret[LanceDBGCSAccessConfig]
+
+    def get_storage_options(self) -> dict:
+        return {**self.access_config.get_secret_value().model_dump(), "timeout": self.timeout}
 
 
 @dataclass

@@ -5,7 +5,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.v2.interfaces.connector import AccessConfig
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
-    LanceDBConnectionConfig,
+    LanceDBRemoteConnectionConfig,
     LanceDBUploader,
     LanceDBUploaderConfig,
     LanceDBUploadStager,
@@ -20,8 +20,19 @@ class LanceDBS3AccessConfig(AccessConfig):
     aws_secret_access_key: str = Field(description="The AWS secret access key to use.")
 
 
-class LanceDBS3ConnectionConfig(LanceDBConnectionConfig):
+class LanceDBS3ConnectionConfig(LanceDBRemoteConnectionConfig):
     access_config: Secret[LanceDBS3AccessConfig]
+    timeout: str = Field(
+        default="30s",
+        description=(
+            "Timeout for the entire request, from connection until the response body has finished"
+            "in a [0-9]+(ns|us|ms|[smhdwy]) format."
+        ),
+        pattern=r"[0-9]+(ns|us|ms|[smhdwy])",
+    )
+
+    def get_storage_options(self) -> dict:
+        return {**self.access_config.get_secret_value().model_dump(), "timeout": self.timeout}
 
 
 @dataclass

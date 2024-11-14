@@ -24,6 +24,9 @@ class LanceDBLocalConnectionConfig(LanceDBConnectionConfig):
         default_factory=LanceDBLocalAccessConfig, validate_default=True
     )
 
+    def get_storage_options(self) -> None:
+        return None
+
 
 @dataclass
 class LanceDBLocalUploader(LanceDBUploader):

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import json
-from abc import ABC
+from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import pandas as pd
 from pydantic import Field
@@ -27,6 +27,10 @@ if TYPE_CHECKING:
 class LanceDBConnectionConfig(ConnectionConfig, ABC):
     uri: str = Field(description="The uri of the database.")
 
+    @abstractmethod
+    def get_storage_options(self) -> Optional[dict[str, str]]:
+        raise NotImplementedError
+
     @asynccontextmanager
     @requires_dependencies(["lancedb"], extras="lancedb")
     @DestinationConnectionError.wrap
@@ -35,12 +39,23 @@ class LanceDBConnectionConfig(ConnectionConfig, ABC):
 
         connection = await lancedb.connect_async(
             self.uri,
-            storage_options=self.access_config.get_secret_value().model_dump(),
+            storage_options=self.get_storage_options(),
         )
         try:
             yield connection
         finally:
             connection.close()
+
+
+class LanceDBRemoteConnectionConfig(LanceDBConnectionConfig):
+    timeout: str = Field(
+        default="30s",
+        description=(
+            "Timeout for the entire request, from connection until the response body has finished"
+            "in a [0-9]+(ns|us|ms|[smhdwy]) format."
+        ),
+        pattern=r"[0-9]+(ns|us|ms|[smhdwy])",
+    )
 
 
 class LanceDBUploadStagerConfig(UploadStagerConfig):
