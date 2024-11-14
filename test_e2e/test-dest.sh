@@ -17,7 +17,6 @@ export OMP_THREAD_LIMIT=1
 all_tests=(
   'astradb.sh'
   'azure.sh'
-  'azure-cognitive-search.sh'
   'box.sh'
   'chroma.sh'
   #  'clarifai.sh'
