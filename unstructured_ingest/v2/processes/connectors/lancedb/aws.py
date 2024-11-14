@@ -22,14 +22,6 @@ class LanceDBS3AccessConfig(AccessConfig):
 
 class LanceDBS3ConnectionConfig(LanceDBRemoteConnectionConfig):
     access_config: Secret[LanceDBS3AccessConfig]
-    timeout: str = Field(
-        default="30s",
-        description=(
-            "Timeout for the entire request, from connection until the response body has finished"
-            "in a [0-9]+(ns|us|ms|[smhdwy]) format."
-        ),
-        pattern=r"[0-9]+(ns|us|ms|[smhdwy])",
-    )
 
     def get_storage_options(self) -> dict:
         return {**self.access_config.get_secret_value().model_dump(), "timeout": self.timeout}
