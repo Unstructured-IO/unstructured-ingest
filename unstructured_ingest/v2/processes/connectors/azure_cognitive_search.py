@@ -81,6 +81,10 @@ class AzureCognitiveSearchUploadStagerConfig(UploadStagerConfig):
 
 class AzureCognitiveSearchUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -172,7 +176,8 @@ class AzureCognitiveSearchUploader(Uploader):
 
     def delete_by_record_id(self, file_data: FileData, index_key: str) -> None:
         logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from azure cognitive search index: {self.connection_config.index}"
         )
         doc_ids_to_delete = self.query_docs(record_id=file_data.identifier, index_key=index_key)
@@ -236,7 +241,9 @@ class AzureCognitiveSearchUploader(Uploader):
         search_index_client = self.connection_config.get_search_index_client()
         index = search_index_client.get_index(name=self.connection_config.index)
         index_fields = index.fields
-        record_id_fields = [field for field in index_fields if field.name == RECORD_ID_LABEL]
+        record_id_fields = [
+            field for field in index_fields if field.name == self.upload_config.record_id_key
+        ]
         if not record_id_fields:
             return False
         record_id_field = record_id_fields[0]
