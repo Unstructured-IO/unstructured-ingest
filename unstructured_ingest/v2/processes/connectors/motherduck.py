@@ -22,16 +22,20 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
-    from duckdb import DuckDBPyConnection as DuckDBConnection
+    from duckdb import DuckDBPyConnection as MotherDuckConnection
 
-CONNECTOR_TYPE = "duckdb"
+CONNECTOR_TYPE = "motherduck"
 
-class DuckDBConnectionConfig(ConnectionConfig):
+
+class MotherDuckAccessConfig(AccessConfig):
+    md_token: Optional[str] = Field(default=None, description="MotherDuck token")
+
+
+class MotherDuckConnectionConfig(ConnectionConfig):    
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     database: Optional[str] = Field(
         default=None,
-        description="Database name. This is the path to the DuckDB .db file. If the file does "
-                    "not exist, it will be created at the specified path.",
+        description="Database name. This is the name of the MotherDuck database.",
     )
     schema: Optional[str] = Field(
         default="main",
@@ -40,17 +44,25 @@ class DuckDBConnectionConfig(ConnectionConfig):
     table: Optional[str] = Field(
         default="elements",
         description="Table name. This is the table name into which the elements data is inserted.",
-    )    
+    )
+    access_config: Secret[MotherDuckAccessConfig] = Field(
+        default=MotherDuckAccessConfig(), validate_default=True
+    )
 
-    def __post_init__(self):
-        if (self.database is None):
+    def __post_init__(self):        
+        if self.database is None:
             raise ValueError(
-                "A DuckDB connection requires a path to a *.db or *.duckdb file "
+                "A MotherDuck connection requires a database (string) to be passed "
                 "through the `database` argument"
-            )        
+            )
+        if self.access_config.md_token is None:
+            raise ValueError(
+                "A MotherDuck connection requires a md_token (MotherDuck token) to be passed "
+                "using MotherDuckAccessConfig through the `access_config` argument"
+            )
 
 
-class DuckDBUploadStagerConfig(UploadStagerConfig):
+class MotherDuckUploadStagerConfig(UploadStagerConfig):
     pass
 
 
@@ -100,9 +112,9 @@ _COLUMNS = (
 
 
 @dataclass
-class DuckDBUploadStager(UploadStager):
-    upload_stager_config: DuckDBUploadStagerConfig = field(
-        default_factory=lambda: DuckDBUploadStagerConfig()
+class MotherDuckUploadStager(UploadStager):
+    upload_stager_config: MotherDuckUploadStagerConfig = field(
+        default_factory=lambda: MotherDuckUploadStagerConfig()
     )
 
     def run(
@@ -148,15 +160,15 @@ class DuckDBUploadStager(UploadStager):
         return output_path
 
 
-class DuckDBUploaderConfig(UploaderConfig):
+class MotherDuckUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="[Not-used] Number of records per batch")
 
 
 @dataclass
-class DuckDBUploader(Uploader):
+class MotherDuckUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
-    upload_config: DuckDBUploaderConfig
-    connection_config: DuckDBConnectionConfig
+    upload_config: MotherDuckUploaderConfig
+    connection_config: MotherDuckConnectionConfig
 
     def precheck(self) -> None:
         try:
@@ -168,14 +180,19 @@ class DuckDBUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @property
-    def connection(self) -> Callable[[], "DuckDBConnection"]:
-        return self._make_duckdb_connection
+    def connection(self) -> Callable[[], "MotherDuckConnection"]:
+        return self._make_motherduck_connection
 
     @requires_dependencies(["duckdb"], extras="duckdb")
-    def _make_duckdb_connection(self) -> "DuckDBConnection":
+    def _make_motherduck_connection(self) -> "MotherDuckConnection":
         import duckdb
 
-        return duckdb.connect(self.connection_config.database)    
+        access_config = self.connection_config.access_config.get_secret_value()
+        conn = duckdb.connect(f"md:?motherduck_token={access_config.md_token}")
+
+        conn.sql(f"USE {self.connection_config.database}")
+
+        return conn
 
     def upload_contents(self, path: Path) -> None:
         df_elements = pd.read_json(path, orient="records", lines=True)
@@ -190,10 +207,10 @@ class DuckDBUploader(Uploader):
         self.upload_contents(path=path)
 
 
-duckdb_destination_entry = DestinationRegistryEntry(
-    connection_config=DuckDBConnectionConfig,
-    uploader=DuckDBUploader,
-    uploader_config=DuckDBUploaderConfig,
-    upload_stager=DuckDBUploadStager,
-    upload_stager_config=DuckDBUploadStagerConfig,
+motherduck_destination_entry = DestinationRegistryEntry(
+    connection_config=MotherDuckConnectionConfig,
+    uploader=MotherDuckUploader,
+    uploader_config=MotherDuckUploaderConfig,
+    upload_stager=MotherDuckUploadStager,
+    upload_stager_config=MotherDuckUploadStagerConfig,
 )
