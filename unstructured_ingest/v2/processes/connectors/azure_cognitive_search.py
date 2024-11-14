@@ -277,6 +277,8 @@ class AzureCognitiveSearchUploader(Uploader):
         if self.can_delete():
             index_key = self.get_index_key()
             self.delete_by_record_id(file_data=file_data, index_key=index_key)
+        else:
+            logger.warning("criteria for deleting previous content not met, skipping")
 
         batch_size = self.upload_config.batch_size
         for chunk in batch_generator(elements_dict, batch_size):
