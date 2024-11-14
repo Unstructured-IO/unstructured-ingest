@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generator, Optional
 
-from psycopg2 import sql
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -99,7 +98,10 @@ class PostgresDownloader(SQLDownloader):
     download_config: PostgresDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["psycopg2"], extras="postgres")
     def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+        from psycopg2 import sql
+
         table_name = file_data.additional_metadata["table_name"]
         id_column = file_data.additional_metadata["id_column"]
         ids = tuple(file_data.additional_metadata["ids"])
