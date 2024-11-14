@@ -29,6 +29,7 @@ from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.azure_cognitive_search import (
     CONNECTOR_TYPE,
+    RECORD_ID_LABEL,
     AzureCognitiveSearchAccessConfig,
     AzureCognitiveSearchConnectionConfig,
     AzureCognitiveSearchUploader,
@@ -112,7 +113,7 @@ def get_fields() -> list:
     ]
     fields = [
         SimpleField(name="id", type=SearchFieldDataType.String, key=True),
-        SimpleField(name="record_id", type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name=RECORD_ID_LABEL, type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="element_id", type=SearchFieldDataType.String),
         SimpleField(name="text", type=SearchFieldDataType.String),
         SimpleField(name="type", type=SearchFieldDataType.String),

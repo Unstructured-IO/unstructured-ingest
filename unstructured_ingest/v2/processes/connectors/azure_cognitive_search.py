@@ -9,6 +9,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -27,8 +28,6 @@ from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
-
-RECORD_ID_LABEL = "record_id"
 
 CONNECTOR_TYPE = "azure_cognitive_search"
 
