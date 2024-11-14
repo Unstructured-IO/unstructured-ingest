@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os.path
+import os
 import random
 import shutil
 import tempfile
@@ -211,9 +211,10 @@ class FsspecDownloader(Downloader):
         )
 
     def handle_directory_download(self, lpath: Path) -> None:
-        # When the extension has odd characters in it (i.e. ???,gz), it
-        # gets downloaded in a new directory rather than as a file. This reconciles
-        # that with what is expected.
+        # If the object's name contains certain characters (i.e. '?'), it
+        # gets downloaded into a new directory of the same name. This
+        # reconciles that with what is expected, which is to download it 
+        # as a file that is not within a directory.
         if not lpath.is_dir():
             return
         desired_name = lpath.name
