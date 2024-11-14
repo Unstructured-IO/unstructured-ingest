@@ -12,7 +12,7 @@ from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
     LanceDBUploadStagerConfig,
 )
 
-CONNECTOR_TYPE = "lancedb_s3"
+CONNECTOR_TYPE = "lancedb_aws"
 
 
 class LanceDBS3AccessConfig(AccessConfig):
