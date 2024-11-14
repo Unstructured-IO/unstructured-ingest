@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from multiprocessing import Process
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import pandas as pd
 from pydantic import Field, Secret
@@ -102,15 +103,13 @@ class DeltaTableUploader(Uploader):
             and secrets.aws_access_key_id
             and secrets.aws_secret_access_key
         ):
-            from urllib.parse import urlparse
-
             from boto3 import client
 
-            try:
-                url = urlparse(self.connection_config.table_uri)
-                bucket_name = url.netloc
-                dir_path = url.path.lstrip("/")
+            url = urlparse(self.connection_config.table_uri)
+            bucket_name = url.netloc
+            dir_path = url.path.lstrip("/")
 
+            try:
                 s3_client = client(
                     "s3",
                     aws_access_key_id=secrets.aws_access_key_id,
@@ -119,9 +118,9 @@ class DeltaTableUploader(Uploader):
                 s3_client.put_object(Bucket=bucket_name, Key=dir_path, Body=b"")
 
                 response = s3_client.get_bucket_location(Bucket=bucket_name)
-                assert self.connection_config.aws_region == response.get(
-                    "LocationConstraint"
-                ), "Wrong AWS Region was provided."
+
+                if self.connection_config.aws_region != response.get("LocationConstraint"):
+                    raise ValueError("Wrong AWS Region was provided.")
 
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
