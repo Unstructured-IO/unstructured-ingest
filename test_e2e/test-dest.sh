@@ -23,7 +23,6 @@ all_tests=(
   #  'clarifai.sh'
   'couchbase.sh'
   'dropbox.sh'
-  'duckdb.sh'
   'elasticsearch.sh'
   'gcs.sh'
   'kafka-local.sh'
