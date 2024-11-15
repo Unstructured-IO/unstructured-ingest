@@ -1,4 +1,4 @@
-## 0.2.3-dev5
+## 0.2.3-dev6
 
 ### Enhancements
 
@@ -11,6 +11,7 @@
 
 * **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
 * **Add missing batch label to FileData where applicable** 
+* **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
 
 ## 0.2.2
 
