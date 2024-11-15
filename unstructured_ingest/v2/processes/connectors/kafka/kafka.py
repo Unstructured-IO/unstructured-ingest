@@ -20,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
@@ -27,7 +28,6 @@ from unstructured_ingest.v2.interfaces import (
     SourceIdentifiers,
     Uploader,
     UploaderConfig,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 
@@ -151,7 +151,7 @@ class KafkaIndexer(Indexer, ABC):
         for message in self.generate_messages():
             yield self.generate_file_data(message)
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         raise NotImplementedError()
 
     def precheck(self):
@@ -178,7 +178,7 @@ class KafkaDownloader(Downloader, ABC):
     version: Optional[str] = None
     source_url: Optional[str] = None
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         source_identifiers = file_data.source_identifiers
         if source_identifiers is None:
             raise ValueError("FileData is missing source_identifiers")

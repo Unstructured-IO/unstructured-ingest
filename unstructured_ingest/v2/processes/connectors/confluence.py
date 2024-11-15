@@ -11,12 +11,12 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -154,7 +154,7 @@ class ConfluenceDownloader(Downloader):
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
 
-    def run(self, file_data: FileData, **kwargs) -> download_responses:
+    def run(self, file_data: FileData, **kwargs) -> DownloadResponse:
         doc_id = file_data.identifier
         try:
             client = self.connection_config.get_client()

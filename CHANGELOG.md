@@ -1,4 +1,4 @@
-## 0.2.3-dev4
+## 0.2.3-dev5
 
 ### Enhancements
 
@@ -10,6 +10,7 @@
 ### Fixes
 
 * **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
+* **Add missing batch label to FileData where applicable** 
 
 ## 0.2.2
 
