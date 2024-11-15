@@ -27,15 +27,15 @@ from test.integration.connectors.utils.constants import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.azure_cognitive_search import (
+from unstructured_ingest.v2.processes.connectors.azure_ai_search import (
     CONNECTOR_TYPE,
     RECORD_ID_LABEL,
-    AzureCognitiveSearchAccessConfig,
-    AzureCognitiveSearchConnectionConfig,
-    AzureCognitiveSearchUploader,
-    AzureCognitiveSearchUploaderConfig,
-    AzureCognitiveSearchUploadStager,
-    AzureCognitiveSearchUploadStagerConfig,
+    AzureAISearchAccessConfig,
+    AzureAISearchConnectionConfig,
+    AzureAISearchUploader,
+    AzureAISearchUploaderConfig,
+    AzureAISearchUploadStager,
+    AzureAISearchUploadStagerConfig,
 )
 
 repo_path = Path(__file__).parent.resolve()
@@ -192,7 +192,7 @@ def validate_count(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 @requires_env("AZURE_SEARCH_API_KEY")
-async def test_azure_cog_search_destination(
+async def test_azure_ai_search_destination(
     upload_file: Path,
     index: str,
     tmp_path: Path,
@@ -202,17 +202,15 @@ async def test_azure_cog_search_destination(
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
-    stager = AzureCognitiveSearchUploadStager(
-        upload_stager_config=AzureCognitiveSearchUploadStagerConfig()
-    )
+    stager = AzureAISearchUploadStager(upload_stager_config=AzureAISearchUploadStagerConfig())
 
-    uploader = AzureCognitiveSearchUploader(
-        connection_config=AzureCognitiveSearchConnectionConfig(
-            access_config=AzureCognitiveSearchAccessConfig(key=get_api_key()),
+    uploader = AzureAISearchUploader(
+        connection_config=AzureAISearchConnectionConfig(
+            access_config=AzureAISearchAccessConfig(key=get_api_key()),
             endpoint=ENDPOINT,
             index=index,
         ),
-        upload_config=AzureCognitiveSearchUploaderConfig(),
+        upload_config=AzureAISearchUploaderConfig(),
     )
     staged_filepath = stager.run(
         elements_filepath=upload_file,

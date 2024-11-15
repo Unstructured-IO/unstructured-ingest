@@ -29,16 +29,16 @@ if TYPE_CHECKING:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
 
-CONNECTOR_TYPE = "azure_cognitive_search"
+CONNECTOR_TYPE = "azure_ai_search"
 
 
-class AzureCognitiveSearchAccessConfig(AccessConfig):
-    azure_cognitive_search_key: str = Field(
+class AzureAISearchAccessConfig(AccessConfig):
+    azure_ai_search_key: str = Field(
         alias="key", description="Credential that is used for authenticating to an Azure service"
     )
 
 
-class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
+class AzureAISearchConnectionConfig(ConnectionConfig):
     endpoint: str = Field(
         description="The URL endpoint of an Azure AI (Cognitive) search service. "
         "In the form of https://{{service_name}}.search.windows.net"
@@ -46,9 +46,9 @@ class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
     index: str = Field(
         description="The name of the Azure AI (Cognitive) Search index to connect to."
     )
-    access_config: Secret[AzureCognitiveSearchAccessConfig]
+    access_config: Secret[AzureAISearchAccessConfig]
 
-    @requires_dependencies(["azure.search", "azure.core"], extras="azure-cognitive-search")
+    @requires_dependencies(["azure.search", "azure.core"], extras="azure-ai-search")
     def get_search_client(self) -> "SearchClient":
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
@@ -57,11 +57,11 @@ class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
             endpoint=self.endpoint,
             index_name=self.index,
             credential=AzureKeyCredential(
-                self.access_config.get_secret_value().azure_cognitive_search_key
+                self.access_config.get_secret_value().azure_ai_search_key
             ),
         )
 
-    @requires_dependencies(["azure.search", "azure.core"], extras="azure-cognitive-search")
+    @requires_dependencies(["azure.search", "azure.core"], extras="azure-ai-search")
     def get_search_index_client(self) -> "SearchIndexClient":
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents.indexes import SearchIndexClient
@@ -69,16 +69,16 @@ class AzureCognitiveSearchConnectionConfig(ConnectionConfig):
         return SearchIndexClient(
             endpoint=self.endpoint,
             credential=AzureKeyCredential(
-                self.access_config.get_secret_value().azure_cognitive_search_key
+                self.access_config.get_secret_value().azure_ai_search_key
             ),
         )
 
 
-class AzureCognitiveSearchUploadStagerConfig(UploadStagerConfig):
+class AzureAISearchUploadStagerConfig(UploadStagerConfig):
     pass
 
 
-class AzureCognitiveSearchUploaderConfig(UploaderConfig):
+class AzureAISearchUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
@@ -87,9 +87,9 @@ class AzureCognitiveSearchUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class AzureCognitiveSearchUploadStager(UploadStager):
-    upload_stager_config: AzureCognitiveSearchUploadStagerConfig = field(
-        default_factory=lambda: AzureCognitiveSearchUploadStagerConfig()
+class AzureAISearchUploadStager(UploadStager):
+    upload_stager_config: AzureAISearchUploadStagerConfig = field(
+        default_factory=lambda: AzureAISearchUploadStagerConfig()
     )
 
     @staticmethod
@@ -163,9 +163,9 @@ class AzureCognitiveSearchUploadStager(UploadStager):
 
 
 @dataclass
-class AzureCognitiveSearchUploader(Uploader):
-    upload_config: AzureCognitiveSearchUploaderConfig
-    connection_config: AzureCognitiveSearchConnectionConfig
+class AzureAISearchUploader(Uploader):
+    upload_config: AzureAISearchUploaderConfig
+    connection_config: AzureAISearchConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
     def query_docs(self, record_id: str, index_key: str) -> list[str]:
@@ -202,7 +202,7 @@ class AzureCognitiveSearchUploader(Uploader):
             )
 
     @DestinationConnectionError.wrap
-    @requires_dependencies(["azure"], extras="azure-cognitive-search")
+    @requires_dependencies(["azure"], extras="azure-ai-search")
     def write_dict(self, elements_dict: list[dict[str, Any]]) -> None:
         import azure.core.exceptions
 
@@ -229,7 +229,7 @@ class AzureCognitiveSearchUploader(Uploader):
             raise WriteError(
                 ", ".join(
                     [
-                        f"{error.azure_cognitive_search_key}: "
+                        f"{error.azure_ai_search_key}: "
                         f"[{error.status_code}] {error.error_message}"
                         for error in errors
                     ],
@@ -285,10 +285,10 @@ class AzureCognitiveSearchUploader(Uploader):
             self.write_dict(elements_dict=chunk)  # noqa: E203
 
 
-azure_cognitive_search_destination_entry = DestinationRegistryEntry(
-    connection_config=AzureCognitiveSearchConnectionConfig,
-    uploader=AzureCognitiveSearchUploader,
-    uploader_config=AzureCognitiveSearchUploaderConfig,
-    upload_stager=AzureCognitiveSearchUploadStager,
-    upload_stager_config=AzureCognitiveSearchUploadStagerConfig,
+azure_ai_search_destination_entry = DestinationRegistryEntry(
+    connection_config=AzureAISearchConnectionConfig,
+    uploader=AzureAISearchUploader,
+    uploader_config=AzureAISearchUploaderConfig,
+    upload_stager=AzureAISearchUploadStager,
+    upload_stager_config=AzureAISearchUploadStagerConfig,
 )

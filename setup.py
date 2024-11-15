@@ -83,8 +83,8 @@ connectors_reqs = {
     "airtable": load_requirements("requirements/connectors/airtable.in"),
     "astradb": load_requirements("requirements/connectors/astradb.in"),
     "azure": load_requirements("requirements/connectors/azure.in"),
-    "azure-cognitive-search": load_requirements(
-        "requirements/connectors/azure-cognitive-search.in",
+    "azure-ai-search": load_requirements(
+        "requirements/connectors/azure-ai-search.in",
     ),
     "biomed": load_requirements("requirements/connectors/biomed.in"),
     "box": load_requirements("requirements/connectors/box.in"),
