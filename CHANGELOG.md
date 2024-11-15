@@ -4,7 +4,8 @@
 
 * **Added V2 kafka destination connector**
 * **Persist record id in pinecone metadata, use it to delete previous content to prevent duplicates.**
-* **Persist record id in azure cognitive search, use it to delete previous content to prevent duplicates.**
+* **Persist record id in azure ai search, use it to delete previous content to prevent duplicates.**
+* **Persist record id in astradb, use it to delete previous content to prevent duplicates.**
 * **Update Azure Cognitive Search to Azure AI Search**
 
 ### Fixes

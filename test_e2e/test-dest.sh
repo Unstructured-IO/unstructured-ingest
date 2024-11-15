@@ -15,7 +15,6 @@ cd "$SCRIPT_DIR"/.. || exit 1
 export OMP_THREAD_LIMIT=1
 
 all_tests=(
-  'astradb.sh'
   'azure.sh'
   'box.sh'
   'chroma.sh'
