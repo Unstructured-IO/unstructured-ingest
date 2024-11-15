@@ -54,9 +54,9 @@ def test_milvus_stager_processes_elements_correctly(
 
     if then_error:
         with pytest.raises(KeyError):
-            stager.conform_dict(data=given_element)
+            stager.conform_dict(working_data=given_element)
     else:
-        stager.conform_dict(data=given_element)
+        stager.conform_dict(working_data=given_element)
         assert given_element == then_element
 
 
@@ -109,7 +109,7 @@ def test_milvus_stager_processes_metadata_correctly(
     config = MilvusUploadStagerConfig(flatten_metadata=given_flatten_metadata)
     stager = MilvusUploadStager(upload_stager_config=config)
 
-    stager.conform_dict(data=given_element)
+    stager.conform_dict(working_data=given_element)
     assert given_element == then_element
 
 
@@ -159,5 +159,5 @@ def test_milvus_stager_processes_metadata_correctly_when_using_include_list(
     )
     stager = MilvusUploadStager(upload_stager_config=config)
 
-    stager.conform_dict(data=given_element)
+    stager.conform_dict(working_data=given_element)
     assert given_element == then_element
