@@ -26,6 +26,9 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "duckdb"
 
+class DuckDBAccessConfig(AccessConfig):
+    pass
+
 class DuckDBConnectionConfig(ConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     database: Optional[str] = Field(
@@ -41,6 +44,7 @@ class DuckDBConnectionConfig(ConnectionConfig):
         default="elements",
         description="Table name. This is the table name into which the elements data is inserted.",
     )    
+    access_config: Secret[DuckDBAccessConfig] = Field(default=DuckDBAccessConfig(), validate_default=True)
 
     def __post_init__(self):
         if (self.database is None):
