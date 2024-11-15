@@ -24,10 +24,12 @@ idna==3.10
     # via
     #   requests
     #   snowflake-connector-python
-packaging==24.1
+packaging==24.2
     # via snowflake-connector-python
 platformdirs==4.3.6
     # via snowflake-connector-python
+psycopg2-binary==2.9.10
+    # via -r snowflake.in
 pycparser==2.22
     # via cffi
 pyjwt==2.9.0
@@ -38,7 +40,7 @@ pytz==2024.2
     # via snowflake-connector-python
 requests==2.32.3
     # via snowflake-connector-python
-snowflake-connector-python==3.12.2
+snowflake-connector-python==3.12.3
     # via -r snowflake.in
 sortedcontainers==2.4.0
     # via snowflake-connector-python

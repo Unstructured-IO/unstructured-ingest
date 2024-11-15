@@ -1,4 +1,4 @@
-## 0.2.3-dev6
+## 0.2.3-dev7
 
 ### Enhancements
 
@@ -13,6 +13,7 @@
 * **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
 * **Add missing batch label to FileData where applicable** 
 * **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
+* **Postgres Connector Query** causing syntax error when ID column contains strings
 
 ## 0.2.2
 
