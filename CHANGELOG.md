@@ -1,8 +1,25 @@
-## 0.3.0-dev1
+## 0.3.1-dev1
+
+### Fixes
+* **Make AstraDB precheck fail on non-existant collections**
+* **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+
+## 0.3.0
+
+### Enhancements
+
+* **Added V2 kafka destination connector**
+* **Persist record id in pinecone metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in azure ai search, use it to delete previous content to prevent duplicates.**
+* **Persist record id in astradb, use it to delete previous content to prevent duplicates.**
+* **Update Azure Cognitive Search to Azure AI Search**
 
 ### Fixes
 
-* **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+* **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
+* **Add missing batch label to FileData where applicable** 
+* **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
+* **Postgres Connector Query** causing syntax error when ID column contains strings
 
 ## 0.2.2
 

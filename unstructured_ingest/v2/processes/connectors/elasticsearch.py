@@ -191,6 +191,7 @@ class ElasticsearchIndexer(Indexer):
             yield FileData(
                 identifier=identified,
                 connector_type=CONNECTOR_TYPE,
+                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
                     date_processed=str(time()),
