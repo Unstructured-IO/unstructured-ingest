@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
-from redis import exceptions as redis_exceptions
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
@@ -99,7 +98,7 @@ class RedisUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["redis"])
+    @requires_dependencies(["redis"], extras="redis")
     def create_client(self, async_flag=Field(default=True)) -> "Redis":
         if async_flag:
             from redis.asyncio import Redis, from_url
@@ -126,7 +125,9 @@ class RedisUploader(Uploader):
                 ssl=self.connection_config.ssl,
             )
 
+    @requires_dependencies(["redis"], extras="redis")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        from redis import exceptions as redis_exceptions
 
         with path.open("r") as file:
             elements_dict = json.load(file)
@@ -162,7 +163,10 @@ class RedisUploader(Uploader):
                 pipeline.execute()
             client.close()
 
+    @requires_dependencies(["redis"], extras="redis")
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        from redis import exceptions as redis_exceptions
+
         with path.open("r") as file:
             elements_dict = json.load(file)
 
