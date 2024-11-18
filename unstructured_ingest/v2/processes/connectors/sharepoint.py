@@ -21,7 +21,6 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -426,7 +425,7 @@ class SharepointDownloader(Downloader):
             f.write(etree.tostring(document, encoding="unicode", pretty_print=True))
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         content_type = file_data.additional_metadata.get("sharepoint_content_type")
         if not content_type:
             raise ValueError(
@@ -436,6 +435,8 @@ class SharepointDownloader(Downloader):
             return self.get_document(file_data=file_data)
         elif content_type == SharepointContentType.SITEPAGE.value:
             return self.get_site_page(file_data=file_data)
+        else:
+            raise ValueError(f"content type not recognized: {content_type}")
 
 
 sharepoint_source_entry = SourceRegistryEntry(

@@ -14,8 +14,8 @@ from .airtable import CONNECTOR_TYPE as AIRTABLE_CONNECTOR_TYPE
 from .airtable import airtable_source_entry
 from .astradb import CONNECTOR_TYPE as ASTRA_DB_CONNECTOR_TYPE
 from .astradb import astra_db_destination_entry, astra_db_source_entry
-from .azure_cognitive_search import CONNECTOR_TYPE as AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE
-from .azure_cognitive_search import azure_cognitive_search_destination_entry
+from .azure_ai_search import CONNECTOR_TYPE as AZURE_AI_SEARCH_CONNECTOR_TYPE
+from .azure_ai_search import azure_ai_search_destination_entry
 from .chroma import CONNECTOR_TYPE as CHROMA_CONNECTOR_TYPE
 from .chroma import chroma_destination_entry
 from .confluence import CONNECTOR_TYPE as CONFLUENCE_CONNECTOR_TYPE
@@ -97,8 +97,8 @@ add_source_entry(source_type=SHAREPOINT_CONNECTOR_TYPE, entry=sharepoint_source_
 
 add_destination_entry(destination_type=MILVUS_CONNECTOR_TYPE, entry=milvus_destination_entry)
 add_destination_entry(
-    destination_type=AZURE_COGNTIVE_SEARCH_CONNECTOR_TYPE,
-    entry=azure_cognitive_search_destination_entry,
+    destination_type=AZURE_AI_SEARCH_CONNECTOR_TYPE,
+    entry=azure_ai_search_destination_entry,
 )
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)

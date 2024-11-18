@@ -6,14 +6,14 @@ import click
 from unstructured_ingest.cli.interfaces import (
     CliConfig,
 )
-from unstructured_ingest.connector.azure_cognitive_search import (
-    AzureCognitiveSearchWriteConfig,
-    SimpleAzureCognitiveSearchStorageConfig,
+from unstructured_ingest.connector.azure_ai_search import (
+    AzureAISearchWriteConfig,
+    SimpleAzureAISearchStorageConfig,
 )
 
 
 @dataclass
-class AzureCognitiveSearchCliConfig(SimpleAzureCognitiveSearchStorageConfig, CliConfig):
+class AzureAISearchCliConfig(SimpleAzureAISearchStorageConfig, CliConfig):
     @staticmethod
     def get_cli_options() -> t.List[click.Option]:
         options = [
@@ -39,7 +39,7 @@ class AzureCognitiveSearchCliConfig(SimpleAzureCognitiveSearchStorageConfig, Cli
 
 
 @dataclass
-class AzureCognitiveSearchCliWriteConfig(AzureCognitiveSearchWriteConfig, CliConfig):
+class AzureAISearchCliWriteConfig(AzureAISearchWriteConfig, CliConfig):
     @staticmethod
     def get_cli_options() -> t.List[click.Option]:
         options = [
@@ -57,9 +57,9 @@ def get_base_dest_cmd():
     from unstructured_ingest.cli.base.dest import BaseDestCmd
 
     cmd_cls = BaseDestCmd(
-        cmd_name="azure-cognitive-search",
-        cli_config=AzureCognitiveSearchCliConfig,
-        additional_cli_options=[AzureCognitiveSearchCliWriteConfig],
-        write_config=AzureCognitiveSearchCliWriteConfig,
+        cmd_name="azure-ai-search",
+        cli_config=AzureAISearchCliConfig,
+        additional_cli_options=[AzureAISearchCliWriteConfig],
+        write_config=AzureAISearchCliWriteConfig,
     )
     return cmd_cls

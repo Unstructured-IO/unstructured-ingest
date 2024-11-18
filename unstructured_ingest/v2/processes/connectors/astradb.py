@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -129,11 +130,6 @@ class AstraDBIndexerConfig(IndexerConfig):
         "numbers, and underscores."
     )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
-    namespace: Optional[str] = Field(
-        default=None,
-        description="The Astra DB connection namespace.",
-        deprecated="Please use 'keyspace' instead.",
-    )
     batch_size: int = Field(default=20, description="Number of records per batch")
 
 
@@ -147,21 +143,17 @@ class AstraDBUploaderConfig(UploaderConfig):
         "Note that the collection name must only include letters, "
         "numbers, and underscores."
     )
-    embedding_dimension: int = Field(
-        default=384, description="The dimensionality of the embeddings"
-    )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
-    namespace: Optional[str] = Field(
-        default=None,
-        description="The Astra DB connection namespace.",
-        deprecated="Please use 'keyspace' instead.",
-    )
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
         default=None,
         description="The indexing policy to use for the collection.",
         examples=['{"deny": ["metadata"]}'],
     )
     batch_size: int = Field(default=20, description="Number of records per batch")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -173,7 +165,7 @@ class AstraDBIndexer(Indexer):
         return get_astra_collection(
             connection_config=self.connection_config,
             collection_name=self.index_config.collection_name,
-            keyspace=self.index_config.keyspace or self.index_config.namespace,
+            keyspace=self.index_config.keyspace,
         )
 
     def precheck(self) -> None:
@@ -223,7 +215,7 @@ class AstraDBIndexer(Indexer):
                 additional_metadata={
                     "ids": list(batch),
                     "collection_name": self.index_config.collection_name,
-                    "keyspace": self.index_config.keyspace or self.index_config.namespace,
+                    "keyspace": self.index_config.keyspace,
                 },
             )
             yield fd
@@ -309,10 +301,11 @@ class AstraDBUploadStager(UploadStager):
         default_factory=lambda: AstraDBUploadStagerConfig()
     )
 
-    def conform_dict(self, element_dict: dict) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return {
             "$vector": element_dict.pop("embeddings", None),
             "content": element_dict.pop("text", None),
+            RECORD_ID_LABEL: file_data.identifier,
             "metadata": element_dict,
         }
 
@@ -328,10 +321,15 @@ class AstraDBUploadStager(UploadStager):
             elements_contents = json.load(elements_file)
         conformed_elements = []
         for element in elements_contents:
-            conformed_elements.append(self.conform_dict(element_dict=element))
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
+            conformed_elements.append(self.conform_dict(element_dict=element, file_data=file_data))
+        output_filename_path = Path(output_filename)
+        if output_filename_path.suffix == ".json":
+            output_path = Path(output_dir) / output_filename_path
+        else:
+            output_path = Path(output_dir) / output_filename_path.with_suffix(".json")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
+            json.dump(conformed_elements, output_file, indent=2)
         return output_path
 
 
@@ -346,7 +344,7 @@ class AstraDBUploader(Uploader):
             get_astra_collection(
                 connection_config=self.connection_config,
                 collection_name=self.upload_config.collection_name,
-                keyspace=self.upload_config.keyspace or self.upload_config.namespace,
+                keyspace=self.upload_config.keyspace,
             ).options()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
@@ -357,7 +355,19 @@ class AstraDBUploader(Uploader):
         return get_astra_collection(
             connection_config=self.connection_config,
             collection_name=self.upload_config.collection_name,
-            keyspace=self.upload_config.keyspace or self.upload_config.namespace,
+            keyspace=self.upload_config.keyspace,
+        )
+
+    def delete_by_record_id(self, collection: "AstraDBCollection", file_data: FileData):
+        logger.debug(
+            f"deleting records from collection {collection.name} "
+            f"with {self.upload_config.record_id_key} "
+            f"set to {file_data.identifier}"
+        )
+        delete_filter = {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
+        delete_resp = collection.delete_many(filter=delete_filter)
+        logger.debug(
+            f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
@@ -370,6 +380,8 @@ class AstraDBUploader(Uploader):
 
         astra_db_batch_size = self.upload_config.batch_size
         collection = self.get_collection()
+
+        self.delete_by_record_id(collection=collection, file_data=file_data)
 
         for chunk in batch_generator(elements_dict, astra_db_batch_size):
             collection.insert_many(chunk)
