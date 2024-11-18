@@ -54,6 +54,8 @@ from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
 from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
 from .weaviate import weaviate_destination_entry
+from .redis import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from .redis import redis_destination_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -111,3 +113,5 @@ add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
 
 add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
+
+add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
