@@ -1,4 +1,5 @@
 import tempfile
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
@@ -55,6 +56,25 @@ def get_client() -> Generator[OpenSearch, None, None]:
         yield client
 
 
+def get_index_count(client: OpenSearch, index_name: str) -> int:
+    count_resp = client.cat.count(index=index_name, params={"format": "json"})
+    return int(count_resp[0]["count"])
+
+
+def wait_for_write(
+    client: OpenSearch, index_name: str, expected_count: int, timeout: int = 30, interval: int = 1
+) -> None:
+    current_count = get_index_count(client, index_name)
+    start = time.time()
+    while time.time() - start < timeout:
+        print(f"waiting for current count ({current_count}) to match expected {expected_count}")
+        time.sleep(interval)
+        current_count = get_index_count(client, index_name)
+        if current_count == expected_count:
+            return
+    raise TimeoutError("Timed out while waiting for write to sync")
+
+
 @pytest.fixture
 def source_index(movies_dataframe: pd.DataFrame) -> str:
     with container_context(
@@ -62,7 +82,7 @@ def source_index(movies_dataframe: pd.DataFrame) -> str:
         ports={9200: 9200, 9600: 9600},
         environment={"discovery.type": "single-node"},
         healthcheck=HealthCheck(
-            test="curl --fail https://localhost:9200/_cat/health -ku 'admin:admin' >/dev/null || exit 1",
+            test="curl --fail https://localhost:9200/_cat/health -ku 'admin:admin' >/dev/null || exit 1",  # noqa: E501
             interval=1,
         ),
     ):
@@ -80,11 +100,10 @@ def source_index(movies_dataframe: pd.DataFrame) -> str:
                     ethnicity=row["Origin/Ethnicity"],
                     plot=row["Plot"],
                 )
-                try:
-                    movie.save(using=client)
-                except Exception as e:
-                    print(f"failed to save movie: {row}")
-                    raise e
+                movie.save(using=client)
+            wait_for_write(
+                client=client, index_name=INDEX_NAME, expected_count=len(movies_dataframe)
+            )
         yield INDEX_NAME
 
 
@@ -114,5 +133,7 @@ async def test_opensearch_source(source_index, movies_dataframe: pd.DataFrame):
             configs=ValidationConfigs(
                 test_id="opensearch",
                 expected_num_files=expected_num_files,
+                expected_number_indexed_file_data=1,
+                validate_downloaded_files=True,
             ),
         )

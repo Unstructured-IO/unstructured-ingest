@@ -18,12 +18,13 @@ class HealthCheck(BaseModel):
     retries: int = Field(
         gt=0,
         default=3,
-        description="The number of consecutive failures needed to consider a container as unhealthy.",
+        description="The number of consecutive failures needed "
+        "to consider a container as unhealthy.",
     )
     start_period: int = Field(
         gt=0,
         default=0,
-        description="Start period for the container to initialize before starting health-retries countdown in seconds.",
+        description="Start period for the container to initialize before starting health-retries countdown in seconds.",  # noqa: 501
     )
 
     @field_serializer("interval")
