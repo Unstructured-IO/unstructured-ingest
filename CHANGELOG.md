@@ -1,4 +1,8 @@
-## 0.3.1-dev1
+## 0.3.1-dev3
+
+### Enhancements
+
+* **Added Redis destination connector**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
