@@ -1,4 +1,5 @@
 import json
+import time
 from pathlib import Path
 
 import docker
@@ -86,6 +87,21 @@ def get_count(client: MilvusClient) -> int:
     return resp[0][count_field]
 
 
+def validate_count(
+    client: MilvusClient, expected_count: int, retries: int = 10, interval: int = 1
+) -> None:
+    current_count = get_count(client=client)
+    retry_count = 0
+    while current_count != expected_count and retry_count < retries:
+        time.sleep(interval)
+        current_count = get_count(client=client)
+        retry_count += 1
+    assert current_count == expected_count, (
+        f"Expected count ({expected_count}) doesn't match how "
+        f"much came back from collection: {current_count}"
+    )
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 async def test_azure_ai_search_destination(
@@ -117,17 +133,9 @@ async def test_azure_ai_search_destination(
         staged_elements = json.load(f)
     expected_count = len(staged_elements)
     with uploader.get_client() as client:
-        current_count = get_count(client=client)
-    assert current_count == expected_count, (
-        f"Expected count ({expected_count}) doesn't match how "
-        f"much came back from collection: {current_count}"
-    )
+        validate_count(client=client, expected_count=expected_count)
 
     # Rerun and make sure the same documents get updated
     uploader.run(path=staged_filepath, file_data=file_data)
     with uploader.get_client() as client:
-        current_count = get_count(client=client)
-    assert current_count == expected_count, (
-        f"Expected count ({expected_count}) doesn't match how "
-        f"much came back from collection: {current_count}"
-    )
+        validate_count(client=client, expected_count=expected_count)
