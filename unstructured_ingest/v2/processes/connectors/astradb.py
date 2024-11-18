@@ -170,7 +170,7 @@ class AstraDBIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.get_collection()
+            self.get_collection().options()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -345,7 +345,7 @@ class AstraDBUploader(Uploader):
                 connection_config=self.connection_config,
                 collection_name=self.upload_config.collection_name,
                 keyspace=self.upload_config.keyspace,
-            )
+            ).options()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
