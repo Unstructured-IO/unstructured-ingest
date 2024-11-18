@@ -16,7 +16,6 @@ from test.integration.connectors.utils.constants import (
 from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connectors.pinecone import (
     CONNECTOR_TYPE,
