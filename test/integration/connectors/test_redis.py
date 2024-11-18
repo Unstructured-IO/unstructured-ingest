@@ -9,13 +9,16 @@ import pytest
 from redis import exceptions as redis_exceptions
 from redis.asyncio import Redis, from_url
 
-from unstructured_ingest.v2.interfaces.file_data import (FileData,
-                                                         SourceIdentifiers)
-from unstructured_ingest.v2.processes.connectors.redis import \
-    CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.v2.processes.connectors.redis import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
 from unstructured_ingest.v2.processes.connectors.redis import (
-    RedisAccessConfig, RedisConnectionConfig, RedisUploader,
-    RedisUploaderConfig, RedisUploadStager, RedisUploadStagerConfig)
+    RedisAccessConfig,
+    RedisConnectionConfig,
+    RedisUploader,
+    RedisUploaderConfig,
+    RedisUploadStager,
+    RedisUploadStagerConfig,
+)
 
 redis_pw = os.getenv("AZURE_REDIS_INGEST_TEST_PASSWORD", None)
 
