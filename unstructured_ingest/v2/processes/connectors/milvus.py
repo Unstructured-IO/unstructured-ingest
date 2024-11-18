@@ -132,8 +132,8 @@ class MilvusUploadStager(UploadStager):
         for json_dumps_field in json_dumps_fields:
             if json_dumps_field in working_data:
                 working_data[json_dumps_field] = json.dumps(working_data[json_dumps_field])
-        data[RECORD_ID_LABEL] = file_data.identifier
-        return data
+        working_data[RECORD_ID_LABEL] = file_data.identifier
+        return working_data
 
     def run(
         self,

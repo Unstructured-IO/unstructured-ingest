@@ -1,6 +1,8 @@
 import pytest
 
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.milvus import (
+    CONNECTOR_TYPE,
     MilvusUploadStager,
     MilvusUploadStagerConfig,
 )
@@ -128,11 +130,13 @@ def test_milvus_stager_processes_metadata_correctly(
                     "filename": "fake-memo.pdf",
                 },
                 "element_id": "be34cd2d71310ec72bfef3d1be2b2b36",
+                "record_id": "mock file data",
             },
             {
                 "type": "UncategorizedText",
                 "filename": "fake-memo.pdf",
                 "element_id": "be34cd2d71310ec72bfef3d1be2b2b36",
+                "record_id": "mock file data",
             },
         ),
         (
@@ -143,10 +147,12 @@ def test_milvus_stager_processes_metadata_correctly(
                     "filename": "fake-memo.pdf",
                 },
                 "element_id": "be34cd2d71310ec72bfef3d1be2b2b36",
+                "record_id": "mock file data",
             },
             {
                 "type": "UncategorizedText",
                 "element_id": "be34cd2d71310ec72bfef3d1be2b2b36",
+                "record_id": "mock file data",
             },
         ),
     ],
@@ -154,10 +160,15 @@ def test_milvus_stager_processes_metadata_correctly(
 def test_milvus_stager_processes_metadata_correctly_when_using_include_list(
     given_field_include_list, given_element, then_element
 ):
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath="fake-memo.pdf", filename="fake-memo.pdf"),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
     config = MilvusUploadStagerConfig(
         flatten_metadata=True, fields_to_include=given_field_include_list
     )
     stager = MilvusUploadStager(upload_stager_config=config)
 
-    stager.conform_dict(working_data=given_element)
-    assert given_element == then_element
+    staged_element = stager.conform_dict(data=given_element, file_data=file_data)
+    assert staged_element == then_element
