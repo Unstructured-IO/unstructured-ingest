@@ -46,8 +46,8 @@ from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
 from .outlook import outlook_source_entry
 from .pinecone import CONNECTOR_TYPE as PINECONE_CONNECTOR_TYPE
 from .pinecone import pinecone_destination_entry
-from .redis import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
-from .redis import redis_destination_entry
+from .redisdb import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from .redisdb import redis_destination_entry
 from .salesforce import CONNECTOR_TYPE as SALESFORCE_CONNECTOR_TYPE
 from .salesforce import salesforce_source_entry
 from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
