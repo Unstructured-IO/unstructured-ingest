@@ -1,0 +1,37 @@
+{
+    "identifier": "869bf15f-e840-51dc-a818-8d0b817817c9",
+    "connector_type": "s3",
+    "source_identifiers": {
+      "filename": "Why_is_the_sky_blue?.txt",
+      "fullpath": "utic-dev-tech-fixtures/special-characters/Why_is_the_sky_blue?.txt",
+      "rel_path": "Why_is_the_sky_blue?.txt"
+    },
+    "doc_type": "file",
+    "metadata": {
+      "url": "s3://utic-dev-tech-fixtures/special-characters/Why_is_the_sky_blue?.txt",
+      "version": "15344f385570b834e468ca05bc1cebd0",
+      "record_locator": {
+        "protocol": "s3",
+        "remote_file_path": "s3://utic-dev-tech-fixtures/special-characters/"
+      },
+      "date_created": "1731627148.0",
+      "date_modified": "1731627148.0",
+      "date_processed": "1730944104.616075",
+      "permissions_data": null,
+      "filesize_bytes": 14
+    },
+    "additional_metadata": {
+      "Key": "utic-dev-tech-fixtures/special-characters/Why_is_the_sky_blue?.txt",
+      "LastModified": "2024-11-14T23:32:28+00:00",
+      "ETag": "\"15344f385570b834e468ca05bc1cebd0\"",
+      "Size": 14,
+      "StorageClass": "STANDARD",
+      "type": "file",
+      "size": 14,
+      "name": "utic-dev-tech-fixtures/special-characters/Why_is_the_sky_blue?.txt",
+      "original_file_path": "utic-dev-tech-fixtures/special-characters/Why_is_the_sky_blue?.txt"
+    },
+    "reprocess": false,
+    "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpa5ftry9m/recalibrating-risk-report.pdf",
+    "display_name": "utic-dev-tech-fixtures/special-characters/Why_is_the_sky_blue?.txt"
+  }

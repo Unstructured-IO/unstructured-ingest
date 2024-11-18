@@ -16,9 +16,9 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     Indexer,
     IndexerConfig,
-    download_responses,
 )
 from unstructured_ingest.v2.interfaces.file_data import (
     FileData,
@@ -161,7 +161,7 @@ class SlackDownloader(Downloader):
     def run(self, file_data, **kwargs):
         raise NotImplementedError
 
-    async def run_async(self, file_data: FileData, **kwargs) -> download_responses:
+    async def run_async(self, file_data: FileData, **kwargs) -> DownloadResponse:
         # NOTE: Indexer should provide source identifiers required to generate the download path
         download_path = self.get_download_path(file_data)
         if download_path is None:
