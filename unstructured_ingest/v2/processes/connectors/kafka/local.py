@@ -1,10 +1,12 @@
-import socket
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.v2.processes.connectors.kafka.kafka import (
     KafkaAccessConfig,
     KafkaConnectionConfig,
@@ -12,6 +14,8 @@ from unstructured_ingest.v2.processes.connectors.kafka.kafka import (
     KafkaDownloaderConfig,
     KafkaIndexer,
     KafkaIndexerConfig,
+    KafkaUploader,
+    KafkaUploaderConfig,
 )
 
 if TYPE_CHECKING:
@@ -35,11 +39,18 @@ class LocalKafkaConnectionConfig(KafkaConnectionConfig):
 
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
-            "client.id": socket.gethostname(),
             "group.id": "default_group_id",
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
-            "message.max.bytes": 10485760,
+        }
+        return conf
+
+    def get_producer_configuration(self) -> dict:
+        bootstrap = self.bootstrap_server
+        port = self.port
+
+        conf = {
+            "bootstrap.servers": f"{bootstrap}:{port}",
         }
         return conf
 
@@ -66,10 +77,27 @@ class LocalKafkaDownloader(KafkaDownloader):
     connector_type: str = CONNECTOR_TYPE
 
 
+class LocalKafkaUploaderConfig(KafkaUploaderConfig):
+    pass
+
+
+@dataclass
+class LocalKafkaUploader(KafkaUploader):
+    connection_config: LocalKafkaConnectionConfig
+    upload_config: LocalKafkaUploaderConfig
+    connector_type: str = CONNECTOR_TYPE
+
+
 kafka_local_source_entry = SourceRegistryEntry(
     connection_config=LocalKafkaConnectionConfig,
     indexer=LocalKafkaIndexer,
     indexer_config=LocalKafkaIndexerConfig,
     downloader=LocalKafkaDownloader,
     downloader_config=LocalKafkaDownloaderConfig,
+)
+
+kafka_local_destination_entry = DestinationRegistryEntry(
+    connection_config=LocalKafkaConnectionConfig,
+    uploader=LocalKafkaUploader,
+    uploader_config=LocalKafkaUploaderConfig,
 )

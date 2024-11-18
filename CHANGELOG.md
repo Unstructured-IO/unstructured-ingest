@@ -1,9 +1,26 @@
-## 0.2.3-dev
+## 0.3.1-dev
 
 ### Features
 
 * **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+
+## 0.3.0
+
+### Enhancements
+
+* **Added V2 kafka destination connector**
+* **Persist record id in pinecone metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in azure ai search, use it to delete previous content to prevent duplicates.**
+* **Persist record id in astradb, use it to delete previous content to prevent duplicates.**
+* **Update Azure Cognitive Search to Azure AI Search**
+
+### Fixes
+
+* **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
+* **Add missing batch label to FileData where applicable** 
+* **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
+* **Postgres Connector Query** causing syntax error when ID column contains strings
 
 ## 0.2.2
 

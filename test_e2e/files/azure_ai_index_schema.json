@@ -8,6 +8,11 @@
       "key": true
     },
     {
+      "name": "record_id",
+      "type": "Edm.String",
+      "key": true
+    },
+    {
       "name": "element_id",
       "type": "Edm.String"
     },

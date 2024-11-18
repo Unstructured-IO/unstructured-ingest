@@ -12,11 +12,11 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
@@ -214,7 +214,7 @@ class AirtableDownloader(Downloader):
         row_dict.update(table_row["fields"])
         return row_dict
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         table_meta = AirtableTableMeta.model_validate(file_data.additional_metadata)
         table_contents = self.get_table_contents(table_meta=table_meta)
         df = pandas.DataFrame.from_dict(

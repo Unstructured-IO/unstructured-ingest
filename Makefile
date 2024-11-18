@@ -119,7 +119,7 @@ check-version:
 ###########
 .PHONY: unit-test
 unit-test:
-	PYTHONPATH=. pytest test/unit
+	PYTHONPATH=. pytest -sv --cov unstructured_ingest/ test/unit
 
 .PHONY: integration-test
 integration-test:

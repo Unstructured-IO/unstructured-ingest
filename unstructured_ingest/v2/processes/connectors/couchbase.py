@@ -205,6 +205,7 @@ class CouchbaseIndexer(Indexer):
             yield FileData(
                 identifier=identified,
                 connector_type=CONNECTOR_TYPE,
+                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.connection_string}/"
                     f"{self.connection_config.bucket}",
