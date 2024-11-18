@@ -30,7 +30,11 @@ all_tests=(
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
   'vectara.sh'
+<<<<<<< HEAD
   'weaviate.sh'
+=======
+  'milvus.sh'
+>>>>>>> e4d83e4d (update weaviate to support upsert and migrate e2e test to integration test)
   #  'kdbai.sh'
 )
 

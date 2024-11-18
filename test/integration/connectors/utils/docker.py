@@ -33,11 +33,11 @@ def has_healthcheck(container: Container) -> bool:
     return container.attrs.get("Config", {}).get("Healthcheck", None) is not None
 
 
-def healthcheck_wait(container: Container, timeout: int = 10) -> None:
+def healthcheck_wait(container: Container, timeout: int = 10, interval: int = 1) -> None:
     health = container.health
     start = time.time()
     while health != "healthy" and time.time() - start < timeout:
-        time.sleep(1)
+        time.sleep(interval)
         container.reload()
         health = container.health
     if health != "healthy":

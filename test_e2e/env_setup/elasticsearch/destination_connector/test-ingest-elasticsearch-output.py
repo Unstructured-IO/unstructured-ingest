@@ -79,7 +79,7 @@ def get_embeddings_len(client: Elasticsearch) -> int:
 def validate_embeddings(client: Elasticsearch, embeddings: list[float]):
     # Query the index using the appropriate embedding vector for given query text
     # Verify that the top 1 result matches the expected chunk by checking the start text
-    print("Testing query to the embedded index.")
+    print("Testing query to the embedded.py index.")
     es_embeddings_len = get_embeddings_len(client=client)
     assert len(embeddings) == es_embeddings_len, (
         f"length of embeddings ({len(embeddings)}) doesn't "
@@ -94,7 +94,7 @@ def validate_embeddings(client: Elasticsearch, embeddings: list[float]):
     query_response = client.search(index=INDEX_NAME, knn=query_string)
     response_found = query_response["hits"]["hits"][0]["_source"]
     assert response_found["embeddings"] == embeddings
-    print("Query to the embedded index was successful and returned the expected result.")
+    print("Query to the embedded.py index was successful and returned the expected result.")
 
 
 def validate(num_elements: int, embeddings: list[float]):
