@@ -24,7 +24,7 @@ class HealthCheck(BaseModel):
     start_period: int = Field(
         gt=0,
         default=0,
-        description="Start period for the container to initialize before starting health-retries countdown in seconds.",  # noqa: 501
+        description="Start period for the container to initialize before starting health-retries countdown in seconds.",  # noqa: E501
     )
 
     @field_serializer("interval")

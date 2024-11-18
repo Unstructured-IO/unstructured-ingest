@@ -1,3 +1,4 @@
+import json
 import tempfile
 import time
 from contextlib import contextmanager
@@ -8,12 +9,13 @@ import pandas as pd
 import pytest
 from opensearchpy import Document, Keyword, OpenSearch, Text
 
-from test.integration.connectors.utils.constants import SOURCE_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
 from test.integration.connectors.utils.docker import HealthCheck, container_context
 from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.opensearch import (
     CONNECTOR_TYPE,
     OpenSearchAccessConfig,
@@ -22,9 +24,14 @@ from unstructured_ingest.v2.processes.connectors.opensearch import (
     OpenSearchDownloaderConfig,
     OpenSearchIndexer,
     OpenSearchIndexerConfig,
+    OpenSearchUploader,
+    OpenSearchUploaderConfig,
+    OpenSearchUploadStager,
+    OpenSearchUploadStagerConfig,
 )
 
-INDEX_NAME = "movies"
+SOURCE_INDEX_NAME = "movies"
+DESTINATION_INDEX_NAME = "elements"
 
 
 class Movie(Document):
@@ -38,7 +45,7 @@ class Movie(Document):
     plot = Text()
 
     class Index:
-        name = INDEX_NAME
+        name = SOURCE_INDEX_NAME
 
     def save(self, **kwargs):
         return super(Movie, self).save(**kwargs)
@@ -75,6 +82,28 @@ def wait_for_write(
     raise TimeoutError("Timed out while waiting for write to sync")
 
 
+def validate_count(
+    client: OpenSearch, index_name: str, expected_count: int, retries: int = 10, interval: int = 1
+) -> None:
+    current_count = get_index_count(client, index_name)
+    if current_count == expected_count:
+        return
+    tries = 0
+    while tries < retries:
+        print(
+            f"retrying validation to check if expected count "
+            f"{expected_count} will match current count {current_count}"
+        )
+        time.sleep(interval)
+        current_count = get_index_count(client, index_name)
+        if current_count == expected_count:
+            break
+    assert current_count == expected_count, (
+        f"Expected count ({expected_count}) doesn't match how "
+        f"much came back from index: {current_count}"
+    )
+
+
 @pytest.fixture
 def source_index(movies_dataframe: pd.DataFrame) -> str:
     with container_context(
@@ -102,14 +131,32 @@ def source_index(movies_dataframe: pd.DataFrame) -> str:
                 )
                 movie.save(using=client)
             wait_for_write(
-                client=client, index_name=INDEX_NAME, expected_count=len(movies_dataframe)
+                client=client, index_name=SOURCE_INDEX_NAME, expected_count=len(movies_dataframe)
             )
-        yield INDEX_NAME
+        yield SOURCE_INDEX_NAME
+
+
+@pytest.fixture
+def destination_index(elements_mapping: dict) -> str:
+    with container_context(
+        image="opensearchproject/opensearch:2.11.1",
+        ports={9200: 9200, 9600: 9600},
+        environment={"discovery.type": "single-node"},
+        healthcheck=HealthCheck(
+            test="curl --fail https://localhost:9200/_cat/health -ku 'admin:admin' >/dev/null || exit 1",  # noqa: E501
+            interval=1,
+        ),
+    ):
+        with get_client() as client:
+            response = client.indices.create(index=DESTINATION_INDEX_NAME, body=elements_mapping)
+            if not response["acknowledged"]:
+                raise RuntimeError(f"failed to create index: {response}")
+        yield DESTINATION_INDEX_NAME
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-async def test_opensearch_source(source_index, movies_dataframe: pd.DataFrame):
+async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFrame):
     indexer_config = OpenSearchIndexerConfig(index_name=source_index)
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
@@ -137,3 +184,46 @@ async def test_opensearch_source(source_index, movies_dataframe: pd.DataFrame):
                 validate_downloaded_files=True,
             ),
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_opensearch_destination(
+    upload_file: Path,
+    destination_index: str,
+    tmp_path: Path,
+):
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    stager = OpenSearchUploadStager(
+        upload_stager_config=OpenSearchUploadStagerConfig(index_name=destination_index)
+    )
+
+    uploader = OpenSearchUploader(
+        connection_config=connection_config,
+        upload_config=OpenSearchUploaderConfig(index_name=destination_index),
+    )
+    staged_filepath = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+    uploader.precheck()
+    uploader.run(path=staged_filepath, file_data=file_data)
+
+    # Run validation
+    with staged_filepath.open() as f:
+        staged_elements = json.load(f)
+    expected_count = len(staged_elements)
+    with get_client() as client:
+        validate_count(client=client, expected_count=expected_count, index_name=destination_index)
