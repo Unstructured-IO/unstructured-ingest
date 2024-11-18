@@ -10,8 +10,8 @@ from redis.asyncio import Redis, from_url
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.redis import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
-from unstructured_ingest.v2.processes.connectors.redis import (
+from unstructured_ingest.v2.processes.connectors.redisdb import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from unstructured_ingest.v2.processes.connectors.redisdb import (
     RedisAccessConfig,
     RedisConnectionConfig,
     RedisUploader,
