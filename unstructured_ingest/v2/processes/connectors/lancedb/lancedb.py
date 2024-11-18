@@ -12,6 +12,8 @@ import pandas as pd
 from pydantic import Field
 
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.connector import ConnectionConfig
 from unstructured_ingest.v2.interfaces.file_data import FileData
@@ -92,15 +94,9 @@ class LanceDBUploadStager(UploadStager):
         return output_path
 
     def _conform_element_contents(self, element: dict) -> dict:
-        metadata = element.pop("metadata")
-        data_sources = metadata.pop("data_sources", {})
-        coordinates = metadata.pop("coordinates", {})
         return {
             "vector": element.pop("embeddings", None),
-            **metadata,
-            **data_sources,
-            **coordinates,
-            **element,
+            **flatten_dict(element, separator="-"),
         }
 
 
@@ -113,6 +109,15 @@ class LanceDBUploader(Uploader):
     upload_config: LanceDBUploaderConfig
     connection_config: LanceDBConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+
+    @DestinationConnectionError.wrap
+    def precheck(self):
+        async def _precheck() -> None:
+            async with self.connection_config.get_async_connection() as conn:
+                table = await conn.open_table(self.upload_config.table_name)
+                table.close()
+
+        asyncio.run(_precheck())
 
     async def run_async(self, path, file_data, **kwargs):
         df = pd.read_feather(path)
@@ -130,18 +135,20 @@ class LanceDBUploader(Uploader):
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
 
+        if columns_to_drop:
+            logger.info(
+                "Following columns will be dropped to match the table's schema: "
+                f"{', '.join(columns_to_drop)}"
+            )
+        if missing_columns:
+            logger.info(
+                "Following null filled columns will be added to match the table's schema:"
+                f" {', '.join(missing_columns)} "
+            )
+
         df = df.drop(columns=columns_to_drop)
 
         for column in missing_columns:
             df[column] = pd.Series()
 
         return df
-
-    @DestinationConnectionError.wrap
-    def precheck(self):
-        async def _precheck() -> None:
-            async with self.connection_config.get_async_connection() as conn:
-                table = await conn.open_table(self.upload_config.table_name)
-                table.close()
-
-        asyncio.run(_precheck())

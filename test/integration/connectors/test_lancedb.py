@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Union
 
 import lancedb
 import pandas as pd
+import pyarrow as pa
 import pytest
 import pytest_asyncio
 from lancedb import AsyncConnection
-from lancedb.pydantic import LanceModel, Vector
 from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
@@ -42,7 +42,7 @@ DATABASE_NAME = "database"
 TABLE_NAME = "elements"
 DIMENSION = 384
 NUMBER_EXPECTED_ROWS = 22
-NUMBER_EXPECTED_COLUMNS = 9
+NUMBER_EXPECTED_COLUMNS = 10
 S3_BUCKET = "s3://utic-ingest-test-fixtures/"
 GS_BUCKET = "gs://utic-test-ingest-fixtures-output/"
 AZURE_BUCKET = "az://utic-ingest-test-fixtures-output/"
@@ -54,16 +54,20 @@ REQUIRED_ENV_VARS = {
 }
 
 
-class TableSchema(LanceModel):
-    vector: Vector(DIMENSION)  # type: ignore
-    text: Optional[str]
-    element_id: Optional[str]
-    text_as_html: Optional[str]
-    file_type: Optional[str]
-    filename: Optional[str]
-    type: Optional[str]
-    is_continuation: Optional[bool]
-    page_number: Optional[int]
+SCHEMA = pa.schema(
+    [
+        pa.field("vector", pa.list_(pa.float16(), DIMENSION)),
+        pa.field("text", pa.string(), nullable=True),
+        pa.field("type", pa.string(), nullable=True),
+        pa.field("element_id", pa.string(), nullable=True),
+        pa.field("metadata-text_as_html", pa.string(), nullable=True),
+        pa.field("metadata-filetype", pa.string(), nullable=True),
+        pa.field("metadata-filename", pa.string(), nullable=True),
+        pa.field("metadata-languages", pa.list_(pa.string()), nullable=True),
+        pa.field("metadata-is_continuation", pa.bool_(), nullable=True),
+        pa.field("metadata-page_number", pa.int32(), nullable=True),
+    ]
+)
 
 
 @pytest_asyncio.fixture
@@ -92,7 +96,7 @@ async def connection_with_uri(request, tmp_path: Path):
         uri=uri,
         storage_options=storage_options,
     )
-    await connection.create_table(name=TABLE_NAME, schema=TableSchema)
+    await connection.create_table(name=TABLE_NAME, schema=SCHEMA)
 
     yield connection, uri
 
@@ -132,8 +136,8 @@ async def test_lancedb_destination(
 
     assert table_df["element_id"][0] == "2470d8dc42215b3d68413b55bf00fed2"
     assert table_df["type"][0] == "CompositeElement"
-    assert table_df["filename"][0] == "DA-1p-with-duplicate-pages.pdf.json"
-    assert table_df["text_as_html"][0] is None
+    assert table_df["metadata-filename"][0] == "DA-1p-with-duplicate-pages.pdf.json"
+    assert table_df["metadata-text_as_html"][0] is None
 
 
 def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path) -> str:
