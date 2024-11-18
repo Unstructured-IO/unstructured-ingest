@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.__version__ import __version__ as unstructured_io_ingest_version
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -101,7 +102,12 @@ class MotherDuckUploader(Uploader):
         import duckdb
 
         access_config = self.connection_config.access_config.get_secret_value()
-        conn = duckdb.connect(f"md:?motherduck_token={access_config.md_token}")
+        conn = duckdb.connect(
+            f"md:?motherduck_token={access_config.md_token}",
+            config={
+                "custom_user_agent": f"unstructured-io-ingest/{unstructured_io_ingest_version}"
+            },
+        )
 
         conn.sql(f"USE {self.connection_config.database}")
 
