@@ -1,7 +1,9 @@
-## 0.3.0-dev0
+## 0.3.1-dev1
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
+* **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+
 ## 0.3.0
 
 ### Enhancements

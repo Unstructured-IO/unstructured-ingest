@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "pinecone"
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_POOL_THREADS = 100
+MAX_METADATA_BYTES = 40960  # 40KB https://docs.pinecone.io/reference/quotas-and-limits#hard-limits
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -133,6 +134,13 @@ class PineconeUploadStager(UploadStager):
             remove_none=True,
         )
         metadata[RECORD_ID_LABEL] = file_data.identifier
+        metadata_size_bytes = len(json.dumps(metadata).encode())
+        if metadata_size_bytes > MAX_METADATA_BYTES:
+            logger.info(
+                f"Metadata size is {metadata_size_bytes} bytes, which exceeds the limit of"
+                f" {MAX_METADATA_BYTES} bytes per vector. Dropping the metadata."
+            )
+            metadata = {}
 
         return {
             "id": str(uuid.uuid4()),
