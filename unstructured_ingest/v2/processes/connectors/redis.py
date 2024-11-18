@@ -1,38 +1,29 @@
 import json
 import shutil
-import sys
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
-from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
 from redis import exceptions as redis_exceptions
 
-from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    FileDataSourceMetadata,
     Uploader,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import (
-    DestinationRegistryEntry,
-    SourceRegistryEntry,
-)
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
-    import redis
+    from redis.asyncio import Redis
 
 CONNECTOR_TYPE = "redis"
 SERVER_API_VERSION = "1"
@@ -153,11 +144,12 @@ class RedisUploader(Uploader):
             redis_stack = True
             try:
                 pipeline.json().set(element_id, "$", first_element)
-                res = pipeline.execute()
+                pipeline.execute()
             except redis_exceptions.ResponseError:
-                # if redis server doesn't have stack extension, then cannot save as JSON type, save as string instead
+                # if redis server doesn't have stack extension,
+                # then cannot save as JSON type, save as string instead
                 pipeline.set(element_id, json.dumps(first_element))
-                res = pipeline.execute()
+                pipeline.execute()
                 redis_stack = False
 
             for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
@@ -167,7 +159,7 @@ class RedisUploader(Uploader):
                         pipeline.json().set(element_id, "$", element)
                     else:
                         pipeline.set(element_id, json.dumps(element))
-                res = pipeline.execute()
+                pipeline.execute()
             client.close()
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
@@ -188,7 +180,8 @@ class RedisUploader(Uploader):
                 try:
                     await pipe.json().set(element_id, "$", first_element).execute()
                 except redis_exceptions.ResponseError:
-                    # if redis server doesn't have stack extension, then cannot save as JSON type, save as string instead
+                    # if redis server doesn't have stack extension,
+                    # then cannot save as JSON type, save as string instead
                     await pipe.set(element_id, json.dumps(first_element)).execute()
                     redis_stack = False
 

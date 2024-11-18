@@ -1,26 +1,21 @@
 import json
-import uuid
-from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 from test.integration.connectors.utils.constants import DESTINATION_TAG
-from test.integration.connectors.utils.docker import container_context
-from typing import AsyncGenerator, Optional
+from typing import Optional
 
 import numpy as np
 import pytest
 from redis import exceptions as redis_exceptions
 from redis.asyncio import Redis, from_url
 
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.redis import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from unstructured_ingest.v2.interfaces.file_data import (FileData,
+                                                         SourceIdentifiers)
+from unstructured_ingest.v2.processes.connectors.redis import \
+    CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
 from unstructured_ingest.v2.processes.connectors.redis import (
-    RedisAccessConfig,
-    RedisConnectionConfig,
-    RedisUploader,
-    RedisUploaderConfig,
-    RedisUploadStager,
-    RedisUploadStagerConfig,
-)
+    RedisAccessConfig, RedisConnectionConfig, RedisUploader,
+    RedisUploaderConfig, RedisUploadStager, RedisUploadStagerConfig)
 
 redis_pw = os.getenv("AZURE_REDIS_INGEST_TEST_PASSWORD", None)
 
@@ -28,7 +23,6 @@ redis_pw = os.getenv("AZURE_REDIS_INGEST_TEST_PASSWORD", None)
 async def validate_upload(client: Redis, upload_file: Path):
     with upload_file.open() as upload_fp:
         elements = json.load(upload_fp)
-    expected_point_count = len(elements)
     first_element = elements[0]
     element_id = first_element["element_id"]
     expected_text = first_element["text"]
