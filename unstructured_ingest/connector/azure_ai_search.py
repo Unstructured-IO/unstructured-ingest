@@ -19,28 +19,28 @@ if t.TYPE_CHECKING:
 
 
 @dataclass
-class AzureCognitiveSearchAccessConfig(AccessConfig):
+class AzureAiSearchAccessConfig(AccessConfig):
     key: str = enhanced_field(sensitive=True)
 
 
 @dataclass
-class SimpleAzureCognitiveSearchStorageConfig(BaseConnectorConfig):
+class SimpleAzureAISearchStorageConfig(BaseConnectorConfig):
     endpoint: str
-    access_config: AzureCognitiveSearchAccessConfig
+    access_config: AzureAiSearchAccessConfig
 
 
 @dataclass
-class AzureCognitiveSearchWriteConfig(WriteConfig):
+class AzureAISearchWriteConfig(WriteConfig):
     index: str
 
 
 @dataclass
-class AzureCognitiveSearchDestinationConnector(BaseDestinationConnector):
-    write_config: AzureCognitiveSearchWriteConfig
-    connector_config: SimpleAzureCognitiveSearchStorageConfig
+class AzureAISearchDestinationConnector(BaseDestinationConnector):
+    write_config: AzureAISearchWriteConfig
+    connector_config: SimpleAzureAISearchStorageConfig
     _client: t.Optional["SearchClient"] = field(init=False, default=None)
 
-    @requires_dependencies(["azure.search"], extras="azure-cognitive-search")
+    @requires_dependencies(["azure.search"], extras="azure-ai-search")
     def generate_client(self) -> "SearchClient":
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
@@ -112,7 +112,7 @@ class AzureCognitiveSearchDestinationConnector(BaseDestinationConnector):
         if page_number := data.get("metadata", {}).get("page_number"):
             data["metadata"]["page_number"] = str(page_number)
 
-    @requires_dependencies(["azure"], extras="azure-cognitive-search")
+    @requires_dependencies(["azure"], extras="azure-ai-search")
     def write_dict(self, *args, elements_dict: t.List[t.Dict[str, t.Any]], **kwargs) -> None:
         import azure.core.exceptions
 

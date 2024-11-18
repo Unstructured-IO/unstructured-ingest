@@ -69,7 +69,7 @@ response_code=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
   "https://utic-test-ingest-fixtures.search.windows.net/indexes/$DESTINATION_INDEX?api-version=$API_VERSION" \
   --header "api-key: $AZURE_SEARCH_API_KEY" \
   --header 'content-type: application/json' \
-  --data "@$SCRIPT_DIR/files/azure_cognitive_index_schema.json")
+  --data "@$SCRIPT_DIR/files/azure_ai_index_schema.json")
 
 if [ "$response_code" -lt 400 ]; then
   echo "Index creation success: $response_code"
@@ -101,7 +101,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --chunking-strategy by_title \
   --chunk-multipage-sections \
   --work-dir "$WORK_DIR" \
-  azure-cognitive-search \
+  azure-ai-search \
   --key "$AZURE_SEARCH_API_KEY" \
   --endpoint "$AZURE_SEARCH_ENDPOINT" \
   --index "$DESTINATION_INDEX"
