@@ -205,15 +205,8 @@ def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
     try:
         uploader.run(staged_file, file_data)
     except DestinationConnectionError as e:
-        if (
-            re.search(
-                re.compile(
-                    r"Metadata size is \d+ bytes, which exceeds the limit of \d+ bytes per vector"
-                ),
-                str(e),
-            )
-            is None
-        ):
+        error_line = r"Metadata size is \d+ bytes, which exceeds the limit of \d+ bytes per vector"
+        if re.search(re.compile(error_line), str(e)) is None:
             raise e
         raise pytest.fail("Upload request failed due to metadata exceeding limits.")
 
