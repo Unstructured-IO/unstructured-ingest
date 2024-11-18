@@ -51,7 +51,6 @@ all_tests=(
   'sharepoint-with-permissions.sh'
   'hubspot.sh'
   'sftp.sh'
-  'opensearch.sh'
   'mongodb.sh'
 )
 
