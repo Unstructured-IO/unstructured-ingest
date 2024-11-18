@@ -171,6 +171,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
 
 
 @requires_env(API_KEY)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
     stager = PineconeUploadStager()
     uploader = PineconeUploader(
