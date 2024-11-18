@@ -1,4 +1,5 @@
 import json
+import shutil
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -7,6 +8,7 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
+from redis import exceptions as redis_exceptions
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError
@@ -28,8 +30,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
-import shutil
-from redis import exceptions as redis_exceptions
 
 if TYPE_CHECKING:
     import redis
@@ -37,17 +37,22 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "redis"
 SERVER_API_VERSION = "1"
 
+
 class RedisAccessConfig(AccessConfig):
-    uri: Optional[str] = Field(default=None, description="If not anonymous, use this uri, if specified.")
-    password: Optional[str] = Field(default=None, description="If not anonymous, use this password, if specified.")
+    uri: Optional[str] = Field(
+        default=None, description="If not anonymous, use this uri, if specified."
+    )
+    password: Optional[str] = Field(
+        default=None, description="If not anonymous, use this password, if specified."
+    )
+
 
 class RedisConnectionConfig(ConnectionConfig):
     access_config: Secret[RedisAccessConfig] = Field(
         default=RedisAccessConfig(), validate_default=True
     )
     host: Optional[str] = Field(
-        default=None,
-        description="hostname or IP address of a single redis instance to connect to"
+        default=None, description="hostname or IP address of a single redis instance to connect to"
     )
     database: Optional[int] = Field(default=0, description="database index to connect to")
     port: Optional[int] = Field(default=6379)
@@ -55,8 +60,10 @@ class RedisConnectionConfig(ConnectionConfig):
     ssl: Optional[bool] = Field(default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+
 class RedisUploadStagerConfig(UploadStagerConfig):
     pass
+
 
 @dataclass
 class RedisUploadStager(UploadStager):
@@ -80,6 +87,7 @@ class RedisUploadStager(UploadStager):
 class RedisUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
 
+
 @dataclass
 class RedisUploader(Uploader):
     upload_config: RedisUploaderConfig
@@ -91,7 +99,7 @@ class RedisUploader(Uploader):
 
     def precheck(self) -> None:
         if not self.connection_config.access_config.uri and not self.connection_config.host:
-            raise ValueError('Please pass a hostname either directly or through uri')
+            raise ValueError("Please pass a hostname either directly or through uri")
 
         try:
             client = self.create_client()
@@ -110,9 +118,7 @@ class RedisUploader(Uploader):
         access_config = self.connection_config.access_config.get_secret_value()
 
         if access_config.uri:
-            return from_url(
-                access_config.uri
-            )
+            return from_url(access_config.uri)
         elif access_config.password:
             return Redis(
                 host=self.connection_config.host,
@@ -130,10 +136,10 @@ class RedisUploader(Uploader):
             )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        
+
         with path.open("r") as file:
             elements_dict = json.load(file)
-        
+
         if elements_dict:
             logger.info(
                 f"writing {len(elements_dict)} objects to destination, "
@@ -143,7 +149,7 @@ class RedisUploader(Uploader):
             client = self.create_client(async_flag=False)
             pipeline = client.pipeline()
             first_element = elements_dict[0]
-            element_id = first_element['element_id']
+            element_id = first_element["element_id"]
             redis_stack = True
             try:
                 pipeline.json().set(element_id, "$", first_element)
@@ -156,7 +162,7 @@ class RedisUploader(Uploader):
 
             for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
                 for element in chunk:
-                    element_id = element['element_id']
+                    element_id = element["element_id"]
                     if redis_stack:
                         pipeline.json().set(element_id, "$", element)
                     else:
@@ -177,7 +183,7 @@ class RedisUploader(Uploader):
             client = await self.create_client(async_flag=True)
             async with client.pipeline(transaction=True) as pipe:
                 first_element = elements_dict[0]
-                element_id = first_element['element_id']
+                element_id = first_element["element_id"]
                 redis_stack = True
                 try:
                     await pipe.json().set(element_id, "$", first_element).execute()
@@ -188,13 +194,14 @@ class RedisUploader(Uploader):
 
                 for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
                     for element in chunk:
-                        element_id = element['element_id']
+                        element_id = element["element_id"]
                         if redis_stack:
                             pipe.json().set(element_id, "$", element)
                         else:
                             pipe.set(element_id, json.dumps(element))
                     await pipe.execute()
             await client.aclose()
+
 
 redis_destination_entry = DestinationRegistryEntry(
     connection_config=RedisConnectionConfig,
@@ -203,5 +210,3 @@ redis_destination_entry = DestinationRegistryEntry(
     upload_stager=RedisUploadStager,
     upload_stager_config=RedisUploadStagerConfig,
 )
-        
-        
