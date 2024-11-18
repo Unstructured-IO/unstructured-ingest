@@ -104,7 +104,7 @@ def validate_count(
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-async def test_azure_ai_search_destination(
+async def test_milvus_destination(
     upload_file: Path,
     collection: str,
     tmp_path: Path,
