@@ -2,6 +2,7 @@ import hashlib
 import json
 import sys
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
@@ -26,6 +27,7 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -116,19 +118,12 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
         return client_kwargs
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
-    def get_client(self) -> "ElasticsearchClient":
+    @contextmanager
+    def get_client(self) -> Generator["ElasticsearchClient", None, None]:
         from elasticsearch import Elasticsearch as ElasticsearchClient
 
-        client = ElasticsearchClient(**self.get_client_kwargs())
-        self.check_connection(client=client)
-        return client
-
-    def check_connection(self, client: "ElasticsearchClient"):
-        try:
-            client.perform_request("HEAD", "/", headers={"accept": "application/json"})
-        except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+        with ElasticsearchClient(**self.get_client_kwargs()) as client:
+            yield client
 
 
 class ElasticsearchIndexerConfig(IndexerConfig):
@@ -144,7 +139,9 @@ class ElasticsearchIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.get_client()
+            with self.connection_config.get_client() as client:
+                if not client.ping():
+                    raise SourceConnectionError("cluster not detected")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -160,13 +157,13 @@ class ElasticsearchIndexer(Indexer):
         scan = self.load_scan()
 
         scan_query: dict = {"stored_fields": [], "query": {"match_all": {}}}
-        client = self.connection_config.get_client()
-        hits = scan(
-            client,
-            query=scan_query,
-            scroll="1m",
-            index=self.index_config.index_name,
-        )
+        with self.connection_config.get_client() as client:
+            hits = scan(
+                client,
+                query=scan_query,
+                scroll="1m",
+                index=self.index_config.index_name,
+            )
 
         return {hit["_id"] for hit in hits}
 
@@ -257,6 +254,7 @@ class ElasticsearchDownloader(Downloader):
             file_data=FileData(
                 identifier=filename_id,
                 connector_type=CONNECTOR_TYPE,
+                source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
                 metadata=FileDataSourceMetadata(
                     version=str(result["_version"]) if "_version" in result else None,
                     date_processed=str(time()),
@@ -373,7 +371,9 @@ class ElasticsearchUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.get_client()
+            with self.connection_config.get_client() as client:
+                if not client.ping():
+                    raise DestinationConnectionError("cluster not detected")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -397,28 +397,28 @@ class ElasticsearchUploader(Uploader):
             f"{self.upload_config.num_threads} (number of) threads"
         )
 
-        client = self.connection_config.get_client()
-        if not client.indices.exists(index=self.upload_config.index_name):
-            logger.warning(
-                f"{(self.__class__.__name__).replace('Uploader', '')} index does not exist: "
-                f"{self.upload_config.index_name}. "
-                f"This may cause issues when uploading."
-            )
-        for batch in generator_batching_wbytes(
-            elements_dict, batch_size_limit_bytes=self.upload_config.batch_size_bytes
-        ):
-            for success, info in parallel_bulk(
-                client=client,
-                actions=batch,
-                thread_count=self.upload_config.num_threads,
+        with self.connection_config.get_client() as client:
+            if not client.indices.exists(index=self.upload_config.index_name):
+                logger.warning(
+                    f"{(self.__class__.__name__).replace('Uploader', '')} index does not exist: "
+                    f"{self.upload_config.index_name}. "
+                    f"This may cause issues when uploading."
+                )
+            for batch in generator_batching_wbytes(
+                elements_dict, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
-                if not success:
-                    logger.error(
-                        "upload failed for a batch in "
-                        f"{(self.__class__.__name__).replace('Uploader', '')} "
-                        "destination connector:",
-                        info,
-                    )
+                for success, info in parallel_bulk(
+                    client=client,
+                    actions=batch,
+                    thread_count=self.upload_config.num_threads,
+                ):
+                    if not success:
+                        logger.error(
+                            "upload failed for a batch in "
+                            f"{(self.__class__.__name__).replace('Uploader', '')} "
+                            "destination connector:",
+                            info,
+                        )
 
 
 elasticsearch_source_entry = SourceRegistryEntry(
