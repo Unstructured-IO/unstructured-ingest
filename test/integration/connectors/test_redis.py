@@ -22,8 +22,6 @@ from unstructured_ingest.v2.processes.connectors.redisdb import (
     RedisUploadStagerConfig,
 )
 
-redis_pw = os.getenv("AZURE_REDIS_INGEST_TEST_PASSWORD", None)
-
 
 async def validate_upload(client: Redis, upload_file: Path):
     with upload_file.open() as upload_fp:
@@ -102,13 +100,14 @@ async def test_redis_destination_azure_with_password(upload_file: Path, tmp_path
         "db": 0,
         "ssl": True,
     }
-    password = redis_pw
-    await redis_destination_test(upload_file, tmp_path, connection_kwargs, password=password)
+    redis_pw = os.environ["AZURE_REDIS_INGEST_TEST_PASSWORD"]
+    await redis_destination_test(upload_file, tmp_path, connection_kwargs, password=redis_pw)
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG, "redis")
 async def test_redis_destination_azure_with_uri(upload_file: Path, tmp_path: Path):
     connection_kwargs = {}
+    redis_pw = os.environ["AZURE_REDIS_INGEST_TEST_PASSWORD"]
     uri = f"rediss://:{redis_pw}@utic-dashboard-dev.redis.cache.windows.net:6380/0"
     await redis_destination_test(upload_file, tmp_path, connection_kwargs, uri=uri)
