@@ -1,5 +1,6 @@
 import json
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -46,6 +47,23 @@ def docker_compose_ctx():
         yield ctx
 
 
+def wait_for_topic(topic: str, retries: int = 10, interval: int = 1):
+    admin_client = get_admin_client()
+    current_topics = admin_client.list_topics()
+    attempts = 0
+    while topic not in current_topics and attempts < retries:
+        attempts += 1
+        print(
+            "Attempt {}: Waiting for topic {} to exist in {}".format(
+                attempts, topic, ", ".join(current_topics)
+            )
+        )
+        time.sleep(interval)
+        current_topics = admin_client.list_topics()
+    if topic not in current_topics:
+        raise TimeoutError(f"Timeout out waiting for topic {topic} to exist")
+
+
 @pytest.fixture
 def kafka_seed_topic(docker_compose_ctx) -> str:
     conf = {
@@ -57,8 +75,7 @@ def kafka_seed_topic(docker_compose_ctx) -> str:
         producer.produce(topic=TOPIC, value=message)
     producer.flush(timeout=10)
     print(f"kafka topic {TOPIC} seeded with {SEED_MESSAGES} messages")
-    admin_client = get_admin_client()
-    assert TOPIC in admin_client.list_topics().topics
+    wait_for_topic(topic=TOPIC)
     return TOPIC
 
 
