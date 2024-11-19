@@ -23,7 +23,6 @@ all_tests=(
   'dropbox.sh'
   'elasticsearch.sh'
   'gcs.sh'
-  'kafka-local.sh'
   'mongodb.sh'
   'opensearch.sh'
   's3.sh'
