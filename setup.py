@@ -114,6 +114,7 @@ connectors_reqs = {
     "postgres": load_requirements("requirements/connectors/postgres.in"),
     "qdrant": load_requirements("requirements/connectors/qdrant.in"),
     "reddit": load_requirements("requirements/connectors/reddit.in"),
+    "redis": load_requirements("requirements/connectors/redis.in"),
     "s3": load_requirements("requirements/connectors/s3.in"),
     "sharepoint": load_requirements("requirements/connectors/sharepoint.in"),
     "salesforce": load_requirements("requirements/connectors/salesforce.in"),
