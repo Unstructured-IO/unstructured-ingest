@@ -19,8 +19,6 @@ from unstructured_ingest.v2.processes.connectors.redisdb import (
     RedisConnectionConfig,
     RedisUploader,
     RedisUploaderConfig,
-    RedisUploadStager,
-    RedisUploadStagerConfig,
 )
 
 
@@ -56,9 +54,6 @@ async def redis_destination_test(
     uri: Optional[str] = None,
     password: Optional[str] = None,
 ):
-    stager = RedisUploadStager(
-        upload_stager_config=RedisUploadStagerConfig(),
-    )
     uploader = RedisUploader(
         connection_config=RedisConnectionConfig(
             **connection_kwargs, access_config=RedisAccessConfig(uri=uri, password=password)
@@ -72,17 +67,8 @@ async def redis_destination_test(
         identifier="mock-file-data",
     )
 
-    staged_upload_file = stager.run(
-        elements_filepath=upload_file,
-        file_data=file_data,
-        output_dir=tmp_path,
-        output_filename=upload_file.name,
-    )
-
     if uploader.is_async():
-        await uploader.run_async(path=staged_upload_file, file_data=file_data)
-    else:
-        uploader.run(path=upload_file, file_data=file_data)
+        await uploader.run_async(path=upload_file, file_data=file_data)
 
     if uri:
         async with from_url(uri) as client:

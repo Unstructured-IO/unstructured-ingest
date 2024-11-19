@@ -1,8 +1,8 @@
 import json
-import shutil
-from dataclasses import dataclass, field
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 from pydantic import Field, Secret
 
@@ -15,14 +15,14 @@ from unstructured_ingest.v2.interfaces import (
     FileData,
     Uploader,
     UploaderConfig,
-    UploadStager,
-    UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
+
+import asyncio
 
 CONNECTOR_TYPE = "redis"
 SERVER_API_VERSION = "1"
@@ -42,36 +42,38 @@ class RedisConnectionConfig(ConnectionConfig):
         default=RedisAccessConfig(), validate_default=True
     )
     host: Optional[str] = Field(
-        default=None, description="hostname or IP address of a single redis instance to connect to"
+        default=None, description="Hostname or IP address of a Redis instance to connect to."
     )
-    database: Optional[int] = Field(default=0, description="database index to connect to")
-    port: Optional[int] = Field(default=6379)
-    username: Optional[str] = Field(default=None)
-    ssl: Optional[bool] = Field(default=True)
+    database: Optional[int] = Field(default=0, description="Database index to connect to.")
+    port: Optional[int] = Field(default=6379, description="port used to connect to database.")
+    username: Optional[str] = Field(
+        default=None, description="Username used to connect to database."
+    )
+    ssl: Optional[bool] = Field(
+        default=True, description="Whether the connection should use SSL encryption."
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    @requires_dependencies(["redis"], extras="redis")
+    @asynccontextmanager
+    async def create_client(self) -> AsyncGenerator["Redis", None]:
+        from redis.asyncio import Redis, from_url
 
-class RedisUploadStagerConfig(UploadStagerConfig):
-    pass
+        access_config = self.access_config.get_secret_value()
+        options = {"host": self.host, "port": self.port, "db": self.database, "ssl": self.ssl}
 
+        if access_config.uri:
+            client = from_url(access_config.uri)
+        elif access_config.password:
+            options["password"] = access_config.password
+            client = Redis(**options)
+        else:
+            client = Redis(**options)
 
-@dataclass
-class RedisUploadStager(UploadStager):
-    upload_stager_config: RedisUploadStagerConfig = field(
-        default_factory=lambda: RedisUploadStagerConfig()
-    )
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        shutil.copy(elements_filepath, output_path)
-        return output_path
+        try:
+            yield client
+        finally:
+            await client.aclose()
 
 
 class RedisUploaderConfig(UploaderConfig):
@@ -91,77 +93,15 @@ class RedisUploader(Uploader):
         if not self.connection_config.access_config.uri and not self.connection_config.host:
             raise ValueError("Please pass a hostname either directly or through uri")
 
+        async def check_connection():
+            async with self.connection_config.create_client() as async_client:
+                await async_client.ping()
+
         try:
-            client = self.create_client()
-            client.ping()
+            asyncio.run(check_connection())
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    @requires_dependencies(["redis"], extras="redis")
-    def create_client(self, async_flag=Field(default=True)) -> "Redis":
-        if async_flag:
-            from redis.asyncio import Redis, from_url
-        else:
-            from redis import Redis, from_url
-
-        access_config = self.connection_config.access_config.get_secret_value()
-
-        if access_config.uri:
-            return from_url(access_config.uri)
-        elif access_config.password:
-            return Redis(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                db=self.connection_config.database,
-                password=access_config.password,
-                ssl=self.connection_config.ssl,
-            )
-        else:
-            return Redis(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                db=self.connection_config.database,
-                ssl=self.connection_config.ssl,
-            )
-
-    @requires_dependencies(["redis"], extras="redis")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from redis import exceptions as redis_exceptions
-
-        with path.open("r") as file:
-            elements_dict = json.load(file)
-
-        if elements_dict:
-            logger.info(
-                f"writing {len(elements_dict)} objects to destination, "
-                f"db, {self.connection_config.database}, "
-                f"at {self.connection_config.host}",
-            )
-            client = self.create_client(async_flag=False)
-            pipeline = client.pipeline()
-            first_element = elements_dict[0]
-            element_id = first_element["element_id"]
-            redis_stack = True
-            try:
-                pipeline.json().set(element_id, "$", first_element)
-                pipeline.execute()
-            except redis_exceptions.ResponseError:
-                # if redis server doesn't have stack extension,
-                # then cannot save as JSON type, save as string instead
-                pipeline.set(element_id, json.dumps(first_element))
-                pipeline.execute()
-                redis_stack = False
-
-            for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
-                for element in chunk:
-                    element_id = element["element_id"]
-                    if redis_stack:
-                        pipeline.json().set(element_id, "$", element)
-                    else:
-                        pipeline.set(element_id, json.dumps(element))
-                pipeline.execute()
-            client.close()
 
     @requires_dependencies(["redis"], extras="redis")
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
@@ -176,34 +116,36 @@ class RedisUploader(Uploader):
                 f"db, {self.connection_config.database}, "
                 f"at {self.connection_config.host}",
             )
-            client = await self.create_client(async_flag=True)
-            async with client.pipeline(transaction=True) as pipe:
-                first_element = elements_dict[0]
-                element_id = first_element["element_id"]
-                redis_stack = True
-                try:
-                    await pipe.json().set(element_id, "$", first_element).execute()
-                except redis_exceptions.ResponseError:
-                    # if redis server doesn't have stack extension,
-                    # then cannot save as JSON type, save as string instead
-                    await pipe.set(element_id, json.dumps(first_element)).execute()
-                    redis_stack = False
-
-                for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
-                    for element in chunk:
-                        element_id = element["element_id"]
-                        if redis_stack:
-                            pipe.json().set(element_id, "$", element)
+            async with self.connection_config.create_client() as async_client:
+                async with async_client.pipeline(transaction=True) as pipe:
+                    first_element = elements_dict[0]
+                    element_id = first_element["element_id"]
+                    redis_stack = True
+                    try:
+                        # Redis with stack extension supports JSON type
+                        await pipe.json().set(element_id, "$", first_element).execute()
+                    except redis_exceptions.ResponseError as e:
+                        message = str(e)
+                        if "unknown command `JSON.SET`" in message:
+                            # if this error occurs, Redis server doesn't support JSON type,
+                            # so save as string type instead
+                            await pipe.set(element_id, json.dumps(first_element)).execute()
+                            redis_stack = False
                         else:
-                            pipe.set(element_id, json.dumps(element))
-                    await pipe.execute()
-            await client.aclose()
+                            raise e
+
+                    for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
+                        for element in chunk:
+                            element_id = element["element_id"]
+                            if redis_stack:
+                                pipe.json().set(element_id, "$", element)
+                            else:
+                                pipe.set(element_id, json.dumps(element))
+                        await pipe.execute()
 
 
 redis_destination_entry = DestinationRegistryEntry(
     connection_config=RedisConnectionConfig,
     uploader=RedisUploader,
     uploader_config=RedisUploaderConfig,
-    upload_stager=RedisUploadStager,
-    upload_stager_config=RedisUploadStagerConfig,
 )
