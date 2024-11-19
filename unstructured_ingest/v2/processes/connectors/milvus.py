@@ -155,6 +155,7 @@ class MilvusUploader(Uploader):
     upload_config: MilvusUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @DestinationConnectionError.wrap
     def precheck(self):
         client = self.connection_config.get_client()
         if not client.has_collection(self.upload_config.collection_name):
