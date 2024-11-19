@@ -14,6 +14,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    WriteError,
 )
 from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -346,7 +347,12 @@ class ElasticsearchUploadStager(UploadStager):
         conformed_elements = [
             self.conform_dict(data=element, file_data=file_data) for element in elements_contents
         ]
+        if Path(output_filename).suffix != ".json":
+            output_filename = f"{output_filename}.json"
+        else:
+            output_filename = f"{Path(output_filename).stem}.json"
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as output_file:
             json.dump(conformed_elements, output_file)
         return output_path
@@ -364,6 +370,10 @@ class ElasticsearchUploaderConfig(UploaderConfig):
     )
     num_threads: int = Field(
         default=4, description="Number of threads to be used while uploading content"
+    )
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
     )
 
 
@@ -388,6 +398,23 @@ class ElasticsearchUploader(Uploader):
 
         return parallel_bulk
 
+    def delete_by_record_id(self, client, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"from {self.upload_config.index_name} index"
+        )
+        delete_resp = client.delete_by_query(
+            index=self.upload_config.index_name,
+            body={"query": {"match": {self.upload_config.record_id_key: file_data.identifier}}},
+        )
+        logger.info(
+            "deleted {} records from index {}".format(
+                delete_resp["deleted"], self.upload_config.index_name
+            )
+        )
+        if failures := delete_resp.get("failures"):
+            raise WriteError(f"failed to delete records: {failures}")
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         parallel_bulk = self.load_parallel_bulk()
         with path.open("r") as file:
@@ -402,6 +429,7 @@ class ElasticsearchUploader(Uploader):
         )
 
         with self.connection_config.get_client() as client:
+            self.delete_by_record_id(client=client, file_data=file_data)
             if not client.indices.exists(index=self.upload_config.index_name):
                 logger.warning(
                     f"{(self.__class__.__name__).replace('Uploader', '')} index does not exist: "

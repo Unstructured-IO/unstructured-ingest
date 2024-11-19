@@ -16,7 +16,7 @@ from test.integration.connectors.utils.validation import (
     source_connector_validation,
 )
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.opensearch import (
+from unstructured_ingest.v2.processes.connectors.elasticsearch.opensearch import (
     CONNECTOR_TYPE,
     OpenSearchAccessConfig,
     OpenSearchConnectionConfig,
@@ -225,5 +225,10 @@ async def test_opensearch_destination(
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
     expected_count = len(staged_elements)
+    with get_client() as client:
+        validate_count(client=client, expected_count=expected_count, index_name=destination_index)
+
+    # Rerun and make sure the same documents get updated
+    uploader.run(path=staged_filepath, file_data=file_data)
     with get_client() as client:
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)

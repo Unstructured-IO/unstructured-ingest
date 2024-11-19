@@ -17,7 +17,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
-from unstructured_ingest.v2.processes.connectors.elasticsearch import (
+from unstructured_ingest.v2.processes.connectors.elasticsearch.elasticsearch import (
     ElasticsearchDownloader,
     ElasticsearchDownloaderConfig,
     ElasticsearchIndexer,

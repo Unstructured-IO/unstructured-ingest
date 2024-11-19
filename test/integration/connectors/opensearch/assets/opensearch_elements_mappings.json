@@ -6,6 +6,9 @@
  },
    "mappings": {
       "properties": {
+         "record_id": {
+            "type": "keyword"
+         },
          "element_id": {
             "type": "keyword"
          },
