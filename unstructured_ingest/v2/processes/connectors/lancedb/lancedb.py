@@ -24,6 +24,7 @@ CONNECTOR_TYPE = "lancedb"
 
 if TYPE_CHECKING:
     from lancedb import AsyncConnection
+    from lancedb.table import AsyncTable
 
 
 class LanceDBConnectionConfig(ConnectionConfig, ABC):
@@ -119,15 +120,21 @@ class LanceDBUploader(Uploader):
 
         asyncio.run(_precheck())
 
-    async def run_async(self, path, file_data, **kwargs):
-        df = pd.read_feather(path)
-
+    @asynccontextmanager
+    async def get_table(self) -> AsyncGenerator["AsyncTable", None]:
         async with self.connection_config.get_async_connection() as conn:
             table = await conn.open_table(self.upload_config.table_name)
+            try:
+                yield table
+            finally:
+                table.close()
+
+    async def run_async(self, path, file_data, **kwargs):
+        df = pd.read_feather(path)
+        async with self.get_table() as table:
             schema = await table.schema()
             df = self._fit_to_schema(df, schema)
             await table.add(data=df)
-            table.close()
 
     def _fit_to_schema(self, df: pd.DataFrame, schema) -> pd.DataFrame:
         columns = set(df.columns)
