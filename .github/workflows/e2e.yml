@@ -42,6 +42,7 @@ jobs:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
+          make install-base
           make install-client
           make install-test
           make integration-test-${{ matrix.test }}
@@ -64,6 +65,7 @@ jobs:
           VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
           VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
         run: |
+          make install-base
           make install-all-embedders
           make install-test
           make integration-test-embedders
