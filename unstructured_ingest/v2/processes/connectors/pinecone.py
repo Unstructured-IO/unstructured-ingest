@@ -287,7 +287,6 @@ class PineconeUploader(Uploader):
             f"writing a total of {len(elements_dict)} elements via"
             f" document batches to destination"
             f" index named {self.connection_config.index_name}"
-            f" with batch size {self.upload_config.batch_size}"
         )
         # Determine if serverless or pod based index
         pinecone_client = self.connection_config.get_client()
