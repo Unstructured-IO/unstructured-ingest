@@ -195,7 +195,8 @@ class PineconeUploader(Uploader):
 
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {self.upload_config.record_id_key}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
@@ -207,13 +208,15 @@ class PineconeUploader(Uploader):
 
         resp = index.delete(**delete_kwargs)
         logger.debug(
-            f"deleted any content with metadata {self.upload_config.record_id_key}={file_data.identifier} "
+            f"deleted any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index: {resp}"
         )
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {self.upload_config.record_id_key}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
@@ -240,7 +243,8 @@ class PineconeUploader(Uploader):
                 delete_params["namespace"] = namespace
             index.delete(**delete_params)
         logger.debug(
-            f"deleted any content with metadata {self.upload_config.record_id_key}={file_data.identifier} "
+            f"deleted any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index"
         )
 
