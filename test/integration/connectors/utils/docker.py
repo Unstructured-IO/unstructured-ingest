@@ -75,7 +75,8 @@ def healthcheck_wait(container: Container, retries: int = 30, interval: int = 1)
         logs = container.attrs.get("State", {}).get("Health", {}).get("Log")
         latest_log = logs[-1] if logs else None
         print(
-            f"attempt {tries} - waiting for docker container to be healthy: {health} latest log: {latest_log}"
+            f"attempt {tries} - waiting for docker container "
+            f"to be healthy: {health} latest log: {latest_log}"
         )
         time.sleep(interval)
         container.reload()
