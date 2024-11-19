@@ -2,6 +2,7 @@
 
 ### Enhancements
 
+* **LanceDB V2 Destination Connector**
 * **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
 * **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
 
@@ -29,7 +30,6 @@
 ## 0.2.2
 
 ### Enhancements
-
 * **Remove `overwrite` field** from fsspec and databricks connectors
 * **Added migration for GitLab Source V2**
 * **Added V2 confluence source connector**
@@ -46,6 +46,7 @@
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 * **Support native async requests from unstructured-client**
 * **Support filtering element types in partitioner step**
+
 
 ### Fixes
 
