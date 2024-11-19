@@ -49,7 +49,7 @@ def docker_compose_ctx():
 
 def wait_for_topic(topic: str, retries: int = 10, interval: int = 1):
     admin_client = get_admin_client()
-    current_topics = admin_client.list_topics()
+    current_topics = admin_client.list_topics().topics
     attempts = 0
     while topic not in current_topics and attempts < retries:
         attempts += 1
@@ -59,7 +59,7 @@ def wait_for_topic(topic: str, retries: int = 10, interval: int = 1):
             )
         )
         time.sleep(interval)
-        current_topics = admin_client.list_topics()
+        current_topics = admin_client.list_topics().topics
     if topic not in current_topics:
         raise TimeoutError(f"Timeout out waiting for topic {topic} to exist")
 
