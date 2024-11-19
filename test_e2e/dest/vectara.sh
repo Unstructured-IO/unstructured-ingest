@@ -43,6 +43,9 @@ trap cleanup EXIT
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --output-dir "$OUTPUT_DIR" \
   --strategy fast \
