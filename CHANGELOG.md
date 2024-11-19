@@ -1,4 +1,8 @@
-## 0.3.1-dev1
+## 0.3.1-dev2
+
+### Enhancements
+
+* **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
