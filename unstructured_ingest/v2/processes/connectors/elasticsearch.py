@@ -17,6 +17,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -316,7 +317,7 @@ class ElasticsearchUploadStagerConfig(UploadStagerConfig):
 class ElasticsearchUploadStager(UploadStager):
     upload_stager_config: ElasticsearchUploadStagerConfig
 
-    def conform_dict(self, data: dict) -> dict:
+    def conform_dict(self, data: dict, file_data: FileData) -> dict:
         resp = {
             "_index": self.upload_stager_config.index_name,
             "_id": str(uuid.uuid4()),
@@ -325,6 +326,7 @@ class ElasticsearchUploadStager(UploadStager):
                 "embeddings": data.pop("embeddings", None),
                 "text": data.pop("text", None),
                 "type": data.pop("type", None),
+                RECORD_ID_LABEL: file_data.identifier,
             },
         }
         if "metadata" in data and isinstance(data["metadata"], dict):
@@ -341,7 +343,9 @@ class ElasticsearchUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-        conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
+        conformed_elements = [
+            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
+        ]
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         with open(output_path, "w") as output_file:
             json.dump(conformed_elements, output_file)
