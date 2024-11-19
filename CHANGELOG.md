@@ -1,4 +1,7 @@
-## 0.3.1-dev1
+## 0.3.1-dev2
+
+### Enhancements
+* **Add `precheck` to Milvus connector**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
