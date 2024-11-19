@@ -91,6 +91,8 @@ def container_context(
     docker_client: Optional[docker.DockerClient] = None,
 ):
     docker_client = docker_client or docker.from_env()
+    print(f"pulling image {image}")
+    docker_client.images.pull(image)
     container: Optional[Container] = None
     try:
         container = get_container(
