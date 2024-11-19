@@ -67,17 +67,23 @@ def has_healthcheck(container: Container) -> bool:
     return container.attrs.get("Config", {}).get("Healthcheck", None) is not None
 
 
-def healthcheck_wait(container: Container, timeout: int = 30, interval: int = 1) -> None:
+def healthcheck_wait(container: Container, retries: int = 30, interval: int = 1) -> None:
     health = container.health
-    start = time.time()
-    while health != "healthy" and time.time() - start < timeout:
-        print(f"waiting for docker container to be healthy: {health}")
+    tries = 0
+    while health != "healthy" and tries < retries:
+        tries += 1
+        logs = container.attrs.get("State", {}).get("Health", {}).get("Log")
+        latest_log = logs[-1] if logs else None
+        print(
+            f"attempt {tries} - waiting for docker container to be healthy: {health} latest log: {latest_log}"
+        )
         time.sleep(interval)
         container.reload()
         health = container.health
     if health != "healthy":
-        health_dict = container.attrs.get("State", {}).get("Health", {})
-        raise TimeoutError(f"Docker container never came up healthy: {health_dict}")
+        logs = container.attrs.get("State", {}).get("Health", {}).get("Log")
+        latest_log = logs[-1] if logs else None
+        raise TimeoutError(f"Docker container never came up healthy: {latest_log}")
 
 
 @contextmanager
@@ -87,7 +93,7 @@ def container_context(
     environment: Optional[dict] = None,
     volumes: Optional[dict] = None,
     healthcheck: Optional[HealthCheck] = None,
-    healthcheck_timeout: int = 10,
+    healthcheck_retries: int = 30,
     docker_client: Optional[docker.DockerClient] = None,
 ):
     docker_client = docker_client or docker.from_env()
@@ -104,7 +110,7 @@ def container_context(
             healthcheck=healthcheck,
         )
         if has_healthcheck(container):
-            healthcheck_wait(container=container, timeout=healthcheck_timeout)
+            healthcheck_wait(container=container, retries=healthcheck_retries)
         yield container
     except AssertionError as e:
         if container:

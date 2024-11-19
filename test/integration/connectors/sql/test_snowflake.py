@@ -86,7 +86,7 @@ async def test_snowflake_source():
         image="localstack/snowflake",
         environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
         ports={4566: 4566, 443: 443},
-        healthcheck_timeout=30,
+        healthcheck_retries=30,
     ):
         seed_data()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -156,7 +156,7 @@ async def test_snowflake_destination(upload_file: Path):
         image="localstack/snowflake",
         environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
         ports={4566: 4566, 443: 443},
-        healthcheck_timeout=30,
+        healthcheck_retries=30,
     ):
         init_db_destination()
         with tempfile.TemporaryDirectory() as tmpdir:
