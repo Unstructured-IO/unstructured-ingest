@@ -15,6 +15,10 @@ from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+)
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.elasticsearch.opensearch import (
     CONNECTOR_TYPE,
@@ -186,6 +190,36 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
         )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_opensearch_source_precheck_fail_no_cluster():
+    indexer_config = OpenSearchIndexerConfig(index_name="index")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    indexer = OpenSearchIndexer(connection_config=connection_config, index_config=indexer_config)
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_opensearch_source_precheck_fail_no_index(source_index: str):
+    indexer_config = OpenSearchIndexerConfig(index_name="index")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    indexer = OpenSearchIndexer(connection_config=connection_config, index_config=indexer_config)
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 async def test_opensearch_destination(
@@ -232,3 +266,35 @@ async def test_opensearch_destination(
     uploader.run(path=staged_filepath, file_data=file_data)
     with get_client() as client:
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_opensearch_destination_precheck_fail():
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    uploader = OpenSearchUploader(
+        connection_config=connection_config,
+        upload_config=OpenSearchUploaderConfig(index_name="index"),
+    )
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_opensearch_destination_precheck_fail_no_index(destination_index: str):
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    uploader = OpenSearchUploader(
+        connection_config=connection_config,
+        upload_config=OpenSearchUploaderConfig(index_name="index"),
+    )
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()

@@ -144,6 +144,13 @@ class ElasticsearchIndexer(Indexer):
             with self.connection_config.get_client() as client:
                 if not client.ping():
                     raise SourceConnectionError("cluster not detected")
+                indices = client.indices.get_alias("*")
+                if self.index_config.index_name not in indices:
+                    raise SourceConnectionError(
+                        "index {} not found: {}".format(
+                            self.index_config.index_name, ", ".join(indices.keys())
+                        )
+                    )
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -388,6 +395,13 @@ class ElasticsearchUploader(Uploader):
             with self.connection_config.get_client() as client:
                 if not client.ping():
                     raise DestinationConnectionError("cluster not detected")
+                indices = client.indices.get_alias("*")
+                if self.upload_config.index_name not in indices:
+                    raise SourceConnectionError(
+                        "index {} not found: {}".format(
+                            self.upload_config.index_name, ", ".join(indices.keys())
+                        )
+                    )
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
