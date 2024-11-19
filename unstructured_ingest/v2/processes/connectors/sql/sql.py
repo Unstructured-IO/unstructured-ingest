@@ -16,6 +16,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -338,9 +339,32 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
+    def _fit_to_schema(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+        columns = set(df.columns)
+        schema_fields = set(columns)
+        columns_to_drop = columns - schema_fields
+        missing_columns = schema_fields - columns
+
+        if columns_to_drop:
+            logger.warning(
+                "Following columns will be dropped to match the table's schema: "
+                f"{', '.join(columns_to_drop)}"
+            )
+        if missing_columns:
+            logger.info(
+                "Following null filled columns will be added to match the table's schema:"
+                f" {', '.join(missing_columns)} "
+            )
+
+        df = df.drop(columns=columns_to_drop)
+
+        for column in missing_columns:
+            df[column] = pd.Series()
+
     def upload_contents(self, path: Path) -> None:
         df = pd.read_json(path, orient="records", lines=True)
         df.replace({np.nan: None}, inplace=True)
+        self._fit_to_schema(df=df, columns=self.get_table_columns())
 
         columns = list(df.columns)
         stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
@@ -350,9 +374,7 @@ class SQLUploader(Uploader):
             f" table named {self.upload_config.table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
                 # For debugging purposes:
@@ -374,10 +396,11 @@ class SQLUploader(Uploader):
 
     def delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with data {self.upload_config.record_id_key}={file_data.identifier} "
+            f"deleting any content with data "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from table {self.upload_config.table_name}"
         )
-        stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"
+        stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"  # noqa: E501
         with self.connection_config.get_cursor() as cursor:
             cursor.execute(stmt, [file_data.identifier])
             rowcount = cursor.rowcount
