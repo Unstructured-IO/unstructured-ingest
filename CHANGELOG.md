@@ -1,7 +1,11 @@
 ## 0.3.1-dev2
 
-### Fixes
+### Enhancements
+
 * **LanceDB V2 Destination Connector**
+* **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
+
+### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
 

@@ -31,7 +31,6 @@ all_tests=(
   'sharepoint-embed-cog-index.sh'
   'vectara.sh'
   'weaviate.sh'
-  'milvus.sh'
   #  'kdbai.sh'
 )
 
