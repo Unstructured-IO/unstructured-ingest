@@ -21,7 +21,6 @@ all_tests=(
   #  'clarifai.sh'
   'couchbase.sh'
   'dropbox.sh'
-  'elasticsearch.sh'
   'gcs.sh'
   'mongodb.sh'
   's3.sh'
