@@ -1,4 +1,4 @@
-## 0.3.1-dev4
+## 0.3.1-dev5
 
 ### Features
 
@@ -13,6 +13,7 @@
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+* **Propagate exceptions raised by delta table connector during write**
 
 ## 0.3.0
 
