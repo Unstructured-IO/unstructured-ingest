@@ -56,7 +56,12 @@ def run_check(local_code: bool = False):
     project_path = get_project_path()
     main_file = get_main_file()
     for src_command_label in src_command_labels:
-        cmds.append(f"{main_file} {src_command_label} --help")
+        if local_code:
+            cmds.append(
+                f"PYTHONPATH={project_path} {main_file} {first_src_command_label} --help"  # noqa: E501
+            )
+        else:
+            cmds.append(f"unstructured-ingest {first_src_command_label} --help")
 
     for dest_command_label in dest_command_labels:
         if local_code:
