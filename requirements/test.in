@@ -7,6 +7,7 @@ pytest-asyncio
 pytest_tagging
 faker
 docker
+universal_pathlib
 
 # Connector specific deps
 cryptography

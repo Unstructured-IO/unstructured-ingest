@@ -3,8 +3,10 @@ from __future__ import annotations
 import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.lancedb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.weaviate  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
     add_source_entry,
@@ -52,8 +54,6 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
-from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
-from .weaviate import weaviate_destination_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -86,8 +86,6 @@ add_destination_entry(
 )
 
 add_source_entry(source_type=SALESFORCE_CONNECTOR_TYPE, entry=salesforce_source_entry)
-
-add_destination_entry(destination_type=WEAVIATE_CONNECTOR_TYPE, entry=weaviate_destination_entry)
 
 add_destination_entry(destination_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_destination_entry)
 add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)

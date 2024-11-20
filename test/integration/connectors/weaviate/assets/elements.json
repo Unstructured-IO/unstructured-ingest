@@ -22,7 +22,7 @@
             ],
             "indexFilterable": true,
             "indexSearchable": true,
-            "name": "element_id",
+            "name": "record_id",
             "tokenization": "word"
         },
         {

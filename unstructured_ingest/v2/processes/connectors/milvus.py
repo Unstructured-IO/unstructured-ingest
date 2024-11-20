@@ -1,7 +1,8 @@
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 import pandas as pd
 from dateutil import parser
@@ -10,6 +11,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -89,24 +91,27 @@ class MilvusUploadStager(UploadStager):
             pass
         return parser.parse(date_string).timestamp()
 
-    def conform_dict(self, data: dict) -> None:
-        if self.upload_stager_config.flatten_metadata and (metadata := data.pop("metadata", None)):
-            data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
+    def conform_dict(self, data: dict, file_data: FileData) -> dict:
+        working_data = data.copy()
+        if self.upload_stager_config.flatten_metadata and (
+            metadata := working_data.pop("metadata", None)
+        ):
+            working_data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
 
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
         #  remove once that gets updated
         defaults = {"is_continuation": False}
         for default in defaults:
-            if default not in data:
-                data[default] = defaults[default]
+            if default not in working_data:
+                working_data[default] = defaults[default]
 
         if self.upload_stager_config.fields_to_include:
-            data_keys = set(data.keys())
+            data_keys = set(working_data.keys())
             for data_key in data_keys:
                 if data_key not in self.upload_stager_config.fields_to_include:
-                    data.pop(data_key)
+                    working_data.pop(data_key)
             for field_include_key in self.upload_stager_config.fields_to_include:
-                if field_include_key not in data:
+                if field_include_key not in working_data:
                     raise KeyError(f"Field '{field_include_key}' is missing in data!")
 
         datetime_columns = [
@@ -119,11 +124,15 @@ class MilvusUploadStager(UploadStager):
         json_dumps_fields = ["languages", "data_source_permissions_data"]
 
         for datetime_column in datetime_columns:
-            if datetime_column in data:
-                data[datetime_column] = self.parse_date_string(data[datetime_column])
+            if datetime_column in working_data:
+                working_data[datetime_column] = self.parse_date_string(
+                    working_data[datetime_column]
+                )
         for json_dumps_field in json_dumps_fields:
-            if json_dumps_field in data:
-                data[json_dumps_field] = json.dumps(data[json_dumps_field])
+            if json_dumps_field in working_data:
+                working_data[json_dumps_field] = json.dumps(working_data[json_dumps_field])
+        working_data[RECORD_ID_LABEL] = file_data.identifier
+        return working_data
 
     def run(
         self,
@@ -135,18 +144,27 @@ class MilvusUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents: list[dict[str, Any]] = json.load(elements_file)
-        for element in elements_contents:
-            self.conform_dict(data=element)
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
+        new_content = [
+            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
+        ]
+        output_filename_path = Path(output_filename)
+        if output_filename_path.suffix == ".json":
+            output_path = Path(output_dir) / output_filename_path
+        else:
+            output_path = Path(output_dir) / output_filename_path.with_suffix(".json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open("w") as output_file:
-            json.dump(elements_contents, output_file, indent=2)
+            json.dump(new_content, output_file, indent=2)
         return output_path
 
 
 class MilvusUploaderConfig(UploaderConfig):
+    db_name: Optional[str] = Field(default=None, description="Milvus database name")
     collection_name: str = Field(description="Milvus collections to write to")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -163,6 +181,16 @@ class MilvusUploader(Uploader):
                 f"Collection '{self.upload_config.collection_name}' does not exist"
             )
 
+    @contextmanager
+    def get_client(self) -> Generator["MilvusClient", None, None]:
+        client = self.connection_config.get_client()
+        if db_name := self.upload_config.db_name:
+            client.using_database(db_name=db_name)
+        try:
+            yield client
+        finally:
+            client.close()
+
     def upload(self, content: UploadContent) -> None:
         file_extension = content.path.suffix
         if file_extension == ".json":
@@ -172,23 +200,38 @@ class MilvusUploader(Uploader):
         else:
             raise ValueError(f"Unsupported file extension: {file_extension}")
 
+    def delete_by_record_id(self, file_data: FileData) -> None:
+        logger.info(
+            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"from milvus collection {self.upload_config.collection_name}"
+        )
+        with self.get_client() as client:
+            delete_filter = f'{self.upload_config.record_id_key} == "{file_data.identifier}"'
+            resp = client.delete(
+                collection_name=self.upload_config.collection_name, filter=delete_filter
+            )
+            logger.info(
+                "deleted {} records from milvus collection {}".format(
+                    resp["delete_count"], self.upload_config.collection_name
+                )
+            )
+
     @requires_dependencies(["pymilvus"], extras="milvus")
     def insert_results(self, data: Union[dict, list[dict]]):
         from pymilvus import MilvusException
 
-        logger.debug(
+        logger.info(
             f"uploading {len(data)} entries to {self.connection_config.db_name} "
             f"db in collection {self.upload_config.collection_name}"
         )
-        client = self.connection_config.get_client()
-
-        try:
-            res = client.insert(collection_name=self.upload_config.collection_name, data=data)
-        except MilvusException as milvus_exception:
-            raise WriteError("failed to upload records to milvus") from milvus_exception
-        if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
-            err_count = res["err_count"]
-            raise WriteError(f"failed to upload {err_count} docs")
+        with self.get_client() as client:
+            try:
+                res = client.insert(collection_name=self.upload_config.collection_name, data=data)
+            except MilvusException as milvus_exception:
+                raise WriteError("failed to upload records to milvus") from milvus_exception
+            if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
+                err_count = res["err_count"]
+                raise WriteError(f"failed to upload {err_count} docs")
 
     def upload_csv(self, content: UploadContent) -> None:
         df = pd.read_csv(content.path)
@@ -201,6 +244,7 @@ class MilvusUploader(Uploader):
         self.insert_results(data=data)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.delete_by_record_id(file_data=file_data)
         self.upload(content=UploadContent(path=path, file_data=file_data))
 
 
