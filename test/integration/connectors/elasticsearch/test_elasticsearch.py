@@ -7,9 +7,9 @@ from typing import Generator
 
 import pandas as pd
 import pytest
-
 from elasticsearch import Elasticsearch as ElasticsearchClient
 from elasticsearch.helpers import bulk
+
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
 from test.integration.connectors.utils.docker import HealthCheck, container_context
 from test.integration.connectors.utils.validation import (
