@@ -1,4 +1,4 @@
-## 0.3.1-dev4
+## 0.3.1-dev5
 
 ### Enhancements
 
@@ -6,6 +6,7 @@
 * **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
 * **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
 * **Persist record id in sql metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
