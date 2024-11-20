@@ -1,4 +1,8 @@
-## 0.3.1-dev3
+## 0.3.1-dev4
+
+### Features
+
+* **Add `id_name` field to Couchbase `downloader_config`**
 
 ### Enhancements
 
