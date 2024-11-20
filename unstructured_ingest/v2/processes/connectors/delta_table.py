@@ -1,7 +1,8 @@
 import json
 import os
+import traceback
 from dataclasses import dataclass, field
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import urlparse
@@ -26,6 +27,14 @@ from unstructured_ingest.v2.processes.connector_registry import DestinationRegis
 
 CONNECTOR_TYPE = "delta_table"
 
+
+def write_deltalake_with_error_handling(queue, **kwargs):
+    from deltalake.writer import write_deltalake
+    try:
+        from deltalake.writer import write_deltalake
+        write_deltalake(**kwargs)
+    except Exception as e:
+        queue.put(traceback.format_exc())
 
 class DeltaTableAccessConfig(AccessConfig):
     aws_access_key_id: Optional[str] = Field(default=None, description="AWS Access Key Id")
@@ -155,9 +164,9 @@ class DeltaTableUploader(Uploader):
         else:
             raise ValueError(f"Unsupported file type, must be parquet, json or csv file: {path}")
 
+
     @requires_dependencies(["deltalake"], extras="delta-table")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from deltalake.writer import write_deltalake
 
         df = self.read_dataframe(path)
         updated_upload_path = os.path.join(
@@ -176,16 +185,23 @@ class DeltaTableUploader(Uploader):
             "mode": "overwrite",
             "storage_options": storage_options,
         }
+        queue = Queue()
         # NOTE: deltalake writer on Linux sometimes can finish but still trigger a SIGABRT and cause
         # ingest to fail, even though all tasks are completed normally. Putting the writer into a
         # process mitigates this issue by ensuring python interpreter waits properly for deltalake's
         # rust backend to finish
         writer = Process(
-            target=write_deltalake,
-            kwargs=writer_kwargs,
+            target=write_deltalake_with_error_handling,
+            kwargs={"queue": queue, **writer_kwargs},
         )
         writer.start()
         writer.join()
+
+        # Check if the queue has any exception message
+        if not queue.empty():
+            error_message = queue.get()
+            logger.error(f"Exception occurred in write_deltalake: {error_message}")
+            raise RuntimeError(f"Error in write_deltalake: {error_message}")
 
 
 delta_table_destination_entry = DestinationRegistryEntry(
