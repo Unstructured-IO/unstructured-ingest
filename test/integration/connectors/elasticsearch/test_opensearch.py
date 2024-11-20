@@ -182,7 +182,7 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
             indexer=indexer,
             downloader=downloader,
             configs=ValidationConfigs(
-                test_id="opensearch",
+                test_id=CONNECTOR_TYPE,
                 expected_num_files=expected_num_files,
                 expected_number_indexed_file_data=1,
                 validate_downloaded_files=True,

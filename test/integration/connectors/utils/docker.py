@@ -1,14 +1,14 @@
 import time
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Union
 
 import docker
 from docker.models.containers import Container
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator, AliasChoices
 
 
 class HealthCheck(BaseModel):
-    test: str
+    test: Union[str, list[str]]
     interval: int = Field(
         gt=0, default=30, description="The time to wait between checks in seconds."
     )
@@ -63,11 +63,21 @@ def get_container(
     return container
 
 
-def has_healthcheck(container: Container) -> bool:
-    return container.attrs.get("Config", {}).get("Healthcheck", None) is not None
+def get_healthcheck(container: Container) -> Optional[HealthCheck]:
+    healthcheck_config = container.attrs.get("Config", {}).get("Healthcheck", None)
+    if not healthcheck_config:
+        return None
+    return HealthCheck(
+        test=healthcheck_config["Test"],
+        interval=healthcheck_config["Interval"] / 10e8,
+        start_period=healthcheck_config["StartPeriod"] / 10e8,
+        retries=healthcheck_config["Retries"],
+    )
 
 
-def healthcheck_wait(container: Container, retries: int = 30, interval: int = 1) -> None:
+def healthcheck_wait(container: Container, retries: int = 30, interval: int = 1, start_period: Optional[int] = None) -> None:
+    if start_period:
+        time.sleep(start_period)
     health = container.health
     tries = 0
     while health != "healthy" and tries < retries:
@@ -110,8 +120,9 @@ def container_context(
             volumes=volumes,
             healthcheck=healthcheck,
         )
-        if has_healthcheck(container):
-            healthcheck_wait(container=container, retries=healthcheck_retries)
+        if healthcheck_data := get_healthcheck(container):
+            # Mirror whatever healthcheck config set on container
+            healthcheck_wait(container=container, retries=healthcheck_retries, start_period=healthcheck_data.start_period, interval=healthcheck_data.interval)
         yield container
     except AssertionError as e:
         if container:

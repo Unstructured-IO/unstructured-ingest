@@ -144,7 +144,7 @@ class ElasticsearchIndexer(Indexer):
             with self.connection_config.get_client() as client:
                 if not client.ping():
                     raise SourceConnectionError("cluster not detected")
-                indices = client.indices.get_alias("*")
+                indices = client.indices.get_alias(index="*")
                 if self.index_config.index_name not in indices:
                     raise SourceConnectionError(
                         "index {} not found: {}".format(
@@ -174,7 +174,7 @@ class ElasticsearchIndexer(Indexer):
                 index=self.index_config.index_name,
             )
 
-        return {hit["_id"] for hit in hits}
+            return {hit["_id"] for hit in hits}
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         all_ids = self._get_doc_ids()
@@ -358,10 +358,10 @@ class ElasticsearchUploadStager(UploadStager):
             output_filename = f"{output_filename}.json"
         else:
             output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
+        output_path = Path(output_dir) / output_filename
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
+            json.dump(conformed_elements, output_file, indent=2)
         return output_path
 
 
@@ -395,7 +395,7 @@ class ElasticsearchUploader(Uploader):
             with self.connection_config.get_client() as client:
                 if not client.ping():
                     raise DestinationConnectionError("cluster not detected")
-                indices = client.indices.get_alias("*")
+                indices = client.indices.get_alias(index="*")
                 if self.upload_config.index_name not in indices:
                     raise SourceConnectionError(
                         "index {} not found: {}".format(
