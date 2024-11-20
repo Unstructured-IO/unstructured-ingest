@@ -175,11 +175,11 @@ class MilvusUploader(Uploader):
 
     @DestinationConnectionError.wrap
     def precheck(self):
-        client = self.connection_config.get_client()
-        if not client.has_collection(self.upload_config.collection_name):
-            raise DestinationConnectionError(
-                f"Collection '{self.upload_config.collection_name}' does not exist"
-            )
+        with self.get_client() as client:
+            if not client.has_collection(self.upload_config.collection_name):
+                raise DestinationConnectionError(
+                    f"Collection '{self.upload_config.collection_name}' does not exist"
+                )
 
     @contextmanager
     def get_client(self) -> Generator["MilvusClient", None, None]:
