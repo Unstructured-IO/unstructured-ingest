@@ -17,6 +17,7 @@ class ClusterConfig:
     bucket_name: str
     scope_name: str
     collection_name: str
+    id_name: str
 
 
 def get_client(cluster_config: ClusterConfig) -> Cluster:
@@ -33,6 +34,7 @@ def setup_cluster(cluster_config: ClusterConfig, source_file: str):
     bucket = cluster.bucket(cluster_config.bucket_name)
     scope = bucket.scope(cluster_config.scope_name)
     collection = scope.collection(cluster_config.collection_name)
+    id_name = scope.collection(cluster_config.id_name)
 
     cluster.query(
         f"Create primary index on "
@@ -45,8 +47,7 @@ def setup_cluster(cluster_config: ClusterConfig, source_file: str):
         for line in file:
             try:
                 doc = json.loads(line)
-                # Assuming 'cbmid' is the document ID. Adjust as necessary.
-                doc_id = doc.get("cbmid", uuid.uuid4())
+                doc_id = doc.get(id_name, uuid.uuid4())
                 if doc_id:
                     collection.upsert(doc_id, doc)
                 else:
@@ -67,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--bucket_name", required=True, help="Couchbase bucket name")
     parser.add_argument("--scope_name", required=True, help="Couchbase scope name")
     parser.add_argument("--collection_name", required=True, help="Couchbase collection name")
+    parser.add_argument("--id_name", required=True, help="Couchbase collection id name")
     parser.add_argument("--source_file", required=True, help="Source file to ingest")
 
     args = parser.parse_args()
@@ -78,6 +80,7 @@ if __name__ == "__main__":
         bucket_name=args.bucket_name,
         scope_name=args.scope_name,
         collection_name=args.collection_name,
+        id_name=args.id_name,
     )
 
     setup_cluster(config, args.source_file)

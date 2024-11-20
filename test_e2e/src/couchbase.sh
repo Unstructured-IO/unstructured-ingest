@@ -19,8 +19,8 @@ source "$SCRIPT_DIR"/cleanup.sh
 source "$SCRIPT_DIR"/env_setup/couchbase/common/constants.env
 
 # Check if all necessary environment variables are set
-if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ] || [ -z "$CB_SCOPE" ] || [ -z "$CB_COLLECTION" ]; then
-  echo "Error: One or more environment variables are not set. Please set CB_CONN_STR, CB_USERNAME, CB_PASSWORD, CB_BUCKET, CB_SCOPE, and CB_COLLECTION."
+if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ] || [ -z "$CB_SCOPE" ] || [ -z "$CB_COLLECTION" ] || [ -z "$CB_ID_NAME"]; then
+  echo "Error: One or more environment variables are not set. Please set CB_CONN_STR, CB_USERNAME, CB_PASSWORD, CB_BUCKET, CB_SCOPE, CB_COLLECTION and CB_ID_NAME."
   exit 1
 fi
 
@@ -51,6 +51,7 @@ python "$SCRIPT_DIR"/env_setup/couchbase/source_connector/ingest_source_setup_cl
   --bucket_name "$CB_BUCKET" \
   --scope_name "$CB_SCOPE" \
   --collection_name "$CB_COLLECTION" \
+  --id_name "$CB_ID_NAME" \
   --source_file "$SCRIPT_DIR"/env_setup/couchbase/source_connector/airline_sample.jsonlines
 wait
 
@@ -69,6 +70,7 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --password "$CB_PASSWORD" \
   --scope "$CB_SCOPE" \
   --collection "$CB_COLLECTION" \
+  --id-name "$CB_ID_NAME" \
   --work-dir "$WORK_DIR" \
   --preserve-downloads \
   --reprocess \
