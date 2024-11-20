@@ -9,12 +9,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import pandas as pd
+import pyarrow as pa
 from pydantic import Field
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces.connector import ConnectionConfig
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.upload_stager import UploadStager, UploadStagerConfig
@@ -84,7 +86,7 @@ class LanceDBUploadStager(UploadStager):
 
         df = pd.DataFrame(
             [
-                self._conform_element_contents(element_contents)
+                self._conform_element_contents(element_contents, file_data)
                 for element_contents in elements_contents
             ]
         )
@@ -94,9 +96,10 @@ class LanceDBUploadStager(UploadStager):
 
         return output_path
 
-    def _conform_element_contents(self, element: dict) -> dict:
+    def _conform_element_contents(self, element: dict, file_data: FileData) -> dict:
         return {
             "vector": element.pop("embeddings", None),
+            RECORD_ID_LABEL: file_data.identifier,
             **flatten_dict(element, separator="-"),
         }
 
@@ -114,9 +117,17 @@ class LanceDBUploader(Uploader):
     @DestinationConnectionError.wrap
     def precheck(self):
         async def _precheck() -> None:
-            async with self.connection_config.get_async_connection() as conn:
-                table = await conn.open_table(self.upload_config.table_name)
-                table.close()
+            async with self.get_table() as table:
+                schema = await table.schema()
+                if (
+                    RECORD_ID_LABEL not in schema.names
+                    or schema.field(RECORD_ID_LABEL).type != pa.string()
+                ):
+                    raise DestinationConnectionError(
+                        f"Designated table must contain {RECORD_ID_LABEL} column"
+                        " of type string. It is required to support overwriting updates on"
+                        " subsequent executions on the same file."
+                    )
 
         asyncio.run(_precheck())
 
@@ -134,6 +145,7 @@ class LanceDBUploader(Uploader):
         async with self.get_table() as table:
             schema = await table.schema()
             df = self._fit_to_schema(df, schema)
+            await table.delete(f'{RECORD_ID_LABEL} = "{file_data.identifier}"')
             await table.add(data=df)
 
     def _fit_to_schema(self, df: pd.DataFrame, schema) -> pd.DataFrame:
@@ -141,6 +153,13 @@ class LanceDBUploader(Uploader):
         schema_fields = set(schema.names)
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
+
+        if RECORD_ID_LABEL in columns_to_drop:
+            logger.warning(
+                f"Designated table doesn't contain {RECORD_ID_LABEL} column of type"
+                " string which is required to support overwriting updates on subsequent executions"
+                " on the same file."
+            )
 
         if columns_to_drop:
             logger.info(
