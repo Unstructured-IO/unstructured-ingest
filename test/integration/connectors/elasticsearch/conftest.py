@@ -17,8 +17,17 @@ def movies_dataframe() -> pd.DataFrame:
 
 
 @pytest.fixture
-def elements_mapping() -> dict:
+def opensearch_elements_mapping() -> dict:
     elements_mapping_file = assets_dir / "opensearch_elements_mappings.json"
+    assert elements_mapping_file.exists()
+    assert elements_mapping_file.is_file()
+    with elements_mapping_file.open() as fp:
+        return json.load(fp)
+
+
+@pytest.fixture
+def elasticsearch_elements_mapping() -> dict:
+    elements_mapping_file = assets_dir / "elasticsearch_elements_mappings.json"
     assert elements_mapping_file.exists()
     assert elements_mapping_file.is_file()
     with elements_mapping_file.open() as fp:

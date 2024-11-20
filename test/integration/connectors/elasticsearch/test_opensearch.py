@@ -141,7 +141,7 @@ def source_index(movies_dataframe: pd.DataFrame) -> str:
 
 
 @pytest.fixture
-def destination_index(elements_mapping: dict) -> str:
+def destination_index(opensearch_elements_mapping: dict) -> str:
     with container_context(
         image="opensearchproject/opensearch:2.11.1",
         ports={9200: 9200, 9600: 9600},
@@ -152,7 +152,9 @@ def destination_index(elements_mapping: dict) -> str:
         ),
     ):
         with get_client() as client:
-            response = client.indices.create(index=DESTINATION_INDEX_NAME, body=elements_mapping)
+            response = client.indices.create(
+                index=DESTINATION_INDEX_NAME, body=opensearch_elements_mapping
+            )
             if not response["acknowledged"]:
                 raise RuntimeError(f"failed to create index: {response}")
         yield DESTINATION_INDEX_NAME

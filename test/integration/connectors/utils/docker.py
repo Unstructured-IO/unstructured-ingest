@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import docker
 from docker.models.containers import Container
-from pydantic import BaseModel, Field, field_serializer, field_validator, AliasChoices
+from pydantic import BaseModel, Field, field_serializer
 
 
 class HealthCheck(BaseModel):
@@ -75,7 +75,9 @@ def get_healthcheck(container: Container) -> Optional[HealthCheck]:
     )
 
 
-def healthcheck_wait(container: Container, retries: int = 30, interval: int = 1, start_period: Optional[int] = None) -> None:
+def healthcheck_wait(
+    container: Container, retries: int = 30, interval: int = 1, start_period: Optional[int] = None
+) -> None:
     if start_period:
         time.sleep(start_period)
     health = container.health
@@ -122,7 +124,12 @@ def container_context(
         )
         if healthcheck_data := get_healthcheck(container):
             # Mirror whatever healthcheck config set on container
-            healthcheck_wait(container=container, retries=healthcheck_retries, start_period=healthcheck_data.start_period, interval=healthcheck_data.interval)
+            healthcheck_wait(
+                container=container,
+                retries=healthcheck_retries,
+                start_period=healthcheck_data.start_period,
+                interval=healthcheck_data.interval,
+            )
         yield container
     except AssertionError as e:
         if container:
