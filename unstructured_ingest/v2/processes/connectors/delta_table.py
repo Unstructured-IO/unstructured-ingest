@@ -32,8 +32,6 @@ def write_deltalake_with_error_handling(queue, **kwargs):
     from deltalake.writer import write_deltalake
 
     try:
-        from deltalake.writer import write_deltalake
-
         write_deltalake(**kwargs)
     except Exception:
         queue.put(traceback.format_exc())
