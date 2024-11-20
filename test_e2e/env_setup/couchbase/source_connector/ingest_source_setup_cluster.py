@@ -47,7 +47,7 @@ def setup_cluster(cluster_config: ClusterConfig, source_file: str):
         for line in file:
             try:
                 doc = json.loads(line)
-                doc_id = doc.get(id_name, uuid.uuid4())
+                doc_id = str(doc.get(id_name, uuid.uuid4()))
                 if doc_id:
                     collection.upsert(doc_id, doc)
                 else:
