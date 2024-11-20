@@ -2,6 +2,7 @@ CREATE EXTENSION vector;
 
 CREATE TABLE elements (
     id UUID PRIMARY KEY,
+    record_id VARCHAR,
     element_id VARCHAR,
     text TEXT,
     embeddings vector(384),

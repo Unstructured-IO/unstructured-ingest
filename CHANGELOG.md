@@ -5,6 +5,7 @@
 * **LanceDB V2 Destination Connector**
 * **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
 * **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in sql metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**

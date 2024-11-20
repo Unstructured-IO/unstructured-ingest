@@ -1,5 +1,6 @@
 CREATE TABLE elements (
     id TEXT PRIMARY KEY,
+    record_id TEXT,
     element_id TEXT,
     text TEXT,
     embeddings TEXT,

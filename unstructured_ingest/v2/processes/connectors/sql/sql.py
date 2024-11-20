@@ -16,6 +16,8 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.utils.data_prep import split_dataframe
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -236,35 +238,25 @@ class SQLUploadStagerConfig(UploadStagerConfig):
 class SQLUploadStager(UploadStager):
     upload_stager_config: SQLUploadStagerConfig = field(default_factory=SQLUploadStagerConfig)
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents: list[dict] = json.load(elements_file)
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
+    @staticmethod
+    def conform_dict(data: dict, file_data: FileData) -> pd.DataFrame:
+        working_data = data.copy()
         output = []
-        for data in elements_contents:
-            metadata: dict[str, Any] = data.pop("metadata", {})
+        for element in working_data:
+            metadata: dict[str, Any] = element.pop("metadata", {})
             data_source = metadata.pop("data_source", {})
             coordinates = metadata.pop("coordinates", {})
 
-            data.update(metadata)
-            data.update(data_source)
-            data.update(coordinates)
+            element.update(metadata)
+            element.update(data_source)
+            element.update(coordinates)
 
-            data["id"] = str(uuid.uuid4())
+            element["id"] = str(uuid.uuid4())
 
             # remove extraneous, not supported columns
-            data = {k: v for k, v in data.items() if k in _COLUMNS}
-
-            output.append(data)
+            element = {k: v for k, v in element.items() if k in _COLUMNS}
+            element[RECORD_ID_LABEL] = file_data.identifier
+            output.append(element)
 
         df = pd.DataFrame.from_dict(output)
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
@@ -281,6 +273,26 @@ class SQLUploadStager(UploadStager):
             ("version", "page_number", "regex_metadata"),
         ):
             df[column] = df[column].apply(str)
+        return df
+
+    def run(
+        self,
+        elements_filepath: Path,
+        file_data: FileData,
+        output_dir: Path,
+        output_filename: str,
+        **kwargs: Any,
+    ) -> Path:
+        with open(elements_filepath) as elements_file:
+            elements_contents: list[dict] = json.load(elements_file)
+
+        df = self.conform_dict(data=elements_contents, file_data=file_data)
+        if Path(output_filename).suffix != ".json":
+            output_filename = f"{output_filename}.json"
+        else:
+            output_filename = f"{Path(output_filename).stem}.json"
+        output_path = Path(output_dir) / Path(f"{output_filename}")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with output_path.open("w") as output_file:
             df.to_json(output_file, orient="records", lines=True)
@@ -290,6 +302,10 @@ class SQLUploadStager(UploadStager):
 class SQLUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="Number of records per batch")
     table_name: str = Field(default="elements", description="which table to upload contents to")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -323,18 +339,45 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
+    def _fit_to_schema(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+        columns = set(df.columns)
+        schema_fields = set(columns)
+        columns_to_drop = columns - schema_fields
+        missing_columns = schema_fields - columns
+
+        if columns_to_drop:
+            logger.warning(
+                "Following columns will be dropped to match the table's schema: "
+                f"{', '.join(columns_to_drop)}"
+            )
+        if missing_columns:
+            logger.info(
+                "Following null filled columns will be added to match the table's schema:"
+                f" {', '.join(missing_columns)} "
+            )
+
+        df = df.drop(columns=columns_to_drop)
+
+        for column in missing_columns:
+            df[column] = pd.Series()
+
     def upload_contents(self, path: Path) -> None:
         df = pd.read_json(path, orient="records", lines=True)
         df.replace({np.nan: None}, inplace=True)
+        self._fit_to_schema(df=df, columns=self.get_table_columns())
 
         columns = list(df.columns)
         stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
-
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
+        logger.info(
+            f"writing a total of {len(df)} elements via"
+            f" document batches to destination"
+            f" table named {self.upload_config.table_name}"
+            f" with batch size {self.upload_config.batch_size}"
+        )
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # For debugging purposes:
                 # for val in values:
                 #     try:
                 #         cursor.execute(stmt, val)
@@ -343,5 +386,33 @@ class SQLUploader(Uploader):
                 #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
                 cursor.executemany(stmt, values)
 
+    def get_table_columns(self) -> list[str]:
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(f"SELECT * from {self.upload_config.table_name}")
+            return [desc[0] for desc in cursor.description]
+
+    def can_delete(self) -> bool:
+        return self.upload_config.record_id_key in self.get_table_columns()
+
+    def delete_by_record_id(self, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with data "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
+            f"from table {self.upload_config.table_name}"
+        )
+        stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"  # noqa: E501
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(stmt, [file_data.identifier])
+            rowcount = cursor.rowcount
+            logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        if self.can_delete():
+            self.delete_by_record_id(file_data=file_data)
+        else:
+            logger.warning(
+                f"table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
         self.upload_contents(path=path)
