@@ -67,12 +67,16 @@ def get_healthcheck(container: Container) -> Optional[HealthCheck]:
     healthcheck_config = container.attrs.get("Config", {}).get("Healthcheck", None)
     if not healthcheck_config:
         return None
-    return HealthCheck(
-        test=healthcheck_config["Test"],
-        interval=healthcheck_config["Interval"] / 10e8,
-        start_period=healthcheck_config["StartPeriod"] / 10e8,
-        retries=healthcheck_config["Retries"],
-    )
+    healthcheck_data = {
+        "test": healthcheck_config["Test"],
+    }
+    if interval := healthcheck_config.get("Interval"):
+        healthcheck_data["interval"] = interval / 10e8
+    if start_period := healthcheck_config.get("StartPeriod"):
+        healthcheck_data["start_period"] = start_period / 10e8
+    if retries := healthcheck_config.get("Retries"):
+        healthcheck_data["retries"] = retries
+    return HealthCheck.model_validate(healthcheck_data)
 
 
 def healthcheck_wait(
