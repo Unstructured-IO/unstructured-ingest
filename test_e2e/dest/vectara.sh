@@ -35,7 +35,7 @@ function cleanup {
     }"
 
   # Local file cleanup
-#  cleanup_dir "$WORK_DIR"
+  cleanup_dir "$WORK_DIR"
   cleanup_dir "$OUTPUT_DIR"
 }
 
