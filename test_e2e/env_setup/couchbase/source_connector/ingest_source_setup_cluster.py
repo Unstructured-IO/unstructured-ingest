@@ -34,7 +34,7 @@ def setup_cluster(cluster_config: ClusterConfig, source_file: str):
     bucket = cluster.bucket(cluster_config.bucket_name)
     scope = bucket.scope(cluster_config.scope_name)
     collection = scope.collection(cluster_config.collection_name)
-    id_name = scope.collection(cluster_config.id_name)
+    id_name = cluster_config.id_name
 
     cluster.query(
         f"Create primary index on "
