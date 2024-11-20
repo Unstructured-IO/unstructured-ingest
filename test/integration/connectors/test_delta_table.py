@@ -180,5 +180,5 @@ async def test_delta_table_destination_s3_bad_creds(upload_file: Path, temp_dir:
             await uploader.run_async(path=new_upload_file, file_data=file_data)
         else:
             uploader.run(path=new_upload_file, file_data=file_data)
-    
+
     assert "403 Forbidden" in str(excinfo.value), f"Exception message did not match: {str(excinfo)}"

@@ -30,11 +30,14 @@ CONNECTOR_TYPE = "delta_table"
 
 def write_deltalake_with_error_handling(queue, **kwargs):
     from deltalake.writer import write_deltalake
+
     try:
         from deltalake.writer import write_deltalake
+
         write_deltalake(**kwargs)
-    except Exception as e:
+    except Exception:
         queue.put(traceback.format_exc())
+
 
 class DeltaTableAccessConfig(AccessConfig):
     aws_access_key_id: Optional[str] = Field(default=None, description="AWS Access Key Id")
@@ -163,7 +166,6 @@ class DeltaTableUploader(Uploader):
             return self.process_parquet(parquet_paths=[path])
         else:
             raise ValueError(f"Unsupported file type, must be parquet, json or csv file: {path}")
-
 
     @requires_dependencies(["deltalake"], extras="delta-table")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
