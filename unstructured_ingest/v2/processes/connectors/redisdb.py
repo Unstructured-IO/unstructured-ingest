@@ -44,14 +44,12 @@ class RedisConnectionConfig(ConnectionConfig):
     host: Optional[str] = Field(
         default=None, description="Hostname or IP address of a Redis instance to connect to."
     )
-    database: Optional[int] = Field(default=0, description="Database index to connect to.")
-    port: Optional[int] = Field(default=6379, description="port used to connect to database.")
+    database: int = Field(default=0, description="Database index to connect to.")
+    port: int = Field(default=6379, description="port used to connect to database.")
     username: Optional[str] = Field(
         default=None, description="Username used to connect to database."
     )
-    ssl: Optional[bool] = Field(
-        default=True, description="Whether the connection should use SSL encryption."
-    )
+    ssl: bool = Field(default=True, description="Whether the connection should use SSL encryption.")
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @requires_dependencies(["redis"], extras="redis")
@@ -60,7 +58,13 @@ class RedisConnectionConfig(ConnectionConfig):
         from redis.asyncio import Redis, from_url
 
         access_config = self.access_config.get_secret_value()
-        options = {"host": self.host, "port": self.port, "db": self.database, "ssl": self.ssl}
+        options = {
+            "host": self.host,
+            "port": self.port,
+            "db": self.database,
+            "ssl": self.ssl,
+            "username": self.username,
+        }
 
         if access_config.uri:
             client = from_url(access_config.uri)
