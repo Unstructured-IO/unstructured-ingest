@@ -19,7 +19,7 @@ source "$SCRIPT_DIR"/cleanup.sh
 source "$SCRIPT_DIR"/env_setup/couchbase/common/constants.env
 
 # Check if all necessary environment variables are set
-if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ] || [ -z "$CB_SCOPE" ] || [ -z "$CB_COLLECTION" ] || [ -z "$CB_ID_NAME"]; then
+if [ -z "$CB_USERNAME" ] || [ -z "$CB_PASSWORD" ] || [ -z "$CB_CONN_STR" ] || [ -z "$CB_BUCKET" ] || [ -z "$CB_SCOPE" ] || [ -z "$CB_COLLECTION" ] || [ -z "$CB_ID_NAME" ]; then
   echo "Error: One or more environment variables are not set. Please set CB_CONN_STR, CB_USERNAME, CB_PASSWORD, CB_BUCKET, CB_SCOPE, CB_COLLECTION and CB_ID_NAME."
   exit 1
 fi
