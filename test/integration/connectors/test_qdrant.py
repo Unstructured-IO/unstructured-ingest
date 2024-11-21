@@ -149,9 +149,9 @@ async def test_qdrant_destination_server(upload_file: Path, tmp_path: Path, dock
 
 @pytest.mark.asyncio
 @pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant")
-@requires_env("QDRANT_API_KEY")
+@requires_env("QDRANT_API_KEY", "QDRANT_SERVER_URL")
 async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
-    server_url = "https://9c68fe2c-e0c8-4d02-8410-9b15c8ce167b.us-east4-0.gcp.cloud.qdrant.io:6333/"
+    server_url = os.environ["QDRANT_SERVER_URL"]
     api_key = os.environ["QDRANT_API_KEY"]
     connection_kwargs = {"location": server_url, "api_key": api_key}
     async with qdrant_client(connection_kwargs) as client:
