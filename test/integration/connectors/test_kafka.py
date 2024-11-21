@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -16,8 +17,11 @@ from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
+from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
+from unstructured_ingest.v2.processes.connectors.kafka.cloud import CloudKafkaConnectionConfig, \
+    CloudKafkaDownloaderConfig, CloudKafkaIndexer, CloudKafkaIndexerConfig, CloudKafkaDownloader, CloudKafkaAccessConfig
 from unstructured_ingest.v2.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,
     LocalKafkaConnectionConfig,
@@ -87,8 +91,86 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         )
 
 
+@pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_kafak_source_local_precheck_fail():
+@requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
+async def test_kafka_source_cloud(expected_messages: int = 5):
+
+    conf = {
+        "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVER"],
+        "sasl.username": os.environ["KAFKA_API_KEY"],
+        "sasl.password": os.environ["KAFKA_SECRET"],
+        "sasl.mechanism": "PLAIN",
+        "security.protocol": "SASL_SSL",
+
+    }
+    admin_client = AdminClient(conf)
+    # Kafka Cloud allows to use replication_factor=1 only for Dedicated clusters.
+    topic_obj = NewTopic(TOPIC, num_partitions=1, replication_factor=3)
+
+    try:
+        res = admin_client.delete_topics([TOPIC], operation_timeout=10)
+        for topic, f in res.items():
+            f.result()
+            print("Topic {} removed".format(topic))
+    except Exception as e:
+        pass
+
+    cluster_meta = admin_client.list_topics()
+    current_topics = [
+        topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
+    ]
+
+    if TOPIC in current_topics:
+        raise ValueError("Topic is existing while it shouldn't")
+
+    res = admin_client.create_topics([topic_obj], operation_timeout=10, validate_only=False)
+    for topic, f in res.items():
+        f.result()
+
+    producer = Producer(conf)
+    for i in range(expected_messages):
+        message = f"This is some text for message {i}"
+        producer.produce(topic=TOPIC, value=message)
+    producer.flush(timeout=10)
+
+    connection_config = CloudKafkaConnectionConfig(
+        bootstrap_server=os.environ["KAFKA_BOOTSTRAP_SERVER"],
+        port=9092,
+        access_config=CloudKafkaAccessConfig(
+                api_key=os.environ["KAFKA_API_KEY"],
+                secret=os.environ["KAFKA_SECRET"],
+            )
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        download_config = CloudKafkaDownloaderConfig(download_dir=tempdir_path)
+        indexer = CloudKafkaIndexer(
+            connection_config=connection_config,
+            index_config=CloudKafkaIndexerConfig(
+                topic=TOPIC,
+                num_messages_to_consume=expected_messages,
+            ),
+        )
+        downloader = CloudKafkaDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+        indexer.precheck()
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=ValidationConfigs(
+                test_id="kafka",
+                expected_num_files=expected_messages,
+                validate_downloaded_files=False,
+                validate_file_data=False,
+            ),
+        )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_kafka_source_local_precheck_fail():
     connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     indexer = LocalKafkaIndexer(
         connection_config=connection_config,
@@ -158,7 +240,7 @@ async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: st
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-def test_kafak_destination_local_precheck_fail():
+def test_kafka_destination_local_precheck_fail():
     uploader = LocalKafkaUploader(
         connection_config=LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092),
         upload_config=LocalKafkaUploaderConfig(topic=TOPIC, batch_size=10),
