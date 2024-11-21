@@ -9,6 +9,7 @@ from typing import Generator
 import pytest
 from pydantic import BaseModel, SecretStr
 from pymongo.collection import Collection
+from pymongo.database import Database
 from pymongo.mongo_client import MongoClient
 from pymongo.operations import SearchIndexModel
 
@@ -56,6 +57,24 @@ def get_client() -> Generator[MongoClient, None, None]:
         yield client
 
 
+def wait_for_collection(
+    database: Database, collection_name: str, retries: int = 10, interval: int = 1
+):
+    collections = database.list_collection_names()
+    attempts = 0
+    while collection_name not in collections and attempts < retries:
+        attempts += 1
+        print(
+            "Waiting for collection {} to be recognized: {}".format(
+                collection_name, ", ".join(collections)
+            )
+        )
+        time.sleep(interval)
+        collections = database.list_collection_names()
+    if collection_name not in collection_name:
+        raise TimeoutError(f"Collection {collection_name} was not recognized")
+
+
 @pytest.fixture
 def destination_collection() -> Collection:
     env_data = get_env_data()
@@ -80,6 +99,7 @@ def destination_collection() -> Collection:
             )
         )
         collection.create_index("record_id")
+        wait_for_collection(database=database, collection_name=collection_name)
         try:
             yield collection
         finally:
@@ -141,12 +161,10 @@ def validate_collection_vector(
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 async def test_mongodb_source(temp_dir: Path):
     env_data = get_env_data()
-    indexer_config = MongoDBIndexerConfig()
+    indexer_config = MongoDBIndexerConfig(database=env_data.database, collection=SOURCE_COLLECTION)
     download_config = MongoDBDownloaderConfig(download_dir=temp_dir)
     connection_config = MongoDBConnectionConfig(
         access_config=MongoDBAccessConfig(uri=env_data.uri.get_secret_value()),
-        database=env_data.database,
-        collection=SOURCE_COLLECTION,
     )
     indexer = MongoDBIndexer(connection_config=connection_config, index_config=indexer_config)
     downloader = MongoDBDownloader(
