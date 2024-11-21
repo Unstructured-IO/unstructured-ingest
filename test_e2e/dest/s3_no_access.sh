@@ -24,6 +24,9 @@ RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 # Capture the stderr in a variable to check against
 { err=$(PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --strategy fast \
   --verbose \

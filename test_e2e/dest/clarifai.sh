@@ -67,6 +67,9 @@ fi
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --input-path example-docs/book-war-and-peace-1p.txt \
   --output-dir "$OUTPUT_DIR" \
   --strategy fast \

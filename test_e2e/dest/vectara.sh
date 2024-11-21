@@ -14,7 +14,7 @@ RANDOM_SUFFIX=$((RANDOM % 100000 + 1))
 CORPUS_NAME="test-corpus-vectara-"$RANDOM_SUFFIX
 
 # Expected size of the uploaded document
-EXPECTED_CORPUS_SIZE=8842684
+EXPECTED_CORPUS_SIZE=6189528
 
 if [ -z "$VECTARA_OAUTH_CLIENT_ID" ] && [ -z "$VECTARA_OAUTH_SECRET" ] && [ -z "$VECTARA_CUSTOMER_ID" ]; then
   echo "Skipping VECTARA ingest test because VECTARA_OAUTH_CLIENT_ID, VECTARA_OAUTH_SECRET, or VECTARA_CUSTOMER_ID env var is not set."
@@ -43,6 +43,9 @@ trap cleanup EXIT
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --output-dir "$OUTPUT_DIR" \
   --strategy fast \

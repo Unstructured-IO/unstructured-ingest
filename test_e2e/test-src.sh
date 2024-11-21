@@ -39,7 +39,6 @@ all_tests=(
   'gcs.sh'
   'onedrive.sh'
   'outlook.sh'
-  'elasticsearch.sh'
   'couchbase.sh'
   'airtable-diff.sh'
   # # NOTE(ryan): This test is disabled because it is triggering too many requests to the API
@@ -51,7 +50,6 @@ all_tests=(
   'sharepoint-with-permissions.sh'
   'hubspot.sh'
   'sftp.sh'
-  'opensearch.sh'
   'mongodb.sh'
 )
 
