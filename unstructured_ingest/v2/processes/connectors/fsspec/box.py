@@ -34,7 +34,7 @@ class BoxIndexerConfig(FsspecIndexerConfig):
 
 class BoxAccessConfig(FsspecAccessConfig):
     box_app_config: Optional[str] = Field(
-        default=None, description="Path to Box app credentials as json file."
+        default=None, description="Box app credentials as a JSON string."
     )
 
 
@@ -43,16 +43,26 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     access_config: Secret[BoxAccessConfig] = Field(default=BoxAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-    def get_access_config(self) -> dict[str, Any]:
+def get_access_config(self) -> dict[str, Any]:
         # Return access_kwargs with oauth. The oauth object cannot be stored directly in the config
         # because it is not serializable.
         from boxsdk import JWTAuth
+        import json
 
         ac = self.access_config.get_secret_value()
+        
+        # Parse the JSON string directly from `box_app_config`
+        if ac.box_app_config is None:
+            raise ValueError("box_app_config cannot be None. It must contain the JSON string with Box credentials.")
+        
+        try:
+            settings_dict = json.loads(ac.box_app_config)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to decode JSON from box_app_config: {e}")
+
+        # Create the JWTAuth object from the parsed JSON dictionary
         access_kwargs_with_oauth: dict[str, Any] = {
-            "oauth": JWTAuth.from_settings_file(
-                ac.box_app_config,
-            ),
+            "oauth": JWTAuth.from_settings_dictionary(settings_dict),
         }
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
