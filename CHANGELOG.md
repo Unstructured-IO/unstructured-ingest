@@ -1,4 +1,8 @@
-## 0.3.1
+## 0.3.2-dev0
+
+### Enhancements
+
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
 
 ### Enhancements
 
