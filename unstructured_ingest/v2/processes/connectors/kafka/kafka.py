@@ -43,10 +43,11 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[KafkaAccessConfig]
     bootstrap_server: str
     port: int
-    group_id: str = Field(description="A consumer group is a way to allow a pool of consumers "
-                                      "to divide the consumption of data over topics and partitions.",
-                          default="default_group_id",
-                          )
+    group_id: str = Field(
+        description="A consumer group is a way to allow a pool of consumers "
+        "to divide the consumption of data over topics and partitions.",
+        default="default_group_id",
+    )
 
     @abstractmethod
     def get_consumer_configuration(self) -> dict:
@@ -161,8 +162,8 @@ class KafkaIndexer(Indexer, ABC):
     def precheck(self):
         try:
             with self.get_consumer() as consumer:
-                # timeout needs at least 3 secs,
-                # more info: https://forum.confluent.io/t/kafkacat-connect-failure-to-confcloud-ssl/2513
+                # timeout needs at least 3 secs, more info:
+                # https://forum.confluent.io/t/kafkacat-connect-failure-to-confcloud-ssl/2513
                 cluster_meta = consumer.list_topics(timeout=5)
                 current_topics = [
                     topic for topic in cluster_meta.topics if topic != "__consumer_offsets"

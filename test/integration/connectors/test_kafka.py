@@ -21,8 +21,14 @@ from test.integration.connectors.utils.validation import (
 from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.kafka.cloud import CloudKafkaConnectionConfig, \
-    CloudKafkaDownloaderConfig, CloudKafkaIndexer, CloudKafkaIndexerConfig, CloudKafkaDownloader, CloudKafkaAccessConfig
+from unstructured_ingest.v2.processes.connectors.kafka.cloud import (
+    CloudKafkaAccessConfig,
+    CloudKafkaConnectionConfig,
+    CloudKafkaDownloader,
+    CloudKafkaDownloaderConfig,
+    CloudKafkaIndexer,
+    CloudKafkaIndexerConfig,
+)
 from unstructured_ingest.v2.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,
     LocalKafkaConnectionConfig,
@@ -51,7 +57,15 @@ def docker_compose_ctx():
         yield ctx
 
 
-def wait_for_topic(topic: str, retries: int = 10, interval: int = 1, exists: bool = True, admin_client = get_admin_client()):
+def wait_for_topic(
+    topic: str,
+    retries: int = 10,
+    interval: int = 1,
+    exists: bool = True,
+    admin_client=None,
+):
+    if admin_client is None:
+        admin_client = get_admin_client()
     current_topics = admin_client.list_topics().topics
     attempts = 0
     while (topic not in current_topics) == exists and attempts < retries:
@@ -127,15 +141,13 @@ def kafka_seed_topic_cloud(expected_messages: int = 5) -> int:
         res = admin_client.delete_topics([TOPIC], operation_timeout=10)
         for topic, f in res.items():
             f.result()
-            print("Topic {} removed".format(topic))
+            print(f"Topic {topic} removed")
             wait_for_topic(TOPIC, 5, 1, False, admin_client)
-    except Exception as e:
+    except Exception:
         pass
 
     cluster_meta = admin_client.list_topics()
-    current_topics = [
-        topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
-    ]
+    current_topics = [topic for topic in cluster_meta.topics if topic != "__consumer_offsets"]
 
     assert TOPIC not in current_topics, f"Topic {TOPIC} shouldn't exist"
 
@@ -169,9 +181,9 @@ async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
         bootstrap_server=os.environ["KAFKA_BOOTSTRAP_SERVER"],
         port=9092,
         access_config=CloudKafkaAccessConfig(
-                api_key=os.environ["KAFKA_API_KEY"],
-                secret=os.environ["KAFKA_SECRET"],
-            )
+            api_key=os.environ["KAFKA_API_KEY"],
+            secret=os.environ["KAFKA_SECRET"],
+        ),
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
