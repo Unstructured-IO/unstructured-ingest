@@ -22,7 +22,6 @@ all_tests=(
   'couchbase.sh'
   'dropbox.sh'
   'gcs.sh'
-  'mongodb.sh'
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'

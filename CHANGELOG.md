@@ -1,4 +1,8 @@
-## 0.3.2-dev4
+## 0.3.2-dev5
+
+### Enhancements
+
+* **Persist record id in mongodb data, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 
@@ -17,6 +21,7 @@
 * **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
+
 * **Make AstraDB precheck fail on non-existant collections**
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
 * **Propagate exceptions raised by delta table connector during write**
