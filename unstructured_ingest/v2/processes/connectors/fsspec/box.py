@@ -23,6 +23,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecIndexerConfig,
     FsspecUploader,
     FsspecUploaderConfig,
+    SourceConnectionError,
 )
 
 CONNECTOR_TYPE = "box"
@@ -47,26 +48,36 @@ class BoxConnectionConfig(FsspecConnectionConfig):
 def get_access_config(self) -> dict[str, Any]:
     # Return access_kwargs with oauth. The oauth object cannot be stored directly in the config
     # because it is not serializable.
+    from boxsdk import JWTAuth
     import json
 
-    from boxsdk import JWTAuth
-
     ac = self.access_config.get_secret_value()
-
+    
     # Parse the JSON string directly from `box_app_config`
     if ac.box_app_config is None:
-        raise ValueError(
-            "box_app_config cannot be None. It must contain the JSON string with Box credentials."
-        )
-
+        raise ValueError("box_app_config cannot be None. It must contain the JSON string with Box credentials.")
+    
     try:
         settings_dict = json.loads(ac.box_app_config)
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to decode JSON from box_app_config: {e}")
 
     # Create the JWTAuth object from the parsed JSON dictionary
+    oauth = JWTAuth.from_settings_dictionary(settings_dict)
+
+    # Explicitly authenticate and generate an access token
+    try:
+        oauth.authenticate_instance()
+    except Exception as e:
+        raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
+
+    # Ensure the oauth instance has a valid access_token
+    if not oauth.access_token:
+        raise SourceConnectionError("Authentication failed: No access token generated.")
+
+    # Add the oauth object to the access_kwargs
     access_kwargs_with_oauth: dict[str, Any] = {
-        "oauth": JWTAuth.from_settings_dictionary(settings_dict),
+        "oauth": oauth,
     }
     access_config: dict[str, Any] = ac.model_dump()
     access_config.pop("box_app_config", None)
