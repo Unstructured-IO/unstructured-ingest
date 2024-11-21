@@ -78,8 +78,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Validate --help
         run: |
-          make install-base
-          ./test_e2e/test-help.sh
+          pip install .
+          PYTHONPATH=. python ./test_e2e/test-help.py
+          PYTHONPATH=. python ./test_e2e/test-help.py --local-code
 
   test_install_cli:
     environment: ci

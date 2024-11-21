@@ -1,12 +1,20 @@
 import itertools
 import json
 from datetime import datetime
-from typing import Any, Iterable, Optional, Sequence, TypeVar, cast
+from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
+
+import pandas as pd
 
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
 T = TypeVar("T")
 IterableT = Iterable[T]
+
+
+def split_dataframe(df: pd.DataFrame, chunk_size: int = 100) -> Generator[pd.DataFrame, None, None]:
+    num_chunks = len(df) // chunk_size + 1
+    for i in range(num_chunks):
+        yield df[i * chunk_size : (i + 1) * chunk_size]
 
 
 def batch_generator(iterable: IterableT, batch_size: int = 100) -> IterableT:

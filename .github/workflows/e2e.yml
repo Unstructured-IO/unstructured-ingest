@@ -42,6 +42,7 @@ jobs:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
+          make install-base
           make install-client
           make install-test
           make integration-test-${{ matrix.test }}
@@ -64,6 +65,7 @@ jobs:
           VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
           VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
         run: |
+          make install-base
           make install-all-embedders
           make install-test
           make integration-test-embedders
@@ -296,6 +298,7 @@ jobs:
         KDBAI_BEARER_TOKEN: ${{ secrets.KDBAI_BEARER_TOKEN }}
         KDBAI_USERNAME: ${{ secrets.KDBAI_USERNAME }}
         KDBAI_CIPHER_KEY: ${{ secrets.KDBAI_CIPHER_KEY }}
+        UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
         TABLE_OCR: "tesseract"
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"
