@@ -148,5 +148,5 @@ integration-test-connectors-dest:
 
 .PHONY: parse-skipped-tests
 parse-skipped-tests:
-	jq '.tests[] | select(.outcome == "skipped") | .nodeid, .setup.longrepr' < .report.json
+	PYTHONPATH=. python ./scripts/parse_pytest_report.py
 
