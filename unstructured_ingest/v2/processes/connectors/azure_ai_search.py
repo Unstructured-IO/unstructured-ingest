@@ -155,6 +155,10 @@ class AzureAISearchUploadStager(UploadStager):
             self.conform_dict(data=element, file_data=file_data) for element in elements_contents
         ]
 
+        if Path(output_filename).suffix != ".json":
+            output_filename = f"{output_filename}.json"
+        else:
+            output_filename = f"{Path(output_filename).stem}.json"
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as output_file:

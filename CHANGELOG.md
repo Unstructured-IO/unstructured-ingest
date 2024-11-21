@@ -1,8 +1,24 @@
-## 0.3.1-dev1
+## 0.3.2-dev2
+
+### Fixes
+
+* **Remove forward slash from Google Drive relative path field**
+* **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+
+## 0.3.1
+
+### Enhancements
+
+* **LanceDB V2 Destination Connector**
+* **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
+* **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in sql metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+* **Propagate exceptions raised by delta table connector during write**
 
 ## 0.3.0
 
@@ -24,7 +40,6 @@
 ## 0.2.2
 
 ### Enhancements
-
 * **Remove `overwrite` field** from fsspec and databricks connectors
 * **Added migration for GitLab Source V2**
 * **Added V2 confluence source connector**
@@ -41,6 +56,7 @@
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 * **Support native async requests from unstructured-client**
 * **Support filtering element types in partitioner step**
+
 
 ### Fixes
 

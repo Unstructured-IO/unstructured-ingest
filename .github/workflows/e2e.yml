@@ -42,6 +42,7 @@ jobs:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
+          make install-base
           make install-client
           make install-test
           make integration-test-${{ matrix.test }}
@@ -64,6 +65,7 @@ jobs:
           VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
           VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
         run: |
+          make install-base
           make install-all-embedders
           make install-test
           make integration-test-embedders
@@ -131,6 +133,8 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
         S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+        GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
+        AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
         MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
         MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
         MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
@@ -294,6 +298,7 @@ jobs:
         KDBAI_BEARER_TOKEN: ${{ secrets.KDBAI_BEARER_TOKEN }}
         KDBAI_USERNAME: ${{ secrets.KDBAI_USERNAME }}
         KDBAI_CIPHER_KEY: ${{ secrets.KDBAI_CIPHER_KEY }}
+        UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
         QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
         TABLE_OCR: "tesseract"
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"

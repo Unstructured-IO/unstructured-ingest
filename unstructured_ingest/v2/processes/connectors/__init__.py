@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.elasticsearch  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.lancedb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.sql  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.weaviate  # noqa: F401
 from unstructured_ingest.v2.processes.connector_registry import (
     add_destination_entry,
     add_source_entry,
@@ -24,8 +27,6 @@ from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
 from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
 from .delta_table import delta_table_destination_entry
-from .elasticsearch import CONNECTOR_TYPE as ELASTICSEARCH_CONNECTOR_TYPE
-from .elasticsearch import elasticsearch_destination_entry, elasticsearch_source_entry
 from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
@@ -40,8 +41,6 @@ from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_destination_entry, onedrive_source_entry
-from .opensearch import CONNECTOR_TYPE as OPENSEARCH_CONNECTOR_TYPE
-from .opensearch import opensearch_destination_entry, opensearch_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
 from .outlook import outlook_source_entry
 from .pinecone import CONNECTOR_TYPE as PINECONE_CONNECTOR_TYPE
@@ -52,8 +51,6 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
-from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
-from .weaviate import weaviate_destination_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -67,10 +64,6 @@ add_destination_entry(
     destination_type=DELTA_TABLE_CONNECTOR_TYPE, entry=delta_table_destination_entry
 )
 
-add_source_entry(source_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_source_entry)
-add_destination_entry(
-    destination_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_destination_entry
-)
 
 add_source_entry(source_type=GOOGLE_DRIVE_CONNECTOR_TYPE, entry=google_drive_source_entry)
 
@@ -80,14 +73,8 @@ add_destination_entry(destination_type=LOCAL_CONNECTOR_TYPE, entry=local_destina
 add_source_entry(source_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_source_entry)
 add_destination_entry(destination_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_destination_entry)
 
-add_source_entry(source_type=OPENSEARCH_CONNECTOR_TYPE, entry=opensearch_source_entry)
-add_destination_entry(
-    destination_type=OPENSEARCH_CONNECTOR_TYPE, entry=opensearch_destination_entry
-)
 
 add_source_entry(source_type=SALESFORCE_CONNECTOR_TYPE, entry=salesforce_source_entry)
-
-add_destination_entry(destination_type=WEAVIATE_CONNECTOR_TYPE, entry=weaviate_destination_entry)
 
 add_destination_entry(destination_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_destination_entry)
 add_source_entry(source_type=MONGODB_CONNECTOR_TYPE, entry=mongodb_source_entry)
