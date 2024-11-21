@@ -51,20 +51,19 @@ def docker_compose_ctx():
         yield ctx
 
 
-def wait_for_topic(topic: str, retries: int = 10, interval: int = 1):
-    admin_client = get_admin_client()
+def wait_for_topic(topic: str, retries: int = 10, interval: int = 1, exists: bool = True, admin_client = get_admin_client()):
     current_topics = admin_client.list_topics().topics
     attempts = 0
-    while topic not in current_topics and attempts < retries:
+    while (topic not in current_topics) == exists and attempts < retries:
         attempts += 1
         print(
-            "Attempt {}: Waiting for topic {} to exist in {}".format(
-                attempts, topic, ", ".join(current_topics)
+            "Attempt {}: Waiting for topic {} to {} exist in {}".format(
+                attempts, topic, "" if exists else "not", ", ".join(current_topics)
             )
         )
         time.sleep(interval)
         current_topics = admin_client.list_topics().topics
-    if topic not in current_topics:
+    if (topic not in current_topics) == exists:
         raise TimeoutError(f"Timeout out waiting for topic {topic} to exist")
 
 
@@ -129,8 +128,7 @@ def kafka_seed_topic_cloud(expected_messages: int = 5) -> int:
         for topic, f in res.items():
             f.result()
             print("Topic {} removed".format(topic))
-            # For some reason, sometimes the deletion is not immediately visible even though operation_timeout is used.
-            time.sleep(2)
+            wait_for_topic(TOPIC, 5, 1, False, admin_client)
     except Exception as e:
         pass
 
@@ -204,7 +202,7 @@ async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_kafka_source_local_precheck_fail():
+def test_kafka_source_local_precheck_fail_no_cluster():
     connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     indexer = LocalKafkaIndexer(
         connection_config=connection_config,

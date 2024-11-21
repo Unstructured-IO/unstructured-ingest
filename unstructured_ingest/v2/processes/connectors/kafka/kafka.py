@@ -43,6 +43,10 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[KafkaAccessConfig]
     bootstrap_server: str
     port: int
+    group_id: str = Field(description="A consumer group is a way to allow a pool of consumers "
+                                      "to divide the consumption of data over topics and partitions.",
+                          default="default_group_id",
+                          )
 
     @abstractmethod
     def get_consumer_configuration(self) -> dict:

@@ -43,7 +43,7 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
             "client.id": socket.gethostname(),
-            "group.id": "default_group_id",  # todo it should be parametralizable
+            "group.id": self.group_id,
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
             "sasl.username": access_config.api_key.get_secret_value(),
