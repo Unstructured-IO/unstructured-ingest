@@ -18,7 +18,7 @@ from test.integration.connectors.utils.validation import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.mongodb import (
     CONNECTOR_TYPE,
@@ -33,10 +33,6 @@ from unstructured_ingest.v2.processes.connectors.mongodb import (
 )
 
 SOURCE_COLLECTION = "sample-mongodb-data"
-os.environ["MONGODB_URI"] = (
-    "mongodb+srv://ingest-test-user:8f3YfW7iJdi7pU4e@ingest-test.hgaig.mongodb.net/"
-)
-os.environ["MONGODB_DATABASE"] = "ingest-test-db"
 
 
 class EnvData(BaseModel):
@@ -236,3 +232,49 @@ async def test_mongodb_destination(
         embedding=first_element["embeddings"],
         text=first_element["text"],
     )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_mongodb_uploader_precheck_fail_no_host():
+    upload_config = MongoDBUploaderConfig(
+        database="database",
+        collection="collection",
+    )
+    connection_config = MongoDBConnectionConfig(
+        access_config=MongoDBAccessConfig(uri="mongodb+srv://ingest-test.hgaig.mongodb"),
+    )
+    uploader = MongoDBUploader(connection_config=connection_config, upload_config=upload_config)
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@requires_env("MONGODB_URI", "MONGODB_DATABASE")
+def test_mongodb_uploader_precheck_fail_no_database():
+    env_data = get_env_data()
+    upload_config = MongoDBUploaderConfig(
+        database="database",
+        collection="collection",
+    )
+    connection_config = MongoDBConnectionConfig(
+        access_config=MongoDBAccessConfig(uri=env_data.uri.get_secret_value()),
+    )
+    uploader = MongoDBUploader(connection_config=connection_config, upload_config=upload_config)
+    with pytest.raises(SourceConnectionError):
+        uploader.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@requires_env("MONGODB_URI", "MONGODB_DATABASE")
+def test_mongodb_uploader_precheck_fail_no_collection():
+    env_data = get_env_data()
+    upload_config = MongoDBUploaderConfig(
+        database=env_data.database,
+        collection="collection",
+    )
+    connection_config = MongoDBConnectionConfig(
+        access_config=MongoDBAccessConfig(uri=env_data.uri.get_secret_value()),
+    )
+    uploader = MongoDBUploader(connection_config=connection_config, upload_config=upload_config)
+    with pytest.raises(SourceConnectionError):
+        uploader.precheck()
