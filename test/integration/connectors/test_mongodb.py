@@ -289,7 +289,7 @@ def test_mongodb_uploader_precheck_fail_no_database():
         access_config=MongoDBAccessConfig(uri=env_data.uri.get_secret_value()),
     )
     uploader = MongoDBUploader(connection_config=connection_config, upload_config=upload_config)
-    with pytest.raises(SourceConnectionError):
+    with pytest.raises(DestinationConnectionError):
         uploader.precheck()
 
 
@@ -305,5 +305,5 @@ def test_mongodb_uploader_precheck_fail_no_collection():
         access_config=MongoDBAccessConfig(uri=env_data.uri.get_secret_value()),
     )
     uploader = MongoDBUploader(connection_config=connection_config, upload_config=upload_config)
-    with pytest.raises(SourceConnectionError):
+    with pytest.raises(DestinationConnectionError):
         uploader.precheck()
