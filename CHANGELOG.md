@@ -1,13 +1,14 @@
-## 0.3.2-dev0
+## 0.3.2-dev2
 
 ### Fixes
 
-* **Fix Kafka source connector precheck** 
+* **Remove forward slash from Google Drive relative path field**
+* **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+* **Fix Kafka source connector precheck**
 
 ### Enhancements
 
 * **Kafka source connector has new group_id field**
-
 
 ## 0.3.1
 
