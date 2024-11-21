@@ -136,3 +136,49 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
             secret=aws_credentials["AWS_SECRET_ACCESS_KEY"],
         )
         s3fs.rm(path=destination_path, recursive=True)
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
+async def test_delta_table_destination_s3_bad_creds(upload_file: Path, temp_dir: Path):
+    aws_credentials = {
+        "AWS_ACCESS_KEY_ID": "bad key",
+        "AWS_SECRET_ACCESS_KEY": "bad secret",
+        "AWS_REGION": "us-east-2",
+    }
+    s3_bucket = "s3://utic-platform-test-destination"
+    destination_path = f"{s3_bucket}/destination/test"
+    connection_config = DeltaTableConnectionConfig(
+        access_config=DeltaTableAccessConfig(
+            aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+        ),
+        aws_region=aws_credentials["AWS_REGION"],
+        table_uri=destination_path,
+    )
+    stager_config = DeltaTableUploadStagerConfig()
+    stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+    )
+
+    upload_config = DeltaTableUploaderConfig()
+    uploader = DeltaTableUploader(connection_config=connection_config, upload_config=upload_config)
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(
+            fullpath=upload_file.name, filename=new_upload_file.name
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+
+    with pytest.raises(Exception) as excinfo:
+        if uploader.is_async():
+            await uploader.run_async(path=new_upload_file, file_data=file_data)
+        else:
+            uploader.run(path=new_upload_file, file_data=file_data)
+
+    assert "403 Forbidden" in str(excinfo.value), f"Exception message did not match: {str(excinfo)}"

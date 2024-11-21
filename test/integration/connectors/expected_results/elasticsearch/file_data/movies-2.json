@@ -1,0 +1,30 @@
+{
+  "identifier": "movies-2",
+  "connector_type": "elasticsearch",
+  "source_identifiers": {
+    "filename": "movies-2.txt",
+    "fullpath": "movies-2.txt",
+    "rel_path": null
+  },
+  "doc_type": "file",
+  "metadata": {
+    "url": null,
+    "version": "1",
+    "record_locator": {
+      "hosts": [
+        "http://localhost:9200"
+      ],
+      "index_name": "movies",
+      "document_id": "2"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1732112039.737973",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {},
+  "reprocess": false,
+  "local_download_path": null,
+  "display_name": null
+}

@@ -240,6 +240,10 @@ def update_fixtures(
     # Rewrite the current file data
     if save_filedata:
         file_data_output_path = output_dir / "file_data"
+        print(
+            f"Writing {len(all_file_data)} file data to "
+            f"saved fixture location {file_data_output_path}"
+        )
         file_data_output_path.mkdir(parents=True, exist_ok=True)
         for file_data in all_file_data:
             file_data_path = file_data_output_path / f"{file_data.identifier}.json"
@@ -256,6 +260,10 @@ def update_fixtures(
     # If applicable, save raw downloads
     if save_downloads:
         raw_download_output_path = output_dir / "downloads"
+        print(
+            f"Writing {len(download_files)} downloaded files to "
+            f"saved fixture location {raw_download_output_path}"
+        )
         shutil.copytree(download_dir, raw_download_output_path)
 
 
@@ -328,6 +336,7 @@ async def source_connector_validation(
             postdownload_file_data = replace(resp["file_data"])
             all_postdownload_file_data.append(postdownload_file_data)
     if not overwrite_fixtures:
+        print("Running validation")
         run_all_validations(
             configs=configs,
             predownload_file_data=all_predownload_file_data,
@@ -336,6 +345,7 @@ async def source_connector_validation(
             test_output_dir=test_output_dir,
         )
     else:
+        print("Running fixtures update")
         update_fixtures(
             output_dir=test_output_dir,
             download_dir=download_dir,
