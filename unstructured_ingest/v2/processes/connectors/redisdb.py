@@ -111,45 +111,56 @@ class RedisUploader(Uploader):
 
     @requires_dependencies(["redis"], extras="redis")
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from redis import exceptions as redis_exceptions
-
         with path.open("r") as file:
             elements_dict = json.load(file)
 
         if not elements_dict:
             return
 
+        first_element = elements_dict[0]
+        redis_stack = await self._check_redis_stack(first_element)
+
         logger.info(
             f"writing {len(elements_dict)} objects to destination asynchronously, "
             f"db, {self.connection_config.database}, "
             f"at {self.connection_config.host}",
         )
+
+        batches = list(batch_generator(elements_dict, batch_size=self.upload_config.batch_size))
+        await asyncio.gather(*[self._write_batch(batch, redis_stack) for batch in batches])
+
+    async def _write_batch(self, batch: list[dict], redis_stack: bool) -> None:
         async with self.connection_config.create_client() as async_client:
             async with async_client.pipeline(transaction=True) as pipe:
-                first_element = elements_dict[0]
-                element_id = first_element["element_id"]
-                redis_stack = True
+                for element in batch:
+                    element_id = element["element_id"]
+                    if redis_stack:
+                        pipe.json().set(element_id, "$", element)
+                    else:
+                        pipe.set(element_id, json.dumps(element))
+                await pipe.execute()
+
+    @requires_dependencies(["redis"], extras="redis")
+    async def _check_redis_stack(self, element: dict) -> bool:
+        from redis import exceptions as redis_exceptions
+
+        redis_stack = True
+        async with self.connection_config.create_client() as async_client:
+            async with async_client.pipeline(transaction=True) as pipe:
+                element_id = element["element_id"]
                 try:
                     # Redis with stack extension supports JSON type
-                    await pipe.json().set(element_id, "$", first_element).execute()
+                    await pipe.json().set(element_id, "$", element).execute()
                 except redis_exceptions.ResponseError as e:
                     message = str(e)
                     if "unknown command `JSON.SET`" in message:
                         # if this error occurs, Redis server doesn't support JSON type,
                         # so save as string type instead
-                        await pipe.set(element_id, json.dumps(first_element)).execute()
+                        await pipe.set(element_id, json.dumps(element)).execute()
                         redis_stack = False
                     else:
                         raise e
-
-                for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
-                    for element in chunk:
-                        element_id = element["element_id"]
-                        if redis_stack:
-                            pipe.json().set(element_id, "$", element)
-                        else:
-                            pipe.set(element_id, json.dumps(element))
-                    await pipe.execute()
+        return redis_stack
 
 
 redis_destination_entry = DestinationRegistryEntry(
