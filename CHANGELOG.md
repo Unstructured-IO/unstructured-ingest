@@ -1,14 +1,18 @@
-## 0.3.1-dev5
+## 0.3.2-dev1
 
 ### Features
 
 * **Add `collection_id` field to Couchbase `downloader_config`**
+
+## 0.3.1
 
 ### Enhancements
 
 * **LanceDB V2 Destination Connector**
 * **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
 * **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in sql metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 * **Make AstraDB precheck fail on non-existant collections**

@@ -158,14 +158,20 @@ async def test_postgres_destination(upload_file: Path):
                     access_config=PostgresAccessConfig(password=connect_params["password"]),
                 )
             )
-            if uploader.is_async():
-                await uploader.run_async(path=staged_path, file_data=mock_file_data)
-            else:
-                uploader.run(path=staged_path, file_data=mock_file_data)
+
+            uploader.run(path=staged_path, file_data=mock_file_data)
 
             staged_df = pd.read_json(staged_path, orient="records", lines=True)
             sample_element = staged_df.iloc[0]
             expected_num_elements = len(staged_df)
+            validate_destination(
+                connect_params=connect_params,
+                expected_num_elements=expected_num_elements,
+                expected_text=sample_element["text"],
+                test_embedding=sample_element["embeddings"],
+            )
+
+            uploader.run(path=staged_path, file_data=mock_file_data)
             validate_destination(
                 connect_params=connect_params,
                 expected_num_elements=expected_num_elements,

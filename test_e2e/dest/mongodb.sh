@@ -49,6 +49,9 @@ python "$SCRIPT_DIR"/python/test-ingest-mongodb.py \
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --output-dir "$OUTPUT_DIR" \
   --strategy fast \

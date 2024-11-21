@@ -104,6 +104,10 @@ class PineconeUploaderConfig(UploaderConfig):
         default=None,
         description="The namespace to write to. If not specified, the default namespace is used",
     )
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -191,23 +195,28 @@ class PineconeUploader(Uploader):
 
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        delete_kwargs = {"filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}}}
+        delete_kwargs = {
+            "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
+        }
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
 
         resp = index.delete(**delete_kwargs)
         logger.debug(
-            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleted any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index: {resp}"
         )
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
@@ -217,7 +226,7 @@ class PineconeUploader(Uploader):
             return
         dimension = index_stats["dimension"]
         query_params = {
-            "filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}},
+            "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
             "vector": [0] * dimension,
             "top_k": total_vectors,
         }
@@ -234,7 +243,8 @@ class PineconeUploader(Uploader):
                 delete_params["namespace"] = namespace
             index.delete(**delete_params)
         logger.debug(
-            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleted any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index"
         )
 
@@ -277,7 +287,6 @@ class PineconeUploader(Uploader):
             f"writing a total of {len(elements_dict)} elements via"
             f" document batches to destination"
             f" index named {self.connection_config.index_name}"
-            f" with batch size {self.upload_config.batch_size}"
         )
         # Determine if serverless or pod based index
         pinecone_client = self.connection_config.get_client()
