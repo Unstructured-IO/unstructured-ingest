@@ -58,6 +58,10 @@ class RedisConnectionConfig(ConnectionConfig):
         from redis.asyncio import Redis, from_url
 
         access_config = self.access_config.get_secret_value()
+
+        if not access_config.uri and not self.host:
+            raise ValueError("Please pass a hostname either directly or through uri")
+
         options = {
             "host": self.host,
             "port": self.port,
@@ -94,8 +98,6 @@ class RedisUploader(Uploader):
         return True
 
     def precheck(self) -> None:
-        if not self.connection_config.access_config.uri and not self.connection_config.host:
-            raise ValueError("Please pass a hostname either directly or through uri")
 
         async def check_connection():
             async with self.connection_config.create_client() as async_client:
@@ -114,38 +116,40 @@ class RedisUploader(Uploader):
         with path.open("r") as file:
             elements_dict = json.load(file)
 
-        if elements_dict:
-            logger.info(
-                f"writing {len(elements_dict)} objects to destination asynchronously, "
-                f"db, {self.connection_config.database}, "
-                f"at {self.connection_config.host}",
-            )
-            async with self.connection_config.create_client() as async_client:
-                async with async_client.pipeline(transaction=True) as pipe:
-                    first_element = elements_dict[0]
-                    element_id = first_element["element_id"]
-                    redis_stack = True
-                    try:
-                        # Redis with stack extension supports JSON type
-                        await pipe.json().set(element_id, "$", first_element).execute()
-                    except redis_exceptions.ResponseError as e:
-                        message = str(e)
-                        if "unknown command `JSON.SET`" in message:
-                            # if this error occurs, Redis server doesn't support JSON type,
-                            # so save as string type instead
-                            await pipe.set(element_id, json.dumps(first_element)).execute()
-                            redis_stack = False
-                        else:
-                            raise e
+        if not elements_dict:
+            return
 
-                    for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
-                        for element in chunk:
-                            element_id = element["element_id"]
-                            if redis_stack:
-                                pipe.json().set(element_id, "$", element)
-                            else:
-                                pipe.set(element_id, json.dumps(element))
-                        await pipe.execute()
+        logger.info(
+            f"writing {len(elements_dict)} objects to destination asynchronously, "
+            f"db, {self.connection_config.database}, "
+            f"at {self.connection_config.host}",
+        )
+        async with self.connection_config.create_client() as async_client:
+            async with async_client.pipeline(transaction=True) as pipe:
+                first_element = elements_dict[0]
+                element_id = first_element["element_id"]
+                redis_stack = True
+                try:
+                    # Redis with stack extension supports JSON type
+                    await pipe.json().set(element_id, "$", first_element).execute()
+                except redis_exceptions.ResponseError as e:
+                    message = str(e)
+                    if "unknown command `JSON.SET`" in message:
+                        # if this error occurs, Redis server doesn't support JSON type,
+                        # so save as string type instead
+                        await pipe.set(element_id, json.dumps(first_element)).execute()
+                        redis_stack = False
+                    else:
+                        raise e
+
+                for chunk in batch_generator(elements_dict[1:], self.upload_config.batch_size):
+                    for element in chunk:
+                        element_id = element["element_id"]
+                        if redis_stack:
+                            pipe.json().set(element_id, "$", element)
+                        else:
+                            pipe.set(element_id, json.dumps(element))
+                    await pipe.execute()
 
 
 redis_destination_entry = DestinationRegistryEntry(
