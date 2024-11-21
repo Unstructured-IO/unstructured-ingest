@@ -127,21 +127,26 @@ integration-test:
 
 .PHONY: integration-test-partitioners
 integration-test-partitioners:
-	PYTHONPATH=. pytest -sv test/integration/partitioners
+	PYTHONPATH=. pytest -sv test/integration/partitioners --json-report
 
 .PHONY: integration-test-chunkers
 integration-test-chunkers:
-	PYTHONPATH=. pytest -sv test/integration/chunkers
+	PYTHONPATH=. pytest -sv test/integration/chunkers --json-report
 
 .PHONY: integration-test-embedders
 integration-test-embedders:
-	PYTHONPATH=. pytest -sv test/integration/embedders
+	PYTHONPATH=. pytest -sv test/integration/embedders --json-report
 
 .PHONY: integration-test-connectors-src
 integration-test-connectors-src:
-	PYTHONPATH=. pytest --tags source -sv test/integration/connectors
+	PYTHONPATH=. pytest --tags source -sv test/integration/connectors --cov-report=json --json-report
 
 
 .PHONY: integration-test-connectors-dest
 integration-test-connectors-dest:
-	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors
+	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors --json-report
+
+.PHONY: parse-skipped-tests
+parse-skipped-tests:
+	jq '.tests[] | select(.outcome == "skipped") | .nodeid, .setup.longrepr' < .report.json
+
