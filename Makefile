@@ -62,7 +62,7 @@ install-ci: install-all-connectors install-all-embedders
 .PHONY: tidy
 tidy: tidy-black tidy-ruff tidy-autoflake tidy-shell
 
-.PHONY: tidy_shell
+.PHONY: tidy-shell
 tidy-shell:
 	shfmt -i 2 -l -w .
 
