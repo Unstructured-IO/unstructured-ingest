@@ -51,8 +51,6 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
-from .weaviate import CONNECTOR_TYPE as WEAVIATE_CONNECTOR_TYPE
-from .weaviate import weaviate_destination_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -100,4 +98,3 @@ add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
 
 add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
-add_destination_entry(destination_type=WEAVIATE_CONNECTOR_TYPE, entry=weaviate_destination_entry)
