@@ -103,7 +103,7 @@ jobs:
         ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
         ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
+        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -151,7 +151,7 @@ jobs:
         AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
         AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
+        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
       run : |
         source .venv/bin/activate
         make install-test
