@@ -11,7 +11,6 @@ from lancedb import AsyncConnection
 from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
-from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
@@ -175,23 +174,6 @@ class TestPrecheck:
         _, uri = connection_with_uri
         uploader = _get_uploader(uri)
         uploader.precheck()
-
-    def test_fails_on_missing_record_id_column(self, tmp_path: Path):
-        table_name = "invalid_table"
-        schema = pa.schema([pa.field("vector", pa.list_(pa.float16(), DIMENSION))])
-        uri = str(tmp_path / "database")
-        lancedb.connect(uri).create_table(table_name, schema=schema)
-        uploader = LanceDBLocalUploader(
-            connection_config=LanceDBLocalConnectionConfig(
-                access_config=LanceDBLocalAccessConfig(), uri=uri
-            ),
-            upload_config=LanceDBUploaderConfig(table_name=table_name),
-        )
-        with pytest.raises(
-            DestinationConnectionError,
-            match=f"Designated table must contain {RECORD_ID_LABEL} column of type string",
-        ):
-            uploader.precheck()
 
 
 def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path) -> str:

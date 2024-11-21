@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import pandas as pd
-import pyarrow as pa
 from pydantic import Field
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -117,17 +116,9 @@ class LanceDBUploader(Uploader):
     @DestinationConnectionError.wrap
     def precheck(self):
         async def _precheck() -> None:
-            async with self.get_table() as table:
-                schema = await table.schema()
-                if (
-                    RECORD_ID_LABEL not in schema.names
-                    or schema.field(RECORD_ID_LABEL).type != pa.string()
-                ):
-                    raise DestinationConnectionError(
-                        f"Designated table must contain {RECORD_ID_LABEL} column"
-                        " of type string. It is required to support overwriting updates on"
-                        " subsequent executions on the same file."
-                    )
+            async with self.connection_config.get_async_connection() as conn:
+                table = await conn.open_table(self.upload_config.table_name)
+                table.close()
 
         asyncio.run(_precheck())
 
@@ -158,7 +149,7 @@ class LanceDBUploader(Uploader):
             logger.warning(
                 f"Designated table doesn't contain {RECORD_ID_LABEL} column of type"
                 " string which is required to support overwriting updates on subsequent executions"
-                " on the same file."
+                " on the same file. Records will be appended."
             )
 
         if columns_to_drop:
