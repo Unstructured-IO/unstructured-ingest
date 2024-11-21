@@ -44,46 +44,49 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     access_config: Secret[BoxAccessConfig] = Field(default=BoxAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    def get_access_config(self) -> dict[str, Any]:
+        # Return access_kwargs with oauth. The oauth object cannot be stored directly in the config
+        # because it is not serializable.
+        import json
 
-def get_access_config(self) -> dict[str, Any]:
-    # Return access_kwargs with oauth. The oauth object cannot be stored directly in the config
-    # because it is not serializable.
-    from boxsdk import JWTAuth
-    import json
+        from boxsdk import JWTAuth
 
-    ac = self.access_config.get_secret_value()
-    
-    # Parse the JSON string directly from `box_app_config`
-    if ac.box_app_config is None:
-        raise ValueError("box_app_config cannot be None. It must contain the JSON string with Box credentials.")
-    
-    try:
-        settings_dict = json.loads(ac.box_app_config)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Failed to decode JSON from box_app_config: {e}")
+        ac = self.access_config.get_secret_value()
 
-    # Create the JWTAuth object from the parsed JSON dictionary
-    oauth = JWTAuth.from_settings_dictionary(settings_dict)
+        # Parse the JSON string directly from `box_app_config`
+        if ac.box_app_config is None:
+            raise ValueError(
+                "box_app_config cannot be None. \
+                It must contain the JSON string with Box credentials."
+            )
 
-    # Explicitly authenticate and generate an access token
-    try:
-        oauth.authenticate_instance()
-    except Exception as e:
-        raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
+        try:
+            settings_dict = json.loads(ac.box_app_config)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to decode JSON from box_app_config: {e}")
 
-    # Ensure the oauth instance has a valid access_token
-    if not oauth.access_token:
-        raise SourceConnectionError("Authentication failed: No access token generated.")
+        # Create the JWTAuth object from the parsed JSON dictionary
+        oauth = JWTAuth.from_settings_dictionary(settings_dict)
 
-    # Add the oauth object to the access_kwargs
-    access_kwargs_with_oauth: dict[str, Any] = {
-        "oauth": oauth,
-    }
-    access_config: dict[str, Any] = ac.model_dump()
-    access_config.pop("box_app_config", None)
-    access_kwargs_with_oauth.update(access_config)
+        # Explicitly authenticate and generate an access token
+        try:
+            oauth.authenticate_instance()
+        except Exception as e:
+            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
 
-    return access_kwargs_with_oauth
+        # Ensure the oauth instance has a valid access_token
+        if not oauth.access_token:
+            raise SourceConnectionError("Authentication failed: No access token generated.")
+
+        # Add the oauth object to the access_kwargs
+        access_kwargs_with_oauth: dict[str, Any] = {
+            "oauth": oauth,
+        }
+        access_config: dict[str, Any] = ac.model_dump()
+        access_config.pop("box_app_config", None)
+        access_kwargs_with_oauth.update(access_config)
+
+        return access_kwargs_with_oauth
 
 
 @dataclass
