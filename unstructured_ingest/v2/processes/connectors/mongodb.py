@@ -1,7 +1,7 @@
 import json
 import sys
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from time import time
@@ -25,8 +25,6 @@ from unstructured_ingest.v2.interfaces import (
     SourceIdentifiers,
     Uploader,
     UploaderConfig,
-    UploadStager,
-    UploadStagerConfig,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
@@ -80,10 +78,6 @@ class MongoDBConnectionConfig(ConnectionConfig):
             }
         with MongoClient(**client_kwargs) as client:
             yield client
-
-
-class MongoDBUploadStagerConfig(UploadStagerConfig):
-    pass
 
 
 class MongoDBIndexerConfig(IndexerConfig):
@@ -145,8 +139,8 @@ class MongoDBIndexer(Indexer):
             metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
-                    "database": self.connection_config.database,
-                    "collection": self.connection_config.collection,
+                    "database": self.index_config.database,
+                    "collection": self.index_config.collection,
                 },
             )
 
@@ -242,14 +236,12 @@ class MongoDBDownloader(Downloader):
             concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
 
             # Create a FileData object for each document with source_identifiers
-            individual_file_data = FileData(
-                identifier=str(doc_id),
-                connector_type=self.connector_type,
-                source_identifiers=SourceIdentifiers(
-                    filename=str(doc_id),
-                    fullpath=str(doc_id),
-                    rel_path=str(doc_id),
-                ),
+            individual_file_data = replace(file_data)
+            individual_file_data.identifier = str(doc_id)
+            individual_file_data.source_identifiers = SourceIdentifiers(
+                filename=str(doc_id),
+                fullpath=str(doc_id),
+                rel_path=str(doc_id),
             )
 
             # Determine the download path
@@ -267,15 +259,8 @@ class MongoDBDownloader(Downloader):
             individual_file_data.local_download_path = str(download_path)
 
             # Update metadata
-            individual_file_data.metadata = FileDataSourceMetadata(
-                date_created=date_created,  # Include date_created here
-                date_processed=str(time()),
-                record_locator={
-                    "database": self.connection_config.database,
-                    "collection": self.connection_config.collection,
-                    "document_id": str(doc_id),
-                },
-            )
+            individual_file_data.metadata.record_locator["document_id"] = str(doc_id)
+            individual_file_data.metadata.date_created = date_created
 
             download_response = self.generate_download_response(
                 file_data=individual_file_data, download_path=download_path
@@ -283,29 +268,6 @@ class MongoDBDownloader(Downloader):
             download_responses.append(download_response)
 
         return download_responses
-
-
-@dataclass
-class MongoDBUploadStager(UploadStager):
-    upload_stager_config: MongoDBUploadStagerConfig = field(
-        default_factory=lambda: MongoDBUploadStagerConfig()
-    )
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(elements_contents, output_file)
-        return output_path
 
 
 class MongoDBUploaderConfig(UploaderConfig):
@@ -365,8 +327,6 @@ mongodb_destination_entry = DestinationRegistryEntry(
     connection_config=MongoDBConnectionConfig,
     uploader=MongoDBUploader,
     uploader_config=MongoDBUploaderConfig,
-    upload_stager=MongoDBUploadStager,
-    upload_stager_config=MongoDBUploadStagerConfig,
 )
 
 mongodb_source_entry = SourceRegistryEntry(

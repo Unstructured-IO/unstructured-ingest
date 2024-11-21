@@ -1,19 +1,25 @@
+import json
 import os
+import time
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
 import pytest
 from pydantic import BaseModel, SecretStr
+from pymongo.collection import Collection
 from pymongo.mongo_client import MongoClient
+from pymongo.operations import SearchIndexModel
 
-from test.integration.connectors.utils.constants import SOURCE_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
 from test.integration.connectors.utils.validation import (
     ValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.mongodb import (
     CONNECTOR_TYPE,
     MongoDBAccessConfig,
@@ -22,9 +28,15 @@ from unstructured_ingest.v2.processes.connectors.mongodb import (
     MongoDBDownloaderConfig,
     MongoDBIndexer,
     MongoDBIndexerConfig,
+    MongoDBUploader,
+    MongoDBUploaderConfig,
 )
 
 SOURCE_COLLECTION = "sample-mongodb-data"
+os.environ["MONGODB_URI"] = (
+    "mongodb+srv://ingest-test-user:8f3YfW7iJdi7pU4e@ingest-test.hgaig.mongodb.net/"
+)
+os.environ["MONGODB_DATABASE"] = "ingest-test-db"
 
 
 class EnvData(BaseModel):
@@ -46,6 +58,78 @@ def get_client() -> Generator[MongoClient, None, None]:
     with MongoClient(uri) as client:
         assert client.admin.command("ping")
         yield client
+
+
+@pytest.fixture
+def destination_collection() -> Collection:
+    env_data = get_env_data()
+    collection_name = f"utic-test-output-{uuid.uuid4()}"
+    with get_client() as client:
+        database = client[env_data.database]
+        print(f"creating collection in database {database}: {collection_name}")
+        collection = database.create_collection(name=collection_name)
+        collection.create_search_index(
+            model=SearchIndexModel(
+                name="embeddings",
+                definition={
+                    "mappings": {
+                        "dynamic": True,
+                        "fields": {
+                            "embeddings": [
+                                {"type": "knnVector", "dimensions": 384, "similarity": "euclidean"}
+                            ]
+                        },
+                    }
+                },
+            )
+        )
+        collection.create_index("record_id")
+        try:
+            yield collection
+        finally:
+            print(f"deleting collection: {collection_name}")
+            collection.drop()
+
+
+def validate_collection_count(collection: Collection, expected_records: int) -> None:
+    count = collection.count_documents(filter={})
+    assert (
+        count == expected_records
+    ), f"expected count ({expected_records}) does not match how many records were found: {count}"
+
+
+def validate_collection_vector(
+    collection: Collection, embedding: list[float], text: str, retries: int = 30, interval: int = 1
+) -> None:
+    pipeline = [
+        {
+            "$vectorSearch": {
+                "index": "embeddings",
+                "path": "embeddings",
+                "queryVector": embedding,
+                "numCandidates": 150,
+                "limit": 10,
+            },
+        },
+        {"$project": {"_id": 0, "text": 1, "score": {"$meta": "vectorSearchScore"}}},
+    ]
+    attempts = 0
+    results = list(collection.aggregate(pipeline=pipeline))
+    while not results and attempts < retries:
+        attempts += 1
+        print(f"attempt {attempts}, waiting for valid results: {results}")
+        time.sleep(interval)
+        results = list(collection.aggregate(pipeline=pipeline))
+    if not results:
+        raise TimeoutError("Timed out waiting for valid results")
+    print(f"found results on attempt {attempts}")
+    top_result = results[0]
+    assert top_result["score"] == 1.0, "score detected should be 1: {}".format(top_result["score"])
+    assert top_result["text"] == text, "text detected should be {}, found: {}".format(
+        text, top_result["text"]
+    )
+    for r in results[1:]:
+        assert r["score"] < 1.0, "score detected should be less than 1: {}".format(r["score"])
 
 
 @pytest.mark.asyncio
@@ -114,3 +198,41 @@ def test_mongodb_indexer_precheck_fail_no_collection():
     indexer = MongoDBIndexer(connection_config=connection_config, index_config=indexer_config)
     with pytest.raises(SourceConnectionError):
         indexer.precheck()
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@requires_env("MONGODB_URI", "MONGODB_DATABASE")
+async def test_mongodb_destination(
+    upload_file: Path,
+    destination_collection: Collection,
+    tmp_path: Path,
+):
+    env_data = get_env_data()
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mongodb_mock_id",
+    )
+    connection_config = MongoDBConnectionConfig(
+        access_config=MongoDBAccessConfig(uri=env_data.uri.get_secret_value()),
+    )
+
+    upload_config = MongoDBUploaderConfig(
+        database=env_data.database,
+        collection=destination_collection.name,
+    )
+    uploader = MongoDBUploader(connection_config=connection_config, upload_config=upload_config)
+    uploader.precheck()
+    uploader.run(path=upload_file, file_data=file_data)
+
+    with upload_file.open() as f:
+        staged_elements = json.load(f)
+    expected_records = len(staged_elements)
+    validate_collection_count(collection=destination_collection, expected_records=expected_records)
+    first_element = staged_elements[0]
+    validate_collection_vector(
+        collection=destination_collection,
+        embedding=first_element["embeddings"],
+        text=first_element["text"],
+    )
