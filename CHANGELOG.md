@@ -1,3 +1,8 @@
+## 0.3.2-dev1
+
+### Fixes
+* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
+
 ## 0.3.1
 
 ### Enhancements
