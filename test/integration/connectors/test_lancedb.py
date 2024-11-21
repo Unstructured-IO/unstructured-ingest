@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Literal, Union
+from uuid import uuid4
 
 import lancedb
 import pandas as pd
@@ -186,7 +187,7 @@ def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path)
     elif target == "az":
         base_uri = UPath(AZURE_BUCKET)
 
-    return str(base_uri / "destination" / "lancedb" / DATABASE_NAME)
+    return str(base_uri / "destination" / "lancedb" / str(uuid4()) / DATABASE_NAME)
 
 
 def _get_uploader(
