@@ -46,6 +46,7 @@ jobs:
           make install-client
           make install-test
           make integration-test-${{ matrix.test }}
+          make parse-skipped-tests
 
   embedders_integration_test:
     runs-on: ubuntu-latest
@@ -69,6 +70,7 @@ jobs:
           make install-all-embedders
           make install-test
           make integration-test-embedders
+          make parse-skipped-tests
 
   source_connectors_integration_test:
     runs-on: ubuntu-latest-m
@@ -104,6 +106,7 @@ jobs:
         source .venv/bin/activate
         make install-test
         make integration-test-connectors-src
+        make parse-skipped-tests
 
   destination_connectors_integration_test:
     runs-on: ubuntu-latest-m
@@ -149,6 +152,7 @@ jobs:
         source .venv/bin/activate
         make install-test
         make integration-test-connectors-dest
+        make parse-skipped-tests
 
   test_src:
     strategy:
