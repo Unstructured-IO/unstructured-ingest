@@ -1,5 +1,6 @@
 import json
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -54,10 +55,31 @@ class MongoDBConnectionConfig(ConnectionConfig):
         description="hostname or IP address or Unix domain socket path of a single mongod or "
         "mongos instance to connect to, or a list of hostnames",
     )
-    database: Optional[str] = Field(default=None, description="database name to connect to")
-    collection: Optional[str] = Field(default=None, description="collection name to connect to")
     port: int = Field(default=27017)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+
+    @contextmanager
+    @requires_dependencies(["pymongo"], extras="mongodb")
+    def get_client(self) -> Generator["MongoClient", None, None]:
+        from pymongo import MongoClient
+        from pymongo.driver_info import DriverInfo
+        from pymongo.server_api import ServerApi
+
+        access_config = self.access_config.get_secret_value()
+        if uri := access_config.uri:
+            client_kwargs = {
+                "host": uri,
+                "server_api": ServerApi(version=SERVER_API_VERSION),
+                "driver": DriverInfo(name="unstructured", version=unstructured_version),
+            }
+        else:
+            client_kwargs = {
+                "host": self.host,
+                "port": self.port,
+                "server_api": ServerApi(version=SERVER_API_VERSION),
+            }
+        with MongoClient(**client_kwargs) as client:
+            yield client
 
 
 class MongoDBUploadStagerConfig(UploadStagerConfig):
@@ -66,6 +88,8 @@ class MongoDBUploadStagerConfig(UploadStagerConfig):
 
 class MongoDBIndexerConfig(IndexerConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
+    database: Optional[str] = Field(default=None, description="database name to connect to")
+    collection: Optional[str] = Field(default=None, description="collection name to connect to")
 
 
 class MongoDBDownloaderConfig(DownloaderConfig):
@@ -81,42 +105,38 @@ class MongoDBIndexer(Indexer):
     def precheck(self) -> None:
         """Validates the connection to the MongoDB server."""
         try:
-            client = self.create_client()
-            client.admin.command("ping")
+            with self.connection_config.get_client() as client:
+                client.admin.command("ping")
+                database_names = client.list_database_names()
+                database_name = self.index_config.database
+                if database_name not in database_names:
+                    raise DestinationConnectionError(
+                        "database {} does not exist: {}".format(
+                            database_name, ", ".join(database_names)
+                        )
+                    )
+                database = client[database_name]
+                collection_names = database.list_collection_names()
+                collection_name = self.index_config.collection
+                if collection_name not in collection_names:
+                    raise SourceConnectionError(
+                        "collection {} does not exist: {}".format(
+                            collection_name, ", ".join(collection_names)
+                        )
+                    )
         except Exception as e:
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    @requires_dependencies(["pymongo"], extras="mongodb")
-    def create_client(self) -> "MongoClient":
-        from pymongo import MongoClient
-        from pymongo.driver_info import DriverInfo
-        from pymongo.server_api import ServerApi
-
-        access_config = self.connection_config.access_config.get_secret_value()
-
-        if access_config.uri:
-            return MongoClient(
-                access_config.uri,
-                server_api=ServerApi(version=SERVER_API_VERSION),
-                driver=DriverInfo(name="unstructured", version=unstructured_version),
-            )
-        else:
-            return MongoClient(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                server_api=ServerApi(version=SERVER_API_VERSION),
-            )
-
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
-        client = self.create_client()
-        database = client[self.connection_config.database]
-        collection = database[self.connection_config.collection]
+        with self.connection_config.get_client() as client:
+            database = client[self.connection_config.database]
+            collection = database[self.connection_config.collection]
 
-        # Get list of document IDs
-        ids = collection.distinct("_id")
-        batch_size = self.index_config.batch_size if self.index_config else 100
+            # Get list of document IDs
+            ids = collection.distinct("_id")
+            batch_size = self.index_config.batch_size if self.index_config else 100
 
         for id_batch in batch_generator(ids, batch_size=batch_size):
             # Make sure the hash is always a positive number to create identifier
@@ -290,6 +310,8 @@ class MongoDBUploadStager(UploadStager):
 
 class MongoDBUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
+    database: Optional[str] = Field(default=None, description="database name to connect to")
+    collection: Optional[str] = Field(default=None, description="collection name to connect to")
 
 
 @dataclass
@@ -300,47 +322,43 @@ class MongoDBUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            client = self.create_client()
-            client.admin.command("ping")
+            with self.connection_config.get_client() as client:
+                client.admin.command("ping")
+                database_names = client.list_database_names()
+                database_name = self.upload_config.database
+                if database_name not in database_names:
+                    raise DestinationConnectionError(
+                        "database {} does not exist: {}".format(
+                            database_name, ", ".join(database_names)
+                        )
+                    )
+                database = client[database_name]
+                collection_names = database.list_collection_names()
+                collection_name = self.upload_config.collection
+                if collection_name not in collection_names:
+                    raise SourceConnectionError(
+                        "collection {} does not exist: {}".format(
+                            collection_name, ", ".join(collection_names)
+                        )
+                    )
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    @requires_dependencies(["pymongo"], extras="mongodb")
-    def create_client(self) -> "MongoClient":
-        from pymongo import MongoClient
-        from pymongo.driver_info import DriverInfo
-        from pymongo.server_api import ServerApi
-
-        access_config = self.connection_config.access_config.get_secret_value()
-
-        if access_config.uri:
-            return MongoClient(
-                access_config.uri,
-                server_api=ServerApi(version=SERVER_API_VERSION),
-                driver=DriverInfo(name="unstructured", version=unstructured_version),
-            )
-        else:
-            return MongoClient(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                server_api=ServerApi(version=SERVER_API_VERSION),
-            )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         with path.open("r") as file:
             elements_dict = json.load(file)
         logger.info(
             f"writing {len(elements_dict)} objects to destination "
-            f"db, {self.connection_config.database}, "
-            f"collection {self.connection_config.collection} "
+            f"db, {self.upload_config.database}, "
+            f"collection {self.upload_config.collection} "
             f"at {self.connection_config.host}",
         )
-        client = self.create_client()
-        db = client[self.connection_config.database]
-        collection = db[self.connection_config.collection]
-        for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
-            collection.insert_many(chunk)
+        with self.connection_config.get_client() as client:
+            db = client[self.upload_config.database]
+            collection = db[self.upload_config.collection]
+            for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+                collection.insert_many(chunk)
 
 
 mongodb_destination_entry = DestinationRegistryEntry(
