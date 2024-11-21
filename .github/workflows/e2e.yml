@@ -102,6 +102,8 @@ jobs:
         CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
         ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
         ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -148,6 +150,8 @@ jobs:
         ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
         AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
         AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -191,8 +195,6 @@ jobs:
         HUBSPOT_API_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
         JIRA_INGEST_API_TOKEN: ${{ secrets.JIRA_INGEST_API_TOKEN }}
         JIRA_INGEST_USER_EMAIL: ${{ secrets.JIRA_INGEST_USER_EMAIL }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
         MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
         MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
         MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
@@ -287,8 +289,6 @@ jobs:
         DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
         GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
         AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
         PINECONE_API_KEY: ${{secrets.PINECONE_API_KEY}}
         VECTARA_OAUTH_CLIENT_ID: ${{secrets.VECTARA_OAUTH_CLIENT_ID}}
