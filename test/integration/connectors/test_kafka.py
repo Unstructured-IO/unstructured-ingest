@@ -181,7 +181,7 @@ async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
         bootstrap_server=os.environ["KAFKA_BOOTSTRAP_SERVER"],
         port=9092,
         access_config=CloudKafkaAccessConfig(
-            api_key=os.environ["KAFKA_API_KEY"],
+            kafka_api_key=os.environ["KAFKA_API_KEY"],
             secret=os.environ["KAFKA_SECRET"],
         ),
     )
