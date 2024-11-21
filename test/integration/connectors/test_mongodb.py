@@ -87,8 +87,16 @@ def destination_collection() -> Collection:
             collection.drop()
 
 
-def validate_collection_count(collection: Collection, expected_records: int) -> None:
+def validate_collection_count(
+    collection: Collection, expected_records: int, retries: int = 10, interval: int = 1
+) -> None:
     count = collection.count_documents(filter={})
+    attempt = 0
+    while count != expected_records and attempt < retries:
+        attempt += 1
+        print(f"attempt {attempt} to get count of collection {count} to match {expected_records}")
+        time.sleep(interval)
+        count = collection.count_documents(filter={})
     assert (
         count == expected_records
     ), f"expected count ({expected_records}) does not match how many records were found: {count}"
@@ -232,6 +240,9 @@ async def test_mongodb_destination(
         embedding=first_element["embeddings"],
         text=first_element["text"],
     )
+
+    uploader.run(path=upload_file, file_data=file_data)
+    validate_collection_count(collection=destination_collection, expected_records=expected_records)
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)

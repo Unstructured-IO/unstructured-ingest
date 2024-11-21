@@ -13,6 +13,7 @@ from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -35,6 +36,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 
 if TYPE_CHECKING:
     from pymongo import MongoClient
+    from pymongo.collection import Collection
 
 CONNECTOR_TYPE = "mongodb"
 SERVER_API_VERSION = "1"
@@ -274,6 +276,10 @@ class MongoDBUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
     database: Optional[str] = Field(default=None, description="database name to connect to")
     collection: Optional[str] = Field(default=None, description="collection name to connect to")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -307,6 +313,25 @@ class MongoDBUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
+    def can_delete(self, collection: "Collection") -> bool:
+        indexed_keys = []
+        for index in collection.list_indexes():
+            key_bson = index["key"]
+            indexed_keys.extend(key_bson.keys())
+        return self.upload_config.record_id_key in indexed_keys
+
+    def delete_by_record_id(self, collection: "Collection", file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
+            f"from collection: {collection.name}"
+        )
+        query = {self.upload_config.record_id_key: file_data.identifier}
+        delete_results = collection.delete_many(filter=query)
+        logger.info(
+            f"deleted {delete_results.deleted_count} records from collection {collection.name}"
+        )
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         with path.open("r") as file:
             elements_dict = json.load(file)
@@ -316,9 +341,17 @@ class MongoDBUploader(Uploader):
             f"collection {self.upload_config.collection} "
             f"at {self.connection_config.host}",
         )
+        # This would typically live in the stager but since no other manipulation
+        # is done, setting the record id field in the uploader
+        for element in elements_dict:
+            element[self.upload_config.record_id_key] = file_data.identifier
         with self.connection_config.get_client() as client:
             db = client[self.upload_config.database]
             collection = db[self.upload_config.collection]
+            if self.can_delete(collection=collection):
+                self.delete_by_record_id(file_data=file_data, collection=collection)
+            else:
+                logger.warning("criteria for deleting previous content not met, skipping")
             for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
                 collection.insert_many(chunk)
 
