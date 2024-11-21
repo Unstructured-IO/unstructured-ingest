@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -91,28 +92,23 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         )
 
 
-@pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-@requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
-async def test_kafka_source_cloud(expected_messages: int = 5):
-
+@pytest.fixture
+def kafka_seed_topic_cloud(expected_messages: int = 5) -> int:
     conf = {
         "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVER"],
         "sasl.username": os.environ["KAFKA_API_KEY"],
         "sasl.password": os.environ["KAFKA_SECRET"],
         "sasl.mechanism": "PLAIN",
         "security.protocol": "SASL_SSL",
-
     }
     admin_client = AdminClient(conf)
-    # Kafka Cloud allows to use replication_factor=1 only for Dedicated clusters.
-    topic_obj = NewTopic(TOPIC, num_partitions=1, replication_factor=3)
-
     try:
         res = admin_client.delete_topics([TOPIC], operation_timeout=10)
         for topic, f in res.items():
             f.result()
             print("Topic {} removed".format(topic))
+            # For some reason, sometimes the deletion is not immediately visible even though operation_timeout is used.
+            time.sleep(2)
     except Exception as e:
         pass
 
@@ -121,8 +117,10 @@ async def test_kafka_source_cloud(expected_messages: int = 5):
         topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
     ]
 
-    if TOPIC in current_topics:
-        raise ValueError("Topic is existing while it shouldn't")
+    assert TOPIC not in current_topics, f"Topic {TOPIC} shouldn't exist"
+
+    # Kafka Cloud allows to use replication_factor=1 only for Dedicated clusters.
+    topic_obj = NewTopic(TOPIC, num_partitions=1, replication_factor=3)
 
     res = admin_client.create_topics([topic_obj], operation_timeout=10, validate_only=False)
     for topic, f in res.items():
@@ -133,6 +131,19 @@ async def test_kafka_source_cloud(expected_messages: int = 5):
         message = f"This is some text for message {i}"
         producer.produce(topic=TOPIC, value=message)
     producer.flush(timeout=10)
+    return expected_messages
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
+async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
+    """
+    In order to have this test succeed, you need to create cluster on Confluent Cloud,
+    and create the API key with admin privileges. By default, user account keys have it.
+    """
+
+    expected_messages = kafka_seed_topic_cloud
 
     connection_config = CloudKafkaConnectionConfig(
         bootstrap_server=os.environ["KAFKA_BOOTSTRAP_SERVER"],
@@ -162,9 +173,10 @@ async def test_kafka_source_cloud(expected_messages: int = 5):
             downloader=downloader,
             configs=ValidationConfigs(
                 test_id="kafka",
+                exclude_fields_extend=["connector_type"],
                 expected_num_files=expected_messages,
-                validate_downloaded_files=False,
-                validate_file_data=False,
+                validate_downloaded_files=True,
+                validate_file_data=True,
             ),
         )
 
