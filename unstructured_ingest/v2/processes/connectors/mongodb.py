@@ -127,8 +127,8 @@ class MongoDBIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
         with self.connection_config.get_client() as client:
-            database = client[self.connection_config.database]
-            collection = database[self.connection_config.collection]
+            database = client[self.index_config.database]
+            collection = database[self.index_config.collection]
 
             # Get list of document IDs
             ids = collection.distinct("_id")
@@ -193,8 +193,8 @@ class MongoDBDownloader(Downloader):
         from bson.objectid import ObjectId
 
         client = self.create_client()
-        database = client[self.connection_config.database]
-        collection = database[self.connection_config.collection]
+        database = client[file_data.metadata.record_locator["database"]]
+        collection = database[file_data.metadata.record_locator["collection"]]
 
         ids = file_data.additional_metadata.get("ids", [])
         if not ids:
