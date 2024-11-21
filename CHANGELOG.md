@@ -1,3 +1,9 @@
+## 0.3.2-dev1
+
+### Fixes
+
+* **Remove forward slash from Google Drive relative path field**
+
 ## 0.3.1
 
 ### Enhancements

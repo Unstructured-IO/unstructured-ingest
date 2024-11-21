@@ -161,7 +161,7 @@ class GoogleDriveIndexer(Indexer):
             and isinstance(parent_root_path, str)
         ):
             fullpath = f"{parent_path}/{filename}"
-            rel_path = fullpath.replace(parent_root_path, "").lstrip("/").lstrip("\\")
+            rel_path = Path(fullpath).relative_to(parent_root_path).as_posix()
             source_identifiers = SourceIdentifiers(
                 filename=filename, fullpath=fullpath, rel_path=rel_path
             )
