@@ -1,9 +1,10 @@
-## 0.3.2-dev2
+## 0.3.2-dev3
 
 ### Fixes
 
 * **Remove forward slash from Google Drive relative path field**
 * **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+* **Add weaviate to destination registry**
 
 ## 0.3.1
 
