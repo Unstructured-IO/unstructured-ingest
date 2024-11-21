@@ -22,6 +22,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 if TYPE_CHECKING:
     from weaviate.classes.init import Timeout
@@ -287,3 +288,12 @@ class WeaviateUploader(Uploader, ABC):
                         vector=vector,
                     )
             self.check_for_errors(client=weaviate_client)
+
+
+weaviate_destination_entry = DestinationRegistryEntry(
+    connection_config=WeaviateConnectionConfig,
+    uploader=WeaviateUploader,
+    uploader_config=WeaviateUploaderConfig,
+    upload_stager=WeaviateUploadStager,
+    upload_stager_config=WeaviateUploadStagerConfig,
+)
