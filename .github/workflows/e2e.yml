@@ -300,6 +300,7 @@ jobs:
         KDBAI_CIPHER_KEY: ${{ secrets.KDBAI_CIPHER_KEY }}
         UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
         QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        QDRANT_SERVER_URL: ${{ secrets.QDRANT_SERVER_URL }}
         TABLE_OCR: "tesseract"
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"
