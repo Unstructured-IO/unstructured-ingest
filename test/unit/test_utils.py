@@ -8,7 +8,11 @@ import pytz
 
 from unstructured_ingest.cli.utils import extract_config
 from unstructured_ingest.interfaces import BaseConfig
-from unstructured_ingest.utils.string_and_date_utils import ensure_isoformat_datetime, json_to_dict
+from unstructured_ingest.utils.string_and_date_utils import (
+    ensure_isoformat_datetime,
+    json_to_dict,
+    truncate_string_bytes,
+)
 
 
 @dataclass
@@ -162,3 +166,11 @@ def test_ensure_isoformat_datetime_fails_on_string():
 def test_ensure_isoformat_datetime_fails_on_int():
     with pytest.raises(TypeError):
         ensure_isoformat_datetime(1111)
+
+
+def test_truncate_string_bytes():
+    test_string = "abcdef안녕하세요ghijklmn방갑습니opqrstu 더 길어지면 안되는 문자열vwxyz"
+    max_bytes = 11
+    result = truncate_string_bytes(test_string, max_bytes)
+    assert result == "abcdef안"
+    assert len(result.encode("utf-8")) <= max_bytes
