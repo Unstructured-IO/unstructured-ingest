@@ -1,3 +1,14 @@
+## 0.3.2-dev0
+
+### Fixes
+
+* **Fix Kafka source connector precheck** 
+
+### Enhancements
+
+* **Kafka source connector has new group_id field**
+
+
 ## 0.3.1
 
 ### Enhancements
