@@ -219,7 +219,9 @@ class CouchbaseIndexer(Indexer):
 
 
 class CouchbaseDownloaderConfig(DownloaderConfig):
-    collection_id: str = Field(default="id", description="The key of the id field in the collection")
+    collection_id: str = Field(
+        default="id", description="The key of the id field in the collection"
+    )
     fields: list[str] = field(default_factory=list)
 
 
