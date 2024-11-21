@@ -46,6 +46,7 @@ jobs:
           make install-client
           make install-test
           make integration-test-${{ matrix.test }}
+          make parse-skipped-tests
           make parse-skipped-tests >> "$GITHUB_OUTPUT"
 
   embedders_integration_test:
@@ -70,6 +71,7 @@ jobs:
           make install-all-embedders
           make install-test
           make integration-test-embedders
+          make parse-skipped-tests
           make parse-skipped-tests >> "$GITHUB_OUTPUT"
 
   source_connectors_integration_test:
@@ -106,6 +108,7 @@ jobs:
         source .venv/bin/activate
         make install-test
         make integration-test-connectors-src
+        make parse-skipped-tests
         make parse-skipped-tests >> "$GITHUB_OUTPUT"
 
   destination_connectors_integration_test:
@@ -152,6 +155,7 @@ jobs:
         source .venv/bin/activate
         make install-test
         make integration-test-connectors-dest
+        make parse-skipped-tests
         make parse-skipped-tests >> "$GITHUB_OUTPUT"
 
   test_src:
