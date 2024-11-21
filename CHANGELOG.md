@@ -2,7 +2,7 @@
 
 ### Features
 
-* **Add `id_name` field to Couchbase `downloader_config`**
+* **Add `collection_id` field to Couchbase `downloader_config`**
 
 ### Enhancements
 
