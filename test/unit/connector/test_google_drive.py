@@ -1,15 +1,9 @@
-import pytest
-from datetime import datetime
-from unstructured_ingest.v2.interfaces import SourceIdentifiers, FileData, FileDataSourceMetadata
-from unstructured_ingest.v2.processes.connectors.google_drive import (
-    GoogleDriveIndexer
-)
+from unstructured_ingest.v2.interfaces import SourceIdentifiers
+from unstructured_ingest.v2.processes.connectors.google_drive import GoogleDriveIndexer
+
 
 def test_map_file_data():
-    indexer = GoogleDriveIndexer(
-        connection_config=None,
-        index_config=None
-    )
+    indexer = GoogleDriveIndexer(connection_config=None, index_config=None)
 
     file_record = {
         "id": "file_id_123",
@@ -28,9 +22,7 @@ def test_map_file_data():
     assert file_data.connector_type == "google_drive"
     assert file_data.identifier == "file_id_123"
     assert file_data.source_identifiers == SourceIdentifiers(
-        filename="test_file.txt",
-        fullpath="/parent_folder/test_file.txt",
-        rel_path="test_file.txt"
+        filename="test_file.txt", fullpath="/parent_folder/test_file.txt", rel_path="test_file.txt"
     )
     assert file_data.metadata.url == "http://example.com/test_file.txt"
     assert file_data.metadata.version == "1"
