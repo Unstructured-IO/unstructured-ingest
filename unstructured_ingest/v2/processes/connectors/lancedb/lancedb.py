@@ -136,7 +136,14 @@ class LanceDBUploader(Uploader):
         async with self.get_table() as table:
             schema = await table.schema()
             df = self._fit_to_schema(df, schema)
-            await table.delete(f'{RECORD_ID_LABEL} = "{file_data.identifier}"')
+            if RECORD_ID_LABEL not in schema.names:
+                logger.warning(
+                    f"Designated table doesn't contain {RECORD_ID_LABEL} column of type"
+                    " string which is required to support overwriting updates on subsequent"
+                    " uploads of the same record. New rows will be appended instead."
+                )
+            else:
+                await table.delete(f'{RECORD_ID_LABEL} = "{file_data.identifier}"')
             await table.add(data=df)
 
     def _fit_to_schema(self, df: pd.DataFrame, schema) -> pd.DataFrame:
@@ -144,13 +151,6 @@ class LanceDBUploader(Uploader):
         schema_fields = set(schema.names)
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
-
-        if RECORD_ID_LABEL in columns_to_drop:
-            logger.warning(
-                f"Designated table doesn't contain {RECORD_ID_LABEL} column of type"
-                " string which is required to support overwriting updates on subsequent executions"
-                " on the same file. Records will be appended."
-            )
 
         if columns_to_drop:
             logger.info(
