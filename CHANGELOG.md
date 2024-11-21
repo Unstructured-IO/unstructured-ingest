@@ -1,8 +1,14 @@
-## 0.3.2-dev0
+## 0.3.2-dev2
 
 ### Enhancements
 
 * **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+
+### Fixes
+
+* **Remove forward slash from Google Drive relative path field**
+
+## 0.3.1
 
 ### Enhancements
 
