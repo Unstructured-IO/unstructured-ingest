@@ -75,6 +75,27 @@ def wait_for_collection(
         raise TimeoutError(f"Collection {collection_name} was not recognized")
 
 
+def get_search_index_status(collection: Collection, index_name: str) -> str:
+    search_indexes = collection.list_search_indexes(name=index_name)
+    search_index = list(search_indexes)[0]
+    return search_index["status"]
+
+
+def wait_for_search_index(
+    collection: Collection, index_name: str, retries: int = 60, interval: int = 1
+):
+    current_status = get_search_index_status(collection, index_name)
+    attempts = 0
+    while current_status != "READY" and attempts < retries:
+        attempts += 1
+        print(f"attempt {attempts}: waiting for search index to be READY: {current_status}")
+        time.sleep(interval)
+        current_status = get_search_index_status(collection, index_name)
+
+    if current_status != "READY":
+        raise TimeoutError("search index never detected as READY")
+
+
 @pytest.fixture
 def destination_collection() -> Collection:
     env_data = get_env_data()
@@ -83,9 +104,10 @@ def destination_collection() -> Collection:
         database = client[env_data.database]
         print(f"creating collection in database {database}: {collection_name}")
         collection = database.create_collection(name=collection_name)
+        search_index_name = "embeddings"
         collection.create_search_index(
             model=SearchIndexModel(
-                name="embeddings",
+                name=search_index_name,
                 definition={
                     "mappings": {
                         "dynamic": True,
@@ -100,6 +122,7 @@ def destination_collection() -> Collection:
         )
         collection.create_index("record_id")
         wait_for_collection(database=database, collection_name=collection_name)
+        wait_for_search_index(collection=collection, index_name=search_index_name)
         try:
             yield collection
         finally:
