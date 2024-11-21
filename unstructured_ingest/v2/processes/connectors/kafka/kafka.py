@@ -157,7 +157,9 @@ class KafkaIndexer(Indexer, ABC):
     def precheck(self):
         try:
             with self.get_consumer() as consumer:
-                cluster_meta = consumer.list_topics(timeout=self.index_config.timeout)
+                # timeout needs at least 3 secs,
+                # more info: https://forum.confluent.io/t/kafkacat-connect-failure-to-confcloud-ssl/2513
+                cluster_meta = consumer.list_topics(timeout=5)
                 current_topics = [
                     topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
                 ]

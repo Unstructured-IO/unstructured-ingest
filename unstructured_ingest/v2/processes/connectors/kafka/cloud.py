@@ -27,7 +27,7 @@ CONNECTOR_TYPE = "kafka-cloud"
 
 class CloudKafkaAccessConfig(KafkaAccessConfig):
     api_key: Optional[SecretStr] = Field(
-        description="Kafka API key to connect at the server", alias="kafka_api_key", default=None
+        description="Kafka API key to connect at the server", default=None
     )
     secret: Optional[SecretStr] = Field(description="", default=None)
 
@@ -46,8 +46,8 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
             "group.id": "default_group_id",
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
-            "sasl.username": access_config.api_key,
-            "sasl.password": access_config.secret,
+            "sasl.username": access_config.api_key.get_secret_value(),
+            "sasl.password": access_config.secret.get_secret_value(),
             "sasl.mechanism": "PLAIN",
             "security.protocol": "SASL_SSL",
         }
