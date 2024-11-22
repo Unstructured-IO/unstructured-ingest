@@ -1,3 +1,9 @@
+## 0.3.3
+
+### Fixes
+
+* **Box source connector can now use raw JSON as access token instead of file path to JSON**
+
 ## 0.3.2
 
 ### Enhancements
