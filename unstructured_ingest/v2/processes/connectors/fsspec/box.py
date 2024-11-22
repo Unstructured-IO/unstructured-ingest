@@ -3,13 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import Any, Annotated, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
+from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -34,9 +36,13 @@ class BoxIndexerConfig(FsspecIndexerConfig):
 
 
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Optional[str] = Field(
-        default=None, description="Box app credentials as a JSON string."
-    )
+    box_app_config: Annotated[
+        dict, BeforeValidator(conform_string_to_dict)
+    ] = Field(description="Box app credentials as a JSON string.")
+
+    def model_post_init(self, __context: Any) -> None:
+        if not self.box_app_config:
+            raise ValueError("box_app_config is required and must be a valid JSON string.")
 
 
 class BoxConnectionConfig(FsspecConnectionConfig):
@@ -45,40 +51,26 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
-        # Return access_kwargs with oauth. The oauth object cannot be stored directly in the config
-        # because it is not serializable.
-        import json
-
         from boxsdk import JWTAuth
 
         ac = self.access_config.get_secret_value()
 
-        # Parse the JSON string directly from `box_app_config`
-        if ac.box_app_config is None:
-            raise ValueError(
-                "box_app_config cannot be None. \
-                It must contain the JSON string with Box credentials."
-            )
+        # Use the validated and converted box_app_config
+        settings_dict = ac.box_app_config
 
-        try:
-            settings_dict = json.loads(ac.box_app_config)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to decode JSON from box_app_config: {e}")
-
-        # Create the JWTAuth object from the parsed JSON dictionary
+        # Create the JWTAuth object
         oauth = JWTAuth.from_settings_dictionary(settings_dict)
 
-        # Explicitly authenticate and generate an access token
+        # Explicitly authenticate and ensure access_token is generated
         try:
             oauth.authenticate_instance()
         except Exception as e:
             raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
 
-        # Ensure the oauth instance has a valid access_token
         if not oauth.access_token:
             raise SourceConnectionError("Authentication failed: No access token generated.")
 
-        # Add the oauth object to the access_kwargs
+        # Prepare the access configuration with oauth
         access_kwargs_with_oauth: dict[str, Any] = {
             "oauth": oauth,
         }
