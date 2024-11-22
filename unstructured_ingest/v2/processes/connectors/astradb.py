@@ -305,14 +305,15 @@ class AstraDBUploadStager(UploadStager):
     )
 
     def truncate_dict_elements(self, element_dict: dict) -> None:
-        text_as_html = element_dict.pop("text_as_html", None)
         text = element_dict.pop("text", None)
         if text is not None:
             element_dict["text"] = truncate_string_bytes(text, MAX_CONTENT_PARAM_BYTE_SIZE)
-        if text_as_html is not None:
-            element_dict["text_as_html"] = truncate_string_bytes(
-                text_as_html, MAX_CONTENT_PARAM_BYTE_SIZE
-            )
+        if hasattr(element_dict, "metadata") and isinstance(element_dict["metadata"], dict):
+            text_as_html = element_dict["metadata"].pop("text_as_html", None)
+            if text_as_html is not None:
+                element_dict["metadata"]["text_as_html"] = truncate_string_bytes(
+                    text_as_html, MAX_CONTENT_PARAM_BYTE_SIZE
+                )
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
