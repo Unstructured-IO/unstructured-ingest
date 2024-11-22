@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Literal, Union
+from uuid import uuid4
 
 import lancedb
 import pandas as pd
@@ -13,9 +14,9 @@ from upath import UPath
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
-    LanceDBS3AccessConfig,
-    LanceDBS3ConnectionConfig,
-    LanceDBS3Uploader,
+    LanceDBAwsAccessConfig,
+    LanceDBAwsConnectionConfig,
+    LanceDBAwsUploader,
 )
 from unstructured_ingest.v2.processes.connectors.lancedb.azure import (
     LanceDBAzureAccessConfig,
@@ -150,12 +151,12 @@ def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path)
     elif target == "az":
         base_uri = UPath(AZURE_BUCKET)
 
-    return str(base_uri / "destination" / "lancedb" / DATABASE_NAME)
+    return str(base_uri / "destination" / "lancedb" / str(uuid4()) / DATABASE_NAME)
 
 
 def _get_uploader(
     uri: str,
-) -> Union[LanceDBAzureUploader, LanceDBAzureUploader, LanceDBS3Uploader, LanceDBGSPUploader]:
+) -> Union[LanceDBAzureUploader, LanceDBAzureUploader, LanceDBAwsUploader, LanceDBGSPUploader]:
     target = uri.split("://", maxsplit=1)[0] if uri.startswith(("s3", "az", "gs")) else "local"
     if target == "az":
         azure_connection_string = os.getenv("AZURE_DEST_CONNECTION_STR")
@@ -169,10 +170,10 @@ def _get_uploader(
         )
 
     elif target == "s3":
-        return LanceDBS3Uploader(
+        return LanceDBAwsUploader(
             upload_config=LanceDBUploaderConfig(table_name=TABLE_NAME),
-            connection_config=LanceDBS3ConnectionConfig(
-                access_config=LanceDBS3AccessConfig(
+            connection_config=LanceDBAwsConnectionConfig(
+                access_config=LanceDBAwsAccessConfig(
                     aws_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
                     aws_secret_access_key=os.getenv("S3_INGEST_TEST_SECRET_KEY"),
                 ),
