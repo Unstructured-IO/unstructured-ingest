@@ -1,7 +1,8 @@
-## 0.3.4-dev1
+## 0.3.4
 
-### Features
+### Enhancements
 
+* **Add azure openai embedder**
 * **Add `collection_id` field to Couchbase `downloader_config`**
 
 ## 0.3.3
