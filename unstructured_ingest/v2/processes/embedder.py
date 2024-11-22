@@ -44,6 +44,14 @@ class EmbedderConfig(BaseModel):
     embedding_aws_region: Optional[str] = Field(
         default="us-west-2", description="AWS region used for AWS-based embedders, such as bedrock"
     )
+    embedding_azure_endpoint: Optional[str] = Field(
+        default=None,
+        description="Your Azure endpoint, including the resource, "
+        "e.g. `https://example-resource.azure.openai.com/`",
+    )
+    embedding_azure_api_version: Optional[str] = Field(
+        description="Azure API version", default=None
+    )
 
     def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.huggingface import (

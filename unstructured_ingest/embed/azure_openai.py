@@ -12,10 +12,7 @@ if TYPE_CHECKING:
 
 class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     api_version: str = Field(description="Azure API version")
-    azure_url: str = Field(
-        description="Your Azure endpoint, including the resource, "
-        "e.g. `https://example-resource.azure.openai.com/`"
-    )
+    azure_endpoint: str
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
 
     @requires_dependencies(["openai"], extras="openai")
@@ -25,7 +22,7 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
         return AzureOpenAI(
             api_key=self.api_key.get_secret_value(),
             api_version=self.api_version,
-            azure_endpoint=self.azure_url,
+            azure_endpoint=self.azure_endpoint,
         )
 
 
