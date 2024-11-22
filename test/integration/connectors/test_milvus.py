@@ -146,23 +146,24 @@ async def test_milvus_destination(
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-class TestPrecheck:
-    def test_succeeds(self, collection: str):
-        uploader = MilvusUploader(
-            connection_config=MilvusConnectionConfig(uri=DB_URI),
-            upload_config=MilvusUploaderConfig(db_name=DB_NAME, collection_name=collection),
-        )
-        uploader.precheck()
+def test_precheck_succeeds(collection: str):
+    uploader = MilvusUploader(
+        connection_config=MilvusConnectionConfig(uri=DB_URI),
+        upload_config=MilvusUploaderConfig(db_name=DB_NAME, collection_name=collection),
+    )
+    uploader.precheck()
 
-    def test_fails_on_nonexistent_collection(self, collection: str):
-        uploader = MilvusUploader(
-            connection_config=MilvusConnectionConfig(uri=DB_URI),
-            upload_config=MilvusUploaderConfig(
-                db_name=DB_NAME, collection_name=NONEXISTENT_COLLECTION_NAME
-            ),
-        )
-        with pytest.raises(
-            DestinationConnectionError,
-            match=f"Collection '{NONEXISTENT_COLLECTION_NAME}' does not exist",
-        ):
-            uploader.precheck()
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_precheck_fails_on_nonexistent_collection(collection: str):
+    uploader = MilvusUploader(
+        connection_config=MilvusConnectionConfig(uri=DB_URI),
+        upload_config=MilvusUploaderConfig(
+            db_name=DB_NAME, collection_name=NONEXISTENT_COLLECTION_NAME
+        ),
+    )
+    with pytest.raises(
+        DestinationConnectionError,
+        match=f"Collection '{NONEXISTENT_COLLECTION_NAME}' does not exist",
+    ):
+        uploader.precheck()
