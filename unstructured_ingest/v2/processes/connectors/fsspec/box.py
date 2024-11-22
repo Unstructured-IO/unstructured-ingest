@@ -40,10 +40,6 @@ class BoxAccessConfig(FsspecAccessConfig):
         description="Box app credentials as a JSON string."
     )
 
-    def model_post_init(self, __context: Any) -> None:
-        if not self.box_app_config:
-            raise ValueError("box_app_config is required and must be a valid JSON string.")
-
 
 class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
