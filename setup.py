@@ -1,7 +1,7 @@
 """
 setup.py
 
-unstructured - pre-processing tools for unstructured data
+unstructured-ingest - pre-processing tools for unstructured data
 
 Copyright 2022 Unstructured Technologies, Inc.
 
