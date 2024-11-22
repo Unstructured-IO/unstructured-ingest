@@ -1,7 +1,23 @@
-## 0.3.2-dev1
+## 0.3.2-dev4
+
+### Enhancements
+* **Add `precheck` to Milvus connector**
 
 ### Fixes
-* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
+* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes** 
+
+## 0.3.2
+
+### Enhancements
+
+* **Persist record id in mongodb data, use it to delete previous content to prevent duplicates.**
+
+
+### Fixes
+
+* **Remove forward slash from Google Drive relative path field**
+* **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+* **Add weaviate to destination registry**
 
 ## 0.3.1
 
@@ -14,6 +30,7 @@
 * **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
+
 * **Make AstraDB precheck fail on non-existant collections**
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
 * **Propagate exceptions raised by delta table connector during write**
