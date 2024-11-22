@@ -12,31 +12,30 @@ from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
     LanceDBUploadStagerConfig,
 )
 
-CONNECTOR_TYPE = "lancedb_aws"
+CONNECTOR_TYPE = "lancedb_cloud"
 
 
-class LanceDBAwsAccessConfig(AccessConfig):
-    aws_access_key_id: str = Field(description="The AWS access key ID to use.")
-    aws_secret_access_key: str = Field(description="The AWS secret access key to use.")
+class LanceDBCloudAccessConfig(AccessConfig):
+    api_key: str = Field(description="Api key associated with LanceDb cloud")
 
 
-class LanceDBAwsConnectionConfig(LanceDBRemoteConnectionConfig):
-    access_config: Secret[LanceDBAwsAccessConfig]
+class LanceDBCloudConnectionConfig(LanceDBRemoteConnectionConfig):
+    access_config: Secret[LanceDBCloudAccessConfig]
 
     def get_storage_options(self) -> dict:
         return {**self.access_config.get_secret_value().model_dump(), "timeout": self.timeout}
 
 
 @dataclass
-class LanceDBAwsUploader(LanceDBUploader):
+class LanceDBCloudUploader(LanceDBUploader):
     upload_config: LanceDBUploaderConfig
-    connection_config: LanceDBAwsConnectionConfig
+    connection_config: LanceDBCloudConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
 
-lancedb_aws_destination_entry = DestinationRegistryEntry(
-    connection_config=LanceDBAwsConnectionConfig,
-    uploader=LanceDBAwsUploader,
+lancedb_cloud_destination_entry = DestinationRegistryEntry(
+    connection_config=LanceDBCloudConnectionConfig,
+    uploader=LanceDBCloudUploader,
     uploader_config=LanceDBUploaderConfig,
     upload_stager_config=LanceDBUploadStagerConfig,
     upload_stager=LanceDBUploadStager,
