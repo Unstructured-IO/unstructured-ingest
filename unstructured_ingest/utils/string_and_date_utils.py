@@ -43,5 +43,7 @@ def truncate_string_bytes(string: str, max_bytes: int, encoding: str = "utf-8") 
     """
     Truncates a string to a specified maximum number of bytes.
     """
-    encoded_truncated_string = string.encode(encoding)[:max_bytes]
-    return encoded_truncated_string.decode(encoding, errors="ignore")
+    encoded_string = string.encode(encoding)
+    if len(encoded_string) <= max_bytes:
+        return string
+    return encoded_string[:max_bytes].decode(encoding, errors="ignore")

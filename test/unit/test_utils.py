@@ -168,9 +168,17 @@ def test_ensure_isoformat_datetime_fails_on_int():
         ensure_isoformat_datetime(1111)
 
 
-def test_truncate_string_bytes():
+def test_truncate_string_bytes_return_truncated_string():
     test_string = "abcdef안녕하세요ghijklmn방갑습니opqrstu 더 길어지면 안되는 문자열vwxyz"
     max_bytes = 11
     result = truncate_string_bytes(test_string, max_bytes)
     assert result == "abcdef안"
+    assert len(result.encode("utf-8")) <= max_bytes
+
+
+def test_truncate_string_bytes_return_untouched_string():
+    test_string = "abcdef"
+    max_bytes = 11
+    result = truncate_string_bytes(test_string, max_bytes)
+    assert result == "abcdef"
     assert len(result.encode("utf-8")) <= max_bytes
