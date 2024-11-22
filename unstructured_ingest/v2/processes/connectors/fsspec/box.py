@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Annotated, Generator, Optional
+from typing import Annotated, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -11,7 +11,6 @@ from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
-from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -27,6 +26,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploaderConfig,
     SourceConnectionError,
 )
+from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 
 CONNECTOR_TYPE = "box"
 
@@ -36,9 +36,9 @@ class BoxIndexerConfig(FsspecIndexerConfig):
 
 
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Annotated[
-        dict, BeforeValidator(conform_string_to_dict)
-    ] = Field(description="Box app credentials as a JSON string.")
+    box_app_config: Annotated[dict, BeforeValidator(conform_string_to_dict)] = Field(
+        description="Box app credentials as a JSON string."
+    )
 
     def model_post_init(self, __context: Any) -> None:
         if not self.box_app_config:
