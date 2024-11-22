@@ -34,10 +34,9 @@ fi
 
 # Make sure the BOX_APP_CONFIG is valid JSON
 echo "Checking valid JSON in BOX_APP_CONFIG environment variable"
-echo "$BOX_APP_CONFIG" | jq 'keys' >/dev/null
-if [ $? -ne 0 ]; then
-	echo "BOX_APP_CONFIG does not contain valid JSON. Exiting."
-	exit 1
+if ! echo "$BOX_APP_CONFIG" | jq 'keys' > /dev/null; then
+  echo "BOX_APP_CONFIG does not contain valid JSON. Exiting."
+  exit 1
 fi
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
