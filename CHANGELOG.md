@@ -1,4 +1,4 @@
-## 0.3.3-dev1
+## 0.3.3-dev2
 
 ### Enhancements
 
@@ -8,6 +8,7 @@
 
 * **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
 * **Add missing LanceDb extra**
+* **Weaviate cloud auth detection fixed**
 
 ## 0.3.2
 
