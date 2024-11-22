@@ -15,6 +15,7 @@ from pymilvus.milvus_client import IndexParams
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from test.integration.connectors.utils.docker import healthcheck_wait
 from test.integration.connectors.utils.docker_compose import docker_compose_context
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.milvus import (
     CONNECTOR_TYPE,
@@ -24,9 +25,10 @@ from unstructured_ingest.v2.processes.connectors.milvus import (
     MilvusUploadStager,
 )
 
-DB_URI = "http://localhost:19530"
 DB_NAME = "test_database"
-COLLECTION_NAME = "test_collection"
+EXISTENT_COLLECTION_NAME = "test_collection"
+NONEXISTENT_COLLECTION_NAME = "nonexistent_collection"
+DB_URI = "http://localhost:19530"
 
 
 def get_schema() -> CollectionSchema:
@@ -55,7 +57,9 @@ def get_index_params() -> IndexParams:
     return index_params
 
 
-@pytest.fixture
+# NOTE: Precheck tests are read-only so they don't interfere with destination test,
+# using scope="module" we can limit number of times the docker-compose has to be run
+@pytest.fixture(scope="module")
 def collection():
     docker_client = docker.from_env()
     with docker_compose_context(docker_compose_path=env_setup_path / "milvus"):
@@ -73,10 +77,10 @@ def collection():
             schema = get_schema()
             index_params = get_index_params()
             collection_resp = milvus_client.create_collection(
-                collection_name=COLLECTION_NAME, schema=schema, index_params=index_params
+                collection_name=EXISTENT_COLLECTION_NAME, schema=schema, index_params=index_params
             )
-            print(f"Created collection {COLLECTION_NAME}: {collection_resp}")
-            yield COLLECTION_NAME
+            print(f"Created collection {EXISTENT_COLLECTION_NAME}: {collection_resp}")
+            yield EXISTENT_COLLECTION_NAME
         finally:
             milvus_client.close()
 
@@ -139,3 +143,27 @@ async def test_milvus_destination(
     uploader.run(path=staged_filepath, file_data=file_data)
     with uploader.get_client() as client:
         validate_count(client=client, expected_count=expected_count)
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_precheck_succeeds(collection: str):
+    uploader = MilvusUploader(
+        connection_config=MilvusConnectionConfig(uri=DB_URI),
+        upload_config=MilvusUploaderConfig(db_name=DB_NAME, collection_name=collection),
+    )
+    uploader.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_precheck_fails_on_nonexistent_collection(collection: str):
+    uploader = MilvusUploader(
+        connection_config=MilvusConnectionConfig(uri=DB_URI),
+        upload_config=MilvusUploaderConfig(
+            db_name=DB_NAME, collection_name=NONEXISTENT_COLLECTION_NAME
+        ),
+    )
+    with pytest.raises(
+        DestinationConnectionError,
+        match=f"Collection '{NONEXISTENT_COLLECTION_NAME}' does not exist",
+    ):
+        uploader.precheck()
