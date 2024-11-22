@@ -308,7 +308,8 @@ class AstraDBUploadStager(UploadStager):
         text = element_dict.pop("text", None)
         if text is not None:
             element_dict["text"] = truncate_string_bytes(text, MAX_CONTENT_PARAM_BYTE_SIZE)
-        if hasattr(element_dict, "metadata") and isinstance(element_dict["metadata"], dict):
+        metadata = element_dict.get("metadata")
+        if metadata is not None and isinstance(metadata, dict):
             text_as_html = element_dict["metadata"].pop("text_as_html", None)
             if text_as_html is not None:
                 element_dict["metadata"]["text_as_html"] = truncate_string_bytes(
