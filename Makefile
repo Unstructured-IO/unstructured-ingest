@@ -62,7 +62,7 @@ install-ci: install-all-connectors install-all-embedders
 .PHONY: tidy
 tidy: tidy-black tidy-ruff tidy-autoflake tidy-shell
 
-.PHONY: tidy_shell
+.PHONY: tidy-shell
 tidy-shell:
 	shfmt -i 2 -l -w .
 
@@ -127,21 +127,26 @@ integration-test:
 
 .PHONY: integration-test-partitioners
 integration-test-partitioners:
-	PYTHONPATH=. pytest -sv test/integration/partitioners
+	PYTHONPATH=. pytest -sv test/integration/partitioners --json-report
 
 .PHONY: integration-test-chunkers
 integration-test-chunkers:
-	PYTHONPATH=. pytest -sv test/integration/chunkers
+	PYTHONPATH=. pytest -sv test/integration/chunkers --json-report
 
 .PHONY: integration-test-embedders
 integration-test-embedders:
-	PYTHONPATH=. pytest -sv test/integration/embedders
+	PYTHONPATH=. pytest -sv test/integration/embedders --json-report
 
 .PHONY: integration-test-connectors-src
 integration-test-connectors-src:
-	PYTHONPATH=. pytest --tags source -sv test/integration/connectors
+	PYTHONPATH=. pytest --tags source -sv test/integration/connectors --cov-report=json --json-report
 
 
 .PHONY: integration-test-connectors-dest
 integration-test-connectors-dest:
-	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors
+	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors --json-report
+
+.PHONY: parse-skipped-tests
+parse-skipped-tests:
+	PYTHONPATH=. python ./scripts/parse_pytest_report.py
+

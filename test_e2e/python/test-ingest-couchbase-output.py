@@ -73,6 +73,7 @@ def check(ctx, expected_docs):
     )
     # Tally up the embeddings
     query_result = cluster.query(f"Select * from {bucket_name}.{scope_name}.{collection_name}")
+    time.sleep(5)
     docs = list(query_result)
     number_of_docs = len(docs)
 
