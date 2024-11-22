@@ -1,10 +1,13 @@
-## 0.3.2-dev4
+## 0.3.3-dev1
 
 ### Enhancements
+
 * **Add `precheck` to Milvus connector**
 
 ### Fixes
-* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes** 
+
+* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
+* **Add missing LanceDb extra**
 
 ## 0.3.2
 

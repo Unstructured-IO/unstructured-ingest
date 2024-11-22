@@ -1,7 +1,7 @@
 """
 setup.py
 
-unstructured - pre-processing tools for unstructured data
+unstructured-ingest - pre-processing tools for unstructured data
 
 Copyright 2022 Unstructured Technologies, Inc.
 
@@ -104,6 +104,7 @@ connectors_reqs = {
     "jira": load_requirements("requirements/connectors/jira.in"),
     "kafka": load_requirements("requirements/connectors/kafka.in"),
     "kdbai": load_requirements("requirements/connectors/kdbai.in"),
+    "lancedb": load_requirements("requirements/connectors/lancedb.in"),
     "milvus": load_requirements("requirements/connectors/milvus.in"),
     "mongodb": load_requirements("requirements/connectors/mongodb.in"),
     "notion": load_requirements("requirements/connectors/notion.in"),
