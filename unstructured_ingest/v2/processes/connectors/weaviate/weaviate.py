@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
-from pydantic import Field, Secret
+from pydantic import AliasChoices, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -181,7 +181,10 @@ class WeaviateUploadStager(UploadStager):
 
 
 class WeaviateUploaderConfig(UploaderConfig):
-    collection: str = Field(description="The name of the collection this object belongs to")
+    collection: str = Field(
+        description="The name of the collection this object belongs to",
+        validation_alias=AliasChoices("collection", "class_name"),
+    )
     batch_size: Optional[int] = Field(default=None, description="Number of records per batch")
     requests_per_minute: Optional[int] = Field(default=None, description="Rate limit for upload")
     dynamic_batch: bool = Field(default=True, description="Whether to use dynamic batch")

@@ -1,8 +1,9 @@
-## 0.3.3-dev2
+## 0.3.3-dev3
 
 ### Enhancements
 
 * **Add `precheck` to Milvus connector**
+* **Support multiple aliases for weaviate uploader collection key**
 
 ### Fixes
 
