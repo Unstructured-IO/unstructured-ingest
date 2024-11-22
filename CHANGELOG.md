@@ -4,11 +4,18 @@
 
 * **Box source connector can now use raw JSON as access token instead of file path to JSON**
 
+## 0.3.2-dev3
+
+### Enhancements
+* **Add `precheck` to Milvus connector**
+* 
+
 ## 0.3.2
 
 ### Enhancements
 
 * **Persist record id in mongodb data, use it to delete previous content to prevent duplicates.**
+
 
 ### Fixes
 
