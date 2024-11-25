@@ -1,4 +1,4 @@
-## 0.3.4-dev0
+## 0.3.5-dev0
 
 ### Fixes
 
@@ -7,6 +7,13 @@
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
+
+## 0.3.4
+
+### Enhancements
+
+* **Add azure openai embedder**
+* **Add `collection_id` field to Couchbase `downloader_config`**
 
 ## 0.3.3
 

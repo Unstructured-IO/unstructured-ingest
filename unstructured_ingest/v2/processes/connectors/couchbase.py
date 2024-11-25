@@ -219,6 +219,9 @@ class CouchbaseIndexer(Indexer):
 
 
 class CouchbaseDownloaderConfig(DownloaderConfig):
+    collection_id: str = Field(
+        default="id", description="The unique key of the id field in the collection"
+    )
     fields: list[str] = field(default_factory=list)
 
 
@@ -250,7 +253,7 @@ class CouchbaseDownloader(Downloader):
     def generate_download_response(
         self, result: dict, bucket: str, file_data: FileData
     ) -> DownloadResponse:
-        record_id = result["id"]
+        record_id = result[self.download_config.collection_id]
         filename_id = self.get_identifier(bucket=bucket, record_id=record_id)
         filename = f"{filename_id}.txt"
         download_path = self.download_dir / Path(filename)
