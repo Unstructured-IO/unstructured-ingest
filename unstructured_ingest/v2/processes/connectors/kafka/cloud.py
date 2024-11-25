@@ -1,6 +1,6 @@
 import socket
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret, SecretStr
 
@@ -26,10 +26,10 @@ CONNECTOR_TYPE = "kafka-cloud"
 
 
 class CloudKafkaAccessConfig(KafkaAccessConfig):
-    kafka_api_key: Optional[SecretStr] = Field(
+    kafka_api_key: SecretStr = Field(
         description="Kafka API key to connect at the server", default=None
     )
-    secret: Optional[SecretStr] = Field(description="", default=None)
+    secret: SecretStr = Field(description="", default=None)
 
 
 class CloudKafkaConnectionConfig(KafkaConnectionConfig):
