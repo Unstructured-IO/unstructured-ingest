@@ -1,8 +1,10 @@
-## 0.3.3-dev2
+## 0.3.4-dev1
 
 ### Features
 
 * **Add `collection_id` field to Couchbase `downloader_config`**
+
+## 0.3.3
 
 ### Enhancements
 
@@ -12,6 +14,7 @@
 
 * **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
 * **Add missing LanceDb extra**
+* **Weaviate cloud auth detection fixed**
 
 ## 0.3.2
 
