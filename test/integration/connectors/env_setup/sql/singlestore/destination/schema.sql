@@ -3,6 +3,7 @@ USE ingest_test;
 
 CREATE TABLE elements (
     id TEXT PRIMARY KEY NOT NULL,
+    record_id TEXT,
     element_id TEXT,
     text TEXT,
     embeddings Vector(384),

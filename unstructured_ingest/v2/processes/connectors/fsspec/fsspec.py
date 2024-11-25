@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
 import random
+import shutil
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
@@ -207,12 +210,35 @@ class FsspecDownloader(Downloader):
             **self.connection_config.get_access_config(),
         )
 
+    def handle_directory_download(self, lpath: Path) -> None:
+        # If the object's name contains certain characters (i.e. '?'), it
+        # gets downloaded into a new directory of the same name. This
+        # reconciles that with what is expected, which is to download it
+        # as a file that is not within a directory.
+        if not lpath.is_dir():
+            return
+        desired_name = lpath.name
+        files_in_dir = [file for file in lpath.iterdir() if file.is_file()]
+        if not files_in_dir:
+            raise ValueError(f"no files in {lpath}")
+        if len(files_in_dir) > 1:
+            raise ValueError(
+                "Multiple files in {}: {}".format(lpath, ", ".join([str(f) for f in files_in_dir]))
+            )
+        file = files_in_dir[0]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_location = os.path.join(temp_dir, desired_name)
+            shutil.copyfile(src=file, dst=temp_location)
+            shutil.rmtree(lpath)
+            shutil.move(src=temp_location, dst=lpath)
+
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             rpath = file_data.additional_metadata["original_file_path"]
             self.fs.get(rpath=rpath, lpath=download_path.as_posix())
+            self.handle_directory_download(lpath=download_path)
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
@@ -224,6 +250,7 @@ class FsspecDownloader(Downloader):
         try:
             rpath = file_data.additional_metadata["original_file_path"]
             await self.fs.get(rpath=rpath, lpath=download_path.as_posix())
+            self.handle_directory_download(lpath=download_path)
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")

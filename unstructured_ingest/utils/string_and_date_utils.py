@@ -37,3 +37,13 @@ def ensure_isoformat_datetime(timestamp: t.Union[datetime, str]) -> str:
             raise ValueError(f"String '{timestamp}' could not be parsed as a datetime.") from e
     else:
         raise TypeError(f"Expected input type datetime or str, but got {type(timestamp)}.")
+
+
+def truncate_string_bytes(string: str, max_bytes: int, encoding: str = "utf-8") -> str:
+    """
+    Truncates a string to a specified maximum number of bytes.
+    """
+    encoded_string = str(string).encode(encoding)
+    if len(encoded_string) <= max_bytes:
+        return string
+    return encoded_string[:max_bytes].decode(encoding, errors="ignore")

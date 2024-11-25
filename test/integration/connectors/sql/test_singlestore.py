@@ -143,13 +143,17 @@ async def test_singlestore_destination(upload_file: Path):
                     table_name="elements",
                 ),
             )
-            if uploader.is_async():
-                await uploader.run_async(path=staged_path, file_data=mock_file_data)
-            else:
-                uploader.run(path=staged_path, file_data=mock_file_data)
+
+            uploader.run(path=staged_path, file_data=mock_file_data)
 
             staged_df = pd.read_json(staged_path, orient="records", lines=True)
             expected_num_elements = len(staged_df)
+            validate_destination(
+                connect_params=connect_params,
+                expected_num_elements=expected_num_elements,
+            )
+
+            uploader.run(path=staged_path, file_data=mock_file_data)
             validate_destination(
                 connect_params=connect_params,
                 expected_num_elements=expected_num_elements,

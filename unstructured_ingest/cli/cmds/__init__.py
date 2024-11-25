@@ -9,7 +9,7 @@ from unstructured_ingest.cli.cmds.fsspec.sftp import get_base_src_cmd as sftp_ba
 from .airtable import get_base_src_cmd as airtable_base_src_cmd
 from .astradb import get_base_dest_cmd as astradb_base_dest_cmd
 from .astradb import get_base_src_cmd as astradb_base_src_cmd
-from .azure_cognitive_search import get_base_dest_cmd as azure_cognitive_search_base_dest_cmd
+from .azure_ai_search import get_base_dest_cmd as azure_ai_search_base_dest_cmd
 from .biomed import get_base_src_cmd as biomed_base_src_cmd
 from .chroma import get_base_dest_cmd as chroma_base_dest_cmd
 from .clarifai import get_base_dest_cmd as clarifai_base_dest_cmd
@@ -118,7 +118,7 @@ base_dest_cmd_fns: t.List[t.Callable[[], "BaseDestCmd"]] = [
     gcs_base_dest_cmd,
     kafka_base_dest_cmd,
     s3_base_dest_cmd,
-    azure_cognitive_search_base_dest_cmd,
+    azure_ai_search_base_dest_cmd,
     delta_table_dest_cmd,
     sql_base_dest_cmd,
     weaviate_dest_cmd,
