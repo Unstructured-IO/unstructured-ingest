@@ -1,3 +1,9 @@
+## 0.3.4-dev0
+
+### Enhancements
+
+* **Added Qdrant Cloud integration test**
+
 ## 0.3.3
 
 ### Enhancements
