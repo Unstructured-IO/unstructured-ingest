@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
-    api_version: str = Field(description="Azure API version")
+    api_version: str = Field(description="Azure API version", default="2024-06-01")
     azure_endpoint: str
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
 

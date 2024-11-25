@@ -74,13 +74,17 @@ class EmbedderConfig(BaseModel):
             AzureOpenAIEmbeddingEncoder,
         )
 
+        config_kwargs = {
+            "api_key": self.embedding_api_key,
+            "azure_endpoint": self.embedding_azure_endpoint,
+        }
+        if api_version := self.embedding_azure_api_version:
+            config_kwargs["api_version"] = api_version
+        if model_name := self.embedding_model_name:
+            config_kwargs["model_name"] = model_name
+
         return AzureOpenAIEmbeddingEncoder(
-            config=AzureOpenAIEmbeddingConfig(
-                api_key=self.embedding_api_key,
-                azure_endpoint=self.embedding_azure_endpoint,
-                api_version=self.embedding_azure_api_version,
-                model_name=self.embedding_model_name,
-            )
+            config=AzureOpenAIEmbeddingConfig.model_validate(config_kwargs)
         )
 
     def get_octoai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
