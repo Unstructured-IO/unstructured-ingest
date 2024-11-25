@@ -1,14 +1,20 @@
-## 0.3.3
+## 0.3.3-dev0
 
 ### Fixes
 
 * **Box source connector can now use raw JSON as access token instead of file path to JSON**
 
-## 0.3.2-dev3
+## 0.3.3
 
 ### Enhancements
+
 * **Add `precheck` to Milvus connector**
-* 
+
+### Fixes
+
+* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
+* **Add missing LanceDb extra**
+* **Weaviate cloud auth detection fixed**
 
 ## 0.3.2
 
