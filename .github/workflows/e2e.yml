@@ -104,6 +104,9 @@ jobs:
         ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
+        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
       run : |
         source .venv/bin/activate
         make install-test
