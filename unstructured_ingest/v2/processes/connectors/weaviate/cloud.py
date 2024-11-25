@@ -55,10 +55,11 @@ class CloudWeaviateConnectionConfig(WeaviateConnectionConfig):
             "client_secret": access_config.client_secret is not None,
             "client_password": access_config.password is not None and self.username is not None,
         }
-        if len(auths) == 0:
+        existing_auths = [auth_method for auth_method, flag in auths.items() if flag]
+
+        if len(existing_auths) == 0:
             raise ValueError("No auth values provided and anonymous is False")
-        if len(auths) > 1:
-            existing_auths = [auth_method for auth_method, flag in auths.items() if flag]
+        if len(existing_auths) > 1:
             raise ValueError(
                 "Multiple auth values provided, only one approach can be used: {}".format(
                     ", ".join(existing_auths)

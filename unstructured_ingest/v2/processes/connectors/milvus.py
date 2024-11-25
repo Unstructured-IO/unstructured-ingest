@@ -8,7 +8,7 @@ import pandas as pd
 from dateutil import parser
 from pydantic import Field, Secret
 
-from unstructured_ingest.error import WriteError
+from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -66,7 +66,6 @@ class MilvusConnectionConfig(ConnectionConfig):
 
 
 class MilvusUploadStagerConfig(UploadStagerConfig):
-
     fields_to_include: Optional[list[str]] = None
     """If set - list of fields to include in the output.
     Unspecified fields are removed from the elements.
@@ -174,6 +173,14 @@ class MilvusUploader(Uploader):
     upload_config: MilvusUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @DestinationConnectionError.wrap
+    def precheck(self):
+        with self.get_client() as client:
+            if not client.has_collection(self.upload_config.collection_name):
+                raise DestinationConnectionError(
+                    f"Collection '{self.upload_config.collection_name}' does not exist"
+                )
+
     @contextmanager
     def get_client(self) -> Generator["MilvusClient", None, None]:
         client = self.connection_config.get_client()
@@ -218,7 +225,6 @@ class MilvusUploader(Uploader):
             f"db in collection {self.upload_config.collection_name}"
         )
         with self.get_client() as client:
-
             try:
                 res = client.insert(collection_name=self.upload_config.collection_name, data=data)
             except MilvusException as milvus_exception:
