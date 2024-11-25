@@ -209,3 +209,4 @@ annotated/
 
 tmp_ingest/
 .vs
+.report.json

@@ -5,6 +5,7 @@ pytest-mock
 unstructured
 pytest-asyncio
 pytest_tagging
+pytest-json-report
 faker
 docker
 universal_pathlib
