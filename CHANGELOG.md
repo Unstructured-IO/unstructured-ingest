@@ -1,3 +1,9 @@
+## 0.3.4-dev1
+
+### Features
+
+* **Add `collection_id` field to Couchbase `downloader_config`**
+
 ## 0.3.3
 
 ### Enhancements
