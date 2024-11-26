@@ -1,4 +1,4 @@
-## 0.3.5-dev3
+## 0.3.5-dev4
 
 ### Enhancements
 
@@ -9,6 +9,7 @@
 * **Remove client.ping() from the Elasticsearch precheck.**
 * **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
 * **Add check to prevent querying for more than pinecone limit when deleting records**
+* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
 
 ## 0.3.4
 
