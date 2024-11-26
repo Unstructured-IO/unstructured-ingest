@@ -34,7 +34,9 @@ if __name__ == "__main__":
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
         embedder_config=EmbedderConfig(embedding_provider="huggingface"),
-        destination_connection_config=LocalWeaviateConnectionConfig(),  # Connects to http://localhost:8080
+        destination_connection_config=LocalWeaviateConnectionConfig(
+            # Connects to http://localhost:8080
+        ),
         stager_config=LocalWeaviateUploadStagerConfig(),
         uploader_config=LocalWeaviateUploaderConfig(
             collection="elements", batch_size=10, dynamic_batch=False
