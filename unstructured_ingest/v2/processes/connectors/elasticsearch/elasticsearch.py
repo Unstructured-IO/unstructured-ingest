@@ -91,7 +91,6 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
         # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html
         client_input_kwargs: dict[str, Any] = {}
         access_config = self.access_config.get_secret_value()
-        breakpoint()
         if self.hosts:
             client_input_kwargs["hosts"] = self.hosts
         if self.cloud_id:
@@ -392,7 +391,7 @@ class ElasticsearchUploader(Uploader):
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
-                dices = client.indices.get_alias(index="*")
+                indices = client.indices.get_alias(index="*")
                 if self.upload_config.index_name not in indices:
                     raise DestinationConnectionError(
                         "index {} not found: {}".format(
