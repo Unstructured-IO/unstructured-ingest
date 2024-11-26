@@ -31,6 +31,7 @@ CONNECTOR_TYPE = "pinecone"
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_POOL_THREADS = 100
 MAX_METADATA_BYTES = 40960  # 40KB https://docs.pinecone.io/reference/quotas-and-limits#hard-limits
+MAX_QUERY_RESULTS = 10000
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -214,25 +215,7 @@ class PineconeUploader(Uploader):
             f"from pinecone index: {resp}"
         )
 
-    def serverless_delete_by_record_id(self, file_data: FileData) -> None:
-        logger.debug(
-            f"deleting any content with metadata "
-            f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from pinecone serverless index"
-        )
-        index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        index_stats = index.describe_index_stats()
-        total_vectors = index_stats["total_vector_count"]
-        if total_vectors == 0:
-            return
-        dimension = index_stats["dimension"]
-        query_params = {
-            "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
-            "vector": [0] * dimension,
-            "top_k": total_vectors,
-        }
-        if namespace := self.upload_config.namespace:
-            query_params["namespace"] = namespace
+    def delete_by_query(self, index: "PineconeIndex", query_params: dict) -> None:
         while True:
             query_results = index.query(**query_params)
             matches = query_results.get("matches", [])
@@ -243,8 +226,34 @@ class PineconeUploader(Uploader):
             if namespace := self.upload_config.namespace:
                 delete_params["namespace"] = namespace
             index.delete(**delete_params)
+
+    def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleted any content with metadata "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
+            f"from pinecone serverless index"
+        )
+        index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
+        index_stats = index.describe_index_stats()
+        dimension = index_stats["dimension"]
+        total_vectors = index_stats["total_vector_count"]
+        if total_vectors == 0:
+            return
+        while total_vectors > 0:
+            top_k = min(total_vectors, MAX_QUERY_RESULTS)
+            query_params = {
+                "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
+                "vector": [0] * dimension,
+                "top_k": top_k,
+            }
+            if namespace := self.upload_config.namespace:
+                query_params["namespace"] = namespace
+            self.delete_by_query(index=index, query_params=query_params)
+            index_stats = index.describe_index_stats()
+            total_vectors = index_stats["total_vector_count"]
+
+        logger.info(
+            f"deleted {total_vectors} records with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index"
         )
