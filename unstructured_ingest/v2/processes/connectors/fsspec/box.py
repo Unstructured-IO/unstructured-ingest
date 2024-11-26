@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from optparse import Option
 from pathlib import Path
 from time import time
 from typing import Annotated, Any, Generator, Optional
@@ -56,9 +55,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
             SourceConnectionError("No authorized token available")
 
         # Prepare the access configuration with settings
-        access_kwargs_with_settings: dict[str, Any] = {
-            "oauth": self.authenticated_token
-        }
+        access_kwargs_with_settings: dict[str, Any] = {"oauth": self.authenticated_token}
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
         access_kwargs_with_settings.update(access_config)
