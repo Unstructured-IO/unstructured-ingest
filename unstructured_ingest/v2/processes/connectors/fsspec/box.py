@@ -47,34 +47,21 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
-        from boxsdk import JWTAuth
-
+        
         ac = self.access_config.get_secret_value()
 
-        # Use the validated and converted box_app_config
+        # At this point this should already be validated
         settings_dict = ac.box_app_config
 
-        # Create the JWTAuth object
-        oauth = JWTAuth.from_settings_dictionary(settings_dict)
-
-        # Explicitly authenticate and ensure access_token is generated
-        try:
-            oauth.authenticate_instance()
-        except Exception as e:
-            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
-
-        if not oauth.access_token:
-            raise SourceConnectionError("Authentication failed: No access token generated.")
-
-        # Prepare the access configuration with oauth
-        access_kwargs_with_oauth: dict[str, Any] = {
-            "oauth": oauth,
+        # Prepare the access configuration with settings
+        access_kwargs_with_settings: dict[str, Any] = {
+            "settings": settings_dict,
         }
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
-        access_kwargs_with_oauth.update(access_config)
+        access_kwargs_with_settings.update(access_config)
 
-        return access_kwargs_with_oauth
+        return access_kwargs_with_settings
 
 
 @dataclass
@@ -89,6 +76,24 @@ class BoxIndexer(FsspecIndexer):
 
     @requires_dependencies(["boxfs"], extras="box")
     def precheck(self) -> None:
+        from boxsdk import JWTAuth
+
+        ac = self.connection_config.access_config.get_secret_value()
+        settings_dict = ac.box_app_config
+
+        # Create the JWTAuth object
+        oauth = JWTAuth.from_settings_dictionary(settings_dict)
+
+        # Authenticate and ensure access_token is generated
+        try:
+            oauth.authenticate_instance()
+        except Exception as e:
+            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
+
+        if not oauth.access_token:
+            raise SourceConnectionError("Authentication failed: No access token generated.")
+
+        # Proceed with the base class's precheck
         super().precheck()
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
