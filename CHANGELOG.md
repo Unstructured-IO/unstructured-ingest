@@ -1,3 +1,9 @@
+## 0.3.5-dev0
+
+### Fixes
+
+* **Remove client.ping() from the Elasticsearch precheck.**
+
 ## 0.3.4
 
 ### Enhancements
