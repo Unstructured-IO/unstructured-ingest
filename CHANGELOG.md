@@ -1,8 +1,21 @@
-## 0.3.3-dev0
+## 0.3.5-dev1
 
 ### Fixes
 
 * **Box source connector can now use raw JSON as access token instead of file path to JSON**
+
+## 0.3.5-dev0
+
+### Fixes
+
+* **Remove client.ping() from the Elasticsearch precheck.**
+
+## 0.3.4
+
+### Enhancements
+
+* **Add azure openai embedder**
+* **Add `collection_id` field to Couchbase `downloader_config`**
 
 ## 0.3.3
 
