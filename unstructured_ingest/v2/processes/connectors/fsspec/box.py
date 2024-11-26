@@ -47,7 +47,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
-        
+
         ac = self.access_config.get_secret_value()
 
         # At this point this should already be validated
