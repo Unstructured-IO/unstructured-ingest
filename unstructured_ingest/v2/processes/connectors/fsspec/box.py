@@ -45,17 +45,15 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
     access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
-    authenticated_token: Optional[Any]
 
     def get_access_config(self) -> dict[str, Any]:
-
         ac = self.access_config.get_secret_value()
+        settings_dict = ac.box_app_config
 
-        if not self.authenticated_token:
-            SourceConnectionError("No authorized token available")
-
-        # Prepare the access configuration with settings
-        access_kwargs_with_settings: dict[str, Any] = {"oauth": self.authenticated_token}
+        # Return settings without authenticating
+        access_kwargs_with_settings: dict[str, Any] = {
+            "settings": settings_dict,
+        }
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
         access_kwargs_with_settings.update(access_config)
@@ -76,25 +74,32 @@ class BoxIndexer(FsspecIndexer):
     @requires_dependencies(["boxfs"], extras="box")
     def precheck(self) -> None:
         from boxsdk import JWTAuth
+        from boxsdk.exception import BoxOAuthException
 
         ac = self.connection_config.access_config.get_secret_value()
         settings_dict = ac.box_app_config
 
-        # Create the JWTAuth object
-        oauth = JWTAuth.from_settings_dictionary(settings_dict)
-
-        # Authenticate and ensure access_token is generated
+        # Create and authenticate the JWTAuth object
+        self.oauth = JWTAuth.from_settings_dictionary(settings_dict)
         try:
-            oauth.authenticate_instance()
-        except Exception as e:
+            self.oauth.authenticate_instance()
+        except BoxOAuthException as e:
             raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
+        except Exception as e:
+            raise SourceConnectionError(f"An unexpected error occurred: {e}")
 
-        if not oauth.access_token:
+        if not self.oauth.access_token:
             raise SourceConnectionError("Authentication failed: No access token generated.")
 
-        self.connection_config.authenticated_token = oauth
-        # Proceed with the base class's precheck
-        super().precheck()
+        # Test the connection by making an API call
+        from boxsdk import Client
+
+        client = Client(self.oauth)
+        try:
+            # Attempt to get the root folder to verify the connection
+            client.folder(folder_id="0").get()
+        except Exception as e:
+            raise SourceConnectionError(f"Failed to access Box folder: {e}")
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
