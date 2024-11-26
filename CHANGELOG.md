@@ -1,9 +1,10 @@
-## 0.3.5-dev1
+## 0.3.5-dev2
 
 ### Fixes
 
 * **Remove client.ping() from the Elasticsearch precheck.**
 * **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
 
 ## 0.3.4
 
