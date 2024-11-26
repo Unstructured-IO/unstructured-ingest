@@ -6,7 +6,6 @@ from time import time
 from typing import Annotated, Any, Generator, Optional
 
 from dateutil import parser
-from fsspec.spec import AbstractFileSystem
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
@@ -48,27 +47,31 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     oauth: Optional[Any] = None  # Store the authenticated oauth
 
-    def authenticate(self):
+    def get_access_config(self) -> dict[str, Any]:
         from boxsdk import JWTAuth
 
         ac = self.access_config.get_secret_value()
         settings_dict = ac.box_app_config
-        self.oauth = JWTAuth.from_settings_dictionary(settings_dict)
-        self.oauth.authenticate_instance()
 
-    def get_access_config(self) -> dict[str, Any]:
-        ac = self.access_config.get_secret_value()
-        settings_dict = ac.box_app_config
+        # Create and authenticate the JWTAuth object
+        oauth = JWTAuth.from_settings_dictionary(settings_dict)
+        try:
+            oauth.authenticate_instance()
+        except Exception as e:
+            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
 
-        # Return settings without authenticating
-        access_kwargs_with_settings: dict[str, Any] = {
-            "settings": settings_dict,
+        if not oauth.access_token:
+            raise SourceConnectionError("Authentication failed: No access token generated.")
+
+        # Prepare the access configuration with the authenticated oauth
+        access_kwargs_with_oauth: dict[str, Any] = {
+            "oauth": oauth,
         }
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
-        access_kwargs_with_settings.update(access_config)
+        access_kwargs_with_oauth.update(access_config)
 
-        return access_kwargs_with_settings
+        return access_kwargs_with_oauth
 
 
 @dataclass
@@ -83,19 +86,7 @@ class BoxIndexer(FsspecIndexer):
 
     @requires_dependencies(["boxfs"], extras="box")
     def precheck(self) -> None:
-        try:
-            self.connection_config.authenticate()
-            # Test the connection as before
-        except Exception as e:
-            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
-
-    @property
-    def fs(self) -> "AbstractFileSystem":
-        from fsspec import get_filesystem_class
-
-        return get_filesystem_class(self.index_config.protocol)(
-            oauth=self.connection_config.oauth,
-        )
+        super().precheck()
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
