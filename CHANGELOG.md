@@ -1,4 +1,7 @@
-## 0.3.5-dev1
+## 0.3.5-dev2
+
+### Enhacements
+* **Update weaviate v2 example**
 
 ### Fixes
 
