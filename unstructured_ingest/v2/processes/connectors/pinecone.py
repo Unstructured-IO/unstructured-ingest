@@ -137,7 +137,6 @@ class PineconeUploadStager(UploadStager):
             flatten_lists=True,
             remove_none=True,
         )
-        metadata[RECORD_ID_LABEL] = file_data.identifier
         metadata_size_bytes = len(json.dumps(metadata).encode())
         if metadata_size_bytes > MAX_METADATA_BYTES:
             logger.info(
@@ -147,6 +146,7 @@ class PineconeUploadStager(UploadStager):
             metadata = {}
 
         metadata[RECORD_ID_LABEL] = file_data.identifier
+
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
