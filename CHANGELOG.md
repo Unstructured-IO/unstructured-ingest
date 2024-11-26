@@ -1,8 +1,9 @@
-## 0.3.5-dev0
+## 0.3.5-dev1
 
 ### Fixes
 
 * **Remove client.ping() from the Elasticsearch precheck.**
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
 
 ## 0.3.4
 
