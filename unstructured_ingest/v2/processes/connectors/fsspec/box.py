@@ -45,7 +45,6 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
     access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
-    oauth: Optional[Any] = None  # Store the authenticated oauth
 
     def get_access_config(self) -> dict[str, Any]:
         from boxsdk import JWTAuth
