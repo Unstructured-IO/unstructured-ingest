@@ -84,7 +84,7 @@ ALLOWED_FIELDS = (
 
 class PineconeUploadStagerConfig(UploadStagerConfig):
     metadata_fields: list[str] = Field(
-        default=str(ALLOWED_FIELDS),
+        default=list(ALLOWED_FIELDS),
         description=(
             "which metadata from the source element to map to the payload metadata being sent to "
             "Pinecone."
@@ -137,7 +137,6 @@ class PineconeUploadStager(UploadStager):
             flatten_lists=True,
             remove_none=True,
         )
-        metadata[RECORD_ID_LABEL] = file_data.identifier
         metadata_size_bytes = len(json.dumps(metadata).encode())
         if metadata_size_bytes > MAX_METADATA_BYTES:
             logger.info(
@@ -145,6 +144,8 @@ class PineconeUploadStager(UploadStager):
                 f" {MAX_METADATA_BYTES} bytes per vector. Dropping the metadata."
             )
             metadata = {}
+
+        metadata[RECORD_ID_LABEL] = file_data.identifier
 
         return {
             "id": str(uuid.uuid4()),
