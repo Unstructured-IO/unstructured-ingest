@@ -15,9 +15,7 @@ from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
-    LanceDBS3AccessConfig,
-    LanceDBS3ConnectionConfig,
-    LanceDBS3Uploader,
+    LanceDBAwsUploader,
 )
 from unstructured_ingest.v2.processes.connectors.lancedb.azure import (
     LanceDBAzureAccessConfig,
@@ -192,7 +190,7 @@ def _get_uri(target: Literal["local", "s3", "gcs", "az"], local_base_path: Path)
 
 def _get_uploader(
     uri: str,
-) -> Union[LanceDBAzureUploader, LanceDBAzureUploader, LanceDBS3Uploader, LanceDBGSPUploader]:
+) -> Union[LanceDBAzureUploader, LanceDBAzureUploader, LanceDBAwsUploader, LanceDBGSPUploader]:
     target = uri.split("://", maxsplit=1)[0] if uri.startswith(("s3", "az", "gs")) else "local"
     upload_config = LanceDBUploaderConfig(table_name=TABLE_NAME)
     if target == "az":

@@ -1,13 +1,41 @@
-## 0.3.2-dev3
+## 0.3.5-dev1
+
+### Fixes
+
+* **Remove client.ping() from the Elasticsearch precheck.**
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+
+## 0.3.4
 
 ### Enhancements
 
-* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+* **Add azure openai embedder**
+* **Add `collection_id` field to Couchbase `downloader_config`**
+
+## 0.3.3
+
+### Enhancements
+
+* **Add `precheck` to Milvus connector**
+
+### Fixes
+
+* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
+* **Add missing LanceDb extra**
+* **Weaviate cloud auth detection fixed**
+
+## 0.3.2
+
+### Enhancements
+
+* **Persist record id in mongodb data, use it to delete previous content to prevent duplicates.**
+
 
 ### Fixes
 
 * **Remove forward slash from Google Drive relative path field**
 * **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+* **Add weaviate to destination registry**
 
 ## 0.3.1
 
@@ -20,6 +48,7 @@
 * **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
+
 * **Make AstraDB precheck fail on non-existant collections**
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
 * **Propagate exceptions raised by delta table connector during write**

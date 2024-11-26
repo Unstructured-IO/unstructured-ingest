@@ -50,7 +50,6 @@ all_tests=(
   'sharepoint-with-permissions.sh'
   'hubspot.sh'
   'sftp.sh'
-  'mongodb.sh'
 )
 
 full_python_matrix_tests=(
