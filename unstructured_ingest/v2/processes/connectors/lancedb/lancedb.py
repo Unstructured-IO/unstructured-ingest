@@ -15,6 +15,7 @@ from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces.connector import ConnectionConfig
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.upload_stager import UploadStager, UploadStagerConfig
@@ -84,7 +85,7 @@ class LanceDBUploadStager(UploadStager):
 
         df = pd.DataFrame(
             [
-                self._conform_element_contents(element_contents)
+                self._conform_element_contents(element_contents, file_data)
                 for element_contents in elements_contents
             ]
         )
@@ -94,9 +95,10 @@ class LanceDBUploadStager(UploadStager):
 
         return output_path
 
-    def _conform_element_contents(self, element: dict) -> dict:
+    def _conform_element_contents(self, element: dict, file_data: FileData) -> dict:
         return {
             "vector": element.pop("embeddings", None),
+            RECORD_ID_LABEL: file_data.identifier,
             **flatten_dict(element, separator="-"),
         }
 
@@ -134,6 +136,14 @@ class LanceDBUploader(Uploader):
         async with self.get_table() as table:
             schema = await table.schema()
             df = self._fit_to_schema(df, schema)
+            if RECORD_ID_LABEL not in schema.names:
+                logger.warning(
+                    f"Designated table doesn't contain {RECORD_ID_LABEL} column of type"
+                    " string which is required to support overwriting updates on subsequent"
+                    " uploads of the same record. New rows will be appended instead."
+                )
+            else:
+                await table.delete(f'{RECORD_ID_LABEL} = "{file_data.identifier}"')
             await table.add(data=df)
 
     def _fit_to_schema(self, df: pd.DataFrame, schema) -> pd.DataFrame:
