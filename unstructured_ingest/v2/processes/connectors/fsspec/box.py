@@ -45,6 +45,14 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
     access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    oauth: Optional[Any] = None  # Store the authenticated oauth
+    
+    def authenticate(self):
+        from boxsdk import JWTAuth
+        ac = self.access_config.get_secret_value()
+        settings_dict = ac.box_app_config
+        self.oauth = JWTAuth.from_settings_dictionary(settings_dict)
+        self.oauth.authenticate_instance()
 
     def get_access_config(self) -> dict[str, Any]:
         ac = self.access_config.get_secret_value()
@@ -73,33 +81,18 @@ class BoxIndexer(FsspecIndexer):
 
     @requires_dependencies(["boxfs"], extras="box")
     def precheck(self) -> None:
-        from boxsdk import JWTAuth
-        from boxsdk.exception import BoxOAuthException
-
-        ac = self.connection_config.access_config.get_secret_value()
-        settings_dict = ac.box_app_config
-
-        # Create and authenticate the JWTAuth object
-        self.oauth = JWTAuth.from_settings_dictionary(settings_dict)
         try:
-            self.oauth.authenticate_instance()
-        except BoxOAuthException as e:
+            self.connection_config.authenticate()
+            # Test the connection as before
+        except Exception as e:
             raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
-        except Exception as e:
-            raise SourceConnectionError(f"An unexpected error occurred: {e}")
-
-        if not self.oauth.access_token:
-            raise SourceConnectionError("Authentication failed: No access token generated.")
-
-        # Test the connection by making an API call
-        from boxsdk import Client
-
-        client = Client(self.oauth)
-        try:
-            # Attempt to get the root folder to verify the connection
-            client.folder(folder_id="0").get()
-        except Exception as e:
-            raise SourceConnectionError(f"Failed to access Box folder: {e}")
+        
+    @property
+    def fs(self) -> "AbstractFileSystem":
+        from fsspec import get_filesystem_class
+        return get_filesystem_class(self.index_config.protocol)(
+            oauth=self.connection_config.oauth,
+        )
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
