@@ -146,6 +146,7 @@ class PineconeUploadStager(UploadStager):
             )
             metadata = {}
 
+        metadata[RECORD_ID_LABEL] = file_data.identifier
         return {
             "id": str(uuid.uuid4()),
             "values": embeddings,
