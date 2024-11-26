@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from optparse import Option
 from pathlib import Path
 from time import time
 from typing import Annotated, Any, Generator, Optional
@@ -45,17 +46,18 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
     access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    authenticated_token: Optional[Any]
 
     def get_access_config(self) -> dict[str, Any]:
 
         ac = self.access_config.get_secret_value()
 
-        # At this point this should already be validated
-        settings_dict = ac.box_app_config
+        if not self.authenticated_token:
+            SourceConnectionError("No authorized token available")
 
         # Prepare the access configuration with settings
         access_kwargs_with_settings: dict[str, Any] = {
-            "settings": settings_dict,
+            "oauth": self.authenticated_token
         }
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
@@ -93,6 +95,7 @@ class BoxIndexer(FsspecIndexer):
         if not oauth.access_token:
             raise SourceConnectionError("Authentication failed: No access token generated.")
 
+        self.connection_config.authenticated_token = oauth
         # Proceed with the base class's precheck
         super().precheck()
 
