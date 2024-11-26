@@ -91,6 +91,7 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
         # https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html
         client_input_kwargs: dict[str, Any] = {}
         access_config = self.access_config.get_secret_value()
+        breakpoint()
         if self.hosts:
             client_input_kwargs["hosts"] = self.hosts
         if self.cloud_id:
@@ -142,8 +143,6 @@ class ElasticsearchIndexer(Indexer):
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
-                if not client.ping():
-                    raise SourceConnectionError("cluster not detected")
                 indices = client.indices.get_alias(index="*")
                 if self.index_config.index_name not in indices:
                     raise SourceConnectionError(
@@ -393,11 +392,9 @@ class ElasticsearchUploader(Uploader):
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
-                if not client.ping():
-                    raise DestinationConnectionError("cluster not detected")
-                indices = client.indices.get_alias(index="*")
+                dices = client.indices.get_alias(index="*")
                 if self.upload_config.index_name not in indices:
-                    raise SourceConnectionError(
+                    raise DestinationConnectionError(
                         "index {} not found: {}".format(
                             self.upload_config.index_name, ", ".join(indices.keys())
                         )
