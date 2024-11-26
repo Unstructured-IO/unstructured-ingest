@@ -15,6 +15,8 @@ from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
+    LanceDBAwsAccessConfig,
+    LanceDBAwsConnectionConfig,
     LanceDBAwsUploader,
 )
 from unstructured_ingest.v2.processes.connectors.lancedb.azure import (
@@ -205,10 +207,10 @@ def _get_uploader(
         )
 
     elif target == "s3":
-        return LanceDBS3Uploader(
+        return LanceDBAwsUploader(
             upload_config=upload_config,
-            connection_config=LanceDBS3ConnectionConfig(
-                access_config=LanceDBS3AccessConfig(
+            connection_config=LanceDBAwsConnectionConfig(
+                access_config=LanceDBAwsAccessConfig(
                     aws_access_key_id=os.getenv("S3_INGEST_TEST_ACCESS_KEY"),
                     aws_secret_access_key=os.getenv("S3_INGEST_TEST_SECRET_KEY"),
                 ),
