@@ -6,6 +6,7 @@ from time import time
 from typing import Annotated, Any, Generator, Optional
 
 from dateutil import parser
+from fsspec.spec import AbstractFileSystem
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
@@ -46,9 +47,10 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     oauth: Optional[Any] = None  # Store the authenticated oauth
-    
+
     def authenticate(self):
         from boxsdk import JWTAuth
+
         ac = self.access_config.get_secret_value()
         settings_dict = ac.box_app_config
         self.oauth = JWTAuth.from_settings_dictionary(settings_dict)
@@ -86,10 +88,11 @@ class BoxIndexer(FsspecIndexer):
             # Test the connection as before
         except Exception as e:
             raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
-        
+
     @property
     def fs(self) -> "AbstractFileSystem":
         from fsspec import get_filesystem_class
+
         return get_filesystem_class(self.index_config.protocol)(
             oauth=self.connection_config.oauth,
         )
