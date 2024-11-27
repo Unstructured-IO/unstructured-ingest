@@ -30,8 +30,8 @@ CONNECTOR_TYPE = "vectara"
 
 
 class VectaraAccessConfig(AccessConfig):
-    oauth_client_id: Optional[str] = Field(default=None, description="Client ID")
-    oauth_secret: Optional[str] = Field(default=None, description="Client Secret")
+    oauth_client_id: str = Field(description="Client ID")
+    oauth_secret: str = Field(description="Client Secret")
 
 
 class VectaraConnectionConfig(ConnectionConfig):
@@ -52,14 +52,6 @@ class VectaraUploadStager(UploadStager):
         default_factory=lambda: VectaraUploadStagerConfig()
     )
 
-    @staticmethod
-    def parse_date_string(date_string: str) -> date:
-        try:
-            timestamp = float(date_string)
-            return datetime.fromtimestamp(timestamp)
-        except Exception as e:
-            logger.debug(f"date {date_string} string not a timestamp: {e}")
-        return parser.parse(date_string)
 
     @staticmethod
     def conform_dict(data: dict) -> dict:
@@ -146,14 +138,14 @@ class VectaraUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @property
-    async def jwt_token(self):
+    async def jwt_token(self) -> str:
         if not self._jwt_token or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60:
             self._jwt_token = await self._get_jwt_token()
         return self._jwt_token
 
     # Get Oauth2 JWT token
     @requires_dependencies(["httpx"], extras="vectara")
-    async def _get_jwt_token(self):
+    async def _get_jwt_token(self) -> str:
         import httpx
 
         """Connect to the server and get a JWT token."""
@@ -178,7 +170,7 @@ class VectaraUploader(Uploader):
         return response_json.get("access_token")
 
     @DestinationConnectionError.wrap
-    async def _check_connection_and_corpora(self):
+    async def _check_connection_and_corpora(self) -> None:
         """
         Check the connection for Vectara and validate corpus exists.
         - If more than one corpus with the same name exists - then return a message
@@ -193,22 +185,26 @@ class VectaraUploader(Uploader):
             endpoint="corpora",
         )
 
-        possible_corpora_keys_names_map = {
-            corpus.get("key"): corpus.get("name")
-            for corpus in list_corpora_response.get("corpora")
-            if corpus.get("name") == self.connection_config.corpus_name
-        }
+        if self.connection_config.corpus_name:
+            possible_corpora_keys_names_map = {
+                corpus.get("key"): corpus.get("name")
+                for corpus in list_corpora_response.get("corpora")
+                if corpus.get("name") == self.connection_config.corpus_name
+            }
 
-        if len(possible_corpora_keys_names_map) > 1:
-            raise ValueError(
-                f"Multiple Corpora exist with name {self.connection_config.corpus_name} in dest."
-            )
-        if len(possible_corpora_keys_names_map) == 1:
-            self.connection_config.corpus_key = list(possible_corpora_keys_names_map.keys())[0]
-        else:
-            raise ValueError(
-                f"No Corpora exist with name {self.connection_config.corpus_name} in dest."
-            )
+            if len(possible_corpora_keys_names_map) > 1:
+                raise ValueError(
+                    f"Multiple Corpora exist with name {self.connection_config.corpus_name} in dest."
+                )
+            if len(possible_corpora_keys_names_map) == 1:
+                if not self.connection_config.corpus_key:
+                    self.connection_config.corpus_key = list(possible_corpora_keys_names_map.keys())[0]
+                elif self.connection_config.corpus_key != list(possible_corpora_keys_names_map.keys())[0]:
+                    raise ValueError("Corpus key does not match provided corpus name.")
+            else:
+                raise ValueError(
+                    f"No Corpora exist with name {self.connection_config.corpus_name} in dest."
+                )
 
     @requires_dependencies(["httpx"], extras="vectara")
     async def _request(
@@ -217,7 +213,7 @@ class VectaraUploader(Uploader):
         http_method: str = "POST",
         params: Mapping[str, Any] = None,
         data: Mapping[str, Any] = None,
-    ):
+    ) -> tuple[bool, dict]:
         import httpx
 
         url = f"{BASE_URL}/{endpoint}"
@@ -297,8 +293,6 @@ class VectaraUploader(Uploader):
         **kwargs: Any,
     ) -> None:
         import aiofiles
-
-        docs_list: Dict[Dict[str, Any]] = []
 
         async with aiofiles.open(path) as json_file:
             docs_list = json.loads(await json_file.read())
