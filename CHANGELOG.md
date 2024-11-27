@@ -1,9 +1,70 @@
-## 0.3.1-dev
+## 0.3.6-dev
 
 ### Features
 
 * **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+
+## 0.3.5
+
+### Enhancements
+
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+
+### Fixes
+
+* **Remove client.ping() from the Elasticsearch precheck.**
+* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
+* **Add check to prevent querying for more than pinecone limit when deleting records**
+* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
+
+## 0.3.4
+
+### Enhancements
+
+* **Add azure openai embedder**
+* **Add `collection_id` field to Couchbase `downloader_config`**
+
+## 0.3.3
+
+### Enhancements
+
+* **Add `precheck` to Milvus connector**
+
+### Fixes
+
+* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
+* **Add missing LanceDb extra**
+* **Weaviate cloud auth detection fixed**
+
+## 0.3.2
+
+### Enhancements
+
+* **Persist record id in mongodb data, use it to delete previous content to prevent duplicates.**
+
+
+### Fixes
+
+* **Remove forward slash from Google Drive relative path field**
+* **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+* **Add weaviate to destination registry**
+
+## 0.3.1
+
+### Enhancements
+
+* **LanceDB V2 Destination Connector**
+* **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
+* **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in sql metadata, use it to delete previous content to prevent duplicates.**
+* **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
+
+### Fixes
+
+* **Make AstraDB precheck fail on non-existant collections**
+* **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
+* **Propagate exceptions raised by delta table connector during write**
 
 ## 0.3.0
 
@@ -25,7 +86,6 @@
 ## 0.2.2
 
 ### Enhancements
-
 * **Remove `overwrite` field** from fsspec and databricks connectors
 * **Added migration for GitLab Source V2**
 * **Added V2 confluence source connector**
@@ -42,6 +102,7 @@
 * **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
 * **Support native async requests from unstructured-client**
 * **Support filtering element types in partitioner step**
+
 
 ### Fixes
 

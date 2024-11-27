@@ -16,6 +16,7 @@ class EmbedderConfig(BaseModel):
     embedding_provider: Optional[
         Literal[
             "openai",
+            "azure-openai",
             "huggingface",
             "aws-bedrock",
             "vertexai",
@@ -43,6 +44,14 @@ class EmbedderConfig(BaseModel):
     embedding_aws_region: Optional[str] = Field(
         default="us-west-2", description="AWS region used for AWS-based embedders, such as bedrock"
     )
+    embedding_azure_endpoint: Optional[str] = Field(
+        default=None,
+        description="Your Azure endpoint, including the resource, "
+        "e.g. `https://example-resource.azure.openai.com/`",
+    )
+    embedding_azure_api_version: Optional[str] = Field(
+        description="Azure API version", default=None
+    )
 
     def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.huggingface import (
@@ -58,6 +67,25 @@ class EmbedderConfig(BaseModel):
         from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
 
         return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig.model_validate(embedding_kwargs))
+
+    def get_azure_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.azure_openai import (
+            AzureOpenAIEmbeddingConfig,
+            AzureOpenAIEmbeddingEncoder,
+        )
+
+        config_kwargs = {
+            "api_key": self.embedding_api_key,
+            "azure_endpoint": self.embedding_azure_endpoint,
+        }
+        if api_version := self.embedding_azure_api_version:
+            config_kwargs["api_version"] = api_version
+        if model_name := self.embedding_model_name:
+            config_kwargs["model_name"] = model_name
+
+        return AzureOpenAIEmbeddingEncoder(
+            config=AzureOpenAIEmbeddingConfig.model_validate(config_kwargs)
+        )
 
     def get_octoai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.octoai import OctoAiEmbeddingConfig, OctoAIEmbeddingEncoder
@@ -146,6 +174,8 @@ class EmbedderConfig(BaseModel):
             return self.get_mixedbread_embedder(embedding_kwargs=kwargs)
         if self.embedding_provider == "togetherai":
             return self.get_togetherai_embedder(embedding_kwargs=kwargs)
+        if self.embedding_provider == "azure-openai":
+            return self.get_azure_openai_embedder(embedding_kwargs=kwargs)
 
         raise ValueError(f"{self.embedding_provider} not a recognized encoder")
 

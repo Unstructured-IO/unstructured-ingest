@@ -1,7 +1,10 @@
 import json
+import math
 import os
+import re
 import time
 from pathlib import Path
+from typing import Generator
 from uuid import uuid4
 
 import pytest
@@ -12,10 +15,12 @@ from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connectors.pinecone import (
     CONNECTOR_TYPE,
+    MAX_QUERY_RESULTS,
     PineconeAccessConfig,
     PineconeConnectionConfig,
     PineconeUploader,
@@ -24,6 +29,12 @@ from unstructured_ingest.v2.processes.connectors.pinecone import (
     PineconeUploadStagerConfig,
 )
 
+METADATA_BYTES_LIMIT = (
+    40960  # 40KB https://docs.pinecone.io/reference/quotas-and-limits#hard-limits
+)
+VECTOR_DIMENSION = 384
+SPEC = {"serverless": {"cloud": "aws", "region": "us-east-1"}}
+ALLOWED_METADATA_FIELD = "text"
 API_KEY = "PINECONE_API_KEY"
 
 
@@ -62,7 +73,7 @@ def wait_for_ready(client: Pinecone, index_name: str, timeout=60, interval=1) ->
 
 
 @pytest.fixture
-def pinecone_index() -> str:
+def pinecone_index() -> Generator[str, None, None]:
     pinecone = Pinecone(api_key=get_api_key())
     random_id = str(uuid4()).split("-")[0]
     index_name = f"ingest-test-{random_id}"
@@ -109,7 +120,10 @@ def validate_pinecone_index(
             f"retry attempt {i}: expected {expected_num_of_vectors} != vector count {vector_count}"
         )
         time.sleep(interval)
-    assert vector_count == expected_num_of_vectors
+    assert vector_count == expected_num_of_vectors, (
+        f"vector count from index ({vector_count}) doesn't "
+        f"match expected number: {expected_num_of_vectors}"
+    )
 
 
 @requires_env(API_KEY)
@@ -138,10 +152,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
     uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
     uploader.precheck()
 
-    if uploader.is_async():
-        await uploader.run_async(path=new_upload_file, file_data=file_data)
-    else:
-        uploader.run(path=new_upload_file, file_data=file_data)
+    uploader.run(path=new_upload_file, file_data=file_data)
     with new_upload_file.open() as f:
         staged_content = json.load(f)
     expected_num_of_vectors = len(staged_content)
@@ -151,11 +162,103 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
     )
 
     # Rerun uploader and make sure no duplicates exist
-    if uploader.is_async():
-        await uploader.run_async(path=new_upload_file, file_data=file_data)
-    else:
-        uploader.run(path=new_upload_file, file_data=file_data)
+    uploader.run(path=new_upload_file, file_data=file_data)
     logger.info("validating second upload")
     validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.skip(reason="TODO: get this to work")
+async def test_pinecone_destination_large_index(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
+    new_file = temp_dir / "large_file.json"
+    with upload_file.open() as f:
+        upload_content = json.load(f)
+
+    min_entries = math.ceil((MAX_QUERY_RESULTS * 2) / len(upload_content))
+    new_content = (upload_content * min_entries)[: (2 * MAX_QUERY_RESULTS)]
+    print(f"Creating large index content with {len(new_content)} records")
+    with new_file.open("w") as f:
+        json.dump(new_content, f)
+
+    expected_num_of_vectors = len(new_content)
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=new_file.name, filename=new_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+    )
+    connection_config = PineconeConnectionConfig(
+        index_name=pinecone_index,
+        access_config=PineconeAccessConfig(api_key=get_api_key()),
+    )
+    stager_config = PineconeUploadStagerConfig()
+    stager = PineconeUploadStager(upload_stager_config=stager_config)
+    new_upload_file = stager.run(
+        elements_filepath=new_file,
+        output_dir=temp_dir,
+        output_filename=new_file.name,
+        file_data=file_data,
+    )
+
+    upload_config = PineconeUploaderConfig()
+    uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
+    uploader.precheck()
+
+    uploader.run(path=new_upload_file, file_data=file_data)
+    validate_pinecone_index(
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+    )
+    # Rerun uploader and make sure no duplicates exist
+    uploader.run(path=new_upload_file, file_data=file_data)
+    logger.info("validating second upload")
+    validate_pinecone_index(
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+    )
+
+
+@requires_env(API_KEY)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
+    stager = PineconeUploadStager()
+    uploader = PineconeUploader(
+        connection_config=PineconeConnectionConfig(
+            access_config=PineconeAccessConfig(api_key=get_api_key()),
+            index_name=pinecone_index,
+        ),
+        upload_config=PineconeUploaderConfig(),
+    )
+    large_metadata_upload_file = tmp_path / "mock-upload-file.pdf.json"
+    large_metadata = {ALLOWED_METADATA_FIELD: "0" * 2 * METADATA_BYTES_LIMIT}
+
+    with open(upload_file) as file:
+        elements = json.load(file)
+
+    with open(large_metadata_upload_file, "w") as file:
+        mock_element = elements[0]
+        mock_element["metadata"] = large_metadata
+        json.dump([mock_element], file)
+
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(
+            fullpath=large_metadata_upload_file.name, filename=large_metadata_upload_file.name
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock-file-data",
+    )
+    staged_file = stager.run(
+        file_data, large_metadata_upload_file, tmp_path, large_metadata_upload_file.name
+    )
+    try:
+        uploader.run(staged_file, file_data)
+    except DestinationConnectionError as e:
+        error_line = r"Metadata size is \d+ bytes, which exceeds the limit of \d+ bytes per vector"
+        if re.search(re.compile(error_line), str(e)) is None:
+            raise e
+        raise pytest.fail("Upload request failed due to metadata exceeding limits.")
+
+    validate_pinecone_index(pinecone_index, 1, interval=5)

@@ -1,5 +1,6 @@
 import json
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -33,10 +34,34 @@ SEED_MESSAGES = 10
 TOPIC = "fake-topic"
 
 
+def get_admin_client() -> AdminClient:
+    conf = {
+        "bootstrap.servers": "localhost:29092",
+    }
+    return AdminClient(conf)
+
+
 @pytest.fixture
 def docker_compose_ctx():
     with docker_compose_context(docker_compose_path=env_setup_path / "kafka") as ctx:
         yield ctx
+
+
+def wait_for_topic(topic: str, retries: int = 10, interval: int = 1):
+    admin_client = get_admin_client()
+    current_topics = admin_client.list_topics().topics
+    attempts = 0
+    while topic not in current_topics and attempts < retries:
+        attempts += 1
+        print(
+            "Attempt {}: Waiting for topic {} to exist in {}".format(
+                attempts, topic, ", ".join(current_topics)
+            )
+        )
+        time.sleep(interval)
+        current_topics = admin_client.list_topics().topics
+    if topic not in current_topics:
+        raise TimeoutError(f"Timeout out waiting for topic {topic} to exist")
 
 
 @pytest.fixture
@@ -50,15 +75,13 @@ def kafka_seed_topic(docker_compose_ctx) -> str:
         producer.produce(topic=TOPIC, value=message)
     producer.flush(timeout=10)
     print(f"kafka topic {TOPIC} seeded with {SEED_MESSAGES} messages")
+    wait_for_topic(topic=TOPIC)
     return TOPIC
 
 
 @pytest.fixture
 def kafka_upload_topic(docker_compose_ctx) -> str:
-    conf = {
-        "bootstrap.servers": "localhost:29092",
-    }
-    admin_client = AdminClient(conf)
+    admin_client = get_admin_client()
     admin_client.create_topics([NewTopic(TOPIC, 1, 1)])
     return TOPIC
 
@@ -88,11 +111,22 @@ async def test_kafka_source_local(kafka_seed_topic: str):
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_kafak_source_local_precheck_fail():
+def test_kafka_source_local_precheck_fail_no_cluster():
     connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     indexer = LocalKafkaIndexer(
         connection_config=connection_config,
         index_config=LocalKafkaIndexerConfig(topic=TOPIC, num_messages_to_consume=5),
+    )
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_kafka_source_local_precheck_fail_no_topic(kafka_seed_topic: str):
+    connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
+    indexer = LocalKafkaIndexer(
+        connection_config=connection_config,
+        index_config=LocalKafkaIndexerConfig(topic="topic", num_messages_to_consume=5),
     )
     with pytest.raises(SourceConnectionError):
         indexer.precheck()
@@ -158,7 +192,7 @@ async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: st
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-def test_kafak_destination_local_precheck_fail():
+def test_kafka_destination_local_precheck_fail_no_cluster():
     uploader = LocalKafkaUploader(
         connection_config=LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092),
         upload_config=LocalKafkaUploaderConfig(topic=TOPIC, batch_size=10),

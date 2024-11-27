@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.string_and_date_utils import truncate_string_bytes
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -49,6 +50,8 @@ if TYPE_CHECKING:
 
 
 CONNECTOR_TYPE = "astradb"
+
+MAX_CONTENT_PARAM_BYTE_SIZE = 8000
 
 
 class AstraDBAccessConfig(AccessConfig):
@@ -170,7 +173,7 @@ class AstraDBIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.get_collection()
+            self.get_collection().options()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -301,7 +304,20 @@ class AstraDBUploadStager(UploadStager):
         default_factory=lambda: AstraDBUploadStagerConfig()
     )
 
+    def truncate_dict_elements(self, element_dict: dict) -> None:
+        text = element_dict.pop("text", None)
+        if text is not None:
+            element_dict["text"] = truncate_string_bytes(text, MAX_CONTENT_PARAM_BYTE_SIZE)
+        metadata = element_dict.get("metadata")
+        if metadata is not None and isinstance(metadata, dict):
+            text_as_html = element_dict["metadata"].pop("text_as_html", None)
+            if text_as_html is not None:
+                element_dict["metadata"]["text_as_html"] = truncate_string_bytes(
+                    text_as_html, MAX_CONTENT_PARAM_BYTE_SIZE
+                )
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        self.truncate_dict_elements(element_dict)
         return {
             "$vector": element_dict.pop("embeddings", None),
             "content": element_dict.pop("text", None),
@@ -345,7 +361,7 @@ class AstraDBUploader(Uploader):
                 connection_config=self.connection_config,
                 collection_name=self.upload_config.collection_name,
                 keyspace=self.upload_config.keyspace,
-            )
+            ).options()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")

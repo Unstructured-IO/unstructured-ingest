@@ -86,7 +86,7 @@ async def test_snowflake_source():
         image="localstack/snowflake",
         environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
         ports={4566: 4566, 443: 443},
-        healthcheck_timeout=30,
+        healthcheck_retries=30,
     ):
         seed_data()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -156,7 +156,7 @@ async def test_snowflake_destination(upload_file: Path):
         image="localstack/snowflake",
         environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
         ports={4566: 4566, 443: 443},
-        healthcheck_timeout=30,
+        healthcheck_retries=30,
     ):
         init_db_destination()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -192,13 +192,17 @@ async def test_snowflake_destination(upload_file: Path):
                     host=connect_params["host"],
                 )
             )
-            if uploader.is_async():
-                await uploader.run_async(path=staged_path, file_data=mock_file_data)
-            else:
-                uploader.run(path=staged_path, file_data=mock_file_data)
+
+            uploader.run(path=staged_path, file_data=mock_file_data)
 
             staged_df = pd.read_json(staged_path, orient="records", lines=True)
             expected_num_elements = len(staged_df)
+            validate_destination(
+                connect_params=connect_params,
+                expected_num_elements=expected_num_elements,
+            )
+
+            uploader.run(path=staged_path, file_data=mock_file_data)
             validate_destination(
                 connect_params=connect_params,
                 expected_num_elements=expected_num_elements,

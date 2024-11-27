@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "pinecone"
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_POOL_THREADS = 100
+MAX_METADATA_BYTES = 40960  # 40KB https://docs.pinecone.io/reference/quotas-and-limits#hard-limits
+MAX_QUERY_RESULTS = 10000
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -83,7 +85,7 @@ ALLOWED_FIELDS = (
 
 class PineconeUploadStagerConfig(UploadStagerConfig):
     metadata_fields: list[str] = Field(
-        default=str(ALLOWED_FIELDS),
+        default=list(ALLOWED_FIELDS),
         description=(
             "which metadata from the source element to map to the payload metadata being sent to "
             "Pinecone."
@@ -102,6 +104,10 @@ class PineconeUploaderConfig(UploaderConfig):
     namespace: Optional[str] = Field(
         default=None,
         description="The namespace to write to. If not specified, the default namespace is used",
+    )
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
     )
 
 
@@ -132,6 +138,14 @@ class PineconeUploadStager(UploadStager):
             flatten_lists=True,
             remove_none=True,
         )
+        metadata_size_bytes = len(json.dumps(metadata).encode())
+        if metadata_size_bytes > MAX_METADATA_BYTES:
+            logger.info(
+                f"Metadata size is {metadata_size_bytes} bytes, which exceeds the limit of"
+                f" {MAX_METADATA_BYTES} bytes per vector. Dropping the metadata."
+            )
+            metadata = {}
+
         metadata[RECORD_ID_LABEL] = file_data.identifier
 
         return {
@@ -183,38 +197,25 @@ class PineconeUploader(Uploader):
 
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        delete_kwargs = {"filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}}}
+        delete_kwargs = {
+            "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
+        }
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
 
         resp = index.delete(**delete_kwargs)
         logger.debug(
-            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleted any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index: {resp}"
         )
 
-    def serverless_delete_by_record_id(self, file_data: FileData) -> None:
-        logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
-            f"from pinecone serverless index"
-        )
-        index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        index_stats = index.describe_index_stats()
-        total_vectors = index_stats["total_vector_count"]
-        if total_vectors == 0:
-            return
-        dimension = index_stats["dimension"]
-        query_params = {
-            "filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}},
-            "vector": [0] * dimension,
-            "top_k": total_vectors,
-        }
-        if namespace := self.upload_config.namespace:
-            query_params["namespace"] = namespace
+    def delete_by_query(self, index: "PineconeIndex", query_params: dict) -> None:
         while True:
             query_results = index.query(**query_params)
             matches = query_results.get("matches", [])
@@ -225,8 +226,35 @@ class PineconeUploader(Uploader):
             if namespace := self.upload_config.namespace:
                 delete_params["namespace"] = namespace
             index.delete(**delete_params)
+
+    def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
+            f"from pinecone serverless index"
+        )
+        index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
+        index_stats = index.describe_index_stats()
+        dimension = index_stats["dimension"]
+        total_vectors = index_stats["total_vector_count"]
+        if total_vectors == 0:
+            return
+        while total_vectors > 0:
+            top_k = min(total_vectors, MAX_QUERY_RESULTS)
+            query_params = {
+                "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
+                "vector": [0] * dimension,
+                "top_k": top_k,
+            }
+            if namespace := self.upload_config.namespace:
+                query_params["namespace"] = namespace
+            self.delete_by_query(index=index, query_params=query_params)
+            index_stats = index.describe_index_stats()
+            total_vectors = index_stats["total_vector_count"]
+
+        logger.info(
+            f"deleted {total_vectors} records with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index"
         )
 
@@ -269,7 +297,6 @@ class PineconeUploader(Uploader):
             f"writing a total of {len(elements_dict)} elements via"
             f" document batches to destination"
             f" index named {self.connection_config.index_name}"
-            f" with batch size {self.upload_config.batch_size}"
         )
         # Determine if serverless or pod based index
         pinecone_client = self.connection_config.get_client()
