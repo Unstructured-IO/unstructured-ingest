@@ -71,7 +71,7 @@ def wait_for_topic(
     while (topic not in current_topics) == exists and attempts < retries:
         attempts += 1
         print(
-            "Attempt {}: Waiting for topic {} to {} exist in {}".format(
+            "Attempt {}: Waiting for topic {} to {} exist. Current topics: [{}]".format(
                 attempts, topic, "" if exists else "not", ", ".join(current_topics)
             )
         )

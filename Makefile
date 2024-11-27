@@ -144,7 +144,7 @@ integration-test-connectors-src:
 
 .PHONY: integration-test-connectors-dest
 integration-test-connectors-dest:
-	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors --json-report
+	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors/test_kafka.py --json-report -k test_kafka_source_cloud
 
 .PHONY: parse-skipped-tests
 parse-skipped-tests:

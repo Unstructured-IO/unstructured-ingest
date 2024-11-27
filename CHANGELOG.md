@@ -1,4 +1,4 @@
-## 0.3.5-dev0
+## 0.3.6-dev0
 
 ### Fixes
 
@@ -7,6 +7,19 @@
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
+
+## 0.3.5
+
+### Enhancements
+
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+
+### Fixes
+
+* **Remove client.ping() from the Elasticsearch precheck.**
+* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
+* **Add check to prevent querying for more than pinecone limit when deleting records**
+* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
 
 ## 0.3.4
 
