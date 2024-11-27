@@ -24,7 +24,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
-BASE_URL = "https://api.vectara.io/v1"
+BASE_URL = "https://api.vectara.io/v2"
 
 CONNECTOR_TYPE = "vectara"
 
@@ -38,7 +38,7 @@ class VectaraConnectionConfig(ConnectionConfig):
     access_config: Secret[VectaraAccessConfig]
     customer_id: str
     corpus_name: Optional[str] = None
-    corpus_id: Optional[str] = None
+    corpus_key: Optional[str] = None
     token_url: str = "https://vectara-prod-{}.auth.us-west-2.amazoncognito.com/oauth2/token"
 
 
@@ -93,17 +93,17 @@ class VectaraUploadStager(UploadStager):
             elements_contents = json.load(elements_file)
 
         docs_list: list[dict[str, Any]] = []
+        
         conformed_elements = {
-            "documentId": str(uuid.uuid4()),
-            "title": elements_contents[0]
-            .get("metadata", {})
-            .get("data_source", {})
-            .get("record_locator", {})
-            .get("path"),
-            "section": [
+            "id": str(uuid.uuid4()),
+            "type": "core",
+            "metadata": {
+                "title": file_data.identifier,
+            },
+            "document_parts": [
                 {
                     "text": element.pop("text", None),
-                    "metadataJson": json.dumps(self.conform_dict(data=element)),
+                    "metadata": self.conform_dict(data=element),
                 }
                 for element in elements_contents
             ],
@@ -111,6 +111,7 @@ class VectaraUploadStager(UploadStager):
         logger.info(
             f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}"
         )
+
         docs_list.append(conformed_elements)
 
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
@@ -137,7 +138,7 @@ class VectaraUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            asyncio.run(self.vectara())
+            asyncio.run(self._check_connection_and_corpora())
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -175,7 +176,7 @@ class VectaraUploader(Uploader):
         return response_json.get("access_token")
 
     @DestinationConnectionError.wrap
-    async def vectara(self):
+    async def _check_connection_and_corpora(self):
         """
         Check the connection for Vectara and validate corpus exists.
         - If more than one corpus with the same name exists - then return a message
@@ -185,29 +186,23 @@ class VectaraUploader(Uploader):
         # Get token if not already set
         await self.jwt_token
 
-        list_corpora_response = await self._request(
-            endpoint="list-corpora",
-            data={"numResults": 1, "filter": self.connection_config.corpus_name},
+        _, list_corpora_response = await self._request(
+            http_method='GET',
+            endpoint="corpora",
         )
 
-        possible_corpora_ids_names_map = {
-            corpus.get("id"): corpus.get("name")
-            for corpus in list_corpora_response.get("corpus")
+        possible_corpora_keys_names_map = {
+            corpus.get("key"): corpus.get("name")
+            for corpus in list_corpora_response.get("corpora")
             if corpus.get("name") == self.connection_config.corpus_name
         }
 
-        if len(possible_corpora_ids_names_map) > 1:
-            return f"Multiple Corpora exist with name {self.connection_config.corpus_name}"
-        if len(possible_corpora_ids_names_map) == 1:
-            self.connection_config.corpus_id = list(possible_corpora_ids_names_map.keys())[0]
+        if len(possible_corpora_keys_names_map) > 1:
+            raise ValueError(f"Multiple Corpora exist with name {self.connection_config.corpus_name} in destination.")
+        if len(possible_corpora_keys_names_map) == 1:
+            self.connection_config.corpus_key = list(possible_corpora_keys_names_map.keys())[0]
         else:
-            data = {
-                "corpus": {
-                    "name": self.connection_config.corpus_name,
-                }
-            }
-            create_corpus_response = await self._request(endpoint="create-corpus", data=data)
-            self.connection_config.corpus_id = create_corpus_response.get("corpusId")
+            raise ValueError(f'No Corpora exist with name {self.connection_config.corpus_name} in destination.')
 
     @requires_dependencies(["httpx"], extras="vectara")
     async def _request(
@@ -225,7 +220,6 @@ class VectaraUploader(Uploader):
             "Content-Type": "application/json",
             "Accept": "application/json",
             "Authorization": f"Bearer {await self.jwt_token}",
-            "customer-id": self.connection_config.customer_id,
             "X-source": "unstructured",
         }
 
@@ -234,65 +228,51 @@ class VectaraUploader(Uploader):
                 method=http_method, url=url, headers=headers, params=params, json=data
             )
             response.raise_for_status()
-            return response.json()
+            return response.is_success, response.json()
+
 
     async def _delete_doc(self, doc_id: str) -> None:
         """
         Delete a document from the Vectara corpus.
-
-        Args:
-            url (str): URL of the page to delete.
-            doc_id (str): ID of the document to delete.
         """
-        body = {
-            "customer_id": self.connection_config.customer_id,
-            "corpus_id": self.connection_config.corpus_id,
-            "document_id": doc_id,
-        }
-        await self._request(endpoint="delete-doc", data=body)
+
+        return await _request(endpoint=f"corpora/{self.connection_config.corpus_key}/documents/{doc_id}", http_method='DELETE')
 
     async def _index_document(self, document: Dict[str, Any]) -> None:
         """
         Index a document (by uploading it to the Vectara corpus) from the document dictionary
         """
-        body = {
-            "customer_id": self.connection_config.customer_id,
-            "corpus_id": self.connection_config.corpus_id,
-            "document": document,
-        }
 
+        body = document
         logger.debug(
-            f"Indexing document {document['documentId']}"
-            + " to corpus ID {self.connection_config.corpus_id}"
+            f"Indexing document {document['id']} to corpus key {self.connection_config.corpus_key}"
         )
 
         try:
-            result = await self._request(endpoint="index", data=body, http_method="POST")
+            is_success, result = await self._request(endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body)
         except Exception as e:
-            logger.info(f"exception {e} while indexing document {document['documentId']}")
+            logger.error(f"exception {e} while indexing document {document['id']}")
             return
 
-        if (
-            "status" in result
-            and result["status"]
+        if is_success:
+            logger.info(f"indexing document {document['id']} succeeded")
+        elif (
+            "messages" in result
+            and result["messages"]
             and (
-                "ALREADY_EXISTS" in result["status"]["code"]
+                "ALREADY_EXISTS" in result["messages"]
                 or (
-                    "CONFLICT" in result["status"]["code"]
-                    and "Indexing doesn't support updating documents"
-                    in result["status"]["statusDetail"]
+                    "CONFLICT: Indexing doesn't support updating documents." in result["messages"][0]
                 )
             )
         ):
-            logger.info(f"document {document['documentId']} already exists, re-indexing")
-            await self._delete_doc(document["documentId"])
-            await self._request(endpoint="index", data=body, http_method="POST")
+            logger.info(f"document {document['id']} already exists, re-indexing")
+            await self._delete_doc(document["id"])
+            await self._request(endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body)
             return
-
-        if "status" in result and result["status"] and "OK" in result["status"]["code"]:
-            logger.info(f"indexing document {document['documentId']} succeeded")
         else:
-            logger.info(f"indexing document {document['documentId']} failed, response = {result}")
+            logger.warn(f"indexing document {document['id']} failed, response = {result}")
+
 
     async def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
@@ -303,7 +283,7 @@ class VectaraUploader(Uploader):
         path: Path,
         file_data: FileData,
         **kwargs: Any,
-    ) -> Path:
+    ) -> None:
         import aiofiles
 
         docs_list: Dict[Dict[str, Any]] = []
