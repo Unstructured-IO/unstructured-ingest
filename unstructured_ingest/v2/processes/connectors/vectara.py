@@ -75,6 +75,7 @@ class VectaraUploadStager(UploadStager):
             "filename": "filename",
             "filetype": "filetype",
             "last_modified": "last_modified",
+            "element_id": "element_id",
         }
         md = flatten_dict(data, separator="-", flatten_lists=True)
         md = {k.replace("metadata-", ""): v for k, v in md.items()}
@@ -93,7 +94,7 @@ class VectaraUploadStager(UploadStager):
             elements_contents = json.load(elements_file)
 
         docs_list: list[dict[str, Any]] = []
-        
+
         conformed_elements = {
             "id": str(uuid.uuid4()),
             "type": "core",
@@ -108,6 +109,7 @@ class VectaraUploadStager(UploadStager):
                 for element in elements_contents
             ],
         }
+
         logger.info(
             f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}"
         )
@@ -187,7 +189,7 @@ class VectaraUploader(Uploader):
         await self.jwt_token
 
         _, list_corpora_response = await self._request(
-            http_method='GET',
+            http_method="GET",
             endpoint="corpora",
         )
 
@@ -198,11 +200,15 @@ class VectaraUploader(Uploader):
         }
 
         if len(possible_corpora_keys_names_map) > 1:
-            raise ValueError(f"Multiple Corpora exist with name {self.connection_config.corpus_name} in destination.")
+            raise ValueError(
+                f"Multiple Corpora exist with name {self.connection_config.corpus_name} in dest."
+            )
         if len(possible_corpora_keys_names_map) == 1:
             self.connection_config.corpus_key = list(possible_corpora_keys_names_map.keys())[0]
         else:
-            raise ValueError(f'No Corpora exist with name {self.connection_config.corpus_name} in destination.')
+            raise ValueError(
+                f"No Corpora exist with name {self.connection_config.corpus_name} in dest."
+            )
 
     @requires_dependencies(["httpx"], extras="vectara")
     async def _request(
@@ -230,13 +236,15 @@ class VectaraUploader(Uploader):
             response.raise_for_status()
             return response.is_success, response.json()
 
-
     async def _delete_doc(self, doc_id: str) -> None:
         """
         Delete a document from the Vectara corpus.
         """
 
-        return await _request(endpoint=f"corpora/{self.connection_config.corpus_key}/documents/{doc_id}", http_method='DELETE')
+        return await self._request(
+            endpoint=f"corpora/{self.connection_config.corpus_key}/documents/{doc_id}",
+            http_method="DELETE",
+        )
 
     async def _index_document(self, document: Dict[str, Any]) -> None:
         """
@@ -249,7 +257,9 @@ class VectaraUploader(Uploader):
         )
 
         try:
-            is_success, result = await self._request(endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body)
+            is_success, result = await self._request(
+                endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body
+            )
         except Exception as e:
             logger.error(f"exception {e} while indexing document {document['id']}")
             return
@@ -262,17 +272,19 @@ class VectaraUploader(Uploader):
             and (
                 "ALREADY_EXISTS" in result["messages"]
                 or (
-                    "CONFLICT: Indexing doesn't support updating documents." in result["messages"][0]
+                    "CONFLICT: Indexing doesn't support updating documents."
+                    in result["messages"][0]
                 )
             )
         ):
             logger.info(f"document {document['id']} already exists, re-indexing")
             await self._delete_doc(document["id"])
-            await self._request(endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body)
+            await self._request(
+                endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body
+            )
             return
         else:
             logger.warn(f"indexing document {document['id']} failed, response = {result}")
-
 
     async def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
