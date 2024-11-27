@@ -113,7 +113,7 @@ async def test_vectara_destination(upload_file: Path, tmp_path: Path):
         identifier="mock-file-data",
     )
 
-    stager_config = VectaraUploadStagerConfig()
+    stager_config = VectaraUploadStagerConfig(batch_size=10)
     stager = VectaraUploadStager(upload_stager_config=stager_config)
     new_upload_file = stager.run(
         elements_filepath=upload_file,
@@ -129,7 +129,7 @@ async def test_vectara_destination(upload_file: Path, tmp_path: Path):
                 oauth_client_id=oauth_client_id, oauth_secret=oauth_secret
             ),
         ),
-        upload_config=VectaraUploaderConfig(batch_size=10),
+        upload_config=VectaraUploaderConfig(),
     )
 
     if uploader.is_async():

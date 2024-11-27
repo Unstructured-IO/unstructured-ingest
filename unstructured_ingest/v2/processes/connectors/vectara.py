@@ -23,6 +23,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.utils.data_prep import batch_generator
 
 BASE_URL = "https://api.vectara.io/v2"
 
@@ -43,7 +44,7 @@ class VectaraConnectionConfig(ConnectionConfig):
 
 
 class VectaraUploadStagerConfig(UploadStagerConfig):
-    pass
+    batch_size: int = Field(default=50, description="Number of records per batch")
 
 
 @dataclass
@@ -84,29 +85,29 @@ class VectaraUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-
-        docs_list: list[dict[str, Any]] = []
-
-        conformed_elements = {
-            "id": str(uuid.uuid4()),
-            "type": "core",
-            "metadata": {
-                "title": file_data.identifier,
-            },
-            "document_parts": [
-                {
-                    "text": element.pop("text", None),
-                    "metadata": self.conform_dict(data=element),
-                }
-                for element in elements_contents
-            ],
-        }
-
+  
         logger.info(
-            f"Extending {len(conformed_elements)} json elements from content in {elements_filepath}"
+            f"Extending {len(elements_contents)} json elements from content in {elements_filepath}"
         )
+        batches = list(batch_generator(elements_contents, batch_size=self.upload_stager_config.batch_size))
+        docs_list = []
+        for batch in batches:
+            conformed_elements = {
+                "id": str(uuid.uuid4()),
+                "type": "core",
+                "metadata": {
+                    "title": file_data.identifier,
+                },
+                "document_parts": [
+                    {
+                        "text": element.pop("text", None),
+                        "metadata": self.conform_dict(data=element),
+                    }
+                    for element in batch
+                ],
+            }
 
-        docs_list.append(conformed_elements)
+            docs_list.append(conformed_elements)
 
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         with open(output_path, "w") as output_file:
@@ -115,7 +116,7 @@ class VectaraUploadStager(UploadStager):
 
 
 class VectaraUploaderConfig(UploaderConfig):
-    batch_size: int = Field(default=50, description="Number of records per batch")
+    pass
 
 
 @dataclass
