@@ -9,7 +9,7 @@ import pandas as pd
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.duckdb import (
+from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
     CONNECTOR_TYPE,
     DuckDBConnectionConfig,
     DuckDBUploadStager,

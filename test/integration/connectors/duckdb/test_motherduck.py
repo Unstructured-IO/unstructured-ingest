@@ -12,7 +12,7 @@ import pandas as pd
 from test.integration.utils import requires_env
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.motherduck import (
+from unstructured_ingest.v2.processes.connectors.duckdb.motherduck import (
     CONNECTOR_TYPE,
     MotherDuckAccessConfig,
     MotherDuckConnectionConfig,
@@ -31,7 +31,7 @@ def motherduck_setup(md_token: str) -> Generator[Path, None, None]:
         assert db_init_path.is_file()
         with duckdb.connect(f"md:?motherduck_token={md_token}") as md_conn:
             with db_init_path.open("r") as f:
-                query = f.read()            
+                query = f.read()
             md_conn.execute(f"CREATE DATABASE {database_name}")
             md_conn.execute(f"USE {database_name}")
             md_conn.execute(query)
@@ -40,7 +40,7 @@ def motherduck_setup(md_token: str) -> Generator[Path, None, None]:
     finally:
         with duckdb.connect(f"md:?motherduck_token={md_token}") as md_conn:
             md_conn.execute(f"DROP DATABASE {database_name}")
-            md_conn.close()        
+            md_conn.close()
 
 
 def validate_motherduck_destination(database: str, expected_num_elements: int, md_token: str):

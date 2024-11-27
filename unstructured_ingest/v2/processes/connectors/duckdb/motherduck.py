@@ -13,14 +13,13 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     FileData,
     Uploader,
+    UploaderConfig,
+    UploadStager,
+    UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-from unstructured_ingest.v2.processes.connectors.duckdb import (
-    DuckDBUploadStagerConfig,
-    DuckDBUploadStager,
-    DuckDBUploaderConfig,
-)
+from unstructured_ingest.v2.processes.connectors.duckdb.base import BaseDuckDBUploadStager
 
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection as MotherDuckConnection
@@ -38,7 +37,7 @@ class MotherDuckConnectionConfig(ConnectionConfig):
         default=None,
         description="Database name. This is the name of the MotherDuck database.",
     )
-    schema: Optional[str] = Field(
+    db_schema: Optional[str] = Field(
         default="main",
         description="Schema name. This is the schema within the database where the elements table is located.",
     )
@@ -63,18 +62,18 @@ class MotherDuckConnectionConfig(ConnectionConfig):
             )
 
 
-class MotherDuckUploadStagerConfig(DuckDBUploadStagerConfig):
+class MotherDuckUploadStagerConfig(UploadStagerConfig):
     pass
 
 
 @dataclass
-class MotherDuckUploadStager(DuckDBUploadStager):
+class MotherDuckUploadStager(BaseDuckDBUploadStager):
     upload_stager_config: MotherDuckUploadStagerConfig = field(
         default_factory=lambda: MotherDuckUploadStagerConfig()
     )
 
 
-class MotherDuckUploaderConfig(DuckDBUploaderConfig):
+class MotherDuckUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="[Not-used] Number of records per batch")
 
 
@@ -119,7 +118,7 @@ class MotherDuckUploader(Uploader):
 
         with self.connection() as conn:
             conn.query(
-                f"INSERT INTO {self.connection_config.schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"
+                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"
             )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

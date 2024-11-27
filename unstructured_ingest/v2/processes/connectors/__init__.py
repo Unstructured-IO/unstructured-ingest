@@ -25,10 +25,6 @@ from .confluence import CONNECTOR_TYPE as CONFLUENCE_CONNECTOR_TYPE
 from .confluence import confluence_source_entry
 from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
-from .duckdb import CONNECTOR_TYPE as DUCKDB_CONNECTOR_TYPE
-from .duckdb import duckdb_destination_entry
-from .motherduck import CONNECTOR_TYPE as MOTHERDUCK_CONNECTOR_TYPE
-from .motherduck import motherduck_destination_entry
 from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
 from .delta_table import delta_table_destination_entry
 from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
@@ -63,15 +59,8 @@ add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_desti
 
 add_source_entry(source_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_source_entry)
 add_destination_entry(destination_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_destination_entry)
-add_destination_entry(destination_type=DUCKDB_CONNECTOR_TYPE, entry=duckdb_destination_entry)
-add_destination_entry(destination_type=MOTHERDUCK_CONNECTOR_TYPE, entry=motherduck_destination_entry)
 add_destination_entry(
     destination_type=DELTA_TABLE_CONNECTOR_TYPE, entry=delta_table_destination_entry
-)
-
-add_source_entry(source_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_source_entry)
-add_destination_entry(
-    destination_type=ELASTICSEARCH_CONNECTOR_TYPE, entry=elasticsearch_destination_entry
 )
 
 add_source_entry(source_type=GOOGLE_DRIVE_CONNECTOR_TYPE, entry=google_drive_source_entry)
