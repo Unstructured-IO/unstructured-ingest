@@ -59,11 +59,9 @@ add_destination_entry(destination_type=CHROMA_CONNECTOR_TYPE, entry=chroma_desti
 
 add_source_entry(source_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_source_entry)
 add_destination_entry(destination_type=COUCHBASE_CONNECTOR_TYPE, entry=couchbase_destination_entry)
-
 add_destination_entry(
     destination_type=DELTA_TABLE_CONNECTOR_TYPE, entry=delta_table_destination_entry
 )
-
 
 add_source_entry(source_type=GOOGLE_DRIVE_CONNECTOR_TYPE, entry=google_drive_source_entry)
 
