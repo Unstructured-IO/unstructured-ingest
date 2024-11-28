@@ -133,7 +133,6 @@ class SnowflakeUploader(PostgresUploader):
 
     def upload_contents(self, path: Path) -> None:
         df = pd.read_json(path, orient="records", lines=True)
-        df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
@@ -144,6 +143,7 @@ class SnowflakeUploader(PostgresUploader):
         for rows in pd.read_json(
             path, orient="records", lines=True, chunksize=self.upload_config.batch_size
         ):
+            rows.replace({np.nan: None}, inplace=True)
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
                 # TODO: executemany break on 'Binding data in type (list) is not supported'
