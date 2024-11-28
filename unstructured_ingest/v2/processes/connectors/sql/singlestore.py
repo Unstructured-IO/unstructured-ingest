@@ -154,7 +154,7 @@ class SingleStoreUploader(SQLUploader):
 singlestore_source_entry = SourceRegistryEntry(
     connection_config=SingleStoreConnectionConfig,
     indexer_config=SingleStoreIndexerConfig,
-    indexer=SQLIndexer,
+    indexer=SingleStoreIndexer,
     downloader_config=SingleStoreDownloaderConfig,
     downloader=SingleStoreDownloader,
 )
