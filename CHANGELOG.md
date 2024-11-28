@@ -1,3 +1,8 @@
+## 0.3.6-dev0
+
+### Fixes
+* **Correct SFTP date metadata field types**
+
 ## 0.3.5
 
 ### Enhancements
