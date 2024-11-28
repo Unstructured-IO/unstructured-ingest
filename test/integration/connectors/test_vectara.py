@@ -1,9 +1,9 @@
 import json
 import os
 from pathlib import Path
-
+import time
 import pytest
-
+import httpx
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
@@ -39,7 +39,6 @@ def validate_upload(response: dict, expected_data: dict):
 
 @requires_env("VECTARA_OAUTH_CLIENT_ID", "VECTARA_OAUTH_SECRET", "VECTARA_CUSTOMER_ID")
 async def _get_jwt_token():
-    import httpx
 
     """Connect to the server and get a JWT token."""
     customer_id = os.environ["VECTARA_CUSTOMER_ID"]
@@ -64,11 +63,11 @@ async def _get_jwt_token():
 
 
 async def query_data(corpus_key: str, element_id: str):
-    import httpx
 
     url = f"https://api.vectara.io/v2/corpora/{corpus_key}/query"
 
     # the query below requires the corpus to have filter attributes for element_id
+    
     data = json.dumps(
         {
             "query": "string",
@@ -79,6 +78,7 @@ async def query_data(corpus_key: str, element_id: str):
             },
         }
     )
+
     jwt_token = await _get_jwt_token()
     headers = {
         "Content-Type": "application/json",
@@ -94,16 +94,80 @@ async def query_data(corpus_key: str, element_id: str):
 
     return response_json
 
+async def create_corpora(corpus_key: str, corpus_name: str) -> None:
+    url = f"https://api.vectara.io/v2/corpora"
+    data = json.dumps({
+            'key': corpus_key,
+            "name": corpus_name,
+            'description': 'integration test'
+    })
+    jwt_token = await _get_jwt_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+        "X-source": "unstructured",
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, data=data)
+        response.raise_for_status()
+
+async def replace_filter_attributes(corpus_key: str) -> None:
+    url = f"https://api.vectara.io/v2/corpora/{corpus_key}/replace_filter_attributes"
+    data = json.dumps({
+    "filter_attributes": [
+        {
+        "name": "element_id",
+        "level": "part",
+        "indexed": True,
+        "type": "text"
+        }
+    ]
+    })
+    jwt_token = await _get_jwt_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+        "X-source": "unstructured",
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, data=data)
+        response.raise_for_status()
+
+
+async def delete_corpora(corpus_key: str) -> None:
+    url = f"https://api.vectara.io/v2/corpora/{corpus_key}"
+
+    jwt_token = await _get_jwt_token()
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+        "X-source": "unstructured",
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.delete(url, headers=headers)
+        response.raise_for_status()
+        
 
 @pytest.mark.asyncio
 @pytest.mark.tags(VECTARA_CONNECTOR_TYPE, DESTINATION_TAG, "vectara")
 @requires_env("VECTARA_OAUTH_CLIENT_ID", "VECTARA_OAUTH_SECRET", "VECTARA_CUSTOMER_ID")
-async def test_vectara_destination(upload_file: Path, tmp_path: Path):
+async def test_vectara_destination(upload_file: Path, tmp_path: Path, retries=30, interval=10):
+    import random
+    RANDOM_SUFFIX = random.randrange(1000)
+    corpus_name = f"test-corpus-vectara-{RANDOM_SUFFIX}"
+    corpus_key = f"test-corpus-vectara-{RANDOM_SUFFIX}_1"
+
     connection_kwargs = {
         "customer_id": os.environ["VECTARA_CUSTOMER_ID"],
-        "corpus_name": "test-corpus-vectara-24162",
-        "corpus_key": "test-corpus-vectara-24162_3535",
+        "corpus_name": corpus_name,
+        "corpus_key": corpus_key,
     }
+
+    await create_corpora(corpus_key, corpus_name)
+    await replace_filter_attributes(corpus_key)
     oauth_client_id = os.environ["VECTARA_OAUTH_CLIENT_ID"]
     oauth_secret = os.environ["VECTARA_OAUTH_SECRET"]
 
@@ -138,7 +202,14 @@ async def test_vectara_destination(upload_file: Path, tmp_path: Path):
     with upload_file.open() as upload_fp:
         elements = json.load(upload_fp)
     first_element = elements[0]
-
-    response = await query_data(connection_kwargs["corpus_key"], first_element["element_id"])
+    
+    for i in range(retries):
+        response = await query_data(connection_kwargs["corpus_key"], first_element["element_id"])
+        if not response["search_results"]:
+            time.sleep(interval)
+        else:
+            break
 
     validate_upload(response=response, expected_data=first_element)
+
+    await delete_corpora(corpus_key)
