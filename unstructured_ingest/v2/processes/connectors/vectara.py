@@ -2,15 +2,14 @@ import asyncio
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -23,7 +22,6 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-from unstructured_ingest.utils.data_prep import batch_generator
 
 BASE_URL = "https://api.vectara.io/v2"
 
@@ -52,7 +50,6 @@ class VectaraUploadStager(UploadStager):
     upload_stager_config: VectaraUploadStagerConfig = field(
         default_factory=lambda: VectaraUploadStagerConfig()
     )
-
 
     @staticmethod
     def conform_dict(data: dict) -> dict:
@@ -85,11 +82,13 @@ class VectaraUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-  
+
         logger.info(
             f"Extending {len(elements_contents)} json elements from content in {elements_filepath}"
         )
-        batches = list(batch_generator(elements_contents, batch_size=self.upload_stager_config.batch_size))
+        batches = list(
+            batch_generator(elements_contents, batch_size=self.upload_stager_config.batch_size)
+        )
         docs_list = []
         for batch in batches:
             conformed_elements = {
@@ -195,12 +194,17 @@ class VectaraUploader(Uploader):
 
             if len(possible_corpora_keys_names_map) > 1:
                 raise ValueError(
-                    f"Multiple Corpora exist with name {self.connection_config.corpus_name} in dest."
+                    f"Multiple Corpus exist with name {self.connection_config.corpus_name} in dest."
                 )
             if len(possible_corpora_keys_names_map) == 1:
                 if not self.connection_config.corpus_key:
-                    self.connection_config.corpus_key = list(possible_corpora_keys_names_map.keys())[0]
-                elif self.connection_config.corpus_key != list(possible_corpora_keys_names_map.keys())[0]:
+                    self.connection_config.corpus_key = list(
+                        possible_corpora_keys_names_map.keys()
+                    )[0]
+                elif (
+                    self.connection_config.corpus_key
+                    != list(possible_corpora_keys_names_map.keys())[0]
+                ):
                     raise ValueError("Corpus key does not match provided corpus name.")
             else:
                 raise ValueError(
@@ -248,14 +252,13 @@ class VectaraUploader(Uploader):
         Index a document (by uploading it to the Vectara corpus) from the document dictionary
         """
 
-        body = document
         logger.debug(
             f"Indexing document {document['id']} to corpus key {self.connection_config.corpus_key}"
         )
 
         try:
             is_success, result = await self._request(
-                endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body
+                endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=document
             )
         except Exception as e:
             logger.error(f"exception {e} while indexing document {document['id']}")
@@ -277,7 +280,7 @@ class VectaraUploader(Uploader):
             logger.info(f"document {document['id']} already exists, re-indexing")
             await self._delete_doc(document["id"])
             await self._request(
-                endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=body
+                endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=document
             )
             return
         else:
