@@ -186,7 +186,7 @@ class AzureAISearchUploader(Uploader):
         doc_ids_to_delete = self.query_docs(record_id=file_data.identifier, index_key=index_key)
         if not doc_ids_to_delete:
             return
-        client: SearchClient = self.connection_config.get_search_client()
+        client: "SearchClient" = self.connection_config.get_search_client()
         results = client.delete_documents(
             documents=[{index_key: doc_id} for doc_id in doc_ids_to_delete]
         )
@@ -207,7 +207,9 @@ class AzureAISearchUploader(Uploader):
 
     @DestinationConnectionError.wrap
     @requires_dependencies(["azure"], extras="azure-ai-search")
-    def write_dict(self, elements_dict: list[dict[str, Any]]) -> None:
+    def write_dict(
+        self, elements_dict: list[dict[str, Any]], search_client: "SearchClient"
+    ) -> None:
         import azure.core.exceptions
 
         logger.info(
@@ -215,12 +217,10 @@ class AzureAISearchUploader(Uploader):
             f"index at {self.connection_config.index}",
         )
         try:
-            results = self.connection_config.get_search_client().upload_documents(
-                documents=elements_dict
-            )
-
+            results = search_client.upload_documents(documents=elements_dict)
         except azure.core.exceptions.HttpResponseError as http_error:
             raise WriteError(f"http error: {http_error}") from http_error
+
         errors = []
         success = []
         for result in results:
@@ -285,8 +285,9 @@ class AzureAISearchUploader(Uploader):
             logger.warning("criteria for deleting previous content not met, skipping")
 
         batch_size = self.upload_config.batch_size
+        search_client: "SearchClient" = self.connection_config.get_search_client()
         for chunk in batch_generator(elements_dict, batch_size):
-            self.write_dict(elements_dict=chunk)  # noqa: E203
+            self.write_dict(elements_dict=chunk, search_client=search_client)  # noqa: E203
 
 
 azure_ai_search_destination_entry = DestinationRegistryEntry(
