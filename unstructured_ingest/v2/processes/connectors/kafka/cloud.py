@@ -1,6 +1,6 @@
 import socket
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret, SecretStr
 
@@ -26,10 +26,10 @@ CONNECTOR_TYPE = "kafka-cloud"
 
 
 class CloudKafkaAccessConfig(KafkaAccessConfig):
-    api_key: Optional[SecretStr] = Field(
-        description="Kafka API key to connect at the server", alias="kafka_api_key", default=None
+    kafka_api_key: SecretStr = Field(
+        description="Kafka API key to connect at the server", default=None
     )
-    secret: Optional[SecretStr] = Field(description="", default=None)
+    secret: SecretStr = Field(description="", default=None)
 
 
 class CloudKafkaConnectionConfig(KafkaConnectionConfig):
@@ -43,11 +43,11 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
             "client.id": socket.gethostname(),
-            "group.id": "default_group_id",
+            "group.id": self.group_id,
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
-            "sasl.username": access_config.api_key,
-            "sasl.password": access_config.secret,
+            "sasl.username": access_config.kafka_api_key.get_secret_value(),
+            "sasl.password": access_config.secret.get_secret_value(),
             "sasl.mechanism": "PLAIN",
             "security.protocol": "SASL_SSL",
         }
@@ -61,7 +61,7 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
 
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
-            "sasl.username": access_config.api_key,
+            "sasl.username": access_config.kafka_api_key,
             "sasl.password": access_config.secret,
             "sasl.mechanism": "PLAIN",
             "security.protocol": "SASL_SSL",
