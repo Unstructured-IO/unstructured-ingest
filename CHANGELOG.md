@@ -1,4 +1,4 @@
-## 0.3.6-dev0
+## 0.3.7-dev1
 
 ### Fixes
 
@@ -7,6 +7,12 @@
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
+
+## 0.3.6
+
+### Fixes
+
+* **Fix Azure AI Search Error handling**
 
 ## 0.3.5
 
