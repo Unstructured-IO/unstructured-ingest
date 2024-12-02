@@ -1,3 +1,9 @@
+## 0.3.6
+
+### Fixes
+
+* **Fix Azure AI Search Error handling**
+
 ## 0.3.5
 
 ### Enhancements
