@@ -174,7 +174,9 @@ class AzureAISearchUploader(Uploader):
 
     def query_docs(self, record_id: str, index_key: str) -> list[str]:
         with self.connection_config.get_search_client() as search_client:
-            results = list(search_client.search(filter=f"record_id eq '{record_id}'", select=[index_key]))
+            results = list(
+                search_client.search(filter=f"record_id eq '{record_id}'", select=[index_key])
+            )
         return [result[index_key] for result in results]
 
     def delete_by_record_id(self, file_data: FileData, index_key: str) -> None:
