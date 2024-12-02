@@ -80,7 +80,7 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
 class KafkaIndexerConfig(IndexerConfig):
     topic: str = Field(description="which topic to consume from")
     num_messages_to_consume: Optional[int] = 100
-    timeout: Optional[float] = Field(default=1.0, description="polling timeout")
+    timeout: Optional[float] = Field(default=3.0, description="polling timeout", ge=3.0)
 
     def update_consumer(self, consumer: "Consumer") -> None:
         consumer.subscribe([self.topic])
