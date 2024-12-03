@@ -187,6 +187,6 @@ async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
     if uploader.is_async():
         await uploader.run_async(path=staged_upload_file, file_data=file_data)
     else:
-        uploader.run(path=upload_file, file_data=file_data)
+        uploader.run(path=staged_upload_file, file_data=file_data)
     async with qdrant_client(connection_kwargs) as client:
         await validate_upload(client=client, upload_file=upload_file)
