@@ -1,7 +1,8 @@
-## 0.3.7-dev2
+## 0.3.7-dev3
 
 ### Fixes
 
+* **Fix Azure AI Search session handling**
 * **Fix Kafka source connection problems**
 
 ### Enhancements
