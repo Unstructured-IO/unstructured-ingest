@@ -54,9 +54,10 @@ class VectaraUploadStager(UploadStager):
     @staticmethod
     def conform_dict(data: dict) -> dict:
         """
-        Prepares dictionary in the format that Vectara requires
+        Prepares dictionary in the format that Vectara requires.
+        See more detail in https://docs.vectara.com/docs/rest-api/create-corpus-document
 
-        Select which meta-data fields to include and optionally map them to a new new.
+        Select which meta-data fields to include and optionally map them to a new format.
         remove the "metadata-" prefix from the keys
         """
         metadata_map = {
@@ -173,9 +174,9 @@ class VectaraUploader(Uploader):
     async def _check_connection_and_corpora(self) -> None:
         """
         Check the connection for Vectara and validate corpus exists.
-        - If more than one corpus with the same name exists - then return a message
+        - If more than one corpus with the same name exists - raise error
         - If exactly one corpus exists with this name - use it.
-        - If does not exist - create it.
+        - If does not exist - raise error.
         """
         # Get token if not already set
         await self.jwt_token
@@ -237,7 +238,7 @@ class VectaraUploader(Uploader):
             response.raise_for_status()
             return response.is_success, response.json()
 
-    async def _delete_doc(self, doc_id: str) -> None:
+    async def _delete_doc(self, doc_id: str) -> tuple[bool, dict]:
         """
         Delete a document from the Vectara corpus.
         """

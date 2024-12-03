@@ -65,7 +65,7 @@ def _get_jwt_token():
     return response_json.get("access_token")
 
 
-def query_data(corpus_key: str, element_id: str):
+def query_data(corpus_key: str, element_id: str) -> dict:
 
     url = f"https://api.vectara.io/v2/corpora/{corpus_key}/query"
 

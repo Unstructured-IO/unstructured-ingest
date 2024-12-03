@@ -2,7 +2,7 @@
 
 ### Enhancements
 
-* **Vectara destination to v2**
+* **Migrate Vectara Destination Connector to v2**
 
 
 ## 0.2.0
