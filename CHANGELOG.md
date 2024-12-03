@@ -1,3 +1,9 @@
+## 0.3.7-dev2
+
+### Fixes
+
+* **Fix Azure AI Search session handling**
+
 ## 0.3.7-dev1
 
 ### Fixes
