@@ -1,3 +1,10 @@
+## 0.3.7-dev1
+
+### Features
+
+* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
+* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+
 ## 0.3.6
 
 ### Fixes
