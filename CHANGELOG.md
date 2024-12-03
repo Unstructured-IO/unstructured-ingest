@@ -2,13 +2,14 @@
 
 ### Fixes
 
-* **Fix Azure AI Search session handling**
 * **Fix Kafka source connection problems**
+* **Fix Azure AI Search session handling**
 
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
 * **Added Qdrant Cloud integration test**
+* **Support personal access token for confluence auth**
 
 ## 0.3.6
 
