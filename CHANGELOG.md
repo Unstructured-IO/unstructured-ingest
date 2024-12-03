@@ -8,7 +8,8 @@
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
-* * **Support personal access token for confluence auth**
+* **Support personal access token for confluence auth**
+* **Migrate Discord Source Connector to V2**
 
 ## 0.3.6
 

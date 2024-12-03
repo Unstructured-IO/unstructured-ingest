@@ -1,0 +1,48 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "774a4148b6855a2f527cbb3ec7c89086",
+    "text": "Why did the bot go on a diet? Because it had too many mega-bytes!",
+    "metadata": {
+      "filename": "1099601456321003600.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "channel_id": "1099601456321003600"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 79
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "ab6ad082a84082dfa13372994d2a90a7",
+    "text": "This is a bot",
+    "metadata": {
+      "filename": "1099601456321003600.txt",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/plain",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "channel_id": "1099601456321003600"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 79
+      }
+    }
+  }
+]
