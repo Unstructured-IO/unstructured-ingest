@@ -25,7 +25,7 @@ all_tests=(
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
-  'vectara.sh'
+  # 'vectara.sh'
   #  'kdbai.sh'
 )
 

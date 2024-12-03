@@ -1,8 +1,39 @@
-## 0.3.4-dev0
+## 0.3.7-dev2
+
+### Fixes
+
+* **Fix Kafka source connection problems**
 
 ### Enhancements
 
+* **Kafka source connector has new field: group_id**
 * **Added Qdrant Cloud integration test**
+
+## 0.3.6
+
+### Fixes
+
+* **Fix Azure AI Search Error handling**
+
+## 0.3.5
+
+### Enhancements
+
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+
+### Fixes
+
+* **Remove client.ping() from the Elasticsearch precheck.**
+* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
+* **Add check to prevent querying for more than pinecone limit when deleting records**
+* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
+
+## 0.3.4
+
+### Enhancements
+
+* **Add azure openai embedder**
+* **Add `collection_id` field to Couchbase `downloader_config`**
 
 ## 0.3.3
 
