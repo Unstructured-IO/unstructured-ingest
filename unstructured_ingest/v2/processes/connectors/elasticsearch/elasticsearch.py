@@ -142,8 +142,6 @@ class ElasticsearchIndexer(Indexer):
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
-                if not client.ping():
-                    raise SourceConnectionError("cluster not detected")
                 indices = client.indices.get_alias(index="*")
                 if self.index_config.index_name not in indices:
                     raise SourceConnectionError(
@@ -393,11 +391,9 @@ class ElasticsearchUploader(Uploader):
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
-                if not client.ping():
-                    raise DestinationConnectionError("cluster not detected")
                 indices = client.indices.get_alias(index="*")
                 if self.upload_config.index_name not in indices:
-                    raise SourceConnectionError(
+                    raise DestinationConnectionError(
                         "index {} not found: {}".format(
                             self.upload_config.index_name, ", ".join(indices.keys())
                         )
