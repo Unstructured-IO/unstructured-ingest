@@ -33,16 +33,16 @@ class DuckDBConnectionConfig(ConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     database: Optional[str] = Field(
         default=None,
-        description="Database name. This is the path to the DuckDB .db file. If the file does "
+        description="Database name. Path to the DuckDB .db file. If the file does "
         "not exist, it will be created at the specified path.",
     )
     db_schema: Optional[str] = Field(
         default="main",
-        description="Schema name. This is the schema within the database where the elements table is located.",
+        description="Schema name. Schema in the database where the elements table is located.",
     )
     table: Optional[str] = Field(
         default="elements",
-        description="Table name. This is the table name into which the elements data is inserted.",
+        description="Table name. Table name into which the elements data is inserted.",
     )
     access_config: Secret[DuckDBAccessConfig] = Field(
         default=DuckDBAccessConfig(), validate_default=True
@@ -102,7 +102,7 @@ class DuckDBUploader(Uploader):
 
         with self.connection() as conn:
             conn.query(
-                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"
+                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"  # noqa: E501
             )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

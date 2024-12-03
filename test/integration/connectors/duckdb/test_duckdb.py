@@ -60,7 +60,7 @@ def test_duckdb_destination(upload_file: Path):
                 identifier="mock-file-data",
             )
 
-            ## deafults to default stager config
+            # deafults to default stager config
             stager = DuckDBUploadStager()
             stager_params = {
                 "elements_filepath": upload_file,
