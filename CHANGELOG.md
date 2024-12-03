@@ -1,7 +1,13 @@
-## 0.3.6-dev0
+## 0.3.7-dev0
 
 ### Fixes
 * **Correct SFTP date metadata field types**
+
+## 0.3.6
+
+### Fixes
+
+* **Fix Azure AI Search Error handling**
 
 ## 0.3.5
 
