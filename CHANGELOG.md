@@ -1,12 +1,14 @@
-## 0.3.7-dev2
+## 0.3.7-dev3
 
 ### Fixes
 
 * **Fix Kafka source connection problems**
+* **Fix Azure AI Search session handling**
 
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
+* **Support personal access token for confluence auth**
 * **Migrate Discord Source Connector to V2**
 
 ## 0.3.6
