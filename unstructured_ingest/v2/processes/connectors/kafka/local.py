@@ -39,7 +39,7 @@ class LocalKafkaConnectionConfig(KafkaConnectionConfig):
 
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
-            "group.id": "default_group_id",
+            "group.id": self.group_id,
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
         }

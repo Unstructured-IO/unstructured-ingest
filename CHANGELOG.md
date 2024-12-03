@@ -1,7 +1,14 @@
-## 0.3.7-dev0
+## 0.3.7-dev3
 
 ### Fixes
+
+* **Fix Azure AI Search session handling**
 * **Correct SFTP date metadata field types**
+* **Fix Kafka source connection problems**
+
+### Enhancements
+
+* **Kafka source connector has new field: group_id**
 
 ## 0.3.6
 
