@@ -2,13 +2,14 @@
 
 ### Fixes
 
-* **Fix Azure AI Search session handling**
-* **Correct SFTP date metadata field types**
+* **Correct fsspec connectors date metadata field types** - sftp, azure, box and gcs
 * **Fix Kafka source connection problems**
+* **Fix Azure AI Search session handling**
 
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
+* **Support personal access token for confluence auth**
 
 ## 0.3.6
 
