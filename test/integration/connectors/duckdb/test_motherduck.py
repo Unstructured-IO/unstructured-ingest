@@ -1,24 +1,24 @@
 import os
 import tempfile
 import uuid
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator
 
-import pytest
 import duckdb
 import pandas as pd
+import pytest
 
-from test.integration.utils import requires_env
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
+from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.duckdb.motherduck import (
     CONNECTOR_TYPE,
     MotherDuckAccessConfig,
     MotherDuckConnectionConfig,
-    MotherDuckUploadStager,
-    MotherDuckUploaderConfig,
     MotherDuckUploader,
+    MotherDuckUploaderConfig,
+    MotherDuckUploadStager,
 )
 
 

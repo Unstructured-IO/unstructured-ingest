@@ -1,20 +1,20 @@
 import tempfile
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator
 
-import pytest
 import duckdb
 import pandas as pd
+import pytest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
     CONNECTOR_TYPE,
     DuckDBConnectionConfig,
-    DuckDBUploadStager,
-    DuckDBUploaderConfig,
     DuckDBUploader,
+    DuckDBUploaderConfig,
+    DuckDBUploadStager,
 )
 
 

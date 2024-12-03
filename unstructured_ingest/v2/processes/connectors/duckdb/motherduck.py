@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import pandas as pd
 from pydantic import Field, Secret
@@ -14,7 +14,6 @@ from unstructured_ingest.v2.interfaces import (
     FileData,
     Uploader,
     UploaderConfig,
-    UploadStager,
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
@@ -96,7 +95,7 @@ class MotherDuckUploader(Uploader):
     def connection(self) -> Callable[[], "MotherDuckConnection"]:
         return self._make_motherduck_connection
 
-    @requires_dependencies(["duckdb"], extras="motherduck")
+    @requires_dependencies(["duckdb"], extras="duckdb")
     def _make_motherduck_connection(self) -> "MotherDuckConnection":
         import duckdb
 
