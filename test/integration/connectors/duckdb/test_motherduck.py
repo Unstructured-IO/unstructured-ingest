@@ -79,7 +79,7 @@ def test_motherduck_destination(upload_file: Path):
                 identifier="mock-file-data",
             )
 
-            ## deafults to default stager config
+            # deafults to default stager config
             stager = MotherDuckUploadStager()
             stager_params = {
                 "elements_filepath": upload_file,
