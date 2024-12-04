@@ -251,7 +251,7 @@ class SQLUploadStager(UploadStager):
             element.update(data_source)
             element.update(coordinates)
 
-            element["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
+            element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
 
             # remove extraneous, not supported columns
             element = {k: v for k, v in element.items() if k in _COLUMNS}
