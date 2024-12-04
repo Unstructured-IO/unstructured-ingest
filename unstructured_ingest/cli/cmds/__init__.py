@@ -18,8 +18,6 @@ from .databricks_volumes import get_base_dest_cmd as databricks_volumes_dest_cmd
 from .delta_table import get_base_dest_cmd as delta_table_dest_cmd
 from .delta_table import get_base_src_cmd as delta_table_base_src_cmd
 from .discord import get_base_src_cmd as discord_base_src_cmd
-
-# DUCKDB?
 from .elasticsearch import get_base_dest_cmd as elasticsearch_base_dest_cmd
 from .elasticsearch import get_base_src_cmd as elasticsearch_base_src_cmd
 from .fsspec.azure import get_base_dest_cmd as azure_base_dest_cmd
