@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -133,6 +134,7 @@ class SnowflakeUploader(PostgresUploader):
 
     def upload_contents(self, path: Path) -> None:
         df = pd.read_json(path, orient="records", lines=True)
+        df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
@@ -140,10 +142,13 @@ class SnowflakeUploader(PostgresUploader):
             columns=",".join(columns),
             values=",".join([self.values_delimiter for _ in columns]),
         )
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
-            rows.replace({np.nan: None}, inplace=True)
+        logger.info(
+            f"writing a total of {len(df)} elements via"
+            f" document batches to destination"
+            f" table named {self.upload_config.table_name}"
+            f" with batch size {self.upload_config.batch_size}"
+        )
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
                 # TODO: executemany break on 'Binding data in type (list) is not supported'
