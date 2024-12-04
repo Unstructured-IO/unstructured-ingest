@@ -1,4 +1,3 @@
-import random
 from pathlib import Path
 
 from unstructured_ingest.v2.interfaces import ProcessorConfig
@@ -42,11 +41,13 @@ if __name__ == "__main__":
         ),
         embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         destination_connection_config=VectaraConnectionConfig(
-            access_config=VectaraAccessConfig(oauth_client_id=None, oauth_secret=None),
-            customer_id="2268229652",
-            corpus_name=f"test-corpus-vectara-{random.randint(1000,9999)}",
-            corpus_key="3232",
-            token_url="https://vectara-prod-{}.auth.us-west-2.amazoncognito.com/oauth2/token",
+            access_config=VectaraAccessConfig(
+                oauth_client_id="fill oauth_client_id", oauth_secret="fill oauth_secret"
+            ),
+            customer_id="fill customer_id",
+            corpus_name="fill corpus_name",
+            corpus_key="fill corpus_key",
+            token_url="fill token_url",
         ),
         stager_config=VectaraUploadStagerConfig(batch_size=10),
         uploader_config=VectaraUploaderConfig(),
