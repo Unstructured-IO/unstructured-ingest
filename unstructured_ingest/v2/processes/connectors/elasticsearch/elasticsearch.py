@@ -1,7 +1,6 @@
 import hashlib
 import json
 import sys
-import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -41,6 +40,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch as ElasticsearchClient
@@ -326,7 +326,7 @@ class ElasticsearchUploadStager(UploadStager):
     def conform_dict(self, data: dict, file_data: FileData) -> dict:
         resp = {
             "_index": self.upload_stager_config.index_name,
-            "_id": str(uuid.uuid4()),
+            "_id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             "_source": {
                 "element_id": data.pop("element_id", None),
                 "embeddings": data.pop("embeddings", None),
