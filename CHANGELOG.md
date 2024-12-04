@@ -15,6 +15,7 @@
 * **Support personal access token for confluence auth**
 * **Leverage deterministic id for uploaded content**
 * **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
+* **Optimizes memory usage of Snowflake Destination Connector.**
 
 ## 0.3.6
 
