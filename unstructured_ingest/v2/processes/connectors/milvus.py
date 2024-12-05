@@ -176,6 +176,7 @@ class MilvusUploader(Uploader):
     @DestinationConnectionError.wrap
     def precheck(self):
         from pymilvus import MilvusException
+
         try:
             with self.get_client() as client:
                 if not client.has_collection(self.upload_config.collection_name):
@@ -183,7 +184,9 @@ class MilvusUploader(Uploader):
                         f"Collection '{self.upload_config.collection_name}' does not exist"
                     )
         except MilvusException as milvus_exception:
-            raise DestinationConnectionError(f"failed to precheck Milvus: {str(milvus_exception.message)}") from milvus_exception
+            raise DestinationConnectionError(
+                f"failed to precheck Milvus: {str(milvus_exception.message)}"
+            ) from milvus_exception
 
     @contextmanager
     def get_client(self) -> Generator["MilvusClient", None, None]:
@@ -232,7 +235,9 @@ class MilvusUploader(Uploader):
             try:
                 res = client.insert(collection_name=self.upload_config.collection_name, data=data)
             except MilvusException as milvus_exception:
-                raise WriteError(f"failed to upload records to Milvus: {str(milvus_exception.message)}") from milvus_exception
+                raise WriteError(
+                    f"failed to upload records to Milvus: {str(milvus_exception.message)}"
+                ) from milvus_exception
             if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
                 err_count = res["err_count"]
                 raise WriteError(f"failed to upload {err_count} docs")
