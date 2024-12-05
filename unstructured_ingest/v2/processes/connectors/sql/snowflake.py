@@ -25,7 +25,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploader,
     SQLUploaderConfig,
     SQLUploadStager,
-    SQLUploadStagerConfig
+    SQLUploadStagerConfig,
 )
 
 if TYPE_CHECKING:
@@ -63,7 +63,8 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @contextmanager
-    @requires_dependencies(["snowflake"], extras="snowflake")   # The actual snowflake module package name is: snowflake-connector-python
+    # The actual snowflake module package name is: snowflake-connector-python
+    @requires_dependencies(["snowflake"], extras="snowflake")
     def get_connection(self) -> Generator["SnowflakeConnection", None, None]:
         # https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#label-snowflake-connector-methods-connect
         from snowflake.connector import connect
@@ -115,7 +116,8 @@ class SnowflakeDownloader(SQLDownloader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
-    @requires_dependencies(["snowflake"], extras="snowflake")   # The actual snowflake module package name is: snowflake-connector-python
+    # The actual snowflake module package name is: snowflake-connector-python
+    @requires_dependencies(["snowflake"], extras="snowflake")
     def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
         table_name = file_data.additional_metadata["table_name"]
         id_column = file_data.additional_metadata["id_column"]
