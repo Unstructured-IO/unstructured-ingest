@@ -3,9 +3,12 @@ from datetime import datetime
 from inspect import isclass
 from pathlib import Path
 from typing import Any
+from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel
 from pydantic.types import _SecretBase
+
+from unstructured_ingest.v2.interfaces import FileData
 
 
 def is_secret(value: Any) -> bool:
@@ -50,3 +53,9 @@ def serialize_base_model_json(model: BaseModel, **json_kwargs) -> str:
 
     # Support json dumps kwargs such as sort_keys
     return json.dumps(model_dict, default=json_serial, **json_kwargs)
+
+
+def get_enhanced_element_id(element_dict: dict, file_data: FileData) -> str:
+    element_id = element_dict.get("element_id")
+    new_data = f"{element_id}{file_data.identifier}"
+    return str(uuid5(NAMESPACE_DNS, new_data))

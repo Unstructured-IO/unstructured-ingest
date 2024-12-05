@@ -1,5 +1,4 @@
 import json
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -24,6 +23,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
@@ -100,7 +100,7 @@ class AzureAISearchUploadStager(UploadStager):
         Azure Cognitive Search index
         """
 
-        data["id"] = str(uuid.uuid4())
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
         data[RECORD_ID_LABEL] = file_data.identifier
 
         if points := data.get("metadata", {}).get("coordinates", {}).get("points"):
@@ -173,8 +173,10 @@ class AzureAISearchUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     def query_docs(self, record_id: str, index_key: str) -> list[str]:
-        client = self.connection_config.get_search_client()
-        results = list(client.search(filter=f"record_id eq '{record_id}'", select=[index_key]))
+        with self.connection_config.get_search_client() as search_client:
+            results = list(
+                search_client.search(filter=f"record_id eq '{record_id}'", select=[index_key])
+            )
         return [result[index_key] for result in results]
 
     def delete_by_record_id(self, file_data: FileData, index_key: str) -> None:
@@ -186,10 +188,10 @@ class AzureAISearchUploader(Uploader):
         doc_ids_to_delete = self.query_docs(record_id=file_data.identifier, index_key=index_key)
         if not doc_ids_to_delete:
             return
-        client: SearchClient = self.connection_config.get_search_client()
-        results = client.delete_documents(
-            documents=[{index_key: doc_id} for doc_id in doc_ids_to_delete]
-        )
+        with self.connection_config.get_search_client() as search_client:
+            results = search_client.delete_documents(
+                documents=[{index_key: doc_id} for doc_id in doc_ids_to_delete]
+            )
         errors = []
         success = []
         for result in results:
@@ -207,7 +209,9 @@ class AzureAISearchUploader(Uploader):
 
     @DestinationConnectionError.wrap
     @requires_dependencies(["azure"], extras="azure-ai-search")
-    def write_dict(self, elements_dict: list[dict[str, Any]]) -> None:
+    def write_dict(
+        self, elements_dict: list[dict[str, Any]], search_client: "SearchClient"
+    ) -> None:
         import azure.core.exceptions
 
         logger.info(
@@ -215,12 +219,10 @@ class AzureAISearchUploader(Uploader):
             f"index at {self.connection_config.index}",
         )
         try:
-            results = self.connection_config.get_search_client().upload_documents(
-                documents=elements_dict
-            )
-
+            results = search_client.upload_documents(documents=elements_dict)
         except azure.core.exceptions.HttpResponseError as http_error:
             raise WriteError(f"http error: {http_error}") from http_error
+
         errors = []
         success = []
         for result in results:
@@ -240,8 +242,8 @@ class AzureAISearchUploader(Uploader):
             )
 
     def can_delete(self) -> bool:
-        search_index_client = self.connection_config.get_search_index_client()
-        index = search_index_client.get_index(name=self.connection_config.index)
+        with self.connection_config.get_search_index_client() as search_index_client:
+            index = search_index_client.get_index(name=self.connection_config.index)
         index_fields = index.fields
         record_id_fields = [
             field for field in index_fields if field.name == self.upload_config.record_id_key
@@ -252,8 +254,8 @@ class AzureAISearchUploader(Uploader):
         return record_id_field.filterable
 
     def get_index_key(self) -> str:
-        search_index_client = self.connection_config.get_search_index_client()
-        index = search_index_client.get_index(name=self.connection_config.index)
+        with self.connection_config.get_search_index_client() as search_index_client:
+            index = search_index_client.get_index(name=self.connection_config.index)
         index_fields = index.fields
         key_fields = [field for field in index_fields if field.key]
         if not key_fields:
@@ -262,8 +264,8 @@ class AzureAISearchUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            client = self.connection_config.get_search_client()
-            client.get_document_count()
+            with self.connection_config.get_search_client() as search_client:
+                search_client.get_document_count()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -284,8 +286,9 @@ class AzureAISearchUploader(Uploader):
             logger.warning("criteria for deleting previous content not met, skipping")
 
         batch_size = self.upload_config.batch_size
-        for chunk in batch_generator(elements_dict, batch_size):
-            self.write_dict(elements_dict=chunk)  # noqa: E203
+        with self.connection_config.get_search_client() as search_client:
+            for chunk in batch_generator(elements_dict, batch_size):
+                self.write_dict(elements_dict=chunk, search_client=search_client)  # noqa: E203
 
 
 azure_ai_search_destination_entry = DestinationRegistryEntry(
