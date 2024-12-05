@@ -95,6 +95,7 @@ connectors_reqs = {
     "delta-table": load_requirements("requirements/connectors/delta-table.in"),
     "discord": load_requirements("requirements/connectors/discord.in"),
     "dropbox": load_requirements("requirements/connectors/dropbox.in"),
+    "duckdb": load_requirements("requirements/connectors/duckdb.in"),
     "elasticsearch": load_requirements("requirements/connectors/elasticsearch.in"),
     "gcs": load_requirements("requirements/connectors/gcs.in"),
     "github": load_requirements("requirements/connectors/github.in"),
