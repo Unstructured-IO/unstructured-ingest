@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
@@ -164,15 +165,23 @@ class SnowflakeUploader(PostgresUploader):
         df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
-        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
-
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
+        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+            table_name=self.upload_config.table_name,
+            columns=",".join(columns),
+            values=",".join([self.values_delimiter for _ in columns]),
+        )
+        logger.info(
+            f"writing a total of {len(df)} elements via"
+            f" document batches to destination"
+            f" table named {self.upload_config.table_name}"
+            f" with batch size {self.upload_config.batch_size}"
+        )
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
                 # TODO: executemany break on 'Binding data in type (list) is not supported'
                 for val in values:
+                    logger.debug(f"running query: {stmt}\nwith values: {val}")
                     cursor.execute(stmt, val)
 
 
