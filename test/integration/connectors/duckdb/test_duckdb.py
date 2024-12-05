@@ -7,7 +7,7 @@ import duckdb
 import pandas as pd
 import pytest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
+from test.integration.connectors.utils.constants import DESTINATION_TAG
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
     CONNECTOR_TYPE,
@@ -22,7 +22,7 @@ from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
 def duckdbd_setup() -> Generator[Path, None, None]:
     with tempfile.TemporaryDirectory() as temp_dir:
         db_path = Path(temp_dir) / "temp_duck.db"
-        db_init_path = env_setup_path / "duckdb" / "duckdb-schema.sql"
+        db_init_path = Path(__file__).parent / "duckdb-schema.sql"
         assert db_init_path.exists()
         assert db_init_path.is_file()
         with duckdb.connect(database=db_path) as duckdb_connection:

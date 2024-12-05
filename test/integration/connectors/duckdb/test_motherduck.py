@@ -9,7 +9,7 @@ import duckdb
 import pandas as pd
 import pytest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
+from test.integration.connectors.utils.constants import DESTINATION_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.duckdb.motherduck import (
@@ -26,7 +26,7 @@ from unstructured_ingest.v2.processes.connectors.duckdb.motherduck import (
 def motherduck_setup(md_token: str) -> Generator[Path, None, None]:
     database_name = f"test_{str(uuid.uuid4()).replace('-', '_')}"
     try:
-        db_init_path = env_setup_path / "duckdb" / "duckdb-schema.sql"
+        db_init_path = Path(__file__).parent / "duckdb-schema.sql"
         assert db_init_path.exists()
         assert db_init_path.is_file()
         with duckdb.connect(f"md:?motherduck_token={md_token}") as md_conn:
