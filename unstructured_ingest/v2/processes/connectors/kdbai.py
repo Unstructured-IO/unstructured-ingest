@@ -1,5 +1,4 @@
 import json
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -24,6 +23,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from kdbai_client import Database, Session, Table
@@ -81,7 +81,7 @@ class KdbaiUploadStager(UploadStager):
         for element in elements_contents:
             data.append(
                 {
-                    "id": str(uuid.uuid4()),
+                    "id": get_enhanced_element_id(element_dict=element, file_data=file_data),
                     "element_id": element.get("element_id"),
                     "document": element.pop("text", None),
                     "embeddings": element.get("embeddings"),

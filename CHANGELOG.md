@@ -1,15 +1,41 @@
-## 0.3.5-dev2
+## 0.3.7-dev6
 
 ### Fixes
 
 * **Box source connector can now use raw JSON as access token instead of file path to JSON**
 
-## 0.3.5-dev0
+## 0.3.7-dev5
+
+### Fixes
+
+* **Correct fsspec connectors date metadata field types** - sftp, azure, box and gcs
+* **Fix Kafka source connection problems**
+* **Fix Azure AI Search session handling**
+
+### Enhancements
+
+* **Kafka source connector has new field: group_id**
+* **Support personal access token for confluence auth**
+* **Leverage deterministic id for uploaded content**
+
+## 0.3.6
+
+### Fixes
+
+* **Fix Azure AI Search Error handling**
+
+## 0.3.5
+
+### Enhancements
+
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 
 * **Remove client.ping() from the Elasticsearch precheck.**
-* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
+* **Add check to prevent querying for more than pinecone limit when deleting records**
+* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
 
 ## 0.3.4
 

@@ -1,7 +1,6 @@
 import hashlib
 import json
 import sys
-import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
@@ -35,6 +34,7 @@ from unstructured_ingest.v2.interfaces import (
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 _COLUMNS = (
     "id",
@@ -251,7 +251,7 @@ class SQLUploadStager(UploadStager):
             element.update(data_source)
             element.update(coordinates)
 
-            element["id"] = str(uuid.uuid4())
+            element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
 
             # remove extraneous, not supported columns
             element = {k: v for k, v in element.items() if k in _COLUMNS}
