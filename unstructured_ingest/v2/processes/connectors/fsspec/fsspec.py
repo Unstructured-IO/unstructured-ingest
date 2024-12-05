@@ -297,7 +297,7 @@ class FsspecUploader(Uploader):
                 **self.connection_config.get_access_config(),
             )
             upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
-            fs.write_bytes(path=str(upload_path), value=b"")
+            fs.write_bytes(path=upload_path.as_posix(), value=b"")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -314,11 +314,11 @@ class FsspecUploader(Uploader):
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
         logger.debug(f"writing local file {path_str} to {upload_path}")
-        self.fs.upload(lpath=path_str, rpath=str(upload_path))
+        self.fs.upload(lpath=path_str, rpath=upload_path.as_posix())
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         upload_path = self.get_upload_path(file_data=file_data)
         path_str = str(path.resolve())
         # Odd that fsspec doesn't run exists() as async even when client support async
         logger.debug(f"writing local file {path_str} to {upload_path}")
-        self.fs.upload(lpath=path_str, rpath=str(upload_path))
+        self.fs.upload(lpath=path_str, rpath=upload_path.as_posix())
