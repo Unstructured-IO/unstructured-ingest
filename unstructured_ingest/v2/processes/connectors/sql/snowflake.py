@@ -15,12 +15,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
-from unstructured_ingest.v2.processes.connectors.sql.postgres import (
-    PostgresUploader,
-    PostgresUploaderConfig,
-    PostgresUploadStager,
-    PostgresUploadStagerConfig,
-)
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLAccessConfig,
     SQLConnectionConfig,
@@ -28,6 +22,10 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLDownloaderConfig,
     SQLIndexer,
     SQLIndexerConfig,
+    SQLUploader,
+    SQLUploaderConfig,
+    SQLUploadStager,
+    SQLUploadStagerConfig
 )
 
 if TYPE_CHECKING:
@@ -141,20 +139,20 @@ class SnowflakeDownloader(SQLDownloader):
             return rows, columns
 
 
-class SnowflakeUploadStagerConfig(PostgresUploadStagerConfig):
+class SnowflakeUploadStagerConfig(SQLUploadStagerConfig):
     pass
 
 
-class SnowflakeUploadStager(PostgresUploadStager):
+class SnowflakeUploadStager(SQLUploadStager):
     upload_stager_config: SnowflakeUploadStagerConfig
 
 
-class SnowflakeUploaderConfig(PostgresUploaderConfig):
+class SnowflakeUploaderConfig(SQLUploaderConfig):
     pass
 
 
 @dataclass
-class SnowflakeUploader(PostgresUploader):
+class SnowflakeUploader(SQLUploader):
     upload_config: SnowflakeUploaderConfig = field(default_factory=SnowflakeUploaderConfig)
     connection_config: SnowflakeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
