@@ -25,6 +25,7 @@ all_tests=(
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
+  # TODO: (Marek Połom) - enable Vectara once the account issue is resolved
   # 'vectara.sh'
   #  'kdbai.sh'
 )
