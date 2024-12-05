@@ -17,6 +17,7 @@
 * **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
 * **Optimizes memory usage of Snowflake Destination Connector.**
 * **Added Qdrant Cloud integration test**
+* **Improved Milvus error handling**
 
 ## 0.3.6
 

@@ -74,3 +74,6 @@ omit=[
     "unstructured_ingest/ingest_backoff/*",
     "unstructured_ingest/enhanced_dataclass/*"
 ]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope="function"
