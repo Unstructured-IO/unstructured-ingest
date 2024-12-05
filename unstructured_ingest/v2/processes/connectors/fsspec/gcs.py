@@ -113,9 +113,9 @@ class GcsIndexer(FsspecIndexer):
         date_created = None
         date_modified = None
         if modified_at_str := file_data.get("updated"):
-            date_modified = parser.parse(modified_at_str).timestamp()
+            date_modified = str(parser.parse(modified_at_str).timestamp())
         if created_at_str := file_data.get("timeCreated"):
-            date_created = parser.parse(created_at_str).timestamp()
+            date_created = str(parser.parse(created_at_str).timestamp())
 
         file_size = file_data.get("size") if "size" in file_data else None
 
