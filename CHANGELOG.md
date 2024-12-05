@@ -1,16 +1,21 @@
-## 0.3.7-dev5
+## 0.3.7-dev6
 
 ### Fixes
 
 * **Correct fsspec connectors date metadata field types** - sftp, azure, box and gcs
 * **Fix Kafka source connection problems**
 * **Fix Azure AI Search session handling**
+* **Fixes issue with SingleStore Source Connector not being available**
+* **Fixes issue with SQLite Source Connector using wrong Indexer** - Caused indexer config parameter error when trying to use SQLite Source
+* **Fixes issue with Snowflake Destination Connector `nan` values** - `nan` values were not properly replaced with `None`
 
 ### Enhancements
 
 * **Kafka source connector has new field: group_id**
 * **Support personal access token for confluence auth**
 * **Leverage deterministic id for uploaded content**
+* **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
+* **Optimizes memory usage of Snowflake Destination Connector.**
 
 ## 0.3.6
 
