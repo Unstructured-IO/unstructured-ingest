@@ -1,9 +1,10 @@
-## 0.3.7-dev3
+## 0.3.7-dev4
 
 ### Fixes
 
 * **Fix Kafka source connection problems**
 * **Fix Azure AI Search session handling**
+* **Properly log elasticsearch upload errors**
 
 ### Enhancements
 
