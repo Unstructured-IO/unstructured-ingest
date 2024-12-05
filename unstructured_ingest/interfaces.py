@@ -212,6 +212,7 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig(**kwargs))
+
         elif self.provider == "huggingface":
             from unstructured_ingest.embed.huggingface import (
                 HuggingFaceEmbeddingConfig,
@@ -219,6 +220,7 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return HuggingFaceEmbeddingEncoder(config=HuggingFaceEmbeddingConfig(**kwargs))
+
         elif self.provider == "octoai":
             from unstructured_ingest.embed.octoai import (
                 OctoAiEmbeddingConfig,
@@ -226,6 +228,7 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig(**kwargs))
+
         elif self.provider == "aws-bedrock":
             from unstructured_ingest.embed.bedrock import (
                 BedrockEmbeddingConfig,
@@ -239,6 +242,7 @@ class EmbeddingConfig(BaseConfig):
                     region_name=self.aws_region,
                 )
             )
+
         elif self.provider == "vertexai":
             from unstructured_ingest.embed.vertexai import (
                 VertexAIEmbeddingConfig,
@@ -246,6 +250,7 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return VertexAIEmbeddingEncoder(config=VertexAIEmbeddingConfig(**kwargs))
+
         elif self.provider == "voyageai":
             from unstructured_ingest.embed.voyageai import (
                 VoyageAIEmbeddingConfig,
@@ -253,6 +258,15 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return VoyageAIEmbeddingEncoder(config=VoyageAIEmbeddingConfig(**kwargs))
+
+        elif self.provider == "ollama":
+            from unstructured_ingest.embed.ollama import (
+                OllamaEmbeddingConfig,
+                OllamaEmbeddingEncoder,
+            )
+
+            return OllamaEmbeddingEncoder(config=OllamaEmbeddingConfig(**kwargs))
+
         else:
             raise ValueError(f"{self.provider} not a recognized encoder")
 

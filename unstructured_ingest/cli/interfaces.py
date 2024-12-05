@@ -421,6 +421,7 @@ class CliEmbeddingConfig(EmbeddingConfig, CliMixin):
             "vertexai",
             "voyageai",
             "octoai",
+            "ollama",
         ]
         options = [
             click.Option(
