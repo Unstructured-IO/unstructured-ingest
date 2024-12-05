@@ -1,7 +1,8 @@
-## 0.3.7-dev4
+## 0.3.7-dev5
 
 ### Fixes
 
+* **Correct fsspec connectors date metadata field types** - sftp, azure, box and gcs
 * **Fix Kafka source connection problems**
 * **Fix Azure AI Search session handling**
 
