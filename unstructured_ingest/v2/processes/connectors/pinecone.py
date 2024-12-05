@@ -1,5 +1,4 @@
 import json
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -21,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
@@ -149,7 +149,7 @@ class PineconeUploadStager(UploadStager):
         metadata[RECORD_ID_LABEL] = file_data.identifier
 
         return {
-            "id": str(uuid.uuid4()),
+            "id": get_enhanced_element_id(element_dict=element_dict, file_data=file_data),
             "values": embeddings,
             "metadata": metadata,
         }

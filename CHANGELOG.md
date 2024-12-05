@@ -1,4 +1,4 @@
-## 0.3.7-dev3
+## 0.3.7-dev5
 
 ### Fixes
 
@@ -10,6 +10,7 @@
 
 * **Kafka source connector has new field: group_id**
 * **Support personal access token for confluence auth**
+* **Leverage deterministic id for uploaded content**
 
 ## 0.3.6
 

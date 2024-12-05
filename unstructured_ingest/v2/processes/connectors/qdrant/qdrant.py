@@ -1,6 +1,5 @@
 import asyncio
 import json
-import uuid
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -22,6 +21,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from qdrant_client import AsyncQdrantClient
@@ -64,10 +64,10 @@ class QdrantUploadStager(UploadStager, ABC):
     )
 
     @staticmethod
-    def conform_dict(data: dict) -> dict:
+    def conform_dict(data: dict, file_data: FileData) -> dict:
         """Prepares dictionary in the format that Chroma requires"""
         return {
-            "id": str(uuid.uuid4()),
+            "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             "vector": data.pop("embeddings", {}),
             "payload": {
                 "text": data.pop("text", None),
@@ -91,7 +91,9 @@ class QdrantUploadStager(UploadStager, ABC):
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
 
-        conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
+        conformed_elements = [
+            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
+        ]
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
 
         with open(output_path, "w") as output_file:

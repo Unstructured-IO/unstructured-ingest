@@ -1,5 +1,4 @@
 import json
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -24,6 +23,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
@@ -100,7 +100,7 @@ class AzureAISearchUploadStager(UploadStager):
         Azure Cognitive Search index
         """
 
-        data["id"] = str(uuid.uuid4())
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
         data[RECORD_ID_LABEL] = file_data.identifier
 
         if points := data.get("metadata", {}).get("coordinates", {}).get("points"):
