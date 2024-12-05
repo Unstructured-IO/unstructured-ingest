@@ -15,9 +15,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.sql.postgres import (
-    PostgresDownloaderConfig,
-    PostgresIndexer,
-    PostgresIndexerConfig,
+    PostgresUploader,
     PostgresUploaderConfig,
     PostgresUploadStager,
     PostgresUploadStagerConfig,
@@ -26,7 +24,9 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLAccessConfig,
     SQLConnectionConfig,
     SQLDownloader,
-    SQLUploader,
+    SQLDownloaderConfig,
+    SQLIndexer,
+    SQLIndexerConfig,
 )
 
 if TYPE_CHECKING:
@@ -94,18 +94,18 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
                 cursor.close()
 
 
-class SnowflakeIndexerConfig(PostgresIndexerConfig):
+class SnowflakeIndexerConfig(SQLIndexerConfig):
     pass
 
 
 @dataclass
-class SnowflakeIndexer(PostgresIndexer):
+class SnowflakeIndexer(SQLIndexer):
     connection_config: SnowflakeConnectionConfig
     index_config: SnowflakeIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
 
-class SnowflakeDownloaderConfig(PostgresDownloaderConfig):
+class SnowflakeDownloaderConfig(SQLDownloaderConfig):
     pass
 
 
@@ -153,7 +153,7 @@ class SnowflakeUploaderConfig(PostgresUploaderConfig):
 
 
 @dataclass
-class SnowflakeUploader(SQLUploader):
+class SnowflakeUploader(PostgresUploader):
     upload_config: SnowflakeUploaderConfig = field(default_factory=SnowflakeUploaderConfig)
     connection_config: SnowflakeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
