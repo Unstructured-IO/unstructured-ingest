@@ -24,6 +24,7 @@ class EmbedderConfig(BaseModel):
             "octoai",
             "mixedbread-ai",
             "togetherai",
+            "ollama",
         ]
     ] = Field(default=None, description="Type of the embedding class to be used.")
     embedding_api_key: Optional[SecretStr] = Field(
@@ -146,6 +147,11 @@ class EmbedderConfig(BaseModel):
             config=TogetherAIEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
+    def get_ollama_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
+        from unstructured_ingest.embed.ollama import OllamaEmbeddingConfig, OllamaEmbeddingEncoder
+
+        return OllamaEmbeddingEncoder(config=OllamaEmbeddingConfig.model_validate(embedding_kwargs))
+
     def get_embedder(self) -> "BaseEmbeddingEncoder":
         kwargs: dict[str, Any] = {}
         if self.embedding_api_key:
@@ -176,6 +182,8 @@ class EmbedderConfig(BaseModel):
             return self.get_togetherai_embedder(embedding_kwargs=kwargs)
         if self.embedding_provider == "azure-openai":
             return self.get_azure_openai_embedder(embedding_kwargs=kwargs)
+        if self.embedding_provider == "ollama":
+            return self.get_ollama_embedder(embedding_kwargs=kwargs)
 
         raise ValueError(f"{self.embedding_provider} not a recognized encoder")
 
