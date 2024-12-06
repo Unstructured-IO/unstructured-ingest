@@ -1,4 +1,15 @@
+## 0.3.7-dev8
+
+### Fixes
+
+* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
+
 ## 0.3.7-dev7
+
+### Features
+
+* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
+* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
 
 ### Fixes
 
@@ -8,7 +19,6 @@
 * **Fixes issue with SingleStore Source Connector not being available**
 * **Fixes issue with SQLite Source Connector using wrong Indexer** - Caused indexer config parameter error when trying to use SQLite Source
 * **Fixes issue with Snowflake Destination Connector `nan` values** - `nan` values were not properly replaced with `None`
-* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
 
 ### Enhancements
 
