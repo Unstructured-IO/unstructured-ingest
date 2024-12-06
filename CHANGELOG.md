@@ -1,8 +1,14 @@
-## 0.3.7-dev8
+## 0.3.7-dev9
 
 ### Fixes
 
 * **Box source connector can now use raw JSON as access token instead of file path to JSON**
+
+## 0.3.7-dev8
+
+### Fixes
+
+* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
 
 ## 0.3.7-dev7
 

@@ -9,22 +9,24 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
-from unstructured_ingest.v2.processes.connectors.sql.postgres import (
-    PostgresDownloader,
-    PostgresDownloaderConfig,
-    PostgresIndexer,
-    PostgresIndexerConfig,
-    PostgresUploader,
-    PostgresUploaderConfig,
-    PostgresUploadStager,
-    PostgresUploadStagerConfig,
+from unstructured_ingest.v2.processes.connectors.sql.sql import (
+    SQLAccessConfig,
+    SQLConnectionConfig,
+    SQLDownloader,
+    SQLDownloaderConfig,
+    SQLIndexer,
+    SQLIndexerConfig,
+    SQLUploader,
+    SQLUploaderConfig,
+    SQLUploadStager,
+    SQLUploadStagerConfig,
 )
-from unstructured_ingest.v2.processes.connectors.sql.sql import SQLAccessConfig, SQLConnectionConfig
 
 if TYPE_CHECKING:
     from snowflake.connector import SnowflakeConnection
@@ -61,6 +63,7 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @contextmanager
+    # The actual snowflake module package name is: snowflake-connector-python
     @requires_dependencies(["snowflake"], extras="snowflake")
     def get_connection(self) -> Generator["SnowflakeConnection", None, None]:
         # https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#label-snowflake-connector-methods-connect
@@ -91,42 +94,67 @@ class SnowflakeConnectionConfig(SQLConnectionConfig):
                 cursor.close()
 
 
-class SnowflakeIndexerConfig(PostgresIndexerConfig):
+class SnowflakeIndexerConfig(SQLIndexerConfig):
     pass
 
 
 @dataclass
-class SnowflakeIndexer(PostgresIndexer):
+class SnowflakeIndexer(SQLIndexer):
     connection_config: SnowflakeConnectionConfig
     index_config: SnowflakeIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
 
-class SnowflakeDownloaderConfig(PostgresDownloaderConfig):
+class SnowflakeDownloaderConfig(SQLDownloaderConfig):
     pass
 
 
 @dataclass
-class SnowflakeDownloader(PostgresDownloader):
+class SnowflakeDownloader(SQLDownloader):
     connection_config: SnowflakeConnectionConfig
     download_config: SnowflakeDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
+    values_delimiter: str = "?"
+
+    # The actual snowflake module package name is: snowflake-connector-python
+    @requires_dependencies(["snowflake"], extras="snowflake")
+    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+        table_name = file_data.additional_metadata["table_name"]
+        id_column = file_data.additional_metadata["id_column"]
+        ids = file_data.additional_metadata["ids"]
+
+        with self.connection_config.get_cursor() as cursor:
+            query = "SELECT {fields} FROM {table_name} WHERE {id_column} IN ({values})".format(
+                table_name=table_name,
+                id_column=id_column,
+                fields=(
+                    ",".join(self.download_config.fields) if self.download_config.fields else "*"
+                ),
+                values=",".join([self.values_delimiter for _ in ids]),
+            )
+            logger.debug(f"running query: {query}\nwith values: {ids}")
+            cursor.execute(query, ids)
+            rows = [
+                tuple(row.values()) if isinstance(row, dict) else row for row in cursor.fetchall()
+            ]
+            columns = [col[0] for col in cursor.description]
+            return rows, columns
 
 
-class SnowflakeUploadStagerConfig(PostgresUploadStagerConfig):
+class SnowflakeUploadStagerConfig(SQLUploadStagerConfig):
     pass
 
 
-class SnowflakeUploadStager(PostgresUploadStager):
+class SnowflakeUploadStager(SQLUploadStager):
     upload_stager_config: SnowflakeUploadStagerConfig
 
 
-class SnowflakeUploaderConfig(PostgresUploaderConfig):
+class SnowflakeUploaderConfig(SQLUploaderConfig):
     pass
 
 
 @dataclass
-class SnowflakeUploader(PostgresUploader):
+class SnowflakeUploader(SQLUploader):
     upload_config: SnowflakeUploaderConfig = field(default_factory=SnowflakeUploaderConfig)
     connection_config: SnowflakeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
