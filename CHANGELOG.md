@@ -1,3 +1,9 @@
+## 0.3.7-dev8
+
+### Fixes
+
+* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
+
 ## 0.3.7-dev7
 
 ### Features
