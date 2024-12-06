@@ -91,22 +91,20 @@ class SingleStoreDownloader(SQLDownloader):
     connection_config: SingleStoreConnectionConfig
     download_config: SingleStoreDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
+    values_delimiter: str = "%s"
 
     def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
         table_name = file_data.additional_metadata["table_name"]
         id_column = file_data.additional_metadata["id_column"]
-        ids = file_data.additional_metadata["ids"]
+        ids = tuple(file_data.additional_metadata["ids"])
         with self.connection_config.get_connection() as sqlite_connection:
             cursor = sqlite_connection.cursor()
             fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
-            query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
-                fields=fields,
-                table_name=table_name,
-                id_column=id_column,
-                ids=",".join([str(i) for i in ids]),
+            query = (
+                f"SELECT {fields} FROM {table_name} WHERE {id_column} IN {self.values_delimiter}"
             )
-            logger.debug(f"running query: {query}")
-            cursor.execute(query)
+            logger.debug(f"running query: {query}\nwith values: {(ids,)}")
+            cursor.execute(query, (ids,))
             rows = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
             return rows, columns
@@ -154,7 +152,7 @@ class SingleStoreUploader(SQLUploader):
 singlestore_source_entry = SourceRegistryEntry(
     connection_config=SingleStoreConnectionConfig,
     indexer_config=SingleStoreIndexerConfig,
-    indexer=SQLIndexer,
+    indexer=SingleStoreIndexer,
     downloader_config=SingleStoreDownloaderConfig,
     downloader=SingleStoreDownloader,
 )

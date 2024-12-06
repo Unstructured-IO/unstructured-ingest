@@ -367,7 +367,11 @@ class SQLUploader(Uploader):
         self._fit_to_schema(df=df, columns=self.get_table_columns())
 
         columns = list(df.columns)
-        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
+        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+            table_name=self.upload_config.table_name,
+            columns=",".join(columns),
+            values=",".join([self.values_delimiter for _ in columns]),
+        )
         logger.info(
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
@@ -384,6 +388,7 @@ class SQLUploader(Uploader):
                 #     except Exception as e:
                 #         print(f"Error: {e}")
                 #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                logger.debug(f"running query: {stmt}")
                 cursor.executemany(stmt, values)
 
     def get_table_columns(self) -> list[str]:
