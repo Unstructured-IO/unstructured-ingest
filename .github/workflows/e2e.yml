@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, release/* ]
   merge_group:
     branches: [ main ]
 
@@ -104,6 +104,9 @@ jobs:
         ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
+        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -152,6 +155,8 @@ jobs:
         AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        QDRANT_SERVER_URL: ${{ secrets.QDRANT_SERVER_URL }}
       run : |
         source .venv/bin/activate
         make install-test

@@ -1,12 +1,49 @@
-## 0.3.5-dev2
 
-### Enhacements
+## 0.3.7-dev12
+
+### Fixes
+
+* **Correct fsspec connectors date metadata field types** - sftp, azure, box and gcs
+* **Fix Kafka source connection problems**
+* **Fix Azure AI Search session handling**
+* **Fixes issue with SingleStore Source Connector not being available**
+* **Fixes issue with SQLite Source Connector using wrong Indexer** - Caused indexer config parameter error when trying to use SQLite Source
+* **Fixes issue with Snowflake Destination Connector `nan` values** - `nan` values were not properly replaced with `None`
+* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
+* **Box source connector can now use raw JSON as access token instead of file path to JSON**
+* **Fix fsspec upload paths to be OS independent**
+* **Properly log elasticsearch upload errors**
+
+### Enhancements
+
+* **Kafka source connector has new field: group_id**
+* **Support personal access token for confluence auth**
+* **Leverage deterministic id for uploaded content**
+* **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
+* **Optimizes memory usage of Snowflake Destination Connector.**
+* **Added Qdrant Cloud integration test**
+* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
+* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
 * **Update weaviate v2 example**
+
+## 0.3.6
+
+### Fixes
+
+* **Fix Azure AI Search Error handling**
+
+## 0.3.5
+
+### Enhancements
+
+* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
 
 ### Fixes
 
 * **Remove client.ping() from the Elasticsearch precheck.**
-* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
+* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
+* **Add check to prevent querying for more than pinecone limit when deleting records**
+* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
 
 ## 0.3.4
 

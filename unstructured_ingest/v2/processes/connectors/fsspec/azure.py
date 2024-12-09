@@ -110,10 +110,14 @@ class AzureIndexer(FsspecIndexer):
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
         date_created = (
-            file_data.get("creation_time").timestamp() if "creation_time" in file_data else None
+            str(file_data.get("creation_time").timestamp())
+            if "creation_time" in file_data
+            else None
         )
         date_modified = (
-            file_data.get("last_modified").timestamp() if "last_modified" in file_data else None
+            str(file_data.get("last_modified").timestamp())
+            if "last_modified" in file_data
+            else None
         )
 
         file_size = file_data.get("size") if "size" in file_data else None
