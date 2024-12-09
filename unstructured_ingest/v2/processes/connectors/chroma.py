@@ -135,20 +135,19 @@ class ChromaUploader(Uploader):
         import chromadb
 
         access_config = self.connection_config.access_config.get_secret_value()
-        if self.connection_config.path:
-            return chromadb.PersistentClient(
-                path=self.connection_config.path,
-                settings=access_config.settings,
-                tenant=self.connection_config.tenant,
-                database=self.connection_config.database,
-            )
-
-        elif self.connection_config.host and self.connection_config.port:
+        if self.connection_config.host and self.connection_config.port:
             return chromadb.HttpClient(
                 host=self.connection_config.host,
                 port=self.connection_config.port,
                 ssl=self.connection_config.ssl,
                 headers=access_config.headers,
+                settings=access_config.settings,
+                tenant=self.connection_config.tenant,
+                database=self.connection_config.database,
+            )
+        elif self.connection_config.path:
+            return chromadb.PersistentClient(
+                path=self.connection_config.path,
                 settings=access_config.settings,
                 tenant=self.connection_config.tenant,
                 database=self.connection_config.database,
