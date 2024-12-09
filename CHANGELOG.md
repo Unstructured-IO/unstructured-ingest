@@ -1,4 +1,5 @@
-## 0.3.7-dev10
+
+## 0.3.7-dev11
 
 ### Fixes
 
@@ -11,6 +12,7 @@
 * **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
 * **Box source connector can now use raw JSON as access token instead of file path to JSON**
 * **Fix fsspec upload paths to be OS independent**
+* **Properly log elasticsearch upload errors**
 
 ### Enhancements
 

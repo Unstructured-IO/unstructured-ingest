@@ -1,3 +1,4 @@
+import collections
 import hashlib
 import json
 import sys
@@ -425,7 +426,10 @@ class ElasticsearchUploader(Uploader):
         if failures := delete_resp.get("failures"):
             raise WriteError(f"failed to delete records: {failures}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    @requires_dependencies(["elasticsearch"], extras="elasticsearch")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:  # type: ignore
+        from elasticsearch.helpers.errors import BulkIndexError
+
         parallel_bulk = self.load_parallel_bulk()
         with path.open("r") as file:
             elements_dict = json.load(file)
@@ -449,18 +453,33 @@ class ElasticsearchUploader(Uploader):
             for batch in generator_batching_wbytes(
                 elements_dict, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
-                for success, info in parallel_bulk(
-                    client=client,
-                    actions=batch,
-                    thread_count=self.upload_config.num_threads,
-                ):
-                    if not success:
-                        logger.error(
-                            "upload failed for a batch in "
-                            f"{(self.__class__.__name__).replace('Uploader', '')} "
-                            "destination connector:",
-                            info,
-                        )
+                try:
+                    iterator = parallel_bulk(
+                        client=client,
+                        actions=batch,
+                        thread_count=self.upload_config.num_threads,
+                    )
+                    collections.deque(iterator, maxlen=0)
+                except BulkIndexError as e:
+                    sanitized_errors = [
+                        self._sanitize_bulk_index_error(error) for error in e.errors
+                    ]
+                    logger.error(
+                        f"Batch upload failed - {e} - with following errors: {sanitized_errors}"
+                    )
+                    raise e
+                except Exception as e:
+                    logger.error(f"Batch upload failed - {e}")
+                    raise e
+
+    def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
+        """Remove data uploaded to index from the log, leave only error information.
+
+        Error structure is `{<operation-type>: {..., "data": <uploaded-object>}}`
+        """
+        for error_data in error.values():
+            error_data.pop("data", None)
+        return error
 
 
 elasticsearch_source_entry = SourceRegistryEntry(
