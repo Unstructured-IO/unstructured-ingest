@@ -1,7 +1,6 @@
 import hashlib
 import json
 import sys
-import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
@@ -35,6 +34,7 @@ from unstructured_ingest.v2.interfaces import (
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 _COLUMNS = (
     "id",
@@ -251,7 +251,7 @@ class SQLUploadStager(UploadStager):
             element.update(data_source)
             element.update(coordinates)
 
-            element["id"] = str(uuid.uuid4())
+            element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
 
             # remove extraneous, not supported columns
             element = {k: v for k, v in element.items() if k in _COLUMNS}
@@ -367,7 +367,11 @@ class SQLUploader(Uploader):
         self._fit_to_schema(df=df, columns=self.get_table_columns())
 
         columns = list(df.columns)
-        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
+        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+            table_name=self.upload_config.table_name,
+            columns=",".join(columns),
+            values=",".join([self.values_delimiter for _ in columns]),
+        )
         logger.info(
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
@@ -384,6 +388,7 @@ class SQLUploader(Uploader):
                 #     except Exception as e:
                 #         print(f"Error: {e}")
                 #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                logger.debug(f"running query: {stmt}")
                 cursor.executemany(stmt, values)
 
     def get_table_columns(self) -> list[str]:

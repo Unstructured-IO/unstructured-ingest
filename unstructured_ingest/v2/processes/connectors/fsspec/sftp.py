@@ -30,7 +30,6 @@ CONNECTOR_TYPE = "sftp"
 
 
 class SftpIndexerConfig(FsspecIndexerConfig):
-
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
         _, ext = os.path.splitext(self.remote_url)
@@ -99,8 +98,8 @@ class SftpIndexer(FsspecIndexer):
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
-        date_created = file_data.get("time").timestamp() if "time" in file_data else None
-        date_modified = file_data.get("mtime").timestamp() if "mtime" in file_data else None
+        date_created = str(file_data.get("time").timestamp()) if "time" in file_data else None
+        date_modified = str(file_data.get("mtime").timestamp()) if "mtime" in file_data else None
 
         file_size = file_data.get("size") if "size" in file_data else None
 
