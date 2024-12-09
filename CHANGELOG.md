@@ -1,5 +1,5 @@
 
-## 0.3.7-dev11
+## 0.3.7-dev12
 
 ### Fixes
 
@@ -24,6 +24,7 @@
 * **Added Qdrant Cloud integration test**
 * **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+* **Update weaviate v2 example**
 
 ## 0.3.6
 
