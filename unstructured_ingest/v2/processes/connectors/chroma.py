@@ -1,5 +1,4 @@
 import json
-import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -23,6 +22,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 from .utils import conform_string_to_dict
 
@@ -83,13 +83,12 @@ class ChromaUploadStager(UploadStager):
         return parser.parse(date_string)
 
     @staticmethod
-    def conform_dict(data: dict) -> dict:
+    def conform_dict(data: dict, file_data: FileData) -> dict:
         """
         Prepares dictionary in the format that Chroma requires
         """
-        element_id = data.get("element_id", str(uuid.uuid4()))
         return {
-            "id": element_id,
+            "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             "embedding": data.pop("embeddings", None),
             "document": data.pop("text", None),
             "metadata": flatten_dict(data, separator="-", flatten_lists=True, remove_none=True),
@@ -105,7 +104,9 @@ class ChromaUploadStager(UploadStager):
     ) -> Path:
         with open(elements_filepath) as elements_file:
             elements_contents = json.load(elements_file)
-        conformed_elements = [self.conform_dict(data=element) for element in elements_contents]
+        conformed_elements = [
+            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
+        ]
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         with open(output_path, "w") as output_file:
             json.dump(conformed_elements, output_file)

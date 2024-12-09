@@ -9,11 +9,11 @@ from unstructured_ingest.v2.processes.connectors.local import (
     LocalDownloaderConfig,
     LocalIndexerConfig,
 )
-from unstructured_ingest.v2.processes.connectors.weaviate import (
+from unstructured_ingest.v2.processes.connectors.weaviate.local import (
     CONNECTOR_TYPE,
-    WeaviateConnectionConfig,
-    WeaviateUploaderConfig,
-    WeaviateUploadStagerConfig,
+    LocalWeaviateConnectionConfig,
+    LocalWeaviateUploaderConfig,
+    LocalWeaviateUploadStagerConfig,
 )
 from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
@@ -34,12 +34,11 @@ if __name__ == "__main__":
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
         embedder_config=EmbedderConfig(embedding_provider="huggingface"),
-        destination_connection_config=WeaviateConnectionConfig(
-            host_url="http://localhost:8080",
-            class_name="elements",
-            access_config=None,
-            anonymous=True,
+        destination_connection_config=LocalWeaviateConnectionConfig(
+            # Connects to http://localhost:8080
         ),
-        stager_config=WeaviateUploadStagerConfig(),
-        uploader_config=WeaviateUploaderConfig(batch_size=10),
+        stager_config=LocalWeaviateUploadStagerConfig(),
+        uploader_config=LocalWeaviateUploaderConfig(
+            collection="elements", batch_size=10, dynamic_batch=False
+        ),
     ).run()
