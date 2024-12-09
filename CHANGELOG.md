@@ -1,21 +1,4 @@
-## 0.3.7-dev9
-
-### Fixes
-
-* **Box source connector can now use raw JSON as access token instead of file path to JSON**
-
-## 0.3.7-dev8
-
-### Fixes
-
-* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
-
-## 0.3.7-dev7
-
-### Features
-
-* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
-* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+## 0.3.7-dev10
 
 ### Fixes
 
@@ -25,6 +8,9 @@
 * **Fixes issue with SingleStore Source Connector not being available**
 * **Fixes issue with SQLite Source Connector using wrong Indexer** - Caused indexer config parameter error when trying to use SQLite Source
 * **Fixes issue with Snowflake Destination Connector `nan` values** - `nan` values were not properly replaced with `None`
+* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
+* **Box source connector can now use raw JSON as access token instead of file path to JSON**
+* **Fix fsspec upload paths to be OS independent**
 
 ### Enhancements
 
@@ -34,6 +20,8 @@
 * **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
 * **Optimizes memory usage of Snowflake Destination Connector.**
 * **Added Qdrant Cloud integration test**
+* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
+* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
 
 ## 0.3.6
 
