@@ -155,6 +155,8 @@ jobs:
         AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        QDRANT_SERVER_URL: ${{ secrets.QDRANT_SERVER_URL }}
       run : |
         source .venv/bin/activate
         make install-test

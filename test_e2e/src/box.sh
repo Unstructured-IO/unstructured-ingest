@@ -27,21 +27,17 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-if [ -z "$BOX_APP_CONFIG" ] && [ -z "$BOX_APP_CONFIG_PATH" ]; then
-  echo "Skipping Box ingest test because neither BOX_APP_CONFIG nor BOX_APP_CONFIG_PATH env vars are set."
+if [ -z "$BOX_APP_CONFIG" ]; then
+  echo "Skipping Box ingest test because BOX_APP_CONFIG env var is not set."
   exit 8
 fi
 
-if [ -z "$BOX_APP_CONFIG_PATH" ]; then
-  # Create temporary service key file
-  BOX_APP_CONFIG_PATH=$(mktemp)
-  echo "$BOX_APP_CONFIG" >"$BOX_APP_CONFIG_PATH"
-
+# Make sure the BOX_APP_CONFIG is valid JSON
+echo "Checking valid JSON in BOX_APP_CONFIG environment variable"
+if ! echo "$BOX_APP_CONFIG" | jq 'keys' >/dev/null; then
+  echo "BOX_APP_CONFIG does not contain valid JSON. Exiting."
+  exit 1
 fi
-
-# Make sure valid json
-echo "Checking valid json at file $BOX_APP_CONFIG_PATH"
-jq 'keys' <"$BOX_APP_CONFIG_PATH"
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
@@ -50,7 +46,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --partition-by-api \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
-  --box-app-config "$BOX_APP_CONFIG_PATH" \
+  --box-app-config "$BOX_APP_CONFIG" \
   --remote-url box://utic-test-ingest-fixtures \
   --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --output-dir "$OUTPUT_DIR" \

@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import Annotated, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
+from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
@@ -23,7 +24,9 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecIndexerConfig,
     FsspecUploader,
     FsspecUploaderConfig,
+    SourceConnectionError,
 )
+from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 
 CONNECTOR_TYPE = "box"
 
@@ -33,26 +36,35 @@ class BoxIndexerConfig(FsspecIndexerConfig):
 
 
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Optional[str] = Field(
-        default=None, description="Path to Box app credentials as json file."
+    box_app_config: Annotated[dict, BeforeValidator(conform_string_to_dict)] = Field(
+        description="Box app credentials as a JSON string."
     )
 
 
 class BoxConnectionConfig(FsspecConnectionConfig):
     supported_protocols: list[str] = field(default_factory=lambda: ["box"], init=False)
-    access_config: Secret[BoxAccessConfig] = Field(default=BoxAccessConfig(), validate_default=True)
+    access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
-        # Return access_kwargs with oauth. The oauth object cannot be stored directly in the config
-        # because it is not serializable.
         from boxsdk import JWTAuth
 
         ac = self.access_config.get_secret_value()
+        settings_dict = ac.box_app_config
+
+        # Create and authenticate the JWTAuth object
+        oauth = JWTAuth.from_settings_dictionary(settings_dict)
+        try:
+            oauth.authenticate_instance()
+        except Exception as e:
+            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
+
+        if not oauth.access_token:
+            raise SourceConnectionError("Authentication failed: No access token generated.")
+
+        # Prepare the access configuration with the authenticated oauth
         access_kwargs_with_oauth: dict[str, Any] = {
-            "oauth": JWTAuth.from_settings_file(
-                ac.box_app_config,
-            ),
+            "oauth": oauth,
         }
         access_config: dict[str, Any] = ac.model_dump()
         access_config.pop("box_app_config", None)
