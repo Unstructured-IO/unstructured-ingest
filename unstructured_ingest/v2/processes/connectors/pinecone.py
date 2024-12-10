@@ -1,4 +1,5 @@
 import json
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -226,6 +227,7 @@ class PineconeUploader(Uploader):
             if namespace := self.upload_config.namespace:
                 delete_params["namespace"] = namespace
             index.delete(**delete_params)
+            time.sleep(1)
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
@@ -234,28 +236,40 @@ class PineconeUploader(Uploader):
             f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
+        filter_dict = {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
         index_stats = index.describe_index_stats()
         dimension = index_stats["dimension"]
         total_vectors = index_stats["total_vector_count"]
         if total_vectors == 0:
             return
-        while total_vectors > 0:
-            top_k = min(total_vectors, MAX_QUERY_RESULTS)
-            query_params = {
-                "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
-                "vector": [0] * dimension,
-                "top_k": top_k,
-            }
+        top_k = min(total_vectors, MAX_QUERY_RESULTS)
+        query_params = {
+            "filter": filter_dict,
+            "vector": [0] * dimension,
+            "top_k": top_k,
+        }
+        if namespace := self.upload_config.namespace:
+            query_params["namespace"] = namespace
+        read_units_used = 0
+        while True:
+            query_results = index.query(**query_params)
+            read_units_used += query_results.get("usage").get("read_units", 0)
+            matches = query_results.get("matches", [])
+            if not matches:
+                break
+            ids = [match["id"] for match in matches]
+            delete_params = {"ids": ids}
             if namespace := self.upload_config.namespace:
-                query_params["namespace"] = namespace
-            self.delete_by_query(index=index, query_params=query_params)
-            index_stats = index.describe_index_stats()
-            total_vectors = index_stats["total_vector_count"]
+                delete_params["namespace"] = namespace
+            # delete operation doesn't return any usage data
+            index.delete(**delete_params)
+            # Give the index a second to process before making another request
+            time.sleep(1)
 
         logger.info(
-            f"deleted {total_vectors} records with metadata "
+            f"deleted records with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from pinecone index"
+            f"from pinecone index, read units used: {read_units_used}"
         )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
