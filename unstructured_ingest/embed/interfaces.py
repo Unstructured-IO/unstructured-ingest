@@ -47,6 +47,10 @@ class BaseEncoder(ABC):
 @dataclass
 class BaseEmbeddingEncoder(BaseEncoder, ABC):
 
+    def initialize(self):
+        """Initializes the embedding encoder class. Should also validate the instance
+        is properly configured: e.g., embed a single a element"""
+
     @property
     def num_of_dimensions(self) -> tuple[int, ...]:
         exemplary_embedding = self.get_exemplary_embedding()
@@ -80,6 +84,10 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
 
 @dataclass
 class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
+
+    async def initialize(self):
+        """Initializes the embedding encoder class. Should also validate the instance
+        is properly configured: e.g., embed a single a element"""
 
     @property
     async def num_of_dimensions(self) -> tuple[int, ...]:
