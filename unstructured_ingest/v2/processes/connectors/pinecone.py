@@ -216,19 +216,6 @@ class PineconeUploader(Uploader):
             f"from pinecone index: {resp}"
         )
 
-    def delete_by_query(self, index: "PineconeIndex", query_params: dict) -> None:
-        while True:
-            query_results = index.query(**query_params)
-            matches = query_results.get("matches", [])
-            if not matches:
-                break
-            ids = [match["id"] for match in matches]
-            delete_params = {"ids": ids}
-            if namespace := self.upload_config.namespace:
-                delete_params["namespace"] = namespace
-            index.delete(**delete_params)
-            time.sleep(1)
-
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
             f"deleting any content with metadata "
