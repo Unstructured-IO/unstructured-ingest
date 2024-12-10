@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -112,9 +113,5 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
         pass
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        results = []
-        for text in elements:
-            response = await self.embed_query(query=text)
-            results.append(response)
-
+        results = await asyncio.gather(*[self.embed_query(query=text) for text in elements])
         return results
