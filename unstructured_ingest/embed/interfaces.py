@@ -13,10 +13,6 @@ class EmbeddingConfig(BaseModel):
 class BaseEncoder(ABC):
     config: EmbeddingConfig
 
-    def initialize(self):
-        """Initializes the embedding encoder class. Should also validate the instance
-        is properly configured: e.g., embed a single a element"""
-
     @staticmethod
     def _add_embeddings_to_elements(
         elements: list[dict], embeddings: list[list[float]]
@@ -41,6 +37,10 @@ class BaseEncoder(ABC):
 
 @dataclass
 class BaseEmbeddingEncoder(BaseEncoder, ABC):
+
+    def initialize(self):
+        """Initializes the embedding encoder class. Should also validate the instance
+        is properly configured: e.g., embed a single a element"""
 
     @property
     def num_of_dimensions(self) -> tuple[int, ...]:
@@ -75,6 +75,10 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
 
 @dataclass
 class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
+
+    async def initialize(self):
+        """Initializes the embedding encoder class. Should also validate the instance
+        is properly configured: e.g., embed a single a element"""
 
     @property
     async def num_of_dimensions(self) -> tuple[int, ...]:
