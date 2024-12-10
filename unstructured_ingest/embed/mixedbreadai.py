@@ -1,7 +1,7 @@
 import asyncio
 import os
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr
 
@@ -70,23 +70,19 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
     """
 
     config: MixedbreadAIEmbeddingConfig
-    _request_options: Optional["RequestOptions"] = field(init=False, default=None)
 
     def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
         return self._embed(["Q"])[0]
 
-    def initialize(self):
-        if self.config.api_key is None:
-            raise ValueError(
-                "The Mixedbread AI API key must be specified."
-                + "You either pass it in the constructor using 'api_key'"
-                + "or via the 'MXBAI_API_KEY' environment variable."
-            )
-
+    @requires_dependencies(
+        ["mixedbread_ai"],
+        extras="embed-mixedbreadai",
+    )
+    def get_request_options(self) -> "RequestOptions":
         from mixedbread_ai.core import RequestOptions
 
-        self._request_options = RequestOptions(
+        return RequestOptions(
             max_retries=MAX_RETRIES,
             timeout_in_seconds=TIMEOUT,
             additional_headers={"User-Agent": USER_AGENT},
@@ -114,7 +110,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
                 normalized=True,
                 encoding_format=ENCODING_FORMAT,
                 truncation_strategy=TRUNCATION_STRATEGY,
-                request_options=self._request_options,
+                request_options=self.get_request_options(),
                 input=batch,
             )
             responses.append(response)
@@ -163,24 +159,20 @@ class AsyncMixedbreadAIEmbeddingConfig(MixedbreadAIEmbeddingConfig):
 class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     config: AsyncMixedbreadAIEmbeddingConfig
-    _request_options: Optional["RequestOptions"] = field(init=False, default=None)
 
     async def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
         embedding = await self._embed(["Q"])
         return embedding[0]
 
-    async def initialize(self):
-        if self.config.api_key is None:
-            raise ValueError(
-                "The Mixedbread AI API key must be specified."
-                + "You either pass it in the constructor using 'api_key'"
-                + "or via the 'MXBAI_API_KEY' environment variable."
-            )
-
+    @requires_dependencies(
+        ["mixedbread_ai"],
+        extras="embed-mixedbreadai",
+    )
+    def get_request_options(self) -> "RequestOptions":
         from mixedbread_ai.core import RequestOptions
 
-        self._request_options = RequestOptions(
+        return RequestOptions(
             max_retries=MAX_RETRIES,
             timeout_in_seconds=TIMEOUT,
             additional_headers={"User-Agent": USER_AGENT},
@@ -209,7 +201,7 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
                     normalized=True,
                     encoding_format=ENCODING_FORMAT,
                     truncation_strategy=TRUNCATION_STRATEGY,
-                    request_options=self._request_options,
+                    request_options=self.get_request_options(),
                     input=batch,
                 )
             )
