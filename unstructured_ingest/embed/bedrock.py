@@ -1,11 +1,17 @@
+import asyncio
 import json
 import os
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncContextManager
 
 from pydantic import Field, SecretStr
 
-from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
+from unstructured_ingest.embed.interfaces import (
+    AsyncBaseEmbeddingEncoder,
+    BaseEmbeddingEncoder,
+    EmbeddingConfig,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
@@ -15,6 +21,10 @@ if TYPE_CHECKING:
 
     class BedrockClient(BaseClient):
         def invoke_model(self, body: str, modelId: str, trace: str) -> dict:
+            pass
+
+    class AsyncBedrockClient(BaseClient):
+        async def invoke_model(self, body: str, modelId: str, trace: str) -> dict:
             pass
 
 
@@ -29,7 +39,6 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         extras="bedrock",
     )
     def get_client(self) -> "BedrockClient":
-        # delay import only when needed
         import boto3
 
         bedrock_client = boto3.client(
@@ -111,5 +120,80 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = [self.embed_query(query=e.get("text", "")) for e in elements]
+        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
+        return elements_with_embeddings
+
+
+class AsyncBedrockEmbeddingConfig(EmbeddingConfig):
+    aws_access_key_id: SecretStr
+    aws_secret_access_key: SecretStr
+    region_name: str = "us-west-2"
+    embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
+
+    @requires_dependencies(
+        ["aioboto3"],
+        extras="bedrock",
+    )
+    @asynccontextmanager
+    async def get_client(self) -> AsyncContextManager["AsyncBedrockClient"]:
+        # delay import only when needed
+        import aioboto3
+
+        session = aioboto3.Session()
+        async with session.client(
+            "bedrock-runtime",
+            aws_access_key_id=self.aws_access_key_id.get_secret_value(),
+            aws_secret_access_key=self.aws_secret_access_key.get_secret_value(),
+            region_name=self.region_name,
+        ) as aws_bedrock:
+            yield aws_bedrock
+
+
+@dataclass
+class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
+    config: AsyncBedrockEmbeddingConfig
+
+    async def embed_query(self, query: str) -> list[float]:
+        """Call out to Bedrock embedding endpoint."""
+        # replace newlines, which can negatively affect performance.
+        text = query.replace(os.linesep, " ")
+
+        # format input body for provider
+        provider = self.config.embed_model_name.split(".")[0]
+        input_body = {}
+        if provider == "cohere":
+            if "input_type" not in input_body:
+                input_body["input_type"] = "search_document"
+            input_body["texts"] = [text]
+        else:
+            # includes common provider == "amazon"
+            input_body["inputText"] = text
+        body = json.dumps(input_body)
+
+        try:
+            async with self.config.get_client() as bedrock_client:
+                # invoke bedrock API
+                response = await bedrock_client.invoke_model(
+                    body=body,
+                    modelId=self.config.embed_model_name,
+                    accept="application/json",
+                    contentType="application/json",
+                )
+                async with response.get("body") as client_response:
+                    response_body = await client_response.json()
+
+            # format output based on provider
+            if provider == "cohere":
+                return response_body.get("embeddings")[0]
+            else:
+                # includes common provider == "amazon"
+                return response_body.get("embedding")
+        except Exception as e:
+            raise ValueError(f"Error raised by inference endpoint: {e}")
+
+    async def embed_documents(self, elements: list[dict]) -> list[dict]:
+        embeddings = await asyncio.gather(
+            *[self.embed_query(query=e.get("text", "")) for e in elements]
+        )
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
