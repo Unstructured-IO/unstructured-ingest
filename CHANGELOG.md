@@ -1,9 +1,13 @@
-## 0.3.13-dev1
+## 0.3.13-dev2
 
 ### Fixes
 
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
+
+### Enhancements
+
+* **Async support for all IO-bounded embedders**
 
 ## 0.3.12
 
