@@ -2,9 +2,20 @@ import json
 import os
 from pathlib import Path
 
-from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
+import pytest
+
+from test.integration.embedders.utils import (
+    validate_embedding_output,
+    validate_raw_embedder,
+    validate_raw_embedder_async,
+)
 from test.integration.utils import requires_env
-from unstructured_ingest.embed.voyageai import VoyageAIEmbeddingConfig, VoyageAIEmbeddingEncoder
+from unstructured_ingest.embed.voyageai import (
+    AsyncVoyageAIEmbeddingConfig,
+    AsyncVoyageAIEmbeddingEncoder,
+    VoyageAIEmbeddingConfig,
+    VoyageAIEmbeddingEncoder,
+)
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "VOYAGEAI_API_KEY"
@@ -37,5 +48,19 @@ def test_raw_voyageai_embedder(embedder_file: Path):
         )
     )
     validate_raw_embedder(
+        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1024,)
+    )
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+async def test_raw_async_voyageai_embedder(embedder_file: Path):
+    api_key = get_api_key()
+    embedder = AsyncVoyageAIEmbeddingEncoder(
+        config=AsyncVoyageAIEmbeddingConfig(
+            api_key=api_key,
+        )
+    )
+    await validate_raw_embedder_async(
         embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1024,)
     )
