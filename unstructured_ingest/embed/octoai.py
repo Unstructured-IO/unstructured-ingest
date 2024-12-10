@@ -1,9 +1,14 @@
+import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr
 
-from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
+from unstructured_ingest.embed.interfaces import (
+    AsyncBaseEmbeddingEncoder,
+    BaseEmbeddingEncoder,
+    EmbeddingConfig,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
@@ -15,7 +20,7 @@ from unstructured_ingest.v2.errors import (
 )
 
 if TYPE_CHECKING:
-    from openai import OpenAI
+    from openai import AsyncOpenAI, OpenAI
 
 
 class OctoAiEmbeddingConfig(EmbeddingConfig):
@@ -78,5 +83,34 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         except Exception as e:
             raise self.wrap_error(e=e)
         embeddings = [data.embedding for data in response.data]
+        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
+        return elements_with_embeddings
+
+
+class AsyncOctoAiEmbeddingConfig(OctoAiEmbeddingConfig):
+    @requires_dependencies(
+        ["openai", "tiktoken"],
+        extras="embed-octoai",
+    )
+    def get_client(self) -> "AsyncOpenAI":
+        """Creates an OpenAI python client to embed elements. Uses the OpenAI SDK."""
+        from openai import AsyncOpenAI
+
+        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
+
+
+@dataclass
+class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
+    config: AsyncOctoAiEmbeddingConfig
+
+    async def embed_query(self, query: str):
+        client = self.config.get_client()
+        response = await client.embeddings.create(
+            input=query, model=self.config.embedder_model_name
+        )
+        return response.data[0].embedding
+
+    async def embed_documents(self, elements: list[dict]) -> list[dict]:
+        embeddings = await asyncio.gather(*[self.embed_query(e.get("text", "")) for e in elements])
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
