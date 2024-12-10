@@ -23,6 +23,7 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
 
     # Mock get_client to return our mock_client
     mocker.patch.object(MixedbreadAIEmbeddingConfig, "get_client", return_value=mock_client)
+    mocker.patch.object(MixedbreadAIEmbeddingEncoder, "get_request_options", return_value={})
 
     encoder = MixedbreadAIEmbeddingEncoder(
         config=MixedbreadAIEmbeddingConfig(

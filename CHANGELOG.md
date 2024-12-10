@@ -1,3 +1,8 @@
+## 0.3.8-dev0
+
+### Enhancements
+
+* **Async support for all IO-bounded embedders**
 
 ## 0.3.7
 
