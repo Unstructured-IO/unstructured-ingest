@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator
 
 import networkx as nx
-from cymple import QueryBuilder
 from cymple.typedefs import Properties
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
@@ -209,10 +208,7 @@ class Neo4jUploader(Uploader):
 
         asyncio.run(verify_auth())
 
-    async def create_node(self, client: "AsyncDriver", node: Node) -> None:
-        pass
-
-    async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:
+    async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
         with path.open() as file:
             staged_data = json.load(file)
         graph_data = GraphData.model_validate(staged_data)
@@ -221,45 +217,10 @@ class Neo4jUploader(Uploader):
             for batch_nodes in batch_generator(graph_data.nodes.values()):
                 await self.create_nodes(client=client, batch_nodes=batch_nodes)
 
-            # await self._create_file_node(client, file_data)
-            #
-            # elements = self.get_elements(path=path)
-            # file_id = file_data.identifier
-            # await asyncio.gather(
-            #     *[
-            #         self._create_element_node(
-            #             client=client, element_dict=element_dict, file_id=file_id
-            #         )
-            #         for element_dict in elements
-            #     ]
-            # )
-
-    async def _create_file_node(
-        self,
-        client: "AsyncDriver",
-        file_data: FileData,
-    ) -> None:
-        properties = {"id": file_data.identifier}
-
-        if file_data.source_identifiers:
-            properties["name"] = file_data.source_identifiers.filename
-        if file_data.metadata.date_created:
-            properties["date_created"] = file_data.metadata.date_created.isoformat()
-        if file_data.metadata.date_modified:
-            properties["date_created"] = file_data.metadata.date_modified.isoformat()
-
-        builder = QueryBuilder()
-        query = builder.create().node(labels=["file"], properties=properties)
-
-        await client.execute_query(query.get())
-
-    def get_element_properties(self, element_dict) -> dict:
-        properties = {"id": element_dict["element_id"], "text": element_dict["text"]}
-
-        if embeddings := element_dict.get("embeddings"):
-            properties["embeddings"] = embeddings
-
-        return properties
+    async def create_nodes(self, client: "AsyncDriver", batch_nodes: list[Node]) -> None:
+        node_cqls = [self.create_node_cql(node=node) for node in batch_nodes]
+        cql = "MERGE {}".format(", ".join(node_cqls))
+        print(cql)
 
     def create_node_cql(self, node: Node) -> str:
         identifier = node.node_id
@@ -273,32 +234,6 @@ class Neo4jUploader(Uploader):
             property_string = f" {{{Properties(properties).to_str()}}}"
 
         return f"({identifier}{labels_string}{property_string})"
-
-    async def create_nodes(self, client: "AsyncDriver", batch_nodes: list[Node]) -> None:
-        node_cqls = [self.create_node_cql(node=node) for node in batch_nodes]
-        cql = "MERGE {}".format(", ".join(node_cqls))
-        print(cql)
-
-    async def _create_element_node(
-        self, client: "AsyncDriver", element_dict: dict, file_id: str
-    ) -> None:
-        properties = {"id": element_dict["element_id"], "text": element_dict["text"]}
-
-        if embeddings := element_dict.get("embeddings"):
-            properties["embeddings"] = embeddings
-
-        builder = QueryBuilder()
-        match_query = (
-            builder.match().node(labels="File", properties={"id": file_id}, ref_name="f").with_("f")
-        )
-        query = match_query + (
-            builder.create()
-            .node(labels="Element", properties=properties)
-            .related_from("element_of")
-            .node(ref_name="f")
-        )
-
-        await client.execute_query(query)
 
 
 neo4j_destination_entry = DestinationRegistryEntry(
