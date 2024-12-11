@@ -1,3 +1,8 @@
+## 0.3.8-dev0
+
+### Fixes
+
+* **Prevent pinecone delete from hammering database when deleting**
 
 ## 0.3.7
 
