@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -22,10 +23,11 @@ from unstructured_ingest.v2.processes.connectors.redisdb import (
 )
 
 
-async def validate_upload(client: Redis, upload_file: Path):
-    with upload_file.open() as upload_fp:
-        elements = json.load(upload_fp)
-    first_element = elements[0]
+async def delete_record(client: Redis, element_id: str) -> None:
+    await client.delete(element_id)
+
+
+async def validate_upload(client: Redis, first_element: dict):
     element_id = first_element["element_id"]
     expected_text = first_element["text"]
     expected_embeddings = first_element["embeddings"]
@@ -66,16 +68,31 @@ async def redis_destination_test(
         connector_type=REDIS_CONNECTOR_TYPE,
         identifier="mock-file-data",
     )
+    with upload_file.open() as upload_fp:
+        elements = json.load(upload_fp)
+    first_element = elements[0]
 
-    if uploader.is_async():
-        await uploader.run_async(path=upload_file, file_data=file_data)
+    try:
+        if uploader.is_async():
+            await uploader.run_async(path=upload_file, file_data=file_data)
 
-    if uri:
-        async with from_url(uri) as client:
-            await validate_upload(client=client, upload_file=upload_file)
-    else:
-        async with Redis(**connection_kwargs, password=password) as client:
-            await validate_upload(client=client, upload_file=upload_file)
+        if uri:
+            async with from_url(uri) as client:
+                await validate_upload(client=client, first_element=first_element)
+        else:
+            async with Redis(**connection_kwargs, password=password) as client:
+                await validate_upload(client=client, first_element=first_element)
+    except Exception as e:
+        raise e
+    finally:
+        if uri:
+            async with from_url(uri) as client:
+                tasks = [delete_record(client, element["element_id"]) for element in elements]
+                await asyncio.gather(*tasks)
+        else:
+            async with Redis(**connection_kwargs, password=password) as client:
+                tasks = [delete_record(client, element["element_id"]) for element in elements]
+                await asyncio.gather(*tasks)
 
 
 @pytest.mark.asyncio
