@@ -1,7 +1,4 @@
-import tempfile
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import duckdb
 import pandas as pd
@@ -23,15 +20,15 @@ from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
 )
 
 
-@contextmanager
-def duckdbd_setup(duckdb_schema: Path, temp_dir: Path) -> Generator[Path, None, None]:
+@pytest.fixture
+def provisioned_db_file(duckdb_schema: Path, temp_dir: Path) -> Path:
     db_path = Path(temp_dir) / "temp_duck.db"
     with duckdb.connect(database=db_path) as duckdb_connection:
         with duckdb_schema.open("r") as f:
             query = f.read()
         duckdb_connection.execute(query)
         duckdb_connection.close()
-    yield db_path
+    return db_path
 
 
 def validate_duckdb_destination(db_path: Path, expected_num_elements: int):
@@ -50,37 +47,31 @@ def validate_duckdb_destination(db_path: Path, expected_num_elements: int):
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "duckdb")
-def test_duckdb_destination(upload_file: Path):
-    with duckdbd_setup() as test_db_path:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_data = FileData(
-                source_identifiers=SourceIdentifiers(
-                    fullpath=upload_file.name, filename=upload_file.name
-                ),
-                connector_type=CONNECTOR_TYPE,
-                identifier="mock-file-data",
-            )
+def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_dir: Path):
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock-file-data",
+    )
 
-            # deafults to default stager config
-            stager = DuckDBUploadStager()
-            stager_params = {
-                "elements_filepath": upload_file,
-                "file_data": file_data,
-                "output_dir": temp_dir,
-                "output_filename": "test_db",
-            }
-            staged_path = stager.run(**stager_params)
+    # deafults to default stager config
+    stager = DuckDBUploadStager()
+    stager_params = {
+        "elements_filepath": upload_file,
+        "file_data": file_data,
+        "output_dir": temp_dir,
+        "output_filename": "test_db",
+    }
+    staged_path = stager.run(**stager_params)
 
-            connection_config = DuckDBConnectionConfig(database=str(test_db_path))
-            upload_config = DuckDBUploaderConfig()
-            uploader = DuckDBUploader(
-                connection_config=connection_config, upload_config=upload_config
-            )
+    connection_config = DuckDBConnectionConfig(database=str(provisioned_db_file))
+    upload_config = DuckDBUploaderConfig()
+    uploader = DuckDBUploader(connection_config=connection_config, upload_config=upload_config)
 
-            uploader.run(path=staged_path, file_data=file_data)
+    uploader.run(path=staged_path, file_data=file_data)
 
-            staged_df = pd.read_json(staged_path, orient="records", lines=True)
-            validate_duckdb_destination(db_path=test_db_path, expected_num_elements=len(staged_df))
+    staged_df = pd.read_json(staged_path, orient="records", lines=True)
+    validate_duckdb_destination(db_path=provisioned_db_file, expected_num_elements=len(staged_df))
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])

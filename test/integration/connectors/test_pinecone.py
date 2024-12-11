@@ -256,7 +256,10 @@ def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
         identifier="mock-file-data",
     )
     staged_file = stager.run(
-        file_data, large_metadata_upload_file, tmp_path, large_metadata_upload_file.name
+        elements_filepath=large_metadata_upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=large_metadata_upload_file.name,
     )
     try:
         uploader.run(staged_file, file_data)
