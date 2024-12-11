@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import uuid
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import date, datetime
+from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import networkx as nx
 from cymple.typedefs import Properties
@@ -33,8 +35,20 @@ from unstructured_ingest.v2.processes.connector_registry import (
 if TYPE_CHECKING:
     from neo4j import AsyncDriver, Auth
 
-
 CONNECTOR_TYPE = "neo4j"
+
+
+class Label(Enum):
+    UNSTRUCTURED_ELEMENT = "Unstructured Element"
+    CHUNK = "Chunk"
+    DOCUMENT = "Document"
+
+
+class Relationship(Enum):
+    PART_OF_DOCUMENT = "PART_OF_DOCUMENT"
+    PART_OF_CHUNK = "PART_OF_CHUNK"
+    NEXT_CHUNK = "NEXT_CHUNK"
+    NEXT_ELEMENT = "NEXT_ELEMENT"
 
 
 class Neo4jAccessConfig(AccessConfig):
@@ -94,67 +108,23 @@ class GraphData(BaseModel):
     nodes: dict[str, Node]
     edges: list[Edge]
 
+    @classmethod
+    def from_nx(cls, nx_graph: nx.MultiDiGraph) -> GraphData:
+        nodes = {node.node_id: node for node in nx_graph.nodes()}
+        edges = {
+            Edge(from_node=u.node_id, to_node=v.node_id, relationship=data_dict["relationship"])
+            for u, v, data_dict in nx_graph.edges(data=True)
+        }
+        return GraphData(nodes=nodes, edges=edges)
+
 
 @dataclass
 class Neo4jUploadStager(UploadStager):
-    upload_stager_config: Neo4jUploadStagerConfig = Field(default_factory=Neo4jUploadStagerConfig)
+    upload_stager_config: Neo4jUploadStagerConfig = Field(
+        default_factory=Neo4jUploadStagerConfig, validate_default=True
+    )
 
-    def has_children(self, element: dict) -> bool:
-        return "orig_elements" in element.get("metadata", {})
-
-    def get_children(self, element: dict) -> list[dict]:
-        orig_elements = element.get("metadata", {}).get("orig_elements")
-        return elements_from_base64_gzipped_json(raw_s=orig_elements)
-
-    def element_to_node(self, element: dict) -> Node:
-        properties = {"id": element["element_id"], "text": element["text"]}
-
-        if embeddings := element.get("embeddings"):
-            properties["embeddings"] = embeddings
-
-        return Node(node_id=element["element_id"], properties=properties, labels=["element"])
-
-    def create_graph(self, elements: list[dict], parent_node: Node) -> nx.Graph:
-        graph = nx.Graph()
-        if parent_node not in graph.nodes:
-            graph.add_node(parent_node)
-        for element in elements:
-            element_type = element["type"]
-            element_type_node = Node(node_id=element_type)
-            if element_type_node not in graph.nodes:
-                graph.add_node(element_type_node)
-            element_node = self.element_to_node(element=element)
-            graph.add_edge(element_node, element_type_node, relationship="element type")
-            if self.has_children(element):
-                element_node.labels.append("chunked_element")
-                graph.add_node(element_node)
-                for child in self.get_children(element):
-                    child_element_node = self.element_to_node(element=child)
-                    graph.add_node(child_element_node)
-                    graph.add_edge(element_node, child_element_node, relationship="chunked from")
-            graph.add_edge(element_node, parent_node, relationship="belongs to")
-        return graph
-
-    @staticmethod
-    def parse_date_string(date_string: str) -> date:
-        try:
-            timestamp = float(date_string)
-            return datetime.fromtimestamp(timestamp)
-        except Exception as e:
-            logger.debug(f"date {date_string} string not a timestamp: {e}")
-        return parser.parse(date_string)
-
-    def file_data_to_node(self, file_data: FileData) -> Node:
-        properties = {
-            "name": file_data.source_identifiers.filename,
-        }
-        if date_created := file_data.metadata.date_created:
-            properties["date_created"] = parser.parse(date_created).isoformat()
-        if date_modified := file_data.metadata.date_modified:
-            properties["date_modified"] = parser.parse(date_modified).isoformat()
-        return Node(node_id=file_data.identifier, properties=properties, labels=["file"])
-
-    def run(
+    def run(  # type: ignore
         self,
         elements_filepath: Path,
         file_data: FileData,
@@ -164,25 +134,87 @@ class Neo4jUploadStager(UploadStager):
     ) -> Path:
         with elements_filepath.open() as file:
             elements = json.load(file)
-        graph = self.create_graph(elements, self.file_data_to_node(file_data=file_data))
-        nodes = list(graph.nodes())
-        node_dict = {node.node_id: node for node in nodes}
-        edges = list(graph.edges(data=True))
-        edges_dict = [
-            Edge(
-                from_node=edge[0].node_id,
-                to_node=edge[1].node_id,
-                relationship=edge[2]["relationship"],
-            )
-            for edge in edges
-        ]
-        data = GraphData(nodes=node_dict, edges=edges_dict)
-        # data = {"nodes": nodes_dict, "edges": edges_dict}
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(data.model_dump(), output_file, indent=2)
-        return output_path
+
+        nx_graph = self._create_lexical_graph(
+            elements, self._create_document_node(file_data=file_data)
+        )
+        output_filepath = Path(output_dir) / f"{output_filename}.json"
+        output_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_filepath, "w") as file:
+            json.dump(GraphData.from_nx(nx_graph), file, indent=4)
+
+        return output_filepath
+
+    def _create_lexical_graph(self, elements: list[dict], document_node: Node) -> nx.Graph:
+        graph = nx.MultiDiGraph()
+        graph.add_node(document_node)
+
+        previous_node: Optional[Node] = None
+        # TODO(Filip Knefel): Consolidate the nodes create/add code in this loop
+        for element in elements:
+            if self._is_chunk(element):
+                chunk_node = self._create_element_node(element)
+                if previous_node:
+                    graph.add_edge(
+                        chunk_node, previous_node, relationship=Relationship.NEXT_CHUNK.value
+                    )
+                previous_node = chunk_node
+                graph.add_edge(
+                    chunk_node, document_node, relationship=Relationship.PART_OF_DOCUMENT.value
+                )
+                origin_element_nodes = [
+                    self._create_element_node(origin_element)
+                    for origin_element in self._get_origin_elements(element)
+                ]
+                graph.add_edges_from(
+                    [
+                        (origin_element_node, chunk_node)
+                        for origin_element_node in origin_element_nodes
+                    ],
+                    relationship=Relationship.PART_OF_CHUNK.value,
+                )
+            else:
+                element_node = self._create_element_node(element)
+                graph.add_edge(
+                    element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT.value
+                )
+                if previous_node:
+                    graph.add_edge(
+                        element_node, previous_node, relationship=Relationship.NEXT_CHUNK.value
+                    )
+                previous_node = element_node
+
+        return graph
+
+    # TODO(Filip Knefel): Ensure _is_chunk is as reliable as possible, consider different checks
+    def _is_chunk(self, element: dict) -> bool:
+        return "orig_elements" in element.get("metadata", {})
+
+    def _create_document_node(self, file_data: FileData) -> Node:
+        properties = {
+            "name": file_data.source_identifiers.filename,
+        }
+        if date_created := file_data.metadata.date_created:
+            properties["date_created"] = parser.parse(date_created).isoformat()
+        if date_modified := file_data.metadata.date_modified:
+            properties["date_modified"] = parser.parse(date_modified).isoformat()
+        return Node(
+            node_id=file_data.identifier, properties=properties, labels=[Label.DOCUMENT.value]
+        )
+
+    def _create_element_node(self, element: dict) -> Node:
+        properties = {"id": element["element_id"], "text": element["text"]}
+
+        if embeddings := element.get("embeddings"):
+            properties["embeddings"] = embeddings
+
+        label = Label.UNSTRUCTURED_ELEMENT if self._is_chunk(element) else Label.CHUNK
+        return Node(node_id=element["element_id"], properties=properties, labels=[label.value])
+
+    def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
+        orig_elements = chunk_element.get("metadata", {}).get("orig_elements")
+        return elements_from_base64_gzipped_json(raw_s=orig_elements)
 
 
 class Neo4jUploaderConfig(UploaderConfig):
