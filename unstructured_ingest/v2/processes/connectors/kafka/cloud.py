@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret, SecretStr
 
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -50,6 +51,7 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
             "sasl.password": access_config.secret.get_secret_value(),
             "sasl.mechanism": "PLAIN",
             "security.protocol": "SASL_SSL",
+            "logger": logger,
         }
 
         return conf
@@ -65,6 +67,7 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
             "sasl.password": access_config.secret.get_secret_value(),
             "sasl.mechanism": "PLAIN",
             "security.protocol": "SASL_SSL",
+            "logger": logger,
         }
 
         return conf
