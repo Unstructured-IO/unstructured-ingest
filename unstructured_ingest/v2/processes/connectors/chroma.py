@@ -82,35 +82,17 @@ class ChromaUploadStager(UploadStager):
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
 
-    @staticmethod
-    def conform_dict(data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         Prepares dictionary in the format that Chroma requires
         """
+        data = element_dict.copy()
         return {
             "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             "embedding": data.pop("embeddings", None),
             "document": data.pop("text", None),
             "metadata": flatten_dict(data, separator="-", flatten_lists=True, remove_none=True),
         }
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        conformed_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
-        return output_path
 
 
 class ChromaUploaderConfig(UploaderConfig):

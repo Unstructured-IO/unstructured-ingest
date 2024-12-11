@@ -8,11 +8,16 @@ from typing import Generator
 from uuid import uuid4
 
 import pytest
+from _pytest.fixtures import TopRequest
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.core.openapi.shared.exceptions import NotFoundException
 
 from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
+)
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError
@@ -262,3 +267,19 @@ def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
         raise pytest.fail("Upload request failed due to metadata exceeding limits.")
 
     validate_pinecone_index(pinecone_index, 1, interval=5)
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_pinecone_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = PineconeUploadStager()
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

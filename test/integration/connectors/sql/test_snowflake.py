@@ -6,11 +6,16 @@ import docker
 import pandas as pd
 import pytest
 import snowflake.connector as sf
+from _pytest.fixtures import TopRequest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
 from test.integration.connectors.utils.docker import container_context
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -112,7 +117,7 @@ async def test_snowflake_source():
             await source_connector_validation(
                 indexer=indexer,
                 downloader=downloader,
-                configs=ValidationConfigs(
+                configs=SourceValidationConfigs(
                     test_id="snowflake",
                     expected_num_files=SEED_DATA_ROWS,
                     expected_number_indexed_file_data=4,
@@ -207,3 +212,19 @@ async def test_snowflake_destination(upload_file: Path):
                 connect_params=connect_params,
                 expected_num_elements=expected_num_elements,
             )
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_snowflake_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = SnowflakeUploadStager()
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

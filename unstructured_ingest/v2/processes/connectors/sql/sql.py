@@ -238,27 +238,24 @@ class SQLUploadStagerConfig(UploadStagerConfig):
 class SQLUploadStager(UploadStager):
     upload_stager_config: SQLUploadStagerConfig = field(default_factory=SQLUploadStagerConfig)
 
-    @staticmethod
-    def conform_dict(data: dict, file_data: FileData) -> pd.DataFrame:
-        working_data = data.copy()
-        output = []
-        for element in working_data:
-            metadata: dict[str, Any] = element.pop("metadata", {})
-            data_source = metadata.pop("data_source", {})
-            coordinates = metadata.pop("coordinates", {})
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        metadata: dict[str, Any] = data.pop("metadata", {})
+        data_source = metadata.pop("data_source", {})
+        coordinates = metadata.pop("coordinates", {})
 
-            element.update(metadata)
-            element.update(data_source)
-            element.update(coordinates)
+        data.update(metadata)
+        data.update(data_source)
+        data.update(coordinates)
 
-            element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
 
-            # remove extraneous, not supported columns
-            element = {k: v for k, v in element.items() if k in _COLUMNS}
-            element[RECORD_ID_LABEL] = file_data.identifier
-            output.append(element)
+        # remove extraneous, not supported columns
+        element = {k: v for k, v in data.items() if k in _COLUMNS}
+        element[RECORD_ID_LABEL] = file_data.identifier
+        return element
 
-        df = pd.DataFrame.from_dict(output)
+    def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
             df[column] = df[column].apply(parse_date_string)
         for column in filter(
@@ -283,19 +280,19 @@ class SQLUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents: list[dict] = json.load(elements_file)
+        elements_contents = self.get_data(elements_filepath=elements_filepath)
 
-        df = self.conform_dict(data=elements_contents, file_data=file_data)
-        if Path(output_filename).suffix != ".json":
-            output_filename = f"{output_filename}.json"
-        else:
-            output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / Path(f"{output_filename}")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame(
+            data=[
+                self.conform_dict(element_dict=element_dict, file_data=file_data)
+                for element_dict in elements_contents
+            ]
+        )
+        df = self.conform_dataframe(df=df)
 
-        with output_path.open("w") as output_file:
-            df.to_json(output_file, orient="records", lines=True)
+        output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
+
+        self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
         return output_path
 
 

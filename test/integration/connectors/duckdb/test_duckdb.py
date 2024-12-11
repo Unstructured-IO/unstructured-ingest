@@ -6,8 +6,13 @@ from typing import Generator
 import duckdb
 import pandas as pd
 import pytest
+from _pytest.fixtures import TopRequest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
     CONNECTOR_TYPE,
@@ -19,18 +24,14 @@ from unstructured_ingest.v2.processes.connectors.duckdb.duckdb import (
 
 
 @contextmanager
-def duckdbd_setup() -> Generator[Path, None, None]:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        db_path = Path(temp_dir) / "temp_duck.db"
-        db_init_path = Path(__file__).parent / "duckdb-schema.sql"
-        assert db_init_path.exists()
-        assert db_init_path.is_file()
-        with duckdb.connect(database=db_path) as duckdb_connection:
-            with db_init_path.open("r") as f:
-                query = f.read()
-            duckdb_connection.execute(query)
-            duckdb_connection.close()
-        yield db_path
+def duckdbd_setup(duckdb_schema: Path, temp_dir: Path) -> Generator[Path, None, None]:
+    db_path = Path(temp_dir) / "temp_duck.db"
+    with duckdb.connect(database=db_path) as duckdb_connection:
+        with duckdb_schema.open("r") as f:
+            query = f.read()
+        duckdb_connection.execute(query)
+        duckdb_connection.close()
+    yield db_path
 
 
 def validate_duckdb_destination(db_path: Path, expected_num_elements: int):
@@ -80,3 +81,19 @@ def test_duckdb_destination(upload_file: Path):
 
             staged_df = pd.read_json(staged_path, orient="records", lines=True)
             validate_duckdb_destination(db_path=test_db_path, expected_num_elements=len(staged_df))
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_duckdb_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = DuckDBUploadStager()
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

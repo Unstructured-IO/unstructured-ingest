@@ -4,12 +4,17 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from _pytest.fixtures import TopRequest
 from psycopg2 import connect
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
 from test.integration.connectors.utils.docker_compose import docker_compose_context
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from unstructured_ingest.v2.interfaces import FileData
@@ -80,7 +85,7 @@ async def test_postgres_source():
             await source_connector_validation(
                 indexer=indexer,
                 downloader=downloader,
-                configs=ValidationConfigs(
+                configs=SourceValidationConfigs(
                     test_id="postgres",
                     expected_num_files=SEED_DATA_ROWS,
                     expected_number_indexed_file_data=4,
@@ -178,3 +183,19 @@ async def test_postgres_destination(upload_file: Path):
                 expected_text=sample_element["text"],
                 test_embedding=sample_element["embeddings"],
             )
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_postgres_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = PostgresUploadStager()
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

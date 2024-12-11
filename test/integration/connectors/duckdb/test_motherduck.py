@@ -23,14 +23,11 @@ from unstructured_ingest.v2.processes.connectors.duckdb.motherduck import (
 
 
 @contextmanager
-def motherduck_setup(md_token: str) -> Generator[Path, None, None]:
+def motherduck_setup(md_token: str, duckdb_schema: Path) -> Generator[Path, None, None]:
     database_name = f"test_{str(uuid.uuid4()).replace('-', '_')}"
     try:
-        db_init_path = Path(__file__).parent / "duckdb-schema.sql"
-        assert db_init_path.exists()
-        assert db_init_path.is_file()
         with duckdb.connect(f"md:?motherduck_token={md_token}") as md_conn:
-            with db_init_path.open("r") as f:
+            with duckdb_schema.open("r") as f:
                 query = f.read()
             md_conn.execute(f"CREATE DATABASE {database_name}")
             md_conn.execute(f"USE {database_name}")

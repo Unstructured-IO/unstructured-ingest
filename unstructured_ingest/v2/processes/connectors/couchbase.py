@@ -88,32 +88,16 @@ class CouchbaseUploadStager(UploadStager):
         default_factory=lambda: CouchbaseUploadStagerConfig()
     )
 
-    def run(
-        self,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        output_elements = []
-        for element in elements_contents:
-            new_doc = {
-                element["element_id"]: {
-                    "embedding": element.get("embeddings", None),
-                    "text": element.get("text", None),
-                    "metadata": element.get("metadata", None),
-                    "type": element.get("type", None),
-                }
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        return {
+            data["element_id"]: {
+                "embedding": data.get("embeddings", None),
+                "text": data.get("text", None),
+                "metadata": data.get("metadata", None),
+                "type": data.get("type", None),
             }
-            output_elements.append(new_doc)
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(output_elements, output_file)
-        return output_path
+        }
 
 
 class CouchbaseUploaderConfig(UploaderConfig):

@@ -74,11 +74,11 @@ class WeaviateUploadStager(UploadStager):
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
 
-    @classmethod
-    def conform_dict(cls, data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         Updates the element dictionary to conform to the Weaviate schema
         """
+        data = element_dict.copy()
         working_data = data.copy()
         # Dict as string formatting
         if (
@@ -111,7 +111,7 @@ class WeaviateUploadStager(UploadStager):
             .get("data_source", {})
             .get("date_created")
         ):
-            working_data["metadata"]["data_source"]["date_created"] = cls.parse_date_string(
+            working_data["metadata"]["data_source"]["date_created"] = self.parse_date_string(
                 date_created
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
@@ -122,7 +122,7 @@ class WeaviateUploadStager(UploadStager):
             .get("data_source", {})
             .get("date_modified")
         ):
-            working_data["metadata"]["data_source"]["date_modified"] = cls.parse_date_string(
+            working_data["metadata"]["data_source"]["date_modified"] = self.parse_date_string(
                 date_modified
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
@@ -133,14 +133,14 @@ class WeaviateUploadStager(UploadStager):
             .get("data_source", {})
             .get("date_processed")
         ):
-            working_data["metadata"]["data_source"]["date_processed"] = cls.parse_date_string(
+            working_data["metadata"]["data_source"]["date_processed"] = self.parse_date_string(
                 date_processed
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
             )
 
         if last_modified := working_data.get("metadata", {}).get("last_modified"):
-            working_data["metadata"]["last_modified"] = cls.parse_date_string(
+            working_data["metadata"]["last_modified"] = self.parse_date_string(
                 last_modified
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
@@ -158,25 +158,6 @@ class WeaviateUploadStager(UploadStager):
 
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        updated_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(updated_elements, output_file, indent=2)
-        return output_path
 
 
 class WeaviateUploaderConfig(UploaderConfig):

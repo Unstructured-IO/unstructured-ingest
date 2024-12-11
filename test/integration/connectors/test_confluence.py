@@ -5,8 +5,8 @@ import pytest
 from test.integration.connectors.utils.constants import (
     SOURCE_TAG,
 )
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -60,7 +60,7 @@ async def test_confluence_source(temp_dir):
     await source_connector_validation(
         indexer=indexer,
         downloader=downloader,
-        configs=ValidationConfigs(
+        configs=SourceValidationConfigs(
             test_id="confluence",
             expected_num_files=11,
             validate_downloaded_files=True,
@@ -107,7 +107,7 @@ async def test_confluence_source_large(temp_dir):
     await source_connector_validation(
         indexer=indexer,
         downloader=downloader,
-        configs=ValidationConfigs(
+        configs=SourceValidationConfigs(
             test_id="confluence_large", expected_num_files=250, validate_file_data=False
         ),
     )

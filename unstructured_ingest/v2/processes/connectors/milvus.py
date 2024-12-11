@@ -91,8 +91,8 @@ class MilvusUploadStager(UploadStager):
             pass
         return parser.parse(date_string).timestamp()
 
-    def conform_dict(self, data: dict, file_data: FileData) -> dict:
-        working_data = data.copy()
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        working_data = element_dict.copy()
         if self.upload_stager_config.flatten_metadata and (
             metadata := working_data.pop("metadata", None)
         ):
@@ -133,29 +133,6 @@ class MilvusUploadStager(UploadStager):
                 working_data[json_dumps_field] = json.dumps(working_data[json_dumps_field])
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents: list[dict[str, Any]] = json.load(elements_file)
-        new_content = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        output_filename_path = Path(output_filename)
-        if output_filename_path.suffix == ".json":
-            output_path = Path(output_dir) / output_filename_path
-        else:
-            output_path = Path(output_dir) / output_filename_path.with_suffix(".json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with output_path.open("w") as output_file:
-            json.dump(new_content, output_file, indent=2)
-        return output_path
 
 
 class MilvusUploaderConfig(UploaderConfig):
