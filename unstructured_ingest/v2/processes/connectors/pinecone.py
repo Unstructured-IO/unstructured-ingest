@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
+from unstructured_ingest.utils.data_prep import (
+    flatten_dict,
+    generator_batching_wbytes,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
@@ -148,8 +151,10 @@ class PineconeUploadStager(UploadStager):
 
         metadata[RECORD_ID_LABEL] = file_data.identifier
 
+        # To support more optimal deletes, a prefix is suggested for each record:
+        # https://docs.pinecone.io/guides/data/manage-rag-documents#delete-all-records-for-a-parent-document
         return {
-            "id": get_enhanced_element_id(element_dict=element_dict, file_data=file_data),
+            "id": f"{file_data.identifier}#{get_enhanced_element_id(element_dict=element_dict, file_data=file_data)}",  # noqa:E501
             "values": embeddings,
             "metadata": metadata,
         }
@@ -215,18 +220,6 @@ class PineconeUploader(Uploader):
             f"from pinecone index: {resp}"
         )
 
-    def delete_by_query(self, index: "PineconeIndex", query_params: dict) -> None:
-        while True:
-            query_results = index.query(**query_params)
-            matches = query_results.get("matches", [])
-            if not matches:
-                break
-            ids = [match["id"] for match in matches]
-            delete_params = {"ids": ids}
-            if namespace := self.upload_config.namespace:
-                delete_params["namespace"] = namespace
-            index.delete(**delete_params)
-
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
             f"deleting any content with metadata "
@@ -234,26 +227,21 @@ class PineconeUploader(Uploader):
             f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        index_stats = index.describe_index_stats()
-        dimension = index_stats["dimension"]
-        total_vectors = index_stats["total_vector_count"]
-        if total_vectors == 0:
-            return
-        while total_vectors > 0:
-            top_k = min(total_vectors, MAX_QUERY_RESULTS)
-            query_params = {
-                "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
-                "vector": [0] * dimension,
-                "top_k": top_k,
-            }
+        list_kwargs = {"prefix": f"{file_data.identifier}#"}
+        deleted_ids = 0
+        if namespace := self.upload_config.namespace:
+            list_kwargs["namespace"] = namespace
+        for ids in index.list(**list_kwargs):
+            deleted_ids += len(ids)
+            delete_kwargs = {"ids": ids}
             if namespace := self.upload_config.namespace:
-                query_params["namespace"] = namespace
-            self.delete_by_query(index=index, query_params=query_params)
-            index_stats = index.describe_index_stats()
-            total_vectors = index_stats["total_vector_count"]
-
+                delete_resp = delete_kwargs["namespace"] = namespace
+                # delete_resp should be an empty dict if there were no errors
+                if delete_resp:
+                    logger.error(f"failed to delete batch of ids: {delete_resp}")
+            index.delete(**delete_kwargs)
         logger.info(
-            f"deleted {total_vectors} records with metadata "
+            f"deleted {deleted_ids} records with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index"
         )

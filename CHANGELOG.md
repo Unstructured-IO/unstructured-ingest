@@ -1,5 +1,16 @@
+## 0.3.9-dev0
 
-## 0.3.7-dev12
+## Fixes
+
+* **Test fix to ChromaDB reverting client creating order**
+
+## 0.3.8
+
+### Fixes
+
+* **Prevent pinecone delete from hammering database when deleting**
+
+## 0.3.7
 
 ### Fixes
 
