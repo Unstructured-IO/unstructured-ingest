@@ -1,3 +1,9 @@
+## 0.3.9-dev0
+
+## Fixes
+
+* **Test fix to ChromaDB reverting client creating order**
+
 ## 0.3.8
 
 ### Fixes
