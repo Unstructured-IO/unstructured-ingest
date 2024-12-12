@@ -138,7 +138,7 @@ async def test_singlestore_destination(upload_file: Path, temp_dir: Path):
                 table_name="elements",
             ),
         )
-
+        uploader.precheck()
         uploader.run(path=staged_path, file_data=mock_file_data)
 
         with staged_path.open("r") as f:

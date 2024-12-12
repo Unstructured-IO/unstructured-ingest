@@ -165,6 +165,7 @@ async def test_s3_destination(upload_file: Path):
         identifier="mock file data",
     )
     try:
+        uploader.precheck()
         if uploader.is_async():
             await uploader.run_async(path=upload_file, file_data=file_data)
         else:
