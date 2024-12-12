@@ -15,6 +15,7 @@ from dateutil import parser
 from pydantic import BaseModel, ConfigDict, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -112,12 +113,10 @@ class Neo4jUploadStager(UploadStager):
             if self._is_chunk(element):
                 chunk_node = self._create_element_node(element)
                 if previous_node:
-                    graph.add_edge(
-                        chunk_node, previous_node, relationship=_Relationship.NEXT_CHUNK.value
-                    )
+                    graph.add_edge(chunk_node, previous_node, relationship=Relationship.NEXT_CHUNK)
                 previous_node = chunk_node
                 graph.add_edge(
-                    chunk_node, document_node, relationship=_Relationship.PART_OF_DOCUMENT.value
+                    chunk_node, document_node, relationship=Relationship.PART_OF_DOCUMENT
                 )
                 origin_element_nodes = [
                     self._create_element_node(origin_element)
@@ -128,16 +127,16 @@ class Neo4jUploadStager(UploadStager):
                         (origin_element_node, chunk_node)
                         for origin_element_node in origin_element_nodes
                     ],
-                    relationship=_Relationship.PART_OF_CHUNK.value,
+                    relationship=Relationship.PART_OF_CHUNK,
                 )
             else:
                 element_node = self._create_element_node(element)
                 graph.add_edge(
-                    element_node, document_node, relationship=_Relationship.PART_OF_DOCUMENT.value
+                    element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT
                 )
                 if previous_node:
                     graph.add_edge(
-                        element_node, previous_node, relationship=_Relationship.NEXT_CHUNK.value
+                        element_node, previous_node, relationship=Relationship.NEXT_CHUNK
                     )
                 previous_node = element_node
 
@@ -155,7 +154,7 @@ class Neo4jUploadStager(UploadStager):
             properties["date_created"] = parser.parse(date_created).isoformat()
         if date_modified := file_data.metadata.date_modified:
             properties["date_modified"] = parser.parse(date_modified).isoformat()
-        return _Node(id_=file_data.identifier, properties=properties, labels=[_Label.DOCUMENT])
+        return _Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT])
 
     def _create_element_node(self, element: dict) -> _Node:
         properties = {"id": element["element_id"], "text": element["text"]}
@@ -163,7 +162,7 @@ class Neo4jUploadStager(UploadStager):
         if embeddings := element.get("embeddings"):
             properties["embeddings"] = embeddings
 
-        label = _Label.CHUNK if self._is_chunk(element) else _Label.UNSTRUCTURED_ELEMENT
+        label = Label.CHUNK if self._is_chunk(element) else Label.UNSTRUCTURED_ELEMENT
         return _Node(id_=element["element_id"], properties=properties, labels=[label])
 
     def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
@@ -182,7 +181,7 @@ class _GraphData(BaseModel):
             _Edge(
                 source_id=u.id_,
                 destination_id=v.id_,
-                relationship=_Relationship(data_dict["relationship"]),
+                relationship=Relationship(data_dict["relationship"]),
             )
             for u, v, data_dict in nx_graph.edges(data=True)
         ]
@@ -193,7 +192,7 @@ class _Node(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    labels: list[_Label] = Field(default_factory=list)
+    labels: list[Label] = Field(default_factory=list)
     properties: dict = Field(default_factory=dict)
 
     def __hash__(self):
@@ -205,16 +204,16 @@ class _Edge(BaseModel):
 
     source_id: str
     destination_id: str
-    relationship: _Relationship
+    relationship: Relationship
 
 
-class _Label(Enum):
+class Label(str, Enum):
     UNSTRUCTURED_ELEMENT = "UnstructuredElement"
     CHUNK = "Chunk"
     DOCUMENT = "Document"
 
 
-class _Relationship(Enum):
+class Relationship(str, Enum):
     PART_OF_DOCUMENT = "PART_OF_DOCUMENT"
     PART_OF_CHUNK = "PART_OF_CHUNK"
     NEXT_CHUNK = "NEXT_CHUNK"
@@ -254,20 +253,22 @@ class Neo4jUploader(Uploader):
             await self._merge_graph(graph_data=graph_data, client=client)
 
     async def _merge_graph(self, graph_data: _GraphData, client: AsyncDriver) -> None:
-        nodes_by_labels: defaultdict[tuple[_Label, ...], list[_Node]] = defaultdict(list)
+        nodes_by_labels: defaultdict[tuple[Label, ...], list[_Node]] = defaultdict(list)
         for node in graph_data.nodes:
             nodes_by_labels[tuple(node.labels)].append(node)
 
+        # NOTE: Processed in parallel as there's no overlap between accessed nodes
         await self._execute_queries(
             [self._create_nodes_query(nodes, labels) for labels, nodes in nodes_by_labels.items()],
             client=client,
             in_parallel=True,
         )
 
-        edges_by_relationship: defaultdict[_Relationship, list[_Edge]] = defaultdict(list)
+        edges_by_relationship: defaultdict[Relationship, list[_Edge]] = defaultdict(list)
         for edge in graph_data.edges:
             edges_by_relationship[edge.relationship].append(edge)
 
+        # NOTE: Processed sequentially to avoid queries locking node access to one another
         await self._execute_queries(
             [
                 self._create_edges_query(edges, relationship)
@@ -280,21 +281,27 @@ class Neo4jUploader(Uploader):
     async def _execute_queries(
         queries_with_parameters: list[tuple[str, dict]],
         client: AsyncDriver,
-        in_parallel: bool = True,
+        in_parallel: bool = False,
     ) -> None:
         if in_parallel:
-            asyncio.gather(
+            logger.debug(f"Executing {len(queries_with_parameters)} queries in parallel.")
+            await asyncio.gather(
                 *[
                     client.execute_query(query, parameters_=parameters)
                     for query, parameters in queries_with_parameters
                 ]
             )
+            logger.debug("Finished executing parallel queries.")
         else:
-            for query, parameters in queries_with_parameters:
+            logger.debug(f"Executing {len(queries_with_parameters)} queries sequentially.")
+            for i, (query, parameters) in enumerate(queries_with_parameters):
+                logger.debug(f"Query #{i} started.")
                 await client.execute_query(query, parameters_=parameters)
+                logger.debug(f"Query #{i} finished.")
+            logger.debug("Finished executing sequential queries.")
 
     @staticmethod
-    def _create_nodes_query(nodes: list[_Node], labels: tuple[_Label, ...]) -> tuple[str, dict]:
+    def _create_nodes_query(nodes: list[_Node], labels: tuple[Label, ...]) -> tuple[str, dict]:
         labels_string = ", ".join(labels)
         query_string = f"""
             UNWIND $nodes AS node
@@ -305,7 +312,8 @@ class Neo4jUploader(Uploader):
         return query_string, parameters
 
     @staticmethod
-    def _create_edges_query(edges: list[_Edge], relationship: _Relationship) -> tuple[str, dict]:
+    def _create_edges_query(edges: list[_Edge], relationship: Relationship) -> tuple[str, dict]:
+        logger.debug(f"Preparing merge query for {len(edges)} {relationship} relationships.")
         query_string = f"""
             UNWIND $edges AS edge
             MATCH (u {{id: edge.source}}), (v {{id: edge.destination}})
