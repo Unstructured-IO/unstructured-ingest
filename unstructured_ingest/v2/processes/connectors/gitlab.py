@@ -146,11 +146,11 @@ class GitLabIndexer(Indexer):
         """
 
         try:
-            gitlab = self.connection_config.get_client()
-            if self.connection_config.access_config.get_secret_value().access_token is not None:
-                gitlab.auth()
-            else:
-                gitlab.projects.get(self.connection_config.repo_path)
+            with self.connection_config.get_client() as client:
+                if self.connection_config.access_config.get_secret_value().access_token is not None:
+                    client.auth()
+                else:
+                    client.projects.get(self.connection_config.repo_path)
 
         except Exception as e:
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
