@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import networkx as nx
-from cymple.typedefs import Properties
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
@@ -250,82 +249,70 @@ class Neo4jUploader(Uploader):
         async with self.connection_config.get_client() as client:
             await self._merge_graph(graph_data=graph_data, client=client)
 
-    # numbers = [{"value": random()} for _ in range(10000)]
-    # driver.execute_query("""
-    #     WITH $numbers AS batch
-    #     UNWIND batch AS node
-    #     MERGE (n:Number)
-    #     SET n.value = node.value
-    #     """, numbers=numbers,
-    # )
-    # https://community.neo4j.com/t/iterate-over-list-of-objects-and-create-nodes-by-properties-of-objects/46205/8
     async def _merge_graph(self, graph_data: GraphData, client: AsyncDriver) -> None:
         nodes_by_labels: defaultdict[tuple[str, ...], list[Node]] = defaultdict(list)
         for node in graph_data.nodes:
             nodes_by_labels[tuple(node.labels)].append(node)
 
-        await asyncio.gather(
-            *[
-                self._create_nodes(nodes, labels, client)
-                for labels, nodes in nodes_by_labels.items()
-            ]
+        await self._execute_queries(
+            [self._create_nodes_query(nodes, labels) for labels, nodes in nodes_by_labels.items()],
+            client=client,
+            in_parallel=True,
         )
 
         edges_by_relationship: defaultdict[str, list[Edge]] = defaultdict(list)
         for edge in graph_data.edges:
             edges_by_relationship[edge.relationship].append(edge)
 
-        for relationship, edges in edges_by_relationship.items():
-            await self._create_edges(edges, relationship, client)
+        await self._execute_queries(
+            [
+                self._create_edges_query(edges, relationship)
+                for relationship, edges in edges_by_relationship.items()
+            ],
+            client=client,
+        )
 
-    async def _create_nodes(
-        self, nodes: list[Node], labels: tuple[str, ...], client: AsyncDriver
+    @staticmethod
+    async def _execute_queries(
+        queries_with_parameters: list[tuple[str, dict]],
+        client: AsyncDriver,
+        in_parallel: bool = True,
     ) -> None:
+        if in_parallel:
+            asyncio.gather(
+                *[
+                    client.execute_query(query, parameters_=parameters)
+                    for query, parameters in queries_with_parameters
+                ]
+            )
+        else:
+            for query, parameters in queries_with_parameters:
+                await client.execute_query(query, parameters_=parameters)
+
+    @staticmethod
+    def _create_nodes_query(nodes: list[Node], labels: tuple[str, ...]) -> tuple[str, dict]:
         labels_string = ", ".join(labels)
-        await client.execute_query(
-            f"""
+        query_string = f"""
             UNWIND $nodes AS node
             MERGE (n: {labels_string} {{id: node.id}})
             SET n += node.properties
-            """,
-            nodes=[{"id": node.id_, "properties": node.properties} for node in nodes],
-        )
+            """
+        parameters = {"nodes": [{"id": node.id_, "properties": node.properties} for node in nodes]}
+        return query_string, parameters
 
-    async def _create_edges(
-        self, edges: list[Edge], relationship: str, client: AsyncDriver
-    ) -> None:
-        await client.execute_query(
-            f"""
+    @staticmethod
+    def _create_edges_query(edges: list[Edge], relationship: str) -> tuple[str, dict]:
+        query_string = f"""
             UNWIND $edges AS edge
             MATCH (u {{id: edge.source}}), (v {{id: edge.destination}})
             MERGE (u)-[:{relationship}]->(v)
-            """,
-            edges=[
-                {
-                    "source": edge.source_id,
-                    "destination": edge.destination_id,
-                }
-                for edge in edges
-            ],
-        )
-
-    async def create_nodes(self, client: "AsyncDriver", batch_nodes: list[Node]) -> None:
-        node_cqls = [self.create_node_cql(node=node) for node in batch_nodes]
-        cql = "MERGE {}".format(", ".join(node_cqls))
-        print(cql)
-
-    def create_node_cql(self, node: Node) -> str:
-        identifier = node.id_
-        labels = node.labels
-        labels_string = f':{"&".join(labels).strip()}'
-
-        properties = node.properties
-        if not properties:
-            property_string = ""
-        else:
-            property_string = f" {{{Properties(properties).to_str()}}}"
-
-        return f"({identifier}{labels_string}{property_string})"
+            """
+        parameters = {
+            "edges": [
+                {"source": edge.source_id, "destination": edge.destination_id} for edge in edges
+            ]
+        }
+        return query_string, parameters
 
 
 neo4j_destination_entry = DestinationRegistryEntry(
