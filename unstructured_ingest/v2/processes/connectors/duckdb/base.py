@@ -86,7 +86,7 @@ class BaseDuckDBUploadStager(UploadStager):
             self.conform_dict(element_dict=element_dict, file_data=file_data)
             for element_dict in elements_contents
         ]
-        df = pd.DataFrame.from_dict(output)
+        df = pd.DataFrame(data=output)
 
         for column in filter(
             lambda x: x in df.columns,

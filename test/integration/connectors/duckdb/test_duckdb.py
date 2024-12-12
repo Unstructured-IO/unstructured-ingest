@@ -1,7 +1,7 @@
+import json
 from pathlib import Path
 
 import duckdb
-import pandas as pd
 import pytest
 from _pytest.fixtures import TopRequest
 
@@ -54,7 +54,6 @@ def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_d
         identifier="mock-file-data",
     )
 
-    # deafults to default stager config
     stager = DuckDBUploadStager()
     staged_path = stager.run(
         elements_filepath=upload_file,
@@ -69,8 +68,9 @@ def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_d
 
     uploader.run(path=staged_path, file_data=file_data)
 
-    staged_df = pd.read_json(staged_path, orient="records", lines=True)
-    validate_duckdb_destination(db_path=provisioned_db_file, expected_num_elements=len(staged_df))
+    with staged_path.open() as f:
+        data = json.load(f)
+    validate_duckdb_destination(db_path=provisioned_db_file, expected_num_elements=len(data))
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
