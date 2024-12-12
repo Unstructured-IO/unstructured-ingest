@@ -11,8 +11,8 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors.platform import NotFound
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -82,7 +82,7 @@ async def test_volumes_native_source():
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
+            configs=SourceValidationConfigs(
                 test_id="databricks_volumes_native",
                 expected_num_files=1,
             ),

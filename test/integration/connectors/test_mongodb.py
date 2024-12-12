@@ -14,8 +14,8 @@ from pymongo.mongo_client import MongoClient
 from pymongo.operations import SearchIndexModel
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -196,7 +196,7 @@ async def test_mongodb_source(temp_dir: Path):
     await source_connector_validation(
         indexer=indexer,
         downloader=downloader,
-        configs=ValidationConfigs(
+        configs=SourceValidationConfigs(
             test_id=CONNECTOR_TYPE, expected_num_files=4, validate_downloaded_files=True
         ),
     )

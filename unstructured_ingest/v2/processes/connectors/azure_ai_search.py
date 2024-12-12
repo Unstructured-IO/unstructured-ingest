@@ -92,14 +92,13 @@ class AzureAISearchUploadStager(UploadStager):
         default_factory=lambda: AzureAISearchUploadStagerConfig()
     )
 
-    @staticmethod
-    def conform_dict(data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         updates the dictionary that is from each Element being converted into a dict/json
         into a dictionary that conforms to the schema expected by the
         Azure Cognitive Search index
         """
-
+        data = element_dict.copy()
         data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
         data[RECORD_ID_LABEL] = file_data.identifier
 
@@ -139,31 +138,6 @@ class AzureAISearchUploadStager(UploadStager):
         if page_number := data.get("metadata", {}).get("page_number"):
             data["metadata"]["page_number"] = str(page_number)
         return data
-
-    def run(
-        self,
-        file_data: FileData,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        conformed_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-
-        if Path(output_filename).suffix != ".json":
-            output_filename = f"{output_filename}.json"
-        else:
-            output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file, indent=2)
-        return output_path
 
 
 @dataclass

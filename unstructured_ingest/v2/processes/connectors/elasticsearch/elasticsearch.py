@@ -324,7 +324,8 @@ class ElasticsearchUploadStagerConfig(UploadStagerConfig):
 class ElasticsearchUploadStager(UploadStager):
     upload_stager_config: ElasticsearchUploadStagerConfig
 
-    def conform_dict(self, data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
         resp = {
             "_index": self.upload_stager_config.index_name,
             "_id": get_enhanced_element_id(element_dict=data, file_data=file_data),
@@ -339,29 +340,6 @@ class ElasticsearchUploadStager(UploadStager):
         if "metadata" in data and isinstance(data["metadata"], dict):
             resp["_source"]["metadata"] = flatten_dict(data["metadata"], separator="-")
         return resp
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        conformed_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        if Path(output_filename).suffix != ".json":
-            output_filename = f"{output_filename}.json"
-        else:
-            output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / output_filename
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file, indent=2)
-        return output_path
 
 
 class ElasticsearchUploaderConfig(UploaderConfig):

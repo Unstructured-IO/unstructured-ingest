@@ -325,29 +325,6 @@ class AstraDBUploadStager(UploadStager):
             "metadata": element_dict,
         }
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        conformed_elements = []
-        for element in elements_contents:
-            conformed_elements.append(self.conform_dict(element_dict=element, file_data=file_data))
-        output_filename_path = Path(output_filename)
-        if output_filename_path.suffix == ".json":
-            output_path = Path(output_dir) / output_filename_path
-        else:
-            output_path = Path(output_dir) / output_filename_path.with_suffix(".json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file, indent=2)
-        return output_path
-
 
 @dataclass
 class AstraDBUploader(Uploader):

@@ -1,3 +1,10 @@
+## 0.3.9-dev0
+
+### Enhancements
+
+* **Support ndjson files in stagers**
+
+
 ## 0.3.8
 
 ### Fixes

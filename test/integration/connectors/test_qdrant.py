@@ -6,10 +6,15 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
+from _pytest.fixtures import TopRequest
 from qdrant_client import AsyncQdrantClient
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from test.integration.connectors.utils.docker import container_context
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.qdrant.cloud import (
@@ -190,3 +195,21 @@ async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
         uploader.run(path=staged_upload_file, file_data=file_data)
     async with qdrant_client(connection_kwargs) as client:
         await validate_upload(client=client, upload_file=upload_file)
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_qdrant_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = LocalQdrantUploadStager(
+        upload_stager_config=LocalQdrantUploadStagerConfig(),
+    )
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=LOCAL_CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

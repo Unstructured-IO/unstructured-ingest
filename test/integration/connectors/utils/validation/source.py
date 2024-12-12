@@ -1,83 +1,28 @@
-import filecmp
 import json
 import os
 import shutil
-from dataclasses import dataclass, field, replace
+from dataclasses import replace
 from pathlib import Path
 from typing import Callable, Optional
 
-import pandas as pd
-from bs4 import BeautifulSoup
 from deepdiff import DeepDiff
+from pydantic import Field
 
-from test.integration.connectors.utils.constants import expected_results_path
+from test.integration.connectors.utils.validation.utils import ValidationConfig, reset_dir
 from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 
 
-def json_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
-    expected_df = pd.read_csv(expected_filepath)
-    current_df = pd.read_csv(current_filepath)
-    if expected_df.equals(current_df):
-        return True
-    # Print diff
-    diff = expected_df.merge(current_df, indicator=True, how="left").loc[
-        lambda x: x["_merge"] != "both"
-    ]
-    print("diff between expected and current df:")
-    print(diff)
-    return False
-
-
-def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
-    with expected_filepath.open() as expected_f:
-        expected_soup = BeautifulSoup(expected_f, "html.parser")
-    with current_filepath.open() as current_f:
-        current_soup = BeautifulSoup(current_f, "html.parser")
-    return expected_soup.text == current_soup.text
-
-
-def txt_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
-    with expected_filepath.open() as expected_f:
-        expected_text_lines = expected_f.readlines()
-    with current_filepath.open() as current_f:
-        current_text_lines = current_f.readlines()
-    if len(expected_text_lines) != len(current_text_lines):
-        print(
-            f"Lines in expected text file ({len(expected_text_lines)}) "
-            f"don't match current text file ({len(current_text_lines)})"
-        )
-        return False
-    expected_text = "\n".join(expected_text_lines)
-    current_text = "\n".join(current_text_lines)
-    if expected_text == current_text:
-        return True
-    print("txt content don't match:")
-    print(f"expected: {expected_text}")
-    print(f"current: {current_text}")
-    return False
-
-
-file_type_equality_check = {
-    ".json": json_equality_check,
-    ".html": html_equality_check,
-    ".txt": txt_equality_check,
-}
-
-
-@dataclass
-class ValidationConfigs:
-    test_id: str
+class SourceValidationConfigs(ValidationConfig):
     expected_number_indexed_file_data: Optional[int] = None
     expected_num_files: Optional[int] = None
     predownload_file_data_check: Optional[Callable[[FileData], None]] = None
     postdownload_file_data_check: Optional[Callable[[FileData], None]] = None
-    exclude_fields: list[str] = field(
+    exclude_fields: list[str] = Field(
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
-    exclude_fields_extend: list[str] = field(default_factory=list)
+    exclude_fields_extend: list[str] = Field(default_factory=list)
     validate_downloaded_files: bool = False
     validate_file_data: bool = True
-    downloaded_file_equality_check: Optional[Callable[[Path, Path], bool]] = None
 
     def get_exclude_fields(self) -> list[str]:
         exclude_fields = self.exclude_fields
@@ -96,9 +41,6 @@ class ValidationConfigs:
         if expected_num_files := self.expected_num_files:
             downloaded_files = [p for p in download_dir.rglob("*") if p.is_file()]
             assert len(downloaded_files) == expected_num_files
-
-    def test_output_dir(self) -> Path:
-        return expected_results_path / self.test_id
 
     def omit_ignored_fields(self, data: dict) -> dict:
         exclude_fields = self.get_exclude_fields()
@@ -143,7 +85,7 @@ def check_files_in_paths(expected_output_dir: Path, current_output_dir: Path):
 
 
 def check_contents(
-    expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
+    expected_output_dir: Path, all_file_data: list[FileData], configs: SourceValidationConfigs
 ):
     found_diff = False
     for file_data in all_file_data:
@@ -160,27 +102,10 @@ def check_contents(
     assert not found_diff, f"Diffs found between files: {found_diff}"
 
 
-def detect_diff(
-    configs: ValidationConfigs, expected_filepath: Path, current_filepath: Path
-) -> bool:
-    if expected_filepath.suffix != current_filepath.suffix:
-        return True
-    if downloaded_file_equality_check := configs.downloaded_file_equality_check:
-        return not downloaded_file_equality_check(expected_filepath, current_filepath)
-    current_suffix = expected_filepath.suffix
-    if current_suffix in file_type_equality_check:
-        equality_check_callable = file_type_equality_check[current_suffix]
-        return not equality_check_callable(
-            expected_filepath=expected_filepath, current_filepath=current_filepath
-        )
-    # Fallback is using filecmp.cmp to compare the files
-    return not filecmp.cmp(expected_filepath, current_filepath, shallow=False)
-
-
 def check_raw_file_contents(
     expected_output_dir: Path,
     current_output_dir: Path,
-    configs: ValidationConfigs,
+    configs: SourceValidationConfigs,
 ):
     current_files = get_files(dir_path=current_output_dir)
     found_diff = False
@@ -188,7 +113,7 @@ def check_raw_file_contents(
     for current_file in current_files:
         current_file_path = current_output_dir / current_file
         expected_file_path = expected_output_dir / current_file
-        if detect_diff(configs, expected_file_path, current_file_path):
+        if configs.detect_diff(expected_file_path, current_file_path):
             found_diff = True
             files.append(str(expected_file_path))
             print(f"diffs between files {expected_file_path} and {current_file_path}")
@@ -196,7 +121,7 @@ def check_raw_file_contents(
 
 
 def run_expected_results_validation(
-    expected_output_dir: Path, all_file_data: list[FileData], configs: ValidationConfigs
+    expected_output_dir: Path, all_file_data: list[FileData], configs: SourceValidationConfigs
 ):
     check_files(expected_output_dir=expected_output_dir, all_file_data=all_file_data)
     check_contents(
@@ -207,7 +132,7 @@ def run_expected_results_validation(
 def run_expected_download_files_validation(
     expected_output_dir: Path,
     current_download_dir: Path,
-    configs: ValidationConfigs,
+    configs: SourceValidationConfigs,
 ):
     check_files_in_paths(
         expected_output_dir=expected_output_dir, current_output_dir=current_download_dir
@@ -234,12 +159,10 @@ def update_fixtures(
     save_downloads: bool = False,
     save_filedata: bool = True,
 ):
-    # Delete current files
-    shutil.rmtree(path=output_dir, ignore_errors=True)
-    output_dir.mkdir(parents=True)
     # Rewrite the current file data
     if save_filedata:
         file_data_output_path = output_dir / "file_data"
+        reset_dir(dir_path=file_data_output_path)
         print(
             f"Writing {len(all_file_data)} file data to "
             f"saved fixture location {file_data_output_path}"
@@ -260,6 +183,7 @@ def update_fixtures(
     # If applicable, save raw downloads
     if save_downloads:
         raw_download_output_path = output_dir / "downloads"
+        reset_dir(raw_download_output_path)
         print(
             f"Writing {len(download_files)} downloaded files to "
             f"saved fixture location {raw_download_output_path}"
@@ -268,7 +192,7 @@ def update_fixtures(
 
 
 def run_all_validations(
-    configs: ValidationConfigs,
+    configs: SourceValidationConfigs,
     predownload_file_data: list[FileData],
     postdownload_file_data: list[FileData],
     download_dir: Path,
@@ -308,7 +232,7 @@ def run_all_validations(
 async def source_connector_validation(
     indexer: Indexer,
     downloader: Downloader,
-    configs: ValidationConfigs,
+    configs: SourceValidationConfigs,
     overwrite_fixtures: bool = os.getenv("OVERWRITE_FIXTURES", "False").lower() == "true",
 ) -> None:
     # Run common validations on the process of running a source connector, supporting dynamic
