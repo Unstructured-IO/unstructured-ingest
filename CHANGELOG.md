@@ -1,3 +1,13 @@
+## 0.3.9-dev0
+
+### Fixes
+
+* **Fix Kafka destination connection problems**
+
+### Enhancements
+
+* **Kafka destination connector checks for existence of topic**
+
 ## 0.3.8
 
 ### Fixes
