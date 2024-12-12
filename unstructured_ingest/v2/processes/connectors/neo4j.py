@@ -36,19 +36,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "neo4j"
 
 
-class Label(Enum):
-    UNSTRUCTURED_ELEMENT = "UnstructuredElement"
-    CHUNK = "Chunk"
-    DOCUMENT = "Document"
-
-
-class Relationship(Enum):
-    PART_OF_DOCUMENT = "PART_OF_DOCUMENT"
-    PART_OF_CHUNK = "PART_OF_CHUNK"
-    NEXT_CHUNK = "NEXT_CHUNK"
-    NEXT_ELEMENT = "NEXT_ELEMENT"
-
-
 class Neo4jAccessConfig(AccessConfig):
     password: str
 
@@ -87,43 +74,6 @@ class Neo4jUploadStagerConfig(UploadStagerConfig):
     pass
 
 
-class Node(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
-
-    id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    labels: list[Label] = Field(default_factory=list)
-    properties: dict = Field(default_factory=dict)
-
-    def __hash__(self):
-        return hash(self.id_)
-
-
-class Edge(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
-
-    source_id: str
-    destination_id: str
-    relationship: Relationship
-
-
-class GraphData(BaseModel):
-    nodes: list[Node]
-    edges: list[Edge]
-
-    @classmethod
-    def from_nx(cls, nx_graph: nx.MultiDiGraph) -> GraphData:
-        nodes = list(nx_graph.nodes())
-        edges = [
-            Edge(
-                source_id=u.id_,
-                destination_id=v.id_,
-                relationship=Relationship(data_dict["relationship"]),
-            )
-            for u, v, data_dict in nx_graph.edges(data=True)
-        ]
-        return GraphData(nodes=nodes, edges=edges)
-
-
 @dataclass
 class Neo4jUploadStager(UploadStager):
     upload_stager_config: Neo4jUploadStagerConfig = Field(
@@ -148,26 +98,26 @@ class Neo4jUploadStager(UploadStager):
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with open(output_filepath, "w") as file:
-            json.dump(GraphData.from_nx(nx_graph).model_dump(), file, indent=4)
+            json.dump(_GraphData.from_nx(nx_graph).model_dump(), file, indent=4)
 
         return output_filepath
 
-    def _create_lexical_graph(self, elements: list[dict], document_node: Node) -> nx.Graph:
+    def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> nx.Graph:
         graph = nx.MultiDiGraph()
         graph.add_node(document_node)
 
-        previous_node: Optional[Node] = None
+        previous_node: Optional[_Node] = None
         # TODO(Filip Knefel): Consolidate the nodes create/add code in this loop
         for element in elements:
             if self._is_chunk(element):
                 chunk_node = self._create_element_node(element)
                 if previous_node:
                     graph.add_edge(
-                        chunk_node, previous_node, relationship=Relationship.NEXT_CHUNK.value
+                        chunk_node, previous_node, relationship=_Relationship.NEXT_CHUNK.value
                     )
                 previous_node = chunk_node
                 graph.add_edge(
-                    chunk_node, document_node, relationship=Relationship.PART_OF_DOCUMENT.value
+                    chunk_node, document_node, relationship=_Relationship.PART_OF_DOCUMENT.value
                 )
                 origin_element_nodes = [
                     self._create_element_node(origin_element)
@@ -178,16 +128,16 @@ class Neo4jUploadStager(UploadStager):
                         (origin_element_node, chunk_node)
                         for origin_element_node in origin_element_nodes
                     ],
-                    relationship=Relationship.PART_OF_CHUNK.value,
+                    relationship=_Relationship.PART_OF_CHUNK.value,
                 )
             else:
                 element_node = self._create_element_node(element)
                 graph.add_edge(
-                    element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT.value
+                    element_node, document_node, relationship=_Relationship.PART_OF_DOCUMENT.value
                 )
                 if previous_node:
                     graph.add_edge(
-                        element_node, previous_node, relationship=Relationship.NEXT_CHUNK.value
+                        element_node, previous_node, relationship=_Relationship.NEXT_CHUNK.value
                     )
                 previous_node = element_node
 
@@ -197,7 +147,7 @@ class Neo4jUploadStager(UploadStager):
     def _is_chunk(self, element: dict) -> bool:
         return "orig_elements" in element.get("metadata", {})
 
-    def _create_document_node(self, file_data: FileData) -> Node:
+    def _create_document_node(self, file_data: FileData) -> _Node:
         properties = {
             "name": file_data.source_identifiers.filename,
         }
@@ -205,20 +155,70 @@ class Neo4jUploadStager(UploadStager):
             properties["date_created"] = parser.parse(date_created).isoformat()
         if date_modified := file_data.metadata.date_modified:
             properties["date_modified"] = parser.parse(date_modified).isoformat()
-        return Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT])
+        return _Node(id_=file_data.identifier, properties=properties, labels=[_Label.DOCUMENT])
 
-    def _create_element_node(self, element: dict) -> Node:
+    def _create_element_node(self, element: dict) -> _Node:
         properties = {"id": element["element_id"], "text": element["text"]}
 
         if embeddings := element.get("embeddings"):
             properties["embeddings"] = embeddings
 
-        label = Label.CHUNK if self._is_chunk(element) else Label.UNSTRUCTURED_ELEMENT
-        return Node(id_=element["element_id"], properties=properties, labels=[label])
+        label = _Label.CHUNK if self._is_chunk(element) else _Label.UNSTRUCTURED_ELEMENT
+        return _Node(id_=element["element_id"], properties=properties, labels=[label])
 
     def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
         orig_elements = chunk_element.get("metadata", {}).get("orig_elements")
         return elements_from_base64_gzipped_json(raw_s=orig_elements)
+
+
+class _GraphData(BaseModel):
+    nodes: list[_Node]
+    edges: list[_Edge]
+
+    @classmethod
+    def from_nx(cls, nx_graph: nx.MultiDiGraph) -> _GraphData:
+        nodes = list(nx_graph.nodes())
+        edges = [
+            _Edge(
+                source_id=u.id_,
+                destination_id=v.id_,
+                relationship=_Relationship(data_dict["relationship"]),
+            )
+            for u, v, data_dict in nx_graph.edges(data=True)
+        ]
+        return _GraphData(nodes=nodes, edges=edges)
+
+
+class _Node(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    labels: list[_Label] = Field(default_factory=list)
+    properties: dict = Field(default_factory=dict)
+
+    def __hash__(self):
+        return hash(self.id_)
+
+
+class _Edge(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    source_id: str
+    destination_id: str
+    relationship: _Relationship
+
+
+class _Label(Enum):
+    UNSTRUCTURED_ELEMENT = "UnstructuredElement"
+    CHUNK = "Chunk"
+    DOCUMENT = "Document"
+
+
+class _Relationship(Enum):
+    PART_OF_DOCUMENT = "PART_OF_DOCUMENT"
+    PART_OF_CHUNK = "PART_OF_CHUNK"
+    NEXT_CHUNK = "NEXT_CHUNK"
+    NEXT_ELEMENT = "NEXT_ELEMENT"
 
 
 class Neo4jUploaderConfig(UploaderConfig):
@@ -248,13 +248,13 @@ class Neo4jUploader(Uploader):
         with path.open() as file:
             staged_data = json.load(file)
 
-        graph_data = GraphData.model_validate(staged_data)
+        graph_data = _GraphData.model_validate(staged_data)
 
         async with self.connection_config.get_client() as client:
             await self._merge_graph(graph_data=graph_data, client=client)
 
-    async def _merge_graph(self, graph_data: GraphData, client: AsyncDriver) -> None:
-        nodes_by_labels: defaultdict[tuple[Label, ...], list[Node]] = defaultdict(list)
+    async def _merge_graph(self, graph_data: _GraphData, client: AsyncDriver) -> None:
+        nodes_by_labels: defaultdict[tuple[_Label, ...], list[_Node]] = defaultdict(list)
         for node in graph_data.nodes:
             nodes_by_labels[tuple(node.labels)].append(node)
 
@@ -264,7 +264,7 @@ class Neo4jUploader(Uploader):
             in_parallel=True,
         )
 
-        edges_by_relationship: defaultdict[Relationship, list[Edge]] = defaultdict(list)
+        edges_by_relationship: defaultdict[_Relationship, list[_Edge]] = defaultdict(list)
         for edge in graph_data.edges:
             edges_by_relationship[edge.relationship].append(edge)
 
@@ -294,7 +294,7 @@ class Neo4jUploader(Uploader):
                 await client.execute_query(query, parameters_=parameters)
 
     @staticmethod
-    def _create_nodes_query(nodes: list[Node], labels: tuple[Label, ...]) -> tuple[str, dict]:
+    def _create_nodes_query(nodes: list[_Node], labels: tuple[_Label, ...]) -> tuple[str, dict]:
         labels_string = ", ".join(labels)
         query_string = f"""
             UNWIND $nodes AS node
@@ -305,7 +305,7 @@ class Neo4jUploader(Uploader):
         return query_string, parameters
 
     @staticmethod
-    def _create_edges_query(edges: list[Edge], relationship: Relationship) -> tuple[str, dict]:
+    def _create_edges_query(edges: list[_Edge], relationship: _Relationship) -> tuple[str, dict]:
         query_string = f"""
             UNWIND $edges AS edge
             MATCH (u {{id: edge.source}}), (v {{id: edge.destination}})
