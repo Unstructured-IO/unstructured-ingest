@@ -1,5 +1,4 @@
 import json
-from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -33,8 +32,15 @@ from unstructured_ingest.v2.processes.connectors.sql.singlestore import (
 SEED_DATA_ROWS = 20
 
 
-@contextmanager
-def singlestore_download_setup(connect_params: dict) -> None:
+@pytest.fixture
+def source_database_setup() -> dict:
+    connect_params = {
+        "host": "localhost",
+        "port": 3306,
+        "database": "ingest_test",
+        "user": "root",
+        "password": "password",
+    }
     with docker_compose_context(
         docker_compose_path=env_setup_path / "sql" / "singlestore" / "source"
     ):
@@ -44,49 +50,40 @@ def singlestore_download_setup(connect_params: dict) -> None:
                     sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
                     cursor.execute(sql_statment)
                 connection.commit()
-        yield
+        yield connect_params
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
-async def test_singlestore_source(temp_dir: Path):
-    connect_params = {
-        "host": "localhost",
-        "port": 3306,
-        "database": "ingest_test",
-        "user": "root",
-        "password": "password",
-    }
-    with singlestore_download_setup(connect_params=connect_params):
-        connection_config = SingleStoreConnectionConfig(
-            host=connect_params["host"],
-            port=connect_params["port"],
-            database=connect_params["database"],
-            user=connect_params["user"],
-            access_config=SingleStoreAccessConfig(password=connect_params["password"]),
-        )
-        indexer = SingleStoreIndexer(
-            connection_config=connection_config,
-            index_config=SingleStoreIndexerConfig(
-                table_name="cars", id_column="car_id", batch_size=5
-            ),
-        )
-        downloader = SingleStoreDownloader(
-            connection_config=connection_config,
-            download_config=SingleStoreDownloaderConfig(
-                fields=["car_id", "brand"], download_dir=temp_dir
-            ),
-        )
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=SourceValidationConfigs(
-                test_id="singlestore",
-                expected_num_files=SEED_DATA_ROWS,
-                expected_number_indexed_file_data=4,
-                validate_downloaded_files=True,
-            ),
-        )
+async def test_singlestore_source(temp_dir: Path, source_database_setup: dict):
+
+    connection_config = SingleStoreConnectionConfig(
+        host=source_database_setup["host"],
+        port=source_database_setup["port"],
+        database=source_database_setup["database"],
+        user=source_database_setup["user"],
+        access_config=SingleStoreAccessConfig(password=source_database_setup["password"]),
+    )
+    indexer = SingleStoreIndexer(
+        connection_config=connection_config,
+        index_config=SingleStoreIndexerConfig(table_name="cars", id_column="car_id", batch_size=5),
+    )
+    downloader = SingleStoreDownloader(
+        connection_config=connection_config,
+        download_config=SingleStoreDownloaderConfig(
+            fields=["car_id", "brand"], download_dir=temp_dir
+        ),
+    )
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="singlestore",
+            expected_num_files=SEED_DATA_ROWS,
+            expected_number_indexed_file_data=4,
+            validate_downloaded_files=True,
+        ),
+    )
 
 
 def validate_destination(
@@ -115,11 +112,11 @@ async def test_singlestore_destination(upload_file: Path, temp_dir: Path):
             elements_filepath=upload_file,
             file_data=mock_file_data,
             output_dir=temp_dir,
-            output_filename="test_db",
+            output_filename=upload_file.name,
         )
 
         # The stager should append the `.json` suffix to the output filename passed in.
-        assert staged_path.name == "test_db.json"
+        assert staged_path.suffix == upload_file.suffix
 
         connect_params = {
             "host": "localhost",

@@ -60,7 +60,7 @@ def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_d
         elements_filepath=upload_file,
         file_data=file_data,
         output_dir=temp_dir,
-        output_filename="test_db",
+        output_filename=upload_file.name,
     )
 
     connection_config = DuckDBConnectionConfig(database=str(provisioned_db_file))

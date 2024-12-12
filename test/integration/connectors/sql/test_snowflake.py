@@ -2,7 +2,6 @@ import json
 import os
 from pathlib import Path
 
-import docker
 import pytest
 import snowflake.connector as sf
 from _pytest.fixtures import TopRequest
@@ -34,14 +33,15 @@ from unstructured_ingest.v2.processes.connectors.sql.snowflake import (
 SEED_DATA_ROWS = 20
 
 
-def seed_data():
-    conn = sf.connect(
-        user="test",
-        password="test",
-        account="test",
-        database="test",
-        host="snowflake.localhost.localstack.cloud",
-    )
+def seed_data() -> dict:
+    connect_params = {
+        "user": "test",
+        "password": "test",
+        "account": "test",
+        "database": "test",
+        "host": "snowflake.localhost.localstack.cloud",
+    }
+    conn = sf.connect(**connect_params)
 
     file = Path(env_setup_path / "sql" / "snowflake" / "source" / "snowflake-schema.sql")
 
@@ -56,16 +56,31 @@ def seed_data():
 
     cur.close()
     conn.close()
+    return connect_params
 
 
-def init_db_destination():
-    conn = sf.connect(
-        user="test",
-        password="test",
-        account="test",
-        database="test",
-        host="snowflake.localhost.localstack.cloud",
-    )
+@pytest.fixture
+def source_database_setup() -> dict:
+    token = os.getenv("LOCALSTACK_AUTH_TOKEN")
+    with container_context(
+        image="localstack/snowflake",
+        environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
+        ports={4566: 4566, 443: 443},
+        healthcheck_retries=30,
+    ):
+        connect_params = seed_data()
+        yield connect_params
+
+
+def init_db_destination() -> dict:
+    connect_params = {
+        "user": "test",
+        "password": "test",
+        "account": "test",
+        "database": "test",
+        "host": "snowflake.localhost.localstack.cloud",
+    }
+    conn = sf.connect(**connect_params)
 
     file = Path(env_setup_path / "sql" / "snowflake" / "destination" / "snowflake-schema.sql")
 
@@ -77,51 +92,53 @@ def init_db_destination():
 
     cur.close()
     conn.close()
+    return connect_params
 
 
-@pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
-@requires_env("LOCALSTACK_AUTH_TOKEN")
-async def test_snowflake_source(temp_dir: Path):
-    docker_client = docker.from_env()
+@pytest.fixture
+def destination_database_setup() -> dict:
     token = os.getenv("LOCALSTACK_AUTH_TOKEN")
     with container_context(
-        docker_client=docker_client,
         image="localstack/snowflake",
         environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
         ports={4566: 4566, 443: 443},
         healthcheck_retries=30,
     ):
-        seed_data()
-        connection_config = SnowflakeConnectionConfig(
-            access_config=SnowflakeAccessConfig(password="test"),
-            account="test",
-            user="test",
-            database="test",
-            host="snowflake.localhost.localstack.cloud",
-        )
-        indexer = SnowflakeIndexer(
-            connection_config=connection_config,
-            index_config=SnowflakeIndexerConfig(
-                table_name="cars", id_column="CAR_ID", batch_size=5
-            ),
-        )
-        downloader = SnowflakeDownloader(
-            connection_config=connection_config,
-            download_config=SnowflakeDownloaderConfig(
-                fields=["CAR_ID", "BRAND"], download_dir=temp_dir
-            ),
-        )
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=SourceValidationConfigs(
-                test_id="snowflake",
-                expected_num_files=SEED_DATA_ROWS,
-                expected_number_indexed_file_data=4,
-                validate_downloaded_files=True,
-            ),
-        )
+        connect_params = init_db_destination()
+        yield connect_params
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
+@requires_env("LOCALSTACK_AUTH_TOKEN")
+async def test_snowflake_source(temp_dir: Path, source_database_setup: dict):
+    connection_config = SnowflakeConnectionConfig(
+        access_config=SnowflakeAccessConfig(password="test"),
+        account="test",
+        user="test",
+        database="test",
+        host="snowflake.localhost.localstack.cloud",
+    )
+    indexer = SnowflakeIndexer(
+        connection_config=connection_config,
+        index_config=SnowflakeIndexerConfig(table_name="cars", id_column="CAR_ID", batch_size=5),
+    )
+    downloader = SnowflakeDownloader(
+        connection_config=connection_config,
+        download_config=SnowflakeDownloaderConfig(
+            fields=["CAR_ID", "BRAND"], download_dir=temp_dir
+        ),
+    )
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="snowflake",
+            expected_num_files=SEED_DATA_ROWS,
+            expected_number_indexed_file_data=4,
+            validate_downloaded_files=True,
+        ),
+    )
 
 
 def validate_destination(
@@ -148,64 +165,57 @@ def validate_destination(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
 @requires_env("LOCALSTACK_AUTH_TOKEN")
-async def test_snowflake_destination(upload_file: Path, temp_dir: Path):
+async def test_snowflake_destination(
+    upload_file: Path, temp_dir: Path, destination_database_setup: dict
+):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
-    docker_client = docker.from_env()
-    token = os.getenv("LOCALSTACK_AUTH_TOKEN")
-    with container_context(
-        docker_client=docker_client,
-        image="localstack/snowflake",
-        environment={"LOCALSTACK_AUTH_TOKEN": token, "EXTRA_CORS_ALLOWED_ORIGINS": "*"},
-        ports={4566: 4566, 443: 443},
-        healthcheck_retries=30,
-    ):
-        init_db_destination()
-        stager = SnowflakeUploadStager()
-        staged_path = stager.run(
-            elements_filepath=upload_file,
-            file_data=mock_file_data,
-            output_dir=temp_dir,
-            output_filename="test_db",
+    init_db_destination()
+    stager = SnowflakeUploadStager()
+    staged_path = stager.run(
+        elements_filepath=upload_file,
+        file_data=mock_file_data,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+    )
+
+    # The stager should append the `.json` suffix to the output filename passed in.
+    assert staged_path.suffix == upload_file.suffix
+
+    connect_params = {
+        "user": "test",
+        "password": "test",
+        "account": "test",
+        "database": "test",
+        "host": "snowflake.localhost.localstack.cloud",
+    }
+
+    uploader = SnowflakeUploader(
+        connection_config=SnowflakeConnectionConfig(
+            access_config=SnowflakeAccessConfig(password=connect_params["password"]),
+            account=connect_params["account"],
+            user=connect_params["user"],
+            database=connect_params["database"],
+            host=connect_params["host"],
         )
+    )
 
-        # The stager should append the `.json` suffix to the output filename passed in.
-        assert staged_path.name == "test_db.json"
+    uploader.run(path=staged_path, file_data=mock_file_data)
 
-        connect_params = {
-            "user": "test",
-            "password": "test",
-            "account": "test",
-            "database": "test",
-            "host": "snowflake.localhost.localstack.cloud",
-        }
+    with staged_path.open("r") as f:
+        staged_data = json.load(f)
+    expected_num_elements = len(staged_data)
+    validate_destination(
+        connect_params=connect_params,
+        expected_num_elements=expected_num_elements,
+    )
 
-        uploader = SnowflakeUploader(
-            connection_config=SnowflakeConnectionConfig(
-                access_config=SnowflakeAccessConfig(password=connect_params["password"]),
-                account=connect_params["account"],
-                user=connect_params["user"],
-                database=connect_params["database"],
-                host=connect_params["host"],
-            )
-        )
-
-        uploader.run(path=staged_path, file_data=mock_file_data)
-
-        with staged_path.open("r") as f:
-            staged_data = json.load(f)
-        expected_num_elements = len(staged_data)
-        validate_destination(
-            connect_params=connect_params,
-            expected_num_elements=expected_num_elements,
-        )
-
-        uploader.run(path=staged_path, file_data=mock_file_data)
-        validate_destination(
-            connect_params=connect_params,
-            expected_num_elements=expected_num_elements,
-        )
+    uploader.run(path=staged_path, file_data=mock_file_data)
+    validate_destination(
+        connect_params=connect_params,
+        expected_num_elements=expected_num_elements,
+    )
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])

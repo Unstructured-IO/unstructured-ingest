@@ -1,5 +1,4 @@
 import json
-from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -32,13 +31,14 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
 SEED_DATA_ROWS = 20
 
 
-@contextmanager
-def postgres_download_setup() -> None:
+@pytest.fixture
+def source_database_setup() -> str:
+    db_name = "test_db"
     with docker_compose_context(docker_compose_path=env_setup_path / "sql" / "postgres" / "source"):
         connection = connect(
             user="unstructured",
             password="test",
-            dbname="test_db",
+            dbname=db_name,
             host="localhost",
             port=5433,
         )
@@ -47,12 +47,12 @@ def postgres_download_setup() -> None:
                 sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
                 cursor.execute(sql_statment)
             connection.commit()
-        yield
+        yield db_name
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
-async def test_postgres_source(temp_dir: Path):
+async def test_postgres_source(temp_dir: Path, source_database_setup: str):
     connect_params = {
         "host": "localhost",
         "port": 5433,
@@ -60,34 +60,31 @@ async def test_postgres_source(temp_dir: Path):
         "user": "unstructured",
         "password": "test",
     }
-    with postgres_download_setup():
-        connection_config = PostgresConnectionConfig(
-            host=connect_params["host"],
-            port=connect_params["port"],
-            database=connect_params["database"],
-            username=connect_params["user"],
-            access_config=PostgresAccessConfig(password=connect_params["password"]),
-        )
-        indexer = PostgresIndexer(
-            connection_config=connection_config,
-            index_config=PostgresIndexerConfig(table_name="cars", id_column="car_id", batch_size=5),
-        )
-        downloader = PostgresDownloader(
-            connection_config=connection_config,
-            download_config=PostgresDownloaderConfig(
-                fields=["car_id", "brand"], download_dir=temp_dir
-            ),
-        )
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=SourceValidationConfigs(
-                test_id="postgres",
-                expected_num_files=SEED_DATA_ROWS,
-                expected_number_indexed_file_data=4,
-                validate_downloaded_files=True,
-            ),
-        )
+    connection_config = PostgresConnectionConfig(
+        host=connect_params["host"],
+        port=connect_params["port"],
+        database=connect_params["database"],
+        username=connect_params["user"],
+        access_config=PostgresAccessConfig(password=connect_params["password"]),
+    )
+    indexer = PostgresIndexer(
+        connection_config=connection_config,
+        index_config=PostgresIndexerConfig(table_name="cars", id_column="car_id", batch_size=5),
+    )
+    downloader = PostgresDownloader(
+        connection_config=connection_config,
+        download_config=PostgresDownloaderConfig(fields=["car_id", "brand"], download_dir=temp_dir),
+    )
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="postgres",
+            expected_num_files=SEED_DATA_ROWS,
+            expected_number_indexed_file_data=4,
+            validate_downloaded_files=True,
+        ),
+    )
 
 
 def validate_destination(
@@ -131,11 +128,11 @@ async def test_postgres_destination(upload_file: Path, temp_dir: Path):
             elements_filepath=upload_file,
             file_data=mock_file_data,
             output_dir=temp_dir,
-            output_filename="test_db",
+            output_filename=upload_file.name,
         )
 
         # The stager should append the `.json` suffix to the output filename passed in.
-        assert staged_path.name == "test_db.json"
+        assert staged_path.suffix == upload_file.suffix
 
         connect_params = {
             "host": "localhost",
