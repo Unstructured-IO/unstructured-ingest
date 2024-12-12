@@ -1,7 +1,8 @@
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret
 
@@ -49,29 +50,33 @@ class AzureAISearchConnectionConfig(ConnectionConfig):
     access_config: Secret[AzureAISearchAccessConfig]
 
     @requires_dependencies(["azure.search", "azure.core"], extras="azure-ai-search")
-    def get_search_client(self) -> "SearchClient":
+    @contextmanager
+    def get_search_client(self) -> Generator["SearchClient", None, None]:
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
 
-        return SearchClient(
+        with SearchClient(
             endpoint=self.endpoint,
             index_name=self.index,
             credential=AzureKeyCredential(
                 self.access_config.get_secret_value().azure_ai_search_key
             ),
-        )
+        ) as client:
+            yield client
 
     @requires_dependencies(["azure.search", "azure.core"], extras="azure-ai-search")
-    def get_search_index_client(self) -> "SearchIndexClient":
+    @contextmanager
+    def get_search_index_client(self) -> Generator["SearchIndexClient", None, None]:
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents.indexes import SearchIndexClient
 
-        return SearchIndexClient(
+        with SearchIndexClient(
             endpoint=self.endpoint,
             credential=AzureKeyCredential(
                 self.access_config.get_secret_value().azure_ai_search_key
             ),
-        )
+        ) as search_index_client:
+            yield search_index_client
 
 
 class AzureAISearchUploadStagerConfig(UploadStagerConfig):

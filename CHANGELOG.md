@@ -1,9 +1,13 @@
 ## 0.3.9-dev1
 
+<<<<<<< HEAD
 ### Enhancements
 
 * **Support ndjson files in stagers**
 
+### Fixes
+
+* **Make sure any SDK clients that support closing get called**
 
 ## 0.3.8
 

@@ -2,6 +2,7 @@ import hashlib
 import json
 import sys
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
@@ -65,7 +66,8 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     access_config: Secret[CouchbaseAccessConfig]
 
     @requires_dependencies(["couchbase"], extras="couchbase")
-    def connect_to_couchbase(self) -> "Cluster":
+    @contextmanager
+    def get_client(self) -> Generator["Cluster", None, None]:
         from couchbase.auth import PasswordAuthenticator
         from couchbase.cluster import Cluster
         from couchbase.options import ClusterOptions
@@ -73,9 +75,14 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
         options = ClusterOptions(auth)
         options.apply_profile("wan_development")
-        cluster = Cluster(self.connection_string, options)
-        cluster.wait_until_ready(timedelta(seconds=5))
-        return cluster
+        cluster = None
+        try:
+            cluster = Cluster(self.connection_string, options)
+            cluster.wait_until_ready(timedelta(seconds=5))
+            yield cluster
+        finally:
+            if cluster:
+                cluster.close()
 
 
 class CouchbaseUploadStagerConfig(UploadStagerConfig):
@@ -112,7 +119,7 @@ class CouchbaseUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.connect_to_couchbase()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -125,13 +132,15 @@ class CouchbaseUploader(Uploader):
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.connection_string}",
         )
-        cluster = self.connection_config.connect_to_couchbase()
-        bucket = cluster.bucket(self.connection_config.bucket)
-        scope = bucket.scope(self.connection_config.scope)
-        collection = scope.collection(self.connection_config.collection)
+        with self.connection_config.get_client() as client:
+            bucket = client.bucket(self.connection_config.bucket)
+            scope = bucket.scope(self.connection_config.scope)
+            collection = scope.collection(self.connection_config.collection)
 
-        for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
-            collection.upsert_multi({doc_id: doc for doc in chunk for doc_id, doc in doc.items()})
+            for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+                collection.upsert_multi(
+                    {doc_id: doc for doc in chunk for doc_id, doc in doc.items()}
+                )
 
 
 class CouchbaseIndexerConfig(IndexerConfig):
@@ -146,7 +155,7 @@ class CouchbaseIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.connect_to_couchbase()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -164,10 +173,10 @@ class CouchbaseIndexer(Indexer):
         attempts = 0
         while attempts < max_attempts:
             try:
-                cluster = self.connection_config.connect_to_couchbase()
-                result = cluster.query(query)
-                document_ids = [row["id"] for row in result]
-                return document_ids
+                with self.connection_config.get_client() as client:
+                    result = client.query(query)
+                    document_ids = [row["id"] for row in result]
+                    return document_ids
             except Exception as e:
                 attempts += 1
                 time.sleep(3)
@@ -278,13 +287,13 @@ class CouchbaseDownloader(Downloader):
         bucket_name: str = file_data.additional_metadata["bucket"]
         ids: list[str] = file_data.additional_metadata["ids"]
 
-        cluster = self.connection_config.connect_to_couchbase()
-        bucket = cluster.bucket(bucket_name)
-        scope = bucket.scope(self.connection_config.scope)
-        collection = scope.collection(self.connection_config.collection)
+        with self.connection_config.get_client() as client:
+            bucket = client.bucket(bucket_name)
+            scope = bucket.scope(self.connection_config.scope)
+            collection = scope.collection(self.connection_config.collection)
 
-        download_resp = self.process_all_doc_ids(ids, collection, bucket_name, file_data)
-        return list(download_resp)
+            download_resp = self.process_all_doc_ids(ids, collection, bucket_name, file_data)
+            return list(download_resp)
 
     def process_doc_id(self, doc_id, collection, bucket_name, file_data):
         result = collection.get(doc_id)

@@ -59,10 +59,17 @@ class MilvusConnectionConfig(ConnectionConfig):
         return connection_config_dict
 
     @requires_dependencies(["pymilvus"], extras="milvus")
-    def get_client(self) -> "MilvusClient":
+    @contextmanager
+    def get_client(self) -> Generator["MilvusClient", None, None]:
         from pymilvus import MilvusClient
 
-        return MilvusClient(**self.get_connection_kwargs())
+        client = None
+        try:
+            client = MilvusClient(**self.get_connection_kwargs())
+            yield client
+        finally:
+            if client:
+                client.close()
 
 
 class MilvusUploadStagerConfig(UploadStagerConfig):
@@ -160,13 +167,10 @@ class MilvusUploader(Uploader):
 
     @contextmanager
     def get_client(self) -> Generator["MilvusClient", None, None]:
-        client = self.connection_config.get_client()
-        if db_name := self.upload_config.db_name:
-            client.using_database(db_name=db_name)
-        try:
+        with self.connection_config.get_client() as client:
+            if db_name := self.upload_config.db_name:
+                client.using_database(db_name=db_name)
             yield client
-        finally:
-            client.close()
 
     def upload(self, content: UploadContent) -> None:
         file_extension = content.path.suffix
