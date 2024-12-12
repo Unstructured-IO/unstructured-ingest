@@ -102,7 +102,8 @@ class QdrantUploader(Uploader, ABC):
             async with self.connection_config.get_client() as async_client:
                 await async_client.get_collections()
 
-        asyncio.run(check_connection())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(check_connection())
 
     def is_async(self):
         return True
