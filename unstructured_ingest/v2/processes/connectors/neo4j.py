@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import networkx as nx
+from cymple.typedefs import Properties
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
@@ -88,17 +89,17 @@ class Neo4jUploadStagerConfig(UploadStagerConfig):
 
 
 class Node(BaseModel):
-    node_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
     labels: list[str] = Field(default_factory=list)
     properties: dict = Field(default_factory=dict)
 
     def __hash__(self):
-        return hash(self.node_id)
+        return hash(self.id_)
 
 
 class Edge(BaseModel):
-    from_node: str
-    to_node: str
+    source_id: str
+    destination_id: str
     relationship: str
 
 
@@ -110,7 +111,11 @@ class GraphData(BaseModel):
     def from_nx(cls, nx_graph: nx.MultiDiGraph) -> GraphData:
         nodes = list(nx_graph.nodes())
         edges = [
-            Edge(from_node=u.node_id, to_node=v.node_id, relationship=data_dict["relationship"])
+            Edge(
+                source_id=u.id_,
+                destination_id=v.id_,
+                relationship=data_dict["relationship"],
+            )
             for u, v, data_dict in nx_graph.edges(data=True)
         ]
         return GraphData(nodes=nodes, edges=edges)
@@ -197,9 +202,7 @@ class Neo4jUploadStager(UploadStager):
             properties["date_created"] = parser.parse(date_created).isoformat()
         if date_modified := file_data.metadata.date_modified:
             properties["date_modified"] = parser.parse(date_modified).isoformat()
-        return Node(
-            node_id=file_data.identifier, properties=properties, labels=[Label.DOCUMENT.value]
-        )
+        return Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT.value])
 
     def _create_element_node(self, element: dict) -> Node:
         properties = {"id": element["element_id"], "text": element["text"]}
@@ -208,7 +211,7 @@ class Neo4jUploadStager(UploadStager):
             properties["embeddings"] = embeddings
 
         label = Label.CHUNK if self._is_chunk(element) else Label.UNSTRUCTURED_ELEMENT
-        return Node(node_id=element["element_id"], properties=properties, labels=[label.value])
+        return Node(id_=element["element_id"], properties=properties, labels=[label.value])
 
     def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
         orig_elements = chunk_element.get("metadata", {}).get("orig_elements")
@@ -268,34 +271,61 @@ class Neo4jUploader(Uploader):
             ]
         )
 
-        edges_by_relationship: defaultdict[Relationship, list[Edge]] = defaultdict(list)
+        edges_by_relationship: defaultdict[str, list[Edge]] = defaultdict(list)
         for edge in graph_data.edges:
             edges_by_relationship[edge.relationship].append(edge)
+
+        for relationship, edges in edges_by_relationship.items():
+            await self._create_edges(edges, relationship, client)
 
     async def _create_nodes(
         self, nodes: list[Node], labels: tuple[str, ...], client: AsyncDriver
     ) -> None:
+        labels_string = ", ".join(labels)
         await client.execute_query(
             f"""
-            WITH $nodes AS batch
-            UNWIND batch AS node
-            CREATE (n: {", ".join(labels)} {{id: node.id}})
-            SET n += node
+            UNWIND $nodes AS node
+            MERGE (n: {labels_string} {{id: node.id}})
+            SET n += node.properties
             """,
-            nodes=[{"id": node.node_id, **node.properties} for node in nodes],
+            nodes=[{"id": node.id_, "properties": node.properties} for node in nodes],
         )
 
-    # async def _create_edges(
-    #     edges: list[Edge], relationship: Relationship, client: AsyncDriver
-    # ) -> None:
-    #     await client.execute_query(
-    #         f"""
-    #         WITH $edges AS batch
-    #         UNWIND batch AS edge
-    #         MERGE (:{} {{id: edge.origin_id}})-[r:{relationship.value}]->(:{} {{id: edge.destination_id}})
-    #         """,
-    #         edges=[],
-    #     )
+    async def _create_edges(
+        self, edges: list[Edge], relationship: str, client: AsyncDriver
+    ) -> None:
+        await client.execute_query(
+            f"""
+            UNWIND $edges AS edge
+            MATCH (u {{id: edge.source}}), (v {{id: edge.destination}})
+            MERGE (u)-[:{relationship}]->(v)
+            """,
+            edges=[
+                {
+                    "source": edge.source_id,
+                    "destination": edge.destination_id,
+                }
+                for edge in edges
+            ],
+        )
+
+    async def create_nodes(self, client: "AsyncDriver", batch_nodes: list[Node]) -> None:
+        node_cqls = [self.create_node_cql(node=node) for node in batch_nodes]
+        cql = "MERGE {}".format(", ".join(node_cqls))
+        print(cql)
+
+    def create_node_cql(self, node: Node) -> str:
+        identifier = node.id_
+        labels = node.labels
+        labels_string = f':{"&".join(labels).strip()}'
+
+        properties = node.properties
+        if not properties:
+            property_string = ""
+        else:
+            property_string = f" {{{Properties(properties).to_str()}}}"
+
+        return f"({identifier}{labels_string}{property_string})"
 
 
 neo4j_destination_entry = DestinationRegistryEntry(
