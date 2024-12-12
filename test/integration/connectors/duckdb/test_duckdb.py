@@ -56,13 +56,12 @@ def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_d
 
     # deafults to default stager config
     stager = DuckDBUploadStager()
-    stager_params = {
-        "elements_filepath": upload_file,
-        "file_data": file_data,
-        "output_dir": temp_dir,
-        "output_filename": "test_db",
-    }
-    staged_path = stager.run(**stager_params)
+    staged_path = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=temp_dir,
+        output_filename="test_db",
+    )
 
     connection_config = DuckDBConnectionConfig(database=str(provisioned_db_file))
     upload_config = DuckDBUploaderConfig()

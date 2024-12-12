@@ -359,7 +359,9 @@ class SQLUploader(Uploader):
             df[column] = pd.Series()
 
     def upload_contents(self, path: Path) -> None:
-        df = pd.read_json(path, orient="records", lines=True)
+        with path.open() as f:
+            data = json.load(f)
+        df = pd.DataFrame(data=data)
         df.replace({np.nan: None}, inplace=True)
         self._fit_to_schema(df=df, columns=self.get_table_columns())
 

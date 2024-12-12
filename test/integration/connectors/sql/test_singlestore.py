@@ -1,8 +1,7 @@
-import tempfile
+import json
 from contextlib import contextmanager
 from pathlib import Path
 
-import pandas as pd
 import pytest
 import singlestoredb as s2
 from _pytest.fixtures import TopRequest
@@ -50,7 +49,7 @@ def singlestore_download_setup(connect_params: dict) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
-async def test_singlestore_source():
+async def test_singlestore_source(temp_dir: Path):
     connect_params = {
         "host": "localhost",
         "port": 3306,
@@ -59,36 +58,35 @@ async def test_singlestore_source():
         "password": "password",
     }
     with singlestore_download_setup(connect_params=connect_params):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            connection_config = SingleStoreConnectionConfig(
-                host=connect_params["host"],
-                port=connect_params["port"],
-                database=connect_params["database"],
-                user=connect_params["user"],
-                access_config=SingleStoreAccessConfig(password=connect_params["password"]),
-            )
-            indexer = SingleStoreIndexer(
-                connection_config=connection_config,
-                index_config=SingleStoreIndexerConfig(
-                    table_name="cars", id_column="car_id", batch_size=5
-                ),
-            )
-            downloader = SingleStoreDownloader(
-                connection_config=connection_config,
-                download_config=SingleStoreDownloaderConfig(
-                    fields=["car_id", "brand"], download_dir=Path(tmpdir)
-                ),
-            )
-            await source_connector_validation(
-                indexer=indexer,
-                downloader=downloader,
-                configs=SourceValidationConfigs(
-                    test_id="singlestore",
-                    expected_num_files=SEED_DATA_ROWS,
-                    expected_number_indexed_file_data=4,
-                    validate_downloaded_files=True,
-                ),
-            )
+        connection_config = SingleStoreConnectionConfig(
+            host=connect_params["host"],
+            port=connect_params["port"],
+            database=connect_params["database"],
+            user=connect_params["user"],
+            access_config=SingleStoreAccessConfig(password=connect_params["password"]),
+        )
+        indexer = SingleStoreIndexer(
+            connection_config=connection_config,
+            index_config=SingleStoreIndexerConfig(
+                table_name="cars", id_column="car_id", batch_size=5
+            ),
+        )
+        downloader = SingleStoreDownloader(
+            connection_config=connection_config,
+            download_config=SingleStoreDownloaderConfig(
+                fields=["car_id", "brand"], download_dir=temp_dir
+            ),
+        )
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id="singlestore",
+                expected_num_files=SEED_DATA_ROWS,
+                expected_number_indexed_file_data=4,
+                validate_downloaded_files=True,
+            ),
+        )
 
 
 def validate_destination(
@@ -107,62 +105,58 @@ def validate_destination(
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
-async def test_singlestore_destination(upload_file: Path):
+async def test_singlestore_destination(upload_file: Path, temp_dir: Path):
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
     with docker_compose_context(
         docker_compose_path=env_setup_path / "sql" / "singlestore" / "destination"
     ):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            stager = SingleStoreUploadStager()
-            stager_params = {
-                "elements_filepath": upload_file,
-                "file_data": mock_file_data,
-                "output_dir": Path(tmpdir),
-                "output_filename": "test_db",
-            }
-            if stager.is_async():
-                staged_path = await stager.run_async(**stager_params)
-            else:
-                staged_path = stager.run(**stager_params)
+        stager = SingleStoreUploadStager()
+        staged_path = stager.run(
+            elements_filepath=upload_file,
+            file_data=mock_file_data,
+            output_dir=temp_dir,
+            output_filename="test_db",
+        )
 
-            # The stager should append the `.json` suffix to the output filename passed in.
-            assert staged_path.name == "test_db.json"
+        # The stager should append the `.json` suffix to the output filename passed in.
+        assert staged_path.name == "test_db.json"
 
-            connect_params = {
-                "host": "localhost",
-                "port": 3306,
-                "database": "ingest_test",
-                "user": "root",
-                "password": "password",
-            }
+        connect_params = {
+            "host": "localhost",
+            "port": 3306,
+            "database": "ingest_test",
+            "user": "root",
+            "password": "password",
+        }
 
-            uploader = SingleStoreUploader(
-                connection_config=SingleStoreConnectionConfig(
-                    host=connect_params["host"],
-                    port=connect_params["port"],
-                    database=connect_params["database"],
-                    user=connect_params["user"],
-                    access_config=SingleStoreAccessConfig(password=connect_params["password"]),
-                ),
-                upload_config=SingleStoreUploaderConfig(
-                    table_name="elements",
-                ),
-            )
+        uploader = SingleStoreUploader(
+            connection_config=SingleStoreConnectionConfig(
+                host=connect_params["host"],
+                port=connect_params["port"],
+                database=connect_params["database"],
+                user=connect_params["user"],
+                access_config=SingleStoreAccessConfig(password=connect_params["password"]),
+            ),
+            upload_config=SingleStoreUploaderConfig(
+                table_name="elements",
+            ),
+        )
 
-            uploader.run(path=staged_path, file_data=mock_file_data)
+        uploader.run(path=staged_path, file_data=mock_file_data)
 
-            staged_df = pd.read_json(staged_path, orient="records", lines=True)
-            expected_num_elements = len(staged_df)
-            validate_destination(
-                connect_params=connect_params,
-                expected_num_elements=expected_num_elements,
-            )
+        with staged_path.open("r") as f:
+            staged_data = json.load(f)
+        expected_num_elements = len(staged_data)
+        validate_destination(
+            connect_params=connect_params,
+            expected_num_elements=expected_num_elements,
+        )
 
-            uploader.run(path=staged_path, file_data=mock_file_data)
-            validate_destination(
-                connect_params=connect_params,
-                expected_num_elements=expected_num_elements,
-            )
+        uploader.run(path=staged_path, file_data=mock_file_data)
+        validate_destination(
+            connect_params=connect_params,
+            expected_num_elements=expected_num_elements,
+        )
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])

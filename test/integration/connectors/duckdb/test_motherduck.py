@@ -72,15 +72,13 @@ def test_motherduck_destination(
         identifier="mock-file-data",
     )
 
-    # deafults to default stager config
     stager = MotherDuckUploadStager()
-    stager_params = {
-        "elements_filepath": upload_file,
-        "file_data": file_data,
-        "output_dir": temp_dir,
-        "output_filename": "test_db",
-    }
-    staged_path = stager.run(**stager_params)
+    staged_path = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+    )
 
     access_config = MotherDuckAccessConfig(md_token=md_token)
     connection_config = MotherDuckConnectionConfig(

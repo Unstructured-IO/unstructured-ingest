@@ -1,8 +1,7 @@
-import tempfile
+import json
 from contextlib import contextmanager
 from pathlib import Path
 
-import pandas as pd
 import pytest
 from _pytest.fixtures import TopRequest
 from psycopg2 import connect
@@ -53,7 +52,7 @@ def postgres_download_setup() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
-async def test_postgres_source():
+async def test_postgres_source(temp_dir: Path):
     connect_params = {
         "host": "localhost",
         "port": 5433,
@@ -62,36 +61,33 @@ async def test_postgres_source():
         "password": "test",
     }
     with postgres_download_setup():
-        with tempfile.TemporaryDirectory() as tmpdir:
-            connection_config = PostgresConnectionConfig(
-                host=connect_params["host"],
-                port=connect_params["port"],
-                database=connect_params["database"],
-                username=connect_params["user"],
-                access_config=PostgresAccessConfig(password=connect_params["password"]),
-            )
-            indexer = PostgresIndexer(
-                connection_config=connection_config,
-                index_config=PostgresIndexerConfig(
-                    table_name="cars", id_column="car_id", batch_size=5
-                ),
-            )
-            downloader = PostgresDownloader(
-                connection_config=connection_config,
-                download_config=PostgresDownloaderConfig(
-                    fields=["car_id", "brand"], download_dir=Path(tmpdir)
-                ),
-            )
-            await source_connector_validation(
-                indexer=indexer,
-                downloader=downloader,
-                configs=SourceValidationConfigs(
-                    test_id="postgres",
-                    expected_num_files=SEED_DATA_ROWS,
-                    expected_number_indexed_file_data=4,
-                    validate_downloaded_files=True,
-                ),
-            )
+        connection_config = PostgresConnectionConfig(
+            host=connect_params["host"],
+            port=connect_params["port"],
+            database=connect_params["database"],
+            username=connect_params["user"],
+            access_config=PostgresAccessConfig(password=connect_params["password"]),
+        )
+        indexer = PostgresIndexer(
+            connection_config=connection_config,
+            index_config=PostgresIndexerConfig(table_name="cars", id_column="car_id", batch_size=5),
+        )
+        downloader = PostgresDownloader(
+            connection_config=connection_config,
+            download_config=PostgresDownloaderConfig(
+                fields=["car_id", "brand"], download_dir=temp_dir
+            ),
+        )
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id="postgres",
+                expected_num_files=SEED_DATA_ROWS,
+                expected_number_indexed_file_data=4,
+                validate_downloaded_files=True,
+            ),
+        )
 
 
 def validate_destination(
@@ -123,66 +119,63 @@ def validate_destination(
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
-async def test_postgres_destination(upload_file: Path):
+async def test_postgres_destination(upload_file: Path, temp_dir: Path):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
     mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
     with docker_compose_context(
         docker_compose_path=env_setup_path / "sql" / "postgres" / "destination"
     ):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            stager = PostgresUploadStager()
-            stager_params = {
-                "elements_filepath": upload_file,
-                "file_data": mock_file_data,
-                "output_dir": Path(tmpdir),
-                "output_filename": "test_db",
-            }
-            if stager.is_async():
-                staged_path = await stager.run_async(**stager_params)
-            else:
-                staged_path = stager.run(**stager_params)
+        stager = PostgresUploadStager()
+        staged_path = stager.run(
+            elements_filepath=upload_file,
+            file_data=mock_file_data,
+            output_dir=temp_dir,
+            output_filename="test_db",
+        )
 
-            # The stager should append the `.json` suffix to the output filename passed in.
-            assert staged_path.name == "test_db.json"
+        # The stager should append the `.json` suffix to the output filename passed in.
+        assert staged_path.name == "test_db.json"
 
-            connect_params = {
-                "host": "localhost",
-                "port": 5433,
-                "database": "elements",
-                "user": "unstructured",
-                "password": "test",
-            }
+        connect_params = {
+            "host": "localhost",
+            "port": 5433,
+            "database": "elements",
+            "user": "unstructured",
+            "password": "test",
+        }
 
-            uploader = PostgresUploader(
-                connection_config=PostgresConnectionConfig(
-                    host=connect_params["host"],
-                    port=connect_params["port"],
-                    database=connect_params["database"],
-                    username=connect_params["user"],
-                    access_config=PostgresAccessConfig(password=connect_params["password"]),
-                )
+        uploader = PostgresUploader(
+            connection_config=PostgresConnectionConfig(
+                host=connect_params["host"],
+                port=connect_params["port"],
+                database=connect_params["database"],
+                username=connect_params["user"],
+                access_config=PostgresAccessConfig(password=connect_params["password"]),
             )
+        )
 
-            uploader.run(path=staged_path, file_data=mock_file_data)
+        uploader.run(path=staged_path, file_data=mock_file_data)
 
-            staged_df = pd.read_json(staged_path, orient="records", lines=True)
-            sample_element = staged_df.iloc[0]
-            expected_num_elements = len(staged_df)
-            validate_destination(
-                connect_params=connect_params,
-                expected_num_elements=expected_num_elements,
-                expected_text=sample_element["text"],
-                test_embedding=sample_element["embeddings"],
-            )
+        with staged_path.open("r") as f:
+            staged_data = json.load(f)
 
-            uploader.run(path=staged_path, file_data=mock_file_data)
-            validate_destination(
-                connect_params=connect_params,
-                expected_num_elements=expected_num_elements,
-                expected_text=sample_element["text"],
-                test_embedding=sample_element["embeddings"],
-            )
+        sample_element = staged_data[0]
+        expected_num_elements = len(staged_data)
+        validate_destination(
+            connect_params=connect_params,
+            expected_num_elements=expected_num_elements,
+            expected_text=sample_element["text"],
+            test_embedding=sample_element["embeddings"],
+        )
+
+        uploader.run(path=staged_path, file_data=mock_file_data)
+        validate_destination(
+            connect_params=connect_params,
+            expected_num_elements=expected_num_elements,
+            expected_text=sample_element["text"],
+            test_embedding=sample_element["embeddings"],
+        )
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
