@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import networkx as nx
 from dateutil import parser
-from pydantic import BaseModel, Field, Secret
+from pydantic import BaseModel, ConfigDict, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
@@ -88,8 +88,10 @@ class Neo4jUploadStagerConfig(UploadStagerConfig):
 
 
 class Node(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    labels: list[str] = Field(default_factory=list)
+    labels: list[Label] = Field(default_factory=list)
     properties: dict = Field(default_factory=dict)
 
     def __hash__(self):
@@ -97,9 +99,11 @@ class Node(BaseModel):
 
 
 class Edge(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
     source_id: str
     destination_id: str
-    relationship: str
+    relationship: Relationship
 
 
 class GraphData(BaseModel):
@@ -113,7 +117,7 @@ class GraphData(BaseModel):
             Edge(
                 source_id=u.id_,
                 destination_id=v.id_,
-                relationship=data_dict["relationship"],
+                relationship=Relationship(data_dict["relationship"]),
             )
             for u, v, data_dict in nx_graph.edges(data=True)
         ]
@@ -201,7 +205,7 @@ class Neo4jUploadStager(UploadStager):
             properties["date_created"] = parser.parse(date_created).isoformat()
         if date_modified := file_data.metadata.date_modified:
             properties["date_modified"] = parser.parse(date_modified).isoformat()
-        return Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT.value])
+        return Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT])
 
     def _create_element_node(self, element: dict) -> Node:
         properties = {"id": element["element_id"], "text": element["text"]}
@@ -210,7 +214,7 @@ class Neo4jUploadStager(UploadStager):
             properties["embeddings"] = embeddings
 
         label = Label.CHUNK if self._is_chunk(element) else Label.UNSTRUCTURED_ELEMENT
-        return Node(id_=element["element_id"], properties=properties, labels=[label.value])
+        return Node(id_=element["element_id"], properties=properties, labels=[label])
 
     def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
         orig_elements = chunk_element.get("metadata", {}).get("orig_elements")
@@ -250,7 +254,7 @@ class Neo4jUploader(Uploader):
             await self._merge_graph(graph_data=graph_data, client=client)
 
     async def _merge_graph(self, graph_data: GraphData, client: AsyncDriver) -> None:
-        nodes_by_labels: defaultdict[tuple[str, ...], list[Node]] = defaultdict(list)
+        nodes_by_labels: defaultdict[tuple[Label, ...], list[Node]] = defaultdict(list)
         for node in graph_data.nodes:
             nodes_by_labels[tuple(node.labels)].append(node)
 
@@ -260,7 +264,7 @@ class Neo4jUploader(Uploader):
             in_parallel=True,
         )
 
-        edges_by_relationship: defaultdict[str, list[Edge]] = defaultdict(list)
+        edges_by_relationship: defaultdict[Relationship, list[Edge]] = defaultdict(list)
         for edge in graph_data.edges:
             edges_by_relationship[edge.relationship].append(edge)
 
@@ -290,7 +294,7 @@ class Neo4jUploader(Uploader):
                 await client.execute_query(query, parameters_=parameters)
 
     @staticmethod
-    def _create_nodes_query(nodes: list[Node], labels: tuple[str, ...]) -> tuple[str, dict]:
+    def _create_nodes_query(nodes: list[Node], labels: tuple[Label, ...]) -> tuple[str, dict]:
         labels_string = ", ".join(labels)
         query_string = f"""
             UNWIND $nodes AS node
@@ -301,7 +305,7 @@ class Neo4jUploader(Uploader):
         return query_string, parameters
 
     @staticmethod
-    def _create_edges_query(edges: list[Edge], relationship: str) -> tuple[str, dict]:
+    def _create_edges_query(edges: list[Edge], relationship: Relationship) -> tuple[str, dict]:
         query_string = f"""
             UNWIND $edges AS edge
             MATCH (u {{id: edge.source}}), (v {{id: edge.destination}})
