@@ -1,10 +1,10 @@
 import asyncio
 import json
 from abc import ABC, abstractmethod
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -24,7 +24,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
-    from qdrant_client import AsyncQdrantClient
+    from qdrant_client import AsyncQdrantClient, QdrantClient
 
 
 class QdrantAccessConfig(AccessConfig, ABC):
@@ -42,8 +42,8 @@ class QdrantConnectionConfig(ConnectionConfig, ABC):
 
     @requires_dependencies(["qdrant_client"], extras="qdrant")
     @asynccontextmanager
-    async def get_client(self) -> AsyncGenerator["AsyncQdrantClient", None]:
-        from qdrant_client.async_qdrant_client import AsyncQdrantClient
+    async def get_async_client(self) -> AsyncGenerator["AsyncQdrantClient", None]:
+        from qdrant_client import AsyncQdrantClient
 
         client_kwargs = self.get_client_kwargs()
         client = AsyncQdrantClient(**client_kwargs)
@@ -51,6 +51,18 @@ class QdrantConnectionConfig(ConnectionConfig, ABC):
             yield client
         finally:
             await client.close()
+
+    @requires_dependencies(["qdrant_client"], extras="qdrant")
+    @contextmanager
+    def get_client(self) -> Generator["QdrantClient", None, None]:
+        from qdrant_client import QdrantClient
+
+        client_kwargs = self.get_client_kwargs()
+        client = QdrantClient(**client_kwargs)
+        try:
+            yield client
+        finally:
+            client.close()
 
 
 class QdrantUploadStagerConfig(UploadStagerConfig):
@@ -98,12 +110,15 @@ class QdrantUploader(Uploader, ABC):
 
     @DestinationConnectionError.wrap
     def precheck(self) -> None:
-        async def check_connection():
-            async with self.connection_config.get_client() as async_client:
-                await async_client.get_collections()
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(check_connection())
+        with self.connection_config.get_client() as client:
+            collections_response = client.get_collections()
+            collection_names = [c.name for c in collections_response.collections]
+            if self.upload_config.collection_name not in collection_names:
+                raise DestinationConnectionError(
+                    "collection '{}' not found: {}".format(
+                        self.upload_config.collection_name, ", ".join(collection_names)
+                    )
+                )
 
     def is_async(self):
         return True
@@ -137,7 +152,7 @@ class QdrantUploader(Uploader, ABC):
                 len(points),
                 self.upload_config.collection_name,
             )
-            async with self.connection_config.get_client() as async_client:
+            async with self.connection_config.get_async_client() as async_client:
                 await async_client.upsert(
                     self.upload_config.collection_name, points=points, wait=True
                 )
