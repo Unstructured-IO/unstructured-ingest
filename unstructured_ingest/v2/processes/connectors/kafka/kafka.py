@@ -170,7 +170,7 @@ class KafkaIndexer(Indexer, ABC):
                 ]
                 if self.index_config.topic not in current_topics:
                     raise SourceConnectionError(
-                        "expected topic {} not detected in cluster: {}".format(
+                        "expected topic '{}' not detected in cluster: '{}'".format(
                             self.index_config.topic, ", ".join(current_topics)
                         )
                     )
@@ -232,6 +232,13 @@ class KafkaUploader(Uploader, ABC):
                     topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
                 ]
                 logger.info(f"successfully checked available topics: {current_topics}")
+                if self.upload_config.topic not in current_topics:
+                    raise DestinationConnectionError(
+                        "expected topic '{}' not detected in cluster: '{}'".format(
+                            self.upload_config.topic, ", ".join(current_topics)
+                        )
+                    )
+
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
