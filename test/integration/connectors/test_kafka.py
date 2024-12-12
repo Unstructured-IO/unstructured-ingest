@@ -21,6 +21,7 @@ from test.integration.connectors.utils.validation import (
 from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connectors.kafka.cloud import (
     CloudKafkaAccessConfig,
     CloudKafkaConnectionConfig,
@@ -72,13 +73,19 @@ def wait_for_topic(
     attempts = 0
     while (topic not in current_topics) == exists and attempts < retries:
         attempts += 1
-        print(
+        logger.info(
             "Attempt {}: Waiting for topic {} to {} exist. Current topics: [{}]".format(
                 attempts, topic, "" if exists else "not", ", ".join(current_topics)
             )
         )
         time.sleep(interval)
         current_topics = admin_client.list_topics().topics
+    logger.info(
+        "Attempt {} succeeded: Waiting for topic {} to {} exist. Current topics: [{}]".format(
+            attempts, topic, "" if exists else "not", ", ".join(current_topics)
+        )
+    )
+
     if (topic not in current_topics) == exists:
         raise TimeoutError(f"Timeout out waiting for topic {topic} to exist")
 
@@ -93,7 +100,7 @@ def kafka_seed_topic(docker_compose_ctx) -> str:
         message = f"This is some text for message {i}"
         producer.produce(topic=TOPIC, value=message)
     producer.flush(timeout=10)
-    print(f"kafka topic {TOPIC} seeded with {SEED_MESSAGES} messages")
+    logger.info(f"kafka topic {TOPIC} seeded with {SEED_MESSAGES} messages")
     wait_for_topic(topic=TOPIC)
     return TOPIC
 
@@ -144,7 +151,7 @@ def kafka_seed_topic_cloud(request) -> int:
         res = admin_client.delete_topics([TOPIC], operation_timeout=10)
         for topic, f in res.items():
             f.result()
-            print(f"Topic {topic} removed")
+            logger.info(f"Topic {topic} removed")
             wait_for_topic(TOPIC, 5, 1, False, admin_client)
     except Exception:
         pass
@@ -172,7 +179,7 @@ def kafka_seed_topic_cloud(request) -> int:
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
 @requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
-@pytest.mark.parametrize('kafka_seed_topic_cloud', [5], indirect=True)
+@pytest.mark.parametrize("kafka_seed_topic_cloud", [5], indirect=True)
 async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
     """
     In order to have this test succeed, you need to create cluster on Confluent Cloud,
@@ -261,7 +268,6 @@ def get_all_messages(conf: dict, topic: str, max_empty_messages: int = 5) -> lis
             finally:
                 consumer.commit(asynchronous=False)
     finally:
-        print("closing consumer")
         consumer.close()
     return messages
 
@@ -311,7 +317,9 @@ def test_kafka_destination_local_precheck_fail_no_cluster():
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 @requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
-@pytest.mark.parametrize('kafka_seed_topic_cloud', [0], indirect=True)  # make it just create topic, without messages
+@pytest.mark.parametrize(
+    "kafka_seed_topic_cloud", [0], indirect=True
+)  # make it just create topic, without messages
 async def test_kafka_destination_cloud(upload_file: Path, kafka_seed_topic_cloud: int):
     """
     In order to have this test succeed, you need to create cluster on Confluent Cloud.
