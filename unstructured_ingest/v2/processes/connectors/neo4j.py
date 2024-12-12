@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
@@ -10,13 +11,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import networkx as nx
-from cymple.typedefs import Properties
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -27,7 +26,6 @@ from unstructured_ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
@@ -39,7 +37,7 @@ CONNECTOR_TYPE = "neo4j"
 
 
 class Label(Enum):
-    UNSTRUCTURED_ELEMENT = "Unstructured Element"
+    UNSTRUCTURED_ELEMENT = "UnstructuredElement"
     CHUNK = "Chunk"
     DOCUMENT = "Document"
 
@@ -105,16 +103,16 @@ class Edge(BaseModel):
 
 
 class GraphData(BaseModel):
-    nodes: dict[str, Node]
+    nodes: list[Node]
     edges: list[Edge]
 
     @classmethod
     def from_nx(cls, nx_graph: nx.MultiDiGraph) -> GraphData:
-        nodes = {node.node_id: node for node in nx_graph.nodes()}
-        edges = {
+        nodes = list(nx_graph.nodes())
+        edges = [
             Edge(from_node=u.node_id, to_node=v.node_id, relationship=data_dict["relationship"])
             for u, v, data_dict in nx_graph.edges(data=True)
-        }
+        ]
         return GraphData(nodes=nodes, edges=edges)
 
 
@@ -142,7 +140,7 @@ class Neo4jUploadStager(UploadStager):
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with open(output_filepath, "w") as file:
-            json.dump(GraphData.from_nx(nx_graph), file, indent=4)
+            json.dump(GraphData.from_nx(nx_graph).model_dump(), file, indent=4)
 
         return output_filepath
 
@@ -209,7 +207,7 @@ class Neo4jUploadStager(UploadStager):
         if embeddings := element.get("embeddings"):
             properties["embeddings"] = embeddings
 
-        label = Label.UNSTRUCTURED_ELEMENT if self._is_chunk(element) else Label.CHUNK
+        label = Label.CHUNK if self._is_chunk(element) else Label.UNSTRUCTURED_ELEMENT
         return Node(node_id=element["element_id"], properties=properties, labels=[label.value])
 
     def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
@@ -228,9 +226,6 @@ class Neo4jUploader(Uploader):
     connection_config: Neo4jConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def is_async(self):
-        return True
-
     @DestinationConnectionError.wrap
     def precheck(self) -> None:
         async def verify_auth():
@@ -240,32 +235,67 @@ class Neo4jUploader(Uploader):
 
         asyncio.run(verify_auth())
 
+    def is_async(self):
+        return True
+
     async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
         with path.open() as file:
             staged_data = json.load(file)
+
         graph_data = GraphData.model_validate(staged_data)
+
         async with self.connection_config.get_client() as client:
-            logger.info("Creating new file node")
-            for batch_nodes in batch_generator(graph_data.nodes.values()):
-                await self.create_nodes(client=client, batch_nodes=batch_nodes)
+            await self._merge_graph(graph_data=graph_data, client=client)
 
-    async def create_nodes(self, client: "AsyncDriver", batch_nodes: list[Node]) -> None:
-        node_cqls = [self.create_node_cql(node=node) for node in batch_nodes]
-        cql = "MERGE {}".format(", ".join(node_cqls))
-        print(cql)
+    # numbers = [{"value": random()} for _ in range(10000)]
+    # driver.execute_query("""
+    #     WITH $numbers AS batch
+    #     UNWIND batch AS node
+    #     MERGE (n:Number)
+    #     SET n.value = node.value
+    #     """, numbers=numbers,
+    # )
+    # https://community.neo4j.com/t/iterate-over-list-of-objects-and-create-nodes-by-properties-of-objects/46205/8
+    async def _merge_graph(self, graph_data: GraphData, client: AsyncDriver) -> None:
+        nodes_by_labels: defaultdict[tuple[str, ...], list[Node]] = defaultdict(list)
+        for node in graph_data.nodes:
+            nodes_by_labels[tuple(node.labels)].append(node)
 
-    def create_node_cql(self, node: Node) -> str:
-        identifier = node.node_id
-        labels = node.labels
-        labels_string = f':{"&".join(labels).strip()}'
+        await asyncio.gather(
+            *[
+                self._create_nodes(nodes, labels, client)
+                for labels, nodes in nodes_by_labels.items()
+            ]
+        )
 
-        properties = node.properties
-        if not properties:
-            property_string = ""
-        else:
-            property_string = f" {{{Properties(properties).to_str()}}}"
+        edges_by_relationship: defaultdict[Relationship, list[Edge]] = defaultdict(list)
+        for edge in graph_data.edges:
+            edges_by_relationship[edge.relationship].append(edge)
 
-        return f"({identifier}{labels_string}{property_string})"
+    async def _create_nodes(
+        self, nodes: list[Node], labels: tuple[str, ...], client: AsyncDriver
+    ) -> None:
+        await client.execute_query(
+            f"""
+            WITH $nodes AS batch
+            UNWIND batch AS node
+            CREATE (n: {", ".join(labels)} {{id: node.id}})
+            SET n += node
+            """,
+            nodes=[{"id": node.node_id, **node.properties} for node in nodes],
+        )
+
+    # async def _create_edges(
+    #     edges: list[Edge], relationship: Relationship, client: AsyncDriver
+    # ) -> None:
+    #     await client.execute_query(
+    #         f"""
+    #         WITH $edges AS batch
+    #         UNWIND batch AS edge
+    #         MERGE (:{} {{id: edge.origin_id}})-[r:{relationship.value}]->(:{} {{id: edge.destination_id}})
+    #         """,
+    #         edges=[],
+    #     )
 
 
 neo4j_destination_entry = DestinationRegistryEntry(
