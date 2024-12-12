@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
@@ -249,18 +248,16 @@ class WeaviateUploader(Uploader, ABC):
             if not resp.failed and not resp.successful:
                 break
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"class {self.connection_config.access_config} "
         )
 
         with self.connection_config.get_client() as weaviate_client:
             self.delete_by_record_id(client=weaviate_client, file_data=file_data)
             with self.upload_config.get_batch_client(client=weaviate_client) as batch_client:
-                for e in elements_dict:
+                for e in data:
                     vector = e.pop("embeddings", None)
                     batch_client.add_object(
                         collection=self.upload_config.collection,

@@ -1,4 +1,3 @@
-import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,6 +7,7 @@ import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -101,19 +101,21 @@ class DuckDBUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def upload_contents(self, path: Path) -> None:
-        with path.open() as f:
-            data = json.load(f)
-        df_elements = pd.DataFrame(data=data)
-        logger.debug(f"uploading {len(df_elements)} entries to {self.connection_config.database} ")
+    def upload_dataframe(self, df: pd.DataFrame) -> None:
+        logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")
 
         with self.connection_config.get_client() as conn:
             conn.query(
                 f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"  # noqa: E501
             )
 
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data=data)
+        self.upload_dataframe(df=df)
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        self.upload_contents(path=path)
+        df = get_data_df(path)
+        self.upload_dataframe(df=df)
 
 
 duckdb_destination_entry = DestinationRegistryEntry(

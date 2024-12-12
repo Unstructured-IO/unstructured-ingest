@@ -1,9 +1,7 @@
-import json
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import datetime
-from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
@@ -332,18 +330,16 @@ class MongoDBUploader(Uploader):
             f"deleted {delete_results.deleted_count} records from collection {collection.name}"
         )
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"db, {self.upload_config.database}, "
             f"collection {self.upload_config.collection} "
             f"at {self.connection_config.host}",
         )
         # This would typically live in the stager but since no other manipulation
         # is done, setting the record id field in the uploader
-        for element in elements_dict:
+        for element in data:
             element[self.upload_config.record_id_key] = file_data.identifier
         with self.connection_config.get_client() as client:
             db = client[self.upload_config.database]
@@ -352,7 +348,7 @@ class MongoDBUploader(Uploader):
                 self.delete_by_record_id(file_data=file_data, collection=collection)
             else:
                 logger.warning("criteria for deleting previous content not met, skipping")
-            for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+            for chunk in batch_generator(data, self.upload_config.batch_size):
                 collection.insert_many(chunk)
 
 

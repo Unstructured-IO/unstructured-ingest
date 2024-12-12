@@ -1,7 +1,5 @@
-import json
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 from dateutil import parser
@@ -171,19 +169,16 @@ class ChromaUploader(Uploader):
         )
         return chroma_dict
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
-
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"collection {self.connection_config.collection_name} "
             f"at {self.connection_config.host}",
         )
         client = self.connection_config.get_client()
 
         collection = client.get_or_create_collection(name=self.connection_config.collection_name)
-        for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+        for chunk in batch_generator(data, self.upload_config.batch_size):
             self.upsert_batch(collection, self.prepare_chroma_list(chunk))
 
 

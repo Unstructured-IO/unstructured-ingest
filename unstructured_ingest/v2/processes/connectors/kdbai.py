@@ -1,15 +1,13 @@
-import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import numpy as np
 import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.data_prep import flatten_dict, get_data_df, split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -129,31 +127,16 @@ class KdbaiUploader(Uploader):
             f"uploading {len(df)} entries to {self.connection_config.endpoint} "
             f"db {self.upload_config.database_name} in table {self.upload_config.table_name}"
         )
-        for _, batch_df in df.groupby(np.arange(len(df)) // self.upload_config.batch_size):
+        for batch_df in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
 
-    def process_csv(self, csv_paths: list[Path]):
-        logger.debug(f"uploading content from {len(csv_paths)} csv files")
-        df = pd.concat((pd.read_csv(path) for path in csv_paths), ignore_index=True)
-        self.process_dataframe(df=df)
-
-    def process_json(self, json_paths: list[Path]):
-        logger.debug(f"uploading content from {len(json_paths)} json files")
-        all_records = []
-        for p in json_paths:
-            with open(p) as json_file:
-                all_records.extend(json.load(json_file))
-
-        df = pd.DataFrame(data=all_records)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data=data)
         self.process_dataframe(df=df)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        if path.suffix == ".csv":
-            self.process_csv(csv_paths=[path])
-        elif path.suffix == ".json":
-            self.process_json(json_paths=[path])
-        else:
-            raise ValueError(f"Unsupported file type, must be json or csv file: {path}")
+        data = get_data_df(path=path)
+        self.process_dataframe(df=data)
 
 
 kdbai_destination_entry = DestinationRegistryEntry(
