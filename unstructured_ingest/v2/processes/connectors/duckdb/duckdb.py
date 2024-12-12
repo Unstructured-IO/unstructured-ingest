@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
@@ -97,7 +98,9 @@ class DuckDBUploader(Uploader):
         return duckdb.connect(self.connection_config.database)
 
     def upload_contents(self, path: Path) -> None:
-        df_elements = pd.read_json(path, orient="records", lines=True)
+        with path.open() as f:
+            data = json.load(f)
+        df_elements = pd.DataFrame(data=data)
         logger.debug(f"uploading {len(df_elements)} entries to {self.connection_config.database} ")
 
         with self.connection() as conn:
