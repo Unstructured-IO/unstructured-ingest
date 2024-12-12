@@ -28,6 +28,8 @@ from unstructured_ingest.v2.processes.connectors.kafka.cloud import (
     CloudKafkaDownloaderConfig,
     CloudKafkaIndexer,
     CloudKafkaIndexerConfig,
+    CloudKafkaUploader,
+    CloudKafkaUploaderConfig,
 )
 from unstructured_ingest.v2.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,
@@ -128,7 +130,8 @@ async def test_kafka_source_local(kafka_seed_topic: str):
 
 
 @pytest.fixture
-def kafka_seed_topic_cloud(expected_messages: int = 5) -> int:
+def kafka_seed_topic_cloud(request) -> int:
+    expected_messages: int = request.param
     conf = {
         "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVER"],
         "sasl.username": os.environ["KAFKA_API_KEY"],
@@ -169,6 +172,7 @@ def kafka_seed_topic_cloud(expected_messages: int = 5) -> int:
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
 @requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
+@pytest.mark.parametrize('kafka_seed_topic_cloud', [5], indirect=True)
 async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
     """
     In order to have this test succeed, you need to create cluster on Confluent Cloud,
@@ -235,20 +239,14 @@ def test_kafka_source_local_precheck_fail_no_topic(kafka_seed_topic: str):
         indexer.precheck()
 
 
-def get_all_messages(topic: str, max_empty_messages: int = 5) -> list[dict]:
-    conf = {
-        "bootstrap.servers": "localhost:29092",
-        "group.id": "default_group_id",
-        "enable.auto.commit": "false",
-        "auto.offset.reset": "earliest",
-    }
+def get_all_messages(conf: dict, topic: str, max_empty_messages: int = 5) -> list[dict]:
     consumer = Consumer(conf)
     consumer.subscribe([topic])
     messages = []
     try:
         empty_count = 0
         while empty_count < max_empty_messages:
-            msg = consumer.poll(timeout=1)
+            msg = consumer.poll(timeout=3)
             if msg is None:
                 empty_count += 1
                 continue
@@ -285,12 +283,18 @@ async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: st
         await uploader.run_async(path=upload_file, file_data=file_data)
     else:
         uploader.run(path=upload_file, file_data=file_data)
-    all_messages = get_all_messages(topic=kafka_upload_topic)
+    conf = {
+        "bootstrap.servers": "localhost:29092",
+        "group.id": "default_group_id",
+        "enable.auto.commit": "false",
+        "auto.offset.reset": "earliest",
+    }
+    all_messages = get_all_messages(conf=conf, topic=kafka_upload_topic)
     with upload_file.open("r") as upload_fs:
         content_to_upload = json.load(upload_fs)
     assert len(all_messages) == len(content_to_upload), (
         f"expected number of messages ({len(content_to_upload)}) doesn't "
-        f"match how many messages read off of kakfa topic {kafka_upload_topic}: {len(all_messages)}"
+        f"match how many messages read off of kafka topic {kafka_upload_topic}: {len(all_messages)}"
     )
 
 
@@ -302,3 +306,57 @@ def test_kafka_destination_local_precheck_fail_no_cluster():
     )
     with pytest.raises(DestinationConnectionError):
         uploader.precheck()
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
+@pytest.mark.parametrize('kafka_seed_topic_cloud', [0], indirect=True)  # make it just create topic, without messages
+async def test_kafka_destination_cloud(upload_file: Path, kafka_seed_topic_cloud: int):
+    """
+    In order to have this test succeed, you need to create cluster on Confluent Cloud.
+    """
+
+    connection_config = CloudKafkaConnectionConfig(
+        bootstrap_server=os.environ["KAFKA_BOOTSTRAP_SERVER"],
+        port=9092,
+        access_config=CloudKafkaAccessConfig(
+            kafka_api_key=os.environ["KAFKA_API_KEY"],
+            secret=os.environ["KAFKA_SECRET"],
+        ),
+    )
+
+    uploader = CloudKafkaUploader(
+        connection_config=connection_config,
+        upload_config=CloudKafkaUploaderConfig(topic=TOPIC, batch_size=10),
+    )
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    uploader.precheck()
+
+    if uploader.is_async():
+        await uploader.run_async(path=upload_file, file_data=file_data)
+    else:
+        uploader.run(path=upload_file, file_data=file_data)
+
+    conf = {
+        "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVER"],
+        "sasl.username": os.environ["KAFKA_API_KEY"],
+        "sasl.password": os.environ["KAFKA_SECRET"],
+        "sasl.mechanism": "PLAIN",
+        "security.protocol": "SASL_SSL",
+        "group.id": "default_group_name",
+        "enable.auto.commit": "false",
+        "auto.offset.reset": "earliest",
+    }
+
+    all_messages = get_all_messages(conf=conf, topic=TOPIC)
+    with upload_file.open("r") as upload_fs:
+        content_to_upload = json.load(upload_fs)
+    assert len(all_messages) == len(content_to_upload), (
+        f"expected number of messages ({len(content_to_upload)}) doesn't "
+        f"match how many messages read off of kafka topic {TOPIC}: {len(all_messages)}"
+    )
