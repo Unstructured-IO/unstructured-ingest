@@ -1,6 +1,6 @@
 {
-  "identifier": "1c704234-e0da-5676-be32-a12cc6407b3d",
-  "connector_type": "sqlite",
+  "identifier": "324354db-0465-56ca-a023-072481f5dd03",
+  "connector_type": "singlestore",
   "source_identifiers": null,
   "metadata": {
     "url": null,
@@ -8,7 +8,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734106259.0233579",
+    "date_processed": "1734106455.915812",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -21,19 +21,27 @@
   "display_name": null,
   "batch_items": [
     {
-      "identifier": "10",
+      "identifier": "1",
       "version": null
     },
     {
-      "identifier": "7",
+      "identifier": "2",
       "version": null
     },
     {
-      "identifier": "8",
+      "identifier": "3",
       "version": null
     },
     {
-      "identifier": "9",
+      "identifier": "4",
+      "version": null
+    },
+    {
+      "identifier": "5",
+      "version": null
+    },
+    {
+      "identifier": "6",
       "version": null
     }
   ]

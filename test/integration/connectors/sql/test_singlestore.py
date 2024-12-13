@@ -29,7 +29,7 @@ from unstructured_ingest.v2.processes.connectors.sql.singlestore import (
     SingleStoreUploadStager,
 )
 
-SEED_DATA_ROWS = 20
+SEED_DATA_ROWS = 10
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ async def test_singlestore_source(temp_dir: Path, source_database_setup: dict):
     )
     indexer = SingleStoreIndexer(
         connection_config=connection_config,
-        index_config=SingleStoreIndexerConfig(table_name="cars", id_column="car_id", batch_size=5),
+        index_config=SingleStoreIndexerConfig(table_name="cars", id_column="car_id", batch_size=6),
     )
     downloader = SingleStoreDownloader(
         connection_config=connection_config,
@@ -80,7 +80,7 @@ async def test_singlestore_source(temp_dir: Path, source_database_setup: dict):
         configs=SourceValidationConfigs(
             test_id="singlestore",
             expected_num_files=SEED_DATA_ROWS,
-            expected_number_indexed_file_data=4,
+            expected_number_indexed_file_data=2,
             validate_downloaded_files=True,
         ),
     )
