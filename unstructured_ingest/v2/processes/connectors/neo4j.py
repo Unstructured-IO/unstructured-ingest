@@ -108,37 +108,36 @@ class Neo4jUploadStager(UploadStager):
         graph.add_node(document_node)
 
         previous_node: Optional[_Node] = None
-        # TODO(Filip Knefel): Consolidate the nodes create/add code in this loop
         for element in elements:
+            element_node = self._create_element_node(element)
+            order_relationship = (
+                Relationship.NEXT_CHUNK if self._is_chunk(element) else Relationship.NEXT_ELEMENT
+            )
+            if previous_node:
+                graph.add_edge(element_node, previous_node, relationship=order_relationship)
+
+            previous_node = element_node
+            graph.add_edge(element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT)
+
             if self._is_chunk(element):
-                chunk_node = self._create_element_node(element)
-                if previous_node:
-                    graph.add_edge(chunk_node, previous_node, relationship=Relationship.NEXT_CHUNK)
-                previous_node = chunk_node
-                graph.add_edge(
-                    chunk_node, document_node, relationship=Relationship.PART_OF_DOCUMENT
-                )
                 origin_element_nodes = [
                     self._create_element_node(origin_element)
                     for origin_element in self._get_origin_elements(element)
                 ]
                 graph.add_edges_from(
                     [
-                        (origin_element_node, chunk_node)
+                        (origin_element_node, element_node)
                         for origin_element_node in origin_element_nodes
                     ],
                     relationship=Relationship.PART_OF_CHUNK,
                 )
-            else:
-                element_node = self._create_element_node(element)
-                graph.add_edge(
-                    element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT
+                graph.add_edges_from(
+                    [
+                        (origin_element_node, document_node)
+                        for origin_element_node in origin_element_nodes
+                    ],
+                    relationship=Relationship.PART_OF_DOCUMENT,
                 )
-                if previous_node:
-                    graph.add_edge(
-                        element_node, previous_node, relationship=Relationship.NEXT_CHUNK
-                    )
-                previous_node = element_node
 
         return graph
 

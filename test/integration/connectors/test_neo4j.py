@@ -90,7 +90,7 @@ async def validate_uploaded_graph():
             )
             next_chunk_count = len(records)
 
-            assert part_of_document_count == EXPECTED_CHUNKS_COUNT
+            assert part_of_document_count == EXPECTED_CHUNKS_COUNT + EXPECTED_ELEMENT_COUNT
             assert next_chunk_count == EXPECTED_CHUNKS_COUNT - 1
 
     finally:
