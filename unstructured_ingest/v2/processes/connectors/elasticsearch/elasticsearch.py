@@ -1,6 +1,5 @@
 import collections
 import hashlib
-import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -20,6 +19,8 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -46,6 +47,14 @@ if TYPE_CHECKING:
     from elasticsearch import Elasticsearch as ElasticsearchClient
 
 CONNECTOR_TYPE = "elasticsearch"
+
+
+class FileDataMetadata(BaseModel):
+    index_name: str
+
+
+class ElasticsearchBatchFileData(BatchFileData):
+    additional_metadata: FileDataMetadata
 
 
 class ElasticsearchAccessConfig(AccessConfig):
@@ -174,7 +183,7 @@ class ElasticsearchIndexer(Indexer):
 
             return {hit["_id"] for hit in hits}
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         id_batches: list[frozenset[str]] = [
@@ -191,19 +200,16 @@ class ElasticsearchIndexer(Indexer):
         ]
         for batch in id_batches:
             # Make sure the hash is always a positive number to create identified
-            identified = str(hash(batch) + sys.maxsize + 1)
-            yield FileData(
-                identifier=identified,
+            yield ElasticsearchBatchFileData(
                 connector_type=CONNECTOR_TYPE,
-                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
                     date_processed=str(time()),
                 ),
-                additional_metadata={
-                    "ids": list(batch),
-                    "index_name": self.index_config.index_name,
-                },
+                additional_metadata=FileDataMetadata(
+                    index_name=self.index_config.index_name,
+                ),
+                batch_items=[BatchItem(identifier=b) for b in batch],
             )
 
 
@@ -285,11 +291,12 @@ class ElasticsearchDownloader(Downloader):
 
         return AsyncElasticsearch, async_scan
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
+        elasticsearch_filedata = ElasticsearchBatchFileData.cast(file_data=file_data)
         AsyncClient, async_scan = self.load_async()
 
-        index_name: str = file_data.additional_metadata["index_name"]
-        ids: list[str] = file_data.additional_metadata["ids"]
+        index_name: str = elasticsearch_filedata.additional_metadata.index_name
+        ids: list[str] = [item.identifier for item in elasticsearch_filedata.batch_items]
 
         scan_query = {
             "_source": self.download_config.fields,

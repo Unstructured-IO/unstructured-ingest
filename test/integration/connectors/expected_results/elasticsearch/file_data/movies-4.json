@@ -6,7 +6,6 @@
     "fullpath": "movies-4.txt",
     "rel_path": null
   },
-  "doc_type": "file",
   "metadata": {
     "url": null,
     "version": "1",
@@ -19,7 +18,7 @@
     },
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1732112039.738688",
+    "date_processed": "1734103913.149733",
     "permissions_data": null,
     "filesize_bytes": null
   },
