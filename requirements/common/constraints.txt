@@ -26,4 +26,3 @@ wrapt>=1.14.0
 # instead of 7.2.0. Need to investigate
 importlib-metadata==7.1.0
 numpy<2
-httpx<=0.27.2
