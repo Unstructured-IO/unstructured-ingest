@@ -234,7 +234,7 @@ class Neo4jUploader(Uploader):
     def precheck(self) -> None:
         async def verify_auth():
             async with self.connection_config.get_client() as client:
-                if not client.verify_authentication():
+                if not await client.verify_authentication(database=self.upload_config.database):
                     raise DestinationConnectionError("Invalid authentication information.")
 
         asyncio.run(verify_auth())

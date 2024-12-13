@@ -1,11 +1,14 @@
+import time
 from pathlib import Path
 
 import pytest
-from neo4j import AsyncGraphDatabase
+from neo4j import AsyncGraphDatabase, Driver, GraphDatabase
+from neo4j.exceptions import ServiceUnavailable
 from pytest_check import check
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from test.integration.connectors.utils.docker_compose import docker_compose_context
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.neo4j import (
     Label,
@@ -20,12 +23,37 @@ from unstructured_ingest.v2.processes.connectors.neo4j import (
 USERNAME = "neo4j"
 PASSWORD = "password"
 URI = "neo4j://localhost:7687"
+DATABASE = "neo4j"
 
 EXPECTED_ELEMENT_COUNT = 42
 EXPECTED_CHUNKS_COUNT = 22
 EXPECTED_DOCUMENT_COUNT = 1
 EXPECTED_NODES_COUNT = 65
 DOCKER_COMPOSE_FILEPATH = env_setup_path / "neo4j" / "docker-compose.yml"
+
+
+# NOTE: Precheck tests are read-only so we utilize the same container for all tests.
+# If new tests require clean neo4j container, this fixture's scope should be adjusted.
+@pytest.fixture(autouse=True, scope="module")
+def _neo4j_server():
+    with docker_compose_context(DOCKER_COMPOSE_FILEPATH):
+        driver = GraphDatabase.driver(uri=URI, auth=(USERNAME, PASSWORD))
+        wait_for_connection(driver)
+        driver.close()
+        yield
+
+
+def wait_for_connection(driver: Driver, retries: int = 10, delay_seconds: int = 2):
+    attempts = 0
+    while attempts < retries:
+        try:
+            driver.verify_connectivity()
+            return
+        except ServiceUnavailable:
+            time.sleep(delay_seconds)
+            attempts += 1
+
+    pytest.fail("Failed to connect with Neo4j server.")
 
 
 @pytest.mark.asyncio
@@ -38,7 +66,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
             username=USERNAME,
             uri=URI,
         ),
-        upload_config=Neo4jUploaderConfig(database="neo4j"),
+        upload_config=Neo4jUploaderConfig(database=DATABASE),
     )
     file_data = FileData(
         identifier="mock-file-data",
@@ -54,10 +82,53 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
         output_dir=tmp_path,
         output_filename=upload_file.name,
     )
+    driver = AsyncGraphDatabase.driver(uri=URI, auth=(USERNAME, PASSWORD))
+    verified = await driver.verify_authentication()
+    assert verified
+    await uploader.run_async(staged_filepath, file_data)
+    await validate_uploaded_graph()
 
-    with docker_compose_context(DOCKER_COMPOSE_FILEPATH):
-        await uploader.run_async(staged_filepath, file_data)
-        await validate_uploaded_graph()
+
+@pytest.mark.tags(DESTINATION_TAG)
+class TestPrecheck:
+    @pytest.fixture
+    def configured_uploader(self) -> Neo4jUploader:
+        return Neo4jUploader(
+            connection_config=Neo4jConnectionConfig(
+                access_config=Neo4jAccessConfig(password=PASSWORD), username=USERNAME, uri=URI
+            ),
+            upload_config=Neo4jUploaderConfig(database=DATABASE),
+        )
+
+    def test_succeeds(self, configured_uploader: Neo4jUploader):
+        configured_uploader.precheck()
+
+    def test_fails_on_invalid_password(self, configured_uploader: Neo4jUploader):
+        configured_uploader.connection_config.access_config.get_secret_value().password = (
+            "invalid-password"
+        )
+        with pytest.raises(DestinationConnectionError, match="Invalid authentication information."):
+            configured_uploader.precheck()
+
+    def test_fails_on_invalid_username(self, configured_uploader: Neo4jUploader):
+        configured_uploader.connection_config.username = "invalid-username"
+        with pytest.raises(DestinationConnectionError, match="Invalid authentication information."):
+            configured_uploader.precheck()
+
+    def test_fails_on_invalid_uri(self, configured_uploader: Neo4jUploader):
+        configured_uploader.connection_config.uri = "neo4j://localhst:7687"
+        with pytest.raises(
+            DestinationConnectionError,
+            match="Error in connecting to downstream data source: Cannot resolve address",
+        ):
+            configured_uploader.precheck()
+
+    def test_fails_on_invalid_database(self, configured_uploader: Neo4jUploader):
+        configured_uploader.upload_config.database = "invalid-database"
+        with pytest.raises(
+            DestinationConnectionError, match="Unable to get a routing table for database"
+        ):
+            configured_uploader.precheck()
 
 
 async def validate_uploaded_graph():
