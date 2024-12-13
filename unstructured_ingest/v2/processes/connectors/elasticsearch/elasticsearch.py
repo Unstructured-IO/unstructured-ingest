@@ -14,7 +14,11 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
     WriteError,
 )
-from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
+from unstructured_ingest.utils.data_prep import (
+    batch_generator,
+    flatten_dict,
+    generator_batching_wbytes,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
@@ -186,19 +190,7 @@ class ElasticsearchIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
-        id_batches: list[frozenset[str]] = [
-            frozenset(
-                ids[
-                    i
-                    * self.index_config.batch_size : (i + 1)  # noqa
-                    * self.index_config.batch_size
-                ]
-            )
-            for i in range(
-                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
-            )
-        ]
-        for batch in id_batches:
+        for batch in batch_generator(ids, self.index_config.batch_size):
             # Make sure the hash is always a positive number to create identified
             yield ElasticsearchBatchFileData(
                 connector_type=CONNECTOR_TYPE,
@@ -243,7 +235,7 @@ class ElasticsearchDownloader(Downloader):
         return concatenated_values
 
     def generate_download_response(
-        self, result: dict, index_name: str, file_data: FileData
+        self, result: dict, index_name: str, file_data: ElasticsearchBatchFileData
     ) -> DownloadResponse:
         record_id = result["_id"]
         filename_id = self.get_identifier(index_name=index_name, record_id=record_id)
@@ -263,22 +255,19 @@ class ElasticsearchDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-        return DownloadResponse(
-            file_data=FileData(
-                identifier=filename_id,
-                connector_type=CONNECTOR_TYPE,
-                source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
-                metadata=FileDataSourceMetadata(
-                    version=str(result["_version"]) if "_version" in result else None,
-                    date_processed=str(time()),
-                    record_locator={
-                        "hosts": self.connection_config.hosts,
-                        "index_name": index_name,
-                        "document_id": record_id,
-                    },
-                ),
-            ),
-            path=download_path,
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename_id
+        cast_file_data.metadata.date_processed = str(time())
+        cast_file_data.metadata.version = str(result["_version"]) if "_version" in result else None
+        cast_file_data.metadata.record_locator = {
+            "hosts": self.connection_config.hosts,
+            "index_name": index_name,
+            "document_id": record_id,
+        }
+        cast_file_data.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
+        return super().generate_download_response(
+            file_data=cast_file_data,
+            download_path=download_path,
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
