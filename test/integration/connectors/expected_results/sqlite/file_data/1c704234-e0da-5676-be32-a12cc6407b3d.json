@@ -1,5 +1,5 @@
 {
-  "identifier": "cars-10-5fb93ce5",
+  "identifier": "1c704234-e0da-5676-be32-a12cc6407b3d",
   "connector_type": "sqlite",
   "source_identifiers": null,
   "metadata": {
@@ -17,6 +17,24 @@
     "id_column": "car_id"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpx7p64js7/cars-10-5fb93ce5.csv",
-  "display_name": null
+  "local_download_path": null,
+  "display_name": null,
+  "batch_items": [
+    {
+      "identifier": "10",
+      "version": null
+    },
+    {
+      "identifier": "7",
+      "version": null
+    },
+    {
+      "identifier": "8",
+      "version": null
+    },
+    {
+      "identifier": "9",
+      "version": null
+    }
+  ]
 }

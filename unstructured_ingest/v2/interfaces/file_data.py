@@ -75,6 +75,8 @@ class BatchFileData(FileData):
     @field_validator("batch_items")
     @classmethod
     def check_uniqueness(cls, v: list[BatchItem]) -> list[BatchItem]:
+        if not v:
+            raise ValueError("batch items cannot be empty")
         all_identifiers = [item.identifier for item in v]
         if len(all_identifiers) != len(set(all_identifiers)):
             raise ValueError(f"duplicate identifiers: {all_identifiers}")

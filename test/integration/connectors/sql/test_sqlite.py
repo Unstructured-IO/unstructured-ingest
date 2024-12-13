@@ -27,7 +27,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
     SQLiteUploadStager,
 )
 
-SEED_DATA_ROWS = 20
+SEED_DATA_ROWS = 10
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ async def test_sqlite_source(source_database_setup: Path, temp_dir: Path):
     connection_config = SQLiteConnectionConfig(database_path=source_database_setup)
     indexer = SQLiteIndexer(
         connection_config=connection_config,
-        index_config=SQLiteIndexerConfig(table_name="cars", id_column="car_id", batch_size=5),
+        index_config=SQLiteIndexerConfig(table_name="cars", id_column="car_id", batch_size=6),
     )
     downloader = SQLiteDownloader(
         connection_config=connection_config,
@@ -69,7 +69,7 @@ async def test_sqlite_source(source_database_setup: Path, temp_dir: Path):
         configs=SourceValidationConfigs(
             test_id="sqlite",
             expected_num_files=SEED_DATA_ROWS,
-            expected_number_indexed_file_data=4,
+            expected_number_indexed_file_data=2,
             validate_downloaded_files=True,
         ),
     )
