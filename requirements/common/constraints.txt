@@ -25,5 +25,4 @@ wrapt>=1.14.0
 # NOTE(robinson): chroma was pinned to importlib-metadata>=7.1.0 but 7.1.0 was installed
 # instead of 7.2.0. Need to investigate
 importlib-metadata==7.1.0
-unstructured==0.15.10
 numpy<2
