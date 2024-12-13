@@ -45,7 +45,7 @@ class Neo4jConnectionConfig(ConnectionConfig):
     access_config: Secret[Neo4jAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     username: str
-    uri: str = Field(description="the connection URI for the driver")
+    uri: str = Field(description="Neo4j Connection URI <scheme>://<host>:<port>")
 
     @requires_dependencies(["neo4j"], extras="neo4j")
     def get_auth(self) -> "Auth":
@@ -220,8 +220,10 @@ class Relationship(str, Enum):
 
 
 class Neo4jUploaderConfig(UploaderConfig):
-    database: str = Field(description="database to write to")
-    batch_size: int = Field(default=100, description="batch size")
+    database: str = Field(description="Name of the target database")
+    batch_size: int = Field(
+        default=100, description="Maximal number of nodes/relationships created per transaction."
+    )
 
 
 @dataclass
