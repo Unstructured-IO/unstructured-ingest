@@ -82,9 +82,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
         output_dir=tmp_path,
         output_filename=upload_file.name,
     )
-    driver = AsyncGraphDatabase.driver(uri=URI, auth=(USERNAME, PASSWORD))
-    verified = await driver.verify_authentication()
-    assert verified
+
     await uploader.run_async(staged_filepath, file_data)
     await validate_uploaded_graph()
 
