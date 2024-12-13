@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, Secret
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -260,7 +261,11 @@ class Neo4jUploader(Uploader):
 
         # NOTE: Processed in parallel as there's no overlap between accessed nodes
         await self._execute_queries(
-            [self._create_nodes_query(nodes, labels) for labels, nodes in nodes_by_labels.items()],
+            [
+                self._create_nodes_query(nodes_batch, labels)
+                for labels, nodes in nodes_by_labels.items()
+                for nodes_batch in batch_generator(nodes, batch_size=self.upload_config.batch_size)
+            ],
             client=client,
             in_parallel=True,
         )
@@ -272,8 +277,9 @@ class Neo4jUploader(Uploader):
         # NOTE: Processed sequentially to avoid queries locking node access to one another
         await self._execute_queries(
             [
-                self._create_edges_query(edges, relationship)
+                self._create_edges_query(edges_batch, relationship)
                 for relationship, edges in edges_by_relationship.items()
+                for edges_batch in batch_generator(edges, batch_size=self.upload_config.batch_size)
             ],
             client=client,
         )
