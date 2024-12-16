@@ -250,9 +250,29 @@ class Neo4jUploader(Uploader):
             staged_data = json.load(file)
 
         graph_data = _GraphData.model_validate(staged_data)
-
         async with self.connection_config.get_client() as client:
+            await self._create_uniqueness_constraints(client)
+            await self._delete_old_data_if_exists(file_data, client=client)
             await self._merge_graph(graph_data=graph_data, client=client)
+
+    async def _create_uniqueness_constraints(self, client: AsyncDriver) -> None:
+        for label in Label:
+            constraint_name = f"{label.lower()}_id"
+            await client.execute_query(
+                f"""
+                CREATE CONSTRAINT {constraint_name} IF NOT EXISTS
+                FOR (n: {label}) REQUIRE n.id IS UNIQUE
+                """
+            )
+
+    async def _delete_old_data_if_exists(self, file_data: FileData, client: AsyncDriver) -> None:
+        _, summary, _ = await client.execute_query(
+            f"""
+            MATCH (n: {Label.DOCUMENT} {{id: $identifier}})
+            MATCH (n)--(m: {Label.CHUNK}|{Label.UNSTRUCTURED_ELEMENT})
+            DETACH DELETE m""",
+            identifier=file_data.identifier,
+        )
 
     async def _merge_graph(self, graph_data: _GraphData, client: AsyncDriver) -> None:
         nodes_by_labels: defaultdict[tuple[Label, ...], list[_Node]] = defaultdict(list)

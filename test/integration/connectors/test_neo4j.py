@@ -1,4 +1,6 @@
+import json
 import time
+import uuid
 from pathlib import Path
 
 import pytest
@@ -83,6 +85,24 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
         output_filename=upload_file.name,
     )
 
+    await uploader.run_async(staged_filepath, file_data)
+    await validate_uploaded_graph()
+
+    modified_upload_file = tmp_path / f"modified-{upload_file.name}"
+    with open(upload_file) as file:
+        elements = json.load(file)
+        for element in elements:
+            element["element_id"] = str(uuid.uuid4())
+
+    with open(modified_upload_file, "w") as file:
+        json.dump(elements, file, indent=4)
+
+    staged_filepath = stager.run(
+        modified_upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=modified_upload_file.name,
+    )
     await uploader.run_async(staged_filepath, file_data)
     await validate_uploaded_graph()
 
