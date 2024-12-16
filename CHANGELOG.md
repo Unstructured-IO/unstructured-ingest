@@ -1,3 +1,9 @@
+## 0.3.11-dev0
+
+### Enhancements
+
+* **Support Databricks personal access token**
+
 ## 0.3.10
 
 ### Enhancements
