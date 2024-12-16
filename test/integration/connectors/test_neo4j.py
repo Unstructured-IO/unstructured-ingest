@@ -12,6 +12,7 @@ from pytest_check import check
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from test.integration.connectors.utils.docker_compose import docker_compose_context
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
 from unstructured_ingest.v2.interfaces.file_data import (
     FileData,
     FileDataSourceMetadata,
@@ -32,10 +33,7 @@ PASSWORD = "password"
 URI = "neo4j://localhost:7687"
 DATABASE = "neo4j"
 
-EXPECTED_ELEMENT_COUNT = 42
-EXPECTED_CHUNKS_COUNT = 22
 EXPECTED_DOCUMENT_COUNT = 1
-EXPECTED_NODES_COUNT = 65
 DOCKER_COMPOSE_FILEPATH = env_setup_path / "neo4j" / "docker-compose.yml"
 
 
@@ -83,7 +81,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     )
 
     await uploader.run_async(staged_filepath, file_data)
-    await validate_uploaded_graph()
+    await validate_uploaded_graph(upload_file)
 
     modified_upload_file = tmp_path / f"modified-{upload_file.name}"
     with open(upload_file) as file:
@@ -101,7 +99,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
         output_filename=modified_upload_file.name,
     )
     await uploader.run_async(staged_filepath, file_data)
-    await validate_uploaded_graph()
+    await validate_uploaded_graph(modified_upload_file)
 
 
 @pytest.mark.tags(DESTINATION_TAG)
@@ -173,7 +171,28 @@ def wait_for_connection(driver: Driver, retries: int = 10, delay_seconds: int = 
     pytest.fail("Failed to connect with Neo4j server.")
 
 
-async def validate_uploaded_graph():
+async def validate_uploaded_graph(upload_file: Path):
+    with open(upload_file) as file:
+        elements = json.load(file)
+
+    for element in elements:
+        if "orig_elements" in element["metadata"]:
+            element["metadata"]["orig_elements"] = elements_from_base64_gzipped_json(
+                element["metadata"]["orig_elements"]
+            )
+        else:
+            element["metadata"]["orig_elements"] = []
+
+    expected_chunks_count = len(elements)
+    expected_element_count = len(
+        {
+            origin_element["element_id"]
+            for chunk in elements
+            for origin_element in chunk["metadata"]["orig_elements"]
+        }
+    )
+    expected_nodes_count = expected_chunks_count + expected_element_count + EXPECTED_DOCUMENT_COUNT
+
     driver = AsyncGraphDatabase.driver(uri=URI, auth=(USERNAME, PASSWORD))
     try:
         nodes_count = len((await driver.execute_query("MATCH (n) RETURN n"))[0])
@@ -187,13 +206,13 @@ async def validate_uploaded_graph():
             (await driver.execute_query(f"MATCH (n: {Label.UNSTRUCTURED_ELEMENT}) RETURN n"))[0]
         )
         with check:
-            assert nodes_count == EXPECTED_NODES_COUNT
+            assert nodes_count == expected_nodes_count
         with check:
             assert document_nodes_count == EXPECTED_DOCUMENT_COUNT
         with check:
-            assert chunk_nodes_count == EXPECTED_CHUNKS_COUNT
+            assert chunk_nodes_count == expected_chunks_count
         with check:
-            assert element_nodes_count == EXPECTED_ELEMENT_COUNT
+            assert element_nodes_count == expected_element_count
 
         records, _, _ = await driver.execute_query(
             f"MATCH ()-[r:{Relationship.PART_OF_DOCUMENT}]->(:{Label.DOCUMENT}) RETURN r"
@@ -207,9 +226,9 @@ async def validate_uploaded_graph():
 
         if not check.any_failures():
             with check:
-                assert part_of_document_count == EXPECTED_CHUNKS_COUNT + EXPECTED_ELEMENT_COUNT
+                assert part_of_document_count == expected_chunks_count + expected_element_count
             with check:
-                assert next_chunk_count == EXPECTED_CHUNKS_COUNT - 1
+                assert next_chunk_count == expected_chunks_count - 1
 
     finally:
         await driver.close()
