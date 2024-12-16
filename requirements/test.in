@@ -1,8 +1,8 @@
 -c ./common/constraints.txt
+
 pytest
 pytest-cov
 pytest-mock
-unstructured
 pytest-asyncio
 pytest_tagging
 pytest-json-report

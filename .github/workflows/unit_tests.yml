@@ -121,4 +121,5 @@ jobs:
         run: |
           make install-base
           make install-test
+          pip install unstructured
           make unit-test
