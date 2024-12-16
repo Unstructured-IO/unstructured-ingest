@@ -9,7 +9,7 @@ from neo4j import AsyncGraphDatabase, Driver, GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 from pytest_check import check
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
+from test.integration.connectors.utils.constants import DESTINATION_TAG
 from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
@@ -34,7 +34,6 @@ URI = "neo4j://localhost:7687"
 DATABASE = "neo4j"
 
 EXPECTED_DOCUMENT_COUNT = 1
-DOCKER_COMPOSE_FILEPATH = env_setup_path / "neo4j" / "docker-compose.yml"
 
 
 # NOTE: Precheck tests are read-only so we utilize the same container for all tests.
