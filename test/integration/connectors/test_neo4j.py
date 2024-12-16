@@ -10,7 +10,7 @@ from neo4j.exceptions import ServiceUnavailable
 from pytest_check import check
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
-from test.integration.connectors.utils.docker_compose import docker_compose_context
+from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
 from unstructured_ingest.v2.interfaces.file_data import (
@@ -41,7 +41,9 @@ DOCKER_COMPOSE_FILEPATH = env_setup_path / "neo4j" / "docker-compose.yml"
 # If new tests require clean neo4j container, this fixture's scope should be adjusted.
 @pytest.fixture(autouse=True, scope="module")
 def _neo4j_server():
-    with docker_compose_context(DOCKER_COMPOSE_FILEPATH):
+    with container_context(
+        image="neo4j:latest", environment={"NEO4J_AUTH": "neo4j/password"}, ports={"7687": "7687"}
+    ):
         driver = GraphDatabase.driver(uri=URI, auth=(USERNAME, PASSWORD))
         wait_for_connection(driver)
         driver.close()
