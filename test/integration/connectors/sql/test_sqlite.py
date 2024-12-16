@@ -131,6 +131,7 @@ async def test_sqlite_destination(
     uploader = SQLiteUploader(
         connection_config=SQLiteConnectionConfig(database_path=destination_database_setup)
     )
+    uploader.precheck()
     uploader.run(path=staged_path, file_data=mock_file_data)
 
     with staged_path.open("r") as f:

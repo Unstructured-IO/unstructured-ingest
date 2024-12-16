@@ -1,7 +1,8 @@
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import numpy as np
 import pandas as pd
@@ -48,12 +49,19 @@ class KdbaiConnectionConfig(ConnectionConfig):
     )
 
     @requires_dependencies(["kdbai_client"], extras="kdbai")
-    def get_session(self) -> "Session":
+    @contextmanager
+    def get_client(self) -> Generator["Session", None, None]:
         from kdbai_client import Session
 
-        return Session(
-            api_key=self.access_config.get_secret_value().api_key, endpoint=self.endpoint
-        )
+        session = None
+        try:
+            session = Session(
+                api_key=self.access_config.get_secret_value().api_key, endpoint=self.endpoint
+            )
+            yield session
+        finally:
+            if session:
+                session.close()
 
 
 class KdbaiUploadStagerConfig(UploadStagerConfig):
@@ -100,19 +108,21 @@ class KdbaiUploader(Uploader):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def get_database(self) -> "Database":
-        session: Session = self.connection_config.get_session()
-        db = session.database(self.upload_config.database_name)
-        return db
+    @contextmanager
+    def get_database(self) -> Generator["Database", None, None]:
+        with self.connection_config.get_client() as client:
+            db = client.database(self.upload_config.database_name)
+            yield db
 
-    def get_table(self) -> "Table":
-        db = self.get_database()
-        table = db.table(self.upload_config.table_name)
-        return table
+    @contextmanager
+    def get_table(self) -> Generator["Table", None, None]:
+        with self.get_database() as db:
+            table = db.table(self.upload_config.table_name)
+            yield table
 
     def upsert_batch(self, batch: pd.DataFrame):
-        table = self.get_table()
-        table.insert(batch)
+        with self.get_table() as table:
+            table.insert(batch)
 
     def process_dataframe(self, df: pd.DataFrame):
         logger.debug(
