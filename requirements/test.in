@@ -2,6 +2,7 @@
 pytest
 pytest-cov
 pytest-mock
+pytest-check
 unstructured
 pytest-asyncio
 pytest_tagging
