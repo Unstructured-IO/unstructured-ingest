@@ -3,7 +3,9 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import NAMESPACE_DNS, uuid5
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+
+from unstructured_ingest.v2.logger import logger
 
 
 class SourceIdentifiers(BaseModel):
@@ -93,3 +95,12 @@ class BatchFileData(FileData):
             )
             data["identifier"] = str(uuid5(NAMESPACE_DNS, str(identifier_data)))
         return data
+
+
+def file_data_from_file(path: str) -> FileData:
+    try:
+        BatchFileData.from_file(path=path)
+    except ValidationError:
+        logger.debug(f"{path} not valid for batch file data")
+
+    return FileData.from_file(path=path)

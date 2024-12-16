@@ -87,9 +87,9 @@ class DownloadStep(PipelineStep):
                 f"match size of local file: {file_size_bytes}, updating"
             )
             file_data.metadata.filesize_bytes = file_size_bytes
-        logger.debug(f"updating file data with new content: {file_data.to_dict()}")
+        logger.debug(f"updating file data with new content: {file_data.model_dump()}")
         with file_data_path.open("w") as file:
-            json.dump(file_data.to_dict(), file, indent=2)
+            json.dump(file_data.model_dump(), file, indent=2)
 
     async def _run_async(self, fn: Callable, file_data_path: str) -> list[DownloadStepResponse]:
         file_data = FileData.from_file(path=file_data_path)
@@ -172,7 +172,7 @@ class DownloadStep(PipelineStep):
         filepath = (self.cache_dir / filename).resolve()
         filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(str(filepath), "w") as f:
-            json.dump(file_data.to_dict(), f, indent=2)
+            json.dump(file_data.model_dump(), f, indent=2)
         return str(filepath)
 
     def get_hash(self, extras: Optional[list[str]]) -> str:

@@ -202,7 +202,7 @@ class OnedriveDownloader(Downloader):
         if file_data.source_identifiers is None or not file_data.source_identifiers.fullpath:
             raise ValueError(
                 f"file data doesn't have enough information to get "
-                f"file content: {file_data.to_dict()}"
+                f"file content: {file_data.model_dump()}"
             )
 
         server_relative_path = file_data.source_identifiers.fullpath

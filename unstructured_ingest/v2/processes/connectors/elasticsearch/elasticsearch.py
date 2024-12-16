@@ -303,7 +303,7 @@ class ElasticsearchDownloader(Downloader):
             ):
                 download_responses.append(
                     self.generate_download_response(
-                        result=result, index_name=index_name, file_data=file_data
+                        result=result, index_name=index_name, file_data=elasticsearch_filedata
                     )
                 )
         return download_responses
