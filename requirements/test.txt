@@ -124,12 +124,15 @@ pytest==8.3.4
     # via
     #   -r test.in
     #   pytest-asyncio
+    #   pytest-check
     #   pytest-cov
     #   pytest-json-report
     #   pytest-metadata
     #   pytest-mock
     #   pytest-tagging
 pytest-asyncio==0.25.0
+    # via -r test.in
+pytest-check==2.4.1
     # via -r test.in
 pytest-cov==6.0.0
     # via -r test.in
