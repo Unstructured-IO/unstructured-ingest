@@ -66,10 +66,12 @@ class Neo4jConnectionConfig(ConnectionConfig):
         from neo4j import AsyncGraphDatabase
 
         driver = AsyncGraphDatabase.driver(**self.get_drive_configs())
+        logger.info(f"Created driver connecting to the database at {self.uri}.")
         try:
             yield driver
         finally:
             await driver.close()
+            logger.info(f"Closed driver connecting to the database at {self.uri}.")
 
 
 class Neo4jUploadStagerConfig(UploadStagerConfig):
@@ -257,6 +259,10 @@ class Neo4jUploader(Uploader):
 
     async def _create_uniqueness_constraints(self, client: AsyncDriver) -> None:
         for label in Label:
+            logger.info(
+                f"Adding id uniqueness constraint for nodes labeled '{label}'"
+                " if it does not already exist."
+            )
             constraint_name = f"{label.lower()}_id"
             await client.execute_query(
                 f"""
@@ -266,6 +272,7 @@ class Neo4jUploader(Uploader):
             )
 
     async def _delete_old_data_if_exists(self, file_data: FileData, client: AsyncDriver) -> None:
+        logger.info(f"Deleting old data for the record '{file_data.identifier}' (if present).")
         _, summary, _ = await client.execute_query(
             f"""
             MATCH (n: {Label.DOCUMENT} {{id: $identifier}})
@@ -273,12 +280,17 @@ class Neo4jUploader(Uploader):
             DETACH DELETE m""",
             identifier=file_data.identifier,
         )
+        logger.info(
+            f"Deleted {summary.counters.nodes_deleted} nodes"
+            f" and {summary.counters.relationships_deleted} relationships."
+        )
 
     async def _merge_graph(self, graph_data: _GraphData, client: AsyncDriver) -> None:
         nodes_by_labels: defaultdict[tuple[Label, ...], list[_Node]] = defaultdict(list)
         for node in graph_data.nodes:
             nodes_by_labels[tuple(node.labels)].append(node)
 
+        logger.info(f"Merging {len(graph_data.nodes)} graph nodes.")
         # NOTE: Processed in parallel as there's no overlap between accessed nodes
         await self._execute_queries(
             [
@@ -289,11 +301,13 @@ class Neo4jUploader(Uploader):
             client=client,
             in_parallel=True,
         )
+        logger.info(f"Finished merging {len(graph_data.nodes)} graph nodes.")
 
         edges_by_relationship: defaultdict[Relationship, list[_Edge]] = defaultdict(list)
         for edge in graph_data.edges:
             edges_by_relationship[edge.relationship].append(edge)
 
+        logger.info(f"Merging {len(graph_data.edges)} graph relationships (edges).")
         # NOTE: Processed sequentially to avoid queries locking node access to one another
         await self._execute_queries(
             [
@@ -303,6 +317,7 @@ class Neo4jUploader(Uploader):
             ],
             client=client,
         )
+        logger.info(f"Finished merging {len(graph_data.edges)} graph relationships (edges).")
 
     @staticmethod
     async def _execute_queries(
@@ -311,25 +326,28 @@ class Neo4jUploader(Uploader):
         in_parallel: bool = False,
     ) -> None:
         if in_parallel:
-            logger.debug(f"Executing {len(queries_with_parameters)} queries in parallel.")
+            logger.info(f"Executing {len(queries_with_parameters)} queries in parallel.")
             await asyncio.gather(
                 *[
                     client.execute_query(query, parameters_=parameters)
                     for query, parameters in queries_with_parameters
                 ]
             )
-            logger.debug("Finished executing parallel queries.")
+            logger.info("Finished executing parallel queries.")
         else:
-            logger.debug(f"Executing {len(queries_with_parameters)} queries sequentially.")
+            logger.info(f"Executing {len(queries_with_parameters)} queries sequentially.")
             for i, (query, parameters) in enumerate(queries_with_parameters):
-                logger.debug(f"Query #{i} started.")
+                logger.info(f"Query #{i} started.")
                 await client.execute_query(query, parameters_=parameters)
-                logger.debug(f"Query #{i} finished.")
-            logger.debug("Finished executing sequential queries.")
+                logger.info(f"Query #{i} finished.")
+            logger.info(
+                f"Finished executing all ({len(queries_with_parameters)}) sequential queries."
+            )
 
     @staticmethod
     def _create_nodes_query(nodes: list[_Node], labels: tuple[Label, ...]) -> tuple[str, dict]:
         labels_string = ", ".join(labels)
+        logger.info(f"Preparing MERGE query for {len(nodes)} nodes labeled '{labels_string}'.")
         query_string = f"""
             UNWIND $nodes AS node
             MERGE (n: {labels_string} {{id: node.id}})
@@ -340,7 +358,7 @@ class Neo4jUploader(Uploader):
 
     @staticmethod
     def _create_edges_query(edges: list[_Edge], relationship: Relationship) -> tuple[str, dict]:
-        logger.debug(f"Preparing merge query for {len(edges)} {relationship} relationships.")
+        logger.info(f"Preparing MERGE query for {len(edges)} {relationship} relationships.")
         query_string = f"""
             UNWIND $edges AS edge
             MATCH (u {{id: edge.source}})
