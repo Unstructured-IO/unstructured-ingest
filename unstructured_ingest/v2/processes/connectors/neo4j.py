@@ -343,7 +343,8 @@ class Neo4jUploader(Uploader):
         logger.debug(f"Preparing merge query for {len(edges)} {relationship} relationships.")
         query_string = f"""
             UNWIND $edges AS edge
-            MATCH (u {{id: edge.source}}), (v {{id: edge.destination}})
+            MATCH (u {{id: edge.source}})
+            MATCH (v {{id: edge.destination}})
             MERGE (u)-[:{relationship}]->(v)
             """
         parameters = {
