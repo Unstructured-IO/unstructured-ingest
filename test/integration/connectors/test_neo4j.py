@@ -50,19 +50,6 @@ def _neo4j_server():
         yield
 
 
-def wait_for_connection(driver: Driver, retries: int = 10, delay_seconds: int = 2):
-    attempts = 0
-    while attempts < retries:
-        try:
-            driver.verify_connectivity()
-            return
-        except ServiceUnavailable:
-            time.sleep(delay_seconds)
-            attempts += 1
-
-    pytest.fail("Failed to connect with Neo4j server.")
-
-
 @pytest.mark.asyncio
 @pytest.mark.tags(DESTINATION_TAG)
 async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
@@ -171,6 +158,19 @@ class TestPrecheck:
             DestinationConnectionError, match="{code: Neo.ClientError.Database.DatabaseNotFound}"
         ):
             configured_uploader.precheck()
+
+
+def wait_for_connection(driver: Driver, retries: int = 10, delay_seconds: int = 2):
+    attempts = 0
+    while attempts < retries:
+        try:
+            driver.verify_connectivity()
+            return
+        except ServiceUnavailable:
+            time.sleep(delay_seconds)
+            attempts += 1
+
+    pytest.fail("Failed to connect with Neo4j server.")
 
 
 async def validate_uploaded_graph():

@@ -49,30 +49,32 @@ class Neo4jConnectionConfig(ConnectionConfig):
     database: str = Field(description="Name of the target database")
 
     @requires_dependencies(["neo4j"], extras="neo4j")
-    def get_auth(self) -> "Auth":
-        from neo4j import Auth
-
-        return Auth("basic", self.username, self.access_config.get_secret_value().password)
-
-    def get_drive_configs(self) -> dict:
-        return {
-            "uri": self.uri,
-            "auth": self.get_auth(),
-            "database": self.database,
-        }
-
-    @requires_dependencies(["neo4j"], extras="neo4j")
     @asynccontextmanager
     async def get_client(self) -> AsyncGenerator["AsyncDriver", None]:
         from neo4j import AsyncGraphDatabase
 
-        driver = AsyncGraphDatabase.driver(**self.get_drive_configs())
-        logger.info(f"Created driver connecting to the database at {self.uri}.")
+        driver = AsyncGraphDatabase.driver(**self._get_driver_parameters())
+        logger.info(f"Created driver connecting to the database '{self.database}' at {self.uri}.")
         try:
             yield driver
         finally:
             await driver.close()
-            logger.info(f"Closed driver connecting to the database at {self.uri}.")
+            logger.info(
+                f"Closed driver connecting to the database '{self.database}' at {self.uri}."
+            )
+
+    def _get_driver_parameters(self) -> dict:
+        return {
+            "uri": self.uri,
+            "auth": self._get_auth(),
+            "database": self.database,
+        }
+
+    @requires_dependencies(["neo4j"], extras="neo4j")
+    def _get_auth(self) -> "Auth":
+        from neo4j import Auth
+
+        return Auth("basic", self.username, self.access_config.get_secret_value().password)
 
 
 class Neo4jUploadStagerConfig(UploadStagerConfig):
