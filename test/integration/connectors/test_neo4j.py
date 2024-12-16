@@ -164,23 +164,28 @@ async def validate_uploaded_graph():
         )
         with check:
             assert nodes_count == EXPECTED_NODES_COUNT
-
+        with check:
             assert document_nodes_count == EXPECTED_DOCUMENT_COUNT
+        with check:
             assert chunk_nodes_count == EXPECTED_CHUNKS_COUNT
+        with check:
             assert element_nodes_count == EXPECTED_ELEMENT_COUNT
 
-            records, _, _ = await driver.execute_query(
-                f"MATCH ()-[r:{Relationship.PART_OF_DOCUMENT}]->(:{Label.DOCUMENT}) RETURN r"
-            )
-            part_of_document_count = len(records)
+        records, _, _ = await driver.execute_query(
+            f"MATCH ()-[r:{Relationship.PART_OF_DOCUMENT}]->(:{Label.DOCUMENT}) RETURN r"
+        )
+        part_of_document_count = len(records)
 
-            records, _, _ = await driver.execute_query(
-                f"MATCH (:{Label.CHUNK})-[r:{Relationship.NEXT_CHUNK}]->(:{Label.CHUNK}) RETURN r"
-            )
-            next_chunk_count = len(records)
+        records, _, _ = await driver.execute_query(
+            f"MATCH (:{Label.CHUNK})-[r:{Relationship.NEXT_CHUNK}]->(:{Label.CHUNK}) RETURN r"
+        )
+        next_chunk_count = len(records)
 
-            assert part_of_document_count == EXPECTED_CHUNKS_COUNT + EXPECTED_ELEMENT_COUNT
-            assert next_chunk_count == EXPECTED_CHUNKS_COUNT - 1
+        if not check.any_failures():
+            with check:
+                assert part_of_document_count == EXPECTED_CHUNKS_COUNT + EXPECTED_ELEMENT_COUNT
+            with check:
+                assert next_chunk_count == EXPECTED_CHUNKS_COUNT - 1
 
     finally:
         await driver.close()
