@@ -106,7 +106,7 @@ class DuckDBUploader(Uploader):
 
         with self.connection_config.get_client() as conn:
             conn.query(
-                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"  # noqa: E501
+                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df"  # noqa: E501
             )
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
