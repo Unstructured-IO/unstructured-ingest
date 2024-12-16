@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 import networkx as nx
-from dateutil import parser
 from pydantic import BaseModel, ConfigDict, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -149,13 +148,13 @@ class Neo4jUploadStager(UploadStager):
         return "orig_elements" in element.get("metadata", {})
 
     def _create_document_node(self, file_data: FileData) -> _Node:
-        properties = {
-            "name": file_data.source_identifiers.filename,
-        }
-        if date_created := file_data.metadata.date_created:
-            properties["date_created"] = parser.parse(date_created).isoformat()
-        if date_modified := file_data.metadata.date_modified:
-            properties["date_modified"] = parser.parse(date_modified).isoformat()
+        properties = {}
+        if file_data.source_identifiers:
+            properties["name"] = file_data.source_identifiers.filename
+        if file_data.metadata.date_created:
+            properties["date_created"] = file_data.metadata.date_created
+        if file_data.metadata.date_modified:
+            properties["date_modified"] = file_data.metadata.date_modified
         return _Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT])
 
     def _create_element_node(self, element: dict) -> _Node:

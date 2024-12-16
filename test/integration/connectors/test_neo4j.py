@@ -1,6 +1,7 @@
 import json
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,11 @@ from pytest_check import check
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from test.integration.connectors.utils.docker_compose import docker_compose_context
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.v2.interfaces.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.v2.processes.connectors.neo4j import (
     Label,
     Neo4jAccessConfig,
@@ -76,6 +81,10 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
         source_identifiers=SourceIdentifiers(
             filename=upload_file.name,
             fullpath=upload_file.name,
+        ),
+        metadata=FileDataSourceMetadata(
+            date_created=str(datetime(2022, 1, 1).timestamp()),
+            date_modified=str(datetime(2022, 1, 2).timestamp()),
         ),
     )
     staged_filepath = stager.run(
