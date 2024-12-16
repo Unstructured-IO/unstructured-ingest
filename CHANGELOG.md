@@ -1,6 +1,5 @@
-## 0.3.9-dev1
+## 0.3.9-dev2
 
-<<<<<<< HEAD
 ### Enhancements
 
 * **Support ndjson files in stagers**
