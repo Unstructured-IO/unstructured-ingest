@@ -72,8 +72,9 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
             access_config=Neo4jAccessConfig(password=PASSWORD),  # type: ignore
             username=USERNAME,
             uri=URI,
+            database=DATABASE,
         ),
-        upload_config=Neo4jUploaderConfig(database=DATABASE),
+        upload_config=Neo4jUploaderConfig(),
     )
     file_data = FileData(
         identifier="mock-file-data",
@@ -122,9 +123,12 @@ class TestPrecheck:
     def configured_uploader(self) -> Neo4jUploader:
         return Neo4jUploader(
             connection_config=Neo4jConnectionConfig(
-                access_config=Neo4jAccessConfig(password=PASSWORD), username=USERNAME, uri=URI
+                access_config=Neo4jAccessConfig(password=PASSWORD),  # type: ignore
+                username=USERNAME,
+                uri=URI,
+                database=DATABASE,
             ),
-            upload_config=Neo4jUploaderConfig(database=DATABASE),
+            upload_config=Neo4jUploaderConfig(),
         )
 
     def test_succeeds(self, configured_uploader: Neo4jUploader):
@@ -134,26 +138,37 @@ class TestPrecheck:
         configured_uploader.connection_config.access_config.get_secret_value().password = (
             "invalid-password"
         )
-        with pytest.raises(DestinationConnectionError, match="Invalid authentication information."):
+        with pytest.raises(
+            DestinationConnectionError,
+            match="{code: Neo.ClientError.Security.Unauthorized}",
+        ):
             configured_uploader.precheck()
 
     def test_fails_on_invalid_username(self, configured_uploader: Neo4jUploader):
         configured_uploader.connection_config.username = "invalid-username"
-        with pytest.raises(DestinationConnectionError, match="Invalid authentication information."):
-            configured_uploader.precheck()
-
-    def test_fails_on_invalid_uri(self, configured_uploader: Neo4jUploader):
-        configured_uploader.connection_config.uri = "neo4j://localhst:7687"
         with pytest.raises(
-            DestinationConnectionError,
-            match="Error in connecting to downstream data source: Cannot resolve address",
+            DestinationConnectionError, match="{code: Neo.ClientError.Security.Unauthorized}"
         ):
             configured_uploader.precheck()
 
+    @pytest.mark.parametrize(
+        ("uri", "expected_error_msg"),
+        [
+            ("neo4j://localhst:7687", "Cannot resolve address"),
+            ("neo4j://localhost:7777", "Unable to retrieve routing information"),
+        ],
+    )
+    def test_fails_on_invalid_uri(
+        self, configured_uploader: Neo4jUploader, uri: str, expected_error_msg: str
+    ):
+        configured_uploader.connection_config.uri = uri
+        with pytest.raises(DestinationConnectionError, match=expected_error_msg):
+            configured_uploader.precheck()
+
     def test_fails_on_invalid_database(self, configured_uploader: Neo4jUploader):
-        configured_uploader.upload_config.database = "invalid-database"
+        configured_uploader.connection_config.database = "invalid-database"
         with pytest.raises(
-            DestinationConnectionError, match="Unable to get a routing table for database"
+            DestinationConnectionError, match="{code: Neo.ClientError.Database.DatabaseNotFound}"
         ):
             configured_uploader.precheck()
 

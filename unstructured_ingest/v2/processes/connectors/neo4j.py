@@ -46,6 +46,7 @@ class Neo4jConnectionConfig(ConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     username: str
     uri: str = Field(description="Neo4j Connection URI <scheme>://<host>:<port>")
+    database: str = Field(description="Name of the target database")
 
     @requires_dependencies(["neo4j"], extras="neo4j")
     def get_auth(self) -> "Auth":
@@ -57,6 +58,7 @@ class Neo4jConnectionConfig(ConnectionConfig):
         return {
             "uri": self.uri,
             "auth": self.get_auth(),
+            "database": self.database,
         }
 
     @requires_dependencies(["neo4j"], extras="neo4j")
@@ -222,7 +224,6 @@ class Relationship(str, Enum):
 
 
 class Neo4jUploaderConfig(UploaderConfig):
-    database: str = Field(description="Name of the target database")
     batch_size: int = Field(
         default=100, description="Maximal number of nodes/relationships created per transaction."
     )
@@ -238,8 +239,7 @@ class Neo4jUploader(Uploader):
     def precheck(self) -> None:
         async def verify_auth():
             async with self.connection_config.get_client() as client:
-                if not await client.verify_authentication(database=self.upload_config.database):
-                    raise DestinationConnectionError("Invalid authentication information.")
+                await client.verify_connectivity()
 
         asyncio.run(verify_auth())
 
