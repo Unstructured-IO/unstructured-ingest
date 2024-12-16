@@ -230,12 +230,13 @@ async def test_azure_ai_search_destination(
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
     expected_count = len(staged_elements)
-    search_client: SearchClient = uploader.connection_config.get_search_client()
-    validate_count(search_client=search_client, expected_count=expected_count)
+    with uploader.connection_config.get_search_client() as search_client:
+        validate_count(search_client=search_client, expected_count=expected_count)
 
     # Rerun and make sure the same documents get updated
     uploader.run(path=staged_filepath, file_data=file_data)
-    validate_count(search_client=search_client, expected_count=expected_count)
+    with uploader.connection_config.get_search_client() as search_client:
+        validate_count(search_client=search_client, expected_count=expected_count)
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])

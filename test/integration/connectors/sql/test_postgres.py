@@ -151,7 +151,7 @@ async def test_postgres_destination(upload_file: Path, temp_dir: Path):
                 access_config=PostgresAccessConfig(password=connect_params["password"]),
             )
         )
-
+        uploader.precheck()
         uploader.run(path=staged_path, file_data=mock_file_data)
 
         with staged_path.open("r") as f:

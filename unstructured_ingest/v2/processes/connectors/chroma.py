@@ -62,6 +62,32 @@ class ChromaConnectionConfig(ConnectionConfig):
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    @requires_dependencies(["chromadb"], extras="chroma")
+    def get_client(self) -> "Client":
+        import chromadb
+
+        access_config = self.access_config.get_secret_value()
+        if path := self.path:
+            return chromadb.PersistentClient(
+                path=path,
+                settings=access_config.settings,
+                tenant=self.tenant,
+                database=self.database,
+            )
+
+        elif (host := self.host) and (port := self.port):
+            return chromadb.HttpClient(
+                host=host,
+                port=str(port),
+                ssl=self.ssl,
+                headers=access_config.headers,
+                settings=access_config.settings,
+                tenant=self.tenant,
+                database=self.database,
+            )
+        else:
+            raise ValueError("Chroma connector requires either path or host and port to be set.")
+
 
 class ChromaUploadStagerConfig(UploadStagerConfig):
     pass
@@ -107,36 +133,10 @@ class ChromaUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            self.create_client()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    @requires_dependencies(["chromadb"], extras="chroma")
-    def create_client(self) -> "Client":
-        import chromadb
-
-        access_config = self.connection_config.access_config.get_secret_value()
-        if self.connection_config.path:
-            return chromadb.PersistentClient(
-                path=self.connection_config.path,
-                settings=access_config.settings,
-                tenant=self.connection_config.tenant,
-                database=self.connection_config.database,
-            )
-
-        elif self.connection_config.host and self.connection_config.port:
-            return chromadb.HttpClient(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                ssl=self.connection_config.ssl,
-                headers=access_config.headers,
-                settings=access_config.settings,
-                tenant=self.connection_config.tenant,
-                database=self.connection_config.database,
-            )
-        else:
-            raise ValueError("Chroma connector requires either path or host and port to be set.")
 
     @DestinationConnectionError.wrap
     def upsert_batch(self, collection, batch):
@@ -180,7 +180,7 @@ class ChromaUploader(Uploader):
             f"collection {self.connection_config.collection_name} "
             f"at {self.connection_config.host}",
         )
-        client = self.create_client()
+        client = self.connection_config.get_client()
 
         collection = client.get_or_create_collection(name=self.connection_config.collection_name)
         for chunk in batch_generator(elements_dict, self.upload_config.batch_size):

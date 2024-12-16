@@ -1,9 +1,13 @@
-## 0.3.9-dev1
+## 0.3.9-dev3
 
 ### Enhancements
 
 * **Support ndjson files in stagers**
 * **Add Neo4j destination connector**
+
+### Fixes
+
+* **Make sure any SDK clients that support closing get called**
 
 ## 0.3.8
 

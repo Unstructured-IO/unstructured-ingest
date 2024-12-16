@@ -1,7 +1,8 @@
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import pandas as pd
 from pydantic import Field, Secret
@@ -56,6 +57,20 @@ class DuckDBConnectionConfig(ConnectionConfig):
                 "through the `database` argument"
             )
 
+    @requires_dependencies(["duckdb"], extras="duckdb")
+    @contextmanager
+    def get_client(self) -> Generator["DuckDBConnection", None, None]:
+        import duckdb
+
+        with duckdb.connect(self.database) as client:
+            yield client
+
+    @contextmanager
+    def get_cursor(self) -> Generator["DuckDBConnection", None, None]:
+        with self.get_client() as client:
+            with client.cursor() as cursor:
+                yield cursor
+
 
 class DuckDBUploadStagerConfig(UploadStagerConfig):
     pass
@@ -80,22 +95,11 @@ class DuckDBUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            cursor = self.connection().cursor()
-            cursor.execute("SELECT 1;")
-            cursor.close()
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    @property
-    def connection(self) -> Callable[[], "DuckDBConnection"]:
-        return self._make_duckdb_connection
-
-    @requires_dependencies(["duckdb"], extras="duckdb")
-    def _make_duckdb_connection(self) -> "DuckDBConnection":
-        import duckdb
-
-        return duckdb.connect(self.connection_config.database)
 
     def upload_contents(self, path: Path) -> None:
         with path.open() as f:
@@ -103,7 +107,7 @@ class DuckDBUploader(Uploader):
         df_elements = pd.DataFrame(data=data)
         logger.debug(f"uploading {len(df_elements)} entries to {self.connection_config.database} ")
 
-        with self.connection() as conn:
+        with self.connection_config.get_client() as conn:
             conn.query(
                 f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"  # noqa: E501
             )

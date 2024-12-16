@@ -143,7 +143,7 @@ async def test_qdrant_destination_server(upload_file: Path, tmp_path: Path, dock
         output_dir=tmp_path,
         output_filename=upload_file.name,
     )
-
+    uploader.precheck()
     if uploader.is_async():
         await uploader.run_async(path=staged_upload_file, file_data=file_data)
     else:
@@ -188,7 +188,7 @@ async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
         output_dir=tmp_path,
         output_filename=upload_file.name,
     )
-
+    uploader.precheck()
     if uploader.is_async():
         await uploader.run_async(path=staged_upload_file, file_data=file_data)
     else:

@@ -28,6 +28,7 @@ from unstructured_ingest.v2.processes.connector_registry import DestinationRegis
 CONNECTOR_TYPE = "delta_table"
 
 
+@requires_dependencies(["deltalake"], extras="delta-table")
 def write_deltalake_with_error_handling(queue, **kwargs):
     from deltalake.writer import write_deltalake
 
@@ -165,7 +166,6 @@ class DeltaTableUploader(Uploader):
         else:
             raise ValueError(f"Unsupported file type, must be parquet, json or csv file: {path}")
 
-    @requires_dependencies(["deltalake"], extras="delta-table")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
 
         df = self.read_dataframe(path)
