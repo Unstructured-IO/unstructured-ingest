@@ -40,7 +40,6 @@ class ChromaAccessConfig(AccessConfig):
 
 
 class ChromaConnectionConfig(ConnectionConfig):
-    collection_name: str = Field(description="The name of the Chroma collection to write into.")
     access_config: Secret[ChromaAccessConfig] = Field(
         default=ChromaAccessConfig(), validate_default=True
     )
@@ -120,6 +119,7 @@ class ChromaUploadStager(UploadStager):
 
 
 class ChromaUploaderConfig(UploaderConfig):
+    collection_name: str = Field(description="The name of the Chroma collection to write into.")
     batch_size: int = Field(default=100, description="Number of records per batch")
 
 
@@ -172,12 +172,12 @@ class ChromaUploader(Uploader):
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
-            f"collection {self.connection_config.collection_name} "
+            f"collection {self.upload_config.collection_name} "
             f"at {self.connection_config.host}",
         )
         client = self.connection_config.get_client()
 
-        collection = client.get_or_create_collection(name=self.connection_config.collection_name)
+        collection = client.get_or_create_collection(name=self.upload_config.collection_name)
         for chunk in batch_generator(data, self.upload_config.batch_size):
             self.upsert_batch(collection, self.prepare_chroma_list(chunk))
 

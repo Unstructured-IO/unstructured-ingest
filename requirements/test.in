@@ -11,6 +11,7 @@ pytest-json-report
 faker
 docker
 universal_pathlib
+deepdiff
 
 # Connector specific deps
 cryptography

@@ -65,6 +65,8 @@ jobs:
           TOGETHERAI_API_KEY: ${{ secrets.TOGETHERAI_API_KEY }}
           VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
           VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
         run: |
           make install-base
           make install-all-embedders
