@@ -1,5 +1,4 @@
 import json
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -24,6 +23,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from kdbai_client import Database, Session, Table
@@ -64,38 +64,19 @@ class KdbaiUploadStagerConfig(UploadStagerConfig):
 class KdbaiUploadStager(UploadStager):
     upload_stager_config: KdbaiUploadStagerConfig = field(default_factory=KdbaiUploadStagerConfig)
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        data = []
-        for element in elements_contents:
-            data.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "element_id": element.get("element_id"),
-                    "document": element.pop("text", None),
-                    "embeddings": element.get("embeddings"),
-                    "metadata": flatten_dict(
-                        dictionary=element.get("metadata"),
-                        flatten_lists=True,
-                        remove_none=True,
-                    ),
-                }
-            )
-        logger.debug(f"writing {len(data)} elements to {output_path}")
-        with output_path.open("w") as output_file:
-            json.dump(data, output_file, indent=2)
-        return output_path
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        return {
+            "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
+            "element_id": data.get("element_id"),
+            "document": data.pop("text", None),
+            "embeddings": data.get("embeddings"),
+            "metadata": flatten_dict(
+                dictionary=data.get("metadata"),
+                flatten_lists=True,
+                remove_none=True,
+            ),
+        }
 
 
 class KdbaiUploaderConfig(UploaderConfig):

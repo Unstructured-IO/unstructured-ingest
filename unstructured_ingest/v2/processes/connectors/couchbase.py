@@ -88,32 +88,16 @@ class CouchbaseUploadStager(UploadStager):
         default_factory=lambda: CouchbaseUploadStagerConfig()
     )
 
-    def run(
-        self,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        output_elements = []
-        for element in elements_contents:
-            new_doc = {
-                element["element_id"]: {
-                    "embedding": element.get("embeddings", None),
-                    "text": element.get("text", None),
-                    "metadata": element.get("metadata", None),
-                    "type": element.get("type", None),
-                }
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        return {
+            data["element_id"]: {
+                "embedding": data.get("embeddings", None),
+                "text": data.get("text", None),
+                "metadata": data.get("metadata", None),
+                "type": data.get("type", None),
             }
-            output_elements.append(new_doc)
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(output_elements, output_file)
-        return output_path
+        }
 
 
 class CouchbaseUploaderConfig(UploaderConfig):
@@ -205,6 +189,7 @@ class CouchbaseIndexer(Indexer):
             yield FileData(
                 identifier=identified,
                 connector_type=CONNECTOR_TYPE,
+                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.connection_string}/"
                     f"{self.connection_config.bucket}",
@@ -218,6 +203,9 @@ class CouchbaseIndexer(Indexer):
 
 
 class CouchbaseDownloaderConfig(DownloaderConfig):
+    collection_id: str = Field(
+        default="id", description="The unique key of the id field in the collection"
+    )
     fields: list[str] = field(default_factory=list)
 
 
@@ -249,7 +237,7 @@ class CouchbaseDownloader(Downloader):
     def generate_download_response(
         self, result: dict, bucket: str, file_data: FileData
     ) -> DownloadResponse:
-        record_id = result["id"]
+        record_id = result[self.download_config.collection_id]
         filename_id = self.get_identifier(bucket=bucket, record_id=record_id)
         filename = f"{filename_id}.txt"
         download_path = self.download_dir / Path(filename)

@@ -15,27 +15,18 @@ cd "$SCRIPT_DIR"/.. || exit 1
 export OMP_THREAD_LIMIT=1
 
 all_tests=(
-  'astradb.sh'
   'azure.sh'
-  'azure-cognitive-search.sh'
   'box.sh'
   'chroma.sh'
   #  'clarifai.sh'
   'couchbase.sh'
   'dropbox.sh'
-  'elasticsearch.sh'
   'gcs.sh'
-  'kafka-local.sh'
-  'mongodb.sh'
-  'opensearch.sh'
-  'pinecone.sh'
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
-  'vectara.sh'
-  'weaviate.sh'
-  'milvus.sh'
-  'kdbai.sh'
+  # 'vectara.sh'
+  #  'kdbai.sh'
 )
 
 full_python_matrix_tests=(

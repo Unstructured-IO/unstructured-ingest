@@ -1,15 +1,30 @@
 import json
+import os
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
+from _pytest.fixtures import TopRequest
 from qdrant_client import AsyncQdrantClient
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from test.integration.connectors.utils.docker import container_context
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
+from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.v2.processes.connectors.qdrant.cloud import (
+    CloudQdrantAccessConfig,
+    CloudQdrantConnectionConfig,
+    CloudQdrantUploader,
+    CloudQdrantUploaderConfig,
+    CloudQdrantUploadStager,
+    CloudQdrantUploadStagerConfig,
+)
 from unstructured_ingest.v2.processes.connectors.qdrant.local import (
     CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE,
 )
@@ -135,3 +150,66 @@ async def test_qdrant_destination_server(upload_file: Path, tmp_path: Path, dock
         uploader.run(path=upload_file, file_data=file_data)
     async with qdrant_client(connection_kwargs) as client:
         await validate_upload(client=client, upload_file=upload_file)
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant")
+@requires_env("QDRANT_API_KEY", "QDRANT_SERVER_URL")
+async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
+    server_url = os.environ["QDRANT_SERVER_URL"]
+    api_key = os.environ["QDRANT_API_KEY"]
+    connection_kwargs = {"location": server_url, "api_key": api_key}
+    async with qdrant_client(connection_kwargs) as client:
+        await client.create_collection(COLLECTION_NAME, vectors_config=VECTORS_CONFIG)
+    AsyncQdrantClient(**connection_kwargs)
+
+    stager = CloudQdrantUploadStager(
+        upload_stager_config=CloudQdrantUploadStagerConfig(),
+    )
+    uploader = CloudQdrantUploader(
+        connection_config=CloudQdrantConnectionConfig(
+            url=server_url,
+            access_config=CloudQdrantAccessConfig(
+                api_key=api_key,
+            ),
+        ),
+        upload_config=CloudQdrantUploaderConfig(collection_name=COLLECTION_NAME),
+    )
+
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=SERVER_CONNECTOR_TYPE,
+        identifier="mock-file-data",
+    )
+
+    staged_upload_file = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+
+    if uploader.is_async():
+        await uploader.run_async(path=staged_upload_file, file_data=file_data)
+    else:
+        uploader.run(path=staged_upload_file, file_data=file_data)
+    async with qdrant_client(connection_kwargs) as client:
+        await validate_upload(client=client, upload_file=upload_file)
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_qdrant_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = LocalQdrantUploadStager(
+        upload_stager_config=LocalQdrantUploadStagerConfig(),
+    )
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=LOCAL_CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

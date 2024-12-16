@@ -1,7 +1,7 @@
 """
 setup.py
 
-unstructured - pre-processing tools for unstructured data
+unstructured-ingest - pre-processing tools for unstructured data
 
 Copyright 2022 Unstructured Technologies, Inc.
 
@@ -83,8 +83,8 @@ connectors_reqs = {
     "airtable": load_requirements("requirements/connectors/airtable.in"),
     "astradb": load_requirements("requirements/connectors/astradb.in"),
     "azure": load_requirements("requirements/connectors/azure.in"),
-    "azure-cognitive-search": load_requirements(
-        "requirements/connectors/azure-cognitive-search.in",
+    "azure-ai-search": load_requirements(
+        "requirements/connectors/azure-ai-search.in",
     ),
     "biomed": load_requirements("requirements/connectors/biomed.in"),
     "box": load_requirements("requirements/connectors/box.in"),
@@ -95,6 +95,7 @@ connectors_reqs = {
     "delta-table": load_requirements("requirements/connectors/delta-table.in"),
     "discord": load_requirements("requirements/connectors/discord.in"),
     "dropbox": load_requirements("requirements/connectors/dropbox.in"),
+    "duckdb": load_requirements("requirements/connectors/duckdb.in"),
     "elasticsearch": load_requirements("requirements/connectors/elasticsearch.in"),
     "gcs": load_requirements("requirements/connectors/gcs.in"),
     "github": load_requirements("requirements/connectors/github.in"),
@@ -104,6 +105,7 @@ connectors_reqs = {
     "jira": load_requirements("requirements/connectors/jira.in"),
     "kafka": load_requirements("requirements/connectors/kafka.in"),
     "kdbai": load_requirements("requirements/connectors/kdbai.in"),
+    "lancedb": load_requirements("requirements/connectors/lancedb.in"),
     "milvus": load_requirements("requirements/connectors/milvus.in"),
     "mongodb": load_requirements("requirements/connectors/mongodb.in"),
     "neo4j": load_requirements("requirements/connectors/neo4j.in"),

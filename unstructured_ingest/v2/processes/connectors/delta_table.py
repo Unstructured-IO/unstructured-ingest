@@ -1,9 +1,11 @@
 import json
 import os
+import traceback
 from dataclasses import dataclass, field
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import pandas as pd
 from pydantic import Field, Secret
@@ -24,6 +26,15 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 CONNECTOR_TYPE = "delta_table"
+
+
+def write_deltalake_with_error_handling(queue, **kwargs):
+    from deltalake.writer import write_deltalake
+
+    try:
+        write_deltalake(**kwargs)
+    except Exception:
+        queue.put(traceback.format_exc())
 
 
 class DeltaTableAccessConfig(AccessConfig):
@@ -94,7 +105,7 @@ class DeltaTableUploader(Uploader):
     connection_config: DeltaTableConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
+    @requires_dependencies(["boto3"], extras="delta-table")
     def precheck(self):
         secrets = self.connection_config.access_config.get_secret_value()
         if (
@@ -102,13 +113,24 @@ class DeltaTableUploader(Uploader):
             and secrets.aws_access_key_id
             and secrets.aws_secret_access_key
         ):
-            from fsspec import get_filesystem_class
+            from boto3 import client
+
+            url = urlparse(self.connection_config.table_uri)
+            bucket_name = url.netloc
+            dir_path = url.path.lstrip("/")
 
             try:
-                fs = get_filesystem_class("s3")(
-                    key=secrets.aws_access_key_id, secret=secrets.aws_secret_access_key
+                s3_client = client(
+                    "s3",
+                    aws_access_key_id=secrets.aws_access_key_id,
+                    aws_secret_access_key=secrets.aws_secret_access_key,
                 )
-                fs.write_bytes(path=self.connection_config.table_uri, value=b"")
+                s3_client.put_object(Bucket=bucket_name, Key=dir_path, Body=b"")
+
+                response = s3_client.get_bucket_location(Bucket=bucket_name)
+
+                if self.connection_config.aws_region != response.get("LocationConstraint"):
+                    raise ValueError("Wrong AWS Region was provided.")
 
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -145,7 +167,6 @@ class DeltaTableUploader(Uploader):
 
     @requires_dependencies(["deltalake"], extras="delta-table")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from deltalake.writer import write_deltalake
 
         df = self.read_dataframe(path)
         updated_upload_path = os.path.join(
@@ -164,16 +185,23 @@ class DeltaTableUploader(Uploader):
             "mode": "overwrite",
             "storage_options": storage_options,
         }
+        queue = Queue()
         # NOTE: deltalake writer on Linux sometimes can finish but still trigger a SIGABRT and cause
         # ingest to fail, even though all tasks are completed normally. Putting the writer into a
         # process mitigates this issue by ensuring python interpreter waits properly for deltalake's
         # rust backend to finish
         writer = Process(
-            target=write_deltalake,
-            kwargs=writer_kwargs,
+            target=write_deltalake_with_error_handling,
+            kwargs={"queue": queue, **writer_kwargs},
         )
         writer.start()
         writer.join()
+
+        # Check if the queue has any exception message
+        if not queue.empty():
+            error_message = queue.get()
+            logger.error(f"Exception occurred in write_deltalake: {error_message}")
+            raise RuntimeError(f"Error in write_deltalake: {error_message}")
 
 
 delta_table_destination_entry = DestinationRegistryEntry(

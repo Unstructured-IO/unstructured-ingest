@@ -11,8 +11,8 @@ from test.integration.connectors.utils.constants import (
     env_setup_path,
 )
 from test.integration.connectors.utils.docker_compose import docker_compose_context
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -62,11 +62,34 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
+            configs=SourceValidationConfigs(
                 test_id="s3",
                 predownload_file_data_check=validate_predownload_file_data,
                 postdownload_file_data_check=validate_postdownload_file_data,
                 expected_num_files=4,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig):
+    indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/special-characters/")
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        download_config = S3DownloaderConfig(download_dir=tempdir_path)
+        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
+        downloader = S3Downloader(
+            connection_config=anon_connection_config, download_config=download_config
+        )
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id="s3-specialchar",
+                predownload_file_data_check=validate_predownload_file_data,
+                postdownload_file_data_check=validate_postdownload_file_data,
+                expected_num_files=1,
             ),
         )
 
@@ -98,7 +121,7 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
             await source_connector_validation(
                 indexer=indexer,
                 downloader=downloader,
-                configs=ValidationConfigs(
+                configs=SourceValidationConfigs(
                     test_id="s3-minio",
                     predownload_file_data_check=validate_predownload_file_data,
                     postdownload_file_data_check=validate_postdownload_file_data,

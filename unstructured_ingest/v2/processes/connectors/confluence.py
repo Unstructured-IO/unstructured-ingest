@@ -11,12 +11,12 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -30,15 +30,27 @@ CONNECTOR_TYPE = "confluence"
 
 
 class ConfluenceAccessConfig(AccessConfig):
-    api_token: str = Field(description="Confluence API token")
+    api_token: Optional[str] = Field(description="Confluence API token", default=None)
+    access_token: Optional[str] = Field(
+        description="Confluence Personal Access Token", default=None
+    )
 
 
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
-    user_email: str = Field(description="User email for authentication")
+    user_email: Optional[str] = Field(description="User email for authentication", default=None)
     access_config: Secret[ConfluenceAccessConfig] = Field(
         description="Access configuration for Confluence"
     )
+
+    def model_post_init(self, __context):
+        access_configs = self.access_config.get_secret_value()
+        basic_auth = self.user_email and access_configs.api_token
+        pat_auth = access_configs.access_token
+        if basic_auth and pat_auth:
+            raise ValueError("both forms of auth provided, only one allowed")
+        if not (basic_auth or pat_auth):
+            raise ValueError("neither forms of auth provided")
 
     @requires_dependencies(["atlassian"], extras="confluence")
     def get_client(self) -> "Confluence":
@@ -154,7 +166,7 @@ class ConfluenceDownloader(Downloader):
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
 
-    def run(self, file_data: FileData, **kwargs) -> download_responses:
+    def run(self, file_data: FileData, **kwargs) -> DownloadResponse:
         doc_id = file_data.identifier
         try:
             client = self.connection_config.get_client()

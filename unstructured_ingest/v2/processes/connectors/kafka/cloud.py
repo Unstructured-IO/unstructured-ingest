@@ -1,10 +1,13 @@
 import socket
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret, SecretStr
 
-from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.v2.processes.connectors.kafka.kafka import (
     KafkaAccessConfig,
     KafkaConnectionConfig,
@@ -12,6 +15,8 @@ from unstructured_ingest.v2.processes.connectors.kafka.kafka import (
     KafkaDownloaderConfig,
     KafkaIndexer,
     KafkaIndexerConfig,
+    KafkaUploader,
+    KafkaUploaderConfig,
 )
 
 if TYPE_CHECKING:
@@ -21,10 +26,10 @@ CONNECTOR_TYPE = "kafka-cloud"
 
 
 class CloudKafkaAccessConfig(KafkaAccessConfig):
-    api_key: Optional[SecretStr] = Field(
-        description="Kafka API key to connect at the server", alias="kafka_api_key", default=None
+    kafka_api_key: SecretStr = Field(
+        description="Kafka API key to connect at the server", default=None
     )
-    secret: Optional[SecretStr] = Field(description="", default=None)
+    secret: SecretStr = Field(description="", default=None)
 
 
 class CloudKafkaConnectionConfig(KafkaConnectionConfig):
@@ -38,11 +43,25 @@ class CloudKafkaConnectionConfig(KafkaConnectionConfig):
         conf = {
             "bootstrap.servers": f"{bootstrap}:{port}",
             "client.id": socket.gethostname(),
-            "group.id": "default_group_id",
+            "group.id": self.group_id,
             "enable.auto.commit": "false",
             "auto.offset.reset": "earliest",
-            "message.max.bytes": 10485760,
-            "sasl.username": access_config.api_key,
+            "sasl.username": access_config.kafka_api_key.get_secret_value(),
+            "sasl.password": access_config.secret.get_secret_value(),
+            "sasl.mechanism": "PLAIN",
+            "security.protocol": "SASL_SSL",
+        }
+
+        return conf
+
+    def get_producer_configuration(self) -> dict:
+        bootstrap = self.bootstrap_server
+        port = self.port
+        access_config = self.access_config.get_secret_value()
+
+        conf = {
+            "bootstrap.servers": f"{bootstrap}:{port}",
+            "sasl.username": access_config.kafka_api_key,
             "sasl.password": access_config.secret,
             "sasl.mechanism": "PLAIN",
             "security.protocol": "SASL_SSL",
@@ -73,10 +92,27 @@ class CloudKafkaDownloader(KafkaDownloader):
     connector_type: str = CONNECTOR_TYPE
 
 
+class CloudKafkaUploaderConfig(KafkaUploaderConfig):
+    pass
+
+
+@dataclass
+class CloudKafkaUploader(KafkaUploader):
+    connection_config: CloudKafkaConnectionConfig
+    upload_config: CloudKafkaUploaderConfig
+    connector_type: str = CONNECTOR_TYPE
+
+
 kafka_cloud_source_entry = SourceRegistryEntry(
     connection_config=CloudKafkaConnectionConfig,
     indexer=CloudKafkaIndexer,
     indexer_config=CloudKafkaIndexerConfig,
     downloader=CloudKafkaDownloader,
     downloader_config=CloudKafkaDownloaderConfig,
+)
+
+kafka_cloud_destination_entry = DestinationRegistryEntry(
+    connection_config=CloudKafkaConnectionConfig,
+    uploader=CloudKafkaUploader,
+    uploader_config=CloudKafkaUploaderConfig,
 )

@@ -28,7 +28,6 @@ from unstructured_ingest.v2.interfaces import (
     SourceIdentifiers,
     Uploader,
     UploaderConfig,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -220,7 +219,7 @@ class OnedriveDownloader(Downloader):
         return self.download_dir / Path(rel_path)
 
     @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         file = self._fetch_file(file_data=file_data)
         fsize = file.get_property("size", 0)
         download_path = self.get_download_path(file_data=file_data)
@@ -233,7 +232,7 @@ class OnedriveDownloader(Downloader):
         else:
             with download_path.open(mode="wb") as f:
                 file.download(f).execute_query()
-        return DownloadResponse(file_data=file_data, path=download_path)
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 class OnedriveUploaderConfig(UploaderConfig):
