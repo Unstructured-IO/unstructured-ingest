@@ -1,7 +1,6 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret
@@ -249,9 +248,7 @@ class AzureAISearchUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing document batches to destination"
             f" endpoint at {str(self.connection_config.endpoint)}"
@@ -266,7 +263,7 @@ class AzureAISearchUploader(Uploader):
 
         batch_size = self.upload_config.batch_size
         with self.connection_config.get_search_client() as search_client:
-            for chunk in batch_generator(elements_dict, batch_size):
+            for chunk in batch_generator(data, batch_size):
                 self.write_dict(elements_dict=chunk, search_client=search_client)  # noqa: E203
 
 

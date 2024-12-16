@@ -1,6 +1,5 @@
 import collections
 import hashlib
-import json
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -405,16 +404,14 @@ class ElasticsearchUploader(Uploader):
             raise WriteError(f"failed to delete records: {failures}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:  # type: ignore
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
         from elasticsearch.helpers.errors import BulkIndexError
 
         parallel_bulk = self.load_parallel_bulk()
-        with path.open("r") as file:
-            elements_dict = json.load(file)
         upload_destination = self.connection_config.hosts or self.connection_config.cloud_id
 
         logger.info(
-            f"writing {len(elements_dict)} elements via document batches to destination "
+            f"writing {len(data)} elements via document batches to destination "
             f"index named {self.upload_config.index_name} at {upload_destination} with "
             f"batch size (in bytes) {self.upload_config.batch_size_bytes} with "
             f"{self.upload_config.num_threads} (number of) threads"
@@ -429,7 +426,7 @@ class ElasticsearchUploader(Uploader):
                     f"This may cause issues when uploading."
                 )
             for batch in generator_batching_wbytes(
-                elements_dict, batch_size_limit_bytes=self.upload_config.batch_size_bytes
+                data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
                 try:
                     iterator = parallel_bulk(

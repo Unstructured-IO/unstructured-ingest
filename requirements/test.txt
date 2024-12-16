@@ -14,6 +14,8 @@ coverage[toml]==7.6.9
     # via pytest-cov
 cryptography==44.0.0
     # via -r test.in
+deepdiff==8.0.1
+    # via -r test.in
 docker==7.1.0
     # via -r test.in
 docstring-parser==0.16
@@ -86,6 +88,8 @@ numpy==1.26.4
     # via
     #   -c ./common/constraints.txt
     #   shapely
+orderly-set==5.2.2
+    # via deepdiff
 packaging==24.2
     # via
     #   google-cloud-aiplatform

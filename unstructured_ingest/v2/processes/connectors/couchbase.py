@@ -1,5 +1,4 @@
 import hashlib
-import json
 import sys
 import time
 from contextlib import contextmanager
@@ -124,11 +123,9 @@ class CouchbaseUploader(Uploader):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.connection_string}",
         )
@@ -137,7 +134,7 @@ class CouchbaseUploader(Uploader):
             scope = bucket.scope(self.connection_config.scope)
             collection = scope.collection(self.connection_config.collection)
 
-            for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+            for chunk in batch_generator(data, self.upload_config.batch_size):
                 collection.upsert_multi(
                     {doc_id: doc for doc in chunk for doc_id, doc in doc.items()}
                 )

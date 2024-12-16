@@ -15,7 +15,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import split_dataframe
+from unstructured_ingest.utils.data_prep import get_data_df, split_dataframe
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -358,10 +358,15 @@ class SQLUploader(Uploader):
         for column in missing_columns:
             df[column] = pd.Series()
 
-    def upload_contents(self, path: Path) -> None:
-        with path.open() as f:
-            data = json.load(f)
-        df = pd.DataFrame(data=data)
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        if self.can_delete():
+            self.delete_by_record_id(file_data=file_data)
+        else:
+            logger.warning(
+                f"table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
         df.replace({np.nan: None}, inplace=True)
         self._fit_to_schema(df=df, columns=self.get_table_columns())
 
@@ -410,13 +415,10 @@ class SQLUploader(Uploader):
             rowcount = cursor.rowcount
             logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
 
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data)
+        self.upload_dataframe(df=df, file_data=file_data)
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        if self.can_delete():
-            self.delete_by_record_id(file_data=file_data)
-        else:
-            logger.warning(
-                f"table doesn't contain expected "
-                f"record id column "
-                f"{self.upload_config.record_id_key}, skipping delete"
-            )
-        self.upload_contents(path=path)
+        df = get_data_df(path=path)
+        self.upload_dataframe(df=df, file_data=file_data)

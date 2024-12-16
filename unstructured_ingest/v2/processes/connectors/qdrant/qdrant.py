@@ -3,7 +3,6 @@ import json
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
 
 from pydantic import Field, Secret
@@ -123,18 +122,14 @@ class QdrantUploader(Uploader, ABC):
     def is_async(self):
         return True
 
-    async def run_async(
+    async def run_data_async(
         self,
-        path: Path,
+        data: list[dict],
         file_data: FileData,
         **kwargs: Any,
     ) -> None:
-        with path.open("r") as file:
-            elements: list[dict] = json.load(file)
 
-        logger.debug("Loaded %i elements from %s", len(elements), path)
-
-        batches = list(batch_generator(elements, batch_size=self.upload_config.batch_size))
+        batches = list(batch_generator(data, batch_size=self.upload_config.batch_size))
         logger.debug(
             "Elements split into %i batches of size %i.",
             len(batches),

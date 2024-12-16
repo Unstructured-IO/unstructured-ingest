@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
@@ -251,11 +250,9 @@ class PineconeUploader(Uploader):
                 raise DestinationConnectionError(f"http error: {api_error}") from api_error
             logger.debug(f"results: {results}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing a total of {len(elements_dict)} elements via"
+            f"writing a total of {len(data)} elements via"
             f" document batches to destination"
             f" index named {self.connection_config.index_name}"
         )
@@ -268,7 +265,7 @@ class PineconeUploader(Uploader):
             self.pod_delete_by_record_id(file_data=file_data)
         else:
             raise ValueError(f"unexpected spec type in index description: {index_description}")
-        self.upsert_batches_async(elements_dict=elements_dict)
+        self.upsert_batches_async(elements_dict=data)
 
 
 pinecone_destination_entry = DestinationRegistryEntry(

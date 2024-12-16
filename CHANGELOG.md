@@ -1,9 +1,10 @@
-## 0.3.9-dev3
+## 0.3.9-dev4
 
 ### Enhancements
 
 * **Support ndjson files in stagers**
 * **Add Neo4j destination connector**
+* **Support passing data in for uploaders**
 
 ### Fixes
 
