@@ -19,6 +19,7 @@ from unstructured_ingest.v2.interfaces.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.v2.processes.connectors.neo4j import (
+    CONNECTOR_TYPE,
     Label,
     Neo4jAccessConfig,
     Neo4jConnectionConfig,
@@ -50,7 +51,7 @@ def _neo4j_server():
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(DESTINATION_TAG)
+@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE)
 async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     stager = Neo4jUploadStager()
     uploader = Neo4jUploader(
@@ -103,7 +104,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     await validate_uploaded_graph(modified_upload_file)
 
 
-@pytest.mark.tags(DESTINATION_TAG)
+@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE)
 class TestPrecheck:
     @pytest.fixture
     def configured_uploader(self) -> Neo4jUploader:
