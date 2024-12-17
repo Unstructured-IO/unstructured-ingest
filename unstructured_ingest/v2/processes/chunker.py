@@ -2,6 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+import json
+import ndjson
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -89,12 +91,23 @@ class Chunker(BaseProcess, ABC):
     def is_async(self) -> bool:
         return self.config.chunk_by_api
 
+    def get_data(self, elements_filepath: Path) -> list[dict]:
+        if elements_filepath.suffix == ".json":
+            with elements_filepath.open() as f:
+                return json.load(f)
+        elif elements_filepath.suffix == ".ndjson":
+            with elements_filepath.open() as f:
+                return ndjson.load(f)
+        else:
+            raise ValueError(f"Unsupported input format: {elements_filepath}")
+
     @requires_dependencies(dependencies=["unstructured"])
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured.chunking import dispatch
-        from unstructured.staging.base import elements_from_json
+        from unstructured.staging.base import elements_from_dicts
 
-        elements = elements_from_json(filename=str(elements_filepath))
+        elements_dicts = self.get_data(elements_filepath=elements_filepath)
+        elements = elements_from_dicts(elements_dicts)
         if not elements:
             return [e.to_dict() for e in elements]
         local_chunking_strategies = ("basic", "by_title")

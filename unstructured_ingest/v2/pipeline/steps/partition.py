@@ -1,6 +1,6 @@
 import asyncio
 import hashlib
-import json
+import ndjson
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
@@ -38,7 +38,7 @@ class PartitionStep(PipelineStep):
         return not filepath.exists()
 
     def get_output_filepath(self, filename: Path) -> Path:
-        hashed_output_file = f"{self.get_hash(extras=[filename.name])}.json"
+        hashed_output_file = f"{self.get_hash(extras=[filename.name])}.ndjson"
         filepath = (self.cache_dir / hashed_output_file).resolve()
         filepath.parent.mkdir(parents=True, exist_ok=True)
         return filepath
@@ -46,7 +46,7 @@ class PartitionStep(PipelineStep):
     def _save_output(self, output_filepath: str, partitioned_content: list[dict]):
         with open(str(output_filepath), "w") as f:
             logger.debug(f"writing partitioned output to: {output_filepath}")
-            json.dump(partitioned_content, f, indent=2)
+            ndjson.dump(partitioned_content, f)
 
     async def _run_async(
         self, fn: Callable, path: str, file_data_path: str
