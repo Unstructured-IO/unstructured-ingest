@@ -1,4 +1,4 @@
-## 0.3.9-dev4
+## 0.3.9
 
 ### Enhancements
 
