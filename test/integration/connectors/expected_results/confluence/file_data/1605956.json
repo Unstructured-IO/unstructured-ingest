@@ -6,7 +6,6 @@
     "fullpath": "MFS/1605956.html",
     "rel_path": "MFS/1605956.html"
   },
-  "doc_type": "file",
   "metadata": {
     "url": "https://unstructured-ingest-test.atlassian.net/pages/1605956",
     "version": "1",
@@ -16,7 +15,7 @@
     },
     "date_created": "2023-07-09T12:54:45.288Z",
     "date_modified": "2023-07-09T12:54:45.288Z",
-    "date_processed": "1730944048.0752552",
+    "date_processed": "1734443241.8711371",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -25,6 +24,6 @@
     "document_id": "1605956"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmphgt576pl/MFS/1605956.html",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmprfkrc6wg/MFS/1605956.html",
   "display_name": "Get the most out of your team space"
 }

@@ -1,6 +1,6 @@
 {
   "identifier": "fake-topic_0_0",
-  "connector_type": "kafka-local",
+  "connector_type": "kafka-cloud",
   "source_identifiers": {
     "filename": "fake-topic_0_0.txt",
     "fullpath": "fake-topic_0_0.txt",
@@ -12,7 +12,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734441688.701097",
+    "date_processed": "1734443113.609303",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -23,6 +23,6 @@
     "content": "This is some text for message 0"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpkfb_r27m/fake-topic_0_0.txt",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpelurnw83/fake-topic_0_0.txt",
   "display_name": "fake-topic_0_0.txt"
 }
