@@ -6,9 +6,8 @@
     "fullpath": "movies-6.txt",
     "rel_path": null
   },
-  "doc_type": "file",
   "metadata": {
-    "url": null,
+    "url": "http://localhost:9200/movies",
     "version": "1",
     "record_locator": {
       "hosts": [
@@ -19,12 +18,14 @@
     },
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1731962225.3712618",
+    "date_processed": "1734441717.426358",
     "permissions_data": null,
     "filesize_bytes": null
   },
-  "additional_metadata": {},
+  "additional_metadata": {
+    "index_name": "movies"
+  },
   "reprocess": false,
-  "local_download_path": null,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpz9m4m2ia/movies-6.txt",
   "display_name": null
 }

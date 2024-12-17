@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
-from unstructured_ingest.v2.interfaces.file_data import FileData
+from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.interfaces.upload_stager import UploadStager
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
@@ -43,7 +43,7 @@ class UploadStageStep(PipelineStep):
         output_filename = f"{self.get_hash(extras=[path.name])}{path.suffix}"
         fn_kwargs = {
             "elements_filepath": path,
-            "file_data": FileData.from_file(path=file_data_path),
+            "file_data": file_data_from_file(path=file_data_path),
             "output_dir": self.cache_dir,
             "output_filename": output_filename,
         }

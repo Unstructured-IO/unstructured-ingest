@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
 from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.processes.embedder import Embedder
@@ -49,7 +50,7 @@ class EmbedStep(PipelineStep):
 
     async def _run_async(self, fn: Callable, path: str, file_data_path: str) -> EmbedStepResponse:
         path = Path(path)
-        file_data = FileData.from_file(path=file_data_path)
+        file_data = file_data_from_file(path=file_data_path)
         output_filepath = self.get_output_filepath(filename=path)
         if not self.should_embed(filepath=output_filepath, file_data=file_data):
             logger.debug(f"skipping embedding, output already exists: {output_filepath}")

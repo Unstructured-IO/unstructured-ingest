@@ -2,34 +2,29 @@
   "identifier": "659daefa21dd8c9054b084b7",
   "connector_type": "mongodb",
   "source_identifiers": {
-    "filename": "659daefa21dd8c9054b084b7",
-    "fullpath": "659daefa21dd8c9054b084b7",
-    "rel_path": "659daefa21dd8c9054b084b7"
+    "filename": "659daefa21dd8c9054b084b7.txt",
+    "fullpath": "659daefa21dd8c9054b084b7.txt",
+    "rel_path": "659daefa21dd8c9054b084b7.txt"
   },
-  "doc_type": "batch",
   "metadata": {
     "url": null,
     "version": null,
     "record_locator": {
       "database": "ingest-test-db",
       "collection": "sample-mongodb-data",
-      "document_id": "659daefa21dd8c9054b084b9"
+      "document_id": "659daefa21dd8c9054b084b7"
     },
     "date_created": "2024-01-09T20:39:22+00:00",
     "date_modified": null,
-    "date_processed": "1732220437.5323362",
+    "date_processed": "1734380792.896338",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "ids": [
-      "659daefa21dd8c9054b084b6",
-      "659daefa21dd8c9054b084b7",
-      "659daefa21dd8c9054b084b8",
-      "659daefa21dd8c9054b084b9"
-    ]
+    "database": "ingest-test-db",
+    "collection": "sample-mongodb-data"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp3iv0ttb6/659daefa21dd8c9054b084b7.txt",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpyfmsos4r/659daefa21dd8c9054b084b7.txt",
   "display_name": null
 }

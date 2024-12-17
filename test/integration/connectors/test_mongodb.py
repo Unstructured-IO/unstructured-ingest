@@ -197,7 +197,10 @@ async def test_mongodb_source(temp_dir: Path):
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id=CONNECTOR_TYPE, expected_num_files=4, validate_downloaded_files=True
+            test_id=CONNECTOR_TYPE,
+            expected_num_files=4,
+            validate_downloaded_files=True,
+            expected_number_indexed_file_data=1,
         ),
     )
 

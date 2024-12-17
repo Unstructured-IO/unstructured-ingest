@@ -1,6 +1,5 @@
 import collections
 import hashlib
-import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,11 +14,17 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
     WriteError,
 )
-from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
+from unstructured_ingest.utils.data_prep import (
+    batch_generator,
+    flatten_dict,
+    generator_batching_wbytes,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -46,6 +51,14 @@ if TYPE_CHECKING:
     from elasticsearch import Elasticsearch as ElasticsearchClient
 
 CONNECTOR_TYPE = "elasticsearch"
+
+
+class ElastisearchAdditionalMetadata(BaseModel):
+    index_name: str
+
+
+class ElasticsearchBatchFileData(BatchFileData):
+    additional_metadata: ElastisearchAdditionalMetadata
 
 
 class ElasticsearchAccessConfig(AccessConfig):
@@ -174,36 +187,21 @@ class ElasticsearchIndexer(Indexer):
 
             return {hit["_id"] for hit in hits}
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
-        id_batches: list[frozenset[str]] = [
-            frozenset(
-                ids[
-                    i
-                    * self.index_config.batch_size : (i + 1)  # noqa
-                    * self.index_config.batch_size
-                ]
-            )
-            for i in range(
-                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
-            )
-        ]
-        for batch in id_batches:
+        for batch in batch_generator(ids, self.index_config.batch_size):
             # Make sure the hash is always a positive number to create identified
-            identified = str(hash(batch) + sys.maxsize + 1)
-            yield FileData(
-                identifier=identified,
+            yield ElasticsearchBatchFileData(
                 connector_type=CONNECTOR_TYPE,
-                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
                     date_processed=str(time()),
                 ),
-                additional_metadata={
-                    "ids": list(batch),
-                    "index_name": self.index_config.index_name,
-                },
+                additional_metadata=ElastisearchAdditionalMetadata(
+                    index_name=self.index_config.index_name,
+                ),
+                batch_items=[BatchItem(identifier=b) for b in batch],
             )
 
 
@@ -237,7 +235,7 @@ class ElasticsearchDownloader(Downloader):
         return concatenated_values
 
     def generate_download_response(
-        self, result: dict, index_name: str, file_data: FileData
+        self, result: dict, index_name: str, file_data: ElasticsearchBatchFileData
     ) -> DownloadResponse:
         record_id = result["_id"]
         filename_id = self.get_identifier(index_name=index_name, record_id=record_id)
@@ -257,22 +255,19 @@ class ElasticsearchDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-        return DownloadResponse(
-            file_data=FileData(
-                identifier=filename_id,
-                connector_type=CONNECTOR_TYPE,
-                source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
-                metadata=FileDataSourceMetadata(
-                    version=str(result["_version"]) if "_version" in result else None,
-                    date_processed=str(time()),
-                    record_locator={
-                        "hosts": self.connection_config.hosts,
-                        "index_name": index_name,
-                        "document_id": record_id,
-                    },
-                ),
-            ),
-            path=download_path,
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename_id
+        cast_file_data.metadata.date_processed = str(time())
+        cast_file_data.metadata.version = str(result["_version"]) if "_version" in result else None
+        cast_file_data.metadata.record_locator = {
+            "hosts": self.connection_config.hosts,
+            "index_name": index_name,
+            "document_id": record_id,
+        }
+        cast_file_data.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
+        return super().generate_download_response(
+            file_data=cast_file_data,
+            download_path=download_path,
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
@@ -285,11 +280,12 @@ class ElasticsearchDownloader(Downloader):
 
         return AsyncElasticsearch, async_scan
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
+        elasticsearch_filedata = ElasticsearchBatchFileData.cast(file_data=file_data)
         AsyncClient, async_scan = self.load_async()
 
-        index_name: str = file_data.additional_metadata["index_name"]
-        ids: list[str] = file_data.additional_metadata["ids"]
+        index_name: str = elasticsearch_filedata.additional_metadata.index_name
+        ids: list[str] = [item.identifier for item in elasticsearch_filedata.batch_items]
 
         scan_query = {
             "_source": self.download_config.fields,
@@ -307,7 +303,7 @@ class ElasticsearchDownloader(Downloader):
             ):
                 download_responses.append(
                     self.generate_download_response(
-                        result=result, index_name=index_name, file_data=file_data
+                        result=result, index_name=index_name, file_data=elasticsearch_filedata
                     )
                 )
         return download_responses

@@ -1,3 +1,9 @@
+## 0.3.10-dev0
+
+### Enhancements
+
+* **Support more concrete FileData content for batch support**
+
 ## 0.3.9
 
 ### Enhancements

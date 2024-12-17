@@ -1,0 +1,40 @@
+{
+  "identifier": "1c704234-e0da-5676-be32-a12cc6407b3d",
+  "connector_type": "sqlite",
+  "source_identifiers": null,
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1734106259.0233579",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "table_name": "cars",
+    "id_column": "car_id"
+  },
+  "reprocess": false,
+  "local_download_path": null,
+  "display_name": null,
+  "batch_items": [
+    {
+      "identifier": "10",
+      "version": null
+    },
+    {
+      "identifier": "7",
+      "version": null
+    },
+    {
+      "identifier": "8",
+      "version": null
+    },
+    {
+      "identifier": "9",
+      "version": null
+    }
+  ]
+}
