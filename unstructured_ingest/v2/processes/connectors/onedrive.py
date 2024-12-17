@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator,AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -126,7 +126,7 @@ class OnedriveIndexer(Indexer):
         for f in folders:
             files.extend(self.list_objects(f, recursive))
         return files
-    
+
     async def list_objects(self, folder: "DriveItem", recursive: bool) -> list["DriveItem"]:
         # Offload the blocking operation
         return await asyncio.to_thread(self.list_objects_sync, folder, recursive)
@@ -138,7 +138,7 @@ class OnedriveIndexer(Indexer):
             if root is None or not root.is_folder:
                 raise ValueError(f"Unable to find directory, given: {fpath}")
         return root
-    
+
     async def get_root(self, client: "GraphClient") -> "DriveItem":
         return await asyncio.to_thread(self.get_root_sync, client)
 
@@ -152,8 +152,7 @@ class OnedriveIndexer(Indexer):
             except TypeError:
                 pass
         return filtered_properties
-    
-    
+
     async def get_properties(self, drive_item: "DriveItem") -> dict:
         return await asyncio.to_thread(self.get_properties_sync, drive_item)
 
@@ -194,10 +193,10 @@ class OnedriveIndexer(Indexer):
     async def drive_item_to_file_data(self, drive_item: "DriveItem") -> FileData:
         # Offload the file data creation if it's not guaranteed async
         return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
-    
+
     async def run(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
         try:
-             # Validate token in async
+            # Validate token in async
             token_resp = await asyncio.to_thread(self.connection_config.get_token)
             if "error" in token_resp:
                 raise SourceConnectionError(
@@ -206,7 +205,9 @@ class OnedriveIndexer(Indexer):
 
             client = await asyncio.to_thread(self.connection_config.get_client)
             root = await self.get_root(client=client)
-            drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
+            drive_items = await self.list_objects(
+                folder=root, recursive=self.index_config.recursive
+            )
 
             for drive_item in drive_items:
                 # Convert each drive_item to file_data asynchronously
@@ -250,7 +251,7 @@ class OnedriveDownloader(Downloader):
 
     @SourceConnectionError.wrap
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        try:    
+        try:
             file = self._fetch_file(file_data=file_data)
             fsize = file.get_property("size", 0)
             download_path = self.get_download_path(file_data=file_data)
