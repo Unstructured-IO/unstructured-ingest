@@ -219,7 +219,7 @@ class AstraDBIndexer(Indexer):
                     collection_name=self.index_config.collection_name,
                     keyspace=self.index_config.keyspace,
                 ),
-                batch_items=[BatchItem(identifier=str(b)) for b in batch],
+                batch_items=[BatchItem(identifier=b) for b in batch],
             )
             yield fd
 

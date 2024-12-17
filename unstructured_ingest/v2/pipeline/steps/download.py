@@ -8,6 +8,7 @@ from typing import Callable, Optional, TypedDict, TypeVar
 
 from unstructured_ingest.v2.interfaces import FileData, download_responses
 from unstructured_ingest.v2.interfaces.downloader import Downloader
+from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.utils import serialize_base_model_json
@@ -92,7 +93,7 @@ class DownloadStep(PipelineStep):
             json.dump(file_data.model_dump(), file, indent=2)
 
     async def _run_async(self, fn: Callable, file_data_path: str) -> list[DownloadStepResponse]:
-        file_data = FileData.from_file(path=file_data_path)
+        file_data = file_data_from_file(path=file_data_path)
         download_path = self.process.get_download_path(file_data=file_data)
         if not self.should_download(file_data=file_data, file_data_path=file_data_path):
             logger.debug(f"skipping download, file already exists locally: {download_path}")

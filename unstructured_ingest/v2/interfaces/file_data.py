@@ -50,7 +50,7 @@ class FileData(BaseModel):
             raise ValueError(f"file path not valid: {path}")
         with open(str(path.resolve()), "rb") as f:
             file_data_dict = json.load(f)
-        file_data = FileData.model_validate(file_data_dict)
+        file_data = cls.model_validate(file_data_dict)
         return file_data
 
     @classmethod
@@ -99,7 +99,7 @@ class BatchFileData(FileData):
 
 def file_data_from_file(path: str) -> FileData:
     try:
-        BatchFileData.from_file(path=path)
+        return BatchFileData.from_file(path=path)
     except ValidationError:
         logger.debug(f"{path} not valid for batch file data")
 
