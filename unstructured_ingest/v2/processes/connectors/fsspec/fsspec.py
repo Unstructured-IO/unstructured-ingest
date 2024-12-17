@@ -303,10 +303,14 @@ class FsspecUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def get_upload_path(self, file_data: FileData) -> Path:
-        upload_path = (
-            Path(self.upload_config.path_without_protocol)
-            / file_data.source_identifiers.relative_path
-        )
+        upload_path_name: str
+        if file_data.source_identifiers is not None:
+            upload_path_name = file_data.source_identifiers.relative_path
+        elif file_data.local_download_path is not None:
+            upload_path_name = Path(file_data.local_download_path).name
+        else:
+            upload_path_name = file_data.identifier
+        upload_path = Path(self.upload_config.path_without_protocol) / upload_path_name
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
         return updated_upload_path
 
