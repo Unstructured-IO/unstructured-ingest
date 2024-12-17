@@ -1,11 +1,12 @@
 from pathlib import Path
+
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecAccessConfig,
     FsspecConnectionConfig,
     FsspecUploader,
     FsspecUploaderConfig,
 )
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 
 
 def test_get_upload_path_with_source_identifiers():
