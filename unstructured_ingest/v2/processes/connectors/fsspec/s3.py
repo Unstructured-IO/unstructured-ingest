@@ -1,15 +1,12 @@
 import contextlib
 from dataclasses import dataclass, field
-from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
-    DownloadResponse,
-    FileData,
     FileDataSourceMetadata,
 )
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -28,6 +25,9 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 )
 
 CONNECTOR_TYPE = "s3"
+
+if TYPE_CHECKING:
+    from s3fs import S3FileSystem
 
 
 class S3IndexerConfig(FsspecIndexerConfig):
@@ -72,6 +72,10 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         )
         return access_configs
 
+    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
+    def get_client(self, protocol: str) -> Generator["S3FileSystem", None, None]:
+        yield super().get_client(protocol=protocol)
+
 
 @dataclass
 class S3Indexer(FsspecIndexer):
@@ -115,14 +119,6 @@ class S3Indexer(FsspecIndexer):
             filesize_bytes=file_size,
         )
 
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        return super().run(**kwargs)
-
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def precheck(self) -> None:
-        super().precheck()
-
 
 class S3DownloaderConfig(FsspecDownloaderConfig):
     pass
@@ -135,14 +131,6 @@ class S3Downloader(FsspecDownloader):
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[S3DownloaderConfig] = field(default_factory=S3DownloaderConfig)
 
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return super().run(file_data=file_data, **kwargs)
-
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return await super().run_async(file_data=file_data, **kwargs)
-
 
 class S3UploaderConfig(FsspecUploaderConfig):
     pass
@@ -153,22 +141,6 @@ class S3Uploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: S3ConnectionConfig
     upload_config: S3UploaderConfig = field(default=None)
-
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def __post_init__(self):
-        super().__post_init__()
-
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return super().run(path=path, file_data=file_data, **kwargs)
-
-    @requires_dependencies(["s3fs", "fsspec"], extras="s3")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return await super().run_async(path=path, file_data=file_data, **kwargs)
 
 
 s3_source_entry = SourceRegistryEntry(

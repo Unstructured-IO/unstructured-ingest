@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -25,6 +24,8 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 )
 from unstructured_ingest.v2.processes.connectors.fsspec.utils import json_serial, sterilize_dict
 
+if TYPE_CHECKING:
+    from adlfs import AzureBlobFileSystem
 CONNECTOR_TYPE = "azure"
 
 
@@ -89,6 +90,10 @@ class AzureConnectionConfig(FsspecConnectionConfig):
         }
         return access_configs
 
+    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
+    def get_client(self, protocol: str) -> Generator["AzureBlobFileSystem", None, None]:
+        yield super().get_client(protocol=protocol)
+
 
 @dataclass
 class AzureIndexer(FsspecIndexer):
@@ -96,16 +101,8 @@ class AzureIndexer(FsspecIndexer):
     index_config: AzureIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    def precheck(self) -> None:
-        super().precheck()
-
     def sterilize_info(self, file_data: dict) -> dict:
         return sterilize_dict(data=file_data, default=azure_json_serial)
-
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        return super().run(**kwargs)
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
@@ -149,14 +146,6 @@ class AzureDownloader(FsspecDownloader):
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[AzureDownloaderConfig] = field(default_factory=AzureDownloaderConfig)
 
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return super().run(file_data=file_data, **kwargs)
-
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return await super().run_async(file_data=file_data, **kwargs)
-
 
 class AzureUploaderConfig(FsspecUploaderConfig):
     pass
@@ -167,22 +156,6 @@ class AzureUploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: AzureConnectionConfig
     upload_config: AzureUploaderConfig = field(default=None)
-
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    def __post_init__(self):
-        super().__post_init__()
-
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return super().run(path=path, file_data=file_data, **kwargs)
-
-    @requires_dependencies(["adlfs", "fsspec"], extras="azure")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return await super().run_async(path=path, file_data=file_data, **kwargs)
 
 
 azure_source_entry = SourceRegistryEntry(

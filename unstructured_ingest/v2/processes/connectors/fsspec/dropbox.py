@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -24,11 +23,16 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploaderConfig,
 )
 
+if TYPE_CHECKING:
+    from dropboxdrivefs import DropboxDriveFileSystem
+
 CONNECTOR_TYPE = "dropbox"
 
 
 class DropboxIndexerConfig(FsspecIndexerConfig):
-    pass
+    def model_post_init(self, __context):
+        if not self.path_without_protocol.startswith("/"):
+            self.path_without_protocol = "/" + self.path_without_protocol
 
 
 class DropboxAccessConfig(FsspecAccessConfig):
@@ -41,6 +45,10 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         default=DropboxAccessConfig(), validate_default=True
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+
+    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
+    def get_client(self, protocol: str) -> Generator["DropboxDriveFileSystem", None, None]:
+        yield super().get_client(protocol=protocol)
 
 
 @dataclass
@@ -83,20 +91,6 @@ class DropboxIndexer(FsspecIndexer):
             filesize_bytes=file_size,
         )
 
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def __post_init__(self):
-        # dropbox expects the path to start with a /
-        if not self.index_config.path_without_protocol.startswith("/"):
-            self.index_config.path_without_protocol = "/" + self.index_config.path_without_protocol
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        return super().run(**kwargs)
-
 
 class DropboxDownloaderConfig(FsspecDownloaderConfig):
     pass
@@ -111,14 +105,6 @@ class DropboxDownloader(FsspecDownloader):
         default_factory=DropboxDownloaderConfig
     )
 
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return super().run(file_data=file_data, **kwargs)
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return await super().run_async(file_data=file_data, **kwargs)
-
 
 class DropboxUploaderConfig(FsspecUploaderConfig):
     pass
@@ -129,22 +115,6 @@ class DropboxUploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: DropboxConnectionConfig
     upload_config: DropboxUploaderConfig = field(default=None)
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def __post_init__(self):
-        super().__post_init__()
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return super().run(path=path, file_data=file_data, **kwargs)
-
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return await super().run_async(path=path, file_data=file_data, **kwargs)
 
 
 dropbox_source_entry = SourceRegistryEntry(
