@@ -194,7 +194,7 @@ class OnedriveIndexer(Indexer):
         # Offload the file data creation if it's not guaranteed async
         return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
 
-    async def run(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
+    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
         try:
             # Validate token in async
             token_resp = await asyncio.to_thread(self.connection_config.get_token)
