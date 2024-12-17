@@ -53,12 +53,12 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "elasticsearch"
 
 
-class FileDataMetadata(BaseModel):
+class ElastisearchAdditionalMetadata(BaseModel):
     index_name: str
 
 
 class ElasticsearchBatchFileData(BatchFileData):
-    additional_metadata: FileDataMetadata
+    additional_metadata: ElastisearchAdditionalMetadata
 
 
 class ElasticsearchAccessConfig(AccessConfig):
@@ -198,7 +198,7 @@ class ElasticsearchIndexer(Indexer):
                     url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
                     date_processed=str(time()),
                 ),
-                additional_metadata=FileDataMetadata(
+                additional_metadata=ElastisearchAdditionalMetadata(
                     index_name=self.index_config.index_name,
                 ),
                 batch_items=[BatchItem(identifier=b) for b in batch],

@@ -53,13 +53,13 @@ CONNECTOR_TYPE = "astradb"
 MAX_CONTENT_PARAM_BYTE_SIZE = 8000
 
 
-class FileDataMetadata(BaseModel):
+class AstraDBAdditionalMetadata(BaseModel):
     collection_name: str
     keyspace: Optional[str] = None
 
 
 class AstraDBBatchFileData(BatchFileData):
-    additional_metadata: FileDataMetadata
+    additional_metadata: AstraDBAdditionalMetadata
 
 
 class AstraDBAccessConfig(AccessConfig):
@@ -215,7 +215,7 @@ class AstraDBIndexer(Indexer):
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
                 ),
-                additional_metadata=FileDataMetadata(
+                additional_metadata=AstraDBAdditionalMetadata(
                     collection_name=self.index_config.collection_name,
                     keyspace=self.index_config.keyspace,
                 ),
@@ -294,7 +294,7 @@ class AstraDBDownloader(Downloader):
         )
         async for result in async_astra_collection.find({"_id": {"$in": ids}}):
             download_responses.append(
-                self.generate_download_response(result=result, file_data=file_data)
+                self.generate_download_response(result=result, file_data=astra_file_data)
             )
         return download_responses
 

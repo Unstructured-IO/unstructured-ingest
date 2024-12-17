@@ -82,13 +82,13 @@ _COLUMNS = (
 _DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
 
 
-class FileDataMetadata(BaseModel):
+class SqlAdditionalMetadata(BaseModel):
     table_name: str
     id_column: str
 
 
 class SqlBatchFileData(BatchFileData):
-    additional_metadata: FileDataMetadata
+    additional_metadata: SqlAdditionalMetadata
 
 
 def parse_date_string(date_value: Union[str, int]) -> date:
@@ -166,7 +166,7 @@ class SQLIndexer(Indexer, ABC):
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
                 ),
-                additional_metadata=FileDataMetadata(
+                additional_metadata=SqlAdditionalMetadata(
                     table_name=self.index_config.table_name, id_column=self.index_config.id_column
                 ),
                 batch_items=[BatchItem(identifier=str(b)) for b in batch],

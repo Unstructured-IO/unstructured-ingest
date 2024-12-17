@@ -47,12 +47,12 @@ CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
 
 
-class FileDataMetadata(BaseModel):
+class CouchbaseAdditionalMetadata(BaseModel):
     bucket: str
 
 
 class CouchbaseBatchFileData(BatchFileData):
-    additional_metadata: FileDataMetadata
+    additional_metadata: CouchbaseAdditionalMetadata
 
 
 class CouchbaseAccessConfig(AccessConfig):
@@ -201,7 +201,9 @@ class CouchbaseIndexer(Indexer):
                     f"{self.connection_config.bucket}",
                     date_processed=str(time.time()),
                 ),
-                additional_metadata=FileDataMetadata(bucket=self.connection_config.bucket),
+                additional_metadata=CouchbaseAdditionalMetadata(
+                    bucket=self.connection_config.bucket
+                ),
                 batch_items=[BatchItem(identifier=b) for b in batch],
             )
 

@@ -54,9 +54,9 @@ class FileData(BaseModel):
         return file_data
 
     @classmethod
-    def cast(cls, file_data: "FileData") -> "FileData":
+    def cast(cls, file_data: "FileData", **kwargs) -> "FileData":
         file_data_dict = file_data.model_dump()
-        return cls.model_validate(file_data_dict)
+        return cls.model_validate(file_data_dict, **kwargs)
 
     def to_file(self, path: str) -> None:
         path = Path(path).resolve()

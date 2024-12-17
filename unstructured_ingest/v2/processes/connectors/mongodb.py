@@ -42,13 +42,13 @@ CONNECTOR_TYPE = "mongodb"
 SERVER_API_VERSION = "1"
 
 
-class FileDataMetadata(BaseModel):
+class MongoDBAdditionalMetadata(BaseModel):
     database: str
     collection: str
 
 
 class MongoDBBatchFileData(BatchFileData):
-    additional_metadata: FileDataMetadata
+    additional_metadata: MongoDBAdditionalMetadata
 
 
 class MongoDBAccessConfig(AccessConfig):
@@ -159,7 +159,7 @@ class MongoDBIndexer(Indexer):
                 connector_type=self.connector_type,
                 metadata=metadata,
                 batch_items=[BatchItem(identifier=str(doc_id)) for doc_id in id_batch],
-                additional_metadata=FileDataMetadata(
+                additional_metadata=MongoDBAdditionalMetadata(
                     collection=self.index_config.collection, database=self.index_config.database
                 ),
             )
