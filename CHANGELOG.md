@@ -1,8 +1,12 @@
-## 0.3.10-dev0
+## 0.3.10-dev1
 
 ### Enhancements
 
 * **Support more concrete FileData content for batch support**
+
+### Fixes
+
+* **Fix closing SSHClient in sftp connector**
 
 ## 0.3.9
 

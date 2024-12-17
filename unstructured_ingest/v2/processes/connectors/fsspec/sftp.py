@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
 from pydantic import Field, Secret
@@ -26,6 +27,8 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploaderConfig,
 )
 
+if TYPE_CHECKING:
+    from fsspec.implementations.sftp import SFTPFileSystem
 CONNECTOR_TYPE = "sftp"
 
 
@@ -66,6 +69,18 @@ class SftpConnectionConfig(FsspecConnectionConfig):
             "password": self.access_config.get_secret_value().password,
         }
         return access_config
+
+    @contextmanager
+    def get_client(self, protocol: str) -> Generator["SFTPFileSystem", None, None]:
+        # The paramiko.SSHClient() client that's opened by the SFTPFileSystem
+        # never gets closed so explicitly adding that as part of this context manager
+        from fsspec import get_filesystem_class
+
+        client: SFTPFileSystem = get_filesystem_class(protocol)(
+            **self.get_access_config(),
+        )
+        yield client
+        client.client.close()
 
 
 @dataclass
