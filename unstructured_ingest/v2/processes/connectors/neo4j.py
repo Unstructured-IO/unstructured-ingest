@@ -10,7 +10,6 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
-import networkx as nx
 from pydantic import BaseModel, ConfigDict, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -32,6 +31,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
+    import networkx as nx
     from neo4j import AsyncDriver, Auth
 
 CONNECTOR_TYPE = "neo4j"
@@ -110,6 +110,8 @@ class Neo4jUploadStager(UploadStager):
         return output_filepath
 
     def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> nx.Graph:
+        import networkx as nx
+
         graph = nx.MultiDiGraph()
         graph.add_node(document_node)
 
