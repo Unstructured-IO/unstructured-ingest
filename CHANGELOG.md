@@ -1,4 +1,4 @@
-## 0.3.9-dev4
+## 0.3.9-dev5
 
 ### Enhancements
 
@@ -9,6 +9,7 @@
 ### Fixes
 
 * **Make sure any SDK clients that support closing get called**
+* **Fixes issue with missing `source_identifiers` parameter in `fsspec`**
 
 ## 0.3.8
 
