@@ -97,7 +97,8 @@ class S3Indexer(FsspecIndexer):
         version = file_data.get("ETag").rstrip('"').lstrip('"') if "ETag" in file_data else None
         metadata: dict[str, str] = {}
         with contextlib.suppress(AttributeError):
-            metadata = self.fs.metadata(path=path)
+            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+                metadata = client.metadata(path=path)
         record_locator = {
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,
