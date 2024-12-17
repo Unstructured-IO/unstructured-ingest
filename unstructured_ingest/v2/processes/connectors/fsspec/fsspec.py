@@ -325,4 +325,4 @@ class FsspecUploader(Uploader):
         # Odd that fsspec doesn't run exists() as async even when client support async
         logger.debug(f"writing local file {path_str} to {upload_path}")
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
-            await client.upload(lpath=path_str, rpath=upload_path.as_posix())
+            client.upload(lpath=path_str, rpath=upload_path.as_posix())
