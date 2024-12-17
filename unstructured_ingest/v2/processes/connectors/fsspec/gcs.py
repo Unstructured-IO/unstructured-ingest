@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
@@ -97,8 +98,10 @@ class GcsConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
+    @contextmanager
     def get_client(self, protocol: str) -> Generator["GCSFileSystem", None, None]:
-        yield super().get_client(protocol=protocol)
+        with super().get_client(protocol=protocol) as client:
+            yield client
 
 
 @dataclass

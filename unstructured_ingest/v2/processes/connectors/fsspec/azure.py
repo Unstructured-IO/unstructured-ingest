@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -26,6 +27,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.utils import json_serial
 
 if TYPE_CHECKING:
     from adlfs import AzureBlobFileSystem
+
 CONNECTOR_TYPE = "azure"
 
 
@@ -91,8 +93,10 @@ class AzureConnectionConfig(FsspecConnectionConfig):
         return access_configs
 
     @requires_dependencies(["adlfs", "fsspec"], extras="azure")
+    @contextmanager
     def get_client(self, protocol: str) -> Generator["AzureBlobFileSystem", None, None]:
-        yield super().get_client(protocol=protocol)
+        with super().get_client(protocol=protocol) as client:
+            yield client
 
 
 @dataclass

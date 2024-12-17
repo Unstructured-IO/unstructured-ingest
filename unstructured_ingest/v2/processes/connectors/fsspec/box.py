@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
 from typing import TYPE_CHECKING, Annotated, Any, Generator, Optional
@@ -75,8 +76,10 @@ class BoxConnectionConfig(FsspecConnectionConfig):
         return access_kwargs_with_oauth
 
     @requires_dependencies(["boxfs"], extras="box")
+    @contextmanager
     def get_client(self, protocol: str) -> Generator["BoxFileSystem", None, None]:
-        yield super().get_client(protocol=protocol)
+        with super().get_client(protocol=protocol) as client:
+            yield client
 
 
 @dataclass

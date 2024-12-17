@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
 from typing import TYPE_CHECKING, Generator, Optional
@@ -47,8 +48,10 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
+    @contextmanager
     def get_client(self, protocol: str) -> Generator["DropboxDriveFileSystem", None, None]:
-        yield super().get_client(protocol=protocol)
+        with super().get_client(protocol=protocol) as client:
+            yield client
 
 
 @dataclass
