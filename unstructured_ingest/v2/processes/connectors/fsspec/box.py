@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
 from time import time
-from typing import Annotated, Any, Generator, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -27,6 +27,9 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     SourceConnectionError,
 )
 from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
+
+if TYPE_CHECKING:
+    from boxfs import BoxFileSystem
 
 CONNECTOR_TYPE = "box"
 
@@ -72,20 +75,18 @@ class BoxConnectionConfig(FsspecConnectionConfig):
 
         return access_kwargs_with_oauth
 
+    @requires_dependencies(["boxfs"], extras="box")
+    @contextmanager
+    def get_client(self, protocol: str) -> Generator["BoxFileSystem", None, None]:
+        with super().get_client(protocol=protocol) as client:
+            yield client
+
 
 @dataclass
 class BoxIndexer(FsspecIndexer):
     connection_config: BoxConnectionConfig
     index_config: BoxIndexerConfig
     connector_type: str = CONNECTOR_TYPE
-
-    @requires_dependencies(["boxfs"], extras="box")
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        return super().run(**kwargs)
-
-    @requires_dependencies(["boxfs"], extras="box")
-    def precheck(self) -> None:
-        super().precheck()
 
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
@@ -126,14 +127,6 @@ class BoxDownloader(FsspecDownloader):
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[BoxDownloaderConfig] = field(default_factory=BoxDownloaderConfig)
 
-    @requires_dependencies(["boxfs"], extras="box")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return super().run(file_data=file_data, **kwargs)
-
-    @requires_dependencies(["boxfs"], extras="box")
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return await super().run_async(file_data=file_data, **kwargs)
-
 
 class BoxUploaderConfig(FsspecUploaderConfig):
     pass
@@ -144,22 +137,6 @@ class BoxUploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: BoxConnectionConfig
     upload_config: BoxUploaderConfig = field(default=None)
-
-    @requires_dependencies(["boxfs"], extras="box")
-    def __post_init__(self):
-        super().__post_init__()
-
-    @requires_dependencies(["boxfs"], extras="box")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["boxfs"], extras="box")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return super().run(path=path, file_data=file_data, **kwargs)
-
-    @requires_dependencies(["boxfs"], extras="box")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return await super().run_async(path=path, file_data=file_data, **kwargs)
 
 
 box_source_entry = SourceRegistryEntry(

@@ -1,4 +1,4 @@
-## 0.3.10-dev1
+## 0.3.10-dev2
 
 ### Enhancements
 
@@ -7,6 +7,7 @@
 ### Fixes
 
 * **Add Neo4J to ingest destination connector registry**
+* **Fix closing SSHClient in sftp connector**
 
 ## 0.3.9
 
