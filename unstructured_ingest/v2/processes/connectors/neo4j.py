@@ -31,8 +31,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 if TYPE_CHECKING:
-    import networkx as nx
     from neo4j import AsyncDriver, Auth
+    from networkx import Graph, MultiDiGraph
 
 CONNECTOR_TYPE = "neo4j"
 
@@ -109,7 +109,7 @@ class Neo4jUploadStager(UploadStager):
 
         return output_filepath
 
-    def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> nx.Graph:
+    def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> "Graph":
         import networkx as nx
 
         graph = nx.MultiDiGraph()
@@ -182,7 +182,7 @@ class _GraphData(BaseModel):
     edges: list[_Edge]
 
     @classmethod
-    def from_nx(cls, nx_graph: nx.MultiDiGraph) -> _GraphData:
+    def from_nx(cls, nx_graph: "MultiDiGraph") -> _GraphData:
         nodes = list(nx_graph.nodes())
         edges = [
             _Edge(
