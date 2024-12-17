@@ -41,14 +41,11 @@ class LanceDBConnectionConfig(ConnectionConfig, ABC):
     async def get_async_connection(self) -> AsyncGenerator["AsyncConnection", None]:
         import lancedb
 
-        connection = await lancedb.connect_async(
+        with await lancedb.connect_async(
             self.uri,
             storage_options=self.get_storage_options(),
-        )
-        try:
+        ) as connection:
             yield connection
-        finally:
-            connection.close()
 
 
 class LanceDBRemoteConnectionConfig(LanceDBConnectionConfig):

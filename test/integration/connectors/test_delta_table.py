@@ -114,6 +114,7 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     )
 
     try:
+        uploader.precheck()
         if uploader.is_async():
             await uploader.run_async(path=new_upload_file, file_data=file_data)
         else:

@@ -1,14 +1,19 @@
-## 0.3.9-dev1
+## 0.3.9-dev5
 
 * **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
 
 
-## 0.3.9-dev0
+## 0.3.9-dev4
 
 ### Enhancements
 
 * **Support ndjson files in stagers**
+* **Add Neo4j destination connector**
+* **Support passing data in for uploaders**
 
+### Fixes
+
+* **Make sure any SDK clients that support closing get called**
 
 ## 0.3.8
 

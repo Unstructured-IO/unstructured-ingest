@@ -200,7 +200,7 @@ async def test_snowflake_destination(
             host=connect_params["host"],
         )
     )
-
+    uploader.precheck()
     uploader.run(path=staged_path, file_data=mock_file_data)
 
     with staged_path.open("r") as f:

@@ -1,7 +1,6 @@
 import copy
 import csv
 import hashlib
-import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -17,7 +16,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, get_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import truncate_string_bytes
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -363,11 +362,9 @@ class AstraDBUploader(Uploader):
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
         )
 
@@ -376,8 +373,12 @@ class AstraDBUploader(Uploader):
 
         self.delete_by_record_id(collection=collection, file_data=file_data)
 
-        for chunk in batch_generator(elements_dict, astra_db_batch_size):
+        for chunk in batch_generator(data, astra_db_batch_size):
             collection.insert_many(chunk)
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        data = get_data(path=path)
+        self.run_data(data=data, file_data=file_data, **kwargs)
 
 
 astra_db_source_entry = SourceRegistryEntry(

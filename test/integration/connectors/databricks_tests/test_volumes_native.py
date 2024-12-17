@@ -156,6 +156,7 @@ async def test_volumes_native_destination(upload_file: Path):
                 catalog=env_data.catalog,
             ),
         )
+        uploader.precheck()
         if uploader.is_async():
             await uploader.run_async(path=upload_file, file_data=file_data)
         else:

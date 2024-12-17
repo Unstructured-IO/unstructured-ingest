@@ -165,11 +165,14 @@ async def test_s3_destination(upload_file: Path):
         identifier="mock file data",
     )
     try:
+        uploader.precheck()
         if uploader.is_async():
             await uploader.run_async(path=upload_file, file_data=file_data)
         else:
             uploader.run(path=upload_file, file_data=file_data)
-        uploaded_files = s3fs.ls(path=destination_path)
+        uploaded_files = [
+            Path(file) for file in s3fs.ls(path=destination_path) if Path(file).name != "_empty"
+        ]
         assert len(uploaded_files) == 1
     finally:
         s3fs.rm(path=destination_path, recursive=True)
