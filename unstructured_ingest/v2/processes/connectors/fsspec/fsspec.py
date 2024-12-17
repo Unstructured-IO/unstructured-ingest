@@ -305,7 +305,7 @@ class FsspecUploader(Uploader):
     def get_upload_path(self, file_data: FileData) -> Path:
         upload_path_name: str
         if file_data.source_identifiers is not None:
-            upload_path_name = file_data.source_identifiers.relative_path
+            upload_path_name = file_data.source_identifiers.relative_path.lstrip("/")
         elif file_data.local_download_path is not None:
             upload_path_name = Path(file_data.local_download_path).name
         else:
