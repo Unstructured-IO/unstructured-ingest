@@ -214,7 +214,10 @@ def run_all_validations(
     if configs.validate_file_data:
         run_expected_results_validation(
             expected_output_dir=test_output_dir / "file_data",
-            all_file_data=predownload_file_data + postdownload_file_data,
+            all_file_data=get_all_file_data(
+                all_predownload_file_data=predownload_file_data,
+                all_postdownload_file_data=postdownload_file_data,
+            ),
             configs=configs,
         )
     download_files = get_files(dir_path=download_dir)
@@ -228,6 +231,19 @@ def run_all_validations(
             current_download_dir=download_dir,
             configs=configs,
         )
+
+
+def get_all_file_data(
+    all_postdownload_file_data: list[FileData], all_predownload_file_data: list[FileData]
+) -> list[FileData]:
+    all_file_data = all_postdownload_file_data
+    indexed_file_data = [
+        fd
+        for fd in all_predownload_file_data
+        if fd.identifier not in [f.identifier for f in all_file_data]
+    ]
+    all_file_data += indexed_file_data
+    return all_file_data
 
 
 async def source_connector_validation(
@@ -271,17 +287,13 @@ async def source_connector_validation(
         )
     else:
         print("Running fixtures update")
-        all_file_data = all_postdownload_file_data
-        indexed_file_data = [
-            fd
-            for fd in all_predownload_file_data
-            if fd.identifier not in [f.identifier for f in all_file_data]
-        ]
-        all_file_data += indexed_file_data
         update_fixtures(
             output_dir=test_output_dir,
             download_dir=download_dir,
-            all_file_data=all_file_data,
+            all_file_data=get_all_file_data(
+                all_predownload_file_data=all_predownload_file_data,
+                all_postdownload_file_data=all_postdownload_file_data,
+            ),
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
         )
