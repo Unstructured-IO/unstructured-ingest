@@ -1,8 +1,12 @@
-## 0.3.10-dev0
+## 0.3.10
 
 ### Enhancements
 
 * **Support more concrete FileData content for batch support**
+
+### Fixes
+
+* **Add Neo4J to ingest destination connector registry**
 
 ## 0.3.9
 
