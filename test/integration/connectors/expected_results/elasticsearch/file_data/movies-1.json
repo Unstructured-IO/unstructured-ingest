@@ -7,7 +7,7 @@
     "rel_path": null
   },
   "metadata": {
-    "url": null,
+    "url": "http://localhost:9200/movies",
     "version": "1",
     "record_locator": {
       "hosts": [
@@ -18,12 +18,14 @@
     },
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734103913.147566",
+    "date_processed": "1734441751.522156",
     "permissions_data": null,
     "filesize_bytes": null
   },
-  "additional_metadata": {},
+  "additional_metadata": {
+    "index_name": "movies"
+  },
   "reprocess": false,
-  "local_download_path": null,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpiob2__zr/movies-1.txt",
   "display_name": null
 }

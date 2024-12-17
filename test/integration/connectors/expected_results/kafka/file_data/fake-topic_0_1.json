@@ -6,14 +6,13 @@
     "fullpath": "fake-topic_0_1.txt",
     "rel_path": null
   },
-  "doc_type": "file",
   "metadata": {
     "url": null,
     "version": null,
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1731074369.183776",
+    "date_processed": "1734441688.710477",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -24,6 +23,6 @@
     "content": "This is some text for message 1"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmprfm2jt0h/fake-topic_0_1.txt",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpkfb_r27m/fake-topic_0_1.txt",
   "display_name": "fake-topic_0_1.txt"
 }

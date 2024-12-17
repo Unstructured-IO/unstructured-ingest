@@ -271,10 +271,17 @@ async def source_connector_validation(
         )
     else:
         print("Running fixtures update")
+        all_file_data = all_postdownload_file_data
+        indexed_file_data = [
+            fd
+            for fd in all_predownload_file_data
+            if fd.identifier not in [f.identifier for f in all_file_data]
+        ]
+        all_file_data += indexed_file_data
         update_fixtures(
             output_dir=test_output_dir,
             download_dir=download_dir,
-            all_file_data=all_postdownload_file_data + all_predownload_file_data,
+            all_file_data=all_file_data,
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
         )
