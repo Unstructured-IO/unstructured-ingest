@@ -189,7 +189,7 @@ class OnedriveIndexer(Indexer):
                     "server_relative_path": server_path,
                 },
             ),
-            additional_metadata=self.get_properties(drive_item=drive_item),
+            additional_metadata=self.get_properties_sync(drive_item=drive_item),
         )
 
     async def drive_item_to_file_data(self, drive_item: "DriveItem") -> FileData:
