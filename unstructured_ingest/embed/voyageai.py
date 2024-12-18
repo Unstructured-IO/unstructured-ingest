@@ -40,8 +40,16 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client: VoyageAIClient = self.config.get_client()
-        response = client.embed(texts=elements, model=self.config.embedder_model_name)
-        return response.embeddings
+        
+        if self.config.batch_size is None:
+            return client.embed(texts=elements, model=self.config.embedder_model_name).embeddings
+        
+        embeddings = []
+        for i in range(0, len(elements), self.config.batch_size):
+            embeddings += client.embed(
+                texts=elements[i:i + self.config.batch_size], model=self.config.embedder_model_name
+            ).embeddings
+        return embeddings
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = self._embed_documents([e.get("text", "") for e in elements])
