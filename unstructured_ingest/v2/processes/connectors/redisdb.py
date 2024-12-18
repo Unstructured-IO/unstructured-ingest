@@ -70,18 +70,16 @@ class RedisConnectionConfig(ConnectionConfig):
             "username": self.username,
         }
 
-        if access_config.uri:
-            client = from_url(access_config.uri)
-        elif access_config.password:
+        if access_config.password:
             options["password"] = access_config.password
-            client = Redis(**options)
-        else:
-            client = Redis(**options)
 
-        try:
-            yield client
-        finally:
-            await client.aclose()
+        if access_config.uri:
+            async with from_url(access_config.uri) as client:
+                yield client
+        else:
+            async with Redis(**options) as client:
+                yield client
+
 
 
 class RedisUploaderConfig(UploaderConfig):
