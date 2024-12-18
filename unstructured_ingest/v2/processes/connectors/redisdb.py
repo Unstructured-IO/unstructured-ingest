@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import batch_generator
@@ -52,15 +52,18 @@ class RedisConnectionConfig(ConnectionConfig):
     ssl: bool = Field(default=True, description="Whether the connection should use SSL encryption.")
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    @model_validator(mode="after")
+    def validate_host_or_url(self) -> "RedisConnectionConfig":
+        if not self.access_config.get_secret_value().uri and not self.host:
+            raise ValueError("Please pass a hostname either directly or through uri")
+        return self
+
     @requires_dependencies(["redis"], extras="redis")
     @asynccontextmanager
     async def create_client(self) -> AsyncGenerator["Redis", None]:
         from redis.asyncio import Redis, from_url
 
         access_config = self.access_config.get_secret_value()
-
-        if not access_config.uri and not self.host:
-            raise ValueError("Please pass a hostname either directly or through uri")
 
         options = {
             "host": self.host,
@@ -79,7 +82,6 @@ class RedisConnectionConfig(ConnectionConfig):
         else:
             async with Redis(**options) as client:
                 yield client
-
 
 
 class RedisUploaderConfig(UploaderConfig):
