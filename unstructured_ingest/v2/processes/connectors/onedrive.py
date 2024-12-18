@@ -122,9 +122,11 @@ class OnedriveIndexer(Indexer):
         files = [d for d in drive_items if d.is_file]
         if not recursive:
             return files
+
         folders = [d for d in drive_items if d.is_folder]
         for f in folders:
-            files.extend(self.list_objects(f, recursive))
+            # Use the sync method instead of the async one here
+            files.extend(self.list_objects_sync(f, recursive))
         return files
 
     async def list_objects(self, folder: "DriveItem", recursive: bool) -> list["DriveItem"]:
@@ -195,26 +197,26 @@ class OnedriveIndexer(Indexer):
         return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
 
     async def _run_async(self, **kwargs: Any) -> list[FileData]:
-            # This method encapsulates the async logic and returns a list instead of a generator
-            token_resp = await asyncio.to_thread(self.connection_config.get_token)
-            if "error" in token_resp:
-                raise SourceConnectionError(
-                    "{} ({})".format(token_resp["error"], token_resp.get("error_description"))
-                )
+        # This method encapsulates the async logic and returns a list instead of a generator
+        token_resp = await asyncio.to_thread(self.connection_config.get_token)
+        if "error" in token_resp:
+            raise SourceConnectionError(
+                "{} ({})".format(token_resp["error"], token_resp.get("error_description"))
+            )
 
-            client = await asyncio.to_thread(self.connection_config.get_client)
-            root = await self.get_root(client=client)
-            drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
+        client = await asyncio.to_thread(self.connection_config.get_client)
+        root = await self.get_root(client=client)
+        drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
 
-            results = []
-            for drive_item in drive_items:
-                file_data = await self.drive_item_to_file_data(drive_item=drive_item)
-                results.append(file_data)
+        results = []
+        for drive_item in drive_items:
+            file_data = await self.drive_item_to_file_data(drive_item=drive_item)
+            results.append(file_data)
 
-            return results
+        return results
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-         # Use asyncio.run to execute the async code and get results synchronously
+        # Use asyncio.run to execute the async code and get results synchronously
         try:
             results = asyncio.run(self._run_async(**kwargs))
             # Now `results` is a list of FileData; we can yield them in a normal sync context
