@@ -236,7 +236,7 @@ class VectaraUploader(Uploader):
                 method=http_method, url=url, headers=headers, params=params, json=data
             )
             response.raise_for_status()
-            return response.is_success, response.json()
+            return response.json()
 
     async def _delete_doc(self, doc_id: str) -> tuple[bool, dict]:
         """
@@ -258,16 +258,14 @@ class VectaraUploader(Uploader):
         )
 
         try:
-            is_success, result = await self._request(
+            result = await self._request(
                 endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=document
             )
         except Exception as e:
             logger.error(f"exception {e} while indexing document {document['id']}")
             return
 
-        if is_success:
-            logger.info(f"indexing document {document['id']} succeeded")
-        elif (
+        if (
             "messages" in result
             and result["messages"]
             and (
@@ -284,8 +282,8 @@ class VectaraUploader(Uploader):
                 endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=document
             )
             return
-        else:
-            logger.warn(f"indexing document {document['id']} failed, response = {result}")
+
+        logger.info(f"indexing document {document['id']} succeeded")
 
     async def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
         logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
