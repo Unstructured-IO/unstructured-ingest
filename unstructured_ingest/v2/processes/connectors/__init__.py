@@ -40,6 +40,8 @@ from .milvus import CONNECTOR_TYPE as MILVUS_CONNECTOR_TYPE
 from .milvus import milvus_destination_entry
 from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
+from .neo4j import CONNECTOR_TYPE as NEO4J_CONNECTOR_TYPE
+from .neo4j import neo4j_destination_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_destination_entry, onedrive_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
@@ -74,6 +76,7 @@ add_destination_entry(destination_type=LOCAL_CONNECTOR_TYPE, entry=local_destina
 add_source_entry(source_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_source_entry)
 add_destination_entry(destination_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_destination_entry)
 
+add_destination_entry(destination_type=NEO4J_CONNECTOR_TYPE, entry=neo4j_destination_entry)
 
 add_source_entry(source_type=SALESFORCE_CONNECTOR_TYPE, entry=salesforce_source_entry)
 

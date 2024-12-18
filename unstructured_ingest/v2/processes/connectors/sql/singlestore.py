@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -14,6 +13,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     _DATE_COLUMNS,
     SQLAccessConfig,
+    SqlBatchFileData,
     SQLConnectionConfig,
     SQLDownloader,
     SQLDownloaderConfig,
@@ -93,10 +93,10 @@ class SingleStoreDownloader(SQLDownloader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "%s"
 
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
-        table_name = file_data.additional_metadata["table_name"]
-        id_column = file_data.additional_metadata["id_column"]
-        ids = tuple(file_data.additional_metadata["ids"])
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
+        table_name = file_data.additional_metadata.table_name
+        id_column = file_data.additional_metadata.id_column
+        ids = tuple([item.identifier for item in file_data.batch_items])
         with self.connection_config.get_connection() as sqlite_connection:
             cursor = sqlite_connection.cursor()
             fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"

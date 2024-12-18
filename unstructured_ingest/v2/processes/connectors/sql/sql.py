@@ -1,9 +1,8 @@
 import hashlib
 import json
-import sys
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 from time import time
@@ -12,13 +11,15 @@ from typing import Any, Generator, Union
 import numpy as np
 import pandas as pd
 from dateutil import parser
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.utils.data_prep import get_data_df, split_dataframe
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -81,6 +82,15 @@ _COLUMNS = (
 _DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
 
 
+class SqlAdditionalMetadata(BaseModel):
+    table_name: str
+    id_column: str
+
+
+class SqlBatchFileData(BatchFileData):
+    additional_metadata: SqlAdditionalMetadata
+
+
 def parse_date_string(date_value: Union[str, int]) -> date:
     try:
         timestamp = float(date_value) / 1000 if isinstance(date_value, int) else float(date_value)
@@ -124,7 +134,7 @@ class SQLIndexer(Indexer, ABC):
                 f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
             )
             results = cursor.fetchall()
-            ids = [result[0] for result in results]
+            ids = sorted([result[0] for result in results])
             return ids
 
     def precheck(self) -> None:
@@ -135,7 +145,7 @@ class SQLIndexer(Indexer, ABC):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
         ids = self._get_doc_ids()
         id_batches: list[frozenset[str]] = [
             frozenset(
@@ -151,19 +161,15 @@ class SQLIndexer(Indexer, ABC):
         ]
         for batch in id_batches:
             # Make sure the hash is always a positive number to create identified
-            identified = str(hash(batch) + sys.maxsize + 1)
-            yield FileData(
-                identifier=identified,
+            yield SqlBatchFileData(
                 connector_type=self.connector_type,
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
                 ),
-                doc_type="batch",
-                additional_metadata={
-                    "ids": list(batch),
-                    "table_name": self.index_config.table_name,
-                    "id_column": self.index_config.id_column,
-                },
+                additional_metadata=SqlAdditionalMetadata(
+                    table_name=self.index_config.table_name, id_column=self.index_config.id_column
+                ),
+                batch_items=[BatchItem(identifier=str(b)) for b in batch],
             )
 
 
@@ -176,7 +182,7 @@ class SQLDownloader(Downloader, ABC):
     download_config: SQLDownloaderConfig
 
     @abstractmethod
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         pass
 
     def sql_to_df(self, rows: list[tuple], columns: list[str]) -> list[pd.DataFrame]:
@@ -185,7 +191,7 @@ class SQLDownloader(Downloader, ABC):
         dfs = [pd.DataFrame([row.values], columns=df.columns) for index, row in df.iterrows()]
         return dfs
 
-    def get_data(self, file_data: FileData) -> list[pd.DataFrame]:
+    def get_data(self, file_data: SqlBatchFileData) -> list[pd.DataFrame]:
         rows, columns = self.query_db(file_data=file_data)
         return self.sql_to_df(rows=rows, columns=columns)
 
@@ -199,10 +205,10 @@ class SQLDownloader(Downloader, ABC):
         return f
 
     def generate_download_response(
-        self, result: pd.DataFrame, file_data: FileData
+        self, result: pd.DataFrame, file_data: SqlBatchFileData
     ) -> DownloadResponse:
-        id_column = file_data.additional_metadata["id_column"]
-        table_name = file_data.additional_metadata["table_name"]
+        id_column = file_data.additional_metadata.id_column
+        table_name = file_data.additional_metadata.table_name
         record_id = result.iloc[0][id_column]
         filename_id = self.get_identifier(table_name=table_name, record_id=record_id)
         filename = f"{filename_id}.csv"
@@ -212,20 +218,19 @@ class SQLDownloader(Downloader, ABC):
         )
         download_path.parent.mkdir(parents=True, exist_ok=True)
         result.to_csv(download_path, index=False)
-        copied_file_data = replace(file_data)
-        copied_file_data.identifier = filename_id
-        copied_file_data.doc_type = "file"
-        copied_file_data.additional_metadata.pop("ids", None)
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename_id
         return super().generate_download_response(
-            file_data=copied_file_data, download_path=download_path
+            file_data=cast_file_data, download_path=download_path
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        data_dfs = self.get_data(file_data=file_data)
+        sql_filedata = SqlBatchFileData.cast(file_data=file_data)
+        data_dfs = self.get_data(file_data=sql_filedata)
         download_responses = []
         for df in data_dfs:
             download_responses.append(
-                self.generate_download_response(result=df, file_data=file_data)
+                self.generate_download_response(result=df, file_data=sql_filedata)
             )
         return download_responses
 

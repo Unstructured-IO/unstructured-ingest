@@ -4,13 +4,13 @@
     "element_id": "470542e5ae8f22f3aa1b31118fa9ac40",
     "text": "LOCAIR",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -31,13 +31,13 @@
     "element_id": "a7d213674255037dc5f657f54af0a5af",
     "text": "airline",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -58,13 +58,13 @@
     "element_id": "22db043bfcb2a0e12aee99bcfbeec2ca",
     "text": "airline_10748",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -85,13 +85,13 @@
     "element_id": "45fb0b4e778a1427a6d383234d9c1ba0",
     "text": "inventory",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -112,13 +112,13 @@
     "element_id": "24fbfeb901eb07fda549a7a42bcf249d",
     "text": "United States",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -139,13 +139,13 @@
     "element_id": "d02a5176b14e904a66045d8ee95e9a16",
     "text": "ZQ",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -166,13 +166,13 @@
     "element_id": "9f5679af63718475e2ca931aac11277f",
     "text": "LOC",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -193,13 +193,13 @@
     "element_id": "1b5ed28b5115b39cd1463dfd4f268cf0",
     "text": "10748",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -220,13 +220,13 @@
     "element_id": "af1d04a071aa892d54ab7391df223aa3",
     "text": "Locair",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",
@@ -247,13 +247,13 @@
     "element_id": "6ec5ec0c3f1aa7e1d92cd8bef5e10cd2",
     "text": "airline",
     "metadata": {
-      "filename": "unstructured-10748.txt",
       "languages": [
         "eng"
       ],
+      "filename": "unstructured-10748.txt",
       "filetype": "text/plain",
       "data_source": {
-        "url": null,
+        "url": "couchbase://localhost/unstructured",
         "version": null,
         "record_locator": {
           "connection_string": "couchbase://localhost",

@@ -1,9 +1,20 @@
-## 0.3.9-dev5
+## 0.3.11-dev0
 
 * **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
 
 
-## 0.3.9-dev4
+## 0.3.10
+
+### Enhancements
+
+* **Support more concrete FileData content for batch support**
+
+### Fixes
+
+* **Add Neo4J to ingest destination connector registry**
+* **Fix closing SSHClient in sftp connector**
+
+## 0.3.9
 
 ### Enhancements
 
