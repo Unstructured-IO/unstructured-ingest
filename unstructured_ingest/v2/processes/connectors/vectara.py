@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -42,7 +42,7 @@ class VectaraConnectionConfig(ConnectionConfig):
 
 
 class VectaraUploadStagerConfig(UploadStagerConfig):
-    batch_size: int = Field(default=50, description="Number of records per batch")
+    pass
 
 
 @dataclass
@@ -87,27 +87,25 @@ class VectaraUploadStager(UploadStager):
         logger.info(
             f"Extending {len(elements_contents)} json elements from content in {elements_filepath}"
         )
-        batches = list(
-            batch_generator(elements_contents, batch_size=self.upload_stager_config.batch_size)
-        )
-        docs_list = []
-        for batch in batches:
-            conformed_elements = {
-                "id": str(uuid.uuid4()),
-                "type": "core",
-                "metadata": {
-                    "title": file_data.identifier,
-                },
-                "document_parts": [
-                    {
-                        "text": element.pop("text", None),
-                        "metadata": self.conform_dict(data=element),
-                    }
-                    for element in batch
-                ],
-            }
 
-            docs_list.append(conformed_elements)
+        docs_list = []
+
+        conformed_elements = {
+            "id": str(uuid.uuid4()),
+            "type": "core",
+            "metadata": {
+                "title": file_data.identifier,
+            },
+            "document_parts": [
+                {
+                    "text": element.pop("text", None),
+                    "metadata": self.conform_dict(data=element),
+                }
+                for element in elements_contents
+            ],
+        }
+
+        docs_list.append(conformed_elements)
 
         output_path = Path(output_dir) / Path(f"{output_filename}.json")
         with open(output_path, "w") as output_file:
@@ -299,6 +297,7 @@ class VectaraUploader(Uploader):
 
         async with aiofiles.open(path) as json_file:
             docs_list = json.loads(await json_file.read())
+
         await self.write_dict(docs_list=docs_list)
 
 
