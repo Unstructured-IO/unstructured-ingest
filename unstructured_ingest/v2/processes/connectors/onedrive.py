@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -194,9 +194,8 @@ class OnedriveIndexer(Indexer):
         # Offload the file data creation if it's not guaranteed async
         return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
 
-    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
-        try:
-            # Validate token in async
+    async def _run_async(self, **kwargs: Any) -> list[FileData]:
+            # This method encapsulates the async logic and returns a list instead of a generator
             token_resp = await asyncio.to_thread(self.connection_config.get_token)
             if "error" in token_resp:
                 raise SourceConnectionError(
@@ -205,17 +204,24 @@ class OnedriveIndexer(Indexer):
 
             client = await asyncio.to_thread(self.connection_config.get_client)
             root = await self.get_root(client=client)
-            drive_items = await self.list_objects(
-                folder=root, recursive=self.index_config.recursive
-            )
+            drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
 
+            results = []
             for drive_item in drive_items:
-                # Convert each drive_item to file_data asynchronously
                 file_data = await self.drive_item_to_file_data(drive_item=drive_item)
-                yield file_data
+                results.append(file_data)
+
+            return results
+
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+         # Use asyncio.run to execute the async code and get results synchronously
+        try:
+            results = asyncio.run(self._run_async(**kwargs))
+            # Now `results` is a list of FileData; we can yield them in a normal sync context
+            for r in results:
+                yield r
         except Exception as e:
             logger.error(f"[{CONNECTOR_TYPE}] Exception during indexing: {e}", exc_info=True)
-            # Re-raise to see full stack trace locally
             raise
 
 
