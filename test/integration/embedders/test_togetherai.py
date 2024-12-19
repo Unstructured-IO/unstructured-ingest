@@ -2,12 +2,15 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.togetherai import (
     TogetherAIEmbeddingConfig,
     TogetherAIEmbeddingEncoder,
 )
+from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "TOGETHERAI_API_KEY"
@@ -41,3 +44,10 @@ def test_raw_togetherai_embedder(embedder_file: Path):
         expected_dimensions=(768,),
         expected_is_unit_vector=False,
     )
+
+
+def test_raw_togetherai_embedder_invalid_credentials():
+    embedder = TogetherAIEmbeddingEncoder(config=TogetherAIEmbeddingConfig(api_key="fake_api_key"))
+
+    with pytest.raises(UserAuthError):
+        embedder.get_exemplary_embedding()
