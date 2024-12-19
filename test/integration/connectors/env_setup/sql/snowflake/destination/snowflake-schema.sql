@@ -1,5 +1,6 @@
 CREATE TABLE elements (
     id UUID PRIMARY KEY,
+    record_id VARCHAR,
     element_id VARCHAR,
     text TEXT,
     embeddings ARRAY(FLOAT),

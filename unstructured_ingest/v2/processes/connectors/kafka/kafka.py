@@ -43,6 +43,11 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[KafkaAccessConfig]
     bootstrap_server: str
     port: int
+    group_id: str = Field(
+        description="A consumer group is a way to allow a pool of consumers "
+        "to divide the consumption of data over topics and partitions.",
+        default="default_group_id",
+    )
 
     @abstractmethod
     def get_consumer_configuration(self) -> dict:
@@ -75,7 +80,7 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
 class KafkaIndexerConfig(IndexerConfig):
     topic: str = Field(description="which topic to consume from")
     num_messages_to_consume: Optional[int] = 100
-    timeout: Optional[float] = Field(default=1.0, description="polling timeout")
+    timeout: Optional[float] = Field(default=3.0, description="polling timeout", ge=3.0)
 
     def update_consumer(self, consumer: "Consumer") -> None:
         consumer.subscribe([self.topic])
@@ -157,10 +162,18 @@ class KafkaIndexer(Indexer, ABC):
     def precheck(self):
         try:
             with self.get_consumer() as consumer:
-                cluster_meta = consumer.list_topics(timeout=self.index_config.timeout)
+                # timeout needs at least 3 secs, more info:
+                # https://forum.confluent.io/t/kafkacat-connect-failure-to-confcloud-ssl/2513
+                cluster_meta = consumer.list_topics(timeout=5)
                 current_topics = [
                     topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
                 ]
+                if self.index_config.topic not in current_topics:
+                    raise SourceConnectionError(
+                        "expected topic {} not detected in cluster: {}".format(
+                            self.index_config.topic, ", ".join(current_topics)
+                        )
+                    )
                 logger.info(f"successfully checked available topics: {current_topics}")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -244,8 +257,6 @@ class KafkaUploader(Uploader, ABC):
         if failed_producer:
             raise KafkaException("failed to produce all messages in batch")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as elements_file:
-            elements = json.load(elements_file)
-        for element_batch in batch_generator(elements, batch_size=self.upload_config.batch_size):
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        for element_batch in batch_generator(data, batch_size=self.upload_config.batch_size):
             self.produce_batch(elements=element_batch)

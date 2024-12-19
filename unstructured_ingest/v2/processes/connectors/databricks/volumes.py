@@ -14,6 +14,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
+    AccessConfig,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -50,6 +51,10 @@ class DatabricksPathMixin(BaseModel):
         if self.volume_path:
             path = f"{path}/{self.volume_path}"
         return path
+
+
+class DatabricksVolumesAccessConfig(AccessConfig):
+    token: Optional[str] = Field(default=None, description="Databricks Personal Access Token")
 
 
 class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):

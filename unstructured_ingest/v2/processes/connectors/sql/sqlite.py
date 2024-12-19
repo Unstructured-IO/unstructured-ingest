@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret, model_validator
 
-from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -15,6 +14,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     _DATE_COLUMNS,
     SQLAccessConfig,
+    SqlBatchFileData,
     SQLConnectionConfig,
     SQLDownloader,
     SQLDownloaderConfig,
@@ -95,22 +95,19 @@ class SQLiteDownloader(SQLDownloader):
     connection_config: SQLConnectionConfig
     download_config: SQLDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
+    values_delimiter: str = "?"
 
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
-        table_name = file_data.additional_metadata["table_name"]
-        id_column = file_data.additional_metadata["id_column"]
-        ids = file_data.additional_metadata["ids"]
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
+        table_name = file_data.additional_metadata.table_name
+        id_column = file_data.additional_metadata.id_column
+        ids = [item.identifier for item in file_data.batch_items]
         with self.connection_config.get_connection() as sqlite_connection:
             cursor = sqlite_connection.cursor()
             fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
-            query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
-                fields=fields,
-                table_name=table_name,
-                id_column=id_column,
-                ids=",".join([str(i) for i in ids]),
-            )
-            logger.debug(f"running query: {query}")
-            cursor.execute(query)
+            values = ",".join(self.values_delimiter for _ in ids)
+            query = f"SELECT {fields} FROM {table_name} WHERE {id_column} IN ({values})"
+            logger.debug(f"running query: {query}\nwith values: {ids}")
+            cursor.execute(query, ids)
             rows = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
             return rows, columns
@@ -157,7 +154,7 @@ class SQLiteUploader(SQLUploader):
 sqlite_source_entry = SourceRegistryEntry(
     connection_config=SQLiteConnectionConfig,
     indexer_config=SQLiteIndexerConfig,
-    indexer=SQLIndexer,
+    indexer=SQLiteIndexer,
     downloader_config=SQLiteDownloaderConfig,
     downloader=SQLiteDownloader,
 )

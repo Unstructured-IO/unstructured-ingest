@@ -1,13 +1,14 @@
 import json
-import uuid
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
+from unstructured_ingest.utils.data_prep import (
+    flatten_dict,
+    generator_batching_wbytes,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
@@ -21,6 +22,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
@@ -31,6 +33,7 @@ CONNECTOR_TYPE = "pinecone"
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_POOL_THREADS = 100
 MAX_METADATA_BYTES = 40960  # 40KB https://docs.pinecone.io/reference/quotas-and-limits#hard-limits
+MAX_QUERY_RESULTS = 10000
 
 
 class PineconeAccessConfig(AccessConfig):
@@ -84,7 +87,7 @@ ALLOWED_FIELDS = (
 
 class PineconeUploadStagerConfig(UploadStagerConfig):
     metadata_fields: list[str] = Field(
-        default=str(ALLOWED_FIELDS),
+        default=list(ALLOWED_FIELDS),
         description=(
             "which metadata from the source element to map to the payload metadata being sent to "
             "Pinecone."
@@ -103,6 +106,10 @@ class PineconeUploaderConfig(UploaderConfig):
     namespace: Optional[str] = Field(
         default=None,
         description="The namespace to write to. If not specified, the default namespace is used",
+    )
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
     )
 
 
@@ -133,7 +140,6 @@ class PineconeUploadStager(UploadStager):
             flatten_lists=True,
             remove_none=True,
         )
-        metadata[RECORD_ID_LABEL] = file_data.identifier
         metadata_size_bytes = len(json.dumps(metadata).encode())
         if metadata_size_bytes > MAX_METADATA_BYTES:
             logger.info(
@@ -142,38 +148,15 @@ class PineconeUploadStager(UploadStager):
             )
             metadata = {}
 
+        metadata[RECORD_ID_LABEL] = file_data.identifier
+
+        # To support more optimal deletes, a prefix is suggested for each record:
+        # https://docs.pinecone.io/guides/data/manage-rag-documents#delete-all-records-for-a-parent-document
         return {
-            "id": str(uuid.uuid4()),
+            "id": f"{file_data.identifier}#{get_enhanced_element_id(element_dict=element_dict, file_data=file_data)}",  # noqa:E501
             "values": embeddings,
             "metadata": metadata,
         }
-
-    def run(
-        self,
-        file_data: FileData,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        conformed_elements = [
-            self.conform_dict(element_dict=element, file_data=file_data)
-            for element in elements_contents
-        ]
-
-        if Path(output_filename).suffix != ".json":
-            output_filename = f"{output_filename}.json"
-        else:
-            output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / Path(f"{output_filename}")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
-        return output_path
 
 
 @dataclass
@@ -191,50 +174,47 @@ class PineconeUploader(Uploader):
 
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        delete_kwargs = {"filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}}}
+        delete_kwargs = {
+            "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
+        }
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
 
         resp = index.delete(**delete_kwargs)
         logger.debug(
-            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleted any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index: {resp}"
         )
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+            f"deleting any content with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
-        index_stats = index.describe_index_stats()
-        total_vectors = index_stats["total_vector_count"]
-        if total_vectors == 0:
-            return
-        dimension = index_stats["dimension"]
-        query_params = {
-            "filter": {RECORD_ID_LABEL: {"$eq": file_data.identifier}},
-            "vector": [0] * dimension,
-            "top_k": total_vectors,
-        }
+        list_kwargs = {"prefix": f"{file_data.identifier}#"}
+        deleted_ids = 0
         if namespace := self.upload_config.namespace:
-            query_params["namespace"] = namespace
-        while True:
-            query_results = index.query(**query_params)
-            matches = query_results.get("matches", [])
-            if not matches:
-                break
-            ids = [match["id"] for match in matches]
-            delete_params = {"ids": ids}
+            list_kwargs["namespace"] = namespace
+        for ids in index.list(**list_kwargs):
+            deleted_ids += len(ids)
+            delete_kwargs = {"ids": ids}
             if namespace := self.upload_config.namespace:
-                delete_params["namespace"] = namespace
-            index.delete(**delete_params)
-        logger.debug(
-            f"deleted any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
+                delete_resp = delete_kwargs["namespace"] = namespace
+                # delete_resp should be an empty dict if there were no errors
+                if delete_resp:
+                    logger.error(f"failed to delete batch of ids: {delete_resp}")
+            index.delete(**delete_kwargs)
+        logger.info(
+            f"deleted {deleted_ids} records with metadata "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from pinecone index"
         )
 
@@ -270,14 +250,11 @@ class PineconeUploader(Uploader):
                 raise DestinationConnectionError(f"http error: {api_error}") from api_error
             logger.debug(f"results: {results}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing a total of {len(elements_dict)} elements via"
+            f"writing a total of {len(data)} elements via"
             f" document batches to destination"
             f" index named {self.connection_config.index_name}"
-            f" with batch size {self.upload_config.batch_size}"
         )
         # Determine if serverless or pod based index
         pinecone_client = self.connection_config.get_client()
@@ -288,7 +265,7 @@ class PineconeUploader(Uploader):
             self.pod_delete_by_record_id(file_data=file_data)
         else:
             raise ValueError(f"unexpected spec type in index description: {index_description}")
-        self.upsert_batches_async(elements_dict=elements_dict)
+        self.upsert_batches_async(elements_dict=data)
 
 
 pinecone_destination_entry = DestinationRegistryEntry(

@@ -1,7 +1,8 @@
 import json
 import os
+import traceback
 from dataclasses import dataclass, field
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import urlparse
@@ -10,6 +11,7 @@ import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.table import convert_to_pandas_dataframe
 from unstructured_ingest.v2.interfaces import (
@@ -25,6 +27,16 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
 
 CONNECTOR_TYPE = "delta_table"
+
+
+@requires_dependencies(["deltalake"], extras="delta-table")
+def write_deltalake_with_error_handling(queue, **kwargs):
+    from deltalake.writer import write_deltalake
+
+    try:
+        write_deltalake(**kwargs)
+    except Exception:
+        queue.put(traceback.format_exc())
 
 
 class DeltaTableAccessConfig(AccessConfig):
@@ -126,40 +138,7 @@ class DeltaTableUploader(Uploader):
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def process_csv(self, csv_paths: list[Path]) -> pd.DataFrame:
-        logger.debug(f"uploading content from {len(csv_paths)} csv files")
-        df = pd.concat((pd.read_csv(path) for path in csv_paths), ignore_index=True)
-        return df
-
-    def process_json(self, json_paths: list[Path]) -> pd.DataFrame:
-        logger.debug(f"uploading content from {len(json_paths)} json files")
-        all_records = []
-        for p in json_paths:
-            with open(p) as json_file:
-                all_records.extend(json.load(json_file))
-
-        return pd.DataFrame(data=all_records)
-
-    def process_parquet(self, parquet_paths: list[Path]) -> pd.DataFrame:
-        logger.debug(f"uploading content from {len(parquet_paths)} parquet files")
-        df = pd.concat((pd.read_parquet(path) for path in parquet_paths), ignore_index=True)
-        return df
-
-    def read_dataframe(self, path: Path) -> pd.DataFrame:
-        if path.suffix == ".csv":
-            return self.process_csv(csv_paths=[path])
-        elif path.suffix == ".json":
-            return self.process_json(json_paths=[path])
-        elif path.suffix == ".parquet":
-            return self.process_parquet(parquet_paths=[path])
-        else:
-            raise ValueError(f"Unsupported file type, must be parquet, json or csv file: {path}")
-
-    @requires_dependencies(["deltalake"], extras="delta-table")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        from deltalake.writer import write_deltalake
-
-        df = self.read_dataframe(path)
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
         updated_upload_path = os.path.join(
             self.connection_config.table_uri, file_data.source_identifiers.relative_path
         )
@@ -176,16 +155,31 @@ class DeltaTableUploader(Uploader):
             "mode": "overwrite",
             "storage_options": storage_options,
         }
+        queue = Queue()
         # NOTE: deltalake writer on Linux sometimes can finish but still trigger a SIGABRT and cause
         # ingest to fail, even though all tasks are completed normally. Putting the writer into a
         # process mitigates this issue by ensuring python interpreter waits properly for deltalake's
         # rust backend to finish
         writer = Process(
-            target=write_deltalake,
-            kwargs=writer_kwargs,
+            target=write_deltalake_with_error_handling,
+            kwargs={"queue": queue, **writer_kwargs},
         )
         writer.start()
         writer.join()
+
+        # Check if the queue has any exception message
+        if not queue.empty():
+            error_message = queue.get()
+            logger.error(f"Exception occurred in write_deltalake: {error_message}")
+            raise RuntimeError(f"Error in write_deltalake: {error_message}")
+
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data=data)
+        self.upload_dataframe(df=df, file_data=file_data)
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        df = get_data_df(path)
+        self.upload_dataframe(df=df, file_data=file_data)
 
 
 delta_table_destination_entry = DestinationRegistryEntry(

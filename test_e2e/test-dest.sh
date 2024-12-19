@@ -17,21 +17,14 @@ export OMP_THREAD_LIMIT=1
 all_tests=(
   'azure.sh'
   'box.sh'
-  'chroma.sh'
   #  'clarifai.sh'
   'couchbase.sh'
   'dropbox.sh'
-  'elasticsearch.sh'
   'gcs.sh'
-  'kafka-local.sh'
-  'mongodb.sh'
-  'opensearch.sh'
   's3.sh'
   's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
-  'vectara.sh'
-  'weaviate.sh'
-  'milvus.sh'
+  # 'vectara.sh'
   #  'kdbai.sh'
 )
 

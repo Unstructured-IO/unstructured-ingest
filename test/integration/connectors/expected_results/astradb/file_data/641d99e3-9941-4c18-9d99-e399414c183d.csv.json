@@ -1,0 +1,24 @@
+{
+  "identifier": "641d99e3-9941-4c18-9d99-e399414c183d.csv",
+  "connector_type": "astradb",
+  "source_identifiers": null,
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "document_id": "641d99e3-9941-4c18-9d99-e399414c183d"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1734108082.652407",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "collection_name": "ingest_test_src",
+    "keyspace": null
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/pytest-of-romanisecke/pytest-75/test_astra_search_source0/641d99e3-9941-4c18-9d99-e399414c183d.csv",
+  "display_name": null
+}

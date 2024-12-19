@@ -1,14 +1,11 @@
-import copy
 import csv
 import hashlib
-import json
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest import __name__ as integration_name
 from unstructured_ingest.__version__ import __version__ as integration_version
@@ -17,11 +14,14 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, get_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.string_and_date_utils import truncate_string_bytes
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -49,6 +49,17 @@ if TYPE_CHECKING:
 
 
 CONNECTOR_TYPE = "astradb"
+
+MAX_CONTENT_PARAM_BYTE_SIZE = 8000
+
+
+class AstraDBAdditionalMetadata(BaseModel):
+    collection_name: str
+    keyspace: Optional[str] = None
+
+
+class AstraDBBatchFileData(BatchFileData):
+    additional_metadata: AstraDBAdditionalMetadata
 
 
 class AstraDBAccessConfig(AccessConfig):
@@ -177,9 +188,6 @@ class AstraDBIndexer(Indexer):
 
     def _get_doc_ids(self) -> set[str]:
         """Fetches all document ids in an index"""
-        # Initialize set of ids
-        ids = set()
-
         # Get the collection
         collection = self.get_collection()
 
@@ -192,31 +200,26 @@ class AstraDBIndexer(Indexer):
             astra_db_docs.append(result)
 
         # Create file data for each astra record
-        for astra_record in astra_db_docs:
-            ids.add(astra_record["_id"])
+        ids = sorted([astra_record["_id"] for astra_record in astra_db_docs])
 
-        return ids
+        return set(ids)
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[AstraDBBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         id_batches = batch_generator(ids, self.index_config.batch_size)
 
         for batch in id_batches:
-            # Make sure the hash is always a positive number to create identified
-            identified = str(hash(batch) + sys.maxsize + 1)
-            fd = FileData(
-                identifier=identified,
+            fd = AstraDBBatchFileData(
                 connector_type=CONNECTOR_TYPE,
-                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
                 ),
-                additional_metadata={
-                    "ids": list(batch),
-                    "collection_name": self.index_config.collection_name,
-                    "keyspace": self.index_config.keyspace,
-                },
+                additional_metadata=AstraDBAdditionalMetadata(
+                    collection_name=self.index_config.collection_name,
+                    keyspace=self.index_config.keyspace,
+                ),
+                batch_items=[BatchItem(identifier=b) for b in batch],
             )
             yield fd
 
@@ -245,7 +248,9 @@ class AstraDBDownloader(Downloader):
             writer.writerow(astra_result.keys())
             writer.writerow(astra_result.values())
 
-    def generate_download_response(self, result: dict, file_data: FileData) -> DownloadResponse:
+    def generate_download_response(
+        self, result: dict, file_data: AstraDBBatchFileData
+    ) -> DownloadResponse:
         record_id = result["_id"]
         filename_id = self.get_identifier(record_id=record_id)
         filename = f"{filename_id}.csv"  # csv to preserve column info
@@ -253,7 +258,7 @@ class AstraDBDownloader(Downloader):
         logger.debug(f"Downloading results from record {record_id} as csv to {download_path}")
         download_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            self.write_astra_result_to_csv(astra_result=result, download_path=download_path)
+            self.write_astra_result_to_csv(astra_result=result, download_path=str(download_path))
         except Exception as e:
             logger.error(
                 f"failed to download from record {record_id} to {download_path}: {e}",
@@ -262,14 +267,12 @@ class AstraDBDownloader(Downloader):
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
         # modify input file_data for download_response
-        copied_file_data = copy.deepcopy(file_data)
-        copied_file_data.identifier = filename
-        copied_file_data.doc_type = "file"
-        copied_file_data.metadata.date_processed = str(time())
-        copied_file_data.metadata.record_locator = {"document_id": record_id}
-        copied_file_data.additional_metadata.pop("ids", None)
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename
+        cast_file_data.metadata.date_processed = str(time())
+        cast_file_data.metadata.record_locator = {"document_id": record_id}
         return super().generate_download_response(
-            file_data=copied_file_data, download_path=download_path
+            file_data=cast_file_data, download_path=download_path
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
@@ -277,9 +280,10 @@ class AstraDBDownloader(Downloader):
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         # Get metadata from file_data
-        ids: list[str] = file_data.additional_metadata["ids"]
-        collection_name: str = file_data.additional_metadata["collection_name"]
-        keyspace: str = file_data.additional_metadata["keyspace"]
+        astra_file_data = AstraDBBatchFileData.cast(file_data=file_data)
+        ids: list[str] = [item.identifier for item in astra_file_data.batch_items]
+        collection_name: str = astra_file_data.additional_metadata.collection_name
+        keyspace: str = astra_file_data.additional_metadata.keyspace
 
         # Retrieve results from async collection
         download_responses = []
@@ -290,7 +294,7 @@ class AstraDBDownloader(Downloader):
         )
         async for result in async_astra_collection.find({"_id": {"$in": ids}}):
             download_responses.append(
-                self.generate_download_response(result=result, file_data=file_data)
+                self.generate_download_response(result=result, file_data=astra_file_data)
             )
         return download_responses
 
@@ -301,36 +305,26 @@ class AstraDBUploadStager(UploadStager):
         default_factory=lambda: AstraDBUploadStagerConfig()
     )
 
+    def truncate_dict_elements(self, element_dict: dict) -> None:
+        text = element_dict.pop("text", None)
+        if text is not None:
+            element_dict["text"] = truncate_string_bytes(text, MAX_CONTENT_PARAM_BYTE_SIZE)
+        metadata = element_dict.get("metadata")
+        if metadata is not None and isinstance(metadata, dict):
+            text_as_html = element_dict["metadata"].pop("text_as_html", None)
+            if text_as_html is not None:
+                element_dict["metadata"]["text_as_html"] = truncate_string_bytes(
+                    text_as_html, MAX_CONTENT_PARAM_BYTE_SIZE
+                )
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        self.truncate_dict_elements(element_dict)
         return {
             "$vector": element_dict.pop("embeddings", None),
             "content": element_dict.pop("text", None),
             RECORD_ID_LABEL: file_data.identifier,
             "metadata": element_dict,
         }
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        conformed_elements = []
-        for element in elements_contents:
-            conformed_elements.append(self.conform_dict(element_dict=element, file_data=file_data))
-        output_filename_path = Path(output_filename)
-        if output_filename_path.suffix == ".json":
-            output_path = Path(output_dir) / output_filename_path
-        else:
-            output_path = Path(output_dir) / output_filename_path.with_suffix(".json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file, indent=2)
-        return output_path
 
 
 @dataclass
@@ -370,11 +364,9 @@ class AstraDBUploader(Uploader):
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
         )
 
@@ -383,8 +375,12 @@ class AstraDBUploader(Uploader):
 
         self.delete_by_record_id(collection=collection, file_data=file_data)
 
-        for chunk in batch_generator(elements_dict, astra_db_batch_size):
+        for chunk in batch_generator(data, astra_db_batch_size):
             collection.insert_many(chunk)
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        data = get_data(path=path)
+        self.run_data(data=data, file_data=file_data, **kwargs)
 
 
 astra_db_source_entry = SourceRegistryEntry(

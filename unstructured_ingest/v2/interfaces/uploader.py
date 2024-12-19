@@ -5,6 +5,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from unstructured_ingest.utils.data_prep import get_data
 from unstructured_ingest.v2.interfaces.connector import BaseConnector
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
@@ -38,7 +39,15 @@ class Uploader(BaseProcess, BaseConnector, ABC):
         raise NotImplementedError()
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        raise NotImplementedError()
+        data = get_data(path=path)
+        self.run_data(data=data, file_data=file_data, **kwargs)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return self.run(contents=[UploadContent(path=path, file_data=file_data)], **kwargs)
+        data = get_data(path=path)
+        await self.run_data_async(data=data, file_data=file_data, **kwargs)
+
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        raise NotImplementedError()
+
+    async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        return self.run_data(data=data, file_data=file_data, **kwargs)

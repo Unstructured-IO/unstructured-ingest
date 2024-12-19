@@ -61,4 +61,4 @@ class Embedder(ReformatNode):
             return None
 
     def get_path(self) -> Path:
-        return (Path(self.pipeline_context.work_dir) / "embedded").resolve()
+        return (Path(self.pipeline_context.work_dir) / "embedded.py").resolve()
