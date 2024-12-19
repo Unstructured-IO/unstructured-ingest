@@ -2,6 +2,7 @@ from dataclasses import fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
@@ -51,6 +52,22 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     return PartitionRequest(partition_parameters=partition_params)
 
 
+def handle_error(e: Exception):
+    from unstructured_client.models.errors.sdkerror import SDKError
+
+    if isinstance(e, SDKError):
+        logger.error(f"Error calling Unstructured API: {e}")
+        if 400 <= e.status_code < 500:
+            raise UserError(e.body)
+        elif e.status_code >= 500:
+            raise ProviderError(e.body)
+        else:
+            raise e
+    else:
+        logger.error(f"Uncaught Error calling API: {e}")
+        raise e
+
+
 async def call_api_async(
     server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
 ) -> list[dict]:
@@ -71,7 +88,10 @@ async def call_api_async(
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
-    res = await client.general.partition_async(request=partition_request)
+    try:
+        res = await client.general.partition_async(request=partition_request)
+    except Exception as e:
+        handle_error(e)
 
     return res.elements or []
 
@@ -96,6 +116,9 @@ def call_api(
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
-    res = client.general.partition(request=partition_request)
+    try:
+        res = client.general.partition(request=partition_request)
+    except Exception as e:
+        handle_error(e)
 
     return res.elements or []
