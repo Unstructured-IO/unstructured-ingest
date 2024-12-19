@@ -43,7 +43,7 @@ def conform_query(query: str, provider: str) -> dict:
     else:
         # includes common provider == "amazon"
         input_body["inputText"] = text
-    json.dumps(input_body)
+    return input_body
 
 
 class BedrockEmbeddingConfig(EmbeddingConfig):
@@ -108,7 +108,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
         # invoke bedrock API
         try:
             response = bedrock_client.invoke_model(
-                body=body,
+                body=json.dumps(body),
                 modelId=self.config.embed_model_name,
                 accept="application/json",
                 contentType="application/json",
@@ -166,7 +166,7 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             async with self.config.get_client() as bedrock_client:
                 # invoke bedrock API
                 response = await bedrock_client.invoke_model(
-                    body=body,
+                    body=json.dumps(body),
                     modelId=self.config.embed_model_name,
                     accept="application/json",
                     contentType="application/json",
