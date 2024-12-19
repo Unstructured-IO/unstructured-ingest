@@ -1,12 +1,22 @@
 import itertools
 import json
 from datetime import datetime
-from typing import Any, Iterable, Optional, Sequence, TypeVar, cast
+from pathlib import Path
+from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
+
+import ndjson
+import pandas as pd
 
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
 T = TypeVar("T")
 IterableT = Iterable[T]
+
+
+def split_dataframe(df: pd.DataFrame, chunk_size: int = 100) -> Generator[pd.DataFrame, None, None]:
+    num_chunks = len(df) // chunk_size + 1
+    for i in range(num_chunks):
+        yield df[i * chunk_size : (i + 1) * chunk_size]
 
 
 def batch_generator(iterable: IterableT, batch_size: int = 100) -> IterableT:
@@ -123,3 +133,37 @@ def validate_date_args(date: Optional[str] = None) -> bool:
         f"The argument {date} does not satisfy the format:"
         f" YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS or YYYY-MM-DD+HH:MM:SS or YYYY-MM-DDTHH:MM:SS±HHMM",
     )
+
+
+def get_data(path: Path) -> list[dict]:
+    with path.open() as f:
+        if path.suffix == ".json":
+            return json.load(f)
+        elif path.suffix == ".ndjson":
+            return ndjson.load(f)
+        elif path.suffix == ".csv":
+            df = pd.read_csv(path)
+            return df.to_dict(orient="records")
+        elif path.suffix == ".parquet":
+            df = pd.read_parquet(path)
+            return df.to_dict(orient="records")
+        else:
+            raise ValueError(f"Unsupported file type: {path}")
+
+
+def get_data_df(path: Path) -> pd.DataFrame:
+    with path.open() as f:
+        if path.suffix == ".json":
+            data = json.load(f)
+            return pd.DataFrame(data=data)
+        elif path.suffix == ".ndjson":
+            data = ndjson.load(f)
+            return pd.DataFrame(data=data)
+        elif path.suffix == ".csv":
+            df = pd.read_csv(path)
+            return df
+        elif path.suffix == ".parquet":
+            df = pd.read_parquet(path)
+            return df
+        else:
+            raise ValueError(f"Unsupported file type: {path}")

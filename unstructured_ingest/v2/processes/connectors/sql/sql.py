@@ -1,10 +1,8 @@
 import hashlib
 import json
-import sys
-import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 from time import time
@@ -13,11 +11,15 @@ from typing import Any, Generator, Union
 import numpy as np
 import pandas as pd
 from dateutil import parser
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.utils.data_prep import get_data_df, split_dataframe
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -33,6 +35,7 @@ from unstructured_ingest.v2.interfaces import (
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 _COLUMNS = (
     "id",
@@ -79,6 +82,15 @@ _COLUMNS = (
 _DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
 
 
+class SqlAdditionalMetadata(BaseModel):
+    table_name: str
+    id_column: str
+
+
+class SqlBatchFileData(BatchFileData):
+    additional_metadata: SqlAdditionalMetadata
+
+
 def parse_date_string(date_value: Union[str, int]) -> date:
     try:
         timestamp = float(date_value) / 1000 if isinstance(date_value, int) else float(date_value)
@@ -122,7 +134,7 @@ class SQLIndexer(Indexer, ABC):
                 f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
             )
             results = cursor.fetchall()
-            ids = [result[0] for result in results]
+            ids = sorted([result[0] for result in results])
             return ids
 
     def precheck(self) -> None:
@@ -133,7 +145,7 @@ class SQLIndexer(Indexer, ABC):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
         ids = self._get_doc_ids()
         id_batches: list[frozenset[str]] = [
             frozenset(
@@ -149,19 +161,15 @@ class SQLIndexer(Indexer, ABC):
         ]
         for batch in id_batches:
             # Make sure the hash is always a positive number to create identified
-            identified = str(hash(batch) + sys.maxsize + 1)
-            yield FileData(
-                identifier=identified,
+            yield SqlBatchFileData(
                 connector_type=self.connector_type,
                 metadata=FileDataSourceMetadata(
                     date_processed=str(time()),
                 ),
-                doc_type="batch",
-                additional_metadata={
-                    "ids": list(batch),
-                    "table_name": self.index_config.table_name,
-                    "id_column": self.index_config.id_column,
-                },
+                additional_metadata=SqlAdditionalMetadata(
+                    table_name=self.index_config.table_name, id_column=self.index_config.id_column
+                ),
+                batch_items=[BatchItem(identifier=str(b)) for b in batch],
             )
 
 
@@ -174,7 +182,7 @@ class SQLDownloader(Downloader, ABC):
     download_config: SQLDownloaderConfig
 
     @abstractmethod
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         pass
 
     def sql_to_df(self, rows: list[tuple], columns: list[str]) -> list[pd.DataFrame]:
@@ -183,7 +191,7 @@ class SQLDownloader(Downloader, ABC):
         dfs = [pd.DataFrame([row.values], columns=df.columns) for index, row in df.iterrows()]
         return dfs
 
-    def get_data(self, file_data: FileData) -> list[pd.DataFrame]:
+    def get_data(self, file_data: SqlBatchFileData) -> list[pd.DataFrame]:
         rows, columns = self.query_db(file_data=file_data)
         return self.sql_to_df(rows=rows, columns=columns)
 
@@ -197,10 +205,10 @@ class SQLDownloader(Downloader, ABC):
         return f
 
     def generate_download_response(
-        self, result: pd.DataFrame, file_data: FileData
+        self, result: pd.DataFrame, file_data: SqlBatchFileData
     ) -> DownloadResponse:
-        id_column = file_data.additional_metadata["id_column"]
-        table_name = file_data.additional_metadata["table_name"]
+        id_column = file_data.additional_metadata.id_column
+        table_name = file_data.additional_metadata.table_name
         record_id = result.iloc[0][id_column]
         filename_id = self.get_identifier(table_name=table_name, record_id=record_id)
         filename = f"{filename_id}.csv"
@@ -210,20 +218,19 @@ class SQLDownloader(Downloader, ABC):
         )
         download_path.parent.mkdir(parents=True, exist_ok=True)
         result.to_csv(download_path, index=False)
-        copied_file_data = replace(file_data)
-        copied_file_data.identifier = filename_id
-        copied_file_data.doc_type = "file"
-        copied_file_data.additional_metadata.pop("ids", None)
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename_id
         return super().generate_download_response(
-            file_data=copied_file_data, download_path=download_path
+            file_data=cast_file_data, download_path=download_path
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        data_dfs = self.get_data(file_data=file_data)
+        sql_filedata = SqlBatchFileData.cast(file_data=file_data)
+        data_dfs = self.get_data(file_data=sql_filedata)
         download_responses = []
         for df in data_dfs:
             download_responses.append(
-                self.generate_download_response(result=df, file_data=file_data)
+                self.generate_download_response(result=df, file_data=sql_filedata)
             )
         return download_responses
 
@@ -236,37 +243,24 @@ class SQLUploadStagerConfig(UploadStagerConfig):
 class SQLUploadStager(UploadStager):
     upload_stager_config: SQLUploadStagerConfig = field(default_factory=SQLUploadStagerConfig)
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents: list[dict] = json.load(elements_file)
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        metadata: dict[str, Any] = data.pop("metadata", {})
+        data_source = metadata.pop("data_source", {})
+        coordinates = metadata.pop("coordinates", {})
 
-        output = []
-        for data in elements_contents:
-            metadata: dict[str, Any] = data.pop("metadata", {})
-            data_source = metadata.pop("data_source", {})
-            coordinates = metadata.pop("coordinates", {})
+        data.update(metadata)
+        data.update(data_source)
+        data.update(coordinates)
 
-            data.update(metadata)
-            data.update(data_source)
-            data.update(coordinates)
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
 
-            data["id"] = str(uuid.uuid4())
+        # remove extraneous, not supported columns
+        element = {k: v for k, v in data.items() if k in _COLUMNS}
+        element[RECORD_ID_LABEL] = file_data.identifier
+        return element
 
-            # remove extraneous, not supported columns
-            data = {k: v for k, v in data.items() if k in _COLUMNS}
-
-            output.append(data)
-
-        df = pd.DataFrame.from_dict(output)
+    def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
             df[column] = df[column].apply(parse_date_string)
         for column in filter(
@@ -281,15 +275,39 @@ class SQLUploadStager(UploadStager):
             ("version", "page_number", "regex_metadata"),
         ):
             df[column] = df[column].apply(str)
+        return df
 
-        with output_path.open("w") as output_file:
-            df.to_json(output_file, orient="records", lines=True)
+    def run(
+        self,
+        elements_filepath: Path,
+        file_data: FileData,
+        output_dir: Path,
+        output_filename: str,
+        **kwargs: Any,
+    ) -> Path:
+        elements_contents = self.get_data(elements_filepath=elements_filepath)
+
+        df = pd.DataFrame(
+            data=[
+                self.conform_dict(element_dict=element_dict, file_data=file_data)
+                for element_dict in elements_contents
+            ]
+        )
+        df = self.conform_dataframe(df=df)
+
+        output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
+
+        self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
         return output_path
 
 
 class SQLUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="Number of records per batch")
     table_name: str = Field(default="elements", description="which table to upload contents to")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
@@ -300,39 +318,112 @@ class SQLUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            connection = self.connection_config.get_connection()
-            cursor = connection.cursor()
-            cursor.execute("SELECT 1;")
-            cursor.close()
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @abstractmethod
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
-        pass
+        output = []
+        for row in data:
+            parsed = []
+            for column_name, value in zip(columns, row):
+                if column_name in _DATE_COLUMNS:
+                    if value is None:
+                        parsed.append(None)
+                    else:
+                        parsed.append(parse_date_string(value))
+                else:
+                    parsed.append(value)
+            output.append(tuple(parsed))
+        return output
 
-    def upload_contents(self, path: Path) -> None:
-        df = pd.read_json(path, orient="records", lines=True)
+    def _fit_to_schema(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+        columns = set(df.columns)
+        schema_fields = set(columns)
+        columns_to_drop = columns - schema_fields
+        missing_columns = schema_fields - columns
+
+        if columns_to_drop:
+            logger.warning(
+                "Following columns will be dropped to match the table's schema: "
+                f"{', '.join(columns_to_drop)}"
+            )
+        if missing_columns:
+            logger.info(
+                "Following null filled columns will be added to match the table's schema:"
+                f" {', '.join(missing_columns)} "
+            )
+
+        df = df.drop(columns=columns_to_drop)
+
+        for column in missing_columns:
+            df[column] = pd.Series()
+
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        if self.can_delete():
+            self.delete_by_record_id(file_data=file_data)
+        else:
+            logger.warning(
+                f"table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
         df.replace({np.nan: None}, inplace=True)
+        self._fit_to_schema(df=df, columns=self.get_table_columns())
 
         columns = list(df.columns)
-        stmt = f"INSERT INTO {self.upload_config.table_name} ({','.join(columns)}) VALUES({','.join([self.values_delimiter for x in columns])})"  # noqa E501
-
-        for rows in pd.read_json(
-            path, orient="records", lines=True, chunksize=self.upload_config.batch_size
-        ):
+        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+            table_name=self.upload_config.table_name,
+            columns=",".join(columns),
+            values=",".join([self.values_delimiter for _ in columns]),
+        )
+        logger.info(
+            f"writing a total of {len(df)} elements via"
+            f" document batches to destination"
+            f" table named {self.upload_config.table_name}"
+            f" with batch size {self.upload_config.batch_size}"
+        )
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # For debugging purposes:
                 # for val in values:
                 #     try:
                 #         cursor.execute(stmt, val)
                 #     except Exception as e:
                 #         print(f"Error: {e}")
                 #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                logger.debug(f"running query: {stmt}")
                 cursor.executemany(stmt, values)
 
+    def get_table_columns(self) -> list[str]:
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(f"SELECT * from {self.upload_config.table_name}")
+            return [desc[0] for desc in cursor.description]
+
+    def can_delete(self) -> bool:
+        return self.upload_config.record_id_key in self.get_table_columns()
+
+    def delete_by_record_id(self, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with data "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
+            f"from table {self.upload_config.table_name}"
+        )
+        stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"  # noqa: E501
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute(stmt, [file_data.identifier])
+            rowcount = cursor.rowcount
+            logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
+
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data)
+        self.upload_dataframe(df=df, file_data=file_data)
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        self.upload_contents(path=path)
+        df = get_data_df(path=path)
+        self.upload_dataframe(df=df, file_data=file_data)

@@ -1,19 +1,18 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Generator, Optional
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
-    _DATE_COLUMNS,
     SQLAccessConfig,
+    SqlBatchFileData,
     SQLConnectionConfig,
     SQLDownloader,
     SQLDownloaderConfig,
@@ -23,7 +22,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
-    parse_date_string,
 )
 
 if TYPE_CHECKING:
@@ -100,20 +98,28 @@ class PostgresDownloader(SQLDownloader):
     download_config: PostgresDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
-        table_name = file_data.additional_metadata["table_name"]
-        id_column = file_data.additional_metadata["id_column"]
-        ids = file_data.additional_metadata["ids"]
+    @requires_dependencies(["psycopg2"], extras="postgres")
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
+        from psycopg2 import sql
+
+        table_name = file_data.additional_metadata.table_name
+        id_column = file_data.additional_metadata.id_column
+        ids = tuple([item.identifier for item in file_data.batch_items])
+
         with self.connection_config.get_cursor() as cursor:
-            fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
-            query = "SELECT {fields} FROM {table_name} WHERE {id_column} in ({ids})".format(
-                fields=fields,
-                table_name=table_name,
-                id_column=id_column,
-                ids=",".join([str(i) for i in ids]),
+            fields = (
+                sql.SQL(",").join(sql.Identifier(field) for field in self.download_config.fields)
+                if self.download_config.fields
+                else sql.SQL("*")
             )
-            logger.debug(f"running query: {query}")
-            cursor.execute(query)
+
+            query = sql.SQL("SELECT {fields} FROM {table_name} WHERE {id_column} IN %s").format(
+                fields=fields,
+                table_name=sql.Identifier(table_name),
+                id_column=sql.Identifier(id_column),
+            )
+            logger.debug(f"running query: {cursor.mogrify(query, (ids,))}")
+            cursor.execute(query, (ids,))
             rows = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
             return rows, columns
@@ -137,23 +143,6 @@ class PostgresUploader(SQLUploader):
     connection_config: PostgresConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "%s"
-
-    def prepare_data(
-        self, columns: list[str], data: tuple[tuple[Any, ...], ...]
-    ) -> list[tuple[Any, ...]]:
-        output = []
-        for row in data:
-            parsed = []
-            for column_name, value in zip(columns, row):
-                if column_name in _DATE_COLUMNS:
-                    if value is None:
-                        parsed.append(None)
-                    else:
-                        parsed.append(parse_date_string(value))
-                else:
-                    parsed.append(value)
-            output.append(tuple(parsed))
-        return output
 
 
 postgres_source_entry = SourceRegistryEntry(

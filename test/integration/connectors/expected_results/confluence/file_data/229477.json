@@ -1,0 +1,29 @@
+{
+  "identifier": "229477",
+  "connector_type": "confluence",
+  "source_identifiers": {
+    "filename": "229477.html",
+    "fullpath": "MFS/229477.html",
+    "rel_path": "MFS/229477.html"
+  },
+  "metadata": {
+    "url": "https://unstructured-ingest-test.atlassian.net/pages/229477",
+    "version": "1",
+    "record_locator": {
+      "space_id": "MFS",
+      "document_id": "229477"
+    },
+    "date_created": "2023-06-30T17:25:25.504Z",
+    "date_modified": "2023-06-30T17:25:30.898Z",
+    "date_processed": "1734444194.642272",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "space_id": "MFS",
+    "document_id": "229477"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp1twncsjk/MFS/229477.html",
+  "display_name": "My first space"
+}

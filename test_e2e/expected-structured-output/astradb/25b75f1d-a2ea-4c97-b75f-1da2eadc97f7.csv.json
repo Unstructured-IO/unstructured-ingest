@@ -1,0 +1,25 @@
+[
+  {
+    "type": "Table",
+    "element_id": "8d3eb636d29f7f6fa847c8eb9595e936",
+    "text": "\n\n\n_id\ntitle\nreviewid\ncreationdate\ncriticname\noriginalscore\nreviewstate\nreviewtext\n\n\n25b75f1d-a2ea-4c97-b75f-1da2eadc97f7\nCity Hunter: Shinjuku Private Eyes\n2558908\n2019-02-14\nMatt Schley\n2.5/5\nrotten\nThe film's out-of-touch attempts at humor may find them hunting for the reason the franchise was so popular in the first place.\n\n\n",
+    "metadata": {
+      "text_as_html": "<table border=\"1\" class=\"dataframe\">\n  <tbody>\n    <tr>\n      <td>_id</td>\n      <td>title</td>\n      <td>reviewid</td>\n      <td>creationdate</td>\n      <td>criticname</td>\n      <td>originalscore</td>\n      <td>reviewstate</td>\n      <td>reviewtext</td>\n    </tr>\n    <tr>\n      <td>25b75f1d-a2ea-4c97-b75f-1da2eadc97f7</td>\n      <td>City Hunter: Shinjuku Private Eyes</td>\n      <td>2558908</td>\n      <td>2019-02-14</td>\n      <td>Matt Schley</td>\n      <td>2.5/5</td>\n      <td>rotten</td>\n      <td>The film's out-of-touch attempts at humor may find them hunting for the reason the franchise was so popular in the first place.</td>\n    </tr>\n  </tbody>\n</table>",
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/csv",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+        },
+        "date_created": null,
+        "date_modified": null,
+        "permissions_data": null,
+        "filesize_bytes": 326
+      }
+    }
+  }
+]

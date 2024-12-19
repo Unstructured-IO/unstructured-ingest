@@ -1,7 +1,7 @@
 import typing as t
 
 from .astradb import AstraDBWriter
-from .azure_cognitive_search import AzureCognitiveSearchWriter
+from .azure_ai_search import AzureAiSearchWriter
 from .base_writer import Writer
 from .chroma import ChromaWriter
 from .clarifai import ClarifaiWriter
@@ -25,7 +25,7 @@ from .weaviate import WeaviateWriter
 writer_map: t.Dict[str, t.Type[Writer]] = {
     "astradb": AstraDBWriter,
     "azure": AzureWriter,
-    "azure_cognitive_search": AzureCognitiveSearchWriter,
+    "azure_ai_search": AzureAiSearchWriter,
     "box": BoxWriter,
     "chroma": ChromaWriter,
     "clarifai": ClarifaiWriter,

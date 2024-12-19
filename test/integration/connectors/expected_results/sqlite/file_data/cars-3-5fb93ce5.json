@@ -2,14 +2,13 @@
   "identifier": "cars-3-5fb93ce5",
   "connector_type": "sqlite",
   "source_identifiers": null,
-  "doc_type": "file",
   "metadata": {
     "url": null,
     "version": null,
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1729695195.062916",
+    "date_processed": "1734106259.019072",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -18,5 +17,6 @@
     "id_column": "car_id"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpzbyh4vlw/cars-3-5fb93ce5.csv"
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp2ro2di4f/cars-3-5fb93ce5.csv",
+  "display_name": null
 }

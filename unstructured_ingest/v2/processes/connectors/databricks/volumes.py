@@ -14,6 +14,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
+    AccessConfig,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -50,6 +51,10 @@ class DatabricksPathMixin(BaseModel):
         if self.volume_path:
             path = f"{path}/{self.volume_path}"
         return path
+
+
+class DatabricksVolumesAccessConfig(AccessConfig):
+    token: Optional[str] = Field(default=None, description="Databricks Personal Access Token")
 
 
 class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
@@ -148,9 +153,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
 
 
 class DatabricksVolumesUploaderConfig(UploaderConfig, DatabricksPathMixin):
-    overwrite: bool = Field(
-        default=False, description="If true, an existing file will be overwritten."
-    )
+    pass
 
 
 @dataclass
@@ -166,10 +169,12 @@ class DatabricksVolumesUploader(Uploader, ABC):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        output_path = os.path.join(self.upload_config.path, file_data.source_identifiers.filename)
+        output_path = os.path.join(
+            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
+        )
         with open(path, "rb") as elements_file:
             self.connection_config.get_client().files.upload(
                 file_path=output_path,
                 contents=elements_file,
-                overwrite=self.upload_config.overwrite,
+                overwrite=True,
             )

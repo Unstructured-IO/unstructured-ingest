@@ -1,5 +1,6 @@
 import io
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Generator, Optional
@@ -19,12 +20,12 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
-    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
@@ -74,7 +75,8 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
     access_config: Secret[GoogleDriveAccessConfig]
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
-    def get_files_service(self) -> "GoogleAPIResource":
+    @contextmanager
+    def get_client(self) -> Generator["GoogleAPIResource", None, None]:
         from google.auth import exceptions
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
@@ -86,8 +88,8 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
         try:
             creds = service_account.Credentials.from_service_account_info(key_data)
             service = build("drive", "v3", credentials=creds)
-            return service.files()
-
+            with service.files() as client:
+                yield client
         except HttpError as exc:
             raise ValueError(f"{exc.reason}")
         except exceptions.DefaultCredentialsError:
@@ -132,7 +134,7 @@ class GoogleDriveIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.get_files_service()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -161,7 +163,7 @@ class GoogleDriveIndexer(Indexer):
             and isinstance(parent_root_path, str)
         ):
             fullpath = f"{parent_path}/{filename}"
-            rel_path = fullpath.replace(parent_root_path, "")
+            rel_path = Path(fullpath).relative_to(parent_root_path).as_posix()
             source_identifiers = SourceIdentifiers(
                 filename=filename, fullpath=fullpath, rel_path=rel_path
             )
@@ -266,13 +268,14 @@ class GoogleDriveIndexer(Indexer):
         return data
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        for f in self.get_files(
-            files_client=self.connection_config.get_files_service(),
-            object_id=self.connection_config.drive_id,
-            recursive=self.index_config.recursive,
-            extensions=self.index_config.extensions,
-        ):
-            yield f
+        with self.connection_config.get_client() as client:
+            for f in self.get_files(
+                files_client=client,
+                object_id=self.connection_config.drive_id,
+                recursive=self.index_config.recursive,
+                extensions=self.index_config.extensions,
+            ):
+                yield f
 
 
 class GoogleDriveDownloaderConfig(DownloaderConfig):
@@ -294,7 +297,7 @@ class GoogleDriveDownloader(Downloader):
             _, downloaded = downloader.next_chunk()
         return downloaded
 
-    def _write_file(self, file_data: FileData, file_contents: io.BytesIO):
+    def _write_file(self, file_data: FileData, file_contents: io.BytesIO) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         logger.debug(f"writing {file_data.source_identifiers.fullpath} to {download_path}")
@@ -303,36 +306,36 @@ class GoogleDriveDownloader(Downloader):
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         from googleapiclient.http import MediaIoBaseDownload
 
         logger.debug(f"fetching file: {file_data.source_identifiers.fullpath}")
         mime_type = file_data.additional_metadata["mimeType"]
         record_id = file_data.identifier
-        files_client = self.connection_config.get_files_service()
-        if mime_type.startswith("application/vnd.google-apps"):
-            export_mime = GOOGLE_DRIVE_EXPORT_TYPES.get(
-                self.meta.get("mimeType"),  # type: ignore
-            )
-            if not export_mime:
-                raise TypeError(
-                    f"File not supported. Name: {file_data.source_identifiers.filename} "
-                    f"ID: {record_id} "
-                    f"MimeType: {mime_type}"
+        with self.connection_config.get_client() as client:
+            if mime_type.startswith("application/vnd.google-apps"):
+                export_mime = GOOGLE_DRIVE_EXPORT_TYPES.get(
+                    self.meta.get("mimeType"),  # type: ignore
                 )
+                if not export_mime:
+                    raise TypeError(
+                        f"File not supported. Name: {file_data.source_identifiers.filename} "
+                        f"ID: {record_id} "
+                        f"MimeType: {mime_type}"
+                    )
 
-            request = files_client.export_media(
-                fileId=record_id,
-                mimeType=export_mime,
-            )
-        else:
-            request = files_client.get_media(fileId=record_id)
+                request = client.export_media(
+                    fileId=record_id,
+                    mimeType=export_mime,
+                )
+            else:
+                request = client.get_media(fileId=record_id)
 
         file_contents = io.BytesIO()
         downloader = MediaIoBaseDownload(file_contents, request)
         downloaded = self._get_content(downloader=downloader)
         if not downloaded or not file_contents:
-            return []
+            raise SourceConnectionError("nothing found to download")
         return self._write_file(file_data=file_data, file_contents=file_contents)
 
 

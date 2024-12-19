@@ -44,6 +44,10 @@ ignore = [
     "SIM117",   # -- merge `with` statements for context managers that have same scope --
 ]
 
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
 [tool.autoflake]
 expand_star_imports=true
 ignore_pass_statements=false
@@ -57,4 +61,16 @@ exclude= [
     ".python_packages",
     "build",
     "migrations"
+]
+
+# limit coverage to v2 code
+[tool.coverage.run]
+omit=[
+    "unstructured_ingest/connector/*",
+    "unstructured_ingest/pipeline/*",
+    "unstructured_ingest/cli/*",
+    "unstructured_ingest/runner/*",
+    "unstructured_ingest/utils/*",
+    "unstructured_ingest/ingest_backoff/*",
+    "unstructured_ingest/enhanced_dataclass/*"
 ]

@@ -38,6 +38,9 @@ trap cleanup EXIT
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
   --output-dir "$OUTPUT_DIR" \
   --strategy fast \
@@ -46,7 +49,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --input-path example-docs/pdf/fake-memo.pdf \
   --work-dir "$WORK_DIR" \
   azure \
-  --overwrite \
   --remote-url "$REMOTE_URL" \
   --connection-string "$AZURE_DEST_CONNECTION_STR"
 

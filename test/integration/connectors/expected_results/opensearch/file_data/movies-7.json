@@ -1,0 +1,31 @@
+{
+  "identifier": "movies-7",
+  "connector_type": "elasticsearch",
+  "source_identifiers": {
+    "filename": "movies-7.txt",
+    "fullpath": "movies-7.txt",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": "http://localhost:9200/movies",
+    "version": "1",
+    "record_locator": {
+      "hosts": [
+        "http://localhost:9200"
+      ],
+      "index_name": "movies",
+      "document_id": "7"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1734441717.42651",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "index_name": "movies"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpz9m4m2ia/movies-7.txt",
+  "display_name": null
+}
