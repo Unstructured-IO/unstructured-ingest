@@ -105,3 +105,12 @@ def file_data_from_file(path: str) -> FileData:
         logger.debug(f"{path} not valid for batch file data")
 
     return FileData.from_file(path=path)
+
+
+def file_data_from_dict(data: dict) -> FileData:
+    try:
+        return BatchFileData.model_validate(data)
+    except ValidationError:
+        logger.debug(f"{data} not valid for batch file data")
+
+    return FileData.model_validate(data)
