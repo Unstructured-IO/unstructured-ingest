@@ -250,8 +250,11 @@ async def test_vectara_destination(
         upload_config=VectaraUploaderConfig(),
     )
 
+    with new_upload_file.open() as new_upload_fp:
+        elements_stager = json.load(new_upload_fp)
+
     if uploader.is_async():
-        await uploader.run_async(path=new_upload_file, file_data=file_data)
+        await uploader.run_data_async(data=elements_stager, file_data=file_data)
 
     with upload_file.open() as upload_fp:
         elements = json.load(upload_fp)

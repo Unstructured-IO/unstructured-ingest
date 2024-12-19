@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 from pydantic import Field, Secret
 
@@ -330,22 +330,15 @@ class VectaraUploader(Uploader):
 
         logger.info(f"indexing document {document['id']} succeeded")
 
-    async def write_dict(self, *args, docs_list: List[Dict[str, Any]], **kwargs) -> None:
-        logger.info(f"inserting / updating {len(docs_list)} documents to Vectara ")
-        await asyncio.gather(*(self._index_document(vdoc) for vdoc in docs_list))
-
-    async def run_async(
+    async def run_data_async(
         self,
-        path: Path,
+        data: list[dict],
         file_data: FileData,
         **kwargs: Any,
     ) -> None:
-        import aiofiles
 
-        async with aiofiles.open(path) as json_file:
-            docs_list = json.loads(await json_file.read())
-
-        await self.write_dict(docs_list=docs_list)
+        logger.info(f"inserting / updating {len(data)} documents to Vectara ")
+        await asyncio.gather(*(self._index_document(vdoc) for vdoc in data))
 
 
 vectara_destination_entry = DestinationRegistryEntry(
