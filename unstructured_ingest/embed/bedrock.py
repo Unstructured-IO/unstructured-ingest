@@ -20,12 +20,30 @@ if TYPE_CHECKING:
     from botocore.client import BaseClient
 
     class BedrockClient(BaseClient):
-        def invoke_model(self, body: str, modelId: str, trace: str) -> dict:
+        def invoke_model(self, body: str, modelId: str, accept: str, contentType: str) -> dict:
             pass
 
     class AsyncBedrockClient(BaseClient):
-        async def invoke_model(self, body: str, modelId: str, trace: str) -> dict:
+        async def invoke_model(
+            self, body: str, modelId: str, accept: str, contentType: str
+        ) -> dict:
             pass
+
+
+def conform_query(query: str, provider: str) -> dict:
+    # replace newlines, which can negatively affect performance.
+    text = query.replace(os.linesep, " ")
+
+    # format input body for provider
+    input_body = {}
+    if provider == "cohere":
+        if "input_type" not in input_body:
+            input_body["input_type"] = "search_document"
+        input_body["texts"] = [text]
+    else:
+        # includes common provider == "amazon"
+        input_body["inputText"] = text
+    json.dumps(input_body)
 
 
 class BedrockEmbeddingConfig(EmbeddingConfig):
@@ -83,20 +101,8 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
-        # replace newlines, which can negatively affect performance.
-        text = query.replace(os.linesep, " ")
-
-        # format input body for provider
         provider = self.config.embed_model_name.split(".")[0]
-        input_body = {}
-        if provider == "cohere":
-            if "input_type" not in input_body:
-                input_body["input_type"] = "search_document"
-            input_body["texts"] = [text]
-        else:
-            # includes common provider == "amazon"
-            input_body["inputText"] = text
-        body = json.dumps(input_body)
+        body = conform_query(query=query, provider=provider)
 
         bedrock_client = self.config.get_client()
         # invoke bedrock API
@@ -136,7 +142,6 @@ class AsyncBedrockEmbeddingConfig(EmbeddingConfig):
     )
     @asynccontextmanager
     async def get_client(self) -> AsyncContextManager["AsyncBedrockClient"]:
-        # delay import only when needed
         import aioboto3
 
         session = aioboto3.Session()
@@ -155,21 +160,8 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
-        # replace newlines, which can negatively affect performance.
-        text = query.replace(os.linesep, " ")
-
-        # format input body for provider
         provider = self.config.embed_model_name.split(".")[0]
-        input_body = {}
-        if provider == "cohere":
-            if "input_type" not in input_body:
-                input_body["input_type"] = "search_document"
-            input_body["texts"] = [text]
-        else:
-            # includes common provider == "amazon"
-            input_body["inputText"] = text
-        body = json.dumps(input_body)
-
+        body = conform_query(query=query, provider=provider)
         try:
             async with self.config.get_client() as bedrock_client:
                 # invoke bedrock API
