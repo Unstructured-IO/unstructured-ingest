@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import AsyncIterator, Iterator
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -100,6 +101,15 @@ class OnedriveIndexerConfig(IndexerConfig):
     path: Optional[str] = Field(default="")
     recursive: bool = False
 
+def async_iterable_to_sync_iterable(iterator: AsyncIterator) -> Iterator:
+    with asyncio.Runner() as runner:
+        while True:
+            try:
+                # anext() is only Python 3.10+, otherwise use `await iterator.__anext__()`
+                result = runner.run(anext(iterator))
+                yield result
+            except StopAsyncIteration:
+                break
 
 @dataclass
 class OnedriveIndexer(Indexer):
@@ -125,12 +135,10 @@ class OnedriveIndexer(Indexer):
 
         folders = [d for d in drive_items if d.is_folder]
         for f in folders:
-            # Use the sync method instead of the async one here
             files.extend(self.list_objects_sync(f, recursive))
         return files
 
     async def list_objects(self, folder: "DriveItem", recursive: bool) -> list["DriveItem"]:
-        # Offload the blocking operation
         return await asyncio.to_thread(self.list_objects_sync, folder, recursive)
 
     def get_root_sync(self, client: "GraphClient") -> "DriveItem":
@@ -196,35 +204,26 @@ class OnedriveIndexer(Indexer):
         # Offload the file data creation if it's not guaranteed async
         return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
 
-    async def _run_async(self, **kwargs: Any) -> list[FileData]:
-        # This method encapsulates the async logic and returns a list instead of a generator
+    async def _run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
             raise SourceConnectionError(
-                "{} ({})".format(token_resp["error"], token_resp.get("error_description"))
+                f"[{CONNECTOR_TYPE}]: {token_resp['error']} ({token_resp.get('error_description')})"
             )
 
         client = await asyncio.to_thread(self.connection_config.get_client)
         root = await self.get_root(client=client)
         drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
 
-        results = []
         for drive_item in drive_items:
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
-            results.append(file_data)
-
-        return results
+            yield file_data
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        # Use asyncio.run to execute the async code and get results synchronously
-        try:
-            results = asyncio.run(self._run_async(**kwargs))
-            # Now `results` is a list of FileData; we can yield them in a normal sync context
-            for r in results:
-                yield r
-        except Exception as e:
-            logger.error(f"[{CONNECTOR_TYPE}] Exception during indexing: {e}", exc_info=True)
-            raise
+        # Convert the async generator to a sync generator without loading all data into memory
+        async_gen = self._run_async(**kwargs)
+        for item in async_iterable_to_sync_iterable(async_gen):
+            yield item
 
 
 class OnedriveDownloaderConfig(DownloaderConfig):
