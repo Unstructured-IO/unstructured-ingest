@@ -14,12 +14,18 @@ from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
 )
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
+    source_connector_validation,
+)
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.astradb import (
     CONNECTOR_TYPE,
     AstraDBAccessConfig,
     AstraDBConnectionConfig,
+    AstraDBDownloader,
+    AstraDBDownloaderConfig,
     AstraDBIndexer,
     AstraDBIndexerConfig,
     AstraDBUploader,
@@ -108,6 +114,40 @@ def collection(upload_file: Path) -> Collection:
         yield collection
     finally:
         astra_db.drop_collection(collection)
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@requires_env("ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN")
+async def test_astra_search_source(
+    tmp_path: Path,
+):
+    env_data = get_env_data()
+    collection_name = "ingest_test_src"
+    connection_config = AstraDBConnectionConfig(
+        access_config=AstraDBAccessConfig(token=env_data.token, api_endpoint=env_data.api_endpoint)
+    )
+    indexer = AstraDBIndexer(
+        index_config=AstraDBIndexerConfig(
+            collection_name=collection_name,
+        ),
+        connection_config=connection_config,
+    )
+    downloader = AstraDBDownloader(
+        connection_config=connection_config,
+        download_config=AstraDBDownloaderConfig(download_dir=tmp_path),
+    )
+
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id=CONNECTOR_TYPE,
+            expected_num_files=5,
+            expected_number_indexed_file_data=1,
+            validate_downloaded_files=True,
+        ),
+    )
 
 
 @pytest.mark.asyncio
