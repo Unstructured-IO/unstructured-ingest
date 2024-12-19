@@ -1,8 +1,12 @@
-## 0.3.11-dev0
+## 0.3.11-dev1
 
 ### Enhancements
 
 * **Support Databricks personal access token**
+
+### Fixes
+
+* **Fixes issue with missing `source_identifiers` parameter in `fsspec`**
 
 ## 0.3.10
 
