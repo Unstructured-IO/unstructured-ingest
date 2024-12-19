@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 
 import pytest
-from unstructured_client.models.errors.sdkerror import SDKError
 
 from test.integration.utils import requires_env
+from unstructured_ingest.v2.errors import UserError
 from unstructured_ingest.v2.processes.partitioner import Partitioner, PartitionerConfig
 
 int_test_dir = Path(__file__).parent
@@ -18,6 +18,9 @@ non_image_partition_files = [
 image_partition_files = [
     path for path in all_partition_files if path not in non_image_partition_files
 ]
+
+os.environ["UNSTRUCTURED_API_KEY"] = "8ZXo8Fc1gsYQynxCfwUFaoXB5aTq0t"
+os.environ["UNSTRUCTURED_API_URL"] = "https://api.unstructuredapp.io"
 
 
 @pytest.mark.parametrize(
@@ -71,5 +74,5 @@ async def test_partitioner_api_fast_error(partition_file: Path):
         strategy="fast", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
     )
     partitioner = Partitioner(config=partitioner_config)
-    with pytest.raises(SDKError):
+    with pytest.raises(UserError):
         await partitioner.run_async(filename=partition_file)
