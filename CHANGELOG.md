@@ -1,3 +1,9 @@
+## 0.3.12-dev0
+
+### Enhancements
+
+* **Async support for all IO-bounded embedders**
+
 ## 0.3.11
 
 ### Enhancements

@@ -2,9 +2,20 @@ import json
 import os
 from pathlib import Path
 
-from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
+import pytest
+
+from test.integration.embedders.utils import (
+    validate_embedding_output,
+    validate_raw_embedder,
+    validate_raw_embedder_async,
+)
 from test.integration.utils import requires_env
-from unstructured_ingest.embed.bedrock import BedrockEmbeddingConfig, BedrockEmbeddingEncoder
+from unstructured_ingest.embed.bedrock import (
+    AsyncBedrockEmbeddingConfig,
+    AsyncBedrockEmbeddingEncoder,
+    BedrockEmbeddingConfig,
+    BedrockEmbeddingEncoder,
+)
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
 
@@ -42,6 +53,24 @@ def test_raw_bedrock_embedder(embedder_file: Path):
         )
     )
     validate_raw_embedder(
+        embedder=embedder,
+        embedder_file=embedder_file,
+        expected_dimensions=(1536,),
+        expected_is_unit_vector=False,
+    )
+
+
+@requires_env("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
+@pytest.mark.asyncio
+async def test_raw_async_bedrock_embedder(embedder_file: Path):
+    aws_credentials = get_aws_credentials()
+    embedder = AsyncBedrockEmbeddingEncoder(
+        config=AsyncBedrockEmbeddingConfig(
+            aws_access_key_id=aws_credentials["aws_access_key_id"],
+            aws_secret_access_key=aws_credentials["aws_secret_access_key"],
+        )
+    )
+    await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimensions=(1536,),
