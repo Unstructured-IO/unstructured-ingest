@@ -89,7 +89,7 @@ async def call_api_async(
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     try:
-        res = await client.general.partition(request=partition_request)
+        res = await client.general.partition_async(request=partition_request)
     except Exception as e:
         handle_error(e)
 
