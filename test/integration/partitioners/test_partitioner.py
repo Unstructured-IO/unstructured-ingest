@@ -19,9 +19,6 @@ image_partition_files = [
     path for path in all_partition_files if path not in non_image_partition_files
 ]
 
-os.environ["UNSTRUCTURED_API_KEY"] = "8ZXo8Fc1gsYQynxCfwUFaoXB5aTq0t"
-os.environ["UNSTRUCTURED_API_URL"] = "https://api.unstructuredapp.io"
-
 
 @pytest.mark.parametrize(
     "partition_file", all_partition_files, ids=[path.name for path in all_partition_files]
