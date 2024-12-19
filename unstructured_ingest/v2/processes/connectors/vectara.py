@@ -137,14 +137,20 @@ class VectaraUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @property
-    async def jwt_token(self) -> str:
+    async def jwt_token_async(self) -> str:
         if not self._jwt_token or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60:
-            self._jwt_token = await self._get_jwt_token()
+            self._jwt_token = await self._get_jwt_token_async()
+        return self._jwt_token
+
+    @property
+    def jwt_token(self) -> str:
+        if not self._jwt_token or self._jwt_token_expires_ts - datetime.now().timestamp() <= 60:
+            self._jwt_token = self._get_jwt_token()
         return self._jwt_token
 
     # Get Oauth2 JWT token
     @requires_dependencies(["httpx"], extras="vectara")
-    async def _get_jwt_token(self) -> str:
+    async def _get_jwt_token_async(self) -> str:
         import httpx
 
         """Connect to the server and get a JWT token."""
@@ -168,8 +174,34 @@ class VectaraUploader(Uploader):
 
         return response_json.get("access_token")
 
+    # Get Oauth2 JWT token
+    @requires_dependencies(["httpx"], extras="vectara")
+    def _get_jwt_token(self) -> str:
+        import httpx
+
+        """Connect to the server and get a JWT token."""
+        token_endpoint = self.connection_config.token_url.format(self.connection_config.customer_id)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": self.connection_config.access_config.get_secret_value().oauth_client_id,
+            "client_secret": self.connection_config.access_config.get_secret_value().oauth_secret,
+        }
+
+        with httpx.Client() as client:
+            response = client.post(token_endpoint, headers=headers, data=data)
+            response.raise_for_status()
+            response_json = response.json()
+
+        request_time = datetime.now().timestamp()
+        self._jwt_token_expires_ts = request_time + response_json.get("expires_in")
+
+        return response_json.get("access_token")
+
     @DestinationConnectionError.wrap
-    async def _check_connection_and_corpora(self) -> None:
+    def _check_connection_and_corpora(self) -> None:
         """
         Check the connection for Vectara and validate corpus exists.
         - If more than one corpus with the same name exists - raise error
@@ -177,9 +209,9 @@ class VectaraUploader(Uploader):
         - If does not exist - raise error.
         """
         # Get token if not already set
-        await self.jwt_token
+        self.jwt_token
 
-        _, list_corpora_response = await self._request(
+        _, list_corpora_response = self._request(
             http_method="GET",
             endpoint="corpora",
         )
@@ -211,7 +243,7 @@ class VectaraUploader(Uploader):
                 )
 
     @requires_dependencies(["httpx"], extras="vectara")
-    async def _request(
+    async def _async_request(
         self,
         endpoint: str,
         http_method: str = "POST",
@@ -225,7 +257,7 @@ class VectaraUploader(Uploader):
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "Authorization": f"Bearer {await self.jwt_token}",
+            "Authorization": f"Bearer {await self.jwt_token_async}",
             "X-source": "unstructured",
         }
 
@@ -236,12 +268,38 @@ class VectaraUploader(Uploader):
             response.raise_for_status()
             return response.json()
 
+    @requires_dependencies(["httpx"], extras="vectara")
+    def _request(
+        self,
+        endpoint: str,
+        http_method: str = "POST",
+        params: Mapping[str, Any] = None,
+        data: Mapping[str, Any] = None,
+    ) -> tuple[bool, dict]:
+        import httpx
+
+        url = f"{BASE_URL}/{endpoint}"
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+            "X-source": "unstructured",
+        }
+
+        with httpx.Client() as client:
+            response = client.request(
+                method=http_method, url=url, headers=headers, params=params, json=data
+            )
+            response.raise_for_status()
+            return response.json()
+
     async def _delete_doc(self, doc_id: str) -> tuple[bool, dict]:
         """
         Delete a document from the Vectara corpus.
         """
 
-        return await self._request(
+        return await self._async_request(
             endpoint=f"corpora/{self.connection_config.corpus_key}/documents/{doc_id}",
             http_method="DELETE",
         )
@@ -256,7 +314,7 @@ class VectaraUploader(Uploader):
         )
 
         try:
-            result = await self._request(
+            result = await self._async_request(
                 endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=document
             )
         except Exception as e:
@@ -276,7 +334,7 @@ class VectaraUploader(Uploader):
         ):
             logger.info(f"document {document['id']} already exists, re-indexing")
             await self._delete_doc(document["id"])
-            await self._request(
+            await self._async_request(
                 endpoint=f"corpora/{self.connection_config.corpus_key}/documents", data=document
             )
             return
