@@ -74,7 +74,7 @@ async def redis_destination_test(
 
     try:
         if uploader.is_async():
-            await uploader.run_async(path=upload_file, file_data=file_data)
+            await uploader.run_data_async(data=elements, file_data=file_data)
 
         if uri:
             async with from_url(uri) as client:

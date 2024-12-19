@@ -1,7 +1,6 @@
 import json
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
 
 from pydantic import Field, Secret, model_validator
@@ -130,24 +129,16 @@ class RedisUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["redis"], extras="redis")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
-
-        if not elements_dict:
-            return
-
-        first_element = elements_dict[0]
+    async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        first_element = data[0]
         redis_stack = await self._check_redis_stack(first_element)
-
         logger.info(
-            f"writing {len(elements_dict)} objects to destination asynchronously, "
+            f"writing {len(data)} objects to destination asynchronously, "
             f"db, {self.connection_config.database}, "
             f"at {self.connection_config.host}",
         )
 
-        batches = list(batch_generator(elements_dict, batch_size=self.upload_config.batch_size))
+        batches = list(batch_generator(data, batch_size=self.upload_config.batch_size))
         await asyncio.gather(*[self._write_batch(batch, redis_stack) for batch in batches])
 
     async def _write_batch(self, batch: list[dict], redis_stack: bool) -> None:
