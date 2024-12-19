@@ -6,7 +6,13 @@ from pydantic import Field, SecretStr
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
+from unstructured_ingest.v2.errors import (
+    ProviderError,
+    QuotaError,
+    RateLimitError,
+    UserAuthError,
+    UserError,
+)
 
 if TYPE_CHECKING:
     from openai import OpenAI
@@ -34,16 +40,20 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         if not isinstance(e, APIStatusError):
             logger.error(f"unhandled exception from openai: {e}", exc_info=True)
             raise e
+        error_code = e.code
         if 400 <= e.status_code < 500:
             # user error
             if e.status_code == 401:
-                raise UserAuthError(e.message)
+                raise UserAuthError(e.message) from e
             if e.status_code == 429:
                 # 429 indicates rate limit exceeded and quote exceeded
-                raise RateLimitError(e.message)
-            raise UserError(e.message)
+                if error_code == "insufficient_quota":
+                    raise QuotaError(e.message) from e
+                else:
+                    raise RateLimitError(e.message) from e
+            raise UserError(e.message) from e
         if e.status_code >= 500:
-            raise ProviderError(e.message)
+            raise ProviderError(e.message) from e
         logger.error(f"unhandled exception from openai: {e}", exc_info=True)
         raise e
 
