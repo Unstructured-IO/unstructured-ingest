@@ -1,3 +1,10 @@
+## 0.3.12-dev0
+
+### Fixes
+
+* **Fix Snowflake Uploader error**
+* **Fix SQL Uploader Stager timestamp error**
+
 ## 0.3.11
 
 ### Enhancements
