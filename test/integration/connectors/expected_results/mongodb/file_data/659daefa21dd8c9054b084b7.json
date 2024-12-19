@@ -4,7 +4,7 @@
   "source_identifiers": {
     "filename": "659daefa21dd8c9054b084b7.txt",
     "fullpath": "659daefa21dd8c9054b084b7.txt",
-    "rel_path": "659daefa21dd8c9054b084b7.txt"
+    "rel_path": null
   },
   "metadata": {
     "url": null,
@@ -16,7 +16,7 @@
     },
     "date_created": "2024-01-09T20:39:22+00:00",
     "date_modified": null,
-    "date_processed": "1734380792.896338",
+    "date_processed": "1734616944.92011",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -25,6 +25,6 @@
     "collection": "sample-mongodb-data"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpyfmsos4r/659daefa21dd8c9054b084b7.txt",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpc2l6l7w3/659daefa21dd8c9054b084b7.txt",
   "display_name": null
 }

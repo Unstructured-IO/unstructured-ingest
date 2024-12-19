@@ -32,6 +32,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
     download_responses,
+    SourceIdentifiers
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -261,6 +262,10 @@ class CouchbaseDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
+        file_data.source_identifiers = SourceIdentifiers(
+            filename=filename,
+            fullpath=filename
+        )
         cast_file_data = FileData.cast(file_data=file_data)
         cast_file_data.identifier = filename_id
         cast_file_data.metadata.date_processed = str(time.time())
