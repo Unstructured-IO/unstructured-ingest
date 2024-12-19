@@ -1,3 +1,10 @@
+## 0.3.11-dev1
+
+### Enhancements
+
+* **fix for URL style character in fsspec url**
+
+
 ## 0.3.11-dev0
 
 ### Enhancements

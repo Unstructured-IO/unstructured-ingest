@@ -5,10 +5,10 @@ import random
 import shutil
 import tempfile
 from contextlib import contextmanager
-from urllib.parse import unquote
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
+from urllib.parse import unquote
 from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field, Secret
@@ -110,11 +110,17 @@ class FsspecIndexer(Indexer):
             )
             files = fs.ls(path=self.index_config.path_without_protocol, detail=True)
             if files is None:
-                logger.error(f"[{CONNECTOR_TYPE}]fs.ls returned None for path: {self.index_config.path_without_protocol}")
+                logger.error(
+                    f"[{CONNECTOR_TYPE}]fs.ls returned None for path: \
+                    {self.index_config.path_without_protocol}"
+                )
                 raise SourceConnectionError("No files returned. Check if path is correct.")
             valid_files = [x.get("name") for x in files if x.get("type") == "file"]
             if not valid_files:
-                logger.warning(f"[{CONNECTOR_TYPE}]There was no files found at path: {self.index_config.path_without_protocol}")
+                logger.warning(
+                    f"[{CONNECTOR_TYPE}]There was no files found at path: \
+                    {self.index_config.path_without_protocol}"
+                )
                 return
             file_to_sample = valid_files[0]
             logger.debug(f"attempting to make HEAD request for file: {file_to_sample}")
