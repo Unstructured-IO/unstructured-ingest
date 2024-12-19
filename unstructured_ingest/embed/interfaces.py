@@ -17,10 +17,10 @@ class BaseEmbeddingEncoder(ABC):
         """Initializes the embedding encoder class. Should also validate the instance
         is properly configured: e.g., embed a single a element"""
 
-    def handle_error(self, e: Exception):
+    def wrap_error(self, e: Exception) -> Exception:
         """Handle errors from the embedding service. Should raise a more informative error
         if possible"""
-        raise e
+        return e
 
     @property
     def num_of_dimensions(self) -> tuple[int, ...]:
