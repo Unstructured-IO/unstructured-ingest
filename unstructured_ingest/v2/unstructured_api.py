@@ -2,6 +2,7 @@ from dataclasses import fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
@@ -65,13 +66,26 @@ async def call_api_async(
     Returns: A list of the file's elements, or an empty list if there was an error
     """
     from unstructured_client import UnstructuredClient
+    from unstructured_client.models.errors.sdkerror import SDKError
 
     client = UnstructuredClient(
         server_url=server_url,
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
-    res = await client.general.partition_async(request=partition_request)
+    try:
+        res = await client.general.partition(request=partition_request)
+    except SDKError as e:
+        logger.error(f"Error calling API: {e}")
+        if 400 <= e.status_code < 500:
+            raise UserError(e.body)
+        elif e.status_code >= 500:
+            raise ProviderError(e.body)
+        else:
+            raise e
+    except Exception as e:
+        logger.error(f"Uncaught Error calling API: {e}")
+        raise e
 
     return res.elements or []
 
@@ -90,12 +104,20 @@ def call_api(
     Returns: A list of the file's elements, or an empty list if there was an error
     """
     from unstructured_client import UnstructuredClient
+    from unstructured_client.models.errors.sdkerror import SDKError
 
     client = UnstructuredClient(
         server_url=server_url,
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
-    res = client.general.partition(request=partition_request)
+    try:
+        res = client.general.partition(request=partition_request)
+    except SDKError as e:
+        logger.error(f"Error calling API: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Uncaught Error calling API: {e}")
+        return []
 
     return res.elements or []

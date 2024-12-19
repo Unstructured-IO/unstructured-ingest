@@ -1,3 +1,9 @@
+## 0.3.12-dev0
+
+### Enhancements
+
+* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
+
 ## 0.3.11
 
 ### Enhancements
