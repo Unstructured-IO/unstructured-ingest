@@ -6,7 +6,6 @@
     "fullpath": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
     "rel_path": "recalibrating-risk-report.pdf"
   },
-  "doc_type": "file",
   "metadata": {
     "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
     "version": "e690f37ef36368a509d150f373a0bbe0",
@@ -16,7 +15,7 @@
     },
     "date_created": "1676196572.0",
     "date_modified": "1676196572.0",
-    "date_processed": "1730944104.616075",
+    "date_processed": "1734441638.170231",
     "permissions_data": null,
     "filesize_bytes": 806335
   },
@@ -32,6 +31,6 @@
     "original_file_path": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpa5ftry9m/recalibrating-risk-report.pdf",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp9zapkzvk/recalibrating-risk-report.pdf",
   "display_name": "utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf"
 }

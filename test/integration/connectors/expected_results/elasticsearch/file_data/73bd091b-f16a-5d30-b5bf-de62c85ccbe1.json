@@ -1,0 +1,63 @@
+{
+  "identifier": "73bd091b-f16a-5d30-b5bf-de62c85ccbe1",
+  "connector_type": "elasticsearch",
+  "source_identifiers": null,
+  "metadata": {
+    "url": "http://localhost:9200/movies",
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1734441751.49743",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "index_name": "movies"
+  },
+  "reprocess": false,
+  "local_download_path": null,
+  "display_name": null,
+  "batch_items": [
+    {
+      "identifier": "0",
+      "version": null
+    },
+    {
+      "identifier": "1",
+      "version": null
+    },
+    {
+      "identifier": "2",
+      "version": null
+    },
+    {
+      "identifier": "3",
+      "version": null
+    },
+    {
+      "identifier": "4",
+      "version": null
+    },
+    {
+      "identifier": "5",
+      "version": null
+    },
+    {
+      "identifier": "6",
+      "version": null
+    },
+    {
+      "identifier": "7",
+      "version": null
+    },
+    {
+      "identifier": "8",
+      "version": null
+    },
+    {
+      "identifier": "9",
+      "version": null
+    }
+  ]
+}

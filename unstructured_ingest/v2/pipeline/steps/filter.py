@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from unstructured_ingest.v2.interfaces.file_data import FileData
+from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.processes.filter import Filterer
@@ -20,7 +20,7 @@ class FilterStep(PipelineStep):
         logger.info(f"created {self.identifier} with configs: {config}")
 
     async def _run_async(self, fn: Callable, file_data_path: str, **kwargs) -> Optional[dict]:
-        file_data = FileData.from_file(path=file_data_path)
+        file_data = file_data_from_file(path=file_data_path)
         fn_kwargs = {"file_data": file_data}
         if not asyncio.iscoroutinefunction(fn):
             resp = fn(**fn_kwargs)

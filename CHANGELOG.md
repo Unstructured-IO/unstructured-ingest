@@ -1,4 +1,25 @@
-## 0.3.9-dev5
+## 0.3.11-dev1
+
+### Enhancements
+
+* **Support Databricks personal access token**
+
+### Fixes
+
+* **Fixes issue with missing `source_identifiers` parameter in `fsspec`**
+
+## 0.3.10
+
+### Enhancements
+
+* **Support more concrete FileData content for batch support**
+
+### Fixes
+
+* **Add Neo4J to ingest destination connector registry**
+* **Fix closing SSHClient in sftp connector**
+
+## 0.3.9
 
 ### Enhancements
 
@@ -9,7 +30,6 @@
 ### Fixes
 
 * **Make sure any SDK clients that support closing get called**
-* **Fixes issue with missing `source_identifiers` parameter in `fsspec`**
 
 ## 0.3.8
 

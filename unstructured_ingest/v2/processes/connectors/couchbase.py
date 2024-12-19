@@ -1,5 +1,4 @@
 import hashlib
-import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -7,7 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, List
 
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -18,6 +17,8 @@ from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -40,9 +41,18 @@ from unstructured_ingest.v2.processes.connector_registry import (
 
 if TYPE_CHECKING:
     from couchbase.cluster import Cluster
+    from couchbase.collection import Collection
 
 CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
+
+
+class CouchbaseAdditionalMetadata(BaseModel):
+    bucket: str
+
+
+class CouchbaseBatchFileData(BatchFileData):
+    additional_metadata: CouchbaseAdditionalMetadata
 
 
 class CouchbaseAccessConfig(AccessConfig):
@@ -180,31 +190,21 @@ class CouchbaseIndexer(Indexer):
                 if attempts == max_attempts:
                     raise SourceConnectionError(f"failed to get document ids: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[CouchbaseBatchFileData, None, None]:
         ids = self._get_doc_ids()
-
-        id_batches = [
-            ids[i * self.index_config.batch_size : (i + 1) * self.index_config.batch_size]
-            for i in range(
-                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
-            )
-        ]
-        for batch in id_batches:
+        for batch in batch_generator(ids, self.index_config.batch_size):
             # Make sure the hash is always a positive number to create identified
-            identified = str(hash(tuple(batch)) + sys.maxsize + 1)
-            yield FileData(
-                identifier=identified,
+            yield CouchbaseBatchFileData(
                 connector_type=CONNECTOR_TYPE,
-                doc_type="batch",
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.connection_string}/"
                     f"{self.connection_config.bucket}",
                     date_processed=str(time.time()),
                 ),
-                additional_metadata={
-                    "ids": list(batch),
-                    "bucket": self.connection_config.bucket,
-                },
+                additional_metadata=CouchbaseAdditionalMetadata(
+                    bucket=self.connection_config.bucket
+                ),
+                batch_items=[BatchItem(identifier=b) for b in batch],
             )
 
 
@@ -241,7 +241,7 @@ class CouchbaseDownloader(Downloader):
         return concatenated_values
 
     def generate_download_response(
-        self, result: dict, bucket: str, file_data: FileData
+        self, result: dict, bucket: str, file_data: CouchbaseBatchFileData
     ) -> DownloadResponse:
         record_id = result[self.download_config.collection_id]
         filename_id = self.get_identifier(bucket=bucket, record_id=record_id)
@@ -261,28 +261,25 @@ class CouchbaseDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-        return DownloadResponse(
-            file_data=FileData(
-                identifier=filename_id,
-                connector_type=CONNECTOR_TYPE,
-                metadata=FileDataSourceMetadata(
-                    version=None,
-                    date_processed=str(time.time()),
-                    record_locator={
-                        "connection_string": self.connection_config.connection_string,
-                        "bucket": bucket,
-                        "scope": self.connection_config.scope,
-                        "collection": self.connection_config.collection,
-                        "document_id": record_id,
-                    },
-                ),
-            ),
-            path=download_path,
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename_id
+        cast_file_data.metadata.date_processed = str(time.time())
+        cast_file_data.metadata.record_locator = {
+            "connection_string": self.connection_config.connection_string,
+            "bucket": bucket,
+            "scope": self.connection_config.scope,
+            "collection": self.connection_config.collection,
+            "document_id": record_id,
+        }
+        return super().generate_download_response(
+            file_data=cast_file_data,
+            download_path=download_path,
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        bucket_name: str = file_data.additional_metadata["bucket"]
-        ids: list[str] = file_data.additional_metadata["ids"]
+        couchbase_file_data = CouchbaseBatchFileData.cast(file_data=file_data)
+        bucket_name: str = couchbase_file_data.additional_metadata.bucket
+        ids: list[str] = [item.identifier for item in couchbase_file_data.batch_items]
 
         with self.connection_config.get_client() as client:
             bucket = client.bucket(bucket_name)
@@ -292,13 +289,25 @@ class CouchbaseDownloader(Downloader):
             download_resp = self.process_all_doc_ids(ids, collection, bucket_name, file_data)
             return list(download_resp)
 
-    def process_doc_id(self, doc_id, collection, bucket_name, file_data):
+    def process_doc_id(
+        self,
+        doc_id: str,
+        collection: "Collection",
+        bucket_name: str,
+        file_data: CouchbaseBatchFileData,
+    ):
         result = collection.get(doc_id)
         return self.generate_download_response(
             result=result.content_as[dict], bucket=bucket_name, file_data=file_data
         )
 
-    def process_all_doc_ids(self, ids, collection, bucket_name, file_data):
+    def process_all_doc_ids(
+        self,
+        ids: list[str],
+        collection: "Collection",
+        bucket_name: str,
+        file_data: CouchbaseBatchFileData,
+    ):
         for doc_id in ids:
             yield self.process_doc_id(doc_id, collection, bucket_name, file_data)
 
