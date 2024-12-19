@@ -1,8 +1,12 @@
-## 0.3.11-dev0
+## 0.3.11-dev1
 
 ### Enhancements
 
 * **Support Databricks personal access token**
+
+### Fixes
+
+* **Fix missing source identifiers in some downloaders**
 
 ## 0.3.10
 
