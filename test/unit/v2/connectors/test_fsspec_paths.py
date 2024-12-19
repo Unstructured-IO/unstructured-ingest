@@ -17,7 +17,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     [
         ("dropbox://da ta", "da ta"),
         ("dropbox://da%20ta", "da ta"),
-    ]
+    ],
 )
 def test_fsspec_indexer_path_decoding(remote_url, expected_path):
     index_config = FsspecIndexerConfig(remote_url=remote_url)
