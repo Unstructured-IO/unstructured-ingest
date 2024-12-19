@@ -73,44 +73,33 @@ class VectaraUploadStager(UploadStager):
         md = {metadata_map[k]: v for k, v in md.items() if k in metadata_map}
         return md
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
+    def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
+        with input_file.open() as in_f:
+            elements_contents = json.load(in_f)
 
         logger.info(
-            f"Extending {len(elements_contents)} json elements from content in {elements_filepath}"
+            f"Extending {len(elements_contents)} json elements from content in {input_file}"
         )
 
-        docs_list = []
+        conformed_elements = [
+            {
+                "id": str(uuid.uuid4()),
+                "type": "core",
+                "metadata": {
+                    "title": file_data.identifier,
+                },
+                "document_parts": [
+                    {
+                        "text": element.pop("text", None),
+                        "metadata": self.conform_dict(data=element),
+                    }
+                    for element in elements_contents
+                ],
+            }
+        ]
 
-        conformed_elements = {
-            "id": str(uuid.uuid4()),
-            "type": "core",
-            "metadata": {
-                "title": file_data.identifier,
-            },
-            "document_parts": [
-                {
-                    "text": element.pop("text", None),
-                    "metadata": self.conform_dict(data=element),
-                }
-                for element in elements_contents
-            ],
-        }
-
-        docs_list.append(conformed_elements)
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(docs_list, output_file)
-        return output_path
+        with open(output_file, "w") as out_f:
+            json.dump(conformed_elements, out_f, indent=2)
 
 
 class VectaraUploaderConfig(UploaderConfig):
