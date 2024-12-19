@@ -17,7 +17,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.sql.snowflake import (
     CONNECTOR_TYPE,
     SnowflakeAccessConfig,
@@ -170,7 +170,11 @@ async def test_snowflake_destination(
 ):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
-    mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(filename=upload_file.name, fullpath=upload_file.name),
+    )
     init_db_destination()
     stager = SnowflakeUploadStager()
     staged_path = stager.run(

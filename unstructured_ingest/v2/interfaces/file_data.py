@@ -36,7 +36,7 @@ class FileDataSourceMetadata(BaseModel):
 class FileData(BaseModel):
     identifier: str
     connector_type: str
-    source_identifiers: Optional[SourceIdentifiers] = None
+    source_identifiers: SourceIdentifiers
     metadata: FileDataSourceMetadata = Field(default_factory=lambda: FileDataSourceMetadata())
     additional_metadata: dict[str, Any] = Field(default_factory=dict)
     reprocess: bool = False
@@ -73,6 +73,7 @@ class BatchItem(BaseModel):
 class BatchFileData(FileData):
     identifier: str = Field(init=False)
     batch_items: list[BatchItem]
+    source_identifiers: Optional[SourceIdentifiers] = None
 
     @field_validator("batch_items")
     @classmethod
@@ -104,3 +105,12 @@ def file_data_from_file(path: str) -> FileData:
         logger.debug(f"{path} not valid for batch file data")
 
     return FileData.from_file(path=path)
+
+
+def file_data_from_dict(data: dict) -> FileData:
+    try:
+        return BatchFileData.model_validate(data)
+    except ValidationError:
+        logger.debug(f"{data} not valid for batch file data")
+
+    return FileData.model_validate(data)

@@ -15,7 +15,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.sql.singlestore import (
     CONNECTOR_TYPE,
     SingleStoreAccessConfig,
@@ -103,7 +103,11 @@ def validate_destination(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
 async def test_singlestore_destination(upload_file: Path, temp_dir: Path):
-    mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(filename=upload_file.name, fullpath=upload_file.name),
+    )
     with docker_compose_context(
         docker_compose_path=env_setup_path / "sql" / "singlestore" / "destination"
     ):
