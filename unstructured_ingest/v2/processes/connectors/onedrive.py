@@ -5,8 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional
-from typing import AsyncIterator, Iterator
+from typing import TYPE_CHECKING, Any, AsyncIterator, Generator, Iterator, Optional, TypeVar
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -101,15 +100,27 @@ class OnedriveIndexerConfig(IndexerConfig):
     path: Optional[str] = Field(default="")
     recursive: bool = False
 
-def async_iterable_to_sync_iterable(iterator: AsyncIterator) -> Iterator:
-    with asyncio.Runner() as runner:
+
+T = TypeVar("T")
+
+
+def async_iterable_to_sync_iterable(iterator: AsyncIterator[T]) -> Iterator[T]:
+    # This version works on Python 3.9 by manually handling the async iteration.
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
         while True:
             try:
-                # anext() is only Python 3.10+, otherwise use `await iterator.__anext__()`
-                result = runner.run(anext(iterator))
+                # Instead of anext(iterator), we directly call __anext__().
+                # __anext__ returns a coroutine that we must run until complete.
+                future = iterator.__anext__()
+                result = loop.run_until_complete(future)
                 yield result
             except StopAsyncIteration:
                 break
+    finally:
+        loop.close()
+
 
 @dataclass
 class OnedriveIndexer(Indexer):
