@@ -41,14 +41,11 @@ class LanceDBConnectionConfig(ConnectionConfig, ABC):
     async def get_async_connection(self) -> AsyncGenerator["AsyncConnection", None]:
         import lancedb
 
-        connection = await lancedb.connect_async(
+        with await lancedb.connect_async(
             self.uri,
             storage_options=self.get_storage_options(),
-        )
-        try:
+        ) as connection:
             yield connection
-        finally:
-            connection.close()
 
 
 class LanceDBRemoteConnectionConfig(LanceDBConnectionConfig):
@@ -85,8 +82,8 @@ class LanceDBUploadStager(UploadStager):
 
         df = pd.DataFrame(
             [
-                self._conform_element_contents(element_contents, file_data)
-                for element_contents in elements_contents
+                self.conform_dict(element_dict=element_dict, file_data=file_data)
+                for element_dict in elements_contents
             ]
         )
 
@@ -95,11 +92,12 @@ class LanceDBUploadStager(UploadStager):
 
         return output_path
 
-    def _conform_element_contents(self, element: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
         return {
-            "vector": element.pop("embeddings", None),
+            "vector": data.pop("embeddings", None),
             RECORD_ID_LABEL: file_data.identifier,
-            **flatten_dict(element, separator="-"),
+            **flatten_dict(data, separator="-"),
         }
 
 

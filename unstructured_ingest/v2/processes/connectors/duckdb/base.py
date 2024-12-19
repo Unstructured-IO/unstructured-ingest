@@ -1,5 +1,3 @@
-import json
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -7,6 +5,7 @@ from typing import Any
 import pandas as pd
 
 from unstructured_ingest.v2.interfaces import FileData, UploadStager
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 _COLUMNS = (
     "id",
@@ -56,6 +55,22 @@ _COLUMNS = (
 @dataclass
 class BaseDuckDBUploadStager(UploadStager):
 
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        metadata: dict[str, Any] = data.pop("metadata", {})
+        data_source = metadata.pop("data_source", {})
+        coordinates = metadata.pop("coordinates", {})
+
+        data.update(metadata)
+        data.update(data_source)
+        data.update(coordinates)
+
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
+
+        # remove extraneous, not supported columns
+        data = {k: v for k, v in data.items() if k in _COLUMNS}
+        return data
+
     def run(
         self,
         elements_filepath: Path,
@@ -64,29 +79,14 @@ class BaseDuckDBUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents: list[dict] = json.load(elements_file)
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        elements_contents = self.get_data(elements_filepath=elements_filepath)
+        output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
-        output = []
-        for data in elements_contents:
-            metadata: dict[str, Any] = data.pop("metadata", {})
-            data_source = metadata.pop("data_source", {})
-            coordinates = metadata.pop("coordinates", {})
-
-            data.update(metadata)
-            data.update(data_source)
-            data.update(coordinates)
-
-            data["id"] = str(uuid.uuid4())
-
-            # remove extraneous, not supported columns
-            data = {k: v for k, v in data.items() if k in _COLUMNS}
-
-            output.append(data)
-
-        df = pd.DataFrame.from_dict(output)
+        output = [
+            self.conform_dict(element_dict=element_dict, file_data=file_data)
+            for element_dict in elements_contents
+        ]
+        df = pd.DataFrame(data=output)
 
         for column in filter(
             lambda x: x in df.columns,
@@ -94,6 +94,6 @@ class BaseDuckDBUploadStager(UploadStager):
         ):
             df[column] = df[column].apply(str)
 
-        with output_path.open("w") as output_file:
-            df.to_json(output_file, orient="records", lines=True)
+        data = df.to_dict(orient="records")
+        self.write_output(output_path=output_path, data=data)
         return output_path

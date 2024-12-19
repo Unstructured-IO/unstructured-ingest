@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -13,6 +12,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLAccessConfig,
+    SqlBatchFileData,
     SQLConnectionConfig,
     SQLDownloader,
     SQLDownloaderConfig,
@@ -99,12 +99,12 @@ class PostgresDownloader(SQLDownloader):
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["psycopg2"], extras="postgres")
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         from psycopg2 import sql
 
-        table_name = file_data.additional_metadata["table_name"]
-        id_column = file_data.additional_metadata["id_column"]
-        ids = tuple(file_data.additional_metadata["ids"])
+        table_name = file_data.additional_metadata.table_name
+        id_column = file_data.additional_metadata.id_column
+        ids = tuple([item.identifier for item in file_data.batch_items])
 
         with self.connection_config.get_cursor() as cursor:
             fields = (

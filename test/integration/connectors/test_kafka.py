@@ -14,8 +14,8 @@ from test.integration.connectors.utils.constants import (
     env_setup_path,
 )
 from test.integration.connectors.utils.docker_compose import docker_compose_context
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -133,8 +133,8 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
-                test_id="kafka", expected_num_files=5, validate_downloaded_files=True
+            configs=SourceValidationConfigs(
+                test_id="kafka-local", expected_num_files=5, validate_downloaded_files=True
             ),
         )
 
@@ -218,8 +218,8 @@ async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
-                test_id="kafka",
+            configs=SourceValidationConfigs(
+                test_id="kafka-cloud",
                 exclude_fields_extend=["connector_type"],
                 expected_num_files=expected_messages,
                 validate_downloaded_files=True,

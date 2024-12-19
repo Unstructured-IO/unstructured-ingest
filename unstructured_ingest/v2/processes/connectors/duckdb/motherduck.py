@@ -1,12 +1,14 @@
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_io_ingest_version
 from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -27,13 +29,12 @@ CONNECTOR_TYPE = "motherduck"
 
 
 class MotherDuckAccessConfig(AccessConfig):
-    md_token: Optional[str] = Field(default=None, description="MotherDuck token")
+    md_token: str = Field(default=None, description="MotherDuck token")
 
 
 class MotherDuckConnectionConfig(ConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
-    database: Optional[str] = Field(
-        default=None,
+    database: str = Field(
         description="Database name. Name of the MotherDuck database.",
     )
     db_schema: Optional[str] = Field(
@@ -48,17 +49,26 @@ class MotherDuckConnectionConfig(ConnectionConfig):
         default=MotherDuckAccessConfig(), validate_default=True
     )
 
-    def __post_init__(self):
-        if self.database is None:
-            raise ValueError(
-                "A MotherDuck connection requires a database (string) to be passed "
-                "through the `database` argument"
-            )
-        if self.access_config.md_token is None:
-            raise ValueError(
-                "A MotherDuck connection requires a md_token (MotherDuck token) to be passed "
-                "using MotherDuckAccessConfig through the `access_config` argument"
-            )
+    @requires_dependencies(["duckdb"], extras="duckdb")
+    @contextmanager
+    def get_client(self) -> Generator["MotherDuckConnection", None, None]:
+        import duckdb
+
+        access_config = self.access_config.get_secret_value()
+        with duckdb.connect(
+            f"md:?motherduck_token={access_config.md_token}",
+            config={
+                "custom_user_agent": f"unstructured-io-ingest/{unstructured_io_ingest_version}"
+            },
+        ) as conn:
+            conn.sql(f"USE {self.database}")
+            yield conn
+
+    @contextmanager
+    def get_cursor(self) -> Generator["MotherDuckConnection", None, None]:
+        with self.get_client() as client:
+            with client.cursor() as cursor:
+                yield cursor
 
 
 class MotherDuckUploadStagerConfig(UploadStagerConfig):
@@ -84,44 +94,27 @@ class MotherDuckUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            cursor = self.connection().cursor()
-            cursor.execute("SELECT 1;")
-            cursor.close()
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @property
-    def connection(self) -> Callable[[], "MotherDuckConnection"]:
-        return self._make_motherduck_connection
+    def upload_dataframe(self, df: pd.DataFrame) -> None:
+        logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")
 
-    @requires_dependencies(["duckdb"], extras="duckdb")
-    def _make_motherduck_connection(self) -> "MotherDuckConnection":
-        import duckdb
-
-        access_config = self.connection_config.access_config.get_secret_value()
-        conn = duckdb.connect(
-            f"md:?motherduck_token={access_config.md_token}",
-            config={
-                "custom_user_agent": f"unstructured-io-ingest/{unstructured_io_ingest_version}"
-            },
-        )
-
-        conn.sql(f"USE {self.connection_config.database}")
-
-        return conn
-
-    def upload_contents(self, path: Path) -> None:
-        df_elements = pd.read_json(path, orient="records", lines=True)
-        logger.debug(f"uploading {len(df_elements)} entries to {self.connection_config.database} ")
-
-        with self.connection() as conn:
+        with self.connection_config.get_client() as conn:
             conn.query(
-                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df_elements"  # noqa: E501
+                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df"  # noqa: E501
             )
 
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data=data)
+        self.upload_dataframe(df=df)
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        self.upload_contents(path=path)
+        df = get_data_df(path)
+        self.upload_dataframe(df=df)
 
 
 motherduck_destination_entry = DestinationRegistryEntry(

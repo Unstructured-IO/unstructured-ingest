@@ -9,7 +9,6 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -17,6 +16,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLAccessConfig,
+    SqlBatchFileData,
     SQLConnectionConfig,
     SQLDownloader,
     SQLDownloaderConfig,
@@ -118,10 +118,10 @@ class SnowflakeDownloader(SQLDownloader):
 
     # The actual snowflake module package name is: snowflake-connector-python
     @requires_dependencies(["snowflake"], extras="snowflake")
-    def query_db(self, file_data: FileData) -> tuple[list[tuple], list[str]]:
-        table_name = file_data.additional_metadata["table_name"]
-        id_column = file_data.additional_metadata["id_column"]
-        ids = file_data.additional_metadata["ids"]
+    def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
+        table_name = file_data.additional_metadata.table_name
+        id_column = file_data.additional_metadata.id_column
+        ids = [item.identifier for item in file_data.batch_items]
 
         with self.connection_config.get_cursor() as cursor:
             query = "SELECT {fields} FROM {table_name} WHERE {id_column} IN ({values})".format(

@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
@@ -159,33 +158,6 @@ class PineconeUploadStager(UploadStager):
             "metadata": metadata,
         }
 
-    def run(
-        self,
-        file_data: FileData,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        conformed_elements = [
-            self.conform_dict(element_dict=element, file_data=file_data)
-            for element in elements_contents
-        ]
-
-        if Path(output_filename).suffix != ".json":
-            output_filename = f"{output_filename}.json"
-        else:
-            output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / Path(f"{output_filename}")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
-        return output_path
-
 
 @dataclass
 class PineconeUploader(Uploader):
@@ -278,11 +250,9 @@ class PineconeUploader(Uploader):
                 raise DestinationConnectionError(f"http error: {api_error}") from api_error
             logger.debug(f"results: {results}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing a total of {len(elements_dict)} elements via"
+            f"writing a total of {len(data)} elements via"
             f" document batches to destination"
             f" index named {self.connection_config.index_name}"
         )
@@ -295,7 +265,7 @@ class PineconeUploader(Uploader):
             self.pod_delete_by_record_id(file_data=file_data)
         else:
             raise ValueError(f"unexpected spec type in index description: {index_description}")
-        self.upsert_batches_async(elements_dict=elements_dict)
+        self.upsert_batches_async(elements_dict=data)
 
 
 pinecone_destination_entry = DestinationRegistryEntry(

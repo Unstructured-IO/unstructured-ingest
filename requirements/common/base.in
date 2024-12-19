@@ -2,6 +2,7 @@
 
 python-dateutil
 pandas
+ndjson
 # Pydantic generic Secret only introduced in 2.7
 pydantic>=2.7
 dataclasses_json

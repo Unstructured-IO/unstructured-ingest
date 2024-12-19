@@ -1,6 +1,6 @@
 import pytest
 
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.pinecone import (
     CONNECTOR_TYPE,
     PineconeUploadStager,
@@ -33,6 +33,7 @@ def test_conform_dict(
     file_data = FileData(
         connector_type=CONNECTOR_TYPE,
         identifier="pinecone_mock_id",
+        source_identifiers=SourceIdentifiers(filename="file.txt", fullpath="file.txt"),
     )
     if metadata_fields is not None:
         stager = PineconeUploadStager(

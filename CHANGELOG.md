@@ -1,4 +1,4 @@
-## 0.3.9-dev0
+## 0.3.12-dev0
 
 ### Fixes
 
@@ -7,6 +7,39 @@
 ### Enhancements
 
 * **Kafka destination connector checks for existence of topic**
+
+## 0.3.11
+
+### Enhancements
+
+* **Support Databricks personal access token**
+
+### Fixes
+
+* **Fix missing source identifiers in some downloaders**
+
+## 0.3.10
+
+### Enhancements
+
+* **Support more concrete FileData content for batch support**
+
+### Fixes
+
+* **Add Neo4J to ingest destination connector registry**
+* **Fix closing SSHClient in sftp connector**
+
+## 0.3.9
+
+### Enhancements
+
+* **Support ndjson files in stagers**
+* **Add Neo4j destination connector**
+* **Support passing data in for uploaders**
+
+### Fixes
+
+* **Make sure any SDK clients that support closing get called**
 
 ## 0.3.8
 

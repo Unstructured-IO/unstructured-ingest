@@ -1,10 +1,8 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
-import pandas as pd
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -16,7 +14,6 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    UploadContent,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -59,10 +56,17 @@ class MilvusConnectionConfig(ConnectionConfig):
         return connection_config_dict
 
     @requires_dependencies(["pymilvus"], extras="milvus")
-    def get_client(self) -> "MilvusClient":
+    @contextmanager
+    def get_client(self) -> Generator["MilvusClient", None, None]:
         from pymilvus import MilvusClient
 
-        return MilvusClient(**self.get_connection_kwargs())
+        client = None
+        try:
+            client = MilvusClient(**self.get_connection_kwargs())
+            yield client
+        finally:
+            if client:
+                client.close()
 
 
 class MilvusUploadStagerConfig(UploadStagerConfig):
@@ -91,8 +95,8 @@ class MilvusUploadStager(UploadStager):
             pass
         return parser.parse(date_string).timestamp()
 
-    def conform_dict(self, data: dict, file_data: FileData) -> dict:
-        working_data = data.copy()
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        working_data = element_dict.copy()
         if self.upload_stager_config.flatten_metadata and (
             metadata := working_data.pop("metadata", None)
         ):
@@ -134,29 +138,6 @@ class MilvusUploadStager(UploadStager):
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents: list[dict[str, Any]] = json.load(elements_file)
-        new_content = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        output_filename_path = Path(output_filename)
-        if output_filename_path.suffix == ".json":
-            output_path = Path(output_dir) / output_filename_path
-        else:
-            output_path = Path(output_dir) / output_filename_path.with_suffix(".json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with output_path.open("w") as output_file:
-            json.dump(new_content, output_file, indent=2)
-        return output_path
-
 
 class MilvusUploaderConfig(UploaderConfig):
     db_name: Optional[str] = Field(default=None, description="Milvus database name")
@@ -183,22 +164,10 @@ class MilvusUploader(Uploader):
 
     @contextmanager
     def get_client(self) -> Generator["MilvusClient", None, None]:
-        client = self.connection_config.get_client()
-        if db_name := self.upload_config.db_name:
-            client.using_database(db_name=db_name)
-        try:
+        with self.connection_config.get_client() as client:
+            if db_name := self.upload_config.db_name:
+                client.using_database(db_name=db_name)
             yield client
-        finally:
-            client.close()
-
-    def upload(self, content: UploadContent) -> None:
-        file_extension = content.path.suffix
-        if file_extension == ".json":
-            self.upload_json(content=content)
-        elif file_extension == ".csv":
-            self.upload_csv(content=content)
-        else:
-            raise ValueError(f"Unsupported file extension: {file_extension}")
 
     def delete_by_record_id(self, file_data: FileData) -> None:
         logger.info(
@@ -233,19 +202,9 @@ class MilvusUploader(Uploader):
                 err_count = res["err_count"]
                 raise WriteError(f"failed to upload {err_count} docs")
 
-    def upload_csv(self, content: UploadContent) -> None:
-        df = pd.read_csv(content.path)
-        data = df.to_dict(orient="records")
-        self.insert_results(data=data)
-
-    def upload_json(self, content: UploadContent) -> None:
-        with content.path.open("r") as file:
-            data: list[dict] = json.load(file)
-        self.insert_results(data=data)
-
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         self.delete_by_record_id(file_data=file_data)
-        self.upload(content=UploadContent(path=path, file_data=file_data))
+        self.insert_results(data=data)
 
 
 milvus_destination_entry = DestinationRegistryEntry(

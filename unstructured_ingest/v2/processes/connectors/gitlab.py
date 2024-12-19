@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -82,16 +83,18 @@ class GitLabConnectionConfig(ConnectionConfig):
 
     @SourceConnectionError.wrap
     @requires_dependencies(["gitlab"], extras="gitlab")
-    def get_client(self) -> "Gitlab":
+    @contextmanager
+    def get_client(self) -> Generator["Gitlab", None, None]:
         from gitlab import Gitlab
 
         logger.info(f"Connection to GitLab: {self.base_url!r}")
-        gitlab = Gitlab(
+        with Gitlab(
             self.base_url, private_token=self.access_config.get_secret_value().access_token
-        )
-        return gitlab
+        ) as client:
+            yield client
 
-    def get_project(self) -> "Project":
+    @contextmanager
+    def get_project(self) -> Generator["Project", None, None]:
         """Retrieves the specified GitLab project using the configured base URL and access token.
 
         Returns:
@@ -101,13 +104,12 @@ class GitLabConnectionConfig(ConnectionConfig):
             SourceConnectionError: If the GitLab API connection fails.
             gitlab.exceptions.GitlabGetError: If the project is not found.
         """
-        gitlab = self.get_client()
+        with self.get_client() as client:
+            logger.info(f"Accessing Project: '{self.repo_path}'")
+            project = client.projects.get(self.repo_path)
 
-        logger.info(f"Accessing Project: '{self.repo_path}'")
-        project = gitlab.projects.get(self.repo_path)
-
-        logger.info(f"Successfully accessed project '{self.repo_path}'")
-        return project
+            logger.info(f"Successfully accessed project '{self.repo_path}'")
+            yield project
 
 
 class GitLabIndexerConfig(IndexerConfig):
@@ -144,11 +146,11 @@ class GitLabIndexer(Indexer):
         """
 
         try:
-            gitlab = self.connection_config.get_client()
-            if self.connection_config.access_config.get_secret_value().access_token is not None:
-                gitlab.auth()
-            else:
-                gitlab.projects.get(self.connection_config.repo_path)
+            with self.connection_config.get_client() as client:
+                if self.connection_config.access_config.get_secret_value().access_token is not None:
+                    client.auth()
+                else:
+                    client.projects.get(self.connection_config.repo_path)
 
         except Exception as e:
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
@@ -168,17 +170,16 @@ class GitLabIndexer(Indexer):
             FileData: A generator that yields `FileData` objects representing each file (blob)
             in the repository.
         """
-        project = self.connection_config.get_project()
+        with self.connection_config.get_project() as project:
+            ref = self.index_config.git_branch or project.default_branch
 
-        ref = self.index_config.git_branch or project.default_branch
-
-        files = project.repository_tree(
-            path=str(self.index_config.path),
-            ref=ref,
-            recursive=self.index_config.recursive,
-            iterator=True,
-            all=True,
-        )
+            files = project.repository_tree(
+                path=str(self.index_config.path),
+                ref=ref,
+                recursive=self.index_config.recursive,
+                iterator=True,
+                all=True,
+            )
 
         for file in files:
             relative_path = str(Path(file["path"]).relative_to(self.index_config.path))
@@ -250,12 +251,12 @@ class GitLabDownloader(Downloader):
 
         ref = file_data.metadata.record_locator["ref"]
         path = file_data.metadata.record_locator["file_path"]
-
-        project_file = self.connection_config.get_project().files.get(file_path=path, ref=ref)
         download_path.parent.mkdir(exist_ok=True, parents=True)
 
-        with open(download_path, "wb") as file:
-            file.write(project_file.decode())
+        with self.connection_config.get_project() as project:
+            project_file = project.files.get(file_path=path, ref=ref)
+            with open(download_path, "wb") as file:
+                file.write(project_file.decode())
 
 
 gitlab_source_entry = SourceRegistryEntry(
