@@ -1,8 +1,8 @@
 import json
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
 
 from pydantic import Field, Secret, model_validator
 
@@ -60,7 +60,7 @@ class RedisConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["redis"], extras="redis")
     @asynccontextmanager
-    async def create_client(self) -> AsyncGenerator["Redis", None]:
+    async def create_async_client(self) -> AsyncGenerator["Redis", None]:
         from redis.asyncio import Redis, from_url
 
         access_config = self.access_config.get_secret_value()
@@ -83,6 +83,31 @@ class RedisConnectionConfig(ConnectionConfig):
             async with Redis(**options) as client:
                 yield client
 
+    @requires_dependencies(["redis"], extras="redis")
+    @contextmanager
+    def create_client(self) -> Generator["Redis", None, None]:
+        from redis import Redis, from_url
+
+        access_config = self.access_config.get_secret_value()
+
+        options = {
+            "host": self.host,
+            "port": self.port,
+            "db": self.database,
+            "ssl": self.ssl,
+            "username": self.username,
+        }
+
+        if access_config.password:
+            options["password"] = access_config.password
+
+        if access_config.uri:
+            with from_url(access_config.uri) as client:
+                yield client
+        else:
+            with Redis(**options) as client:
+                yield client
+
 
 class RedisUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
@@ -98,13 +123,9 @@ class RedisUploader(Uploader):
         return True
 
     def precheck(self) -> None:
-
-        async def check_connection():
-            async with self.connection_config.create_client() as async_client:
-                await async_client.ping()
-
         try:
-            asyncio.run(check_connection())
+            with self.connection_config.create_client() as client:
+                client.ping()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -130,7 +151,7 @@ class RedisUploader(Uploader):
         await asyncio.gather(*[self._write_batch(batch, redis_stack) for batch in batches])
 
     async def _write_batch(self, batch: list[dict], redis_stack: bool) -> None:
-        async with self.connection_config.create_client() as async_client:
+        async with self.connection_config.create_async_client() as async_client:
             async with async_client.pipeline(transaction=True) as pipe:
                 for element in batch:
                     element_id = element["element_id"]
@@ -145,7 +166,7 @@ class RedisUploader(Uploader):
         from redis import exceptions as redis_exceptions
 
         redis_stack = True
-        async with self.connection_config.create_client() as async_client:
+        async with self.connection_config.create_async_client() as async_client:
             async with async_client.pipeline(transaction=True) as pipe:
                 element_id = element["element_id"]
                 try:

@@ -96,7 +96,7 @@ async def redis_destination_test(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG, "redis")
+@pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG)
 @requires_env("AZURE_REDIS_INGEST_TEST_PASSWORD")
 async def test_redis_destination_azure_with_password(upload_file: Path, tmp_path: Path):
     connection_kwargs = {
