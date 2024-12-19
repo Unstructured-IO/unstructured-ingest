@@ -52,6 +52,22 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     return PartitionRequest(partition_parameters=partition_params)
 
 
+def handle_error(e: Exception):
+    from unstructured_client.models.errors.sdkerror import SDKError
+
+    if isinstance(e, SDKError):
+        logger.error(f"Error calling Unstructured API: {e}")
+        if 400 <= e.status_code < 500:
+            raise UserError(e.body)
+        elif e.status_code >= 500:
+            raise ProviderError(e.body)
+        else:
+            raise e
+    else:
+        logger.error(f"Uncaught Error calling API: {e}")
+        raise e
+
+
 async def call_api_async(
     server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
 ) -> list[dict]:
@@ -66,7 +82,6 @@ async def call_api_async(
     Returns: A list of the file's elements, or an empty list if there was an error
     """
     from unstructured_client import UnstructuredClient
-    from unstructured_client.models.errors.sdkerror import SDKError
 
     client = UnstructuredClient(
         server_url=server_url,
@@ -75,17 +90,8 @@ async def call_api_async(
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     try:
         res = await client.general.partition(request=partition_request)
-    except SDKError as e:
-        logger.error(f"Error calling API: {e}")
-        if 400 <= e.status_code < 500:
-            raise UserError(e.body)
-        elif e.status_code >= 500:
-            raise ProviderError(e.body)
-        else:
-            raise e
     except Exception as e:
-        logger.error(f"Uncaught Error calling API: {e}")
-        raise e
+        handle_error(e)
 
     return res.elements or []
 
@@ -104,7 +110,6 @@ def call_api(
     Returns: A list of the file's elements, or an empty list if there was an error
     """
     from unstructured_client import UnstructuredClient
-    from unstructured_client.models.errors.sdkerror import SDKError
 
     client = UnstructuredClient(
         server_url=server_url,
@@ -113,11 +118,7 @@ def call_api(
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     try:
         res = client.general.partition(request=partition_request)
-    except SDKError as e:
-        logger.error(f"Error calling API: {e}")
-        return []
     except Exception as e:
-        logger.error(f"Uncaught Error calling API: {e}")
-        return []
+        handle_error(e)
 
     return res.elements or []
