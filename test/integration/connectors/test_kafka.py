@@ -278,7 +278,10 @@ def get_all_messages(conf: dict, topic: str, max_empty_messages: int = 3) -> lis
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-async def test_kafka_destination_local(kafka_upload_topic: str, upload_file: Path,):
+async def test_kafka_destination_local(
+    kafka_upload_topic: str,
+    upload_file: Path,
+):
     """
     Creates empty topic in localhost instance, sends 1 partitioned file.
     Downloader should download it.
