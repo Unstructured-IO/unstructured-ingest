@@ -1,10 +1,10 @@
 import json
 import os
-import tempfile
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from databricks.sdk import WorkspaceClient
@@ -31,11 +31,15 @@ from unstructured_ingest.v2.processes.connectors.databricks.volumes_native impor
 
 
 @dataclass
-class EnvData:
+class BaseEnvData:
     host: str
+    catalog: str
+
+
+@dataclass
+class BasicAuthEnvData(BaseEnvData):
     client_id: str
     client_secret: str
-    catalog: str
 
     def get_connection_config(self) -> DatabricksNativeVolumesConnectionConfig:
         return DatabricksNativeVolumesConnectionConfig(
@@ -47,12 +51,33 @@ class EnvData:
         )
 
 
-def get_env_data() -> EnvData:
-    return EnvData(
+@dataclass
+class PATEnvData(BaseEnvData):
+    token: str
+
+    def get_connection_config(self) -> DatabricksNativeVolumesConnectionConfig:
+        return DatabricksNativeVolumesConnectionConfig(
+            host=self.host,
+            access_config=DatabricksNativeVolumesAccessConfig(
+                token=self.token,
+            ),
+        )
+
+
+def get_basic_auth_env_data() -> BasicAuthEnvData:
+    return BasicAuthEnvData(
         host=os.environ["DATABRICKS_HOST"],
         client_id=os.environ["DATABRICKS_CLIENT_ID"],
         client_secret=os.environ["DATABRICKS_CLIENT_SECRET"],
         catalog=os.environ["DATABRICKS_CATALOG"],
+    )
+
+
+def get_pat_env_data() -> PATEnvData:
+    return PATEnvData(
+        host=os.environ["DATABRICKS_HOST"],
+        catalog=os.environ["DATABRICKS_CATALOG"],
+        token=os.environ["DATABRICKS_PAT"],
     )
 
 
@@ -61,18 +86,17 @@ def get_env_data() -> EnvData:
 @requires_env(
     "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
 )
-async def test_volumes_native_source():
-    env_data = get_env_data()
-    indexer_config = DatabricksNativeVolumesIndexerConfig(
-        recursive=True,
-        volume="test-platform",
-        volume_path="databricks-volumes-test-input",
-        catalog=env_data.catalog,
-    )
-    connection_config = env_data.get_connection_config()
-    with tempfile.TemporaryDirectory() as tempdir:
-        tempdir_path = Path(tempdir)
-        download_config = DatabricksNativeVolumesDownloaderConfig(download_dir=tempdir_path)
+async def test_volumes_native_source(tmp_path: Path):
+    env_data = get_basic_auth_env_data()
+    with mock.patch.dict(os.environ, clear=True):
+        indexer_config = DatabricksNativeVolumesIndexerConfig(
+            recursive=True,
+            volume="test-platform",
+            volume_path="databricks-volumes-test-input",
+            catalog=env_data.catalog,
+        )
+        connection_config = env_data.get_connection_config()
+        download_config = DatabricksNativeVolumesDownloaderConfig(download_dir=tmp_path)
         indexer = DatabricksNativeVolumesIndexer(
             connection_config=connection_config, index_config=indexer_config
         )
@@ -89,12 +113,44 @@ async def test_volumes_native_source():
         )
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@requires_env("DATABRICKS_HOST", "DATABRICKS_PAT", "DATABRICKS_CATALOG")
+async def test_volumes_native_source_pat(tmp_path: Path):
+    env_data = get_pat_env_data()
+    with mock.patch.dict(os.environ, clear=True):
+        indexer_config = DatabricksNativeVolumesIndexerConfig(
+            recursive=True,
+            volume="test-platform",
+            volume_path="databricks-volumes-test-input",
+            catalog=env_data.catalog,
+        )
+        connection_config = env_data.get_connection_config()
+        download_config = DatabricksNativeVolumesDownloaderConfig(download_dir=tmp_path)
+        indexer = DatabricksNativeVolumesIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        downloader = DatabricksNativeVolumesDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id="databricks_volumes_native_pat",
+                expected_num_files=1,
+            ),
+        )
+
+
 def _get_volume_path(catalog: str, volume: str, volume_path: str):
     return f"/Volumes/{catalog}/default/{volume}/{volume_path}"
 
 
 @contextmanager
-def databricks_destination_context(env_data: EnvData, volume: str, volume_path) -> WorkspaceClient:
+def databricks_destination_context(
+    env_data: BasicAuthEnvData, volume: str, volume_path
+) -> WorkspaceClient:
     client = WorkspaceClient(
         host=env_data.host, client_id=env_data.client_id, client_secret=env_data.client_secret
     )
@@ -137,7 +193,7 @@ def validate_upload(client: WorkspaceClient, catalog: str, volume: str, volume_p
     "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
 )
 async def test_volumes_native_destination(upload_file: Path):
-    env_data = get_env_data()
+    env_data = get_basic_auth_env_data()
     volume_path = f"databricks-volumes-test-output-{uuid.uuid4()}"
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
