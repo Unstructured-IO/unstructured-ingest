@@ -20,9 +20,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     ]
 )
 def test_fsspec_indexer_path_decoding(remote_url, expected_path):
-    # Initialize index config with given remote_url
     index_config = FsspecIndexerConfig(remote_url=remote_url)
-    # We assume an empty access config just for test
     connection_config = FsspecConnectionConfig(access_config=Secret(FsspecAccessConfig()))
 
     # After initialization, ensure path_without_protocol matches expected result
@@ -30,7 +28,6 @@ def test_fsspec_indexer_path_decoding(remote_url, expected_path):
         index_config.path_without_protocol == expected_path
     ), f"Expected {expected_path}, got {index_config.path_without_protocol}"
 
-    # Create the indexer
     indexer = FsspecIndexer(connection_config=connection_config, index_config=index_config)
 
     # Now index_config should have our expected path
