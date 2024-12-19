@@ -63,7 +63,7 @@ def docker_compose_ctx():
 def wait_for_topic(
     topic: str,
     retries: int = 10,
-    interval: int = 1,
+    interval: int = 2,
     exists: bool = True,
     admin_client=None,
 ):
@@ -99,7 +99,9 @@ def kafka_seed_topic(docker_compose_ctx) -> str:
     for i in range(SEED_MESSAGES):
         message = f"This is some text for message {i}"
         producer.produce(topic=TOPIC, value=message)
-    producer.flush(timeout=10)
+    while producer_len := len(producer):
+        logger.info(f"another iteration of kafka producer flush. Queue length: {producer_len}")
+        producer.flush(timeout=10)
     logger.info(f"kafka topic {TOPIC} seeded with {SEED_MESSAGES} messages")
     wait_for_topic(topic=TOPIC)
     return TOPIC
@@ -109,6 +111,7 @@ def kafka_seed_topic(docker_compose_ctx) -> str:
 def kafka_upload_topic(docker_compose_ctx) -> str:
     admin_client = get_admin_client()
     admin_client.create_topics([NewTopic(TOPIC, 1, 1)])
+    wait_for_topic(topic=TOPIC)
     return TOPIC
 
 
@@ -182,6 +185,7 @@ def kafka_seed_topic_cloud(request) -> int:
 @pytest.mark.parametrize("kafka_seed_topic_cloud", [5], indirect=True)
 async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
     """
+    Creates topic in cloud, sends 5 simple messages. Downloader should download them.
     In order to have this test succeed, you need to create cluster on Confluent Cloud,
     and create the API key with admin privileges. By default, user account keys have it.
     """
@@ -246,14 +250,14 @@ def test_kafka_source_local_precheck_fail_no_topic(kafka_seed_topic: str):
         indexer.precheck()
 
 
-def get_all_messages(conf: dict, topic: str, max_empty_messages: int = 5) -> list[dict]:
+def get_all_messages(conf: dict, topic: str, max_empty_messages: int = 3) -> list[dict]:
     consumer = Consumer(conf)
     consumer.subscribe([topic])
     messages = []
     try:
         empty_count = 0
         while empty_count < max_empty_messages:
-            msg = consumer.poll(timeout=3)
+            msg = consumer.poll(timeout=5)
             if msg is None:
                 empty_count += 1
                 continue
@@ -274,10 +278,15 @@ def get_all_messages(conf: dict, topic: str, max_empty_messages: int = 5) -> lis
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: str):
+async def test_kafka_destination_local(kafka_upload_topic: str, upload_file: Path,):
+    """
+    Creates empty topic in localhost instance, sends 1 partitioned file.
+    Downloader should download it.
+    """
+
     uploader = LocalKafkaUploader(
         connection_config=LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092),
-        upload_config=LocalKafkaUploaderConfig(topic=TOPIC, batch_size=10),
+        upload_config=LocalKafkaUploaderConfig(topic=kafka_upload_topic, batch_size=10),
     )
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
@@ -302,6 +311,7 @@ async def test_kafka_destination_local(upload_file: Path, kafka_upload_topic: st
         f"expected number of messages ({len(content_to_upload)}) doesn't "
         f"match how many messages read off of kafka topic {kafka_upload_topic}: {len(all_messages)}"
     )
+    assert all_messages == content_to_upload
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
