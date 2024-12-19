@@ -33,7 +33,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
 
-    def handle_error(self, e: Exception):
+    def wrap_error(self, e: Exception) -> Exception:
         # https://platform.openai.com/docs/guides/error-codes/api-errors
         from openai import APIStatusError
 
@@ -44,18 +44,18 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         if 400 <= e.status_code < 500:
             # user error
             if e.status_code == 401:
-                raise UserAuthError(e.message) from e
+                return UserAuthError(e.message)
             if e.status_code == 429:
                 # 429 indicates rate limit exceeded and quote exceeded
                 if error_code == "insufficient_quota":
-                    raise QuotaError(e.message) from e
+                    return QuotaError(e.message)
                 else:
-                    raise RateLimitError(e.message) from e
-            raise UserError(e.message) from e
+                    return RateLimitError(e.message)
+            return UserError(e.message)
         if e.status_code >= 500:
-            raise ProviderError(e.message) from e
+            return ProviderError(e.message)
         logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-        raise e
+        return e
 
     def embed_query(self, query: str) -> list[float]:
 
@@ -63,7 +63,7 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         try:
             response = client.embeddings.create(input=query, model=self.config.embedder_model_name)
         except Exception as e:
-            self.handle_error(e=e)
+            raise self.wrap_error(e=e)
         return response.data[0].embedding
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:

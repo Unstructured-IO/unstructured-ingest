@@ -46,7 +46,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
 class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     config: BedrockEmbeddingConfig
 
-    def handle_exception(self, e: Exception) -> None:
+    def wrap_error(self, e: Exception) -> Exception:
         from botocore.exceptions import ClientError
 
         if isinstance(e, ClientError):
@@ -57,20 +57,20 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
             error_code = http_response["Error"]["Code"]
             if http_response_code == 400:
                 if error_code == "ValidationError":
-                    raise UserError(http_response["Error"]) from e
+                    return UserError(http_response["Error"])
                 elif error_code == "ThrottlingException":
-                    raise RateLimitError(http_response["Error"]) from e
+                    return RateLimitError(http_response["Error"])
                 elif error_code == "NotAuthorized" or error_code == "AccessDeniedException":
-                    raise UserAuthError(http_response["Error"]) from e
+                    return UserAuthError(http_response["Error"])
             if http_response_code == 403:
-                raise UserAuthError(http_response["Error"]) from e
+                return UserAuthError(http_response["Error"])
             if 400 <= http_response_code < 500:
-                raise UserError(http_response["Error"]) from e
+                return UserError(http_response["Error"])
             if http_response_code >= 500:
-                raise ProviderError(http_response["Error"]) from e
+                return ProviderError(http_response["Error"])
 
         logger.error(f"unhandled exception from bedrock: {e}", exc_info=True)
-        raise e
+        return e
 
     def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
@@ -99,7 +99,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
                 contentType="application/json",
             )
         except Exception as e:
-            self.handle_exception(e=e)
+            raise self.wrap_error(e=e)
 
         # format output based on provider
         response_body = json.loads(response.get("body").read())

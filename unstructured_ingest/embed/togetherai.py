@@ -35,20 +35,19 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
 class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
 
-    def handle_error(self, e: Exception):
+    def wrap_error(self, e: Exception) -> Exception:
         # https://docs.together.ai/docs/error-codes
         from together.error import AuthenticationError, RateLimitError, TogetherException
 
         if not isinstance(e, TogetherException):
             logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-            raise e
-        e.http_status
+            return e
         message = e.args[0]
         if isinstance(e, AuthenticationError):
-            raise UserAuthError(message) from e
+            return UserAuthError(message)
         if isinstance(e, RateLimitError):
-            raise CustomRateLimitError(message) from e
-        raise UserError(message) from e
+            return CustomRateLimitError(message)
+        return UserError(message)
 
     def embed_query(self, query: str) -> list[float]:
         return self._embed_documents(elements=[query])[0]
@@ -64,5 +63,5 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
                 model=self.config.embedder_model_name, input=elements
             )
         except Exception as e:
-            self.handle_error(e=e)
+            raise self.wrap_error(e=e)
         return [outputs.data[i].embedding for i in range(len(elements))]
