@@ -40,16 +40,17 @@ test_element = {
     "links": ["https://example.com"],
 }
 stager = SQLUploadStager()
-df = pd.DataFrame(data=[test_element.copy(), test_element.copy()])
 
 
 def test_sql_upload_stager_conform_dataframe_dates():
+    df = pd.DataFrame(data=[test_element.copy(), test_element.copy()])
     conformed_df = stager.conform_dataframe(df)
     for column in ["date_created", "date_modified", "date_processed", "last_modified"]:
         assert conformed_df[column].apply(lambda x: isinstance(x, float)).all()
 
 
 def test_sql_upload_stager_conform_dataframe_json():
+    df = pd.DataFrame(data=[test_element.copy(), test_element.copy()])
     conformed_df = stager.conform_dataframe(df)
     for column in ["permissions_data", "record_locator", "points", "links"]:
         assert conformed_df[column].apply(lambda x: isinstance(x, str)).all()
@@ -62,6 +63,7 @@ def test_sql_upload_stager_conform_dataframe_json():
 
 
 def test_sql_upload_stager_conform_dataframe_strings():
+    df = pd.DataFrame(data=[test_element.copy(), test_element.copy()])
     conformed_df = stager.conform_dataframe(df)
     for column in ["version", "page_number", "regex_metadata"]:
         assert conformed_df[column].apply(lambda x: isinstance(x, str)).all()
