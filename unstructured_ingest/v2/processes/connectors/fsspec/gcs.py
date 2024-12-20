@@ -11,7 +11,9 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
+from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -102,6 +104,26 @@ class GcsConnectionConfig(FsspecConnectionConfig):
     def get_client(self, protocol: str) -> Generator["GCSFileSystem", None, None]:
         with super().get_client(protocol=protocol) as client:
             yield client
+
+    def wrap_error(self, e: Exception) -> Exception:
+        # https://github.com/fsspec/gcsfs/blob/main/gcsfs/retry.py#L79
+        from gcsfs.retry import HttpError
+
+        if isinstance(e, FileNotFoundError):
+            raise UserError(f"File not found: {e}")
+        if isinstance(e, OSError) and "Forbidden" in str(e):
+            raise UserError(e)
+        if isinstance(e, ValueError) and "Bad Request" in str(e):
+            raise UserError(e)
+        if isinstance(e, HttpError):
+            if http_error_code := e.code:
+                message = e.message or e
+                if 400 <= http_error_code < 500:
+                    raise UserError(message)
+                if http_error_code >= 500:
+                    raise ProviderError(message)
+        logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+        return e
 
 
 @dataclass
