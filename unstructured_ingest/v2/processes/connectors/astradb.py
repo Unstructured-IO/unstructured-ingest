@@ -30,6 +30,7 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -267,6 +268,7 @@ class AstraDBDownloader(Downloader):
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
 
         # modify input file_data for download_response
+        file_data.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
         cast_file_data = FileData.cast(file_data=file_data)
         cast_file_data.identifier = filename
         cast_file_data.metadata.date_processed = str(time())

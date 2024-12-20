@@ -160,6 +160,9 @@ jobs:
         MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
         QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
         QDRANT_SERVER_URL: ${{ secrets.QDRANT_SERVER_URL }}
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
+        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
       run : |
         source .venv/bin/activate
         make install-test

@@ -15,7 +15,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     CONNECTOR_TYPE,
     PostgresAccessConfig,
@@ -119,7 +119,11 @@ def validate_destination(
 async def test_postgres_destination(upload_file: Path, temp_dir: Path):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
-    mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(filename=upload_file.name, fullpath=upload_file.name),
+    )
     with docker_compose_context(
         docker_compose_path=env_setup_path / "sql" / "postgres" / "destination"
     ):
