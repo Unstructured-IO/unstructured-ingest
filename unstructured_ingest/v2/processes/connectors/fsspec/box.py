@@ -9,6 +9,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
+from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -24,7 +25,6 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecIndexerConfig,
     FsspecUploader,
     FsspecUploaderConfig,
-    SourceConnectionError,
 )
 from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
 
