@@ -9,9 +9,10 @@ from dateutil import parser
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
-from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError
 from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -57,13 +58,10 @@ class BoxConnectionConfig(FsspecConnectionConfig):
 
         # Create and authenticate the JWTAuth object
         oauth = JWTAuth.from_settings_dictionary(settings_dict)
-        try:
-            oauth.authenticate_instance()
-        except Exception as e:
-            raise SourceConnectionError(f"Failed to authenticate with Box: {e}")
+        oauth.authenticate_instance()
 
-        if not oauth.access_token:
-            raise SourceConnectionError("Authentication failed: No access token generated.")
+        # if not oauth.access_token:
+        #     raise SourceConnectionError("Authentication failed: No access token generated.")
 
         # Prepare the access configuration with the authenticated oauth
         access_kwargs_with_oauth: dict[str, Any] = {
@@ -74,6 +72,24 @@ class BoxConnectionConfig(FsspecConnectionConfig):
         access_kwargs_with_oauth.update(access_config)
 
         return access_kwargs_with_oauth
+
+    def wrap_error(self, e: Exception) -> Exception:
+        from boxsdk.exception import BoxAPIException, BoxOAuthException
+
+        if isinstance(e, BoxOAuthException):
+            return UserAuthError(e.message)
+        if not isinstance(e, BoxAPIException):
+            logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
+            return e
+        message = e.message or e
+        if error_code_status := e.status:
+            if 400 <= error_code_status < 500:
+                return UserError(message)
+            if error_code_status >= 500:
+                return ProviderError(message)
+
+        logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
+        return e
 
     @requires_dependencies(["boxfs"], extras="box")
     @contextmanager

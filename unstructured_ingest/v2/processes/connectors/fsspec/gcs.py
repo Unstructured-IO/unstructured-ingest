@@ -122,7 +122,7 @@ class GcsConnectionConfig(FsspecConnectionConfig):
                     raise UserError(message)
                 if http_error_code >= 500:
                     raise ProviderError(message)
-        logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+        logger.error(f"unhandled exception from gcs ({type(e)}): {e}", exc_info=True)
         return e
 
 
