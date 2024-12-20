@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
-    SourceConnectionError,
     SourceConnectionNetworkError,
 )
 from unstructured_ingest.v2.interfaces import (
@@ -99,6 +98,9 @@ class FsspecIndexer(Indexer):
     index_config: FsspecIndexerConfigT
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return e
+
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
@@ -116,7 +118,7 @@ class FsspecIndexer(Indexer):
                 client.head(path=file_to_sample)
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            raise self.wrap_error(e=e)
 
     def get_file_data(self) -> list[dict[str, Any]]:
         if not self.index_config.recursive:
