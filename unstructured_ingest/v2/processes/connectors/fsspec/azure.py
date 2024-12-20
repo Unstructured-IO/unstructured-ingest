@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError
 from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -97,6 +99,24 @@ class AzureConnectionConfig(FsspecConnectionConfig):
     def get_client(self, protocol: str) -> Generator["AzureBlobFileSystem", None, None]:
         with super().get_client(protocol=protocol) as client:
             yield client
+
+    def wrap_error(self, e: Exception) -> Exception:
+        from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+
+        if not isinstance(e, HttpResponseError):
+            logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+            return e
+        if isinstance(e, ClientAuthenticationError):
+            return UserAuthError(e.reason)
+        status_code = e.status_code
+        message = e.reason
+        if status_code is not None:
+            if 400 <= status_code < 500:
+                return UserError(message)
+            if status_code >= 500:
+                return ProviderError(message)
+        logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+        return e
 
 
 @dataclass
