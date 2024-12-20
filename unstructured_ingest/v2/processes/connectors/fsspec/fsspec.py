@@ -12,10 +12,6 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field, Secret
 
-from unstructured_ingest.error import (
-    DestinationConnectionError,
-    SourceConnectionNetworkError,
-)
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -87,6 +83,9 @@ class FsspecConnectionConfig(ConnectionConfig):
         )
         yield client
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return e
+
 
 FsspecIndexerConfigT = TypeVar("FsspecIndexerConfigT", bound=FsspecIndexerConfig)
 FsspecConnectionConfigT = TypeVar("FsspecConnectionConfigT", bound=FsspecConnectionConfig)
@@ -99,7 +98,7 @@ class FsspecIndexer(Indexer):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def wrap_error(self, e: Exception) -> Exception:
-        return e
+        return self.connection_config.wrap_error(e=e)
 
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
@@ -232,6 +231,9 @@ class FsspecDownloader(Downloader):
             shutil.rmtree(lpath)
             shutil.move(src=temp_location, dst=lpath)
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.connection_config.wrap_error(e=e)
+
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
@@ -241,8 +243,7 @@ class FsspecDownloader(Downloader):
                 client.get(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
-            logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
-            raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
+            raise self.wrap_error(e=e)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
     async def async_run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
@@ -254,8 +255,7 @@ class FsspecDownloader(Downloader):
                 await client.get(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
-            logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
-            raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
+            raise self.wrap_error(e=e)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
@@ -293,6 +293,9 @@ class FsspecUploader(Uploader):
                 f"missing 1 required positional argument: 'upload_config'"
             )
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.connection_config.wrap_error(e=e)
+
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
@@ -303,8 +306,7 @@ class FsspecUploader(Uploader):
             upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
             fs.write_bytes(path=upload_path.as_posix(), value=b"")
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            raise self.wrap_error(e=e)
 
     def get_upload_path(self, file_data: FileData) -> Path:
         upload_path = (

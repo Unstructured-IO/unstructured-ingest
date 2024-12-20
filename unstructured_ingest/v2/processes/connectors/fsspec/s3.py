@@ -81,13 +81,6 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         with super().get_client(protocol=protocol) as client:
             yield client
 
-
-@dataclass
-class S3Indexer(FsspecIndexer):
-    connection_config: S3ConnectionConfig
-    index_config: S3IndexerConfig
-    connector_type: str = CONNECTOR_TYPE
-
     def wrap_error(self, e: Exception) -> Exception:
         # s3fs maps botocore errors into python ones using mapping here:
         # https://github.com/fsspec/s3fs/blob/main/s3fs/errors.py
@@ -106,6 +99,16 @@ class S3Indexer(FsspecIndexer):
                 return ProviderError(message)
         logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
         return e
+
+
+@dataclass
+class S3Indexer(FsspecIndexer):
+    connection_config: S3ConnectionConfig
+    index_config: S3IndexerConfig
+    connector_type: str = CONNECTOR_TYPE
+
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.connection_config.wrap_error(e=e)
 
     def get_path(self, file_data: dict) -> str:
         return file_data["Key"]
