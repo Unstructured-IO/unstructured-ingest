@@ -1,9 +1,4 @@
-## 0.3.12-dev1
-
-* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
-
-
-## 0.3.12-dev0
+## 0.3.12-dev2
 
 ### Fixes
 
@@ -12,6 +7,9 @@
 ### Enhancements
 
 * **Kafka destination connector checks for existence of topic**
+* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
 
 ## 0.3.11
 
