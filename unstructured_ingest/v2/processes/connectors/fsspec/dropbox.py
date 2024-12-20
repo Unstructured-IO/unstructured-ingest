@@ -8,7 +8,16 @@ from typing import TYPE_CHECKING, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import (
+    ProviderError,
+    UserAuthError,
+    UserError,
+)
+from unstructured_ingest.v2.errors import (
+    RateLimitError as CustomRateLimitError,
+)
 from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -52,6 +61,30 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
     def get_client(self, protocol: str) -> Generator["DropboxDriveFileSystem", None, None]:
         with super().get_client(protocol=protocol) as client:
             yield client
+
+    def wrap_error(self, e: Exception) -> Exception:
+        from dropbox.exceptions import AuthError, HttpError, RateLimitError
+
+        if not isinstance(e, HttpError):
+            logger.error(f"unhandled exception from dropbox ({type(e)}): {e}", exc_info=True)
+            return e
+        if isinstance(e, AuthError):
+            raise UserAuthError(e.error)
+        if isinstance(e, RateLimitError):
+            return CustomRateLimitError(e.error)
+        status_code = e.status_code
+        if 400 <= status_code < 500:
+            if body := getattr(e, "body", None):
+                return UserError(body)
+            else:
+                return UserError(e.body)
+        if status_code >= 500:
+            if body := getattr(e, "body", None):
+                return ProviderError(body)
+            else:
+                return ProviderError(e.body)
+        logger.error(f"unhandled exception from dropbox ({type(e)}): {e}", exc_info=True)
+        return e
 
 
 @dataclass
