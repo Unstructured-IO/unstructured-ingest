@@ -1,14 +1,32 @@
-## 0.3.11-dev1
+## 0.3.12-dev2
 
 ### Enhancements
 
 * **Added Redis destination connector**
 
-## 0.3.11-dev0
+## 0.3.12-dev1
+
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+## 0.3.12-dev0
+
+### Fixes
+
+* **Fix Kafka destination connection problems**
+
+### Enhancements
+
+* **Kafka destination connector checks for existence of topic**
+
+## 0.3.11
 
 ### Enhancements
 
 * **Support Databricks personal access token**
+
+### Fixes
+
+* **Fix missing source identifiers in some downloaders**
 
 ## 0.3.10
 

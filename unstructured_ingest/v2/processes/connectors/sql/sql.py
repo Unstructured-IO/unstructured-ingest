@@ -28,6 +28,7 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -218,6 +219,10 @@ class SQLDownloader(Downloader, ABC):
         )
         download_path.parent.mkdir(parents=True, exist_ok=True)
         result.to_csv(download_path, index=False)
+        file_data.source_identifiers = SourceIdentifiers(
+            filename=filename,
+            fullpath=filename,
+        )
         cast_file_data = FileData.cast(file_data=file_data)
         cast_file_data.identifier = filename_id
         return super().generate_download_response(

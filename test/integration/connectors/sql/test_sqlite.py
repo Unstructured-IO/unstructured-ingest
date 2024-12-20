@@ -15,7 +15,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
     CONNECTOR_TYPE,
     SQLiteConnectionConfig,
@@ -116,7 +116,11 @@ async def test_sqlite_destination(
 ):
     # the sqlite destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
-    mock_file_data = FileData(identifier="mock file data", connector_type=CONNECTOR_TYPE)
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(filename=upload_file.name, fullpath=upload_file.name),
+    )
     stager = SQLiteUploadStager()
     staged_path = stager.run(
         elements_filepath=upload_file,
