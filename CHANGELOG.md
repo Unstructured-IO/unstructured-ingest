@@ -1,3 +1,8 @@
+## 0.3.12-dev1
+
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+
 ## 0.3.12-dev0
 
 ### Fixes
