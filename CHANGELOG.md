@@ -1,9 +1,16 @@
-## 0.3.12-dev0
+## 0.3.12-dev2
+
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
 
 ### Fixes
 
+* **Fix Kafka destination connection problems**
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
+
+### Enhancements
+
+* **Kafka destination connector checks for existence of topic**
 
 ## 0.3.11
 
