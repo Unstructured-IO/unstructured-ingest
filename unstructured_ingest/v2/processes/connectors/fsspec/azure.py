@@ -104,7 +104,7 @@ class AzureConnectionConfig(FsspecConnectionConfig):
         from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
 
         if not isinstance(e, HttpResponseError):
-            logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+            logger.error(f"unhandled exception from azure ({type(e)}): {e}", exc_info=True)
             return e
         if isinstance(e, ClientAuthenticationError):
             return UserAuthError(e.reason)
@@ -115,7 +115,7 @@ class AzureConnectionConfig(FsspecConnectionConfig):
                 return UserError(message)
             if status_code >= 500:
                 return ProviderError(message)
-        logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+        logger.error(f"unhandled exception from azure ({type(e)}): {e}", exc_info=True)
         return e
 
 
