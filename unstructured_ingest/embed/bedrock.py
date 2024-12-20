@@ -3,7 +3,7 @@ import json
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AsyncContextManager
+from typing import TYPE_CHECKING, AsyncIterable
 
 from pydantic import Field, SecretStr
 
@@ -68,6 +68,23 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
 
         return bedrock_client
 
+    @requires_dependencies(
+        ["aioboto3"],
+        extras="bedrock",
+    )
+    @asynccontextmanager
+    async def get_async_client(self) -> AsyncIterable["AsyncBedrockClient"]:
+        import aioboto3
+
+        session = aioboto3.Session()
+        async with session.client(
+            "bedrock-runtime",
+            aws_access_key_id=self.aws_access_key_id.get_secret_value(),
+            aws_secret_access_key=self.aws_secret_access_key.get_secret_value(),
+            region_name=self.region_name,
+        ) as aws_bedrock:
+            yield aws_bedrock
+
 
 @dataclass
 class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -130,40 +147,16 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
         return elements_with_embeddings
 
 
-class AsyncBedrockEmbeddingConfig(EmbeddingConfig):
-    aws_access_key_id: SecretStr
-    aws_secret_access_key: SecretStr
-    region_name: str = "us-west-2"
-    embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
-
-    @requires_dependencies(
-        ["aioboto3"],
-        extras="bedrock",
-    )
-    @asynccontextmanager
-    async def get_client(self) -> AsyncContextManager["AsyncBedrockClient"]:
-        import aioboto3
-
-        session = aioboto3.Session()
-        async with session.client(
-            "bedrock-runtime",
-            aws_access_key_id=self.aws_access_key_id.get_secret_value(),
-            aws_secret_access_key=self.aws_secret_access_key.get_secret_value(),
-            region_name=self.region_name,
-        ) as aws_bedrock:
-            yield aws_bedrock
-
-
 @dataclass
 class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
-    config: AsyncBedrockEmbeddingConfig
+    config: BedrockEmbeddingConfig
 
     async def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
         provider = self.config.embed_model_name.split(".")[0]
         body = conform_query(query=query, provider=provider)
         try:
-            async with self.config.get_client() as bedrock_client:
+            async with self.config.get_async_client() as bedrock_client:
                 # invoke bedrock API
                 response = await bedrock_client.invoke_model(
                     body=json.dumps(body),

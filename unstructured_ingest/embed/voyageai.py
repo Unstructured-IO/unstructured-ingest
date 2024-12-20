@@ -47,6 +47,21 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
         )
         return client
 
+    @requires_dependencies(
+        ["voyageai"],
+        extras="embed-voyageai",
+    )
+    def get_async_client(self) -> "AsyncVoyageAIClient":
+        """Creates a VoyageAI python client to embed elements."""
+        from voyageai import AsyncClient as AsyncVoyageAIClient
+
+        client = AsyncVoyageAIClient(
+            api_key=self.api_key.get_secret_value(),
+            max_retries=self.max_retries,
+            timeout=self.timeout_in_seconds,
+        )
+        return client
+
 
 @dataclass
 class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -88,29 +103,12 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self._embed_documents(elements=[query])[0]
 
 
-class AsyncVoyageAIEmbeddingConfig(VoyageAIEmbeddingConfig):
-    @requires_dependencies(
-        ["voyageai"],
-        extras="embed-voyageai",
-    )
-    def get_client(self) -> "AsyncVoyageAIClient":
-        """Creates a VoyageAI python client to embed elements."""
-        from voyageai import AsyncClient as AsyncVoyageAIClient
-
-        client = AsyncVoyageAIClient(
-            api_key=self.api_key.get_secret_value(),
-            max_retries=self.max_retries,
-            timeout=self.timeout_in_seconds,
-        )
-        return client
-
-
 @dataclass
 class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
-    config: AsyncVoyageAIEmbeddingConfig
+    config: VoyageAIEmbeddingConfig
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client = self.config.get_client()
+        client = self.config.get_async_client()
         response = await client.embed(texts=elements, model=self.config.embedder_model_name)
         return response.embeddings
 

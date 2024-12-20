@@ -38,6 +38,16 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
 
         return OpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
 
+    @requires_dependencies(
+        ["openai", "tiktoken"],
+        extras="embed-octoai",
+    )
+    def get_async_client(self) -> "AsyncOpenAI":
+        """Creates an OpenAI python client to embed elements. Uses the OpenAI SDK."""
+        from openai import AsyncOpenAI
+
+        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
+
 
 @dataclass
 class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -87,24 +97,12 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return elements_with_embeddings
 
 
-class AsyncOctoAiEmbeddingConfig(OctoAiEmbeddingConfig):
-    @requires_dependencies(
-        ["openai", "tiktoken"],
-        extras="embed-octoai",
-    )
-    def get_client(self) -> "AsyncOpenAI":
-        """Creates an OpenAI python client to embed elements. Uses the OpenAI SDK."""
-        from openai import AsyncOpenAI
-
-        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
-
-
 @dataclass
 class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
-    config: AsyncOctoAiEmbeddingConfig
+    config: OctoAiEmbeddingConfig
 
     async def embed_query(self, query: str):
-        client = self.config.get_client()
+        client = self.config.get_async_client()
         response = await client.embeddings.create(
             input=query, model=self.config.embedder_model_name
         )

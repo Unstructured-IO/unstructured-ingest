@@ -32,6 +32,12 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
         return OpenAI(api_key=self.api_key.get_secret_value())
 
+    @requires_dependencies(["openai"], extras="openai")
+    def get_async_client(self) -> "AsyncOpenAI":
+        from openai import AsyncOpenAI
+
+        return AsyncOpenAI(api_key=self.api_key.get_secret_value())
+
 
 @dataclass
 class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -76,23 +82,12 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return elements_with_embeddings
 
 
-class AsyncOpenAIEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr
-    embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
-
-    @requires_dependencies(["openai"], extras="openai")
-    def get_client(self) -> "AsyncOpenAI":
-        from openai import AsyncOpenAI
-
-        return AsyncOpenAI(api_key=self.api_key.get_secret_value())
-
-
 @dataclass
 class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
 
     async def embed_query(self, query: str) -> list[float]:
-        client = self.config.get_client()
+        client = self.config.get_async_client()
         response = await client.embeddings.create(
             input=query, model=self.config.embedder_model_name
         )
