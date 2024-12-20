@@ -26,6 +26,12 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
 
         return Together(api_key=self.api_key.get_secret_value())
 
+    @requires_dependencies(["together"], extras="togetherai")
+    def get_async_client(self) -> "AsyncTogether":
+        from together import AsyncTogether
+
+        return AsyncTogether(api_key=self.api_key.get_secret_value())
+
 
 @dataclass
 class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -44,19 +50,6 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return [outputs.data[i].embedding for i in range(len(elements))]
 
 
-class AsyncTogetherAIEmbeddingConfig(TogetherAIEmbeddingConfig):
-    api_key: SecretStr
-    embedder_model_name: str = Field(
-        default="togethercomputer/m2-bert-80M-8k-retrieval", alias="model_name"
-    )
-
-    @requires_dependencies(["together"], extras="togetherai")
-    def get_client(self) -> "AsyncTogether":
-        from together import AsyncTogether
-
-        return AsyncTogether(api_key=self.api_key.get_secret_value())
-
-
 @dataclass
 class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
@@ -70,7 +63,7 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return self._add_embeddings_to_elements(elements, embeddings)
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client = self.config.get_client()
+        client = self.config.get_async_client()
         outputs = await client.embeddings.create(
             model=self.config.embedder_model_name, input=elements
         )

@@ -59,6 +59,17 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
             api_key=self.api_key.get_secret_value(),
         )
 
+    @requires_dependencies(
+        ["mixedbread_ai"],
+        extras="embed-mixedbreadai",
+    )
+    def get_async_client(self) -> "AsyncMixedbreadAI":
+        from mixedbread_ai.client import AsyncMixedbreadAI
+
+        return AsyncMixedbreadAI(
+            api_key=self.api_key.get_secret_value(),
+        )
+
 
 @dataclass
 class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -142,23 +153,10 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self._embed([query])[0]
 
 
-class AsyncMixedbreadAIEmbeddingConfig(MixedbreadAIEmbeddingConfig):
-    @requires_dependencies(
-        ["mixedbread_ai"],
-        extras="embed-mixedbreadai",
-    )
-    def get_client(self) -> "AsyncMixedbreadAI":
-        from mixedbread_ai.client import AsyncMixedbreadAI
-
-        return AsyncMixedbreadAI(
-            api_key=self.api_key.get_secret_value(),
-        )
-
-
 @dataclass
 class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
-    config: AsyncMixedbreadAIEmbeddingConfig
+    config: MixedbreadAIEmbeddingConfig
 
     async def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
@@ -191,7 +189,7 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         batch_size = BATCH_SIZE
         batch_itr = range(0, len(texts), batch_size)
 
-        client = self.config.get_client()
+        client = self.config.get_async_client()
         tasks = []
         for i in batch_itr:
             batch = texts[i : i + batch_size]
