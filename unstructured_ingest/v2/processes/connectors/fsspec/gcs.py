@@ -115,13 +115,12 @@ class GcsConnectionConfig(FsspecConnectionConfig):
             raise UserError(e)
         if isinstance(e, ValueError) and "Bad Request" in str(e):
             raise UserError(e)
-        if isinstance(e, HttpError):
-            if http_error_code := e.code:
-                message = e.message or e
-                if 400 <= http_error_code < 500:
-                    raise UserError(message)
-                if http_error_code >= 500:
-                    raise ProviderError(message)
+        if isinstance(e, HttpError) and (http_error_code := e.code):
+            message = e.message or e
+            if 400 <= http_error_code < 500:
+                raise UserError(message)
+            if http_error_code >= 500:
+                raise ProviderError(message)
         logger.error(f"unhandled exception from gcs ({type(e)}): {e}", exc_info=True)
         return e
 
