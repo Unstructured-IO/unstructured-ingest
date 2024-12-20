@@ -255,6 +255,7 @@ class ElasticsearchDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
+        file_data.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
         cast_file_data = FileData.cast(file_data=file_data)
         cast_file_data.identifier = filename_id
         cast_file_data.metadata.date_processed = str(time())
@@ -264,7 +265,6 @@ class ElasticsearchDownloader(Downloader):
             "index_name": index_name,
             "document_id": record_id,
         }
-        cast_file_data.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
         return super().generate_download_response(
             file_data=cast_file_data,
             download_path=download_path,

@@ -198,14 +198,13 @@ class MongoDBDownloader(Downloader):
         concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
 
         # Create a FileData object for each document with source_identifiers
-        cast_file_data = FileData.cast(file_data=file_data)
-        cast_file_data.identifier = str(doc_id)
         filename = f"{doc_id}.txt"
-        cast_file_data.source_identifiers = SourceIdentifiers(
+        file_data.source_identifiers = SourceIdentifiers(
             filename=filename,
             fullpath=filename,
-            rel_path=filename,
         )
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = str(doc_id)
 
         # Determine the download path
         download_path = self.get_download_path(file_data=cast_file_data)

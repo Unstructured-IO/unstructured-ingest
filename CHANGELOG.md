@@ -1,14 +1,40 @@
-## 0.3.11-dev2
+## 0.3.12-dev3
 
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
 
-## 0.3.11-dev0
+## 0.3.12-dev2
+
+### Enhancements
+
+* **Added Redis destination connector**
+
+## 0.3.12-dev1
+
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+## 0.3.12-dev0
+
+### Fixes
+
+* **Fix Kafka destination connection problems**
+
+### Enhancements
+
+* **Kafka destination connector checks for existence of topic**
+* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+## 0.3.11
 
 ### Enhancements
 
 * **Support Databricks personal access token**
+
+### Fixes
+
+* **Fix missing source identifiers in some downloaders**
 
 ## 0.3.10
 

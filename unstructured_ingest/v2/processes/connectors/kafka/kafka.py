@@ -170,7 +170,7 @@ class KafkaIndexer(Indexer, ABC):
                 ]
                 if self.index_config.topic not in current_topics:
                     raise SourceConnectionError(
-                        "expected topic {} not detected in cluster: {}".format(
+                        "expected topic '{}' not detected in cluster: '{}'".format(
                             self.index_config.topic, ", ".join(current_topics)
                         )
                     )
@@ -232,6 +232,13 @@ class KafkaUploader(Uploader, ABC):
                     topic for topic in cluster_meta.topics if topic != "__consumer_offsets"
                 ]
                 logger.info(f"successfully checked available topics: {current_topics}")
+                if self.upload_config.topic not in current_topics:
+                    raise DestinationConnectionError(
+                        "expected topic '{}' not detected in cluster: '{}'".format(
+                            self.upload_config.topic, ", ".join(current_topics)
+                        )
+                    )
+
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -243,8 +250,10 @@ class KafkaUploader(Uploader, ABC):
         failed_producer = False
 
         def acked(err, msg):
+            nonlocal failed_producer
             if err is not None:
-                logger.error("Failed to deliver message: %s: %s" % (str(msg), str(err)))
+                failed_producer = True
+                logger.error("Failed to deliver kafka message: %s: %s" % (str(msg), str(err)))
 
         for element in elements:
             producer.produce(
@@ -253,7 +262,9 @@ class KafkaUploader(Uploader, ABC):
                 callback=acked,
             )
 
-        producer.flush(timeout=self.upload_config.timeout)
+        while producer_len := len(producer):
+            logger.debug(f"another iteration of kafka producer flush. Queue length: {producer_len}")
+            producer.flush(timeout=self.upload_config.timeout)
         if failed_producer:
             raise KafkaException("failed to produce all messages in batch")
 

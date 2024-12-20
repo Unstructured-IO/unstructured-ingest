@@ -1,14 +1,18 @@
 {
   "identifier": "cars-1-5fb93ce5",
   "connector_type": "postgres",
-  "source_identifiers": null,
+  "source_identifiers": {
+    "filename": "cars-1-5fb93ce5.csv",
+    "fullpath": "cars-1-5fb93ce5.csv",
+    "rel_path": null
+  },
   "metadata": {
     "url": null,
     "version": null,
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734106517.200396",
+    "date_processed": "1734614838.7745018",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -17,6 +21,6 @@
     "id_column": "car_id"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpsibieye5/cars-1-5fb93ce5.csv",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp10ytx8yq/cars-1-5fb93ce5.csv",
   "display_name": null
 }
