@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, release/* ]
   merge_group:
     branches: [ main ]
 
@@ -42,9 +42,11 @@ jobs:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
+          make install-base
           make install-client
           make install-test
           make integration-test-${{ matrix.test }}
+          make parse-skipped-tests
 
   embedders_integration_test:
     runs-on: ubuntu-latest
@@ -63,13 +65,17 @@ jobs:
           TOGETHERAI_API_KEY: ${{ secrets.TOGETHERAI_API_KEY }}
           VOYAGEAI_API_KEY: ${{ secrets.VOYAGEAI_API_KEY }}
           VERTEXAI_API_KEY: ${{ secrets.VERTEXAI_API_KEY }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
         run: |
+          make install-base
           make install-all-embedders
           make install-test
           make integration-test-embedders
+          make parse-skipped-tests
 
   source_connectors_integration_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -84,21 +90,34 @@ jobs:
       uses: ./.github/actions/base-cache
       with:
         python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
         DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
         DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
+        CONFLUENCE_USER_EMAIL: ${{secrets.CONFLUENCE_USER_EMAIL}}
+        CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
+        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
+        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
+        DATABRICKS_PAT: ${{ secrets.DATABRICKS_PAT }}
       run : |
         source .venv/bin/activate
-        sudo make install-docker-compose
-        docker compose version
         make install-test
         make integration-test-connectors-src
+        make parse-skipped-tests
 
   destination_connectors_integration_test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -113,6 +132,10 @@ jobs:
       uses: ./.github/actions/base-cache
       with:
         python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
     - name: Run Integration Tests
       env:
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
@@ -121,12 +144,31 @@ jobs:
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
         S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+        GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
+        AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
+        MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
+        MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+        MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+        MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
+        MS_USER_PNAME: ${{ secrets.MS_USER_PNAME }}
+        PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
+        AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+        AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+        AZURE_REDIS_INGEST_TEST_PASSWORD: ${{ secrets.AZURE_REDIS_INGEST_TEST_PASSWORD }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+        QDRANT_SERVER_URL: ${{ secrets.QDRANT_SERVER_URL }}
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
+        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
       run : |
         source .venv/bin/activate
-        sudo make install-docker-compose
-        docker compose version
         make install-test
         make integration-test-connectors-dest
+        make parse-skipped-tests
 
   test_src:
     strategy:
@@ -152,8 +194,6 @@ jobs:
       env:
         AIRTABLE_PERSONAL_ACCESS_TOKEN: ${{ secrets.AIRTABLE_PERSONAL_ACCESS_TOKEN }}
         BOX_APP_CONFIG: ${{ secrets.BOX_APP_CONFIG }}
-        CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
-        CONFLUENCE_USER_EMAIL: ${{ secrets.CONFLUENCE_USER_EMAIL }}
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
         DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
         DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
@@ -167,8 +207,6 @@ jobs:
         HUBSPOT_API_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
         JIRA_INGEST_API_TOKEN: ${{ secrets.JIRA_INGEST_API_TOKEN }}
         JIRA_INGEST_USER_EMAIL: ${{ secrets.JIRA_INGEST_USER_EMAIL }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
         MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
         MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
         MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
@@ -257,14 +295,13 @@ jobs:
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
         AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
         AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+        AZURE_REDIS_INGEST_TEST_PASSWORD: ${{ secrets.AZURE_REDIS_INGEST_TEST_PASSWORD }}
         BOX_APP_CONFIG: ${{ secrets.BOX_APP_CONFIG }}
         DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
         DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
         DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
         GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
         AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
         PINECONE_API_KEY: ${{secrets.PINECONE_API_KEY}}
         VECTARA_OAUTH_CLIENT_ID: ${{secrets.VECTARA_OAUTH_CLIENT_ID}}
@@ -278,6 +315,7 @@ jobs:
         KDBAI_BEARER_TOKEN: ${{ secrets.KDBAI_BEARER_TOKEN }}
         KDBAI_USERNAME: ${{ secrets.KDBAI_USERNAME }}
         KDBAI_CIPHER_KEY: ${{ secrets.KDBAI_CIPHER_KEY }}
+        UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
         TABLE_OCR: "tesseract"
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"

@@ -2,9 +2,12 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "OPENAI_API_KEY"
@@ -39,3 +42,13 @@ def test_raw_openai_embedder(embedder_file: Path):
     validate_raw_embedder(
         embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1536,)
     )
+
+
+def test_raw_openai_embedder_invalid_credentials():
+    embedder = OpenAIEmbeddingEncoder(
+        config=OpenAIEmbeddingConfig(
+            api_key="fake_api_key",
+        )
+    )
+    with pytest.raises(UserAuthError):
+        embedder.get_exemplary_embedding()

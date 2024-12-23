@@ -2,9 +2,12 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 from test.integration.embedders.utils import validate_embedding_output, validate_raw_embedder
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.bedrock import BedrockEmbeddingConfig, BedrockEmbeddingEncoder
+from unstructured_ingest.v2.errors import UserAuthError, UserError
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
 
@@ -47,3 +50,28 @@ def test_raw_bedrock_embedder(embedder_file: Path):
         expected_dimensions=(1536,),
         expected_is_unit_vector=False,
     )
+
+
+def test_raw_bedrock_embedder_invalid_credentials(embedder_file: Path):
+    embedder = BedrockEmbeddingEncoder(
+        config=BedrockEmbeddingConfig(
+            aws_access_key_id="no_key",
+            aws_secret_access_key="no_secret",
+        )
+    )
+    with pytest.raises(UserAuthError):
+        embedder.get_exemplary_embedding()
+
+
+@requires_env("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
+def test_raw_bedrock_embedder_invalid_model(embedder_file: Path):
+    aws_credentials = get_aws_credentials()
+    embedder = BedrockEmbeddingEncoder(
+        config=BedrockEmbeddingConfig(
+            aws_access_key_id=aws_credentials["aws_access_key_id"],
+            aws_secret_access_key=aws_credentials["aws_secret_access_key"],
+            model_name="invalid_model",
+        )
+    )
+    with pytest.raises(UserError):
+        embedder.get_exemplary_embedding()

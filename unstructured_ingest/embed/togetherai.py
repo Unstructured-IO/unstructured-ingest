@@ -4,7 +4,15 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import (
+    RateLimitError as CustomRateLimitError,
+)
+from unstructured_ingest.v2.errors import (
+    UserAuthError,
+    UserError,
+)
 
 if TYPE_CHECKING:
     from together import Together
@@ -27,6 +35,20 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
 class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        # https://docs.together.ai/docs/error-codes
+        from together.error import AuthenticationError, RateLimitError, TogetherException
+
+        if not isinstance(e, TogetherException):
+            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+            return e
+        message = e.args[0]
+        if isinstance(e, AuthenticationError):
+            return UserAuthError(message)
+        if isinstance(e, RateLimitError):
+            return CustomRateLimitError(message)
+        return UserError(message)
+
     def embed_query(self, query: str) -> list[float]:
         return self._embed_documents(elements=[query])[0]
 
@@ -36,5 +58,10 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_client()
-        outputs = client.embeddings.create(model=self.config.embedder_model_name, input=elements)
+        try:
+            outputs = client.embeddings.create(
+                model=self.config.embedder_model_name, input=elements
+            )
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return [outputs.data[i].embedding for i in range(len(elements))]

@@ -15,10 +15,10 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     Indexer,
     IndexerConfig,
-    download_responses,
 )
 from unstructured_ingest.v2.interfaces.file_data import FileDataSourceMetadata, SourceIdentifiers
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
@@ -191,7 +191,7 @@ class OutlookDownloader(Downloader):
     connection_config: OutlookConnectionConfig
     download_config: OutlookDownloaderConfig = field(default_factory=OutlookDownloaderConfig)
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         # NOTE: Indexer should provide source identifiers required to generate the download path
         download_path = self.get_download_path(file_data)
         if download_path is None:

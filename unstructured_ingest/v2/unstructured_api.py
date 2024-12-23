@@ -1,9 +1,8 @@
-import asyncio
 from dataclasses import fields
-from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
@@ -26,7 +25,7 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     # NOTE(austin): PartitionParameters is a Pydantic model in v0.26.0
     # Prior to this it was a dataclass which doesn't have .__fields
     try:
-        possible_fields = PartitionParameters.__fields__
+        possible_fields = PartitionParameters.model_fields
     except AttributeError:
         possible_fields = [f.name for f in fields(PartitionParameters)]
 
@@ -53,7 +52,23 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
     return PartitionRequest(partition_parameters=partition_params)
 
 
-async def call_api(
+def handle_error(e: Exception):
+    from unstructured_client.models.errors.sdkerror import SDKError
+
+    if isinstance(e, SDKError):
+        logger.error(f"Error calling Unstructured API: {e}")
+        if 400 <= e.status_code < 500:
+            raise UserError(e.body)
+        elif e.status_code >= 500:
+            raise ProviderError(e.body)
+        else:
+            raise e
+    else:
+        logger.error(f"Uncaught Error calling API: {e}")
+        raise e
+
+
+async def call_api_async(
     server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
 ) -> list[dict]:
     """Call the Unstructured API using unstructured-client.
@@ -73,15 +88,37 @@ async def call_api(
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
+    try:
+        res = await client.general.partition_async(request=partition_request)
+    except Exception as e:
+        handle_error(e)
 
-    # TODO when client supports async, run without using run_in_executor
-    # isolate the IO heavy call
-    loop = asyncio.get_event_loop()
+    return res.elements or []
 
-    # Note(austin) - The partition calls needs request to be a keyword arg
-    # We have to use partial to do this, we can't pass request=request into run_in_executor
-    partition_call = partial(client.general.partition, request=partition_request)
 
-    res = await loop.run_in_executor(None, partition_call)
+def call_api(
+    server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
+) -> list[dict]:
+    """Call the Unstructured API using unstructured-client.
+
+    Args:
+        server_url: The base URL where the API is hosted
+        api_key: The user's API key (can be empty if this is a self hosted API)
+        filename: Path to the file being partitioned
+        api_parameters: A dict containing the requested API parameters
+
+    Returns: A list of the file's elements, or an empty list if there was an error
+    """
+    from unstructured_client import UnstructuredClient
+
+    client = UnstructuredClient(
+        server_url=server_url,
+        api_key_auth=api_key,
+    )
+    partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
+    try:
+        res = client.general.partition(request=partition_request)
+    except Exception as e:
+        handle_error(e)
 
     return res.elements or []

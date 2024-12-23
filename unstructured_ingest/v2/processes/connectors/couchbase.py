@@ -1,13 +1,12 @@
 import hashlib
-import json
-import sys
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, List
 
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -18,6 +17,8 @@ from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
@@ -26,6 +27,7 @@ from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
+    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -40,9 +42,18 @@ from unstructured_ingest.v2.processes.connector_registry import (
 
 if TYPE_CHECKING:
     from couchbase.cluster import Cluster
+    from couchbase.collection import Collection
 
 CONNECTOR_TYPE = "couchbase"
 SERVER_API_VERSION = "1"
+
+
+class CouchbaseAdditionalMetadata(BaseModel):
+    bucket: str
+
+
+class CouchbaseBatchFileData(BatchFileData):
+    additional_metadata: CouchbaseAdditionalMetadata
 
 
 class CouchbaseAccessConfig(AccessConfig):
@@ -65,7 +76,8 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     access_config: Secret[CouchbaseAccessConfig]
 
     @requires_dependencies(["couchbase"], extras="couchbase")
-    def connect_to_couchbase(self) -> "Cluster":
+    @contextmanager
+    def get_client(self) -> Generator["Cluster", None, None]:
         from couchbase.auth import PasswordAuthenticator
         from couchbase.cluster import Cluster
         from couchbase.options import ClusterOptions
@@ -73,9 +85,14 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
         options = ClusterOptions(auth)
         options.apply_profile("wan_development")
-        cluster = Cluster(self.connection_string, options)
-        cluster.wait_until_ready(timedelta(seconds=5))
-        return cluster
+        cluster = None
+        try:
+            cluster = Cluster(self.connection_string, options)
+            cluster.wait_until_ready(timedelta(seconds=5))
+            yield cluster
+        finally:
+            if cluster:
+                cluster.close()
 
 
 class CouchbaseUploadStagerConfig(UploadStagerConfig):
@@ -88,32 +105,16 @@ class CouchbaseUploadStager(UploadStager):
         default_factory=lambda: CouchbaseUploadStagerConfig()
     )
 
-    def run(
-        self,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        output_elements = []
-        for element in elements_contents:
-            new_doc = {
-                element["element_id"]: {
-                    "embedding": element.get("embeddings", None),
-                    "text": element.get("text", None),
-                    "metadata": element.get("metadata", None),
-                    "type": element.get("type", None),
-                }
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        return {
+            data["element_id"]: {
+                "embedding": data.get("embeddings", None),
+                "text": data.get("text", None),
+                "metadata": data.get("metadata", None),
+                "type": data.get("type", None),
             }
-            output_elements.append(new_doc)
-
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(output_elements, output_file)
-        return output_path
+        }
 
 
 class CouchbaseUploaderConfig(UploaderConfig):
@@ -128,26 +129,26 @@ class CouchbaseUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.connect_to_couchbase()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"bucket, {self.connection_config.bucket} "
             f"at {self.connection_config.connection_string}",
         )
-        cluster = self.connection_config.connect_to_couchbase()
-        bucket = cluster.bucket(self.connection_config.bucket)
-        scope = bucket.scope(self.connection_config.scope)
-        collection = scope.collection(self.connection_config.collection)
+        with self.connection_config.get_client() as client:
+            bucket = client.bucket(self.connection_config.bucket)
+            scope = bucket.scope(self.connection_config.scope)
+            collection = scope.collection(self.connection_config.collection)
 
-        for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
-            collection.upsert_multi({doc_id: doc for doc in chunk for doc_id, doc in doc.items()})
+            for chunk in batch_generator(data, self.upload_config.batch_size):
+                collection.upsert_multi(
+                    {doc_id: doc for doc in chunk for doc_id, doc in doc.items()}
+                )
 
 
 class CouchbaseIndexerConfig(IndexerConfig):
@@ -162,7 +163,7 @@ class CouchbaseIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.connect_to_couchbase()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -180,44 +181,38 @@ class CouchbaseIndexer(Indexer):
         attempts = 0
         while attempts < max_attempts:
             try:
-                cluster = self.connection_config.connect_to_couchbase()
-                result = cluster.query(query)
-                document_ids = [row["id"] for row in result]
-                return document_ids
+                with self.connection_config.get_client() as client:
+                    result = client.query(query)
+                    document_ids = [row["id"] for row in result]
+                    return document_ids
             except Exception as e:
                 attempts += 1
                 time.sleep(3)
                 if attempts == max_attempts:
                     raise SourceConnectionError(f"failed to get document ids: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[CouchbaseBatchFileData, None, None]:
         ids = self._get_doc_ids()
-
-        id_batches = [
-            ids[i * self.index_config.batch_size : (i + 1) * self.index_config.batch_size]
-            for i in range(
-                (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
-            )
-        ]
-        for batch in id_batches:
+        for batch in batch_generator(ids, self.index_config.batch_size):
             # Make sure the hash is always a positive number to create identified
-            identified = str(hash(tuple(batch)) + sys.maxsize + 1)
-            yield FileData(
-                identifier=identified,
+            yield CouchbaseBatchFileData(
                 connector_type=CONNECTOR_TYPE,
                 metadata=FileDataSourceMetadata(
                     url=f"{self.connection_config.connection_string}/"
                     f"{self.connection_config.bucket}",
                     date_processed=str(time.time()),
                 ),
-                additional_metadata={
-                    "ids": list(batch),
-                    "bucket": self.connection_config.bucket,
-                },
+                additional_metadata=CouchbaseAdditionalMetadata(
+                    bucket=self.connection_config.bucket
+                ),
+                batch_items=[BatchItem(identifier=b) for b in batch],
             )
 
 
 class CouchbaseDownloaderConfig(DownloaderConfig):
+    collection_id: str = Field(
+        default="id", description="The unique key of the id field in the collection"
+    )
     fields: list[str] = field(default_factory=list)
 
 
@@ -247,9 +242,9 @@ class CouchbaseDownloader(Downloader):
         return concatenated_values
 
     def generate_download_response(
-        self, result: dict, bucket: str, file_data: FileData
+        self, result: dict, bucket: str, file_data: CouchbaseBatchFileData
     ) -> DownloadResponse:
-        record_id = result["id"]
+        record_id = result[self.download_config.collection_id]
         filename_id = self.get_identifier(bucket=bucket, record_id=record_id)
         filename = f"{filename_id}.txt"
         download_path = self.download_dir / Path(filename)
@@ -267,44 +262,54 @@ class CouchbaseDownloader(Downloader):
                 exc_info=True,
             )
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-        return DownloadResponse(
-            file_data=FileData(
-                identifier=filename_id,
-                connector_type=CONNECTOR_TYPE,
-                metadata=FileDataSourceMetadata(
-                    version=None,
-                    date_processed=str(time.time()),
-                    record_locator={
-                        "connection_string": self.connection_config.connection_string,
-                        "bucket": bucket,
-                        "scope": self.connection_config.scope,
-                        "collection": self.connection_config.collection,
-                        "document_id": record_id,
-                    },
-                ),
-            ),
-            path=download_path,
+        file_data.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = filename_id
+        cast_file_data.metadata.date_processed = str(time.time())
+        cast_file_data.metadata.record_locator = {
+            "connection_string": self.connection_config.connection_string,
+            "bucket": bucket,
+            "scope": self.connection_config.scope,
+            "collection": self.connection_config.collection,
+            "document_id": record_id,
+        }
+        return super().generate_download_response(
+            file_data=cast_file_data,
+            download_path=download_path,
         )
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        bucket_name: str = file_data.additional_metadata["bucket"]
-        ids: list[str] = file_data.additional_metadata["ids"]
+        couchbase_file_data = CouchbaseBatchFileData.cast(file_data=file_data)
+        bucket_name: str = couchbase_file_data.additional_metadata.bucket
+        ids: list[str] = [item.identifier for item in couchbase_file_data.batch_items]
 
-        cluster = self.connection_config.connect_to_couchbase()
-        bucket = cluster.bucket(bucket_name)
-        scope = bucket.scope(self.connection_config.scope)
-        collection = scope.collection(self.connection_config.collection)
+        with self.connection_config.get_client() as client:
+            bucket = client.bucket(bucket_name)
+            scope = bucket.scope(self.connection_config.scope)
+            collection = scope.collection(self.connection_config.collection)
 
-        download_resp = self.process_all_doc_ids(ids, collection, bucket_name, file_data)
-        return list(download_resp)
+            download_resp = self.process_all_doc_ids(ids, collection, bucket_name, file_data)
+            return list(download_resp)
 
-    def process_doc_id(self, doc_id, collection, bucket_name, file_data):
+    def process_doc_id(
+        self,
+        doc_id: str,
+        collection: "Collection",
+        bucket_name: str,
+        file_data: CouchbaseBatchFileData,
+    ):
         result = collection.get(doc_id)
         return self.generate_download_response(
             result=result.content_as[dict], bucket=bucket_name, file_data=file_data
         )
 
-    def process_all_doc_ids(self, ids, collection, bucket_name, file_data):
+    def process_all_doc_ids(
+        self,
+        ids: list[str],
+        collection: "Collection",
+        bucket_name: str,
+        file_data: CouchbaseBatchFileData,
+    ):
         for doc_id in ids:
             yield self.process_doc_id(doc_id, collection, bucket_name, file_data)
 

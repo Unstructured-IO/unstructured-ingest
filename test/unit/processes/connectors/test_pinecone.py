@@ -1,6 +1,8 @@
 import pytest
 
+from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.pinecone import (
+    CONNECTOR_TYPE,
     PineconeUploadStager,
     PineconeUploadStagerConfig,
 )
@@ -28,13 +30,18 @@ def test_element_dict():
 def test_conform_dict(
     monkeypatch, test_element_dict, metadata_fields, expected_to_exist, not_expected_to_exist
 ):
+    file_data = FileData(
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+        source_identifiers=SourceIdentifiers(filename="file.txt", fullpath="file.txt"),
+    )
     if metadata_fields is not None:
         stager = PineconeUploadStager(
             upload_stager_config=PineconeUploadStagerConfig(metadata_fields=metadata_fields)
         )
     else:
         stager = PineconeUploadStager()
-    results = stager.conform_dict(test_element_dict.copy())
+    results = stager.conform_dict(test_element_dict.copy(), file_data=file_data)
     results.pop("id")
     assert test_element_dict["embeddings"] == results.pop("values")
 

@@ -29,14 +29,3 @@ async def test_chunker_api(chunker_file: Path, strategy: str):
     chunker = Chunker(config=chunker_config)
     results = await chunker.run_async(elements_filepath=chunker_file)
     assert results
-
-
-@pytest.mark.parametrize("chunker_file", chunker_files, ids=[path.name for path in chunker_files])
-@pytest.mark.parametrize("strategy", ["basic", "by_title"])
-def test_chunker_basic(chunker_file: Path, strategy: str):
-    chunker_config = ChunkerConfig(
-        chunking_strategy=strategy,
-    )
-    chunker = Chunker(config=chunker_config)
-    results = chunker.run(elements_filepath=chunker_file)
-    assert results

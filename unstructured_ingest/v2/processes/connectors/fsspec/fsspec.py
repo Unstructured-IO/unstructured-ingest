@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
 import random
+import shutil
+import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, TypeVar
@@ -75,6 +79,15 @@ class FsspecConnectionConfig(ConnectionConfig):
     access_config: Secret[FsspecAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    @contextmanager
+    def get_client(self, protocol: str) -> Generator["AbstractFileSystem", None, None]:
+        from fsspec import get_filesystem_class
+
+        client = get_filesystem_class(protocol)(
+            **self.get_access_config(),
+        )
+        yield client
+
 
 FsspecIndexerConfigT = TypeVar("FsspecIndexerConfigT", bound=FsspecIndexerConfig)
 FsspecConnectionConfigT = TypeVar("FsspecConnectionConfigT", bound=FsspecConnectionConfig)
@@ -85,14 +98,6 @@ class FsspecIndexer(Indexer):
     connection_config: FsspecConnectionConfigT
     index_config: FsspecIndexerConfigT
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
-
-    @property
-    def fs(self) -> "AbstractFileSystem":
-        from fsspec import get_filesystem_class
-
-        return get_filesystem_class(self.index_config.protocol)(
-            **self.connection_config.get_access_config(),
-        )
 
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
@@ -107,7 +112,8 @@ class FsspecIndexer(Indexer):
                 return
             file_to_sample = valid_files[0]
             logger.debug(f"attempting to make HEAD request for file: {file_to_sample}")
-            self.fs.head(path=file_to_sample)
+            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+                client.head(path=file_to_sample)
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -117,16 +123,18 @@ class FsspecIndexer(Indexer):
             # fs.ls does not walk directories
             # directories that are listed in cloud storage can cause problems
             # because they are seen as 0 byte files
-            files = self.fs.ls(self.index_config.path_without_protocol, detail=True)
+            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+                files = client.ls(self.index_config.path_without_protocol, detail=True)
 
         else:
             # fs.find will recursively walk directories
             # "size" is a common key for all the cloud protocols with fs
-            found = self.fs.find(
-                self.index_config.path_without_protocol,
-                detail=True,
-            )
-            files = found.values()
+            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+                found = client.find(
+                    self.index_config.path_without_protocol,
+                    detail=True,
+                )
+                files = found.values()
         filtered_files = [
             file for file in files if file.get("size") > 0 and file.get("type") == "file"
         ]
@@ -176,6 +184,7 @@ class FsspecIndexer(Indexer):
                 ),
                 metadata=self.get_metadata(file_data=file_data),
                 additional_metadata=additional_metadata,
+                display_name=file_path,
             )
 
 
@@ -196,22 +205,39 @@ class FsspecDownloader(Downloader):
     )
 
     def is_async(self) -> bool:
-        return self.fs.async_impl
+        with self.connection_config.get_client(protocol=self.protocol) as client:
+            return client.async_impl
 
-    @property
-    def fs(self) -> "AbstractFileSystem":
-        from fsspec import get_filesystem_class
-
-        return get_filesystem_class(self.protocol)(
-            **self.connection_config.get_access_config(),
-        )
+    def handle_directory_download(self, lpath: Path) -> None:
+        # If the object's name contains certain characters (i.e. '?'), it
+        # gets downloaded into a new directory of the same name. This
+        # reconciles that with what is expected, which is to download it
+        # as a file that is not within a directory.
+        if not lpath.is_dir():
+            return
+        desired_name = lpath.name
+        files_in_dir = [file for file in lpath.iterdir() if file.is_file()]
+        if not files_in_dir:
+            raise ValueError(f"no files in {lpath}")
+        if len(files_in_dir) > 1:
+            raise ValueError(
+                "Multiple files in {}: {}".format(lpath, ", ".join([str(f) for f in files_in_dir]))
+            )
+        file = files_in_dir[0]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_location = os.path.join(temp_dir, desired_name)
+            shutil.copyfile(src=file, dst=temp_location)
+            shutil.rmtree(lpath)
+            shutil.move(src=temp_location, dst=lpath)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             rpath = file_data.additional_metadata["original_file_path"]
-            self.fs.get(rpath=rpath, lpath=download_path.as_posix())
+            with self.connection_config.get_client(protocol=self.protocol) as client:
+                client.get(rpath=rpath, lpath=download_path.as_posix())
+            self.handle_directory_download(lpath=download_path)
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
@@ -222,7 +248,9 @@ class FsspecDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             rpath = file_data.additional_metadata["original_file_path"]
-            await self.fs.get(rpath=rpath, lpath=download_path.as_posix())
+            with self.connection_config.get_client(protocol=self.protocol) as client:
+                await client.get(rpath=rpath, lpath=download_path.as_posix())
+            self.handle_directory_download(lpath=download_path)
         except Exception as e:
             logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
             raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
@@ -230,9 +258,7 @@ class FsspecDownloader(Downloader):
 
 
 class FsspecUploaderConfig(FileConfig, UploaderConfig):
-    overwrite: bool = Field(
-        default=False, description="If true, an existing file will be overwritten."
-    )
+    pass
 
 
 FsspecUploaderConfigT = TypeVar("FsspecUploaderConfigT", bound=FsspecUploaderConfig)
@@ -242,9 +268,11 @@ FsspecUploaderConfigT = TypeVar("FsspecUploaderConfigT", bound=FsspecUploaderCon
 class FsspecUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     upload_config: FsspecUploaderConfigT = field(default=None)
+    connection_config: FsspecConnectionConfigT
 
     def is_async(self) -> bool:
-        return self.fs.async_impl
+        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+            return client.async_impl
 
     @property
     def fs(self) -> "AbstractFileSystem":
@@ -271,7 +299,7 @@ class FsspecUploader(Uploader):
                 **self.connection_config.get_access_config(),
             )
             upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
-            fs.write_bytes(path=str(upload_path), value=b"")
+            fs.write_bytes(path=upload_path.as_posix(), value=b"")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -287,19 +315,14 @@ class FsspecUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        if self.fs.exists(path=str(upload_path)) and not self.upload_config.overwrite:
-            logger.debug(f"skipping upload of {path} to {upload_path}, file already exists")
-            return
         logger.debug(f"writing local file {path_str} to {upload_path}")
-        self.fs.upload(lpath=path_str, rpath=str(upload_path))
+        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+            client.upload(lpath=path_str, rpath=upload_path.as_posix())
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         upload_path = self.get_upload_path(file_data=file_data)
         path_str = str(path.resolve())
         # Odd that fsspec doesn't run exists() as async even when client support async
-        already_exists = self.fs.exists(path=str(upload_path))
-        if already_exists and not self.upload_config.overwrite:
-            logger.debug(f"skipping upload of {path} to {upload_path}, file already exists")
-            return
         logger.debug(f"writing local file {path_str} to {upload_path}")
-        self.fs.upload(lpath=path_str, rpath=str(upload_path))
+        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+            client.upload(lpath=path_str, rpath=upload_path.as_posix())
