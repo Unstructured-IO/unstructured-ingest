@@ -42,6 +42,8 @@ from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
 from .neo4j import CONNECTOR_TYPE as NEO4J_CONNECTOR_TYPE
 from .neo4j import neo4j_destination_entry
+from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
+from .notion.connector import notion_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_destination_entry, onedrive_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
@@ -58,8 +60,6 @@ from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
 from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
 from .vectara import vectara_destination_entry
-from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
-from .notion.connector import notion_source_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
