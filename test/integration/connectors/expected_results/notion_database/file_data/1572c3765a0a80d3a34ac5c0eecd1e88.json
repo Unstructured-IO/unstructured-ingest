@@ -1,0 +1,39 @@
+{
+    "identifier": "1572c3765a0a80d3a34ac5c0eecd1e88",
+    "connector_type": "notion",
+    "source_identifiers": {
+        "filename": "1572c3765a0a80d3a34ac5c0eecd1e88.html",
+        "fullpath": "1572c3765a0a80d3a34ac5c0eecd1e88.html",
+        "rel_path": "1572c3765a0a80d3a34ac5c0eecd1e88.html"
+    },
+    "metadata": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+            "database_id": "1572c3765a0a80d3a34ac5c0eecd1e88"
+        },
+        "date_created": "2024-12-09T11:54:00.000Z",
+        "date_modified": "2024-12-30T15:19:00.000Z",
+        "date_processed": "1735577045.091182",
+        "permissions_data": null,
+        "filesize_bytes": null
+    },
+    "additional_metadata": {
+        "created_by": {
+            "id": "118d872b-594c-8171-b46f-00020d10d8b2",
+            "object": "user"
+        },
+        "last_edited_by": {
+            "id": "118d872b-594c-8171-b46f-00020d10d8b2",
+            "object": "user"
+        },
+        "parent": {
+            "page_id": "1572c376-5a0a-80d8-9619-cb35a622b8cc",
+            "type": "page_id"
+        },
+        "url": "https://www.notion.so/1572c3765a0a80d3a34ac5c0eecd1e88"
+    },
+    "reprocess": false,
+    "local_download_path": "/private/var/folders/h7/n848df9s5yn7ml8rxb61vhyc0000gp/T/tmpnqb7824d/1572c3765a0a80d3a34ac5c0eecd1e88.html",
+    "display_name": null
+  }

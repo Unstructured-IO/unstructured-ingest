@@ -2,10 +2,9 @@ import os
 
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
+    get_all_file_data,
     run_all_validations,
     update_fixtures,
-    get_all_file_data
-
 )
 from unstructured_ingest.v2.interfaces import Downloader, Indexer
 from unstructured_ingest.v2.processes.connectors.notion.connector import (
@@ -18,7 +17,45 @@ from unstructured_ingest.v2.processes.connectors.notion.connector import (
 )
 
 
-def test_notion_source(temp_dir):
+def test_notion_source_database(temp_dir):
+    # Retrieve environment variables
+    notion_api_key = os.environ["NOTION_API_KEY"]
+
+    # Create connection and indexer configurations
+    access_config = NotionAccessConfig(notion_api_key=notion_api_key)
+    connection_config = NotionConnectionConfig(
+        access_config=access_config,
+    )
+    index_config = NotionIndexerConfig(
+        database_ids=["1572c3765a0a80d3a34ac5c0eecd1e88"], recursive=False
+    )
+
+    download_config = NotionDownloaderConfig(download_dir=temp_dir)
+
+    # Instantiate indexer and downloader
+    indexer = NotionIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = NotionDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
+
+    # Run the source connector validation
+    source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="notion_database",
+            expected_num_files=1,
+            validate_downloaded_files=True,
+            exclude_fields_extend=["metadata.date_created", "metadata.date_modified"],
+        ),
+    )
+
+
+def test_notion_source_page(temp_dir):
     # Retrieve environment variables
     notion_api_key = os.environ["NOTION_API_KEY"]
 
@@ -48,10 +85,10 @@ def test_notion_source(temp_dir):
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="notion",
+            test_id="notion_page",
             expected_num_files=1,
             validate_downloaded_files=True,
-            exclude_fields_extend=["metadata.date_created", "metadata.date_modified"]
+            exclude_fields_extend=["metadata.date_created", "metadata.date_modified"],
         ),
     )
 
@@ -84,6 +121,7 @@ def source_connector_validation(
         else:
             postdownload_file_data = resp["file_data"].model_copy(deep=True)
             all_postdownload_file_data.append(postdownload_file_data)
+
     if not overwrite_fixtures:
         print("Running validation")
         run_all_validations(
@@ -105,6 +143,3 @@ def source_connector_validation(
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
         )
-
-
-

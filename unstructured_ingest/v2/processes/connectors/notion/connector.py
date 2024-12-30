@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from time import time
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
 
 from pydantic import UUID4, Field, Secret
 
@@ -21,6 +21,9 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
+if TYPE_CHECKING:
+    from unstructured_ingest.v2.processes.connectors.notion.client import Client
+
 NOTION_API_VERSION = "2022-06-28"
 CONNECTOR_TYPE = "notion"
 
@@ -33,7 +36,7 @@ class NotionConnectionConfig(ConnectionConfig):
     access_config: Secret[NotionAccessConfig]
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_client(self) -> "get_client":
+    def get_client(self) -> "Client":
         from unstructured_ingest.v2.processes.connectors.notion.client import Client
 
         return Client(
@@ -138,7 +141,7 @@ class NotionIndexer(Indexer):
                     databases_to_process.update(child_databases)
 
     @requires_dependencies(["notion_client"], extras="notion")
-    def get_page_file_data(self, page_id: str, client: "get_client") -> Optional[FileData]:
+    def get_page_file_data(self, page_id: str, client: "Client") -> Optional[FileData]:
         try:
             page_metadata = client.pages.retrieve(page_id=page_id)  # type: ignore
             date_created = page_metadata.created_time
@@ -157,10 +160,10 @@ class NotionIndexer(Indexer):
             )
             # additional_metadata = page_metadata
             additional_metadata = {
-                'created_by': page_metadata.created_by,
-                'last_edited_by': page_metadata.last_edited_by,
-                'parent': page_metadata.parent,
-                'url': page_metadata.url
+                "created_by": page_metadata.created_by,
+                "last_edited_by": page_metadata.last_edited_by,
+                "parent": page_metadata.parent,
+                "url": page_metadata.url,
             }
 
             return FileData(
@@ -174,8 +177,8 @@ class NotionIndexer(Indexer):
             logger.error(f"Error retrieving page {page_id}: {e}")
             return None
 
-    @requires_dependencies(["Client"], extras="notion")
-    def get_database_file_data(self, database_id: str, client: "get_client") -> Optional[FileData]:
+    @requires_dependencies(["notion_client"], extras="notion")
+    def get_database_file_data(self, database_id: str, client: "Client") -> Optional[FileData]:
         try:
             # type: ignore
             database_metadata = client.databases.retrieve(database_id=database_id)
@@ -193,7 +196,12 @@ class NotionIndexer(Indexer):
                 record_locator={"database_id": database_id},
                 date_processed=str(time()),
             )
-            additional_metadata = database_metadata
+            additional_metadata = {
+                "created_by": database_metadata.created_by,
+                "last_edited_by": database_metadata.last_edited_by,
+                "parent": database_metadata.parent,
+                "url": database_metadata.url,
+            }
             return FileData(
                 identifier=identifier,
                 connector_type=CONNECTOR_TYPE,
@@ -208,7 +216,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases(
         self,
         page_id: str,
-        client: "get_client",
+        client: "Client",
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:
@@ -228,7 +236,7 @@ class NotionIndexer(Indexer):
     def get_child_pages_and_databases_from_database(
         self,
         database_id: str,
-        client: "get_client",
+        client: "Client",
         processed_pages: set[str],
         processed_databases: set[str],
     ) -> tuple[set[str], set[str]]:

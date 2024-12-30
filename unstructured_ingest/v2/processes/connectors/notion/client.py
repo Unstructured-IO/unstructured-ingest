@@ -1,10 +1,13 @@
-from typing import Any, Generator, Optional, Tuple, List
+from typing import Any, Generator, List, Optional, Tuple
 
 import httpx
+import notion_client.errors
 from notion_client import Client as NotionClient
 from notion_client.api_endpoints import BlocksChildrenEndpoint as NotionBlocksChildrenEndpoint
+from notion_client.api_endpoints import BlocksEndpoint as NotionBlocksEndpoint
 from notion_client.api_endpoints import DatabasesEndpoint as NotionDatabasesEndpoint
 from notion_client.api_endpoints import Endpoint
+from notion_client.api_endpoints import PagesEndpoint as NotionPagesEndpoint
 from notion_client.errors import HTTPResponseError, RequestTimeoutError
 
 from unstructured_ingest.ingest_backoff import RetryHandler
@@ -14,9 +17,6 @@ from unstructured_ingest.v2.processes.connectors.notion.types.block import Block
 from unstructured_ingest.v2.processes.connectors.notion.types.database import Database
 from unstructured_ingest.v2.processes.connectors.notion.types.database_properties import map_cells
 from unstructured_ingest.v2.processes.connectors.notion.types.page import Page
-import notion_client.errors
-from notion_client.api_endpoints import BlocksEndpoint as NotionBlocksEndpoint
-from notion_client.api_endpoints import PagesEndpoint as NotionPagesEndpoint
 
 
 @requires_dependencies(["httpx"], extras="notion")
