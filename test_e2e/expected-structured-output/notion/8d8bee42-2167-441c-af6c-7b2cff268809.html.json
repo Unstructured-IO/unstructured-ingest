@@ -1,0 +1,30 @@
+[
+  {
+    "type": "NarrativeText",
+    "element_id": "5bcc7126851f18b3a41c951030def658",
+    "text": "Planning notes",
+    "metadata": {
+      "emphasized_text_contents": [
+        "Planning notes"
+      ],
+      "emphasized_text_tags": [
+        "b"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "page_id": "8d8bee42-2167-441c-af6c-7b2cff268809"
+        },
+        "date_created": "2023-08-02T20:36:00.000Z",
+        "date_modified": "2023-08-08T19:17:00.000Z",
+        "permissions_data": null,
+        "filesize_bytes": 198
+      }
+    }
+  }
+]

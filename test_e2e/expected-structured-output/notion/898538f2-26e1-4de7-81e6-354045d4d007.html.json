@@ -1,0 +1,46 @@
+[
+  {
+    "type": "Title",
+    "element_id": "52c2888160339820dfa8bb604c031ee9",
+    "text": "Mission, Vision, Values",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "page_id": "898538f2-26e1-4de7-81e6-354045d4d007"
+        },
+        "date_created": "2023-08-04T18:31:00.000Z",
+        "date_modified": "2023-08-04T18:31:00.000Z",
+        "permissions_data": null,
+        "filesize_bytes": 462
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "be9ab17406409efa59dc98966370b9e7",
+    "text": "Notion Tip: A company mission provides direction and purpose, aligning actions and decisions towards a common goal. It also helps attract like-minded individuals who share the same values and vision for the company.",
+    "metadata": {
+      "languages": [
+        "eng"
+      ],
+      "filetype": "text/html",
+      "data_source": {
+        "url": null,
+        "version": null,
+        "record_locator": {
+          "page_id": "898538f2-26e1-4de7-81e6-354045d4d007"
+        },
+        "date_created": "2023-08-04T18:31:00.000Z",
+        "date_modified": "2023-08-04T18:31:00.000Z",
+        "permissions_data": null,
+        "filesize_bytes": 462
+      }
+    }
+  }
+]
