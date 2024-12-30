@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from _pytest.fixtures import TopRequest
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
@@ -24,6 +25,10 @@ from azure.search.documents.indexes.models import (
 
 from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
+)
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
@@ -225,9 +230,26 @@ async def test_azure_ai_search_destination(
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
     expected_count = len(staged_elements)
-    search_client: SearchClient = uploader.connection_config.get_search_client()
-    validate_count(search_client=search_client, expected_count=expected_count)
+    with uploader.connection_config.get_search_client() as search_client:
+        validate_count(search_client=search_client, expected_count=expected_count)
 
     # Rerun and make sure the same documents get updated
     uploader.run(path=staged_filepath, file_data=file_data)
-    validate_count(search_client=search_client, expected_count=expected_count)
+    with uploader.connection_config.get_search_client() as search_client:
+        validate_count(search_client=search_client, expected_count=expected_count)
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_azure_ai_search_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = AzureAISearchUploadStager()
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

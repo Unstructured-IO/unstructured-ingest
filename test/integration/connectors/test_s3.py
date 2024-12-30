@@ -11,8 +11,8 @@ from test.integration.connectors.utils.constants import (
     env_setup_path,
 )
 from test.integration.connectors.utils.docker_compose import docker_compose_context
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
@@ -62,7 +62,7 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
+            configs=SourceValidationConfigs(
                 test_id="s3",
                 predownload_file_data_check=validate_predownload_file_data,
                 postdownload_file_data_check=validate_postdownload_file_data,
@@ -85,7 +85,7 @@ async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
+            configs=SourceValidationConfigs(
                 test_id="s3-specialchar",
                 predownload_file_data_check=validate_predownload_file_data,
                 postdownload_file_data_check=validate_postdownload_file_data,
@@ -121,7 +121,7 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
             await source_connector_validation(
                 indexer=indexer,
                 downloader=downloader,
-                configs=ValidationConfigs(
+                configs=SourceValidationConfigs(
                     test_id="s3-minio",
                     predownload_file_data_check=validate_predownload_file_data,
                     postdownload_file_data_check=validate_postdownload_file_data,
@@ -165,11 +165,14 @@ async def test_s3_destination(upload_file: Path):
         identifier="mock file data",
     )
     try:
+        uploader.precheck()
         if uploader.is_async():
             await uploader.run_async(path=upload_file, file_data=file_data)
         else:
             uploader.run(path=upload_file, file_data=file_data)
-        uploaded_files = s3fs.ls(path=destination_path)
+        uploaded_files = [
+            Path(file) for file in s3fs.ls(path=destination_path) if Path(file).name != "_empty"
+        ]
         assert len(uploaded_files) == 1
     finally:
         s3fs.rm(path=destination_path, recursive=True)

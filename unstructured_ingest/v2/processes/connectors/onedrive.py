@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Generator, Iterator, Optional, TypeVar
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -100,6 +101,27 @@ class OnedriveIndexerConfig(IndexerConfig):
     recursive: bool = False
 
 
+T = TypeVar("T")
+
+
+def async_iterable_to_sync_iterable(iterator: AsyncIterator[T]) -> Iterator[T]:
+    # This version works on Python 3.9 by manually handling the async iteration.
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        while True:
+            try:
+                # Instead of anext(iterator), we directly call __anext__().
+                # __anext__ returns a coroutine that we must run until complete.
+                future = iterator.__anext__()
+                result = loop.run_until_complete(future)
+                yield result
+            except StopAsyncIteration:
+                break
+    finally:
+        loop.close()
+
+
 @dataclass
 class OnedriveIndexer(Indexer):
     connection_config: OnedriveConnectionConfig
@@ -116,17 +138,21 @@ class OnedriveIndexer(Indexer):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    def list_objects(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
+    def list_objects_sync(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
         drive_items = folder.children.get().execute_query()
         files = [d for d in drive_items if d.is_file]
         if not recursive:
             return files
+
         folders = [d for d in drive_items if d.is_folder]
         for f in folders:
-            files.extend(self.list_objects(f, recursive))
+            files.extend(self.list_objects_sync(f, recursive))
         return files
 
-    def get_root(self, client: "GraphClient") -> "DriveItem":
+    async def list_objects(self, folder: "DriveItem", recursive: bool) -> list["DriveItem"]:
+        return await asyncio.to_thread(self.list_objects_sync, folder, recursive)
+
+    def get_root_sync(self, client: "GraphClient") -> "DriveItem":
         root = client.users[self.connection_config.user_pname].drive.get().execute_query().root
         if fpath := self.index_config.path:
             root = root.get_by_path(fpath).get().execute_query()
@@ -134,7 +160,10 @@ class OnedriveIndexer(Indexer):
                 raise ValueError(f"Unable to find directory, given: {fpath}")
         return root
 
-    def get_properties(self, drive_item: "DriveItem") -> dict:
+    async def get_root(self, client: "GraphClient") -> "DriveItem":
+        return await asyncio.to_thread(self.get_root_sync, client)
+
+    def get_properties_sync(self, drive_item: "DriveItem") -> dict:
         properties = drive_item.properties
         filtered_properties = {}
         for k, v in properties.items():
@@ -145,7 +174,10 @@ class OnedriveIndexer(Indexer):
                 pass
         return filtered_properties
 
-    def drive_item_to_file_data(self, drive_item: "DriveItem") -> FileData:
+    async def get_properties(self, drive_item: "DriveItem") -> dict:
+        return await asyncio.to_thread(self.get_properties_sync, drive_item)
+
+    def drive_item_to_file_data_sync(self, drive_item: "DriveItem") -> FileData:
         file_path = drive_item.parent_reference.path.split(":")[-1]
         file_path = file_path[1:] if file_path and file_path[0] == "/" else file_path
         filename = drive_item.name
@@ -176,16 +208,33 @@ class OnedriveIndexer(Indexer):
                     "server_relative_path": server_path,
                 },
             ),
-            additional_metadata=self.get_properties(drive_item=drive_item),
+            additional_metadata=self.get_properties_sync(drive_item=drive_item),
         )
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        client = self.connection_config.get_client()
-        root = self.get_root(client=client)
-        drive_items = self.list_objects(folder=root, recursive=self.index_config.recursive)
+    async def drive_item_to_file_data(self, drive_item: "DriveItem") -> FileData:
+        # Offload the file data creation if it's not guaranteed async
+        return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
+
+    async def _run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
+        token_resp = await asyncio.to_thread(self.connection_config.get_token)
+        if "error" in token_resp:
+            raise SourceConnectionError(
+                f"[{CONNECTOR_TYPE}]: {token_resp['error']} ({token_resp.get('error_description')})"
+            )
+
+        client = await asyncio.to_thread(self.connection_config.get_client)
+        root = await self.get_root(client=client)
+        drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
+
         for drive_item in drive_items:
-            file_data = self.drive_item_to_file_data(drive_item=drive_item)
+            file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
+
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        # Convert the async generator to a sync generator without loading all data into memory
+        async_gen = self._run_async(**kwargs)
+        for item in async_iterable_to_sync_iterable(async_gen):
+            yield item
 
 
 class OnedriveDownloaderConfig(DownloaderConfig):
@@ -202,7 +251,7 @@ class OnedriveDownloader(Downloader):
         if file_data.source_identifiers is None or not file_data.source_identifiers.fullpath:
             raise ValueError(
                 f"file data doesn't have enough information to get "
-                f"file content: {file_data.to_dict()}"
+                f"file content: {file_data.model_dump()}"
             )
 
         server_relative_path = file_data.source_identifiers.fullpath
@@ -220,19 +269,24 @@ class OnedriveDownloader(Downloader):
 
     @SourceConnectionError.wrap
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        file = self._fetch_file(file_data=file_data)
-        fsize = file.get_property("size", 0)
-        download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
-        if fsize > MAX_MB_SIZE:
-            logger.info(f"downloading file with size: {fsize} bytes in chunks")
-            with download_path.open(mode="wb") as f:
-                file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
-        else:
-            with download_path.open(mode="wb") as f:
-                file.download(f).execute_query()
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        try:
+            file = self._fetch_file(file_data=file_data)
+            fsize = file.get_property("size", 0)
+            download_path = self.get_download_path(file_data=file_data)
+            download_path.parent.mkdir(parents=True, exist_ok=True)
+            logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
+            if fsize > MAX_MB_SIZE:
+                logger.info(f"downloading file with size: {fsize} bytes in chunks")
+                with download_path.open(mode="wb") as f:
+                    file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
+            else:
+                with download_path.open(mode="wb") as f:
+                    file.download(f).execute_query()
+            return self.generate_download_response(file_data=file_data, download_path=download_path)
+        except Exception as e:
+            logger.error(f"[{CONNECTOR_TYPE}] Exception during downloading: {e}", exc_info=True)
+            # Re-raise to see full stack trace locally
+            raise
 
 
 class OnedriveUploaderConfig(UploaderConfig):

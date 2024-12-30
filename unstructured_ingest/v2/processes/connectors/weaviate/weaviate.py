@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
@@ -74,11 +73,11 @@ class WeaviateUploadStager(UploadStager):
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
 
-    @classmethod
-    def conform_dict(cls, data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         Updates the element dictionary to conform to the Weaviate schema
         """
+        data = element_dict.copy()
         working_data = data.copy()
         # Dict as string formatting
         if (
@@ -111,7 +110,7 @@ class WeaviateUploadStager(UploadStager):
             .get("data_source", {})
             .get("date_created")
         ):
-            working_data["metadata"]["data_source"]["date_created"] = cls.parse_date_string(
+            working_data["metadata"]["data_source"]["date_created"] = self.parse_date_string(
                 date_created
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
@@ -122,7 +121,7 @@ class WeaviateUploadStager(UploadStager):
             .get("data_source", {})
             .get("date_modified")
         ):
-            working_data["metadata"]["data_source"]["date_modified"] = cls.parse_date_string(
+            working_data["metadata"]["data_source"]["date_modified"] = self.parse_date_string(
                 date_modified
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
@@ -133,14 +132,14 @@ class WeaviateUploadStager(UploadStager):
             .get("data_source", {})
             .get("date_processed")
         ):
-            working_data["metadata"]["data_source"]["date_processed"] = cls.parse_date_string(
+            working_data["metadata"]["data_source"]["date_processed"] = self.parse_date_string(
                 date_processed
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
             )
 
         if last_modified := working_data.get("metadata", {}).get("last_modified"):
-            working_data["metadata"]["last_modified"] = cls.parse_date_string(
+            working_data["metadata"]["last_modified"] = self.parse_date_string(
                 last_modified
             ).strftime(
                 "%Y-%m-%dT%H:%M:%S.%fZ",
@@ -158,25 +157,6 @@ class WeaviateUploadStager(UploadStager):
 
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
-
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        updated_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(updated_elements, output_file, indent=2)
-        return output_path
 
 
 class WeaviateUploaderConfig(UploaderConfig):
@@ -268,18 +248,16 @@ class WeaviateUploader(Uploader, ABC):
             if not resp.failed and not resp.successful:
                 break
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"class {self.connection_config.access_config} "
         )
 
         with self.connection_config.get_client() as weaviate_client:
             self.delete_by_record_id(client=weaviate_client, file_data=file_data)
             with self.upload_config.get_batch_client(client=weaviate_client) as batch_client:
-                for e in elements_dict:
+                for e in data:
                     vector = e.pop("embeddings", None)
                     batch_client.add_object(
                         collection=self.upload_config.collection,

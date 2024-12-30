@@ -7,12 +7,17 @@ from typing import Generator
 
 import pandas as pd
 import pytest
+from _pytest.fixtures import TopRequest
 from opensearchpy import Document, Keyword, OpenSearch, Text
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
 from test.integration.connectors.utils.docker import HealthCheck, container_context
-from test.integration.connectors.utils.validation import (
-    ValidationConfigs,
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
     source_connector_validation,
 )
 from unstructured_ingest.error import (
@@ -183,7 +188,7 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
-            configs=ValidationConfigs(
+            configs=SourceValidationConfigs(
                 test_id=CONNECTOR_TYPE,
                 expected_num_files=expected_num_files,
                 expected_number_indexed_file_data=1,
@@ -300,3 +305,21 @@ def test_opensearch_destination_precheck_fail_no_index(destination_index: str):
     )
     with pytest.raises(DestinationConnectionError):
         uploader.precheck()
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_opensearch_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = OpenSearchUploadStager(
+        upload_stager_config=OpenSearchUploadStagerConfig(index_name="mock_index")
+    )
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

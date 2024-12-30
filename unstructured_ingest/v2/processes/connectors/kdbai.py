@@ -1,14 +1,13 @@
-import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import numpy as np
 import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.data_prep import flatten_dict, get_data_df, split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -48,12 +47,19 @@ class KdbaiConnectionConfig(ConnectionConfig):
     )
 
     @requires_dependencies(["kdbai_client"], extras="kdbai")
-    def get_session(self) -> "Session":
+    @contextmanager
+    def get_client(self) -> Generator["Session", None, None]:
         from kdbai_client import Session
 
-        return Session(
-            api_key=self.access_config.get_secret_value().api_key, endpoint=self.endpoint
-        )
+        session = None
+        try:
+            session = Session(
+                api_key=self.access_config.get_secret_value().api_key, endpoint=self.endpoint
+            )
+            yield session
+        finally:
+            if session:
+                session.close()
 
 
 class KdbaiUploadStagerConfig(UploadStagerConfig):
@@ -64,38 +70,19 @@ class KdbaiUploadStagerConfig(UploadStagerConfig):
 class KdbaiUploadStager(UploadStager):
     upload_stager_config: KdbaiUploadStagerConfig = field(default_factory=KdbaiUploadStagerConfig)
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        data = []
-        for element in elements_contents:
-            data.append(
-                {
-                    "id": get_enhanced_element_id(element_dict=element, file_data=file_data),
-                    "element_id": element.get("element_id"),
-                    "document": element.pop("text", None),
-                    "embeddings": element.get("embeddings"),
-                    "metadata": flatten_dict(
-                        dictionary=element.get("metadata"),
-                        flatten_lists=True,
-                        remove_none=True,
-                    ),
-                }
-            )
-        logger.debug(f"writing {len(data)} elements to {output_path}")
-        with output_path.open("w") as output_file:
-            json.dump(data, output_file, indent=2)
-        return output_path
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        return {
+            "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
+            "element_id": data.get("element_id"),
+            "document": data.pop("text", None),
+            "embeddings": data.get("embeddings"),
+            "metadata": flatten_dict(
+                dictionary=data.get("metadata"),
+                flatten_lists=True,
+                remove_none=True,
+            ),
+        }
 
 
 class KdbaiUploaderConfig(UploaderConfig):
@@ -119,50 +106,37 @@ class KdbaiUploader(Uploader):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def get_database(self) -> "Database":
-        session: Session = self.connection_config.get_session()
-        db = session.database(self.upload_config.database_name)
-        return db
+    @contextmanager
+    def get_database(self) -> Generator["Database", None, None]:
+        with self.connection_config.get_client() as client:
+            db = client.database(self.upload_config.database_name)
+            yield db
 
-    def get_table(self) -> "Table":
-        db = self.get_database()
-        table = db.table(self.upload_config.table_name)
-        return table
+    @contextmanager
+    def get_table(self) -> Generator["Table", None, None]:
+        with self.get_database() as db:
+            table = db.table(self.upload_config.table_name)
+            yield table
 
     def upsert_batch(self, batch: pd.DataFrame):
-        table = self.get_table()
-        table.insert(batch)
+        with self.get_table() as table:
+            table.insert(batch)
 
     def process_dataframe(self, df: pd.DataFrame):
         logger.debug(
             f"uploading {len(df)} entries to {self.connection_config.endpoint} "
             f"db {self.upload_config.database_name} in table {self.upload_config.table_name}"
         )
-        for _, batch_df in df.groupby(np.arange(len(df)) // self.upload_config.batch_size):
+        for batch_df in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
 
-    def process_csv(self, csv_paths: list[Path]):
-        logger.debug(f"uploading content from {len(csv_paths)} csv files")
-        df = pd.concat((pd.read_csv(path) for path in csv_paths), ignore_index=True)
-        self.process_dataframe(df=df)
-
-    def process_json(self, json_paths: list[Path]):
-        logger.debug(f"uploading content from {len(json_paths)} json files")
-        all_records = []
-        for p in json_paths:
-            with open(p) as json_file:
-                all_records.extend(json.load(json_file))
-
-        df = pd.DataFrame(data=all_records)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data=data)
         self.process_dataframe(df=df)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        if path.suffix == ".csv":
-            self.process_csv(csv_paths=[path])
-        elif path.suffix == ".json":
-            self.process_json(json_paths=[path])
-        else:
-            raise ValueError(f"Unsupported file type, must be json or csv file: {path}")
+        data = get_data_df(path=path)
+        self.process_dataframe(df=data)
 
 
 kdbai_destination_entry = DestinationRegistryEntry(

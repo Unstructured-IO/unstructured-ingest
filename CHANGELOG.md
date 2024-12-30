@@ -1,4 +1,72 @@
-## 0.3.7-dev6
+## 0.3.12-dev4
+
+### Enhancements
+
+* **Migrate Vectara Destination Connector to v2**
+* **Improved Milvus error handling**
+
+## 0.3.12-dev2
+
+### Enhancements
+
+* **Added Redis destination connector**
+
+## 0.3.12-dev1
+
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+## 0.3.12-dev0
+
+### Fixes
+
+* **Fix Kafka destination connection problems**
+
+### Enhancements
+
+* **Kafka destination connector checks for existence of topic**
+* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+## 0.3.11
+
+### Enhancements
+
+* **Support Databricks personal access token**
+
+### Fixes
+
+* **Fix missing source identifiers in some downloaders**
+
+## 0.3.10
+
+### Enhancements
+
+* **Support more concrete FileData content for batch support**
+
+### Fixes
+
+* **Add Neo4J to ingest destination connector registry**
+* **Fix closing SSHClient in sftp connector**
+
+## 0.3.9
+
+### Enhancements
+
+* **Support ndjson files in stagers**
+* **Add Neo4j destination connector**
+* **Support passing data in for uploaders**
+
+### Fixes
+
+* **Make sure any SDK clients that support closing get called**
+
+## 0.3.8
+
+### Fixes
+
+* **Prevent pinecone delete from hammering database when deleting**
+
+## 0.3.7
 
 ### Fixes
 
@@ -8,6 +76,10 @@
 * **Fixes issue with SingleStore Source Connector not being available**
 * **Fixes issue with SQLite Source Connector using wrong Indexer** - Caused indexer config parameter error when trying to use SQLite Source
 * **Fixes issue with Snowflake Destination Connector `nan` values** - `nan` values were not properly replaced with `None`
+* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
+* **Box source connector can now use raw JSON as access token instead of file path to JSON**
+* **Fix fsspec upload paths to be OS independent**
+* **Properly log elasticsearch upload errors**
 
 ### Enhancements
 
@@ -17,7 +89,9 @@
 * **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
 * **Optimizes memory usage of Snowflake Destination Connector.**
 * **Added Qdrant Cloud integration test**
-* **Improved Milvus error handling**
+* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
+* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
+* **Update weaviate v2 example**
 
 ## 0.3.6
 

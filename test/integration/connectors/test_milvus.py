@@ -4,6 +4,7 @@ from pathlib import Path
 
 import docker
 import pytest
+from _pytest.fixtures import TopRequest
 from pymilvus import (
     CollectionSchema,
     DataType,
@@ -15,6 +16,10 @@ from pymilvus.milvus_client import IndexParams
 from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
 from test.integration.connectors.utils.docker import healthcheck_wait
 from test.integration.connectors.utils.docker_compose import docker_compose_context
+from test.integration.connectors.utils.validation.destination import (
+    StagerValidationConfigs,
+    stager_validation,
+)
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.milvus import (
@@ -180,3 +185,19 @@ def test_precheck_fails_on_nonexisting_db(collection: str):
         match="database not found",
     ):
         uploader.precheck()
+
+
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_milvus_stager(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = MilvusUploadStager()
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )

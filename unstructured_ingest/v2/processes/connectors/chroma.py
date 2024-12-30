@@ -1,7 +1,5 @@
-import json
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
 from dateutil import parser
@@ -42,7 +40,6 @@ class ChromaAccessConfig(AccessConfig):
 
 
 class ChromaConnectionConfig(ConnectionConfig):
-    collection_name: str = Field(description="The name of the Chroma collection to write into.")
     access_config: Secret[ChromaAccessConfig] = Field(
         default=ChromaAccessConfig(), validate_default=True
     )
@@ -61,6 +58,32 @@ class ChromaConnectionConfig(ConnectionConfig):
         default=False, description="Whether to use SSL to connect to the Chroma server."
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+
+    @requires_dependencies(["chromadb"], extras="chroma")
+    def get_client(self) -> "Client":
+        import chromadb
+
+        access_config = self.access_config.get_secret_value()
+        if path := self.path:
+            return chromadb.PersistentClient(
+                path=path,
+                settings=access_config.settings,
+                tenant=self.tenant,
+                database=self.database,
+            )
+
+        elif (host := self.host) and (port := self.port):
+            return chromadb.HttpClient(
+                host=host,
+                port=str(port),
+                ssl=self.ssl,
+                headers=access_config.headers,
+                settings=access_config.settings,
+                tenant=self.tenant,
+                database=self.database,
+            )
+        else:
+            raise ValueError("Chroma connector requires either path or host and port to be set.")
 
 
 class ChromaUploadStagerConfig(UploadStagerConfig):
@@ -82,11 +105,11 @@ class ChromaUploadStager(UploadStager):
             logger.debug(f"date {date_string} string not a timestamp: {e}")
         return parser.parse(date_string)
 
-    @staticmethod
-    def conform_dict(data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         Prepares dictionary in the format that Chroma requires
         """
+        data = element_dict.copy()
         return {
             "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             "embedding": data.pop("embeddings", None),
@@ -94,26 +117,9 @@ class ChromaUploadStager(UploadStager):
             "metadata": flatten_dict(data, separator="-", flatten_lists=True, remove_none=True),
         }
 
-    def run(
-        self,
-        elements_filepath: Path,
-        file_data: FileData,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-        conformed_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file)
-        return output_path
-
 
 class ChromaUploaderConfig(UploaderConfig):
+    collection_name: str = Field(description="The name of the Chroma collection to write into.")
     batch_size: int = Field(default=100, description="Number of records per batch")
 
 
@@ -125,40 +131,13 @@ class ChromaUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            self.create_client()
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["chromadb"], extras="chroma")
-    def create_client(self) -> "Client":
-        import chromadb
-
-        access_config = self.connection_config.access_config.get_secret_value()
-        if self.connection_config.path:
-            return chromadb.PersistentClient(
-                path=self.connection_config.path,
-                settings=access_config.settings,
-                tenant=self.connection_config.tenant,
-                database=self.connection_config.database,
-            )
-
-        elif self.connection_config.host and self.connection_config.port:
-            return chromadb.HttpClient(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                ssl=self.connection_config.ssl,
-                headers=access_config.headers,
-                settings=access_config.settings,
-                tenant=self.connection_config.tenant,
-                database=self.connection_config.database,
-            )
-        else:
-            raise ValueError("Chroma connector requires either path or host and port to be set.")
-
     @DestinationConnectionError.wrap
     def upsert_batch(self, collection, batch):
-
         try:
             # Chroma wants lists even if there is only one element
             # Upserting to prevent duplicates
@@ -189,19 +168,16 @@ class ChromaUploader(Uploader):
         )
         return chroma_dict
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
-
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
-            f"collection {self.connection_config.collection_name} "
+            f"writing {len(data)} objects to destination "
+            f"collection {self.upload_config.collection_name} "
             f"at {self.connection_config.host}",
         )
-        client = self.create_client()
+        client = self.connection_config.get_client()
 
-        collection = client.get_or_create_collection(name=self.connection_config.collection_name)
-        for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+        collection = client.get_or_create_collection(name=self.upload_config.collection_name)
+        for chunk in batch_generator(data, self.upload_config.batch_size):
             self.upsert_batch(collection, self.prepare_chroma_list(chunk))
 
 

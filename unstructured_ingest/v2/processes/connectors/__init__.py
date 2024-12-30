@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.duckdb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.elasticsearch  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
@@ -39,18 +40,24 @@ from .milvus import CONNECTOR_TYPE as MILVUS_CONNECTOR_TYPE
 from .milvus import milvus_destination_entry
 from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
+from .neo4j import CONNECTOR_TYPE as NEO4J_CONNECTOR_TYPE
+from .neo4j import neo4j_destination_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_destination_entry, onedrive_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
 from .outlook import outlook_source_entry
 from .pinecone import CONNECTOR_TYPE as PINECONE_CONNECTOR_TYPE
 from .pinecone import pinecone_destination_entry
+from .redisdb import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from .redisdb import redis_destination_entry
 from .salesforce import CONNECTOR_TYPE as SALESFORCE_CONNECTOR_TYPE
 from .salesforce import salesforce_source_entry
 from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
+from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
+from .vectara import vectara_destination_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -73,6 +80,7 @@ add_destination_entry(destination_type=LOCAL_CONNECTOR_TYPE, entry=local_destina
 add_source_entry(source_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_source_entry)
 add_destination_entry(destination_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_destination_entry)
 
+add_destination_entry(destination_type=NEO4J_CONNECTOR_TYPE, entry=neo4j_destination_entry)
 
 add_source_entry(source_type=SALESFORCE_CONNECTOR_TYPE, entry=salesforce_source_entry)
 
@@ -97,4 +105,7 @@ add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
 
+add_destination_entry(destination_type=VECTARA_CONNECTOR_TYPE, entry=vectara_destination_entry)
 add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
+
+add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
