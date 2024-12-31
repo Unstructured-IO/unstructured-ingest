@@ -74,15 +74,8 @@ class SftpConnectionConfig(FsspecConnectionConfig):
     @contextmanager
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def get_client(self, protocol: str) -> Generator["SFTPFileSystem", None, None]:
-        # The paramiko.SSHClient() client that's opened by the SFTPFileSystem
-        # never gets closed so explicitly adding that as part of this context manager
-        from fsspec import get_filesystem_class
-
-        client: SFTPFileSystem = get_filesystem_class(protocol)(
-            **self.get_access_config(),
-        )
-        yield client
-        client.client.close()
+        with super().get_client(protocol=protocol) as client:
+            yield client
 
 
 @dataclass
