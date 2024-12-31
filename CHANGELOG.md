@@ -1,8 +1,11 @@
-## 0.3.12-dev3
+## 0.3.12-dev4
 
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
+
+### Fixes
+* **Revert closing connection in SFTP source** which caused more closed socket errors
 
 ## 0.3.12-dev2
 
