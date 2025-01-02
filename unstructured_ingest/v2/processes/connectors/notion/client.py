@@ -80,7 +80,9 @@ class BlocksChildrenEndpoint(NotionBlocksChildrenEndpoint):
         next_cursor = None
         while True:
             response: dict = (
-                self.retry_handler(super().list, block_id=block_id, start_cursor=next_cursor, **kwargs)
+                self.retry_handler(
+                    super().list, block_id=block_id, start_cursor=next_cursor, **kwargs
+                )
                 if self.retry_handler
                 else super().list(block_id=block_id, start_cursor=next_cursor, **kwargs)
             )  # type: ignore
@@ -152,7 +154,9 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
         next_cursor = None
         while True:
             response: dict = (
-                self.retry_handler(super().query, database_id=database_id, start_cursor=next_cursor, **kwargs)
+                self.retry_handler(
+                    super().query, database_id=database_id, start_cursor=next_cursor, **kwargs
+                )
                 if (self.retry_handler)
                 else (super().query(database_id=database_id, start_cursor=next_cursor, **kwargs))
             )  # type: ignore
