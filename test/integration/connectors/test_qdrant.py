@@ -109,6 +109,14 @@ async def test_qdrant_destination_local(upload_file: Path, tmp_path: Path):
     async with qdrant_client(connection_kwargs) as client:
         await validate_upload(client=client, upload_file=upload_file)
 
+    # Repeat upload to test the upsert functionality
+    if uploader.is_async():
+        await uploader.run_async(path=staged_upload_file, file_data=file_data)
+    else:
+        uploader.run(path=upload_file, file_data=file_data)
+    async with qdrant_client(connection_kwargs) as client:
+        await validate_upload(client=client, upload_file=upload_file)
+
 
 @pytest.fixture
 def docker_context():
@@ -144,10 +152,12 @@ async def test_qdrant_destination_server(upload_file: Path, tmp_path: Path, dock
         output_filename=upload_file.name,
     )
     uploader.precheck()
-    if uploader.is_async():
-        await uploader.run_async(path=staged_upload_file, file_data=file_data)
-    else:
-        uploader.run(path=upload_file, file_data=file_data)
+    await uploader.run_async(path=staged_upload_file, file_data=file_data)
+    async with qdrant_client(connection_kwargs) as client:
+        await validate_upload(client=client, upload_file=upload_file)
+
+    # NOTE: Upload the second time to validate upsert behavior
+    await uploader.run_async(path=staged_upload_file, file_data=file_data)
     async with qdrant_client(connection_kwargs) as client:
         await validate_upload(client=client, upload_file=upload_file)
 
@@ -189,10 +199,13 @@ async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
         output_filename=upload_file.name,
     )
     uploader.precheck()
-    if uploader.is_async():
-        await uploader.run_async(path=staged_upload_file, file_data=file_data)
-    else:
-        uploader.run(path=staged_upload_file, file_data=file_data)
+
+    await uploader.run_async(path=staged_upload_file, file_data=file_data)
+    async with qdrant_client(connection_kwargs) as client:
+        await validate_upload(client=client, upload_file=upload_file)
+
+    # NOTE: Upload the second time to validate upsert behavior
+    await uploader.run_async(path=staged_upload_file, file_data=file_data)
     async with qdrant_client(connection_kwargs) as client:
         await validate_upload(client=client, upload_file=upload_file)
 
