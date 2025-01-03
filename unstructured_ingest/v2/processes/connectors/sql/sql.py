@@ -48,13 +48,13 @@ _COLUMNS = (
     "layout_width",
     "layout_height",
     "points",
-    "url",
-    "version",
+    "data_source_url",
+    "data_source_version",
     "date_created",
-    "date_modified",
-    "date_processed",
-    "permissions_data",
-    "record_locator",
+    "data_source_date_modified",
+    "data_source_date_processed",
+    "data_source_permissions_data",
+    "data_source_record_locator",
     "category_depth",
     "parent_id",
     "attached_filename",
@@ -280,7 +280,7 @@ class SQLUploadStager(UploadStager):
             df[column] = df[column].apply(parse_date_string)
         for column in filter(
             lambda x: x in df.columns,
-            ("permissions_data", "record_locator", "points", "links"),
+            ("data_source_permissions_data", "data_source_record_locator", "points", "links"),
         ):
             df[column] = df[column].apply(
                 lambda x: json.dumps(x) if isinstance(x, (list, dict)) else None
@@ -318,7 +318,7 @@ class SQLUploadStager(UploadStager):
 
 class SQLUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=50, description="Number of records per batch")
-    table_name: str = Field(default="elements", description="which table to upload contents to")
+    table_name: str = Field(default="deleteme_elements", description="which table to upload contents to")
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
@@ -411,6 +411,16 @@ class SQLUploader(Uploader):
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # values = [
+                #     tuple(json.dumps(val) if isinstance(val, list) else val for val in row)
+                #     for row in values
+                # ]
+                print("--------------")
+                print("STATEMENT", stmt)
+                print("--------------")
+                print("VALUES", values)
+                print("--------------")
+                # print(stmt, values)
                 # For debugging purposes:
                 # for val in values:
                 #     try:
@@ -424,7 +434,12 @@ class SQLUploader(Uploader):
     def get_table_columns(self) -> list[str]:
         with self.get_cursor() as cursor:
             cursor.execute(f"SELECT * from {self.upload_config.table_name}")
-            return [desc[0] for desc in cursor.description]
+            d = [desc[0] for desc in cursor.description]
+            print(">>>>>>>>>>>>>>>>>>>>>>>>>>")
+            print(self.upload_config.table_name)
+            print(d)
+            print(">>>>>>>>>>>>>>>>>>>>>>>>>>")
+            return d
 
     def can_delete(self) -> bool:
         return self.upload_config.record_id_key in self.get_table_columns()
