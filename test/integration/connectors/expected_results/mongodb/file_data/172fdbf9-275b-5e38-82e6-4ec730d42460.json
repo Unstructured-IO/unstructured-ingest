@@ -1,0 +1,43 @@
+{
+  "identifier": "172fdbf9-275b-5e38-82e6-4ec730d42460",
+  "connector_type": "mongodb",
+  "source_identifiers": null,
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "database": "ingest-test-db",
+      "collection": "sample-mongodb-data"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1734616944.92011",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "database": "ingest-test-db",
+    "collection": "sample-mongodb-data"
+  },
+  "reprocess": false,
+  "local_download_path": null,
+  "display_name": null,
+  "batch_items": [
+    {
+      "identifier": "659daefa21dd8c9054b084b6",
+      "version": null
+    },
+    {
+      "identifier": "659daefa21dd8c9054b084b7",
+      "version": null
+    },
+    {
+      "identifier": "659daefa21dd8c9054b084b8",
+      "version": null
+    },
+    {
+      "identifier": "659daefa21dd8c9054b084b9",
+      "version": null
+    }
+  ]
+}

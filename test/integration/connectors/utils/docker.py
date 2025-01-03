@@ -44,6 +44,7 @@ def get_container(
     docker_client: docker.DockerClient,
     image: str,
     ports: dict,
+    name: Optional[str] = "connector_test",
     environment: Optional[dict] = None,
     volumes: Optional[dict] = None,
     healthcheck: Optional[HealthCheck] = None,
@@ -59,6 +60,8 @@ def get_container(
         run_kwargs["volumes"] = volumes
     if healthcheck:
         run_kwargs["healthcheck"] = healthcheck.model_dump()
+    if name:
+        run_kwargs["name"] = name
     container: Container = docker_client.containers.run(**run_kwargs)
     return container
 
@@ -112,6 +115,7 @@ def container_context(
     healthcheck: Optional[HealthCheck] = None,
     healthcheck_retries: int = 30,
     docker_client: Optional[docker.DockerClient] = None,
+    name: Optional[str] = "connector_test",
 ):
     docker_client = docker_client or docker.from_env()
     print(f"pulling image {image}")
@@ -125,6 +129,7 @@ def container_context(
             environment=environment,
             volumes=volumes,
             healthcheck=healthcheck,
+            name=name,
         )
         if healthcheck_data := get_healthcheck(container):
             # Mirror whatever healthcheck config set on container
@@ -143,3 +148,4 @@ def container_context(
     finally:
         if container:
             container.kill()
+            container.remove()

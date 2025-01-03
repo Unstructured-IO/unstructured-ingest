@@ -1,7 +1,9 @@
 -c ./common/constraints.txt
+
 pytest
 pytest-cov
 pytest-mock
+pytest-check
 unstructured
 pytest-asyncio
 pytest_tagging
@@ -9,6 +11,7 @@ pytest-json-report
 faker
 docker
 universal_pathlib
+deepdiff
 
 # Connector specific deps
 cryptography

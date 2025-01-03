@@ -1,8 +1,7 @@
 import json
-import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret
 
@@ -24,6 +23,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
@@ -49,29 +49,33 @@ class AzureAISearchConnectionConfig(ConnectionConfig):
     access_config: Secret[AzureAISearchAccessConfig]
 
     @requires_dependencies(["azure.search", "azure.core"], extras="azure-ai-search")
-    def get_search_client(self) -> "SearchClient":
+    @contextmanager
+    def get_search_client(self) -> Generator["SearchClient", None, None]:
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents import SearchClient
 
-        return SearchClient(
+        with SearchClient(
             endpoint=self.endpoint,
             index_name=self.index,
             credential=AzureKeyCredential(
                 self.access_config.get_secret_value().azure_ai_search_key
             ),
-        )
+        ) as client:
+            yield client
 
     @requires_dependencies(["azure.search", "azure.core"], extras="azure-ai-search")
-    def get_search_index_client(self) -> "SearchIndexClient":
+    @contextmanager
+    def get_search_index_client(self) -> Generator["SearchIndexClient", None, None]:
         from azure.core.credentials import AzureKeyCredential
         from azure.search.documents.indexes import SearchIndexClient
 
-        return SearchIndexClient(
+        with SearchIndexClient(
             endpoint=self.endpoint,
             credential=AzureKeyCredential(
                 self.access_config.get_secret_value().azure_ai_search_key
             ),
-        )
+        ) as search_index_client:
+            yield search_index_client
 
 
 class AzureAISearchUploadStagerConfig(UploadStagerConfig):
@@ -92,15 +96,14 @@ class AzureAISearchUploadStager(UploadStager):
         default_factory=lambda: AzureAISearchUploadStagerConfig()
     )
 
-    @staticmethod
-    def conform_dict(data: dict, file_data: FileData) -> dict:
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         """
         updates the dictionary that is from each Element being converted into a dict/json
         into a dictionary that conforms to the schema expected by the
         Azure Cognitive Search index
         """
-
-        data["id"] = str(uuid.uuid4())
+        data = element_dict.copy()
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
         data[RECORD_ID_LABEL] = file_data.identifier
 
         if points := data.get("metadata", {}).get("coordinates", {}).get("points"):
@@ -139,31 +142,6 @@ class AzureAISearchUploadStager(UploadStager):
         if page_number := data.get("metadata", {}).get("page_number"):
             data["metadata"]["page_number"] = str(page_number)
         return data
-
-    def run(
-        self,
-        file_data: FileData,
-        elements_filepath: Path,
-        output_dir: Path,
-        output_filename: str,
-        **kwargs: Any,
-    ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
-        conformed_elements = [
-            self.conform_dict(data=element, file_data=file_data) for element in elements_contents
-        ]
-
-        if Path(output_filename).suffix != ".json":
-            output_filename = f"{output_filename}.json"
-        else:
-            output_filename = f"{Path(output_filename).stem}.json"
-        output_path = Path(output_dir) / Path(f"{output_filename}.json")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as output_file:
-            json.dump(conformed_elements, output_file, indent=2)
-        return output_path
 
 
 @dataclass
@@ -270,9 +248,7 @@ class AzureAISearchUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing document batches to destination"
             f" endpoint at {str(self.connection_config.endpoint)}"
@@ -287,7 +263,7 @@ class AzureAISearchUploader(Uploader):
 
         batch_size = self.upload_config.batch_size
         with self.connection_config.get_search_client() as search_client:
-            for chunk in batch_generator(elements_dict, batch_size):
+            for chunk in batch_generator(data, batch_size):
                 self.write_dict(elements_dict=chunk, search_client=search_client)  # noqa: E203
 
 

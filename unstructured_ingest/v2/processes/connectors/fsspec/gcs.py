@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
 from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -25,6 +26,9 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploader,
     FsspecUploaderConfig,
 )
+
+if TYPE_CHECKING:
+    from gcsfs import GCSFileSystem
 
 CONNECTOR_TYPE = "gcs"
 
@@ -93,6 +97,12 @@ class GcsConnectionConfig(FsspecConnectionConfig):
     access_config: Secret[GcsAccessConfig] = Field(default=GcsAccessConfig(), validate_default=True)
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
+    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
+    @contextmanager
+    def get_client(self, protocol: str) -> Generator["GCSFileSystem", None, None]:
+        with super().get_client(protocol=protocol) as client:
+            yield client
+
 
 @dataclass
 class GcsIndexer(FsspecIndexer):
@@ -100,22 +110,14 @@ class GcsIndexer(FsspecIndexer):
     index_config: GcsIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        return super().run(**kwargs)
-
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    def precheck(self) -> None:
-        super().precheck()
-
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
         date_created = None
         date_modified = None
         if modified_at_str := file_data.get("updated"):
-            date_modified = parser.parse(modified_at_str).timestamp()
+            date_modified = str(parser.parse(modified_at_str).timestamp())
         if created_at_str := file_data.get("timeCreated"):
-            date_created = parser.parse(created_at_str).timestamp()
+            date_created = str(parser.parse(created_at_str).timestamp())
 
         file_size = file_data.get("size") if "size" in file_data else None
 
@@ -147,14 +149,6 @@ class GcsDownloader(FsspecDownloader):
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[GcsDownloaderConfig] = field(default_factory=GcsDownloaderConfig)
 
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return super().run(file_data=file_data, **kwargs)
-
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return await super().run_async(file_data=file_data, **kwargs)
-
 
 class GcsUploaderConfig(FsspecUploaderConfig):
     pass
@@ -165,22 +159,6 @@ class GcsUploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: GcsConnectionConfig
     upload_config: GcsUploaderConfig = field(default=None)
-
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    def __post_init__(self):
-        super().__post_init__()
-
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return super().run(path=path, file_data=file_data, **kwargs)
-
-    @requires_dependencies(["gcsfs", "fsspec"], extras="gcs")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return await super().run_async(path=path, file_data=file_data, **kwargs)
 
 
 gcs_source_entry = SourceRegistryEntry(

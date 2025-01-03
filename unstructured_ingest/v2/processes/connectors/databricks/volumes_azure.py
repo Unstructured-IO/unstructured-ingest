@@ -3,12 +3,12 @@ from typing import Optional
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.v2.interfaces import AccessConfig
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.databricks.volumes import (
+    DatabricksVolumesAccessConfig,
     DatabricksVolumesConnectionConfig,
     DatabricksVolumesDownloader,
     DatabricksVolumesDownloaderConfig,
@@ -21,7 +21,7 @@ from unstructured_ingest.v2.processes.connectors.databricks.volumes import (
 CONNECTOR_TYPE = "databricks_volumes_azure"
 
 
-class DatabricksAzureVolumesAccessConfig(AccessConfig):
+class DatabricksAzureVolumesAccessConfig(DatabricksVolumesAccessConfig):
     account_id: Optional[str] = Field(
         default=None,
         description="The Databricks account ID for the Databricks " "accounts endpoint.",

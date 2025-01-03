@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.interfaces import FileData, FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -26,11 +27,13 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploaderConfig,
 )
 
+if TYPE_CHECKING:
+    from fsspec.implementations.sftp import SFTPFileSystem
+
 CONNECTOR_TYPE = "sftp"
 
 
 class SftpIndexerConfig(FsspecIndexerConfig):
-
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
         _, ext = os.path.splitext(self.remote_url)
@@ -68,6 +71,19 @@ class SftpConnectionConfig(FsspecConnectionConfig):
         }
         return access_config
 
+    @contextmanager
+    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
+    def get_client(self, protocol: str) -> Generator["SFTPFileSystem", None, None]:
+        # The paramiko.SSHClient() client that's opened by the SFTPFileSystem
+        # never gets closed so explicitly adding that as part of this context manager
+        from fsspec import get_filesystem_class
+
+        client: SFTPFileSystem = get_filesystem_class(protocol)(
+            **self.get_access_config(),
+        )
+        yield client
+        client.client.close()
+
 
 @dataclass
 class SftpIndexer(FsspecIndexer):
@@ -75,13 +91,11 @@ class SftpIndexer(FsspecIndexer):
     index_config: SftpIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def __post_init__(self):
         parsed_url = urlparse(self.index_config.remote_url)
         self.connection_config.host = parsed_url.hostname or self.connection_config.host
         self.connection_config.port = parsed_url.port or self.connection_config.port
 
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for file in super().run(**kwargs):
             new_identifier = (
@@ -93,14 +107,10 @@ class SftpIndexer(FsspecIndexer):
             file.identifier = new_identifier
             yield file
 
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    def precheck(self) -> None:
-        super().precheck()
-
     def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
         path = file_data["name"]
-        date_created = file_data.get("time").timestamp() if "time" in file_data else None
-        date_modified = file_data.get("mtime").timestamp() if "mtime" in file_data else None
+        date_created = str(file_data.get("time").timestamp()) if "time" in file_data else None
+        date_modified = str(file_data.get("mtime").timestamp()) if "mtime" in file_data else None
 
         file_size = file_data.get("size") if "size" in file_data else None
 
@@ -129,19 +139,10 @@ class SftpDownloader(FsspecDownloader):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     download_config: Optional[SftpDownloaderConfig] = field(default_factory=SftpDownloaderConfig)
 
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def __post_init__(self):
         parsed_url = urlparse(self.download_config.remote_url)
         self.connection_config.host = parsed_url.hostname or self.connection_config.host
         self.connection_config.port = parsed_url.port or self.connection_config.port
-
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return super().run(file_data=file_data, **kwargs)
-
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        return await super().run_async(file_data=file_data, **kwargs)
 
 
 class SftpUploaderConfig(FsspecUploaderConfig):
@@ -153,22 +154,6 @@ class SftpUploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: SftpConnectionConfig
     upload_config: SftpUploaderConfig = field(default=None)
-
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    def __post_init__(self):
-        super().__post_init__()
-
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    def precheck(self) -> None:
-        super().precheck()
-
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return super().run(path=path, file_data=file_data, **kwargs)
-
-    @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        return await super().run_async(path=path, file_data=file_data, **kwargs)
 
 
 sftp_source_entry = SourceRegistryEntry(

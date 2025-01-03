@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, TypedDict
 
-from unstructured_ingest.v2.interfaces.file_data import FileData
+from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.processes.uncompress import Uncompressor
@@ -28,7 +28,7 @@ class UncompressStep(PipelineStep):
     async def _run_async(
         self, fn: Callable, path: str, file_data_path: str
     ) -> list[UncompressStepResponse]:
-        file_data = FileData.from_file(path=file_data_path)
+        file_data = file_data_from_file(path=file_data_path)
         fn_kwargs = {"file_data": file_data}
         if not asyncio.iscoroutinefunction(fn):
             new_file_data = fn(**fn_kwargs)

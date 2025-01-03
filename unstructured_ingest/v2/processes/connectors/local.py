@@ -1,4 +1,5 @@
 import glob
+import json
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -175,7 +176,7 @@ class LocalUploader(Uploader):
     def is_async(self) -> bool:
         return False
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def get_destination_path(self, file_data: FileData) -> Path:
         if source_identifiers := file_data.source_identifiers:
             rel_path = (
                 source_identifiers.relative_path[1:]
@@ -188,7 +189,17 @@ class LocalUploader(Uploader):
             )
         else:
             final_path = self.upload_config.output_path / Path(f"{file_data.identifier}.json")
-        Path(final_path).parent.mkdir(parents=True, exist_ok=True)
+        final_path = Path(final_path)
+        final_path.parent.mkdir(parents=True, exist_ok=True)
+        return final_path
+
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        final_path = self.get_destination_path(file_data=file_data)
+        with final_path.open("w") as f:
+            json.dump(data, f)
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        final_path = self.get_destination_path(file_data=file_data)
         logger.debug(f"copying file from {path} to {final_path}")
         shutil.copy(src=str(path), dst=str(final_path))
 

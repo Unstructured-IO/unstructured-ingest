@@ -1,13 +1,10 @@
-import json
-import sys
 from contextlib import contextmanager
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
@@ -16,9 +13,12 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
+    BatchFileData,
+    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
+    DownloadResponse,
     FileData,
     FileDataSourceMetadata,
     Indexer,
@@ -40,6 +40,15 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "mongodb"
 SERVER_API_VERSION = "1"
+
+
+class MongoDBAdditionalMetadata(BaseModel):
+    database: str
+    collection: str
+
+
+class MongoDBBatchFileData(BatchFileData):
+    additional_metadata: MongoDBAdditionalMetadata
 
 
 class MongoDBAccessConfig(AccessConfig):
@@ -124,7 +133,7 @@ class MongoDBIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
         with self.connection_config.get_client() as client:
             database = client[self.index_config.database]
@@ -132,12 +141,12 @@ class MongoDBIndexer(Indexer):
 
             # Get list of document IDs
             ids = collection.distinct("_id")
-            batch_size = self.index_config.batch_size if self.index_config else 100
+
+        ids = sorted(ids)
+        batch_size = self.index_config.batch_size
 
         for id_batch in batch_generator(ids, batch_size=batch_size):
             # Make sure the hash is always a positive number to create identifier
-            batch_id = str(hash(frozenset(id_batch)) + sys.maxsize + 1)
-
             metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
@@ -146,14 +155,13 @@ class MongoDBIndexer(Indexer):
                 },
             )
 
-            file_data = FileData(
-                identifier=batch_id,
-                doc_type="batch",
+            file_data = MongoDBBatchFileData(
                 connector_type=self.connector_type,
                 metadata=metadata,
-                additional_metadata={
-                    "ids": [str(doc_id) for doc_id in id_batch],
-                },
+                batch_items=[BatchItem(identifier=str(doc_id)) for doc_id in id_batch],
+                additional_metadata=MongoDBAdditionalMetadata(
+                    collection=self.index_config.collection, database=self.index_config.database
+                ),
             )
             yield file_data
 
@@ -164,26 +172,58 @@ class MongoDBDownloader(Downloader):
     connection_config: MongoDBConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["pymongo"], extras="mongodb")
-    def create_client(self) -> "MongoClient":
-        from pymongo import MongoClient
-        from pymongo.driver_info import DriverInfo
-        from pymongo.server_api import ServerApi
+    def generate_download_response(
+        self, doc: dict, file_data: MongoDBBatchFileData
+    ) -> DownloadResponse:
+        from bson.objectid import ObjectId
 
-        access_config = self.connection_config.access_config.get_secret_value()
+        doc_id = doc["_id"]
+        doc.pop("_id", None)
 
-        if access_config.uri:
-            return MongoClient(
-                access_config.uri,
-                server_api=ServerApi(version=SERVER_API_VERSION),
-                driver=DriverInfo(name="unstructured", version=unstructured_version),
-            )
-        else:
-            return MongoClient(
-                host=self.connection_config.host,
-                port=self.connection_config.port,
-                server_api=ServerApi(version=SERVER_API_VERSION),
-            )
+        # Extract date_created from the document or ObjectId
+        date_created = None
+        if "date_created" in doc:
+            # If the document has a 'date_created' field, use it
+            date_created = doc["date_created"]
+            if isinstance(date_created, datetime):
+                date_created = date_created.isoformat()
+            else:
+                # Convert to ISO format if it's a string
+                date_created = str(date_created)
+        elif isinstance(doc_id, ObjectId):
+            # Use the ObjectId's generation time
+            date_created = doc_id.generation_time.isoformat()
+
+        flattened_dict = flatten_dict(dictionary=doc)
+        concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
+
+        # Create a FileData object for each document with source_identifiers
+        filename = f"{doc_id}.txt"
+        file_data.source_identifiers = SourceIdentifiers(
+            filename=filename,
+            fullpath=filename,
+        )
+        cast_file_data = FileData.cast(file_data=file_data)
+        cast_file_data.identifier = str(doc_id)
+
+        # Determine the download path
+        download_path = self.get_download_path(file_data=cast_file_data)
+        if download_path is None:
+            raise ValueError("Download path could not be determined")
+
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write the concatenated values to the file
+        with open(download_path, "w", encoding="utf8") as f:
+            f.write(concatenated_values)
+
+        # Update metadata
+        cast_file_data.metadata.record_locator["document_id"] = str(doc_id)
+        cast_file_data.metadata.date_created = date_created
+
+        return super().generate_download_response(
+            file_data=cast_file_data, download_path=download_path
+        )
 
     @SourceConnectionError.wrap
     @requires_dependencies(["bson"], extras="mongodb")
@@ -192,82 +232,34 @@ class MongoDBDownloader(Downloader):
         from bson.errors import InvalidId
         from bson.objectid import ObjectId
 
-        client = self.create_client()
-        database = client[file_data.metadata.record_locator["database"]]
-        collection = database[file_data.metadata.record_locator["collection"]]
+        mongo_file_data = MongoDBBatchFileData.cast(file_data=file_data)
 
-        ids = file_data.additional_metadata.get("ids", [])
-        if not ids:
-            raise ValueError("No document IDs provided in additional_metadata")
+        with self.connection_config.get_client() as client:
+            database = client[mongo_file_data.additional_metadata.database]
+            collection = database[mongo_file_data.additional_metadata.collection]
 
-        object_ids = []
-        for doc_id in ids:
+            ids = [item.identifier for item in mongo_file_data.batch_items]
+
+            object_ids = []
+            for doc_id in ids:
+                try:
+                    object_ids.append(ObjectId(doc_id))
+                except InvalidId as e:
+                    error_message = f"Invalid ObjectId for doc_id '{doc_id}': {str(e)}"
+                    logger.error(error_message)
+                    raise ValueError(error_message) from e
+
             try:
-                object_ids.append(ObjectId(doc_id))
-            except InvalidId as e:
-                error_message = f"Invalid ObjectId for doc_id '{doc_id}': {str(e)}"
-                logger.error(error_message)
-                raise ValueError(error_message) from e
-
-        try:
-            docs = list(collection.find({"_id": {"$in": object_ids}}))
-        except Exception as e:
-            logger.error(f"Failed to fetch documents: {e}", exc_info=True)
-            raise e
+                docs = list(collection.find({"_id": {"$in": object_ids}}))
+            except Exception as e:
+                logger.error(f"Failed to fetch documents: {e}", exc_info=True)
+                raise e
 
         download_responses = []
         for doc in docs:
-            doc_id = doc["_id"]
-            doc.pop("_id", None)
-
-            # Extract date_created from the document or ObjectId
-            date_created = None
-            if "date_created" in doc:
-                # If the document has a 'date_created' field, use it
-                date_created = doc["date_created"]
-                if isinstance(date_created, datetime):
-                    date_created = date_created.isoformat()
-                else:
-                    # Convert to ISO format if it's a string
-                    date_created = str(date_created)
-            elif isinstance(doc_id, ObjectId):
-                # Use the ObjectId's generation time
-                date_created = doc_id.generation_time.isoformat()
-
-            flattened_dict = flatten_dict(dictionary=doc)
-            concatenated_values = "\n".join(str(value) for value in flattened_dict.values())
-
-            # Create a FileData object for each document with source_identifiers
-            individual_file_data = replace(file_data)
-            individual_file_data.identifier = str(doc_id)
-            individual_file_data.source_identifiers = SourceIdentifiers(
-                filename=str(doc_id),
-                fullpath=str(doc_id),
-                rel_path=str(doc_id),
+            download_responses.append(
+                self.generate_download_response(doc=doc, file_data=mongo_file_data)
             )
-
-            # Determine the download path
-            download_path = self.get_download_path(individual_file_data)
-            if download_path is None:
-                raise ValueError("Download path could not be determined")
-
-            download_path.parent.mkdir(parents=True, exist_ok=True)
-            download_path = download_path.with_suffix(".txt")
-
-            # Write the concatenated values to the file
-            with open(download_path, "w", encoding="utf8") as f:
-                f.write(concatenated_values)
-
-            individual_file_data.local_download_path = str(download_path)
-
-            # Update metadata
-            individual_file_data.metadata.record_locator["document_id"] = str(doc_id)
-            individual_file_data.metadata.date_created = date_created
-
-            download_response = self.generate_download_response(
-                file_data=individual_file_data, download_path=download_path
-            )
-            download_responses.append(download_response)
 
         return download_responses
 
@@ -332,18 +324,16 @@ class MongoDBUploader(Uploader):
             f"deleted {delete_results.deleted_count} records from collection {collection.name}"
         )
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with path.open("r") as file:
-            elements_dict = json.load(file)
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
-            f"writing {len(elements_dict)} objects to destination "
+            f"writing {len(data)} objects to destination "
             f"db, {self.upload_config.database}, "
             f"collection {self.upload_config.collection} "
             f"at {self.connection_config.host}",
         )
         # This would typically live in the stager but since no other manipulation
         # is done, setting the record id field in the uploader
-        for element in elements_dict:
+        for element in data:
             element[self.upload_config.record_id_key] = file_data.identifier
         with self.connection_config.get_client() as client:
             db = client[self.upload_config.database]
@@ -352,7 +342,7 @@ class MongoDBUploader(Uploader):
                 self.delete_by_record_id(file_data=file_data, collection=collection)
             else:
                 logger.warning("criteria for deleting previous content not met, skipping")
-            for chunk in batch_generator(elements_dict, self.upload_config.batch_size):
+            for chunk in batch_generator(data, self.upload_config.batch_size):
                 collection.insert_many(chunk)
 
 

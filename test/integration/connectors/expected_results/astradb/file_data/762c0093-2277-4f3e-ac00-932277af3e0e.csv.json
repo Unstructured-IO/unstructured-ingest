@@ -1,0 +1,28 @@
+{
+  "identifier": "762c0093-2277-4f3e-ac00-932277af3e0e.csv",
+  "connector_type": "astradb",
+  "source_identifiers": {
+    "filename": "762c0093-2277-4f3e-ac00-932277af3e0e.csv",
+    "fullpath": "762c0093-2277-4f3e-ac00-932277af3e0e.csv",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "document_id": "762c0093-2277-4f3e-ac00-932277af3e0e"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1734616909.789599",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "collection_name": "ingest_test_src",
+    "keyspace": null
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/pytest-of-romanisecke/pytest-0/test_astra_search_source0/762c0093-2277-4f3e-ac00-932277af3e0e.csv",
+  "display_name": null
+}

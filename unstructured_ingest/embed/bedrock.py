@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
 
 if TYPE_CHECKING:
     from botocore.client import BaseClient
@@ -44,6 +46,32 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
 class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     config: BedrockEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        from botocore.exceptions import ClientError
+
+        if isinstance(e, ClientError):
+            # https://docs.aws.amazon.com/awssupport/latest/APIReference/CommonErrors.html
+            http_response = e.response
+            meta = http_response["ResponseMetadata"]
+            http_response_code = meta["HTTPStatusCode"]
+            error_code = http_response["Error"]["Code"]
+            if http_response_code == 400:
+                if error_code == "ValidationError":
+                    return UserError(http_response["Error"])
+                elif error_code == "ThrottlingException":
+                    return RateLimitError(http_response["Error"])
+                elif error_code == "NotAuthorized" or error_code == "AccessDeniedException":
+                    return UserAuthError(http_response["Error"])
+            if http_response_code == 403:
+                return UserAuthError(http_response["Error"])
+            if 400 <= http_response_code < 500:
+                return UserError(http_response["Error"])
+            if http_response_code >= 500:
+                return ProviderError(http_response["Error"])
+
+        logger.error(f"unhandled exception from bedrock: {e}", exc_info=True)
+        return e
+
     def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
         # replace newlines, which can negatively affect performance.
@@ -61,25 +89,25 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
             input_body["inputText"] = text
         body = json.dumps(input_body)
 
+        bedrock_client = self.config.get_client()
+        # invoke bedrock API
         try:
-            bedrock_client = self.config.get_client()
-            # invoke bedrock API
             response = bedrock_client.invoke_model(
                 body=body,
                 modelId=self.config.embed_model_name,
                 accept="application/json",
                 contentType="application/json",
             )
-
-            # format output based on provider
-            response_body = json.loads(response.get("body").read())
-            if provider == "cohere":
-                return response_body.get("embeddings")[0]
-            else:
-                # includes common provider == "amazon"
-                return response_body.get("embedding")
         except Exception as e:
-            raise ValueError(f"Error raised by inference endpoint: {e}")
+            raise self.wrap_error(e=e)
+
+        # format output based on provider
+        response_body = json.loads(response.get("body").read())
+        if provider == "cohere":
+            return response_body.get("embeddings")[0]
+        else:
+            # includes common provider == "amazon"
+            return response_body.get("embedding")
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = [self.embed_query(query=e.get("text", "")) for e in elements]
