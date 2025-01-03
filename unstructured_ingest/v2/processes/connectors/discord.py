@@ -96,6 +96,7 @@ class DiscordDownloaderConfig(DownloaderConfig):
 class DiscordDownloader(Downloader):
     connection_config: DiscordConnectionConfig
     download_config: DiscordDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
 
     def is_async(self) -> bool:
         return True
