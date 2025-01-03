@@ -166,7 +166,6 @@ class DatabrickDeltaTablesUploader(SQLUploader):
         return output
 
 
-# Adjust the DestinationRegistryEntry for Databricks Delta Tables
 databricks_delta_table_destination_entry = DestinationRegistryEntry(
     connection_config=DatabrickDeltaTablesConnectionConfig,
     uploader=DatabrickDeltaTablesUploader,

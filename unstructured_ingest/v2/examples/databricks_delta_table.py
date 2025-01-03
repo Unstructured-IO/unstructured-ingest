@@ -20,9 +20,6 @@ from unstructured_ingest.v2.processes.connectors.sql.databricks_delta_tables imp
 from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
-# work_dir = Path("/path/to/work_dir")
-# docs_path = Path("/path/to/docs_path")
-# download_path = work_dir / "download"
 base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"
 work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE

@@ -411,16 +411,6 @@ class SQLUploader(Uploader):
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                # values = [
-                #     tuple(json.dumps(val) if isinstance(val, list) else val for val in row)
-                #     for row in values
-                # ]
-                print("--------------")
-                print("STATEMENT", stmt)
-                print("--------------")
-                print("VALUES", values)
-                print("--------------")
-                # print(stmt, values)
                 # For debugging purposes:
                 # for val in values:
                 #     try:
@@ -434,12 +424,7 @@ class SQLUploader(Uploader):
     def get_table_columns(self) -> list[str]:
         with self.get_cursor() as cursor:
             cursor.execute(f"SELECT * from {self.upload_config.table_name}")
-            d = [desc[0] for desc in cursor.description]
-            print(">>>>>>>>>>>>>>>>>>>>>>>>>>")
-            print(self.upload_config.table_name)
-            print(d)
-            print(">>>>>>>>>>>>>>>>>>>>>>>>>>")
-            return d
+            return [desc[0] for desc in cursor.description]
 
     def can_delete(self) -> bool:
         return self.upload_config.record_id_key in self.get_table_columns()
