@@ -286,3 +286,119 @@ def test_pinecone_stager(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_pinecone_namespace_write_failure(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
+    """
+    Test to ensure that using a non-existent or invalid namespace parameter
+    fails as expected.
+    """
+    namespace_to_fail = "invalid_namespace_test"
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+    )
+
+    connection_config = PineconeConnectionConfig(
+        index_name=pinecone_index,
+        access_config=PineconeAccessConfig(api_key=get_api_key()),
+    )
+
+    stager_config = PineconeUploadStagerConfig()
+    stager = PineconeUploadStager(upload_stager_config=stager_config)
+
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+        file_data=file_data,
+    )
+
+    # No need to create the namespace, as we expect this to fail
+    upload_config = PineconeUploaderConfig(namespace=namespace_to_fail)
+    uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
+
+    # Precheck should pass overall, but the actual run might fail with the invalid namespace
+    uploader.precheck()
+
+    try:
+        uploader.run(path=new_upload_file, file_data=file_data)
+        pytest.fail("Expected a failure when writing to a non-existent/invalid namespace.")
+    except DestinationConnectionError as e:
+        logger.info(f"Namespace write failure test passed: {e}")
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_pinecone_namespace_write_success(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
+    """
+    Test to ensure data is written to a custom namespace successfully and
+    that everything is properly cleaned up afterward.
+    """
+    test_namespace = "test_namespace_success"
+
+    # Prepare test data
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+    )
+
+    connection_config = PineconeConnectionConfig(
+        index_name=pinecone_index,
+        access_config=PineconeAccessConfig(api_key=get_api_key()),
+    )
+    stager_config = PineconeUploadStagerConfig()
+    stager = PineconeUploadStager(upload_stager_config=stager_config)
+
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+        file_data=file_data,
+    )
+
+    upload_config = PineconeUploaderConfig(namespace=test_namespace)
+    uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
+    uploader.precheck()
+
+    uploader.run(path=new_upload_file, file_data=file_data)
+
+    # Validate the vectors in our test namespace
+    pinecone_client = Pinecone(api_key=get_api_key())
+    index = pinecone_client.Index(name=pinecone_index)
+
+    index_stats = index.describe_index_stats(namespace=test_namespace)
+    total_vectors_in_namespace = index_stats["total_vector_count"]
+
+    with new_upload_file.open() as f:
+        staged_content = json.load(f)
+    expected_num_of_vectors = len(staged_content)
+
+    assert total_vectors_in_namespace == expected_num_of_vectors, (
+        f"Expected {expected_num_of_vectors} vectors in namespace '{test_namespace}', "
+        f"but found {total_vectors_in_namespace}."
+    )
+    logger.info(
+        f"Successfully wrote {total_vectors_in_namespace} vectors to namespace '{test_namespace}'."
+    )
+
+    # --- CLEANUP ---
+    try:
+        # Remove all vectors in our test namespace.
+        # This effectively cleans up the namespace, even though you can't
+        # literally delete a namespace from Pinecone.
+        delete_resp = index.delete(filter={}, namespace=test_namespace)
+        logger.info(f"Cleaned up all vectors from namespace '{test_namespace}': {delete_resp}")
+    except Exception as e:
+        logger.error(f"Error cleaning up namespace '{test_namespace}': {e}")
+        pytest.fail(f"Test failed to clean up namespace '{test_namespace}'.")

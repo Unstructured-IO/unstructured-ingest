@@ -1,5 +1,11 @@
 ## 0.3.12-dev3
 
+### Fixes
+
+* **Added possibility to use namespaces in pinecone connector**
+
+## 0.3.12-dev3
+
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
