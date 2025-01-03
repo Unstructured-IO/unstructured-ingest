@@ -17,6 +17,7 @@ from unstructured_ingest.v2.interfaces import (
     IndexerConfig,
     SourceIdentifiers,
 )
+from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
@@ -65,6 +66,12 @@ class DiscordIndexer(Indexer):
             file_data = self.get_channel_file_data(channel_id=channel_id)
             if file_data:
                 yield file_data
+
+    def precheck(self) -> None:
+        if not self.connection_config.access_config.get_secret_value().token:
+            raise SourceConnectionError("Discord token is missing")
+        if not self.index_config.channels:
+            raise SourceConnectionError("No channels provided")
 
     def get_channel_file_data(self, channel_id: str) -> Optional[FileData]:
         # Fetch channel metadata
