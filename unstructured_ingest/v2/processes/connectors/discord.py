@@ -45,8 +45,10 @@ class DiscordConnectionConfig(ConnectionConfig):
 
 
 class DiscordIndexerConfig(IndexerConfig):
-    channels: Optional[list[str]] = Field(
-        default=None, description="List of Discord channel IDs to process"
+    channels: list[str] = Field(
+        default=None,
+        description="List of Discord channel IDs to process",
+        min_length=1,
     )
 
 
