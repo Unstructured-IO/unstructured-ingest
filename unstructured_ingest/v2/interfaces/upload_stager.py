@@ -25,7 +25,7 @@ class UploadStager(BaseProcess, ABC):
     def write_output(self, output_path: Path, data: list[dict]) -> None:
         if output_path.suffix == ".json":
             with output_path.open("w") as f:
-                json.dump(data, f, indent=2)
+                json.dump(data, f, indent=2, default=str)
         elif output_path.suffix == ".ndjson":
             with output_path.open("w") as f:
                 ndjson.dump(data, f)

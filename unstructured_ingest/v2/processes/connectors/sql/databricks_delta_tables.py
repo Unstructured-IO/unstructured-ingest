@@ -5,6 +5,10 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+    SourceRegistryEntry,
+)
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLAccessConfig,
     SQLConnectionConfig,
@@ -160,3 +164,14 @@ class DatabrickDeltaTablesUploader(SQLUploader):
                     parsed.append(val)
             output.append(tuple(parsed))
         return output
+
+
+# Adjust the DestinationRegistryEntry for Databricks Delta Tables
+databricks_delta_table_destination_entry = DestinationRegistryEntry(
+    connection_config=DatabrickDeltaTablesConnectionConfig,
+    uploader=DatabrickDeltaTablesUploader,
+    uploader_config=DatabrickDeltaTablesUploaderConfig,
+    upload_stager=DatabrickDeltaTablesUploadStager,
+    upload_stager_config=DatabrickDeltaTablesUploadStagerConfig,
+)
+
