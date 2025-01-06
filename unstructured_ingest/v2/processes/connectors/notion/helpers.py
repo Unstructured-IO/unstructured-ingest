@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 from uuid import UUID
 
-from htmlBuilder.attributes import Style, Type
+from htmlBuilder.attributes import Style
 from htmlBuilder.tags import (
     Body,
     Div,
@@ -24,16 +24,8 @@ from notion_client.errors import APIResponseError
 
 import unstructured_ingest.v2.processes.connectors.notion.types.blocks as notion_blocks
 from unstructured_ingest.v2.processes.connectors.notion.client import Client
-from unstructured_ingest.v2.processes.connectors.notion.interfaces import BlockBase
 from unstructured_ingest.v2.processes.connectors.notion.types.block import Block
 from unstructured_ingest.v2.processes.connectors.notion.types.database import Database
-
-
-@dataclass
-class TextExtractionResponse:
-    text: Optional[str] = None
-    child_pages: List[str] = field(default_factory=list)
-    child_databases: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -43,92 +35,140 @@ class HtmlExtractionResponse:
     child_databases: List[str] = field(default_factory=list)
 
 
+def process_block(
+    current_block: dict,
+    parent_page_id: str,
+    client: Client,
+    child_pages: list,
+    child_databases: list,
+) -> Tuple[dict, list, list, dict]:
+    if isinstance(current_block["block"].block, notion_blocks.ChildPage) and current_block[
+        "block"
+    ].id != str(parent_page_id):
+        child_pages.append(current_block["block"].id)
+        return {}, child_pages, child_databases
+    if isinstance(current_block["block"].block, notion_blocks.ChildDatabase):
+        child_databases.append(current_block["block"].id)
+        return {}, child_pages, child_databases
+
+    # recursively go through all blocks in a page, store each block in a dictionary
+    if current_block["block"].has_children:
+        children = []
+        for children_block in client.blocks.children.iterate_list(
+            block_id=current_block["block"].id
+        ):
+            children.extend(children_block)
+        if children:
+            for child in children:
+                child_block = {
+                    "block": child,
+                    "level": current_block["level"] + 1,
+                    "children": [],
+                    "parent_id": current_block["block"].id,
+                }
+                child_element, child_pages, child_databases = process_block(
+                    child_block, parent_page_id, client, child_pages, child_databases
+                )
+                current_block["children"].append(child_element)
+    return current_block, child_pages, child_databases
+
+
+def flush_list(type: str, item_list: list, html: list) -> Tuple[list, list]:
+    margin_left = 10 * (item_list[-1][1] - 1)
+    style = Style(f"margin-left: {margin_left}px")
+    if type == "bulleted_list":
+        html.append(Ul([style], [item[2] for item in item_list]))
+    else:
+        html.append(Ol([style], [item[2] for item in item_list]))
+    return [], html
+
+
+def build_html(
+    current_block: dict, bulleted_list: list, numbered_list: list
+) -> Tuple[list, list, list]:
+    html = []
+    # extract current block's html
+    if isinstance(current_block["block"].block, notion_blocks.BulletedListItem):
+        if bulleted_list and current_block["parent_id"] != bulleted_list[-1][0]:
+            bulleted_list, html = flush_list("bulleted_list", bulleted_list, html)
+        bulleted_list.append(
+            (current_block["parent_id"], current_block["level"], current_block["block"].get_html())
+        )
+        if bulleted_list and current_block["peers_rank"] == current_block["peers_count"] - 1:
+            bulleted_list, html = flush_list("bulleted_list", bulleted_list, html)
+    elif isinstance(current_block["block"].block, notion_blocks.NumberedListItem):
+        if numbered_list and current_block["parent_id"] != numbered_list[-1][0]:
+            numbered_list, html = flush_list("numbered_list", numbered_list, html)
+        numbered_list.append(
+            (current_block["parent_id"], current_block["level"], current_block["block"].get_html())
+        )
+        if numbered_list and current_block["peers_rank"] == current_block["peers_count"] - 1:
+            numbered_list, html = flush_list("numbered_list", numbered_list, html)
+    else:
+        if bulleted_list:
+            bulleted_list, html = flush_list("bulleted_list", bulleted_list, html)
+        if numbered_list:
+            numbered_list, html = flush_list("numbered_list", numbered_list, html)
+        if (
+            isinstance(current_block["block"].block, notion_blocks.TableRow)
+            and current_block["peers_rank"] == 0
+        ):
+            current_block["block"].is_header = True
+        if current_block["block"].get_html():
+            html.append(current_block["block"].get_html())
+        else:
+            html.append([])
+    # process current block's children
+    if current_block["children"]:
+        children_html = []
+        for index, child in enumerate(current_block["children"]):
+            if child:
+                child["peers_rank"] = index
+                child["peers_count"] = len(current_block["children"])
+                child_html, bulleted_list, numbered_list = build_html(
+                    child, bulleted_list, numbered_list
+                )
+                if child_html:
+                    children_html.append(child_html)
+        if isinstance(current_block["block"].block, notion_blocks.Column):
+            html.append(
+                Div(
+                    [Style(f"width:{100/current_block['peers_count']}%; float: left")],
+                    children_html,
+                )
+            )
+        elif isinstance(current_block["block"].block, notion_blocks.Table):
+            html.append(Table([], children_html))
+        else:
+            html.append(Div([], children_html))
+
+    return html, bulleted_list, numbered_list
+
+
 def extract_page_html(
     client: Client,
     page_id: str,
     logger: logging.Logger,
 ) -> HtmlExtractionResponse:
-    page_id_uuid = UUID(page_id)
-    html_elements: List[Tuple[BlockBase, HtmlTag]] = []
+    parent_page_id = UUID(page_id)
     parent_block: Block = client.blocks.retrieve(block_id=page_id)  # type: ignore
     head = None
     if isinstance(parent_block.block, notion_blocks.ChildPage):
         head = Head([], Title([], parent_block.block.title))
-    child_pages: List[str] = []
-    child_databases: List[str] = []
-    parents: List[Tuple[int, Block]] = [(0, parent_block)]
-    processed_block_ids = []
-    while len(parents) > 0:
-        level, parent = parents.pop(0)
-        parent_html = parent.get_html()
-        if parent_html:
-            html_elements.append((parent.block, parent_html))
-        logger.debug(f"processing block: {parent}")
-        if isinstance(parent.block, notion_blocks.ChildPage) and parent.id != str(page_id_uuid):
-            child_pages.append(parent.id)
-            continue
-        if isinstance(parent.block, notion_blocks.ChildDatabase):
-            child_databases.append(parent.id)
-            continue
-        if isinstance(parent.block, notion_blocks.Table):
-            table_response = build_table(client=client, table=parent)
-            html_elements.append((parent.block, table_response.table_html))
-            child_pages.extend(table_response.child_pages)
-            child_databases.extend(table_response.child_databases)
-            continue
-        if isinstance(parent.block, notion_blocks.ColumnList):
-            column_html = build_columned_list(client=client, column_parent=parent)
-            html_elements.append((parent.block, column_html))
-            continue
-        if isinstance(parent.block, notion_blocks.BulletedListItem):
-            bullet_list_resp = build_bulleted_list_children(
-                client=client,
-                bulleted_list_item_parent=parent,
-            )
-            if bullet_list_children := bullet_list_resp.child_list:
-                html_elements.append((parent.block, bullet_list_children))
-            continue
-        if isinstance(parent.block, notion_blocks.NumberedListItem):
-            numbered_list_resp = build_numbered_list_children(
-                client=client,
-                numbered_list_item_parent=parent,
-            )
-            if numbered_list_children := numbered_list_resp.child_list:
-                html_elements.append((parent.block, numbered_list_children))
-            continue
-        if parent.block.can_have_children() and parent.has_children:
-            children = []
-            for children_block in client.blocks.children.iterate_list(  # type: ignore
-                block_id=parent.id,
-            ):
-                children.extend(children_block)
-            if children:
-                logger.debug(f"adding {len(children)} children from parent: {parent}")
-                for child in children:
-                    if child.id not in processed_block_ids:
-                        parents.append((level + 1, child))
-        processed_block_ids.append(parent)
-
-    # Join list items
-    joined_html_elements = []
-    numbered_list_items = []
-    bullet_list_items = []
-    for block, html in html_elements:
-        if isinstance(block, notion_blocks.BulletedListItem):
-            bullet_list_items.append(html)
-            continue
-        if isinstance(block, notion_blocks.NumberedListItem):
-            numbered_list_items.append(html)
-            continue
-        if len(numbered_list_items) > 0:
-            joined_html_elements.append(Ol([], numbered_list_items))
-            numbered_list_items = []
-        if len(bullet_list_items) > 0:
-            joined_html_elements.append(Ul([], bullet_list_items))
-            bullet_list_items = []
-        joined_html_elements.append(html)
-
-    body = Body([], joined_html_elements)
+    current_block = {
+        "block": parent_block,
+        "level": 0,
+        "children": [],
+        "parent_id": None,
+        "peers_rank": 0,
+        "peers_count": 1,
+    }
+    logger.debug(f"processing page id: {page_id}")
+    current_block, child_pages, child_databases = process_block(
+        current_block, parent_page_id, client, [], []
+    )
+    html, _, _ = build_html(current_block, [], [])
+    body = Body([], html)
     all_elements = [body]
     if head:
         all_elements = [head] + all_elements
@@ -406,179 +446,3 @@ def is_database_url(client: Client, url: str):
         return False
     check_resp = client.databases.retrieve_status(database_id=database_uuid)
     return check_resp == 200
-
-
-@dataclass
-class BuildTableResponse:
-    table_html: HtmlTag
-    child_pages: List[str] = field(default_factory=list)
-    child_databases: List[str] = field(default_factory=list)
-
-
-def build_table(client: Client, table: Block) -> BuildTableResponse:
-    if not isinstance(table.block, notion_blocks.Table):
-        raise ValueError(f"block type not table: {type(table.block)}")
-    rows: List[notion_blocks.TableRow] = []
-    child_pages: List[str] = []
-    child_databases: List[str] = []
-    for row_chunk in client.blocks.children.iterate_list(  # type: ignore
-        block_id=table.id,
-    ):
-        rows.extend(
-            [row.block for row in row_chunk if isinstance(row.block, notion_blocks.TableRow)],
-        )
-
-    # Extract child databases and pages
-    for row in rows:
-        for c in row.cells:
-            for rt in c.rich_texts:
-                if mention := rt.mention:
-                    if mention.type == "page" and (page := mention.page):
-                        child_pages.append(page.id)
-                    if mention.type == "database" and (database := mention.database):
-                        child_databases.append(database.id)
-
-    header: Optional[notion_blocks.TableRow] = None
-    if table.block.has_column_header:
-        header = rows.pop(0)
-    table_html_rows = []
-    if header:
-        header.is_header = True
-        table_html_rows.append(header.get_html())
-    table_html_rows.extend([row.get_html() for row in rows])
-    html_table = Table([], table_html_rows)
-
-    return BuildTableResponse(
-        table_html=html_table,
-        child_pages=child_pages,
-        child_databases=child_databases,
-    )
-
-
-def build_columned_list(client: Client, column_parent: Block) -> HtmlTag:
-    if not isinstance(column_parent.block, notion_blocks.ColumnList):
-        raise ValueError(f"block type not column list: {type(column_parent.block)}")
-    columns: List[Block] = []
-    for column_chunk in client.blocks.children.iterate_list(  # type: ignore
-        block_id=column_parent.id,
-    ):
-        columns.extend(column_chunk)
-    num_columns = len(columns)
-    columns_content = []
-    for column in columns:
-        for column_content_chunk in client.blocks.children.iterate_list(  # type: ignore
-            block_id=column.id,
-        ):
-            columns_content.append(
-                Div(
-                    [Style(f"width:{100/num_columns}%; float: left")],
-                    [content.block.get_html() for content in column_content_chunk],
-                ),
-            )
-
-    return Div([], columns_content)
-
-
-@dataclass
-class BulletedListResponse:
-    html: HtmlTag
-    child_list: Optional[HtmlTag] = None
-
-
-bulleted_list_styles = ["circle", "square", "disc"]
-
-
-def build_bulleted_list_children(
-    client: Client,
-    bulleted_list_item_parent: Block,
-    list_style_ind: int = 0,
-) -> BulletedListResponse:
-    if not isinstance(bulleted_list_item_parent.block, notion_blocks.BulletedListItem):
-        raise ValueError(
-            f"block type not bulleted list item: {type(bulleted_list_item_parent.block)}",
-        )
-    html = bulleted_list_item_parent.get_html()
-    if html:
-        html.attributes = [Style("margin-left: 10px")]
-    if not bulleted_list_item_parent.has_children:
-        return BulletedListResponse(
-            html=html,
-        )
-    children = []
-    for child_block in client.blocks.children.iterate_list(  # type: ignore
-        block_id=bulleted_list_item_parent.id,
-    ):
-        children.extend(child_block)
-    if not children:
-        return BulletedListResponse(
-            html=bulleted_list_item_parent.get_html(),
-        )
-    child_html = []
-    for child in children:
-        child_resp = build_bulleted_list_children(
-            client=client,
-            bulleted_list_item_parent=child,
-            list_style_ind=(list_style_ind + 1) % len(bulleted_list_styles),
-        )
-        child_html.append(child_resp.html)
-        if child_children := child_resp.child_list:
-            child_html.append(child_children)
-
-    return BulletedListResponse(
-        html=html,
-        child_list=Ul(
-            [Style(f"list-style-type: {bulleted_list_styles[list_style_ind]}")],
-            child_html,
-        ),
-    )
-
-
-@dataclass
-class NumberedListResponse:
-    html: HtmlTag
-    child_list: Optional[HtmlTag] = None
-
-
-numbered_list_types = ["a", "i", "1"]
-
-
-def build_numbered_list_children(
-    client: Client,
-    numbered_list_item_parent: Block,
-    type_attr_ind=0,
-) -> NumberedListResponse:
-    if not isinstance(numbered_list_item_parent.block, notion_blocks.NumberedListItem):
-        raise ValueError(
-            f"block type not numbered list item: {type(numbered_list_item_parent.block)}",
-        )
-    html = numbered_list_item_parent.get_html()
-    if html:
-        html.attributes = [Style("margin-left: 10px")]
-    if not numbered_list_item_parent.has_children:
-        return NumberedListResponse(
-            html=html,
-        )
-    children = []
-    for child_block in client.blocks.children.iterate_list(  # type: ignore
-        block_id=numbered_list_item_parent.id,
-    ):
-        children.extend(child_block)
-    if not children:
-        return NumberedListResponse(
-            html=numbered_list_item_parent.get_html(),
-        )
-    child_html = []
-    for child in children:
-        child_resp = build_numbered_list_children(
-            client=client,
-            numbered_list_item_parent=child,
-            type_attr_ind=(type_attr_ind + 1) % len(numbered_list_types),
-        )
-        child_html.append(child_resp.html)
-        if child_children := child_resp.child_list:
-            child_html.append(child_children)
-
-    return NumberedListResponse(
-        html=html,
-        child_list=Ol([Type(numbered_list_types[type_attr_ind])], child_html),
-    )
