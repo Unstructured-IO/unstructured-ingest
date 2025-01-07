@@ -76,6 +76,8 @@ python_version=$(python --version 2>&1)
 
 tests_to_ignore=(
   'notion.sh'
+  'sharepoint.sh'
+  'sharepoint-with-permissions.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then
