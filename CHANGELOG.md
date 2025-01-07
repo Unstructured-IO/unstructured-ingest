@@ -3,6 +3,7 @@
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
+* **Improved Milvus error handling**
 
 ### Fixes
 * **Register Neo4j Upload Stager**
