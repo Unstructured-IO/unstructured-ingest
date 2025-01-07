@@ -33,7 +33,7 @@ class EnvData:
 def get_env_data() -> EnvData:
     return EnvData(
         token=os.getenv("DISCORD_TOKEN"),
-        channels=os.getenv("DISCORD_CHANNELS"),
+        channels=os.getenv("DISCORD_CHANNELS", default=[]).split(","),
     )
 
 
