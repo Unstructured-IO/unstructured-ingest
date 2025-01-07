@@ -1,16 +1,37 @@
+## 0.3.12-dev4
+
+### Fixes
+
+* **Fix Snowflake Uploader error**
+* **Fix SQL Uploader Stager timestamp error**
+
+## 0.3.12-dev3
+
+### Enhancements
+
+* **Migrate Vectara Destination Connector to v2**
+
 ## 0.3.12-dev2
 
+### Enhancements
+
+* **Added Redis destination connector**
+
+## 0.3.12-dev1
+
 * **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+
+## 0.3.12-dev0
 
 ### Fixes
 
 * **Fix Kafka destination connection problems**
-* **Fix Snowflake Uploader error**
-* **Fix SQL Uploader Stager timestamp error**
 
 ### Enhancements
 
 * **Kafka destination connector checks for existence of topic**
+* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
 
 ## 0.3.11
 

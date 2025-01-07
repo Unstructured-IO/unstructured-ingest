@@ -48,12 +48,16 @@ from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
 from .outlook import outlook_source_entry
 from .pinecone import CONNECTOR_TYPE as PINECONE_CONNECTOR_TYPE
 from .pinecone import pinecone_destination_entry
+from .redisdb import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
+from .redisdb import redis_destination_entry
 from .salesforce import CONNECTOR_TYPE as SALESFORCE_CONNECTOR_TYPE
 from .salesforce import salesforce_source_entry
 from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
+from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
+from .vectara import vectara_destination_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -101,4 +105,7 @@ add_source_entry(source_type=GITLAB_CONNECTOR_TYPE, entry=gitlab_source_entry)
 
 add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
 
+add_destination_entry(destination_type=VECTARA_CONNECTOR_TYPE, entry=vectara_destination_entry)
 add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
+
+add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
