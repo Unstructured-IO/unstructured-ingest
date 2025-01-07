@@ -63,7 +63,7 @@ async def test_discord_source(discord_channels: list[str]):
             configs=SourceValidationConfigs(
                 test_id=CONNECTOR_TYPE,
                 expected_num_files=expected_num_files,
-                expected_number_indexed_file_data=1,
+                expected_number_indexed_file_data=expected_num_files,
                 validate_downloaded_files=True,
             ),
         )
