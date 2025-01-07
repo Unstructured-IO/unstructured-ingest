@@ -17,6 +17,7 @@ class SelectOption(FromJSONMixin):
     color: str
     id: str
     name: str
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

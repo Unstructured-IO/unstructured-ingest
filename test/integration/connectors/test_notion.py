@@ -27,7 +27,7 @@ def test_notion_source_database(temp_dir):
         access_config=access_config,
     )
     index_config = NotionIndexerConfig(
-        database_ids=["1572c3765a0a80d3a34ac5c0eecd1e88"], recursive=False
+        database_ids=["1722c3765a0a8082b382ebc2c62d3f4c"], recursive=False
     )
 
     download_config = NotionDownloaderConfig(download_dir=temp_dir)
