@@ -161,7 +161,7 @@ class DatabrickDeltaTablesUploader(SQLUploader):
             if isinstance(v, dict):
                 values_list.append(json.dumps(v))
             elif isinstance(v, list):
-                if v and (isinstance(v[0], int) or isinstance(v[0], float)):
+                if v and isinstance(v[0], (int, float)):
                     values_list.append("ARRAY({})".format(", ".join([str(val) for val in v])))
                 else:
                     values_list.append("ARRAY({})".format(", ".join([f"'{val}'" for val in v])))
