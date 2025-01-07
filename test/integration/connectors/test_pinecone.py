@@ -299,6 +299,7 @@ def test_pinecone_stager(
         tmp_dir=tmp_path,
     )
 
+
 @requires_env(API_KEY)
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
@@ -343,9 +344,9 @@ async def test_pinecone_namespace_write_success(
     expected_num_of_vectors = len(staged_content)
 
     validate_pinecone_index(
-    index_name=pinecone_index,
-    expected_num_of_vectors=expected_num_of_vectors,
-    namespace="test_namespace_success",  # or your test_namespace variable
+        index_name=pinecone_index,
+        expected_num_of_vectors=expected_num_of_vectors,
+        namespace="test_namespace_success",  # or your test_namespace variable
     )
 
     # --- CLEANUP ---
