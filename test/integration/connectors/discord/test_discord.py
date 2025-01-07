@@ -85,3 +85,15 @@ def test_discord_source_precheck_fail_no_token():
     with pytest.raises(SourceConnectionError):
         indexer.precheck()
 
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_discord_source_precheck_fail_no_channels():
+    indexer_config = DiscordIndexerConfig(channels=[])
+
+    connection_config = DiscordConnectionConfig(
+        access_config=DiscordAccessConfig(token=DISCORD_TOKEN)
+    )
+    indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
+

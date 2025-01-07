@@ -49,7 +49,6 @@ class DiscordIndexerConfig(IndexerConfig):
     channels: list[str] = Field(
         default=None,
         description="List of Discord channel IDs to process",
-        min_length=1,
     )
 
 
