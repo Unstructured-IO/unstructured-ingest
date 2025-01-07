@@ -155,21 +155,6 @@ class DatabrickDeltaTablesUploader(SQLUploader):
                     )
                 )
 
-    # def prepare_data(
-    #     self, columns: list[str], data: tuple[tuple[Any, ...], ...]
-    # ) -> list[tuple[Any, ...]]:
-    #     prepared_data = super().prepare_data(columns=columns, data=data)
-    #     output = []
-    #     for row in prepared_data:
-    #         parsed = []
-    #         for val in row:
-    #             if isinstance(val, list):
-    #                 parsed.append("Array({})".format(",".join([str(v) for v in val])))
-    #             else:
-    #                 parsed.append(val)
-    #         output.append(tuple(parsed))
-    #     return output
-
     def create_statement(self, columns: list[str], values: tuple[Any, ...]) -> str:
         values_list = []
         for v in values:
