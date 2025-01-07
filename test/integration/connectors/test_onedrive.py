@@ -1,14 +1,14 @@
 import os
 import uuid
 from pathlib import Path
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
-from test.integration.utils import requires_env
 
 import pytest
 from office365.graph_client import GraphClient
 
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+)
+from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.onedrive import (
     CONNECTOR_TYPE,
