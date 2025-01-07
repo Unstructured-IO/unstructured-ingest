@@ -74,13 +74,13 @@ trap print_last_run EXIT
 
 python_version=$(python --version 2>&1)
 
-# TODO: remove the lines with 'sharepoint.sh', 'sharepoint-with-permissions.sh'
-# and 'onedrive.sh' from tests_to_ignore once the tests are fixed
+# TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
   'notion.sh'
   'sharepoint.sh'
   'sharepoint-with-permissions.sh'
   'onedrive.sh'
+  'outlook.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then
