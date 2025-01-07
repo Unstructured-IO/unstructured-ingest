@@ -1,14 +1,14 @@
 import os
 import uuid
 from pathlib import Path
-
-import pytest
-from office365.graph_client import GraphClient
-
 from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
 )
 from test.integration.utils import requires_env
+
+import pytest
+from office365.graph_client import GraphClient
+
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.onedrive import (
     CONNECTOR_TYPE,
@@ -20,7 +20,9 @@ from unstructured_ingest.v2.processes.connectors.onedrive import (
 
 
 @pytest.fixture
-@pytest.mark.xfail(reason="Issues with test setup on the provider side.") #TODO: remove line when issues are addressed
+@pytest.mark.xfail(
+    reason="Issues with test setup on the provider side."
+)  # TODO: remove line when issues are addressed
 def onedrive_test_folder() -> str:
     """
     Pytest fixture that creates a test folder in OneDrive and deletes it after test run.
@@ -67,7 +69,9 @@ def get_connection_config():
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 @requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
-@pytest.mark.xfail(reason="Issues with test setup on the provider side.") #TODO: remove line when issues are addressed
+@pytest.mark.xfail(
+    reason="Issues with test setup on the provider side."
+)  # TODO: remove line when issues are addressed
 def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     """
     Integration test for the OneDrive destination connector.
