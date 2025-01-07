@@ -1,10 +1,19 @@
+import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
+import numpy as np
+import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.processes.connector_registry import (
+    DestinationRegistryEntry,
+)
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLAccessConfig,
     SQLConnectionConfig,
@@ -146,17 +155,73 @@ class DatabrickDeltaTablesUploader(SQLUploader):
                     )
                 )
 
-    def prepare_data(
-        self, columns: list[str], data: tuple[tuple[Any, ...], ...]
-    ) -> list[tuple[Any, ...]]:
-        prepared_data = super().prepare_data(columns=columns, data=data)
-        output = []
-        for row in prepared_data:
-            parsed = []
-            for val in row:
-                if isinstance(val, list):
-                    parsed.append("Array({})".format(",".join([str(v) for v in val])))
+    # def prepare_data(
+    #     self, columns: list[str], data: tuple[tuple[Any, ...], ...]
+    # ) -> list[tuple[Any, ...]]:
+    #     prepared_data = super().prepare_data(columns=columns, data=data)
+    #     output = []
+    #     for row in prepared_data:
+    #         parsed = []
+    #         for val in row:
+    #             if isinstance(val, list):
+    #                 parsed.append("Array({})".format(",".join([str(v) for v in val])))
+    #             else:
+    #                 parsed.append(val)
+    #         output.append(tuple(parsed))
+    #     return output
+
+    def create_statement(self, columns: list[str], values: tuple[Any, ...]) -> str:
+        values_list = []
+        for v in values:
+            if isinstance(v, dict):
+                values_list.append(json.dumps(v))
+            elif isinstance(v, list):
+                if v and (isinstance(v[0], int) or isinstance(v[0], float)):
+                    values_list.append("ARRAY({})".format(", ".join([str(val) for val in v])))
                 else:
-                    parsed.append(val)
-            output.append(tuple(parsed))
-        return output
+                    values_list.append("ARRAY({})".format(", ".join([f"'{val}'" for val in v])))
+            else:
+                values_list.append(f"'{v}'")
+        statement = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+            table_name=self.upload_config.table_name,
+            columns=", ".join(columns),
+            values=", ".join(values_list),
+        )
+        return statement
+
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        if self.can_delete():
+            self.delete_by_record_id(file_data=file_data)
+        else:
+            logger.warning(
+                f"table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
+        df.replace({np.nan: None}, inplace=True)
+        self._fit_to_schema(df=df)
+
+        columns = list(df.columns)
+        logger.info(
+            f"writing a total of {len(df)} elements via"
+            f" document batches to destination"
+            f" table named {self.upload_config.table_name}"
+            f" with batch size {self.upload_config.batch_size}"
+        )
+        # TODO: currently variable binding not supporting for list types,
+        #  update once that gets resolved in SDK
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
+            with self.get_cursor() as cursor:
+                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                for v in values:
+                    stmt = self.create_statement(columns=columns, values=v)
+                    cursor.execute(stmt)
+
+
+databricks_delta_tables_destination_entry = DestinationRegistryEntry(
+    connection_config=DatabrickDeltaTablesConnectionConfig,
+    uploader=DatabrickDeltaTablesUploader,
+    uploader_config=DatabrickDeltaTablesUploaderConfig,
+    upload_stager=DatabrickDeltaTablesUploadStager,
+    upload_stager_config=DatabrickDeltaTablesUploadStagerConfig,
+)

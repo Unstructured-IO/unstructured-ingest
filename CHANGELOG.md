@@ -1,4 +1,9 @@
-## 0.3.15-dev0
+## 0.3.15-dev1
+
+### Enhancements
+
+* **Add databricks delta table connector**
+
 
 ## 0.3.14
 
