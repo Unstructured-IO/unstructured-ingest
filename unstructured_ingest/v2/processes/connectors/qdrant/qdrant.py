@@ -128,7 +128,6 @@ class QdrantUploader(Uploader, ABC):
         file_data: FileData,
         **kwargs: Any,
     ) -> None:
-
         batches = list(batch_generator(data, batch_size=self.upload_config.batch_size))
         logger.debug(
             "Elements split into %i batches of size %i.",
