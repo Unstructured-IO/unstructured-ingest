@@ -22,7 +22,6 @@ from unstructured_ingest.v2.processes.connectors.discord import (
     DiscordDownloaderConfig,
     DiscordIndexer,
     DiscordIndexerConfig,
-    SourceConnectionError,
 )
 
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
