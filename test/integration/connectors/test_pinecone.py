@@ -348,33 +348,12 @@ async def test_pinecone_namespace_write_success(
     namespace="test_namespace_success",  # or your test_namespace variable
     )
 
-    # Validate the vectors in our test namespace
-    # pinecone_client = Pinecone(api_key=get_api_key())
-    # index = pinecone_client.Index(name=pinecone_index)
-
-    # index_stats = index.describe_index_stats(namespace=test_namespace)
-    # total_vectors_in_namespace = index_stats["total_vector_count"]
-
-    # with new_upload_file.open() as f:
-    #     staged_content = json.load(f)
-    # expected_num_of_vectors = len(staged_content)
-
-    # assert total_vectors_in_namespace == expected_num_of_vectors, (
-    #     f"Expected {expected_num_of_vectors} vectors in namespace '{test_namespace}', "
-    #     f"but found {total_vectors_in_namespace}."
-    # )
-    # logger.info(
-    #     f"Successfully wrote {total_vectors_in_namespace} vectors to namespace '{test_namespace}'."
-    # )
-
     # --- CLEANUP ---
     try:
-        # Remove all vectors in our test namespace.
-        # This effectively cleans up the namespace, even though you can't
-        # literally delete a namespace from Pinecone.
         pinecone_client = Pinecone(api_key=get_api_key())
         index = pinecone_client.Index(name=pinecone_index)
-        delete_resp = index.delete(filter={}, namespace=test_namespace)
+        # Use deleteAll=True to remove everything in that namespace
+        delete_resp = index.delete(deleteAll=True, namespace=test_namespace)
         logger.info(f"Cleaned up all vectors from namespace '{test_namespace}': {delete_resp}")
     except Exception as e:
         logger.error(f"Error cleaning up namespace '{test_namespace}': {e}")
