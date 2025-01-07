@@ -118,8 +118,9 @@ class TableMigrationConfig(BaseModel):
 
 
 class DatabricksNativeVolumesUploaderConfig(DatabricksVolumesUploaderConfig):
-    table_migration_config: Optional[TableMigrationConfig] = Field(
-        description="Configuration for migrating data to a table in Databricks", default=None
+    table_migration_config: TableMigrationConfig = Field(
+        description="Configuration for migrating data to a table in Databricks",
+        default_factory=TableMigrationConfig,
     )
 
 
