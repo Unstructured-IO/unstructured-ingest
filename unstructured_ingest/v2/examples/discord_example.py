@@ -24,16 +24,10 @@ if __name__ == "__main__":
     logger.info(f"writing all content in: {work_dir.resolve()}")
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve()), tqdm=True, verbose=True),
-        indexer_config=DiscordIndexerConfig(
-            channels=os.environ["DISCORD_CHANNELS"].split(",")
-        ),
-        downloader_config=DiscordDownloaderConfig(
-            limit=int(os.getenv("DISCORD_LIMIT", 100))
-        ),
+        indexer_config=DiscordIndexerConfig(channels=os.environ["DISCORD_CHANNELS"].split(",")),
+        downloader_config=DiscordDownloaderConfig(limit=int(os.getenv("DISCORD_LIMIT", 100))),
         source_connection_config=DiscordConnectionConfig(
-            access_config=DiscordAccessConfig(
-                token=os.environ["DISCORD_TOKEN"]
-            )
+            access_config=DiscordAccessConfig(token=os.environ["DISCORD_TOKEN"])
         ),
         partitioner_config=PartitionerConfig(strategy="fast"),
         # chunker_config=ChunkerConfig(chunking_strategy="by_title"),
