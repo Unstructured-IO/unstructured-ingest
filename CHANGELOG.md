@@ -1,14 +1,17 @@
-## 0.3.12-dev4
+## 0.3.12-dev5
 
 ### Fixes
 
-* **Added possibility to use namespaces in pinecone connector**
+* **Added pinecone namespace upset test**
 
-## 0.3.12-dev3
+## 0.3.12-dev4
 
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
+
+### Fixes
+* **Register Neo4j Upload Stager**
 
 ## 0.3.12-dev2
 
