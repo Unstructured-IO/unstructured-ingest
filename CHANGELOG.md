@@ -3,12 +3,11 @@
 ### Enhancements
 
 * **Migrate Notion Source Connector to V2**
-
-## 0.3.12-dev3
-
-### Enhancements
-
 * **Migrate Vectara Destination Connector to v2**
+* **Improved Milvus error handling**
+
+### Fixes
+* **Register Neo4j Upload Stager**
 
 ## 0.3.12-dev2
 

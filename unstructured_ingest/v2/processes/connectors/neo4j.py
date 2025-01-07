@@ -378,6 +378,8 @@ class Neo4jUploader(Uploader):
 
 neo4j_destination_entry = DestinationRegistryEntry(
     connection_config=Neo4jConnectionConfig,
+    upload_stager=Neo4jUploadStager,
+    upload_stager_config=Neo4jUploadStagerConfig,
     uploader=Neo4jUploader,
     uploader_config=Neo4jUploaderConfig,
 )

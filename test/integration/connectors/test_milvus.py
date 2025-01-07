@@ -174,6 +174,19 @@ def test_precheck_fails_on_nonexistent_collection(collection: str):
         uploader.precheck()
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_precheck_fails_on_nonexisting_db(collection: str):
+    uploader = MilvusUploader(
+        connection_config=MilvusConnectionConfig(uri=DB_URI),
+        upload_config=MilvusUploaderConfig(db_name="nonexisting_db", collection_name=collection),
+    )
+    with pytest.raises(
+        DestinationConnectionError,
+        match="database not found",
+    ):
+        uploader.precheck()
+
+
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_milvus_stager(
     request: TopRequest,
