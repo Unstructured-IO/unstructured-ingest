@@ -1,12 +1,8 @@
 import os
 import tempfile
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
-import discord
 import pytest
-from discord import Client as DiscordClient
 
 from test.integration.connectors.utils.constants import SOURCE_TAG
 from test.integration.connectors.utils.validation.source import (
@@ -24,32 +20,25 @@ from unstructured_ingest.v2.processes.connectors.discord import (
     DiscordIndexerConfig,
 )
 
-DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
-DISCORD_CHANNELS = os.environ["DISCORD_CHANNELS"].split(",")
-
-
-@contextmanager
-def get_client() -> Generator[DiscordClient, None, None]:
-    intents = discord.Intents.default()
-    intents.message_content = True
-    client = discord.Client(intents=intents)
-    yield client
-    client.close()
-
 
 @pytest.fixture
 def discord_channels() -> list[str]:
-    return DISCORD_CHANNELS
+    return os.environ["DISCORD_CHANNELS"].split(",")
+
+
+@pytest.fixture
+def discord_token() -> str:
+    return os.environ["DISCORD_TOKEN"]
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-async def test_discord_source(discord_channels: list[str]):
+async def test_discord_source(discord_token: str, discord_channels: list[str]):
     indexer_config = DiscordIndexerConfig(channels=discord_channels)
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         connection_config = DiscordConnectionConfig(
-            access_config=DiscordAccessConfig(token=DISCORD_TOKEN)
+            access_config=DiscordAccessConfig(token=discord_token)
         )
         download_config = DiscordDownloaderConfig(download_dir=tempdir_path)
         indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
@@ -70,8 +59,8 @@ async def test_discord_source(discord_channels: list[str]):
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_discord_source_precheck_fail_no_token():
-    indexer_config = DiscordIndexerConfig(channels=DISCORD_CHANNELS)
+def test_discord_source_precheck_fail_no_token(discord_channels: list[str]):
+    indexer_config = DiscordIndexerConfig(channels=discord_channels)
 
     connection_config = DiscordConnectionConfig(access_config=DiscordAccessConfig(token=""))
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
@@ -80,11 +69,11 @@ def test_discord_source_precheck_fail_no_token():
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_discord_source_precheck_fail_no_channels():
+def test_discord_source_precheck_fail_no_channels(discord_token: str):
     indexer_config = DiscordIndexerConfig(channels=[])
 
     connection_config = DiscordConnectionConfig(
-        access_config=DiscordAccessConfig(token=DISCORD_TOKEN)
+        access_config=DiscordAccessConfig(token=discord_token)
     )
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
     with pytest.raises(SourceConnectionError):
