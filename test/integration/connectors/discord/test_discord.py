@@ -1,6 +1,8 @@
 import os
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import pytest
 
@@ -9,6 +11,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
+from test.integration.utils import requires_env
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.v2.processes.connectors.discord import (
     CONNECTOR_TYPE,
@@ -21,31 +24,36 @@ from unstructured_ingest.v2.processes.connectors.discord import (
 )
 
 
-@pytest.fixture
-def discord_channels() -> list[str]:
-    return os.environ["DISCORD_CHANNELS"].split(",")
+@dataclass(frozen=True)
+class EnvData:
+    token: Optional[str]
+    channels: Optional[list[str]]
 
 
-@pytest.fixture
-def discord_token() -> str:
-    return os.environ["DISCORD_TOKEN"]
+def get_env_data() -> EnvData:
+    return EnvData(
+        token=os.getenv("DISCORD_TOKEN"),
+        channels=os.getenv("DISCORD_CHANNELS"),
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-async def test_discord_source(discord_token: str, discord_channels: list[str]):
-    indexer_config = DiscordIndexerConfig(channels=discord_channels)
+@requires_env("DISCORD_TOKEN", "DISCORD_CHANNELS")
+async def test_discord_source():
+    env = get_env_data()
+    indexer_config = DiscordIndexerConfig(channels=env.channels)
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         connection_config = DiscordConnectionConfig(
-            access_config=DiscordAccessConfig(token=discord_token)
+            access_config=DiscordAccessConfig(token=env.token)
         )
         download_config = DiscordDownloaderConfig(download_dir=tempdir_path)
         indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
         downloader = DiscordDownloader(
             connection_config=connection_config, download_config=download_config
         )
-        expected_num_files = len(discord_channels)
+        expected_num_files = len(env.channels)
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
@@ -59,8 +67,9 @@ async def test_discord_source(discord_token: str, discord_channels: list[str]):
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_discord_source_precheck_fail_no_token(discord_channels: list[str]):
-    indexer_config = DiscordIndexerConfig(channels=discord_channels)
+@requires_env("DISCORD_CHANNELS")
+def test_discord_source_precheck_fail_no_token():
+    indexer_config = DiscordIndexerConfig(channels=get_env_data().channels)
 
     connection_config = DiscordConnectionConfig(access_config=DiscordAccessConfig(token=""))
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
@@ -69,11 +78,12 @@ def test_discord_source_precheck_fail_no_token(discord_channels: list[str]):
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-def test_discord_source_precheck_fail_no_channels(discord_token: str):
+@requires_env("DISCORD_TOKEN")
+def test_discord_source_precheck_fail_no_channels():
     indexer_config = DiscordIndexerConfig(channels=[])
 
     connection_config = DiscordConnectionConfig(
-        access_config=DiscordAccessConfig(token=discord_token)
+        access_config=DiscordAccessConfig(token=get_env_data().token)
     )
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
     with pytest.raises(SourceConnectionError):
