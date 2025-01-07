@@ -101,10 +101,6 @@ def parse_date_string(date_value: Union[str, int]) -> datetime:
     return parser.parse(date_value)
 
 
-def date_to_timestamp(date_value: datetime) -> float:
-    return date_value.timestamp()
-
-
 class SQLAccessConfig(AccessConfig):
     pass
 
@@ -271,7 +267,7 @@ class SQLUploadStager(UploadStager):
 
     def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
-            df[column] = df[column].apply(parse_date_string).apply(date_to_timestamp)
+            df[column] = df[column].apply(parse_date_string).apply(lambda date: date.timestamp())
         for column in filter(
             lambda x: x in df.columns,
             ("permissions_data", "record_locator", "points", "links"),
