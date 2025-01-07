@@ -78,6 +78,7 @@ tests_to_ignore=(
   'notion.sh'
   'sharepoint.sh'
   'sharepoint-with-permissions.sh'
+  'onedrive.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then
