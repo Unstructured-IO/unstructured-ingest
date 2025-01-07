@@ -1,15 +1,19 @@
-## 0.3.12-dev4
+## 0.3.12-dev5
 
 ### Fixes
 
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
 
-## 0.3.12-dev3
+## 0.3.12-dev4
 
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
+* **Improved Milvus error handling**
+
+### Fixes
+* **Register Neo4j Upload Stager**
 
 ## 0.3.12-dev2
 
