@@ -110,7 +110,6 @@ jobs:
         KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
         KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
         DATABRICKS_PAT: ${{ secrets.DATABRICKS_PAT }}
-        LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
       run : |
         source .venv/bin/activate
         make install-test
@@ -165,7 +164,6 @@ jobs:
         KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
         KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
         KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
-        LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
       run : |
         source .venv/bin/activate
         make install-test
