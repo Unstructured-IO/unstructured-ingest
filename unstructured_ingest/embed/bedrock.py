@@ -52,6 +52,32 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     region_name: str = "us-west-2"
     embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
 
+    def wrap_error(self, e: Exception) -> Exception:
+        from botocore.exceptions import ClientError
+
+        if isinstance(e, ClientError):
+            # https://docs.aws.amazon.com/awssupport/latest/APIReference/CommonErrors.html
+            http_response = e.response
+            meta = http_response["ResponseMetadata"]
+            http_response_code = meta["HTTPStatusCode"]
+            error_code = http_response["Error"]["Code"]
+            if http_response_code == 400:
+                if error_code == "ValidationError":
+                    return UserError(http_response["Error"])
+                elif error_code == "ThrottlingException":
+                    return RateLimitError(http_response["Error"])
+                elif error_code == "NotAuthorized" or error_code == "AccessDeniedException":
+                    return UserAuthError(http_response["Error"])
+            if http_response_code == 403:
+                return UserAuthError(http_response["Error"])
+            if 400 <= http_response_code < 500:
+                return UserError(http_response["Error"])
+            if http_response_code >= 500:
+                return ProviderError(http_response["Error"])
+
+        logger.error(f"unhandled exception from bedrock: {e}", exc_info=True)
+        return e
+
     @requires_dependencies(
         ["boto3", "numpy", "botocore"],
         extras="bedrock",
@@ -91,30 +117,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     config: BedrockEmbeddingConfig
 
     def wrap_error(self, e: Exception) -> Exception:
-        from botocore.exceptions import ClientError
-
-        if isinstance(e, ClientError):
-            # https://docs.aws.amazon.com/awssupport/latest/APIReference/CommonErrors.html
-            http_response = e.response
-            meta = http_response["ResponseMetadata"]
-            http_response_code = meta["HTTPStatusCode"]
-            error_code = http_response["Error"]["Code"]
-            if http_response_code == 400:
-                if error_code == "ValidationError":
-                    return UserError(http_response["Error"])
-                elif error_code == "ThrottlingException":
-                    return RateLimitError(http_response["Error"])
-                elif error_code == "NotAuthorized" or error_code == "AccessDeniedException":
-                    return UserAuthError(http_response["Error"])
-            if http_response_code == 403:
-                return UserAuthError(http_response["Error"])
-            if 400 <= http_response_code < 500:
-                return UserError(http_response["Error"])
-            if http_response_code >= 500:
-                return ProviderError(http_response["Error"])
-
-        logger.error(f"unhandled exception from bedrock: {e}", exc_info=True)
-        return e
+        return self.config.wrap_error(e=e)
 
     def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
@@ -151,6 +154,9 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
 class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: BedrockEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     async def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
         provider = self.config.embed_model_name.split(".")[0]
@@ -158,12 +164,15 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         try:
             async with self.config.get_async_client() as bedrock_client:
                 # invoke bedrock API
-                response = await bedrock_client.invoke_model(
-                    body=json.dumps(body),
-                    modelId=self.config.embed_model_name,
-                    accept="application/json",
-                    contentType="application/json",
-                )
+                try:
+                    response = await bedrock_client.invoke_model(
+                        body=json.dumps(body),
+                        modelId=self.config.embed_model_name,
+                        accept="application/json",
+                        contentType="application/json",
+                    )
+                except Exception as e:
+                    raise self.wrap_error(e=e)
                 async with response.get("body") as client_response:
                     response_body = await client_response.json()
 

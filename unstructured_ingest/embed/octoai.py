@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -28,6 +27,30 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: str = Field(default="thenlper/gte-large", alias="model_name")
     base_url: str = Field(default="https://text.octoai.run/v1")
 
+    def wrap_error(self, e: Exception) -> Exception:
+        # https://platform.openai.com/docs/guides/error-codes/api-errors
+        from openai import APIStatusError
+
+        if not isinstance(e, APIStatusError):
+            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+            raise e
+        error_code = e.code
+        if 400 <= e.status_code < 500:
+            # user error
+            if e.status_code == 401:
+                return UserAuthError(e.message)
+            if e.status_code == 429:
+                # 429 indicates rate limit exceeded and quote exceeded
+                if error_code == "insufficient_quota":
+                    return QuotaError(e.message)
+                else:
+                    return RateLimitError(e.message)
+            return UserError(e.message)
+        if e.status_code >= 500:
+            return ProviderError(e.message)
+        logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+        return e
+
     @requires_dependencies(
         ["openai", "tiktoken"],
         extras="embed-octoai",
@@ -54,28 +77,7 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: OctoAiEmbeddingConfig
 
     def wrap_error(self, e: Exception) -> Exception:
-        # https://platform.openai.com/docs/guides/error-codes/api-errors
-        from openai import APIStatusError
-
-        if not isinstance(e, APIStatusError):
-            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-            raise e
-        error_code = e.code
-        if 400 <= e.status_code < 500:
-            # user error
-            if e.status_code == 401:
-                return UserAuthError(e.message)
-            if e.status_code == 429:
-                # 429 indicates rate limit exceeded and quote exceeded
-                if error_code == "insufficient_quota":
-                    return QuotaError(e.message)
-                else:
-                    return RateLimitError(e.message)
-            return UserError(e.message)
-        if e.status_code >= 500:
-            return ProviderError(e.message)
-        logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-        return e
+        return self.config.wrap_error(e=e)
 
     def embed_query(self, query: str):
         try:
@@ -101,14 +103,28 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
 class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: OctoAiEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     async def embed_query(self, query: str):
         client = self.config.get_async_client()
-        response = await client.embeddings.create(
-            input=query, model=self.config.embedder_model_name
-        )
+        try:
+            response = await client.embeddings.create(
+                input=query, model=self.config.embedder_model_name
+            )
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return response.data[0].embedding
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await asyncio.gather(*[self.embed_query(e.get("text", "")) for e in elements])
+        texts = [e.get("text", "") for e in elements]
+        client = self.config.get_async_client()
+        try:
+            response = await client.embeddings.create(
+                input=texts, model=self.config.embedder_model_name
+            )
+        except Exception as e:
+            raise self.wrap_error(e=e)
+        embeddings = [data.embedding for data in response.data]
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings

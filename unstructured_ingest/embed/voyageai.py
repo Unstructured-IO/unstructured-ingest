@@ -32,6 +32,26 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
     max_retries: int = 0
     timeout_in_seconds: Optional[int] = None
 
+    def wrap_error(self, e: Exception) -> Exception:
+        # https://docs.voyageai.com/docs/error-codes
+        from voyageai.error import AuthenticationError, RateLimitError, VoyageError
+
+        if not isinstance(e, VoyageError):
+            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+            raise e
+        http_code = e.http_status
+        message = e.user_message
+        if isinstance(e, AuthenticationError):
+            return UserAuthError(message)
+        if isinstance(e, RateLimitError):
+            return CustomRateLimitError(message)
+        if 400 <= http_code < 500:
+            return UserError(message)
+        if http_code >= 500:
+            return ProviderError(message)
+        logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+        return e
+
     @requires_dependencies(
         ["voyageai"],
         extras="embed-voyageai",
@@ -68,31 +88,14 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: VoyageAIEmbeddingConfig
 
     def wrap_error(self, e: Exception) -> Exception:
-        # https://docs.voyageai.com/docs/error-codes
-        from voyageai.error import AuthenticationError, RateLimitError, VoyageError
-
-        if not isinstance(e, VoyageError):
-            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-            raise e
-        http_code = e.http_status
-        message = e.user_message
-        if isinstance(e, AuthenticationError):
-            return UserAuthError(message)
-        if isinstance(e, RateLimitError):
-            return CustomRateLimitError(message)
-        if 400 <= http_code < 500:
-            return UserError(message)
-        if http_code >= 500:
-            return ProviderError(message)
-        logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-        return e
+        return self.config.wrap_error(e=e)
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client: VoyageAIClient = self.config.get_client()
         try:
             response = client.embed(texts=elements, model=self.config.embedder_model_name)
         except Exception as e:
-            self.wrap_error(e=e)
+            raise self.wrap_error(e=e)
         return response.embeddings
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
@@ -107,9 +110,15 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
 class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: VoyageAIEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()
-        response = await client.embed(texts=elements, model=self.config.embedder_model_name)
+        try:
+            response = await client.embed(texts=elements, model=self.config.embedder_model_name)
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return response.embeddings
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:

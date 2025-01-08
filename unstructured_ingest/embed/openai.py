@@ -26,23 +26,6 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
 
-    @requires_dependencies(["openai"], extras="openai")
-    def get_client(self) -> "OpenAI":
-        from openai import OpenAI
-
-        return OpenAI(api_key=self.api_key.get_secret_value())
-
-    @requires_dependencies(["openai"], extras="openai")
-    def get_async_client(self) -> "AsyncOpenAI":
-        from openai import AsyncOpenAI
-
-        return AsyncOpenAI(api_key=self.api_key.get_secret_value())
-
-
-@dataclass
-class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
-    config: OpenAIEmbeddingConfig
-
     def wrap_error(self, e: Exception) -> Exception:
         # https://platform.openai.com/docs/guides/error-codes/api-errors
         from openai import APIStatusError
@@ -67,6 +50,26 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         logger.error(f"unhandled exception from openai: {e}", exc_info=True)
         return e
 
+    @requires_dependencies(["openai"], extras="openai")
+    def get_client(self) -> "OpenAI":
+        from openai import OpenAI
+
+        return OpenAI(api_key=self.api_key.get_secret_value())
+
+    @requires_dependencies(["openai"], extras="openai")
+    def get_async_client(self) -> "AsyncOpenAI":
+        from openai import AsyncOpenAI
+
+        return AsyncOpenAI(api_key=self.api_key.get_secret_value())
+
+
+@dataclass
+class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
+    config: OpenAIEmbeddingConfig
+
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     def embed_query(self, query: str) -> list[float]:
 
         client = self.config.get_client()
@@ -86,14 +89,28 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
 class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     async def embed_query(self, query: str) -> list[float]:
         client = self.config.get_async_client()
-        response = await client.embeddings.create(
-            input=query, model=self.config.embedder_model_name
-        )
+        try:
+            response = await client.embeddings.create(
+                input=query, model=self.config.embedder_model_name
+            )
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return response.data[0].embedding
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
+        client = self.config.get_async_client()
+        texts = [e.get("text", "") for e in elements]
+        try:
+            response = await client.embeddings.create(
+                input=texts, model=self.config.embedder_model_name
+            )
+        except Exception as e:
+            raise self.wrap_error(e=e)
+        embeddings = [data.embedding for data in response.data]
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings

@@ -28,6 +28,20 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
         default="togethercomputer/m2-bert-80M-8k-retrieval", alias="model_name"
     )
 
+    def wrap_error(self, e: Exception) -> Exception:
+        # https://docs.together.ai/docs/error-codes
+        from together.error import AuthenticationError, RateLimitError, TogetherException
+
+        if not isinstance(e, TogetherException):
+            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+            return e
+        message = e.args[0]
+        if isinstance(e, AuthenticationError):
+            return UserAuthError(message)
+        if isinstance(e, RateLimitError):
+            return CustomRateLimitError(message)
+        return UserError(message)
+
     @requires_dependencies(["together"], extras="togetherai")
     def get_client(self) -> "Together":
         from together import Together
@@ -46,18 +60,7 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
 
     def wrap_error(self, e: Exception) -> Exception:
-        # https://docs.together.ai/docs/error-codes
-        from together.error import AuthenticationError, RateLimitError, TogetherException
-
-        if not isinstance(e, TogetherException):
-            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
-            return e
-        message = e.args[0]
-        if isinstance(e, AuthenticationError):
-            return UserAuthError(message)
-        if isinstance(e, RateLimitError):
-            return CustomRateLimitError(message)
-        return UserError(message)
+        return self.config.wrap_error(e=e)
 
     def embed_query(self, query: str) -> list[float]:
         return self._embed_documents(elements=[query])[0]
@@ -81,6 +84,9 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
 class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     async def embed_query(self, query: str) -> list[float]:
         embedding = await self._embed_documents(elements=[query])
         return embedding[0]
@@ -91,7 +97,10 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()
-        outputs = await client.embeddings.create(
-            model=self.config.embedder_model_name, input=elements
-        )
+        try:
+            outputs = await client.embeddings.create(
+                model=self.config.embedder_model_name, input=elements
+            )
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return [outputs.data[i].embedding for i in range(len(elements))]

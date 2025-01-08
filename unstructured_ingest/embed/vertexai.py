@@ -14,6 +14,7 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import UserAuthError
 
 if TYPE_CHECKING:
     from vertexai.language_models import TextEmbeddingModel
@@ -35,6 +36,13 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: Optional[str] = Field(
         default="textembedding-gecko@001", alias="model_name"
     )
+
+    def wrap_error(self, e: Exception) -> Exception:
+        from google.auth.exceptions import GoogleAuthError
+
+        if isinstance(e, GoogleAuthError):
+            return UserAuthError(e)
+        return e
 
     def register_application_credentials(self):
         # TODO look into passing credentials in directly, rather than via env var and tmp file
@@ -59,6 +67,9 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
 class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: VertexAIEmbeddingConfig
 
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
+
     def embed_query(self, query):
         return self._embed_documents(elements=[query])[0]
 
@@ -74,15 +85,21 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         from vertexai.language_models import TextEmbeddingInput
 
-        client = self.config.get_client()
         inputs = [TextEmbeddingInput(text=element) for element in elements]
-        embeddings = client.get_embeddings(inputs)
+        try:
+            client = self.config.get_client()
+            embeddings = client.get_embeddings(inputs)
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return [e.values for e in embeddings]
 
 
 @dataclass
 class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: VertexAIEmbeddingConfig
+
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.config.wrap_error(e=e)
 
     async def embed_query(self, query):
         embedding = await self._embed_documents(elements=[query])
@@ -100,7 +117,10 @@ class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         from vertexai.language_models import TextEmbeddingInput
 
-        client = self.config.get_client()
         inputs = [TextEmbeddingInput(text=element) for element in elements]
-        embeddings = await client.get_embeddings_async(inputs)
+        try:
+            client = self.config.get_client()
+            embeddings = await client.get_embeddings_async(inputs)
+        except Exception as e:
+            raise self.wrap_error(e=e)
         return [e.values for e in embeddings]
