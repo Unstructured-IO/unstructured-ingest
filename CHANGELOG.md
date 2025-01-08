@@ -9,6 +9,7 @@
 
 ### Enhancements
 
+* **Migrate Notion Source Connector to V2**
 * **Migrate Vectara Destination Connector to v2**
 * **Added Redis destination connector**
 * **Improved Milvus error handling**

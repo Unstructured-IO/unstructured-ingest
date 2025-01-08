@@ -42,6 +42,8 @@ from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
 from .neo4j import CONNECTOR_TYPE as NEO4J_CONNECTOR_TYPE
 from .neo4j import neo4j_destination_entry
+from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
+from .notion.connector import notion_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_destination_entry, onedrive_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
@@ -98,6 +100,7 @@ add_destination_entry(
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
+add_source_entry(source_type=NOTION_CONNECTOR_TYPE, entry=notion_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 
