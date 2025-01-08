@@ -30,27 +30,45 @@ CONNECTOR_TYPE = "confluence"
 
 
 class ConfluenceAccessConfig(AccessConfig):
-    api_token: Optional[str] = Field(description="Confluence API token", default=None)
-    access_token: Optional[str] = Field(
-        description="Confluence Personal Access Token", default=None
+    password: Optional[str] = Field(
+        description="Confluence password or Cloud API token",
+        default=None,
+    )
+    token: Optional[str] = Field(
+        description="Confluence Personal Access Token",
+        default=None,
     )
 
 
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
-    user_email: Optional[str] = Field(description="User email for authentication", default=None)
+    username: Optional[str] = Field(
+        description="Username or email for authentication",
+        default=None,
+    )
+    cloud: bool = Field(description="Authenticate to Confluence Cloud", default=False)
     access_config: Secret[ConfluenceAccessConfig] = Field(
         description="Access configuration for Confluence"
     )
 
     def model_post_init(self, __context):
         access_configs = self.access_config.get_secret_value()
-        basic_auth = self.user_email and access_configs.api_token
-        pat_auth = access_configs.access_token
+        basic_auth = self.username and access_configs.password
+        pat_auth = access_configs.token
+        if self.cloud and not basic_auth:
+            raise ValueError(
+                "cloud authentication requires username and API token (--password), "
+                "see: https://atlassian-python-api.readthedocs.io/"
+            )
         if basic_auth and pat_auth:
-            raise ValueError("both forms of auth provided, only one allowed")
+            raise ValueError(
+                "both password and token provided, only one allowed, "
+                "see: https://atlassian-python-api.readthedocs.io/"
+            )
         if not (basic_auth or pat_auth):
-            raise ValueError("neither forms of auth provided")
+            raise ValueError(
+                "no form of auth provided, see: https://atlassian-python-api.readthedocs.io/"
+            )
 
     @requires_dependencies(["atlassian"], extras="confluence")
     def get_client(self) -> "Confluence":
@@ -59,8 +77,10 @@ class ConfluenceConnectionConfig(ConnectionConfig):
         access_configs = self.access_config.get_secret_value()
         return Confluence(
             url=self.url,
-            username=self.user_email,
-            password=access_configs.api_token,
+            username=self.username,
+            password=access_configs.password,
+            token=access_configs.token,
+            cloud=self.cloud,
         )
 
 

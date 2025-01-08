@@ -32,10 +32,10 @@ async def test_confluence_source(temp_dir):
     spaces = ["testteamsp", "MFS"]
 
     # Create connection and indexer configurations
-    access_config = ConfluenceAccessConfig(api_token=api_token)
+    access_config = ConfluenceAccessConfig(password=api_token)
     connection_config = ConfluenceConnectionConfig(
         url=confluence_url,
-        user_email=user_email,
+        username=user_email,
         access_config=access_config,
     )
     index_config = ConfluenceIndexerConfig(
@@ -82,7 +82,7 @@ async def test_confluence_source_large(temp_dir):
     access_config = ConfluenceAccessConfig(api_token=api_token)
     connection_config = ConfluenceConnectionConfig(
         url=confluence_url,
-        user_email=user_email,
+        username=user_email,
         access_config=access_config,
     )
     index_config = ConfluenceIndexerConfig(
