@@ -11,7 +11,6 @@ from test.integration.embedders.utils import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.vertexai import (
-    AsyncVertexAIEmbeddingEncoder,
     VertexAIEmbeddingConfig,
     VertexAIEmbeddingEncoder,
 )
@@ -56,7 +55,7 @@ def test_raw_vertexai_embedder(embedder_file: Path):
 @pytest.mark.asyncio
 async def test_raw_async_vertexai_embedder(embedder_file: Path):
     api_key = get_api_key()
-    embedder = AsyncVertexAIEmbeddingEncoder(
+    embedder = VertexAIEmbeddingEncoder(
         config=VertexAIEmbeddingConfig(
             api_key=api_key,
         )
@@ -68,7 +67,7 @@ async def test_raw_async_vertexai_embedder(embedder_file: Path):
 
 @pytest.mark.asyncio
 async def test_raw_async_vertexai_embedder_invalid_api_key(embedder_file: Path):
-    embedder = AsyncVertexAIEmbeddingEncoder(
+    embedder = VertexAIEmbeddingEncoder(
         config=VertexAIEmbeddingConfig(
             api_key={"key": "api_key"},
         )

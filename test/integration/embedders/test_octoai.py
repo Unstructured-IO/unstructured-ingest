@@ -11,7 +11,6 @@ from test.integration.embedders.utils import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.octoai import (
-    AsyncOctoAiEmbeddingConfig,
     AsyncOctoAIEmbeddingEncoder,
     OctoAiEmbeddingConfig,
     OctoAIEmbeddingEncoder,
@@ -69,7 +68,7 @@ def test_raw_octoai_embedder_invalid_credentials():
 async def test_raw_async_octoai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = AsyncOctoAIEmbeddingEncoder(
-        config=AsyncOctoAiEmbeddingConfig(
+        config=OctoAiEmbeddingConfig(
             api_key=api_key,
         )
     )

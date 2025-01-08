@@ -11,7 +11,6 @@ from test.integration.embedders.utils import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.togetherai import (
-    AsyncTogetherAIEmbeddingConfig,
     AsyncTogetherAIEmbeddingEncoder,
     TogetherAIEmbeddingConfig,
     TogetherAIEmbeddingEncoder,
@@ -63,9 +62,7 @@ def test_raw_togetherai_embedder_invalid_credentials():
 @pytest.mark.asyncio
 async def test_raw_async_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
-    embedder = AsyncTogetherAIEmbeddingEncoder(
-        config=AsyncTogetherAIEmbeddingConfig(api_key=api_key)
-    )
+    embedder = AsyncTogetherAIEmbeddingEncoder(config=TogetherAIEmbeddingConfig(api_key=api_key))
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,

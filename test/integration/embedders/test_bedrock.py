@@ -11,7 +11,6 @@ from test.integration.embedders.utils import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.bedrock import (
-    AsyncBedrockEmbeddingConfig,
     AsyncBedrockEmbeddingEncoder,
     BedrockEmbeddingConfig,
     BedrockEmbeddingEncoder,
@@ -91,7 +90,7 @@ def test_raw_bedrock_embedder_invalid_model(embedder_file: Path):
 async def test_raw_async_bedrock_embedder(embedder_file: Path):
     aws_credentials = get_aws_credentials()
     embedder = AsyncBedrockEmbeddingEncoder(
-        config=AsyncBedrockEmbeddingConfig(
+        config=BedrockEmbeddingConfig(
             aws_access_key_id=aws_credentials["aws_access_key_id"],
             aws_secret_access_key=aws_credentials["aws_secret_access_key"],
         )

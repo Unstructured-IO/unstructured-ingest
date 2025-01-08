@@ -11,7 +11,6 @@ from test.integration.embedders.utils import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.openai import (
-    AsyncOpenAIEmbeddingConfig,
     AsyncOpenAIEmbeddingEncoder,
     OpenAIEmbeddingConfig,
     OpenAIEmbeddingEncoder,
@@ -68,7 +67,7 @@ def test_raw_openai_embedder_invalid_credentials():
 async def test_raw_async_openai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = AsyncOpenAIEmbeddingEncoder(
-        config=AsyncOpenAIEmbeddingConfig(
+        config=OpenAIEmbeddingConfig(
             api_key=api_key,
         )
     )
