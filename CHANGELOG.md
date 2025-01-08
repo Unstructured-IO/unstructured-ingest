@@ -1,4 +1,9 @@
-## 0.3.13-dev0
+## 0.3.13-dev1
+
+### Fixes
+
+* **Fix Snowflake Uploader error**
+* **Fix SQL Uploader Stager timestamp error**
 
 ## 0.3.12
 
