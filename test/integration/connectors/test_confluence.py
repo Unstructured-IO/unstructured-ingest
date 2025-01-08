@@ -79,7 +79,7 @@ async def test_confluence_source_large(temp_dir):
     spaces = ["testteamsp1"]
 
     # Create connection and indexer configurations
-    access_config = ConfluenceAccessConfig(api_token=api_token)
+    access_config = ConfluenceAccessConfig(password=api_token)
     connection_config = ConfluenceConnectionConfig(
         url=confluence_url,
         username=user_email,
