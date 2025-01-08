@@ -138,7 +138,6 @@ class ChromaUploader(Uploader):
 
     @DestinationConnectionError.wrap
     def upsert_batch(self, collection, batch):
-
         try:
             # Chroma wants lists even if there is only one element
             # Upserting to prevent duplicates
