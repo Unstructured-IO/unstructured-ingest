@@ -16,9 +16,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.error import (
-    SourceConnectionError,
-)
+from unstructured_ingest.v2.errors import UserAuthError, UserError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     CONNECTOR_TYPE,
@@ -94,12 +92,19 @@ async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig
         )
 
 
-@pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-async def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
+def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-ingest-test-fixtures/destination/")
     indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
-    with pytest.raises(SourceConnectionError):
+    with pytest.raises(UserAuthError):
+        indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+def test_s3_source_no_bucket(anon_connection_config: S3ConnectionConfig):
+    indexer_config = S3IndexerConfig(remote_url="s3://fake-bucket")
+    indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
+    with pytest.raises(UserError):
         indexer.precheck()
 
 
