@@ -1,35 +1,24 @@
-## 0.3.12-dev4
+## 0.3.13-dev0
+
+### Enhancements
+* **Migrate Discord Sourced Connector to v2**
+
+
+## 0.3.12
 
 ### Enhancements
 
 * **Migrate Vectara Destination Connector to v2**
-* **Migrate Discord Sourced Connector to v2**
+* **Added Redis destination connector**
 * **Improved Milvus error handling**
+* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
+* **Kafka destination connector checks for existence of topic**
+* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
 
 ### Fixes
 * **Register Neo4j Upload Stager**
-
-## 0.3.12-dev2
-
-### Enhancements
-
-* **Added Redis destination connector**
-
-## 0.3.12-dev1
-
-* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
-
-## 0.3.12-dev0
-
-### Fixes
-
 * **Fix Kafka destination connection problems**
 
-### Enhancements
-
-* **Kafka destination connector checks for existence of topic**
-* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
-* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
 
 ## 0.3.11
 
