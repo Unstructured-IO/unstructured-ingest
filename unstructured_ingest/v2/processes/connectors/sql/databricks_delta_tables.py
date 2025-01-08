@@ -1,6 +1,6 @@
 import json
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import numpy as np
@@ -25,7 +25,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 
 if TYPE_CHECKING:
     from databricks.sdk.core import oauth_service_principal
-    from databricks.sql import Connection as DeltaTableConnection
+    from databricks.sql.client import Connection as DeltaTableConnection
     from databricks.sql.client import Cursor as DeltaTableCursor
 
 CONNECTOR_TYPE = "databricks_delta_tables"
@@ -110,14 +110,12 @@ class DatabrickDeltaTablesUploadStager(SQLUploadStager):
 class DatabrickDeltaTablesUploaderConfig(SQLUploaderConfig):
     catalog: str = Field(description="Name of the catalog in the Databricks Unity Catalog service")
     database: str = Field(description="Database name", default="default")
-    table: str = Field(description="Table name")
+    table_name: str = Field(description="Table name")
 
 
 @dataclass
 class DatabrickDeltaTablesUploader(SQLUploader):
-    upload_config: DatabrickDeltaTablesUploaderConfig = field(
-        default_factory=DatabrickDeltaTablesUploaderConfig
-    )
+    upload_config: DatabrickDeltaTablesUploaderConfig
     connection_config: DatabrickDeltaTablesConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
@@ -191,7 +189,7 @@ class DatabrickDeltaTablesUploader(SQLUploader):
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
             f" table named {self.upload_config.table_name}"
-            f" with batch size {self.upload_config.batch_size}"
+            # f" with batch size {self.upload_config.batch_size}"
         )
         # TODO: currently variable binding not supporting for list types,
         #  update once that gets resolved in SDK
