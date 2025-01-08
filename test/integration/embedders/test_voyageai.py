@@ -11,7 +11,6 @@ from test.integration.embedders.utils import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.embed.voyageai import (
-    AsyncVoyageAIEmbeddingConfig,
     AsyncVoyageAIEmbeddingEncoder,
     VoyageAIEmbeddingConfig,
     VoyageAIEmbeddingEncoder,
@@ -57,7 +56,7 @@ def test_raw_voyageai_embedder(embedder_file: Path):
 async def test_raw_async_voyageai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = AsyncVoyageAIEmbeddingEncoder(
-        config=AsyncVoyageAIEmbeddingConfig(
+        config=VoyageAIEmbeddingConfig(
             api_key=api_key,
         )
     )
