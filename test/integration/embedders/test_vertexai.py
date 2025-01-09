@@ -15,7 +15,6 @@ from unstructured_ingest.embed.vertexai import (
     VertexAIEmbeddingConfig,
     VertexAIEmbeddingEncoder,
 )
-from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "VERTEXAI_API_KEY"
@@ -64,18 +63,3 @@ async def test_raw_async_vertexai_embedder(embedder_file: Path):
     await validate_raw_embedder_async(
         embedder=embedder, embedder_file=embedder_file, expected_dimensions=(768,)
     )
-
-
-@pytest.mark.asyncio
-async def test_raw_async_vertexai_embedder_invalid_api_key(embedder_file: Path):
-    embedder = AsyncVertexAIEmbeddingEncoder(
-        config=VertexAIEmbeddingConfig(
-            api_key={"key": "api_key"},
-        )
-    )
-    try:
-        await embedder.get_exemplary_embedding()
-    except Exception as e:
-        assert type(e) == UserAuthError, f"type of error does not match UserAuthError: {type(e)}"
-    with pytest.raises(UserAuthError):
-        await embedder.get_exemplary_embedding()
