@@ -7,9 +7,6 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field
 
-from unstructured_ingest.error import (
-    SourceConnectionError,
-)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -161,8 +158,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            raise self.connection_config.wrap_error(e=e)
 
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)
