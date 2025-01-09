@@ -111,6 +111,13 @@ class Pipeline:
         uploader_connector_type = self.uploader_step.process.connector_type
         registry_entry = destination_registry[uploader_connector_type]
         if registry_entry.upload_stager and self.stager_step is None:
+            try:
+                self.stager_step = UploadStageStep(
+                    process=registry_entry.upload_stager(), context=self.context
+                )
+                return
+            except Exception as e:
+                logger.debug(f"failed to instantiate required stager on user's behalf: {e}")
             raise ValueError(
                 f"pipeline with uploader type {self.uploader_step.process.__class__.__name__} "
                 f"expects a stager of type {registry_entry.upload_stager.__name__} "

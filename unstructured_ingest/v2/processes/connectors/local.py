@@ -27,6 +27,10 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 CONNECTOR_TYPE = "local"
 
@@ -176,7 +180,7 @@ class LocalUploader(Uploader):
     def is_async(self) -> bool:
         return False
 
-    def get_destination_path(self, file_data: FileData) -> Path:
+    def get_destination_path(self, file_data: FileData, suffix: str = ".json") -> Path:
         if source_identifiers := file_data.source_identifiers:
             rel_path = (
                 source_identifiers.relative_path[1:]
@@ -185,10 +189,10 @@ class LocalUploader(Uploader):
             )
             new_path = self.upload_config.output_path / Path(rel_path)
             final_path = str(new_path).replace(
-                source_identifiers.filename, f"{source_identifiers.filename}.json"
+                source_identifiers.filename, f"{source_identifiers.filename}{suffix}"
             )
         else:
-            final_path = self.upload_config.output_path / Path(f"{file_data.identifier}.json")
+            final_path = self.upload_config.output_path / Path(f"{file_data.identifier}{suffix}")
         final_path = Path(final_path)
         final_path.parent.mkdir(parents=True, exist_ok=True)
         return final_path
@@ -199,7 +203,7 @@ class LocalUploader(Uploader):
             json.dump(data, f)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        final_path = self.get_destination_path(file_data=file_data)
+        final_path = self.get_destination_path(file_data=file_data, suffix=path.suffix)
         logger.debug(f"copying file from {path} to {final_path}")
         shutil.copy(src=str(path), dst=str(final_path))
 
@@ -213,5 +217,8 @@ local_source_entry = SourceRegistryEntry(
 )
 
 local_destination_entry = DestinationRegistryEntry(
-    uploader=LocalUploader, uploader_config=LocalUploaderConfig
+    uploader=LocalUploader,
+    uploader_config=LocalUploaderConfig,
+    upload_stager=BlobStoreUploadStager,
+    upload_stager_config=BlobStoreUploadStagerConfig,
 )

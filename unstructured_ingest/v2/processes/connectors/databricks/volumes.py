@@ -170,7 +170,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = os.path.join(
-            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
+            self.upload_config.path, f"{file_data.source_identifiers.filename}{path.suffix}"
         )
         with open(path, "rb") as elements_file:
             self.connection_config.get_client().files.upload(

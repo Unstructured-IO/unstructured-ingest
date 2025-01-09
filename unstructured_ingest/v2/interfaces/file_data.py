@@ -102,7 +102,7 @@ def file_data_from_file(path: str) -> FileData:
     try:
         return BatchFileData.from_file(path=path)
     except ValidationError:
-        logger.debug(f"{path} not valid for batch file data")
+        logger.debug(f"{path} not detected as batch file data")
 
     return FileData.from_file(path=path)
 
