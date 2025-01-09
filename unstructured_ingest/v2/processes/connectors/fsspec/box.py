@@ -28,6 +28,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploaderConfig,
 )
 from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     from boxfs import BoxFileSystem
@@ -167,4 +171,6 @@ box_destination_entry = DestinationRegistryEntry(
     uploader=BoxUploader,
     uploader_config=BoxUploaderConfig,
     connection_config=BoxConnectionConfig,
+    upload_stager=BlobStoreUploadStager,
+    upload_stager_config=BlobStoreUploadStagerConfig,
 )

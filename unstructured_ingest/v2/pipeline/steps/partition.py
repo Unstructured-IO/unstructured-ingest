@@ -1,9 +1,10 @@
 import asyncio
 import hashlib
-import ndjson
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
+
+import ndjson
 
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.file_data import file_data_from_file

@@ -26,6 +26,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploader,
     FsspecUploaderConfig,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     from fsspec.implementations.sftp import SFTPFileSystem
@@ -168,4 +172,6 @@ sftp_destination_entry = DestinationRegistryEntry(
     uploader=SftpUploader,
     uploader_config=SftpUploaderConfig,
     connection_config=SftpConnectionConfig,
+    upload_stager_config=BlobStoreUploadStagerConfig,
+    upload_stager=BlobStoreUploadStager,
 )

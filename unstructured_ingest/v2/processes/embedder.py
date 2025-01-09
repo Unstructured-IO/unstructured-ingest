@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
+import ndjson
 from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.v2.interfaces.process import BaseProcess
@@ -184,12 +185,21 @@ class EmbedderConfig(BaseModel):
 class Embedder(BaseProcess, ABC):
     config: EmbedderConfig
 
+    def get_data(self, elements_filepath: Path) -> list[dict]:
+        if elements_filepath.suffix == ".json":
+            with elements_filepath.open() as f:
+                return json.load(f)
+        elif elements_filepath.suffix == ".ndjson":
+            with elements_filepath.open() as f:
+                return ndjson.load(f)
+        else:
+            raise ValueError(f"Unsupported input format: {elements_filepath}")
+
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         # TODO update base embedder classes to support async
         embedder = self.config.get_embedder()
-        with elements_filepath.open("r") as elements_file:
-            elements = json.load(elements_file)
+        elements = self.get_data(elements_filepath=elements_filepath)
         if not elements:
-            return [e.to_dict() for e in elements]
+            return []
         embedded_elements = embedder.embed_documents(elements=elements)
         return embedded_elements
