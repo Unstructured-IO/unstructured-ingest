@@ -148,40 +148,42 @@ async def test_volumes_native_source_pat(tmp_path: Path):
 @requires_env("DATABRICKS_HOST", "DATABRICKS_PAT", "DATABRICKS_CATALOG")
 def test_volumes_native_source_pat_invalid_catalog():
     env_data = get_pat_env_data()
-    indexer_config = DatabricksNativeVolumesIndexerConfig(
-        recursive=True,
-        volume="test-platform",
-        volume_path="databricks-volumes-test-input",
-        catalog="fake_catalog",
-    )
-    indexer = DatabricksNativeVolumesIndexer(
-        connection_config=env_data.get_connection_config(), index_config=indexer_config
-    )
-    with pytest.raises(UserError):
-        _ = list(indexer.run())
+    with mock.patch.dict(os.environ, clear=True):
+        indexer_config = DatabricksNativeVolumesIndexerConfig(
+            recursive=True,
+            volume="test-platform",
+            volume_path="databricks-volumes-test-input",
+            catalog="fake_catalog",
+        )
+        indexer = DatabricksNativeVolumesIndexer(
+            connection_config=env_data.get_connection_config(), index_config=indexer_config
+        )
+        with pytest.raises(UserError):
+            _ = list(indexer.run())
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
 @requires_env("DATABRICKS_HOST")
 def test_volumes_native_source_pat_invalid_pat():
     host = os.environ["DATABRICKS_HOST"]
-    indexer_config = DatabricksNativeVolumesIndexerConfig(
-        recursive=True,
-        volume="test-platform",
-        volume_path="databricks-volumes-test-input",
-        catalog="fake_catalog",
-    )
-    connection_config = DatabricksNativeVolumesConnectionConfig(
-        host=host,
-        access_config=DatabricksNativeVolumesAccessConfig(
-            token="invalid-token",
-        ),
-    )
-    indexer = DatabricksNativeVolumesIndexer(
-        connection_config=connection_config, index_config=indexer_config
-    )
-    with pytest.raises(UserAuthError):
-        _ = list(indexer.run())
+    with mock.patch.dict(os.environ, clear=True):
+        indexer_config = DatabricksNativeVolumesIndexerConfig(
+            recursive=True,
+            volume="test-platform",
+            volume_path="databricks-volumes-test-input",
+            catalog="fake_catalog",
+        )
+        connection_config = DatabricksNativeVolumesConnectionConfig(
+            host=host,
+            access_config=DatabricksNativeVolumesAccessConfig(
+                token="invalid-token",
+            ),
+        )
+        indexer = DatabricksNativeVolumesIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        with pytest.raises(UserAuthError):
+            _ = list(indexer.run())
 
 
 def _get_volume_path(catalog: str, volume: str, volume_path: str):
