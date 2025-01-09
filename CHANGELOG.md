@@ -1,13 +1,16 @@
-## 0.3.13-dev0
+## 0.3.13-dev2
 
-### Enhancements
+### Fixes
+
+* **Fix Snowflake Uploader error**
+* **Fix SQL Uploader Stager timestamp error**
 * **Migrate Discord Sourced Connector to v2**
-
 
 ## 0.3.12
 
 ### Enhancements
 
+* **Migrate Notion Source Connector to V2**
 * **Migrate Vectara Destination Connector to v2**
 * **Added Redis destination connector**
 * **Improved Milvus error handling**

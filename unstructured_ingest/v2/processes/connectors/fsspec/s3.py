@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError
 from unstructured_ingest.v2.interfaces import (
     FileDataSourceMetadata,
 )
+from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -79,12 +81,34 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         with super().get_client(protocol=protocol) as client:
             yield client
 
+    def wrap_error(self, e: Exception) -> Exception:
+        # s3fs maps botocore errors into python ones using mapping here:
+        # https://github.com/fsspec/s3fs/blob/main/s3fs/errors.py
+        if isinstance(e, PermissionError):
+            return UserAuthError(e)
+        if isinstance(e, FileNotFoundError):
+            return UserError(e)
+        if cause := getattr(e, "__cause__", None):
+            error_response = cause.response
+            error_meta = error_response["ResponseMetadata"]
+            http_code = error_meta["HTTPStatusCode"]
+            message = error_response["Error"].get("Message", str(e))
+            if 400 <= http_code < 500:
+                return UserError(message)
+            if http_code >= 500:
+                return ProviderError(message)
+        logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+        return e
+
 
 @dataclass
 class S3Indexer(FsspecIndexer):
     connection_config: S3ConnectionConfig
     index_config: S3IndexerConfig
     connector_type: str = CONNECTOR_TYPE
+
+    def wrap_error(self, e: Exception) -> Exception:
+        return self.connection_config.wrap_error(e=e)
 
     def get_path(self, file_data: dict) -> str:
         return file_data["Key"]

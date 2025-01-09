@@ -3,7 +3,7 @@ import json
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from time import time
 from typing import Any, Generator, Union
@@ -92,7 +92,7 @@ class SqlBatchFileData(BatchFileData):
     additional_metadata: SqlAdditionalMetadata
 
 
-def parse_date_string(date_value: Union[str, int]) -> date:
+def parse_date_string(date_value: Union[str, int]) -> datetime:
     try:
         timestamp = float(date_value) / 1000 if isinstance(date_value, int) else float(date_value)
         return datetime.fromtimestamp(timestamp)
@@ -267,7 +267,7 @@ class SQLUploadStager(UploadStager):
 
     def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
-            df[column] = df[column].apply(parse_date_string)
+            df[column] = df[column].apply(parse_date_string).apply(lambda date: date.timestamp())
         for column in filter(
             lambda x: x in df.columns,
             ("permissions_data", "record_locator", "points", "links"),
