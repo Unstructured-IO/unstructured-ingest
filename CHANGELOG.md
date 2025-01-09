@@ -1,4 +1,8 @@
-## 0.3.13-dev1
+## 0.4.0-dev1
+
+### Enhancements
+
+* **Change Confluence Source Connector authentication parameters to support password, api token, pat token and cloud authentication**
 
 ### Fixes
 
