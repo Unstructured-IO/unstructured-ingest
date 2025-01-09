@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from test.integration.connectors.utils.validation import (
+from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
