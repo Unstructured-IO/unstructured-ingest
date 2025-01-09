@@ -8,7 +8,6 @@ from uuid import NAMESPACE_DNS, uuid5
 from pydantic import BaseModel, Field
 
 from unstructured_ingest.error import (
-    DestinationConnectionError,
     SourceConnectionError,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -196,16 +195,18 @@ class DatabricksVolumesUploader(Uploader, ABC):
         try:
             assert self.connection_config.get_client().current_user.me().active
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            raise self.connection_config.wrap_error(e=e)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = os.path.join(
             self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
         )
         with open(path, "rb") as elements_file:
-            self.connection_config.get_client().files.upload(
-                file_path=output_path,
-                contents=elements_file,
-                overwrite=True,
-            )
+            try:
+                self.connection_config.get_client().files.upload(
+                    file_path=output_path,
+                    contents=elements_file,
+                    overwrite=True,
+                )
+            except Exception as e:
+                raise self.connection_config.wrap_error(e=e)
