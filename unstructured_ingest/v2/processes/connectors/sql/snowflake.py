@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Generator, Optional
 
 import numpy as np
@@ -9,6 +8,7 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -160,9 +160,17 @@ class SnowflakeUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
-    def upload_contents(self, path: Path) -> None:
-        df = pd.read_json(path, orient="records", lines=True)
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        if self.can_delete():
+            self.delete_by_record_id(file_data=file_data)
+        else:
+            logger.warning(
+                f"table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
         df.replace({np.nan: None}, inplace=True)
+        self._fit_to_schema(df=df, columns=self.get_table_columns())
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(

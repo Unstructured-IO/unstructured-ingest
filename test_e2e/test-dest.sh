@@ -49,7 +49,6 @@ trap print_last_run EXIT
 python_version=$(python --version 2>&1)
 
 tests_to_ignore=(
-  'notion.sh'
   'dropbox.sh'
   'sharepoint.sh'
 )
