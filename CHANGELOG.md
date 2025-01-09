@@ -2,12 +2,18 @@
 
 ### Enhancements
 
-* **Fix Confluence Source Connector authentication parameters to support password, api token, pat token and cloud authentication**
+* **Change Confluence Source Connector authentication parameters to support password, api token, pat token and cloud authentication**
+
+### Fixes
+
+* **Fix Snowflake Uploader error**
+* **Fix SQL Uploader Stager timestamp error**
 
 ## 0.3.12
 
 ### Enhancements
 
+* **Migrate Notion Source Connector to V2**
 * **Migrate Vectara Destination Connector to v2**
 * **Added Redis destination connector**
 * **Improved Milvus error handling**
