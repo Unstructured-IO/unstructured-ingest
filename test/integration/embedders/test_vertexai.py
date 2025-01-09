@@ -73,5 +73,9 @@ async def test_raw_async_vertexai_embedder_invalid_api_key(embedder_file: Path):
             api_key={"key": "api_key"},
         )
     )
+    try:
+        await embedder.get_exemplary_embedding()
+    except Exception as e:
+        assert type(e) == UserAuthError, f"type of error does not match UserAuthError: {type(e)}"
     with pytest.raises(UserAuthError):
         await embedder.get_exemplary_embedding()
