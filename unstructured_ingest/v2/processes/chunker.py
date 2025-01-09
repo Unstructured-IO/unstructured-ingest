@@ -1,10 +1,10 @@
+import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
-import json
-import ndjson
 
+import ndjson
 from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
