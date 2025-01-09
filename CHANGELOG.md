@@ -1,5 +1,11 @@
 ## 0.3.13-dev1
 
+### Enchancements
+
+* **Sharepoint coonner no longer uses depracted authorisation method. Uses EntraID instead via msal.**
+
+## 0.3.13-dev1
+
 ### Fixes
 
 * **Fix Snowflake Uploader error**
