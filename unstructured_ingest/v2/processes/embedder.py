@@ -186,14 +186,13 @@ class Embedder(BaseProcess, ABC):
     config: EmbedderConfig
 
     def get_data(self, elements_filepath: Path) -> list[dict]:
-        if elements_filepath.suffix == ".json":
-            with elements_filepath.open() as f:
+        with elements_filepath.open() as f:
+            if elements_filepath.suffix == ".json":
                 return json.load(f)
-        elif elements_filepath.suffix == ".ndjson":
-            with elements_filepath.open() as f:
+            elif elements_filepath.suffix == ".ndjson":
                 return ndjson.load(f)
-        else:
-            raise ValueError(f"Unsupported input format: {elements_filepath}")
+            else:
+                raise ValueError(f"Unsupported input format: {elements_filepath}")
 
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         # TODO update base embedder classes to support async

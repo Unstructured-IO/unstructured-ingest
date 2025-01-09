@@ -2,8 +2,10 @@ import json
 import math
 import time
 from datetime import timedelta
+from pathlib import Path
 
 import click
+import ndjson
 from couchbase import search
 from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
@@ -21,6 +23,16 @@ def get_client(username, password, connection_string) -> Cluster:
     cluster = Cluster(connection_string, options)
     cluster.wait_until_ready(timedelta(seconds=5))
     return cluster
+
+
+def get_data(filepath: Path) -> list[dict]:
+    with filepath.open() as f:
+        if filepath.suffix == ".json":
+            return json.load(f)
+        elif filepath.suffix == ".ndjson":
+            return ndjson.load(f)
+        else:
+            raise ValueError(f"Unsupported input format: {filepath}")
 
 
 @click.group(name="couchbase-ingest")
@@ -87,10 +99,10 @@ def check(ctx, expected_docs):
 
 
 @cli.command()
-@click.option("--output-json", type=click.File())
+@click.option("--output-json", type=click.Path(path_type=Path))
 @click.pass_context
-def check_vector(ctx, output_json):
-    json_content = json.load(output_json)
+def check_vector(ctx, output_json: Path):
+    json_content = get_data(filepath=output_json)
     key_0 = next(iter(json_content[0]))  # Get the first key
     exact_embedding = json_content[0][key_0]["embedding"]
     exact_text = json_content[0][key_0]["text"]
