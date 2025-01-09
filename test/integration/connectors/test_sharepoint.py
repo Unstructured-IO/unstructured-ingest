@@ -24,7 +24,9 @@ SOURCE_TAG = "source"
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-@requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "SHAREPOINT_PERMISSIONS_TENANT", "SHAREPOINT_SITE")
+@requires_env(
+    "SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "SHAREPOINT_PERMISSIONS_TENANT", "SHAREPOINT_SITE"
+)
 async def test_sharepoint_source(temp_dir):
     """
     Integration test that:
