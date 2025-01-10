@@ -4,7 +4,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Optional
 from uuid import uuid4
 
 import pytest
@@ -109,14 +109,25 @@ def pinecone_index() -> Generator[str, None, None]:
 
 
 def validate_pinecone_index(
-    index_name: str, expected_num_of_vectors: int, retries=30, interval=1
+    index_name: str,
+    expected_num_of_vectors: int,
+    namespace: Optional[str] = None,
+    retries=30,
+    interval=1,
 ) -> None:
-    # Because there's a delay for the index to catch up to the recent writes, add in a retry
-    pinecone = Pinecone(api_key=get_api_key())
-    index = pinecone.Index(name=index_name)
+    """
+    Validates that `expected_num_of_vectors` are present in a Pinecone index,
+    optionally in a specific namespace.
+    """
+    pinecone_client = Pinecone(api_key=get_api_key())
+    index = pinecone_client.Index(name=index_name)
+
     vector_count = -1
     for i in range(retries):
-        index_stats = index.describe_index_stats()
+        if namespace:
+            index_stats = index.describe_index_stats(namespace=namespace)
+        else:
+            index_stats = index.describe_index_stats()  # all namespaces
         vector_count = index_stats["total_vector_count"]
         if vector_count == expected_num_of_vectors:
             logger.info(f"expected {expected_num_of_vectors} == vector count {vector_count}")
@@ -125,9 +136,10 @@ def validate_pinecone_index(
             f"retry attempt {i}: expected {expected_num_of_vectors} != vector count {vector_count}"
         )
         time.sleep(interval)
+
     assert vector_count == expected_num_of_vectors, (
-        f"vector count from index ({vector_count}) doesn't "
-        f"match expected number: {expected_num_of_vectors}"
+        f"vector count from index (namespace={namespace}) is {vector_count}, "
+        f"expected {expected_num_of_vectors}"
     )
 
 
@@ -286,3 +298,64 @@ def test_pinecone_stager(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_pinecone_namespace_write_success(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
+    """
+    Test to ensure data is written to a custom namespace successfully and
+    that everything is properly cleaned up afterward.
+    """
+    test_namespace = "test_namespace_success"
+
+    # Prepare test data
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+    )
+
+    connection_config = PineconeConnectionConfig(
+        index_name=pinecone_index,
+        access_config=PineconeAccessConfig(api_key=get_api_key()),
+    )
+    stager_config = PineconeUploadStagerConfig()
+    stager = PineconeUploadStager(upload_stager_config=stager_config)
+
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+        file_data=file_data,
+    )
+
+    upload_config = PineconeUploaderConfig(namespace=test_namespace)
+    uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
+    uploader.precheck()
+
+    uploader.run(path=new_upload_file, file_data=file_data)
+
+    with new_upload_file.open() as f:
+        staged_content = json.load(f)
+    expected_num_of_vectors = len(staged_content)
+
+    validate_pinecone_index(
+        index_name=pinecone_index,
+        expected_num_of_vectors=expected_num_of_vectors,
+        namespace="test_namespace_success",  # or your test_namespace variable
+    )
+
+    # --- CLEANUP ---
+    try:
+        pinecone_client = Pinecone(api_key=get_api_key())
+        index = pinecone_client.Index(name=pinecone_index)
+        # Use deleteAll=True to remove everything in that namespace
+        delete_resp = index.delete(deleteAll=True, namespace=test_namespace)
+        logger.info(f"Cleaned up all vectors from namespace '{test_namespace}': {delete_resp}")
+    except Exception as e:
+        logger.error(f"Error cleaning up namespace '{test_namespace}': {e}")
+        pytest.fail(f"Test failed to clean up namespace '{test_namespace}'.")

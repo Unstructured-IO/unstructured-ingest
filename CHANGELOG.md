@@ -1,3 +1,10 @@
+## 0.3.13-dev3
+
+### Fixes
+
+* **Added pinecone namespace upset test**
+
+
 ## 0.3.13-dev2
 
 ### Fixes
