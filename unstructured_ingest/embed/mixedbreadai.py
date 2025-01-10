@@ -1,10 +1,15 @@
+import asyncio
 import os
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr
 
-from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
+from unstructured_ingest.embed.interfaces import (
+    AsyncBaseEmbeddingEncoder,
+    BaseEmbeddingEncoder,
+    EmbeddingConfig,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 USER_AGENT = "@mixedbread-ai/unstructured"
@@ -16,7 +21,7 @@ TRUNCATION_STRATEGY = "end"
 
 
 if TYPE_CHECKING:
-    from mixedbread_ai.client import MixedbreadAI
+    from mixedbread_ai.client import AsyncMixedbreadAI, MixedbreadAI
     from mixedbread_ai.core import RequestOptions
 
 
@@ -54,6 +59,17 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
             api_key=self.api_key.get_secret_value(),
         )
 
+    @requires_dependencies(
+        ["mixedbread_ai"],
+        extras="embed-mixedbreadai",
+    )
+    def get_async_client(self) -> "AsyncMixedbreadAI":
+        from mixedbread_ai.client import AsyncMixedbreadAI
+
+        return AsyncMixedbreadAI(
+            api_key=self.api_key.get_secret_value(),
+        )
+
 
 @dataclass
 class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -65,23 +81,19 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
     """
 
     config: MixedbreadAIEmbeddingConfig
-    _request_options: Optional["RequestOptions"] = field(init=False, default=None)
 
     def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
         return self._embed(["Q"])[0]
 
-    def initialize(self):
-        if self.config.api_key is None:
-            raise ValueError(
-                "The Mixedbread AI API key must be specified."
-                + "You either pass it in the constructor using 'api_key'"
-                + "or via the 'MXBAI_API_KEY' environment variable."
-            )
-
+    @requires_dependencies(
+        ["mixedbread_ai"],
+        extras="embed-mixedbreadai",
+    )
+    def get_request_options(self) -> "RequestOptions":
         from mixedbread_ai.core import RequestOptions
 
-        self._request_options = RequestOptions(
+        return RequestOptions(
             max_retries=MAX_RETRIES,
             timeout_in_seconds=TIMEOUT,
             additional_headers={"User-Agent": USER_AGENT},
@@ -109,7 +121,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
                 normalized=True,
                 encoding_format=ENCODING_FORMAT,
                 truncation_strategy=TRUNCATION_STRATEGY,
-                request_options=self._request_options,
+                request_options=self.get_request_options(),
                 input=batch,
             )
             responses.append(response)
@@ -139,3 +151,83 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             list[float]: Embedding of the query.
         """
         return self._embed([query])[0]
+
+
+@dataclass
+class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
+
+    config: MixedbreadAIEmbeddingConfig
+
+    async def get_exemplary_embedding(self) -> list[float]:
+        """Get an exemplary embedding to determine dimensions and unit vector status."""
+        embedding = await self._embed(["Q"])
+        return embedding[0]
+
+    @requires_dependencies(
+        ["mixedbread_ai"],
+        extras="embed-mixedbreadai",
+    )
+    def get_request_options(self) -> "RequestOptions":
+        from mixedbread_ai.core import RequestOptions
+
+        return RequestOptions(
+            max_retries=MAX_RETRIES,
+            timeout_in_seconds=TIMEOUT,
+            additional_headers={"User-Agent": USER_AGENT},
+        )
+
+    async def _embed(self, texts: list[str]) -> list[list[float]]:
+        """
+        Embed a list of texts using the Mixedbread AI API.
+
+        Args:
+            texts (list[str]): List of texts to embed.
+
+        Returns:
+            list[list[float]]: List of embeddings.
+        """
+        batch_size = BATCH_SIZE
+        batch_itr = range(0, len(texts), batch_size)
+
+        client = self.config.get_async_client()
+        tasks = []
+        for i in batch_itr:
+            batch = texts[i : i + batch_size]
+            tasks.append(
+                client.embeddings(
+                    model=self.config.embedder_model_name,
+                    normalized=True,
+                    encoding_format=ENCODING_FORMAT,
+                    truncation_strategy=TRUNCATION_STRATEGY,
+                    request_options=self.get_request_options(),
+                    input=batch,
+                )
+            )
+        responses = await asyncio.gather(*tasks)
+        return [item.embedding for response in responses for item in response.data]
+
+    async def embed_documents(self, elements: list[dict]) -> list[dict]:
+        """
+        Embed a list of document elements.
+
+        Args:
+            elements (list[Element]): List of document elements.
+
+        Returns:
+            list[Element]: Elements with embeddings.
+        """
+        embeddings = await self._embed([e.get("text", "") for e in elements])
+        return self._add_embeddings_to_elements(elements, embeddings)
+
+    async def embed_query(self, query: str) -> list[float]:
+        """
+        Embed a query string.
+
+        Args:
+            query (str): Query string to embed.
+
+        Returns:
+            list[float]: Embedding of the query.
+        """
+        embedding = await self._embed([query])
+        return embedding[0]

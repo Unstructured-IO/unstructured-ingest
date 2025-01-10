@@ -6,6 +6,10 @@
 * **Fix SQL Uploader Stager timestamp error**
 * **Migrate Discord Sourced Connector to v2**
 
+### Enhancements
+
+* **Async support for all IO-bounded embedders**
+
 ## 0.3.12
 
 ### Enhancements
