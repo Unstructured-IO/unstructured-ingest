@@ -178,9 +178,9 @@ class PineconeUploader(Uploader):
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         """Deletion for Pinecone Pod-based index."""
         logger.debug(
-            f"Deleting any content with metadata "
+            f"deleting any content with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from Pinecone pod index"
+            f"from pinecone pod index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
 
@@ -188,22 +188,22 @@ class PineconeUploader(Uploader):
         delete_kwargs = {
             "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}},
         }
-        if self.upload_config.namespace is not None:
-            delete_kwargs["namespace"] = self.upload_config.namespace
+        if namespace := self.upload_config.namespace:
+            delete_kwargs["namespace"] = namespace
 
         resp = index.delete(**delete_kwargs)
         logger.debug(
-            f"Deleted any content with metadata "
+            f"deleted any content with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from Pinecone index: {resp}"
+            f"from pinecone index: {resp}"
         )
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
         """Deletion for Pinecone Serverless index."""
         logger.debug(
-            f"Deleting any content with metadata "
+            f"deleting any content with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from Pinecone serverless index"
+            f"from pinecone serverless index"
         )
         index = self.connection_config.get_index(pool_threads=MAX_POOL_THREADS)
 
@@ -220,12 +220,12 @@ class PineconeUploader(Uploader):
                 delete_kwargs["namespace"] = self.upload_config.namespace
             delete_resp = index.delete(**delete_kwargs)
             if delete_resp:
-                logger.error(f"Failed to delete batch of IDs: {delete_resp}")
+                logger.error(f"failed to delete batch of IDs: {delete_resp}")
 
         logger.info(
-            f"Deleted {deleted_ids} records with metadata "
+            f"deleted {deleted_ids} records with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from Pinecone index"
+            f"from pinecone index"
         )
 
     @requires_dependencies(["pinecone"], extras="pinecone")
