@@ -1,0 +1,25 @@
+{
+  "identifier": "1099442333440802930",
+  "connector_type": "discord",
+  "source_identifiers": {
+    "filename": "1099442333440802930.txt",
+    "fullpath": "1099442333440802930.txt",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "channel_id": "1099442333440802930"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "2025-01-07T12:57:37.433374",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {},
+  "reprocess": false,
+  "local_download_path": "/tmp/tmpeacmqxbx/1099442333440802930.txt",
+  "display_name": null
+}
