@@ -101,7 +101,7 @@ class SharepointConnectionConfig(ConnectionConfig):
             app = ConfidentialClientApplication(
                 authority=f"{self.permissions_config.authority_url.get_secret_value()}/"
                 f"{self.permissions_config.permissions_tenant}",
-                client_id=self.permissions_config.permissions_application_id,
+                client_id=self.client_id,
                 client_credential=self.permissions_config.permissions_client_cred.get_secret_value(),  # noqa: E501
             )
             token_result = app.acquire_token_for_client(
