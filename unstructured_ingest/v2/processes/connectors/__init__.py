@@ -28,6 +28,8 @@ from .couchbase import CONNECTOR_TYPE as COUCHBASE_CONNECTOR_TYPE
 from .couchbase import couchbase_destination_entry, couchbase_source_entry
 from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
 from .delta_table import delta_table_destination_entry
+from .discord import CONNECTOR_TYPE as DISCORD_CONNECTOR_TYPE
+from .discord import discord_source_entry
 from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
@@ -42,6 +44,8 @@ from .mongodb import CONNECTOR_TYPE as MONGODB_CONNECTOR_TYPE
 from .mongodb import mongodb_destination_entry, mongodb_source_entry
 from .neo4j import CONNECTOR_TYPE as NEO4J_CONNECTOR_TYPE
 from .neo4j import neo4j_destination_entry
+from .notion.connector import CONNECTOR_TYPE as NOTION_CONNECTOR_TYPE
+from .notion.connector import notion_source_entry
 from .onedrive import CONNECTOR_TYPE as ONEDRIVE_CONNECTOR_TYPE
 from .onedrive import onedrive_destination_entry, onedrive_source_entry
 from .outlook import CONNECTOR_TYPE as OUTLOOK_CONNECTOR_TYPE
@@ -98,6 +102,7 @@ add_destination_entry(
 
 add_destination_entry(destination_type=KDBAI_CONNECTOR_TYPE, entry=kdbai_destination_entry)
 add_source_entry(source_type=AIRTABLE_CONNECTOR_TYPE, entry=airtable_source_entry)
+add_source_entry(source_type=NOTION_CONNECTOR_TYPE, entry=notion_source_entry)
 
 add_source_entry(source_type=OUTLOOK_CONNECTOR_TYPE, entry=outlook_source_entry)
 
@@ -108,4 +113,5 @@ add_source_entry(source_type=SLACK_CONNECTOR_TYPE, entry=slack_source_entry)
 add_destination_entry(destination_type=VECTARA_CONNECTOR_TYPE, entry=vectara_destination_entry)
 add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_entry)
 
+add_source_entry(source_type=DISCORD_CONNECTOR_TYPE, entry=discord_source_entry)
 add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
