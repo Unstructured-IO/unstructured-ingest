@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 from neo4j import AsyncGraphDatabase, Driver, GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
-from pytest_check import check
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG
 from test.integration.connectors.utils.docker import container_context
@@ -209,14 +208,11 @@ async def validate_uploaded_graph(upload_file: Path):
                 0
             ]
         )
-        with check:
-            assert nodes_count == expected_nodes_count
-        with check:
-            assert document_nodes_count == EXPECTED_DOCUMENT_COUNT
-        with check:
-            assert chunk_nodes_count == expected_chunks_count
-        with check:
-            assert element_nodes_count == expected_element_count
+
+        assert nodes_count == expected_nodes_count
+        assert document_nodes_count == EXPECTED_DOCUMENT_COUNT
+        assert chunk_nodes_count == expected_chunks_count
+        assert element_nodes_count == expected_element_count
 
         records, _, _ = await driver.execute_query(
             f"""
@@ -234,11 +230,8 @@ async def validate_uploaded_graph(upload_file: Path):
         )
         next_chunk_count = len(records)
 
-        if not check.any_failures():
-            with check:
-                assert part_of_document_count == expected_chunks_count + expected_element_count
-            with check:
-                assert next_chunk_count == expected_chunks_count - 1
+        assert part_of_document_count == expected_chunks_count + expected_element_count
+        assert next_chunk_count == expected_chunks_count - 1
 
     finally:
         await driver.close()
