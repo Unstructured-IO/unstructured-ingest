@@ -61,9 +61,12 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             logger.debug(
                 f"migrating content from {catalog_path} to table {self.upload_config.table_name}"
             )
-            cursor.execute(
-                f"INSERT INTO `{self.upload_config.table_name}` SELECT * FROM json.`{catalog_path}`"
-            )
+            with path.open() as f:
+                data = json.load(f)
+                columns = data[0].keys()
+            column_str = ", ".join(columns)
+            sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {column_str} FROM json.`{catalog_path}`"  # noqa: E501
+            cursor.execute(sql_statment)
 
 
 databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
