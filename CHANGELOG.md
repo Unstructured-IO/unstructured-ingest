@@ -8,6 +8,7 @@
 
 ### Enhancements
 
+* **Support Python 3.13**
 * **Async support for all IO-bounded embedders**
 
 ## 0.3.12
