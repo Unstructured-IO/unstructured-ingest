@@ -1,4 +1,4 @@
-## 0.3.13-dev3
+## 0.3.13-dev4
 
 ### Fixes
 
@@ -9,6 +9,7 @@
 ### Enhancements
 
 * **Async support for all IO-bounded embedders**
+* **Expand support to Python 3.13**
 
 ## 0.3.12
 
