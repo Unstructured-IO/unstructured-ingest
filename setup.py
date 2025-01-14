@@ -173,7 +173,7 @@ setup(
     long_description_content_type="text/markdown",
     keywords="NLP PDF HTML CV XML parsing preprocessing",
     url="https://github.com/Unstructured-IO/unstructured-ingest",
-    python_requires=">=3.9.0,<3.13",
+    python_requires=">=3.9.0,<3.14",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

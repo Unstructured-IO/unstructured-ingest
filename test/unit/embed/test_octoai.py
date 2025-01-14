@@ -17,7 +17,7 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     mocker.patch.object(OctoAiEmbeddingConfig, "get_client", return_value=mock_client)
 
     encoder = OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig(api_key="api_key"))
-    raw_elements = [{"text": f"This is sentence {i+1}"} for i in range(2)]
+    raw_elements = [{"text": f"This is sentence {i + 1}"} for i in range(2)]
 
     elements = encoder.embed_documents(
         elements=raw_elements,

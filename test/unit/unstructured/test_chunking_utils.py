@@ -10,7 +10,7 @@ from unstructured_ingest.utils.chunking import (
 )
 
 test_file_path = Path(__file__).resolve()
-project_root = test_file_path.parents[2]
+project_root = test_file_path.parents[3]
 docs_path = project_root / "example-docs"
 
 
