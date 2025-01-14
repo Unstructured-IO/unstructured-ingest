@@ -2,7 +2,7 @@ import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Optional, TypeVar
 
 import ndjson
 from pydantic import BaseModel
@@ -22,10 +22,10 @@ UploadStagerConfigT = TypeVar("UploadStagerConfigT", bound=UploadStagerConfig)
 class UploadStager(BaseProcess, ABC):
     upload_stager_config: UploadStagerConfigT
 
-    def write_output(self, output_path: Path, data: list[dict]) -> None:
+    def write_output(self, output_path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
         if output_path.suffix == ".json":
             with output_path.open("w") as f:
-                json.dump(data, f, indent=2)
+                json.dump(data, f, indent=indent)
         elif output_path.suffix == ".ndjson":
             with output_path.open("w") as f:
                 ndjson.dump(data, f)

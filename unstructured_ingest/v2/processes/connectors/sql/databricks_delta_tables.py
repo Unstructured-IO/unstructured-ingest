@@ -77,13 +77,14 @@ class DatabrickDeltaTablesConnectionConfig(SQLConnectionConfig):
 
     @contextmanager
     @requires_dependencies(["databricks"], extras="databricks-delta-tables")
-    def get_connection(self) -> Generator["DeltaTableConnection", None, None]:
+    def get_connection(self, **connect_kwargs) -> Generator["DeltaTableConnection", None, None]:
         from databricks.sql import connect
 
-        connect_kwargs = {
-            "server_hostname": self.server_hostname,
-            "http_path": self.http_path,
-        }
+        connect_kwargs = connect_kwargs or {}
+        connect_kwargs["server_hostname"] = connect_kwargs.get(
+            "server_hostname", self.server_hostname
+        )
+        connect_kwargs["http_path"] = connect_kwargs.get("http_path", self.http_path)
 
         if credential_provider := self.get_credentials_provider():
             connect_kwargs["credentials_provider"] = credential_provider
@@ -93,8 +94,8 @@ class DatabrickDeltaTablesConnectionConfig(SQLConnectionConfig):
             yield connection
 
     @contextmanager
-    def get_cursor(self) -> Generator["DeltaTableCursor", None, None]:
-        with self.get_connection() as connection:
+    def get_cursor(self, **connect_kwargs) -> Generator["DeltaTableCursor", None, None]:
+        with self.get_connection(**connect_kwargs) as connection:
             cursor = connection.cursor()
             yield cursor
 
