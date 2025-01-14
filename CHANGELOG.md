@@ -1,10 +1,11 @@
-## 0.3.13-dev3
+## 0.3.13-dev4
 
 ### Fixes
 
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
 * **Migrate Discord Sourced Connector to v2**
+* **Fix Neo4j Uploader string enum error**
 
 ### Enhancements
 
