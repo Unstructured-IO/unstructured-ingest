@@ -26,7 +26,7 @@ def run_all_stager_validations(
     assert input_file.suffix == staged_filepath.suffix
 
     # Validate length
-    staged_data = get_data(staged_filepath=staged_filepath)
+    staged_data = get_data(path=staged_filepath)
     assert len(staged_data) == configs.expected_count
 
     # Validate file
