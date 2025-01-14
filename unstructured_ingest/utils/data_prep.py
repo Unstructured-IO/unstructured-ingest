@@ -7,6 +7,8 @@ from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
 import ndjson
 import pandas as pd
 
+from unstructured_ingest.v2.logger import logger
+
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
 T = TypeVar("T")
@@ -135,7 +137,7 @@ def validate_date_args(date: Optional[str] = None) -> bool:
     )
 
 
-def get_data(path: Path) -> list[dict]:
+def get_data_by_suffix(path: Path) -> list[dict]:
     with path.open() as f:
         if path.suffix == ".json":
             return json.load(f)
@@ -149,6 +151,35 @@ def get_data(path: Path) -> list[dict]:
             return df.to_dict(orient="records")
         else:
             raise ValueError(f"Unsupported file type: {path}")
+
+
+def get_data(path: Path) -> list[dict]:
+    try:
+        return get_data_by_suffix(path=path)
+    except Exception as e:
+        logger.warning(f"failed to read {path} by extension: {e}")
+    # Fall back
+    with path.open() as f:
+        try:
+            return json.load(f)
+        except Exception as e:
+            logger.warning(f"failed to read {path} as json: {e}")
+        try:
+            return ndjson.load(f)
+        except Exception as e:
+            logger.warning(f"failed to read {path} as ndjson: {e}")
+        try:
+            df = pd.read_csv(path)
+            return df.to_dict(orient="records")
+        except Exception as e:
+            logger.warning(f"failed to read {path} as csv: {e}")
+        try:
+            df = pd.read_parquet(path)
+            return df.to_dict(orient="records")
+        except Exception as e:
+            logger.warning(f"failed to read {path} as parquet: {e}")
+
+    raise IOError(f"File could not be parsed: {path}")
 
 
 def get_data_df(path: Path) -> pd.DataFrame:

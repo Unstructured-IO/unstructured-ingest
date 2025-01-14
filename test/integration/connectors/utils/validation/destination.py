@@ -1,13 +1,10 @@
-import json
 import os
 import shutil
 from pathlib import Path
 
-import ndjson
-
 from test.integration.connectors.utils.validation.utils import ValidationConfig
+from unstructured_ingest.utils.data_prep import get_data
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers, UploadStager
-from unstructured_ingest.v2.logger import logger
 
 
 class StagerValidationConfigs(ValidationConfig):
@@ -45,25 +42,6 @@ def run_all_stager_validations(
 def update_stager_fixtures(stager_output_path: Path, staged_filepath: Path):
     copied_filepath = stager_output_path / staged_filepath.name
     shutil.copy(staged_filepath, copied_filepath)
-
-
-def get_data(staged_filepath: Path) -> list[dict]:
-    if staged_filepath.suffix == ".json":
-        with staged_filepath.open() as f:
-            return json.load(f)
-    elif staged_filepath.suffix == ".ndjson":
-        with staged_filepath.open() as f:
-            return ndjson.load(f)
-    else:
-        # Attempt to read it as json
-        try:
-            with staged_filepath.open() as f:
-                logger.warning(
-                    f"File extension mismatch, attempting to read as json: {staged_filepath}"
-                )
-                return json.load(f)
-        except Exception:
-            raise ValueError(f"Failed to read file: {staged_filepath}")
 
 
 def stager_validation(

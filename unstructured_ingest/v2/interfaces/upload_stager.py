@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
-from unstructured_ingest.v2.logger import logger
 
 
 class UploadStagerConfig(BaseModel):
@@ -32,24 +31,6 @@ class UploadStager(BaseProcess, ABC):
                 ndjson.dump(data, f)
         else:
             raise ValueError(f"Unsupported output format: {output_path}")
-
-    def get_data(self, elements_filepath: Path) -> list[dict]:
-        if elements_filepath.suffix == ".json":
-            with elements_filepath.open() as f:
-                return json.load(f)
-        elif elements_filepath.suffix == ".ndjson":
-            with elements_filepath.open() as f:
-                return ndjson.load(f)
-        else:
-            # Attempt to read it as json
-            try:
-                with elements_filepath.open() as f:
-                    logger.warning(
-                        f"File extension mismatch, attempting to read as json: {elements_filepath}"
-                    )
-                    return json.load(f)
-            except Exception:
-                raise ValueError(f"Failed to read file: {elements_filepath}")
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return element_dict

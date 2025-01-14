@@ -14,7 +14,7 @@ from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import get_data_df, split_dataframe
+from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -290,7 +290,7 @@ class SQLUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        elements_contents = self.get_data(elements_filepath=elements_filepath)
+        elements_contents = get_data(path=elements_filepath)
 
         df = pd.DataFrame(
             data=[
