@@ -122,4 +122,5 @@ jobs:
           make install-base
           make install-test
           pip install unstructured
+          python -c "from unstructured.nlp.tokenize import download_nltk_packages; download_nltk_packages()"
           make unit-test
