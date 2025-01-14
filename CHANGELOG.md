@@ -1,10 +1,11 @@
-## 0.3.13-dev4
+## 0.3.13
 
 ### Fixes
 
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
 * **Migrate Discord Sourced Connector to v2**
+* **Add read data fallback** When reading data that could be json or ndjson, if extension is missing, fallback to trying to read it as json.
 
 ### Enhancements
 
