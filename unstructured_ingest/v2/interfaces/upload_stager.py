@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
+from unstructured_ingest.v2.logger import logger
 
 
 class UploadStagerConfig(BaseModel):
@@ -40,7 +41,15 @@ class UploadStager(BaseProcess, ABC):
             with elements_filepath.open() as f:
                 return ndjson.load(f)
         else:
-            raise ValueError(f"Unsupported input format: {elements_filepath}")
+            # Attempt to read it as json
+            try:
+                with elements_filepath.open() as f:
+                    logger.warning(
+                        f"File extension mismatch, attempting to read as json: {elements_filepath}"
+                    )
+                    return json.load(f)
+            except Exception:
+                raise ValueError(f"Failed to read file: {elements_filepath}")
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return element_dict

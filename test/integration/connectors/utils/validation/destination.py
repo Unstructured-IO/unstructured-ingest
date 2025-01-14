@@ -7,6 +7,7 @@ import ndjson
 
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers, UploadStager
+from unstructured_ingest.v2.logger import logger
 
 
 class StagerValidationConfigs(ValidationConfig):
@@ -54,7 +55,15 @@ def get_data(staged_filepath: Path) -> list[dict]:
         with staged_filepath.open() as f:
             return ndjson.load(f)
     else:
-        raise ValueError(f"Unsupported file type: {staged_filepath.suffix}")
+        # Attempt to read it as json
+        try:
+            with staged_filepath.open() as f:
+                logger.warning(
+                    f"File extension mismatch, attempting to read as json: {staged_filepath}"
+                )
+                return json.load(f)
+        except Exception:
+            raise ValueError(f"Failed to read file: {staged_filepath}")
 
 
 def stager_validation(
