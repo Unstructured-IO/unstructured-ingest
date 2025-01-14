@@ -124,6 +124,7 @@ jobs:
   test_ingest_unit_unstructured:
     strategy:
       matrix:
+        # TODO include 3.13 when unstructured supports it
         python-version: [ "3.9","3.10","3.11", "3.12"]
     runs-on: ubuntu-latest
     env:
@@ -141,4 +142,5 @@ jobs:
           make install-base
           make install-test
           pip install unstructured
+          python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
           make unit-test-unstructured
