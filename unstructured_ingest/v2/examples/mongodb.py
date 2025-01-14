@@ -45,7 +45,7 @@ if __name__ == "__main__":
             access_config=MongoDBAccessConfig(uri=None),
             host="localhost",
             port=27017,
-            collection=f"test-collection-{random.randint(1000, 9999)}",
+            collection=f"test-collection-{random.randint(1000,9999)}",
             database="testDatabase",
         ),
         stager_config=MongoDBUploadStagerConfig(),

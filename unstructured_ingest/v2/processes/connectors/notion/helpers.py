@@ -133,7 +133,7 @@ def build_html(
         if isinstance(current_block["block"].block, notion_blocks.Column):
             html.append(
                 Div(
-                    [Style(f"width:{100 / current_block['peers_count']}%; float: left")],
+                    [Style(f"width:{100/current_block['peers_count']}%; float: left")],
                     children_html,
                 )
             )
