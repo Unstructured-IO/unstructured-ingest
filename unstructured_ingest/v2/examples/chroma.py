@@ -45,7 +45,7 @@ if __name__ == "__main__":
             access_config=ChromaAccessConfig(settings=None, headers=None),
             host="localhost",
             port=8047,
-            collection_name=f"test-collection-{random.randint(1000,9999)}",
+            collection_name=f"test-collection-{random.randint(1000, 9999)}",
             tenant="default_tenant",
             database="default_database",
         ),
