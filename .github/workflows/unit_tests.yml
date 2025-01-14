@@ -107,6 +107,25 @@ jobs:
       matrix:
         python-version: [ "3.9","3.10","3.11", "3.12", "3.13" ]
     runs-on: ubuntu-latest
+    needs: [ lint ]
+    steps:
+      # actions/checkout MUST come before auth
+      - uses: 'actions/checkout@v4'
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test Ingest (unit)
+        run: |
+          make install-base
+          make install-test
+          make unit-test
+
+  test_ingest_unit_unstructured:
+    strategy:
+      matrix:
+        python-version: [ "3.9","3.10","3.11", "3.12"]
+    runs-on: ubuntu-latest
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
     needs: [ lint ]
@@ -122,4 +141,4 @@ jobs:
           make install-base
           make install-test
           pip install unstructured
-          make unit-test
+          make unit-test-unstructured
