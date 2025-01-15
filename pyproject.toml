@@ -18,7 +18,8 @@ exclude= [
     "venv",
     ".python_packages",
     "build",
-    "migrations"
+    "migrations",
+    ".ipynb"
 ]
 
 [tool.ruff.lint]
