@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           check-only: 'true'
 
-  api_based_integration_test:
+  api_based_int_test:
     strategy:
       matrix:
         test: ["partitioners", "chunkers"]
@@ -48,7 +48,7 @@ jobs:
           make integration-test-${{ matrix.test }}
           make parse-skipped-tests
 
-  embedders_integration_test:
+  embedders_int_test:
     runs-on: ubuntu-latest
     steps:
       - uses: 'actions/checkout@v4'
@@ -74,7 +74,7 @@ jobs:
           make integration-test-embedders
           make parse-skipped-tests
 
-  connectors_integration_test_blob_storage:
+  blob_storage_connectors_int_test:
     runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
@@ -117,7 +117,7 @@ jobs:
         make integration-test-connectors-blob-storage
         make parse-skipped-tests
 
-  connectors_integration_test_sql:
+  sql_connectors_int_test:
     runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
@@ -152,7 +152,7 @@ jobs:
         make integration-test-connectors-sql
         make parse-skipped-tests
 
-  connectors_integration_test_nosql:
+  nosql_connectors_int_test:
     runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
@@ -189,7 +189,7 @@ jobs:
         make integration-test-connectors-nosql
         make parse-skipped-tests
 
-  connectors_integration_test_vector_db:
+  vector_db_connectors_int_test:
     runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
@@ -229,7 +229,7 @@ jobs:
         make integration-test-connectors-vector-db
         make parse-skipped-tests
 
-  connectors_integration_test_uncategorized:
+  uncategorized_connectors_int_test:
     runs-on: ubuntu-latest-m
     needs: [ setup ]
     steps:
@@ -269,7 +269,7 @@ jobs:
         make parse-skipped-tests
 
 
-  test_src_e2e:
+  src_e2e_test:
     strategy:
       matrix:
         python-version: ["3.9","3.10"]
@@ -340,7 +340,7 @@ jobs:
         pip freeze
         ./test_e2e/test-src.sh
 
-  test_src_api:
+  src_api_test:
     runs-on: ubuntu-latest
     needs: [ setup ]
     steps:
@@ -363,7 +363,7 @@ jobs:
       run: |
         ./test_e2e/src/against-api.sh
 
-  test_dest_e2e:
+  dest_e2e_test:
     environment: ci
     strategy:
       matrix:
