@@ -188,7 +188,7 @@ class PineconeUploader(Uploader):
             delete_kwargs["namespace"] = namespace
             try:
                 index.delete(**delete_kwargs)
-            except Exception as e::
+            except Exception as e:
                 logger.error(f"failed to delete batch of ids: {delete_kwargs} {e}")
 
         logger.debug(
