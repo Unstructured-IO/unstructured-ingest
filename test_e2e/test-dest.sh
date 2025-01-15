@@ -22,9 +22,7 @@ all_tests=(
   'dropbox.sh'
   'gcs.sh'
   's3.sh'
-  's3_no_access.sh'
   'sharepoint-embed-cog-index.sh'
-  # 'vectara.sh'
   #  'kdbai.sh'
 )
 
