@@ -6,9 +6,7 @@ import pytest
 from deltalake import DeltaTable
 from fsspec import get_filesystem_class
 
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.delta_table import (
@@ -25,7 +23,7 @@ multiprocessing.set_start_method("spawn")
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
     destination_path = str(temp_dir)
     connection_config = DeltaTableConnectionConfig(
@@ -81,7 +79,7 @@ def get_aws_credentials() -> dict:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
 async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     aws_credentials = get_aws_credentials()
@@ -140,7 +138,7 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
 async def test_delta_table_destination_s3_bad_creds(upload_file: Path, temp_dir: Path):
     aws_credentials = {

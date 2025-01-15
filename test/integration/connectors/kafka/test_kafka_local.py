@@ -15,6 +15,7 @@ from test.integration.connectors.kafka.conftest import (
 from test.integration.connectors.utils.constants import (
     DESTINATION_TAG,
     SOURCE_TAG,
+    UNCATEGORIZED_TAG,
     env_setup_path,
 )
 from test.integration.connectors.utils.docker_compose import docker_compose_context
@@ -71,7 +72,7 @@ def kafka_upload_topic(docker_compose_ctx) -> str:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 async def test_kafka_source_local(kafka_seed_topic: str):
     connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     with tempfile.TemporaryDirectory() as tempdir:
@@ -94,7 +95,7 @@ async def test_kafka_source_local(kafka_seed_topic: str):
         )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 def test_kafka_source_local_precheck_fail_no_cluster():
     connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     indexer = LocalKafkaIndexer(
@@ -105,7 +106,7 @@ def test_kafka_source_local_precheck_fail_no_cluster():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 def test_kafka_source_local_precheck_fail_no_topic(kafka_seed_topic: str):
     connection_config = LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092)
     indexer = LocalKafkaIndexer(
@@ -117,7 +118,7 @@ def test_kafka_source_local_precheck_fail_no_topic(kafka_seed_topic: str):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, UNCATEGORIZED_TAG)
 async def test_kafka_destination_local(
     kafka_upload_topic: str,
     upload_file: Path,
@@ -157,7 +158,7 @@ async def test_kafka_destination_local(
     assert all_messages == content_to_upload
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, UNCATEGORIZED_TAG)
 def test_kafka_destination_local_precheck_fail_no_cluster():
     uploader = LocalKafkaUploader(
         connection_config=LocalKafkaConnectionConfig(bootstrap_server="localhost", port=29092),

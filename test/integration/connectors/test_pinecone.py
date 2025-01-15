@@ -12,9 +12,7 @@ from _pytest.fixtures import TopRequest
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.core.openapi.shared.exceptions import NotFoundException
 
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
+from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
@@ -133,7 +131,7 @@ def validate_pinecone_index(
 
 @requires_env(API_KEY)
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp_dir: Path):
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
@@ -176,7 +174,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
 
 @requires_env(API_KEY)
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.skip(reason="TODO: get this to work")
 async def test_pinecone_destination_large_index(
     pinecone_index: str, upload_file: Path, temp_dir: Path
@@ -227,7 +225,7 @@ async def test_pinecone_destination_large_index(
 
 
 @requires_env(API_KEY)
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
     stager = PineconeUploadStager()
     uploader = PineconeUploader(

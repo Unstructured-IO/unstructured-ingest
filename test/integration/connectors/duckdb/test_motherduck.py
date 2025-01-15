@@ -7,7 +7,7 @@ import duckdb
 import pandas as pd
 import pytest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.duckdb.motherduck import (
@@ -61,7 +61,7 @@ def validate_motherduck_destination(database: str, expected_num_elements: int, m
             conn.close()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env("MOTHERDUCK_TOKEN")
 def test_motherduck_destination(
     md_token: str, upload_file: Path, provisioned_db: str, temp_dir: Path

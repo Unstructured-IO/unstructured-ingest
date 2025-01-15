@@ -5,9 +5,7 @@ from pathlib import Path
 import pytest
 from office365.graph_client import GraphClient
 
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
+from test.integration.connectors.utils.constants import BLOB_STORAGE_TAG, DESTINATION_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.onedrive import (
@@ -67,7 +65,7 @@ def get_connection_config():
     return connection_config
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
 @pytest.mark.xfail(
     reason="Issues with test setup on the provider side."

@@ -10,7 +10,7 @@ import pytest
 from _pytest.fixtures import TopRequest
 from opensearchpy import Document, Keyword, OpenSearch, Text
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG, SOURCE_TAG
 from test.integration.connectors.utils.docker import HealthCheck, container_context
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
@@ -166,7 +166,7 @@ def destination_index(opensearch_elements_mapping: dict) -> str:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFrame):
     indexer_config = OpenSearchIndexerConfig(index_name=source_index)
     with tempfile.TemporaryDirectory() as tempdir:
@@ -197,7 +197,7 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
         )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_opensearch_source_precheck_fail_no_cluster():
     indexer_config = OpenSearchIndexerConfig(index_name="index")
 
@@ -212,7 +212,7 @@ def test_opensearch_source_precheck_fail_no_cluster():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_opensearch_source_precheck_fail_no_index(source_index: str):
     indexer_config = OpenSearchIndexerConfig(index_name="index")
 
@@ -228,7 +228,7 @@ def test_opensearch_source_precheck_fail_no_index(source_index: str):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 async def test_opensearch_destination(
     upload_file: Path,
     destination_index: str,
@@ -275,7 +275,7 @@ async def test_opensearch_destination(
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 def test_opensearch_destination_precheck_fail():
     connection_config = OpenSearchConnectionConfig(
         access_config=OpenSearchAccessConfig(password="admin"),
@@ -291,7 +291,7 @@ def test_opensearch_destination_precheck_fail():
         uploader.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 def test_opensearch_destination_precheck_fail_no_index(destination_index: str):
     connection_config = OpenSearchConnectionConfig(
         access_config=OpenSearchAccessConfig(password="admin"),

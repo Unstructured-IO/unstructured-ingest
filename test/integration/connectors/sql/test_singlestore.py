@@ -5,7 +5,12 @@ import pytest
 import singlestoredb as s2
 from _pytest.fixtures import TopRequest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+    SOURCE_TAG,
+    SQL_TAG,
+    env_setup_path,
+)
 from test.integration.connectors.utils.docker_compose import docker_compose_context
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
@@ -54,7 +59,7 @@ def source_database_setup() -> dict:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, SQL_TAG)
 async def test_singlestore_source(temp_dir: Path, source_database_setup: dict):
 
     connection_config = SingleStoreConnectionConfig(
@@ -101,7 +106,7 @@ def validate_destination(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 async def test_singlestore_destination(upload_file: Path, temp_dir: Path):
     mock_file_data = FileData(
         identifier="mock file data",

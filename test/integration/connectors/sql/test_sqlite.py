@@ -6,7 +6,12 @@ from pathlib import Path
 import pytest
 from _pytest.fixtures import TopRequest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+    SOURCE_TAG,
+    SQL_TAG,
+    env_setup_path,
+)
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
@@ -52,7 +57,7 @@ def source_database_setup() -> Path:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, SQL_TAG)
 async def test_sqlite_source(source_database_setup: Path, temp_dir: Path):
     connection_config = SQLiteConnectionConfig(database_path=source_database_setup)
     indexer = SQLiteIndexer(
@@ -110,7 +115,7 @@ def validate_destination(db_path: Path, expected_num_elements: int):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 async def test_sqlite_destination(
     upload_file: Path, temp_dir: Path, destination_database_setup: Path
 ):

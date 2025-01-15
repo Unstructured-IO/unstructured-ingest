@@ -10,7 +10,11 @@ import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors.platform import NotFound
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
+from test.integration.connectors.utils.constants import (
+    BLOB_STORAGE_TAG,
+    DESTINATION_TAG,
+    SOURCE_TAG,
+)
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
@@ -83,7 +87,7 @@ def get_pat_env_data() -> PATEnvData:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env(
     "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
 )
@@ -115,7 +119,7 @@ async def test_volumes_native_source(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("DATABRICKS_HOST", "DATABRICKS_PAT", "DATABRICKS_CATALOG")
 async def test_volumes_native_source_pat(tmp_path: Path):
     env_data = get_pat_env_data()
@@ -144,7 +148,7 @@ async def test_volumes_native_source_pat(tmp_path: Path):
         )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("DATABRICKS_HOST", "DATABRICKS_PAT", "DATABRICKS_CATALOG")
 def test_volumes_native_source_pat_invalid_catalog():
     env_data = get_pat_env_data()
@@ -162,7 +166,7 @@ def test_volumes_native_source_pat_invalid_catalog():
             _ = list(indexer.run())
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("DATABRICKS_HOST")
 def test_volumes_native_source_pat_invalid_pat():
     host = os.environ["DATABRICKS_HOST"]
@@ -231,7 +235,7 @@ def validate_upload(client: WorkspaceClient, catalog: str, volume: str, volume_p
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env(
     "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
 )

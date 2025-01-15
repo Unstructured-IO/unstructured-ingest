@@ -9,7 +9,7 @@ from neo4j import AsyncGraphDatabase, Driver, GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 from pytest_check import check
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, GRAPH_DB_TAG
 from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
@@ -51,7 +51,7 @@ def _neo4j_server():
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE)
+@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE, GRAPH_DB_TAG)
 async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     stager = Neo4jUploadStager()
     uploader = Neo4jUploader(
@@ -104,7 +104,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     await validate_uploaded_graph(modified_upload_file)
 
 
-@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE)
+@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE, GRAPH_DB_TAG)
 class TestPrecheck:
     @pytest.fixture
     def configured_uploader(self) -> Neo4jUploader:
