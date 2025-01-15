@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.v2.errors import UserError
+
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import (
     flatten_dict,
@@ -188,7 +190,7 @@ class PineconeUploader(Uploader):
             delete_kwargs["namespace"] = namespace
             try:
                 index.delete(**delete_kwargs)
-            except Exception as e:
+            except UserError as e:
                 logger.error(f"failed to delete batch of ids: {delete_kwargs} {e}")
 
         logger.debug(
