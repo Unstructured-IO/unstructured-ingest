@@ -11,7 +11,7 @@ from databricks.sql.client import Connection as DeltaTableConnection
 from databricks.sql.client import Cursor as DeltaTableCursor
 from pydantic import BaseModel, SecretStr
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path, SQL_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG, env_setup_path
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
