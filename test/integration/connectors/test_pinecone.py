@@ -107,11 +107,11 @@ def pinecone_index() -> Generator[str, None, None]:
 
 
 def validate_pinecone_index(
-    index_name: str, expected_num_of_vectors: int, retries=30, interval=1
+    index_name: str, expected_num_of_vectors: int, retries=30, interval=1, namespace: str = 'default'
 ) -> None:
     # Because there's a delay for the index to catch up to the recent writes, add in a retry
     pinecone = Pinecone(api_key=get_api_key())
-    index = pinecone.Index(name=index_name)
+    index = pinecone.Index(name=index_name, namespace=namespace)
     vector_count = -1
     for i in range(retries):
         index_stats = index.describe_index_stats()
@@ -271,14 +271,14 @@ async def test_pinecone_destination_namespace(
     expected_num_of_vectors = len(staged_content)
     logger.info("validating first upload")
     validate_pinecone_index(
-        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors, namespace=namespace_test_name
     )
 
     # Rerun uploader and make sure no duplicates exist
     uploader.run(path=new_upload_file, file_data=file_data)
     logger.info("validating second upload")
     validate_pinecone_index(
-        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors, namespace=namespace_test_name
     )
 
 
