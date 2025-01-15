@@ -11,7 +11,7 @@ from databricks.sql.client import Connection as DeltaTableConnection
 from databricks.sql.client import Cursor as DeltaTableCursor
 from pydantic import BaseModel, SecretStr
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
+from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path, SQL_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
@@ -100,7 +100,7 @@ def validate_destination(expected_num_elements: int, table_name: str, retries=30
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env("DATABRICKS_SERVER_HOSTNAME", "DATABRICKS_HTTP_PATH", "DATABRICKS_ACCESS_TOKEN")
 async def test_databricks_delta_tables_destination(
     upload_file: Path, temp_dir: Path, destination_table: str
