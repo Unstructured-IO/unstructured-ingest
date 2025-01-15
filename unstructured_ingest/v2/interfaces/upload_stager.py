@@ -32,16 +32,6 @@ class UploadStager(BaseProcess, ABC):
         else:
             raise ValueError(f"Unsupported output format: {output_path}")
 
-    def get_data(self, elements_filepath: Path) -> list[dict]:
-        if elements_filepath.suffix == ".json":
-            with elements_filepath.open() as f:
-                return json.load(f)
-        elif elements_filepath.suffix == ".ndjson":
-            with elements_filepath.open() as f:
-                return ndjson.load(f)
-        else:
-            raise ValueError(f"Unsupported input format: {elements_filepath}")
-
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return element_dict
 

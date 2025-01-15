@@ -1,15 +1,22 @@
-## 0.3.13-dev4
+## 0.3.14-dev0
+
+### Fixes
+
+* **Fix Neo4j Uploader string enum error**
+
+## 0.3.13
 
 ### Fixes
 
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
 * **Migrate Discord Sourced Connector to v2**
-* **Fix Neo4j Uploader string enum error**
+* **Add read data fallback** When reading data that could be json or ndjson, if extension is missing, fallback to trying to read it as json.
 
 ### Enhancements
 
 * **Async support for all IO-bounded embedders**
+* **Expand support to Python 3.13**
 
 ## 0.3.12
 

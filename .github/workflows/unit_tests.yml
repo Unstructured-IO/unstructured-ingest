@@ -17,7 +17,7 @@ jobs:
   lint:
     strategy:
       matrix:
-        python-version: [ "3.9","3.10","3.11" ]
+        python-version: [ "3.9","3.10","3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
     environment: ci
     strategy:
       matrix:
-        python-version: [ "3.9","3.10","3.11" ]
+        python-version: [ "3.9","3.10","3.11", "3.12", "3.13" ]
     runs-on: ubuntu-latest
     needs: [ lint ]
     steps:
@@ -86,7 +86,7 @@ jobs:
     environment: ci
     strategy:
       matrix:
-        python-version: [ "3.9","3.10","3.11" ]
+        python-version: [ "3.9","3.10","3.11", "3.12", "3.13" ]
     runs-on: ubuntu-latest
     needs: [ lint ]
     steps:
@@ -105,7 +105,27 @@ jobs:
   test_ingest_unit:
     strategy:
       matrix:
-        python-version: [ "3.9","3.10" ]
+        python-version: [ "3.9","3.10","3.11", "3.12", "3.13" ]
+    runs-on: ubuntu-latest
+    needs: [ lint ]
+    steps:
+      # actions/checkout MUST come before auth
+      - uses: 'actions/checkout@v4'
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test Ingest (unit)
+        run: |
+          make install-base
+          make install-test
+          make unit-test
+
+  test_ingest_unit_unstructured:
+    strategy:
+      matrix:
+        # TODO include 3.13 when unstructured supports it
+        python-version: [ "3.9","3.10","3.11", "3.12"]
     runs-on: ubuntu-latest
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
@@ -122,5 +142,5 @@ jobs:
           make install-base
           make install-test
           pip install unstructured
-          python -c "from unstructured.nlp.tokenize import download_nltk_packages; download_nltk_packages()"
-          make unit-test
+          python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
+          make unit-test-unstructured

@@ -15,7 +15,7 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     # Mock create_client to return our mock_client
     mocker.patch.object(VertexAIEmbeddingConfig, "get_client", return_value=mock_client)
     encoder = VertexAIEmbeddingEncoder(config=VertexAIEmbeddingConfig(api_key={"api_key": "value"}))
-    raw_elements = [{"text": f"This is sentence {i+1}"} for i in range(2)]
+    raw_elements = [{"text": f"This is sentence {i + 1}"} for i in range(2)]
 
     elements = encoder.embed_documents(
         elements=raw_elements,
