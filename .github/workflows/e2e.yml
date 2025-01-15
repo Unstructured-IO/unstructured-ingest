@@ -261,6 +261,7 @@ jobs:
       env:
         # Discord
         DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        DISCORD_CHANNELS: ${{ secrets.DISCORD_CHANNELS }}
         # Kafka
         KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
         KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
