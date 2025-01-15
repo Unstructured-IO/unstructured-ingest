@@ -221,7 +221,7 @@ class PineconeUploader(Uploader):
             try:
                 index.delete(**delete_kwargs)
             except UserError as e:
-                logger.error(f"failed to delete batch of ids: {delete_kwargs}")
+                logger.error(f"failed to delete batch of ids: {delete_kwargs} {e}")
 
         logger.info(
             f"deleted {deleted_ids} records with metadata "
