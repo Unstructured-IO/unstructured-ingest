@@ -1,3 +1,9 @@
+## 0.3.14-dev0
+
+### Fixes
+
+* **Fix Neo4j Uploader string enum error**
+
 ## 0.3.13
 
 ### Fixes
