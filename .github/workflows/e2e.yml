@@ -26,7 +26,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
           check-only: 'true'
 
-  api_based_integration_test:
+  check_untagged_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: run check
+        run: |
+          make check-untagged-tests
+
+  api_based_int_test:
     strategy:
       matrix:
         test: ["partitioners", "chunkers"]
@@ -48,7 +56,7 @@ jobs:
           make integration-test-${{ matrix.test }}
           make parse-skipped-tests
 
-  embedders_integration_test:
+  embedders_int_test:
     runs-on: ubuntu-latest
     steps:
       - uses: 'actions/checkout@v4'
@@ -74,9 +82,9 @@ jobs:
           make integration-test-embedders
           make parse-skipped-tests
 
-  source_connectors_integration_test:
+  blob_storage_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
+    needs: [ setup, check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -96,83 +104,180 @@ jobs:
         docker compose version
     - name: Run Integration Tests
       env:
+        # Databricks
         DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
         DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
         DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
         DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
-        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-        DISCORD_CHANNELS: ${{ secrets.DISCORD_CHANNELS }}
-        CONFLUENCE_USER_EMAIL: ${{secrets.CONFLUENCE_USER_EMAIL}}
-        CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
-        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
-        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
-        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
-        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
-        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
         DATABRICKS_PAT: ${{ secrets.DATABRICKS_PAT }}
-      run : |
-        source .venv/bin/activate
-        make install-test
-        make integration-test-connectors-src
-        make parse-skipped-tests
-
-  destination_connectors_integration_test:
-    runs-on: ubuntu-latest-m
-    needs: [ setup ]
-    steps:
-    - uses: 'actions/checkout@v4'
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
-    - name: Get full Python version
-      id: full-python-version
-      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: "3.10"
-    - name: Setup up docker
-      run: |
-        sudo make install-docker-compose
-        docker compose version
-    - name: Run Integration Tests
-      env:
-        DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
-        DATABRICKS_CATALOG: ${{secrets.DATABRICKS_CATALOG}}
-        DATABRICKS_CLIENT_ID: ${{secrets.DATABRICKS_CLIENT_ID}}
-        DATABRICKS_CLIENT_SECRET: ${{secrets.DATABRICKS_CLIENT_SECRET}}
-        S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
-        S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
-        GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
-        AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
+        # Onedrive
         MS_CLIENT_CRED: ${{ secrets.MS_CLIENT_CRED }}
         MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
         MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
         MS_USER_EMAIL: ${{ secrets.MS_USER_EMAIL }}
         MS_USER_PNAME: ${{ secrets.MS_USER_PNAME }}
-        PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
-        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
-        AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
-        AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
-        AZURE_REDIS_INGEST_TEST_PASSWORD: ${{ secrets.AZURE_REDIS_INGEST_TEST_PASSWORD }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
-        QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
-        QDRANT_SERVER_URL: ${{ secrets.QDRANT_SERVER_URL }}
-        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
-        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
-        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
+        # S3
+        S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
+        S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
       run : |
         source .venv/bin/activate
         make install-test
-        make integration-test-connectors-dest
+        make integration-test-connectors-blob-storage
         make parse-skipped-tests
 
-  test_src:
+  sql_connectors_int_test:
+    runs-on: ubuntu-latest-m
+    needs: [ setup, check_untagged_tests ]
+    steps:
+    - uses: 'actions/checkout@v4'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Setup virtual environment
+      uses: ./.github/actions/base-cache
+      with:
+        python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
+    - name: Run Integration Tests
+      env:
+        # Motherduck
+        # MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+        # Snowflake
+        # LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+        # Delta Tables
+        S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
+        S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+      run : |
+        source .venv/bin/activate
+        make install-test
+        make integration-test-connectors-sql
+        make parse-skipped-tests
+
+  nosql_connectors_int_test:
+    runs-on: ubuntu-latest-m
+    needs: [ setup, check_untagged_tests ]
+    steps:
+    - uses: 'actions/checkout@v4'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Setup virtual environment
+      uses: ./.github/actions/base-cache
+      with:
+        python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
+    - name: Run Integration Tests
+      env:
+        # MongoDB
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        MONGODB_DATABASE: ${{ secrets.MONGODB_DATABASE_NAME }}
+        # Redis
+        AZURE_REDIS_INGEST_TEST_PASSWORD: ${{ secrets.AZURE_REDIS_INGEST_TEST_PASSWORD }}
+        # Vectara
+        VECTARA_OAUTH_CLIENT_ID: ${{secrets.VECTARA_OAUTH_CLIENT_ID}}
+        VECTARA_OAUTH_SECRET: ${{secrets.VECTARA_OAUTH_SECRET}}
+        VECTARA_CUSTOMER_ID: ${{secrets.VECTARA_CUSTOMER_ID}}
+      run : |
+        source .venv/bin/activate
+        make install-test
+        make integration-test-connectors-nosql
+        make parse-skipped-tests
+
+  vector_db_connectors_int_test:
+    runs-on: ubuntu-latest-m
+    needs: [ setup, check_untagged_tests ]
+    steps:
+    - uses: 'actions/checkout@v4'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Setup virtual environment
+      uses: ./.github/actions/base-cache
+      with:
+        python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
+    - name: Run Integration Tests
+      env:
+        # AstraDB
+        ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+        ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
+        # Azure AI Search
+        AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+        # LanceDB
+        AZURE_DEST_CONNECTION_STR: ${{ secrets.AZURE_DEST_CONNECTION_STR }}
+        S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
+        S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+        GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
+        # Pinecone
+        PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+      run : |
+        source .venv/bin/activate
+        make install-test
+        make integration-test-connectors-vector-db
+        make parse-skipped-tests
+
+  uncategorized_connectors_int_test:
+    runs-on: ubuntu-latest-m
+    needs: [ setup, check_untagged_tests ]
+    steps:
+    - uses: 'actions/checkout@v4'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Get full Python version
+      id: full-python-version
+      run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+    - name: Setup virtual environment
+      uses: ./.github/actions/base-cache
+      with:
+        python-version: "3.10"
+    - name: Setup up docker
+      run: |
+        sudo make install-docker-compose
+        docker compose version
+    - name: Run Integration Tests
+      env:
+        # Discord
+        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        DISCORD_CHANNELS: ${{ secrets.DISCORD_CHANNELS }}
+        # Kafka
+        KAFKA_API_KEY: ${{ secrets.KAFKA_API_KEY }}
+        KAFKA_SECRET: ${{ secrets.KAFKA_SECRET }}
+        KAFKA_BOOTSTRAP_SERVER: ${{ secrets.KAFKA_BOOTSTRAP_SERVER }}
+        # Confluence
+        CONFLUENCE_USER_EMAIL: ${{secrets.CONFLUENCE_USER_EMAIL}}
+        CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
+        # Notion
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+      run : |
+        source .venv/bin/activate
+        make install-test
+        make integration-test-connectors-uncategorized
+        make parse-skipped-tests
+
+  src_e2e_test:
     strategy:
       matrix:
         python-version: ["3.9","3.10"]
@@ -243,8 +348,8 @@ jobs:
         pip freeze
         ./test_e2e/test-src.sh
 
-  test_src_api:
-    runs-on: ubuntu-latest-m
+  src_api_test:
+    runs-on: ubuntu-latest
     needs: [ setup ]
     steps:
     # actions/checkout MUST come before auth
@@ -266,9 +371,7 @@ jobs:
       run: |
         ./test_e2e/src/against-api.sh
 
-
-
-  test_dest:
+  dest_e2e_test:
     environment: ci
     strategy:
       matrix:

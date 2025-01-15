@@ -141,16 +141,35 @@ integration-test-chunkers:
 integration-test-embedders:
 	PYTHONPATH=. pytest -sv test/integration/embedders --json-report
 
-.PHONY: integration-test-connectors-src
-integration-test-connectors-src:
-	PYTHONPATH=. pytest --tags source -sv test/integration/connectors --cov-report=json --json-report
+.PHONY: integration-test-connectors-blob-storage
+integration-test-connectors-blob-storage:
+	PYTHONPATH=. pytest --tags blob_storage -sv test/integration/connectors --json-report
 
+.PHONY: integration-test-connectors-sql
+integration-test-connectors-sql:
+	PYTHONPATH=. pytest --tags sql -sv test/integration/connectors --json-report
 
-.PHONY: integration-test-connectors-dest
-integration-test-connectors-dest:
-	PYTHONPATH=. pytest --tags destination -sv test/integration/connectors --json-report
+.PHONY: integration-test-connectors-nosql
+integration-test-connectors-nosql:
+	PYTHONPATH=. pytest --tags nosql -sv test/integration/connectors --json-report
+
+.PHONY: integration-test-connectors-vector-db
+integration-test-connectors-vector-db:
+	PYTHONPATH=. pytest --tags vector_db -sv test/integration/connectors --json-report
+
+.PHONY: integration-test-connectors-graph-db
+integration-test-connectors-graph-db:
+	PYTHONPATH=. pytest --tags graph_db -sv test/integration/connectors --json-report
+
+.PHONY: integration-test-connectors-uncategorized
+integration-test-connectors-uncategorized:
+	PYTHONPATH=. pytest --tags uncategorized -sv test/integration/connectors --json-report
 
 .PHONY: parse-skipped-tests
 parse-skipped-tests:
 	PYTHONPATH=. python ./scripts/parse_pytest_report.py
+
+.PHONY: check-untagged-tests
+check-untagged-tests:
+	./scripts/check_untagged_tests.sh
 

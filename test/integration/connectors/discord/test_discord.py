@@ -6,7 +6,7 @@ from typing import Optional
 
 import pytest
 
-from test.integration.connectors.utils.constants import SOURCE_TAG
+from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
@@ -38,7 +38,7 @@ def get_env_data() -> EnvData:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("DISCORD_TOKEN", "DISCORD_CHANNELS")
 async def test_discord_source():
     env = get_env_data()
@@ -66,7 +66,7 @@ async def test_discord_source():
         )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("DISCORD_CHANNELS")
 def test_discord_source_precheck_fail_no_token():
     indexer_config = DiscordIndexerConfig(channels=get_env_data().channels)
@@ -77,7 +77,7 @@ def test_discord_source_precheck_fail_no_token():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("DISCORD_TOKEN")
 def test_discord_source_precheck_fail_no_channels():
     indexer_config = DiscordIndexerConfig(channels=[])
