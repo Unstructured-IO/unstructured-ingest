@@ -169,3 +169,7 @@ integration-test-connectors-uncategorized:
 parse-skipped-tests:
 	PYTHONPATH=. python ./scripts/parse_pytest_report.py
 
+.PHONY: check-untagged-tests
+check-untagged-tests:
+	./scripts/check_untagged_tests.sh
+

@@ -26,6 +26,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           check-only: 'true'
 
+  check_untagged_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: run check
+        run: |
+          make check-untagged-tests
+
   api_based_int_test:
     strategy:
       matrix:
@@ -76,7 +84,7 @@ jobs:
 
   blob_storage_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
+    needs: [ setup, check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -119,7 +127,7 @@ jobs:
 
   sql_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
+    needs: [ setup, check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -154,7 +162,7 @@ jobs:
 
   nosql_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
+    needs: [ setup, check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -191,7 +199,7 @@ jobs:
 
   vector_db_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
+    needs: [ setup, check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -231,7 +239,7 @@ jobs:
 
   uncategorized_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
+    needs: [ setup, check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -267,7 +275,6 @@ jobs:
         make install-test
         make integration-test-connectors-uncategorized
         make parse-skipped-tests
-
 
   src_e2e_test:
     strategy:
