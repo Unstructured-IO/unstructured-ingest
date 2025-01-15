@@ -163,8 +163,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
     expected_num_of_vectors = len(staged_content)
     logger.info("validating first upload")
     validate_pinecone_index(
-        index_name=pinecone_index, 
-        expected_num_of_vectors=expected_num_of_vectors
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
 
     # Rerun uploader and make sure no duplicates exist
@@ -230,27 +229,26 @@ async def test_pinecone_destination_large_index(
 @requires_env(API_KEY)
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
-async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: Path, temp_dir: Path):
+async def test_pinecone_destination_namespace(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
     """
-    tests namespace functionality of destination connector. 
+    tests namespace functionality of destination connector.
     """
 
-
-    # creates a file data structure. 
+    # creates a file data structure.
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,
         identifier="pinecone_mock_id",
     )
-    
+
     connection_config = PineconeConnectionConfig(
         index_name=pinecone_index,
         access_config=PineconeAccessConfig(api_key=get_api_key()),
     )
-    
-    
-    stager_config = PineconeUploadStagerConfig()
 
+    stager_config = PineconeUploadStagerConfig()
 
     stager = PineconeUploadStager(upload_stager_config=stager_config)
     new_upload_file = stager.run(
@@ -260,7 +258,7 @@ async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: 
         file_data=file_data,
     )
 
-    # here add namespace defintion 
+    # here add namespace defintion
     upload_config = PineconeUploaderConfig()
     namespace_test_name = "user-1"
     upload_config.namespace = namespace_test_name
@@ -287,27 +285,26 @@ async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: 
 @requires_env(API_KEY)
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
-async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: Path, temp_dir: Path):
+async def test_pinecone_destination_namespace(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
     """
-    tests namespace functionality of destination connector. 
+    tests namespace functionality of destination connector.
     """
 
-
-    # creates a file data structure. 
+    # creates a file data structure.
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,
         identifier="pinecone_mock_id",
     )
-    
+
     connection_config = PineconeConnectionConfig(
         index_name=pinecone_index,
         access_config=PineconeAccessConfig(api_key=get_api_key()),
     )
-    
-    
-    stager_config = PineconeUploadStagerConfig()
 
+    stager_config = PineconeUploadStagerConfig()
 
     stager = PineconeUploadStager(upload_stager_config=stager_config)
     new_upload_file = stager.run(
@@ -317,7 +314,7 @@ async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: 
         file_data=file_data,
     )
 
-    # here add namespace defintion 
+    # here add namespace defintion
     upload_config = PineconeUploaderConfig()
     namespace_test_name = "user-1"
     upload_config.namespace = namespace_test_name

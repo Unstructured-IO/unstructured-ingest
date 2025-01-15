@@ -186,10 +186,10 @@ class PineconeUploader(Uploader):
 
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
-            try: 
-                index.delete(**delete_kwargs) 
-            except: 
-                logger.error(f"failed to delete batch of ids: {delete_kwargs}")             
+            try:
+                index.delete(**delete_kwargs)
+            except:
+                logger.error(f"failed to delete batch of ids: {delete_kwargs}")
 
         logger.debug(
             f"deleted any content with metadata "
@@ -208,18 +208,18 @@ class PineconeUploader(Uploader):
         deleted_ids = 0
         if namespace := self.upload_config.namespace:
             list_kwargs["namespace"] = namespace
-            
+
         for ids in index.list(**list_kwargs):
             deleted_ids += len(ids)
             delete_kwargs = {"ids": ids}
-            
+
             if namespace := self.upload_config.namespace:
                 delete_kwargs["namespace"] = namespace
 
-            try: 
-                index.delete(**delete_kwargs) 
-            except: 
-                logger.error(f"failed to delete batch of ids: {delete_kwargs}")                
+            try:
+                index.delete(**delete_kwargs)
+            except:
+                logger.error(f"failed to delete batch of ids: {delete_kwargs}")
 
         logger.info(
             f"deleted {deleted_ids} records with metadata "
