@@ -43,6 +43,7 @@ class DatabrickDeltaTablesConnectionConfig(SQLConnectionConfig):
     access_config: Secret[DatabrickDeltaTablesAccessConfig]
     server_hostname: str = Field(description="server hostname connection config value")
     http_path: str = Field(description="http path connection config value")
+    user_agent: str = "unstructuredio_oss"
 
     @requires_dependencies(["databricks"], extras="databricks-delta-tables")
     def get_credentials_provider(self) -> "oauth_service_principal":
@@ -81,6 +82,7 @@ class DatabrickDeltaTablesConnectionConfig(SQLConnectionConfig):
         from databricks.sql import connect
 
         connect_kwargs = connect_kwargs or {}
+        connect_kwargs["_user_agent_entry"] = self.user_agent
         connect_kwargs["server_hostname"] = connect_kwargs.get(
             "server_hostname", self.server_hostname
         )

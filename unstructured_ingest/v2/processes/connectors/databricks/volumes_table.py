@@ -42,6 +42,34 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     upload_config: DatabricksVolumeDeltaTableUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def precheck(self) -> None:
+        with self.connection_config.get_cursor() as cursor:
+            cursor.execute("SHOW CATALOGS")
+            catalogs = [r[0] for r in cursor.fetchall()]
+            if self.upload_config.catalog not in catalogs:
+                raise ValueError(
+                    "Catalog {} not found in {}".format(
+                        self.upload_config.catalog, ", ".join(catalogs)
+                    )
+                )
+            cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
+            cursor.execute("SHOW DATABASES")
+            databases = [r[0] for r in cursor.fetchall()]
+            if self.upload_config.database not in databases:
+                raise ValueError(
+                    "Database {} not found in {}".format(
+                        self.upload_config.database, ", ".join(databases)
+                    )
+                )
+            cursor.execute("SHOW TABLES")
+            table_names = [r[1] for r in cursor.fetchall()]
+            if self.upload_config.table_name not in table_names:
+                raise ValueError(
+                    "Table {} not found in {}".format(
+                        self.upload_config.table_name, ", ".join(table_names)
+                    )
+                )
+
     def get_output_path(self, file_data: FileData, suffix: str = ".json") -> str:
         filename = Path(file_data.source_identifiers.filename)
         adjusted_filename = filename if filename.suffix == suffix else f"{filename}{suffix}"

@@ -25,12 +25,18 @@ if __name__ == "__main__":
     Pipeline.from_configs(
         context=ProcessorConfig(work_dir=str(work_dir.resolve())),
         indexer_config=LocalIndexerConfig(
-            input_path=str(docs_path.resolve()) + "/language-docs/UDHR_first_article_all.txt"
+            input_path=Path("/Users/romanisecke/Downloads/deloitte/2012.00938v1.pdf")
         ),
         downloader_config=LocalDownloaderConfig(download_dir=download_path),
         source_connection_config=LocalConnectionConfig(),
-        partitioner_config=PartitionerConfig(strategy="fast"),
-        chunker_config=ChunkerConfig(chunking_strategy="by_title"),
+        partitioner_config=PartitionerConfig(
+            strategy="hi_res", api_key="8ZXo8Fc1gsYQynxCfwUFaoXB5aTq0t", partition_by_api=True
+        ),
+        chunker_config=ChunkerConfig(
+            chunking_strategy="by_title",
+            chunk_api_key="8ZXo8Fc1gsYQynxCfwUFaoXB5aTq0t",
+            chunk_by_api=True,
+        ),
         embedder_config=EmbedderConfig(embedding_provider="huggingface"),
         uploader_config=LocalUploaderConfig(output_dir=str(output_path.resolve())),
     ).run()
