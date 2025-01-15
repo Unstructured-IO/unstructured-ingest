@@ -19,7 +19,6 @@ exclude= [
     ".python_packages",
     "build",
     "migrations",
-    ".ipynb"
 ]
 
 [tool.ruff.lint]
