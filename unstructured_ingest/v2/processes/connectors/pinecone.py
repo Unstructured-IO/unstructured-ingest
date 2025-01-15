@@ -63,6 +63,7 @@ class PineconeConnectionConfig(ConnectionConfig):
         pc = self.get_client()
 
         index = pc.Index(name=self.index_name, **index_kwargs)
+
         logger.debug(f"connected to index: {pc.describe_index(self.index_name)}")
         return index
 
@@ -182,14 +183,18 @@ class PineconeUploader(Uploader):
         delete_kwargs = {
             "filter": {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
         }
+
         if namespace := self.upload_config.namespace:
             delete_kwargs["namespace"] = namespace
+            try: 
+                index.delete(**delete_kwargs) 
+            except: 
+                logger.error(f"failed to delete batch of ids: {delete_kwargs}")             
 
-        resp = index.delete(**delete_kwargs)
         logger.debug(
             f"deleted any content with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
-            f"from pinecone index: {resp}"
+            f"from pinecone index: {delete_kwargs}"
         )
 
     def serverless_delete_by_record_id(self, file_data: FileData) -> None:
@@ -203,15 +208,19 @@ class PineconeUploader(Uploader):
         deleted_ids = 0
         if namespace := self.upload_config.namespace:
             list_kwargs["namespace"] = namespace
+            
         for ids in index.list(**list_kwargs):
             deleted_ids += len(ids)
             delete_kwargs = {"ids": ids}
+            
             if namespace := self.upload_config.namespace:
-                delete_resp = delete_kwargs["namespace"] = namespace
-                # delete_resp should be an empty dict if there were no errors
-                if delete_resp:
-                    logger.error(f"failed to delete batch of ids: {delete_resp}")
-            index.delete(**delete_kwargs)
+                delete_kwargs["namespace"] = namespace
+
+            try: 
+                index.delete(**delete_kwargs) 
+            except: 
+                logger.error(f"failed to delete batch of ids: {delete_kwargs}")                
+
         logger.info(
             f"deleted {deleted_ids} records with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
