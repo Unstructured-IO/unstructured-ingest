@@ -29,6 +29,7 @@ def test_weaviate_connection_config_happy_path():
     )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_weaviate_connection_config_anonymous():
     CloudWeaviateConnectionConfig(
         access_config=CloudWeaviateAccessConfig(api_key="my key", password="password"),

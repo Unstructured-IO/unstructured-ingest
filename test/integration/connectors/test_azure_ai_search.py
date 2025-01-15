@@ -237,6 +237,7 @@ async def test_azure_ai_search_destination(
         validate_count(search_client=search_client, expected_count=expected_count)
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_azure_ai_search_stager(
     request: TopRequest,

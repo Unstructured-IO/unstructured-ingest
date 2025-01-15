@@ -270,6 +270,7 @@ def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
     validate_pinecone_index(pinecone_index, 1, interval=5)
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_pinecone_stager(
     request: TopRequest,

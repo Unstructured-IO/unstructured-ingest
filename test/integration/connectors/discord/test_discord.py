@@ -77,7 +77,7 @@ def test_discord_source_precheck_fail_no_token():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("DISCORD_TOKEN")
 def test_discord_source_precheck_fail_no_channels():
     indexer_config = DiscordIndexerConfig(channels=[])

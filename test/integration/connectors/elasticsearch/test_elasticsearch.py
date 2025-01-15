@@ -221,7 +221,7 @@ def test_elasticsearch_source_precheck_fail_no_cluster():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_elasticsearch_source_precheck_fail_no_index(source_index: str):
     indexer_config = ElasticsearchIndexerConfig(index_name="index")
 
@@ -312,6 +312,7 @@ def test_elasticsearch_destination_precheck_fail_no_index(destination_index: str
         uploader.precheck()
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_elasticsearch_stager(
     request: TopRequest,

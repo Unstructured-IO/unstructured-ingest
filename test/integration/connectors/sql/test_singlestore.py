@@ -165,6 +165,7 @@ async def test_singlestore_destination(upload_file: Path, temp_dir: Path):
         )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_singlestore_stager(
     request: TopRequest,

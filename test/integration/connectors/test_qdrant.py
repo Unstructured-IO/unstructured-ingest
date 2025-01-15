@@ -197,6 +197,7 @@ async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
         await validate_upload(client=client, upload_file=upload_file)
 
 
+@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant", VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_qdrant_stager(
     request: TopRequest,

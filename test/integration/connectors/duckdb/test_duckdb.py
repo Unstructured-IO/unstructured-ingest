@@ -73,6 +73,7 @@ def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_d
     validate_duckdb_destination(db_path=provisioned_db_file, expected_num_elements=len(data))
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "duckdb", SQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_duckdb_stager(
     request: TopRequest,

@@ -216,6 +216,7 @@ async def test_astra_search_destination(
     )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_astra_stager(
     request: TopRequest,

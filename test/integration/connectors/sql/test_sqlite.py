@@ -151,6 +151,7 @@ async def test_sqlite_destination(
     validate_destination(db_path=destination_database_setup, expected_num_elements=len(staged_data))
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_sqlite_stager(
     request: TopRequest,

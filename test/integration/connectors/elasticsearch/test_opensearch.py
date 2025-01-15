@@ -307,6 +307,7 @@ def test_opensearch_destination_precheck_fail_no_index(destination_index: str):
         uploader.precheck()
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_opensearch_stager(
     request: TopRequest,
