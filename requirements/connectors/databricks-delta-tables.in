@@ -1,0 +1,3 @@
+-c ../common/constraints.txt
+
+databricks-sql-connector
