@@ -27,7 +27,7 @@ from unstructured_ingest.v2.processes.connectors.chroma import (
 @pytest.fixture
 def chroma_instance():
     with container_context(
-        image="chromadb/chroma:latest",
+        image="chromadb/chroma:0.6.2",
         ports={8000: 8000},
         name="chroma_int_test",
         healthcheck=HealthCheck(

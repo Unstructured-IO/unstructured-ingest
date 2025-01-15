@@ -1,8 +1,9 @@
-## 0.3.14-dev0
+## 0.3.14-dev1
 
 ### Fixes
 
 * **Fix Neo4j Uploader string enum error**
+* **Fix ChromaDB Destination failing integration tests** - issue lies within the newest ChromaDB release, fix freezes it's version to 0.6.2.
 
 ## 0.3.13
 
