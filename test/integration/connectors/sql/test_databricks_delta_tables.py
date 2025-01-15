@@ -100,6 +100,7 @@ def validate_destination(expected_num_elements: int, table_name: str, retries=30
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip("Resources take too long to spin up to run in CI")
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env("DATABRICKS_SERVER_HOSTNAME", "DATABRICKS_HTTP_PATH", "DATABRICKS_ACCESS_TOKEN")
 async def test_databricks_delta_tables_destination(
