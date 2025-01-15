@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from test.integration.connectors.utils.constants import (
+    BLOB_STORAGE_TAG,
     DESTINATION_TAG,
     SOURCE_TAG,
     env_setup_path,
@@ -47,7 +48,7 @@ def anon_connection_config() -> S3ConnectionConfig:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 async def test_s3_source(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/small-pdf-set/")
     with tempfile.TemporaryDirectory() as tempdir:
@@ -70,7 +71,7 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/special-characters/")
     with tempfile.TemporaryDirectory() as tempdir:
@@ -92,7 +93,7 @@ async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig
         )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-ingest-test-fixtures/destination/")
     indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
@@ -100,7 +101,7 @@ def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 def test_s3_source_no_bucket(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://fake-bucket")
     indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
@@ -109,7 +110,7 @@ def test_s3_source_no_bucket(anon_connection_config: S3ConnectionConfig):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "minio")
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "minio", BLOB_STORAGE_TAG)
 async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
     anon_connection_config.endpoint_url = "http://localhost:9000"
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/")
@@ -149,7 +150,7 @@ def get_aws_credentials() -> dict:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
 async def test_s3_destination(upload_file: Path):
     aws_credentials = get_aws_credentials()

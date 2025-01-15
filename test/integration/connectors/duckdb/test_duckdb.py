@@ -5,7 +5,7 @@ import duckdb
 import pytest
 from _pytest.fixtures import TopRequest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
@@ -46,7 +46,7 @@ def validate_duckdb_destination(db_path: Path, expected_num_elements: int):
             conn.close()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "duckdb")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "duckdb", SQL_TAG)
 def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_dir: Path):
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
@@ -73,6 +73,7 @@ def test_duckdb_destination(upload_file: Path, provisioned_db_file: Path, temp_d
     validate_duckdb_destination(db_path=provisioned_db_file, expected_num_elements=len(data))
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "duckdb", SQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_duckdb_stager(
     request: TopRequest,

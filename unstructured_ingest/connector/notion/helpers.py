@@ -471,7 +471,7 @@ def build_columned_list(client: Client, column_parent: Block) -> HtmlTag:
         ):
             columns_content.append(
                 Div(
-                    [Style(f"width:{100/num_columns}%; float: left")],
+                    [Style(f"width:{100 / num_columns}%; float: left")],
                     [content.block.get_html() for content in column_content_chunk],
                 ),
             )

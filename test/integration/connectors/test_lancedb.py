@@ -11,7 +11,7 @@ import pytest_asyncio
 from lancedb import AsyncConnection
 from upath import UPath
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
@@ -106,7 +106,7 @@ async def connection_with_uri(request, tmp_path: Path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("connection_with_uri", ["local", "s3", "gcs", "az"], indirect=True)
 async def test_lancedb_destination(
     upload_file: Path,
@@ -164,7 +164,7 @@ async def test_lancedb_destination(
 
 
 class TestPrecheck:
-    @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+    @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
     @pytest.mark.parametrize("connection_with_uri", ["local", "s3", "gcs", "az"], indirect=True)
     def test_succeeds(
         self,

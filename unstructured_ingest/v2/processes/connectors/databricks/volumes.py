@@ -187,6 +187,11 @@ class DatabricksVolumesUploader(Uploader, ABC):
     upload_config: DatabricksVolumesUploaderConfig
     connection_config: DatabricksVolumesConnectionConfig
 
+    def get_output_path(self, file_data: FileData) -> str:
+        return os.path.join(
+            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
+        )
+
     def precheck(self) -> None:
         try:
             assert self.connection_config.get_client().current_user.me().active
@@ -194,9 +199,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
             raise self.connection_config.wrap_error(e=e)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        output_path = os.path.join(
-            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
-        )
+        output_path = self.get_output_path(file_data=file_data)
         with open(path, "rb") as elements_file:
             try:
                 self.connection_config.get_client().files.upload(

@@ -5,7 +5,12 @@ import pytest
 from _pytest.fixtures import TopRequest
 from psycopg2 import connect
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+    SOURCE_TAG,
+    SQL_TAG,
+    env_setup_path,
+)
 from test.integration.connectors.utils.docker_compose import docker_compose_context
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
@@ -51,7 +56,7 @@ def source_database_setup() -> str:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, SQL_TAG)
 async def test_postgres_source(temp_dir: Path, source_database_setup: str):
     connect_params = {
         "host": "localhost",
@@ -115,7 +120,7 @@ def validate_destination(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 async def test_postgres_destination(upload_file: Path, temp_dir: Path):
     # the postgres destination connector doesn't leverage the file data but is required as an input,
     # mocking it with arbitrary values to meet the base requirements:
@@ -179,6 +184,7 @@ async def test_postgres_destination(upload_file: Path, temp_dir: Path):
         )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_postgres_stager(
     request: TopRequest,

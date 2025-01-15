@@ -5,9 +5,7 @@ import chromadb
 import pytest
 from _pytest.fixtures import TopRequest
 
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
+from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.docker import HealthCheck, container_context
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
@@ -27,7 +25,7 @@ from unstructured_ingest.v2.processes.connectors.chroma import (
 @pytest.fixture
 def chroma_instance():
     with container_context(
-        image="chromadb/chroma:latest",
+        image="chromadb/chroma:0.6.2",
         ports={8000: 8000},
         name="chroma_int_test",
         healthcheck=HealthCheck(
@@ -64,7 +62,7 @@ def validate_collection(collection_name: str, num_embeddings: int):
     )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_chroma_destination(
     upload_file: Path,
     chroma_instance,
@@ -104,7 +102,7 @@ def test_chroma_destination(
 
 
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "stager")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "stager", VECTOR_DB_TAG)
 def test_chroma_stager(
     request: TopRequest,
     upload_file_str: str,

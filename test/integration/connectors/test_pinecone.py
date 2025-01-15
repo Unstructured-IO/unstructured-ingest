@@ -12,9 +12,7 @@ from _pytest.fixtures import TopRequest
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.core.openapi.shared.exceptions import NotFoundException
 
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
+from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
@@ -133,7 +131,7 @@ def validate_pinecone_index(
 
 @requires_env(API_KEY)
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp_dir: Path):
 
     file_data = FileData(
@@ -179,7 +177,7 @@ async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp
 
 @requires_env(API_KEY)
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.skip(reason="TODO: get this to work")
 async def test_pinecone_destination_large_index(
     pinecone_index: str, upload_file: Path, temp_dir: Path
@@ -221,6 +219,63 @@ async def test_pinecone_destination_large_index(
     validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
     )
+    # Rerun uploader and make sure no duplicates exist
+    uploader.run(path=new_upload_file, file_data=file_data)
+    logger.info("validating second upload")
+    validate_pinecone_index(
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+    )
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: Path, temp_dir: Path):
+    """
+    tests namespace functionality of destination connector. 
+    """
+
+
+    # creates a file data structure. 
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+    )
+    
+    connection_config = PineconeConnectionConfig(
+        index_name=pinecone_index,
+        access_config=PineconeAccessConfig(api_key=get_api_key()),
+    )
+    
+    
+    stager_config = PineconeUploadStagerConfig()
+
+
+    stager = PineconeUploadStager(upload_stager_config=stager_config)
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+        file_data=file_data,
+    )
+
+    # here add namespace defintion 
+    upload_config = PineconeUploaderConfig()
+    namespace_test_name = "user-1"
+    upload_config.namespace = namespace_test_name
+    uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
+    uploader.precheck()
+
+    uploader.run(path=new_upload_file, file_data=file_data)
+    with new_upload_file.open() as f:
+        staged_content = json.load(f)
+    expected_num_of_vectors = len(staged_content)
+    logger.info("validating first upload")
+    validate_pinecone_index(
+        index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+    )
+
     # Rerun uploader and make sure no duplicates exist
     uploader.run(path=new_upload_file, file_data=file_data)
     logger.info("validating second upload")
@@ -287,7 +342,7 @@ async def test_pinecone_destination_namespace(pinecone_index: str, upload_file: 
 
 
 @requires_env(API_KEY)
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
     stager = PineconeUploadStager()
     uploader = PineconeUploader(
@@ -332,6 +387,7 @@ def test_large_metadata(pinecone_index: str, tmp_path: Path, upload_file: Path):
     validate_pinecone_index(pinecone_index, 1, interval=5)
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_pinecone_stager(
     request: TopRequest,

@@ -23,9 +23,7 @@ from azure.search.documents.indexes.models import (
     VectorSearchProfile,
 )
 
-from test.integration.connectors.utils.constants import (
-    DESTINATION_TAG,
-)
+from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
@@ -195,7 +193,7 @@ def validate_count(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @requires_env("AZURE_SEARCH_API_KEY")
 async def test_azure_ai_search_destination(
     upload_file: Path,
@@ -239,6 +237,7 @@ async def test_azure_ai_search_destination(
         validate_count(search_client=search_client, expected_count=expected_count)
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_azure_ai_search_stager(
     request: TopRequest,

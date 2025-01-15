@@ -5,6 +5,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
     add_source_entry,
 )
 
+from .databricks_delta_tables import CONNECTOR_TYPE as DATABRICKS_DELTA_TABLES_CONNECTOR_TYPE
+from .databricks_delta_tables import databricks_delta_tables_destination_entry
 from .postgres import CONNECTOR_TYPE as POSTGRES_CONNECTOR_TYPE
 from .postgres import postgres_destination_entry, postgres_source_entry
 from .singlestore import CONNECTOR_TYPE as SINGLESTORE_CONNECTOR_TYPE
@@ -24,4 +26,8 @@ add_destination_entry(destination_type=POSTGRES_CONNECTOR_TYPE, entry=postgres_d
 add_destination_entry(destination_type=SNOWFLAKE_CONNECTOR_TYPE, entry=snowflake_destination_entry)
 add_destination_entry(
     destination_type=SINGLESTORE_CONNECTOR_TYPE, entry=singlestore_destination_entry
+)
+add_destination_entry(
+    destination_type=DATABRICKS_DELTA_TABLES_CONNECTOR_TYPE,
+    entry=databricks_delta_tables_destination_entry,
 )

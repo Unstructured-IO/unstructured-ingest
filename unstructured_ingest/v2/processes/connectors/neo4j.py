@@ -105,7 +105,7 @@ class Neo4jUploadStager(UploadStager):
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
 
         with open(output_filepath, "w") as file:
-            json.dump(_GraphData.from_nx(nx_graph).model_dump(), file, indent=4)
+            file.write(_GraphData.from_nx(nx_graph).model_dump_json())
 
         return output_filepath
 
@@ -196,7 +196,7 @@ class _GraphData(BaseModel):
 
 
 class _Node(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict()
 
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
     labels: list[Label] = Field(default_factory=list)
@@ -207,20 +207,20 @@ class _Node(BaseModel):
 
 
 class _Edge(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict()
 
     source_id: str
     destination_id: str
     relationship: Relationship
 
 
-class Label(str, Enum):
+class Label(Enum):
     UNSTRUCTURED_ELEMENT = "UnstructuredElement"
     CHUNK = "Chunk"
     DOCUMENT = "Document"
 
 
-class Relationship(str, Enum):
+class Relationship(Enum):
     PART_OF_DOCUMENT = "PART_OF_DOCUMENT"
     PART_OF_CHUNK = "PART_OF_CHUNK"
     NEXT_CHUNK = "NEXT_CHUNK"
@@ -263,14 +263,14 @@ class Neo4jUploader(Uploader):
     async def _create_uniqueness_constraints(self, client: AsyncDriver) -> None:
         for label in Label:
             logger.info(
-                f"Adding id uniqueness constraint for nodes labeled '{label}'"
+                f"Adding id uniqueness constraint for nodes labeled '{label.value}'"
                 " if it does not already exist."
             )
-            constraint_name = f"{label.lower()}_id"
+            constraint_name = f"{label.value.lower()}_id"
             await client.execute_query(
                 f"""
                 CREATE CONSTRAINT {constraint_name} IF NOT EXISTS
-                FOR (n: {label}) REQUIRE n.id IS UNIQUE
+                FOR (n: {label.value}) REQUIRE n.id IS UNIQUE
                 """
             )
 
@@ -278,8 +278,8 @@ class Neo4jUploader(Uploader):
         logger.info(f"Deleting old data for the record '{file_data.identifier}' (if present).")
         _, summary, _ = await client.execute_query(
             f"""
-            MATCH (n: {Label.DOCUMENT} {{id: $identifier}})
-            MATCH (n)--(m: {Label.CHUNK}|{Label.UNSTRUCTURED_ELEMENT})
+            MATCH (n: {Label.DOCUMENT.value} {{id: $identifier}})
+            MATCH (n)--(m: {Label.CHUNK.value}|{Label.UNSTRUCTURED_ELEMENT.value})
             DETACH DELETE m""",
             identifier=file_data.identifier,
         )
@@ -349,7 +349,7 @@ class Neo4jUploader(Uploader):
 
     @staticmethod
     def _create_nodes_query(nodes: list[_Node], labels: tuple[Label, ...]) -> tuple[str, dict]:
-        labels_string = ", ".join(labels)
+        labels_string = ", ".join([label.value for label in labels])
         logger.info(f"Preparing MERGE query for {len(nodes)} nodes labeled '{labels_string}'.")
         query_string = f"""
             UNWIND $nodes AS node
@@ -366,7 +366,7 @@ class Neo4jUploader(Uploader):
             UNWIND $edges AS edge
             MATCH (u {{id: edge.source}})
             MATCH (v {{id: edge.destination}})
-            MERGE (u)-[:{relationship}]->(v)
+            MERGE (u)-[:{relationship.value}]->(v)
             """
         parameters = {
             "edges": [

@@ -4,6 +4,7 @@ from typing import Any
 
 import pandas as pd
 
+from unstructured_ingest.utils.data_prep import get_data
 from unstructured_ingest.v2.interfaces import FileData, UploadStager
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
@@ -79,7 +80,7 @@ class BaseDuckDBUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        elements_contents = self.get_data(elements_filepath=elements_filepath)
+        elements_contents = get_data(path=elements_filepath)
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
         output = [

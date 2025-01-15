@@ -1,14 +1,30 @@
-## 0.3.13-dev3
+## 0.3.15-dev1
+
+### Enhancements
+
+* **Add databricks delta table connector**
+
+
+## 0.3.14
+
+### Fixes
+
+* **Fix Neo4j Uploader string enum error**
+* **Fix ChromaDB Destination failing integration tests** - issue lies within the newest ChromaDB release, fix freezes it's version to 0.6.2.
+
+## 0.3.13
 
 ### Fixes
 
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
 * **Migrate Discord Sourced Connector to v2**
+* **Add read data fallback** When reading data that could be json or ndjson, if extension is missing, fallback to trying to read it as json.
 
 ### Enhancements
 
 * **Async support for all IO-bounded embedders**
+* **Expand support to Python 3.13**
 
 ## 0.3.12
 
