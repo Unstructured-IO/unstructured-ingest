@@ -1,14 +1,12 @@
-
-## 0.3.16
-
-* ** Fixed namespace issue with pinecone, and added new test **
-
-## 0.3.15-dev3
+## 0.3.15
 
 ### Enhancements
 
 * **Add databricks delta table connector**
 
+### Fixes
+
+* **Fixed namespace issue with pinecone, and added new test**
 
 ## 0.3.14
 
