@@ -3,6 +3,8 @@
 
 * ** Fixed namespace issue with pinecone, and added new test **
 
+## 0.3.15-dev3
+
 ### Enhancements
 
 * **Add databricks delta table connector**
