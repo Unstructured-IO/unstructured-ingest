@@ -107,11 +107,15 @@ def pinecone_index() -> Generator[str, None, None]:
 
 
 def validate_pinecone_index(
-    index_name: str, expected_num_of_vectors: int, retries=30, interval=1
+    index_name: str,
+    expected_num_of_vectors: int,
+    retries=30,
+    interval=1,
+    namespace: str = "default",
 ) -> None:
     # Because there's a delay for the index to catch up to the recent writes, add in a retry
     pinecone = Pinecone(api_key=get_api_key())
-    index = pinecone.Index(name=index_name)
+    index = pinecone.Index(name=index_name, namespace=namespace)
     vector_count = -1
     for i in range(retries):
         index_stats = index.describe_index_stats()
@@ -133,11 +137,13 @@ def validate_pinecone_index(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp_dir: Path):
+
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,
         identifier="pinecone_mock_id",
     )
+
     connection_config = PineconeConnectionConfig(
         index_name=pinecone_index,
         access_config=PineconeAccessConfig(api_key=get_api_key()),
@@ -221,6 +227,66 @@ async def test_pinecone_destination_large_index(
     logger.info("validating second upload")
     validate_pinecone_index(
         index_name=pinecone_index, expected_num_of_vectors=expected_num_of_vectors
+    )
+
+
+@requires_env(API_KEY)
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+async def test_pinecone_destination_namespace(
+    pinecone_index: str, upload_file: Path, temp_dir: Path
+):
+    """
+    tests namespace functionality of destination connector.
+    """
+
+    # creates a file data structure.
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="pinecone_mock_id",
+    )
+
+    connection_config = PineconeConnectionConfig(
+        index_name=pinecone_index,
+        access_config=PineconeAccessConfig(api_key=get_api_key()),
+    )
+
+    stager_config = PineconeUploadStagerConfig()
+
+    stager = PineconeUploadStager(upload_stager_config=stager_config)
+    new_upload_file = stager.run(
+        elements_filepath=upload_file,
+        output_dir=temp_dir,
+        output_filename=upload_file.name,
+        file_data=file_data,
+    )
+
+    # here add namespace defintion
+    upload_config = PineconeUploaderConfig()
+    namespace_test_name = "user-1"
+    upload_config.namespace = namespace_test_name
+    uploader = PineconeUploader(connection_config=connection_config, upload_config=upload_config)
+    uploader.precheck()
+
+    uploader.run(path=new_upload_file, file_data=file_data)
+    with new_upload_file.open() as f:
+        staged_content = json.load(f)
+    expected_num_of_vectors = len(staged_content)
+    logger.info("validating first upload")
+    validate_pinecone_index(
+        index_name=pinecone_index,
+        expected_num_of_vectors=expected_num_of_vectors,
+        namespace=namespace_test_name,
+    )
+
+    # Rerun uploader and make sure no duplicates exist
+    uploader.run(path=new_upload_file, file_data=file_data)
+    logger.info("validating second upload")
+    validate_pinecone_index(
+        index_name=pinecone_index,
+        expected_num_of_vectors=expected_num_of_vectors,
+        namespace=namespace_test_name,
     )
 
 
