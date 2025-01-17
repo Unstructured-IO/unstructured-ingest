@@ -170,7 +170,7 @@ class SnowflakeUploader(SQLUploader):
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df, columns=self.get_table_columns())
+        self._fit_to_schema(df=df)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
