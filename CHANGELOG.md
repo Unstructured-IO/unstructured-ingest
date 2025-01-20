@@ -2,7 +2,7 @@
 
 ### Fixes
 
-* **Fix SQL uploader stager** - When passed `output_filename` without a suffix it resulted in unsupported file format error. `.json` suffix will be added to output filename if it doesn't have one.
+* **Fix SQL uploader stager** - When passed `output_filename` without a suffix it resulted in unsupported file format error. Now, it will take a suffix of `elements_filepath` and append it to `output_filename`.
 * **Fix Snowflake uploader** - Unexpected `columns` argument was passed to `_fit_to_schema` method inside SnowflakeUploader `upload_dataframe` method.
 
 ## 0.3.15
