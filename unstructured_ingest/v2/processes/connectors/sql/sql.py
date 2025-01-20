@@ -310,6 +310,8 @@ class SQLUploadStager(UploadStager):
         )
         df = self.conform_dataframe(df=df)
 
+        output_filename_suffix = Path(elements_filepath).suffix
+        output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
         self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
