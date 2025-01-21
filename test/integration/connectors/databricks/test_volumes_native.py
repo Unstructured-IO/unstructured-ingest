@@ -10,12 +10,17 @@ import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.errors.platform import NotFound
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
+from test.integration.connectors.utils.constants import (
+    BLOB_STORAGE_TAG,
+    DESTINATION_TAG,
+    SOURCE_TAG,
+)
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.v2.errors import UserAuthError, UserError
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.databricks.volumes_native import (
     CONNECTOR_TYPE,
@@ -82,7 +87,7 @@ def get_pat_env_data() -> PATEnvData:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env(
     "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
 )
@@ -114,7 +119,7 @@ async def test_volumes_native_source(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("DATABRICKS_HOST", "DATABRICKS_PAT", "DATABRICKS_CATALOG")
 async def test_volumes_native_source_pat(tmp_path: Path):
     env_data = get_pat_env_data()
@@ -141,6 +146,48 @@ async def test_volumes_native_source_pat(tmp_path: Path):
                 expected_num_files=1,
             ),
         )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
+@requires_env("DATABRICKS_HOST", "DATABRICKS_PAT", "DATABRICKS_CATALOG")
+def test_volumes_native_source_pat_invalid_catalog():
+    env_data = get_pat_env_data()
+    with mock.patch.dict(os.environ, clear=True):
+        indexer_config = DatabricksNativeVolumesIndexerConfig(
+            recursive=True,
+            volume="test-platform",
+            volume_path="databricks-volumes-test-input",
+            catalog="fake_catalog",
+        )
+        indexer = DatabricksNativeVolumesIndexer(
+            connection_config=env_data.get_connection_config(), index_config=indexer_config
+        )
+        with pytest.raises(UserError):
+            _ = list(indexer.run())
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
+@requires_env("DATABRICKS_HOST")
+def test_volumes_native_source_pat_invalid_pat():
+    host = os.environ["DATABRICKS_HOST"]
+    with mock.patch.dict(os.environ, clear=True):
+        indexer_config = DatabricksNativeVolumesIndexerConfig(
+            recursive=True,
+            volume="test-platform",
+            volume_path="databricks-volumes-test-input",
+            catalog="fake_catalog",
+        )
+        connection_config = DatabricksNativeVolumesConnectionConfig(
+            host=host,
+            access_config=DatabricksNativeVolumesAccessConfig(
+                token="invalid-token",
+            ),
+        )
+        indexer = DatabricksNativeVolumesIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        with pytest.raises(UserAuthError):
+            _ = list(indexer.run())
 
 
 def _get_volume_path(catalog: str, volume: str, volume_path: str):
@@ -188,7 +235,7 @@ def validate_upload(client: WorkspaceClient, catalog: str, volume: str, volume_p
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env(
     "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
 )

@@ -9,7 +9,7 @@ from _pytest.fixtures import TopRequest
 from astrapy import Collection
 from astrapy import DataAPIClient as AstraDBClient
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
@@ -49,9 +49,9 @@ def connection_config() -> AstraDBConnectionConfig:
     )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, VECTOR_DB_TAG)
 @requires_env("ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_API_ENDPOINT")
-def test_precheck_succeeds(connection_config: AstraDBConnectionConfig):
+def test_precheck_succeeds_indexer(connection_config: AstraDBConnectionConfig):
     indexer = AstraDBIndexer(
         connection_config=connection_config,
         index_config=AstraDBIndexerConfig(collection_name=EXISTENT_COLLECTION_NAME),
@@ -64,19 +64,34 @@ def test_precheck_succeeds(connection_config: AstraDBConnectionConfig):
     uploader.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @requires_env("ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_API_ENDPOINT")
-def test_precheck_fails(connection_config: AstraDBConnectionConfig):
+def test_precheck_succeeds_uploader(connection_config: AstraDBConnectionConfig):
+    uploader = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(collection_name=EXISTENT_COLLECTION_NAME),
+    )
+    uploader.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, VECTOR_DB_TAG)
+@requires_env("ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_API_ENDPOINT")
+def test_precheck_fails_indexer(connection_config: AstraDBConnectionConfig):
     indexer = AstraDBIndexer(
         connection_config=connection_config,
         index_config=AstraDBIndexerConfig(collection_name=NONEXISTENT_COLLECTION_NAME),
     )
+    with pytest.raises(expected_exception=SourceConnectionError):
+        indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@requires_env("ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_API_ENDPOINT")
+def test_precheck_fails_uploader(connection_config: AstraDBConnectionConfig):
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(collection_name=NONEXISTENT_COLLECTION_NAME),
     )
-    with pytest.raises(expected_exception=SourceConnectionError):
-        indexer.precheck()
     with pytest.raises(expected_exception=DestinationConnectionError):
         uploader.precheck()
 
@@ -117,7 +132,7 @@ def collection(upload_file: Path) -> Collection:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, VECTOR_DB_TAG)
 @requires_env("ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN")
 async def test_astra_search_source(
     tmp_path: Path,
@@ -151,7 +166,7 @@ async def test_astra_search_source(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @requires_env("ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN")
 async def test_astra_search_destination(
     upload_file: Path,
@@ -201,6 +216,7 @@ async def test_astra_search_destination(
     )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_astra_stager(
     request: TopRequest,

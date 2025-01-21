@@ -9,7 +9,7 @@ from neo4j import AsyncGraphDatabase, Driver, GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 from pytest_check import check
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, GRAPH_DB_TAG
 from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
@@ -51,7 +51,7 @@ def _neo4j_server():
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE)
+@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE, GRAPH_DB_TAG)
 async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     stager = Neo4jUploadStager()
     uploader = Neo4jUploader(
@@ -104,7 +104,7 @@ async def test_neo4j_destination(upload_file: Path, tmp_path: Path):
     await validate_uploaded_graph(modified_upload_file)
 
 
-@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE)
+@pytest.mark.tags(DESTINATION_TAG, CONNECTOR_TYPE, GRAPH_DB_TAG)
 class TestPrecheck:
     @pytest.fixture
     def configured_uploader(self) -> Neo4jUploader:
@@ -199,13 +199,15 @@ async def validate_uploaded_graph(upload_file: Path):
     try:
         nodes_count = len((await driver.execute_query("MATCH (n) RETURN n"))[0])
         chunk_nodes_count = len(
-            (await driver.execute_query(f"MATCH (n: {Label.CHUNK}) RETURN n"))[0]
+            (await driver.execute_query(f"MATCH (n: {Label.CHUNK.value}) RETURN n"))[0]
         )
         document_nodes_count = len(
-            (await driver.execute_query(f"MATCH (n: {Label.DOCUMENT}) RETURN n"))[0]
+            (await driver.execute_query(f"MATCH (n: {Label.DOCUMENT.value}) RETURN n"))[0]
         )
         element_nodes_count = len(
-            (await driver.execute_query(f"MATCH (n: {Label.UNSTRUCTURED_ELEMENT}) RETURN n"))[0]
+            (await driver.execute_query(f"MATCH (n: {Label.UNSTRUCTURED_ELEMENT.value}) RETURN n"))[
+                0
+            ]
         )
         with check:
             assert nodes_count == expected_nodes_count
@@ -217,12 +219,18 @@ async def validate_uploaded_graph(upload_file: Path):
             assert element_nodes_count == expected_element_count
 
         records, _, _ = await driver.execute_query(
-            f"MATCH ()-[r:{Relationship.PART_OF_DOCUMENT}]->(:{Label.DOCUMENT}) RETURN r"
+            f"""
+            MATCH ()-[r:{Relationship.PART_OF_DOCUMENT.value}]->(:{Label.DOCUMENT.value})
+            RETURN r
+            """
         )
         part_of_document_count = len(records)
 
         records, _, _ = await driver.execute_query(
-            f"MATCH (:{Label.CHUNK})-[r:{Relationship.NEXT_CHUNK}]->(:{Label.CHUNK}) RETURN r"
+            f"""
+            MATCH (:{Label.CHUNK.value})-[r:{Relationship.NEXT_CHUNK.value}]->(:{Label.CHUNK.value})
+            RETURN r
+            """
         )
         next_chunk_count = len(records)
 

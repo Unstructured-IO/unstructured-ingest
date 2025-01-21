@@ -1,5 +1,8 @@
 import os
 
+import pytest
+
+from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     get_all_file_data,
@@ -8,6 +11,7 @@ from test.integration.connectors.utils.validation.source import (
 )
 from unstructured_ingest.v2.interfaces import Downloader, Indexer
 from unstructured_ingest.v2.processes.connectors.notion.connector import (
+    CONNECTOR_TYPE,
     NotionAccessConfig,
     NotionConnectionConfig,
     NotionDownloader,
@@ -17,6 +21,7 @@ from unstructured_ingest.v2.processes.connectors.notion.connector import (
 )
 
 
+@pytest.mark.tags(SOURCE_TAG, CONNECTOR_TYPE, UNCATEGORIZED_TAG)
 def test_notion_source_database(temp_dir):
     # Retrieve environment variables
     notion_api_key = os.environ["NOTION_API_KEY"]
@@ -55,6 +60,7 @@ def test_notion_source_database(temp_dir):
     )
 
 
+@pytest.mark.tags(SOURCE_TAG, CONNECTOR_TYPE, UNCATEGORIZED_TAG)
 def test_notion_source_page(temp_dir):
     # Retrieve environment variables
     notion_api_key = os.environ["NOTION_API_KEY"]
@@ -93,6 +99,7 @@ def test_notion_source_page(temp_dir):
     )
 
 
+@pytest.mark.tags(SOURCE_TAG, CONNECTOR_TYPE, UNCATEGORIZED_TAG)
 def source_connector_validation(
     indexer: Indexer,
     downloader: Downloader,

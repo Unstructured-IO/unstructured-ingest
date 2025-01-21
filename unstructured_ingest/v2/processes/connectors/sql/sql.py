@@ -14,7 +14,7 @@ from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import get_data_df, split_dataframe
+from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -129,8 +129,13 @@ class SQLIndexer(Indexer, ABC):
     connection_config: SQLConnectionConfig
     index_config: SQLIndexerConfig
 
-    def _get_doc_ids(self) -> list[str]:
+    @contextmanager
+    def get_cursor(self) -> Generator[Any, None, None]:
         with self.connection_config.get_cursor() as cursor:
+            yield cursor
+
+    def _get_doc_ids(self) -> list[str]:
+        with self.get_cursor() as cursor:
             cursor.execute(
                 f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
             )
@@ -140,7 +145,7 @@ class SQLIndexer(Indexer, ABC):
 
     def precheck(self) -> None:
         try:
-            with self.connection_config.get_cursor() as cursor:
+            with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -181,6 +186,11 @@ class SQLDownloaderConfig(DownloaderConfig):
 class SQLDownloader(Downloader, ABC):
     connection_config: SQLConnectionConfig
     download_config: SQLDownloaderConfig
+
+    @contextmanager
+    def get_cursor(self) -> Generator[Any, None, None]:
+        with self.connection_config.get_cursor() as cursor:
+            yield cursor
 
     @abstractmethod
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
@@ -290,7 +300,7 @@ class SQLUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        elements_contents = self.get_data(elements_filepath=elements_filepath)
+        elements_contents = get_data(path=elements_filepath)
 
         df = pd.DataFrame(
             data=[
@@ -300,6 +310,8 @@ class SQLUploadStager(UploadStager):
         )
         df = self.conform_dataframe(df=df)
 
+        output_filename_suffix = Path(elements_filepath).suffix
+        output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
         self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
@@ -323,11 +335,16 @@ class SQLUploader(Uploader):
 
     def precheck(self) -> None:
         try:
-            with self.connection_config.get_cursor() as cursor:
+            with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+    @contextmanager
+    def get_cursor(self) -> Generator[Any, None, None]:
+        with self.connection_config.get_cursor() as cursor:
+            yield cursor
 
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
@@ -346,7 +363,7 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
-    def _fit_to_schema(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    def _fit_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
         columns = set(df.columns)
         schema_fields = set(columns)
         columns_to_drop = columns - schema_fields
@@ -367,6 +384,7 @@ class SQLUploader(Uploader):
 
         for column in missing_columns:
             df[column] = pd.Series()
+        return df
 
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
         if self.can_delete():
@@ -378,7 +396,7 @@ class SQLUploader(Uploader):
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df, columns=self.get_table_columns())
+        self._fit_to_schema(df=df)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
@@ -393,7 +411,7 @@ class SQLUploader(Uploader):
             f" with batch size {self.upload_config.batch_size}"
         )
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
-            with self.connection_config.get_cursor() as cursor:
+            with self.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
                 # For debugging purposes:
                 # for val in values:
@@ -406,7 +424,7 @@ class SQLUploader(Uploader):
                 cursor.executemany(stmt, values)
 
     def get_table_columns(self) -> list[str]:
-        with self.connection_config.get_cursor() as cursor:
+        with self.get_cursor() as cursor:
             cursor.execute(f"SELECT * from {self.upload_config.table_name}")
             return [desc[0] for desc in cursor.description]
 
@@ -420,10 +438,11 @@ class SQLUploader(Uploader):
             f"from table {self.upload_config.table_name}"
         )
         stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"  # noqa: E501
-        with self.connection_config.get_cursor() as cursor:
+        with self.get_cursor() as cursor:
             cursor.execute(stmt, [file_data.identifier])
             rowcount = cursor.rowcount
-            logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
+            if rowcount > 0:
+                logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         df = pd.DataFrame(data)

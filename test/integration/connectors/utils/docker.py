@@ -44,7 +44,7 @@ def get_container(
     docker_client: docker.DockerClient,
     image: str,
     ports: dict,
-    name: Optional[str] = "connector_test",
+    name: Optional[str] = None,
     environment: Optional[dict] = None,
     volumes: Optional[dict] = None,
     healthcheck: Optional[HealthCheck] = None,
@@ -115,7 +115,7 @@ def container_context(
     healthcheck: Optional[HealthCheck] = None,
     healthcheck_retries: int = 30,
     docker_client: Optional[docker.DockerClient] = None,
-    name: Optional[str] = "connector_test",
+    name: Optional[str] = None,
 ):
     docker_client = docker_client or docker.from_env()
     print(f"pulling image {image}")

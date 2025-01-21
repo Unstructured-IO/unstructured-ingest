@@ -9,7 +9,11 @@ from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
 
 from test.integration.connectors.kafka.conftest import TOPIC, get_all_messages, wait_for_topic
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+    SOURCE_TAG,
+    UNCATEGORIZED_TAG,
+)
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
@@ -71,7 +75,7 @@ def kafka_seed_topic_cloud(request) -> int:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
 @pytest.mark.parametrize("kafka_seed_topic_cloud", [5], indirect=True)
 async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
@@ -120,7 +124,7 @@ async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, UNCATEGORIZED_TAG)
 @requires_env("KAFKA_API_KEY", "KAFKA_SECRET", "KAFKA_BOOTSTRAP_SERVER")
 @pytest.mark.parametrize(
     "kafka_seed_topic_cloud", [0], indirect=True

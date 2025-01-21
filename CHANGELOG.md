@@ -6,8 +6,39 @@
 
 ### Fixes
 
+* **Fix SQL uploader stager** - When passed `output_filename` without a suffix it resulted in unsupported file format error. Now, it will take a suffix of `elements_filepath` and append it to `output_filename`.
+* **Fix Snowflake uploader** - Unexpected `columns` argument was passed to `_fit_to_schema` method inside SnowflakeUploader `upload_dataframe` method.
+
+## 0.3.15
+
+### Enhancements
+
+* **Add databricks delta table connector**
+
+### Fixes
+
+* **Fixed namespace issue with pinecone, and added new test**
+
+## 0.3.14
+
+### Fixes
+
+* **Fix Neo4j Uploader string enum error**
+* **Fix ChromaDB Destination failing integration tests** - issue lies within the newest ChromaDB release, fix freezes it's version to 0.6.2.
+
+## 0.3.13
+
+### Fixes
+
 * **Fix Snowflake Uploader error**
 * **Fix SQL Uploader Stager timestamp error**
+* **Migrate Discord Sourced Connector to v2**
+* **Add read data fallback** When reading data that could be json or ndjson, if extension is missing, fallback to trying to read it as json.
+
+### Enhancements
+
+* **Async support for all IO-bounded embedders**
+* **Expand support to Python 3.13**
 
 ## 0.3.12
 
@@ -140,7 +171,7 @@
 ### Fixes
 
 * **Remove forward slash from Google Drive relative path field**
-* **Create LanceDB test databases in unique remote locations to avoid conflicts** 
+* **Create LanceDB test databases in unique remote locations to avoid conflicts**
 * **Add weaviate to destination registry**
 
 ## 0.3.1
@@ -171,8 +202,8 @@
 
 ### Fixes
 
-* **Fix Delta Table destination precheck** Validate AWS Region in precheck. 
-* **Add missing batch label to FileData where applicable** 
+* **Fix Delta Table destination precheck** Validate AWS Region in precheck.
+* **Add missing batch label to FileData where applicable**
 * **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
 * **Postgres Connector Query** causing syntax error when ID column contains strings
 
@@ -272,7 +303,7 @@
 
 * **Leverage `uv` for pip compile**
 
-* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata. 
+* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata.
 
 * **Drop langchain as dependency for embedders**
 
@@ -373,12 +404,12 @@
 
 * **Chroma dict settings should allow string inputs**
 * **Move opensearch non-secret fields out of access config**
-* **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided. 
+* **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided.
 * **Move opensearch non-secret fields out of access config
 
 ### Fixes
 
-**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.  
+**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.
 
 
 ## 0.0.8
@@ -392,12 +423,12 @@
 
 ### Enhancements
 
-* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.  
-* **OTEL support** If endpoint supplied, publish all traces to an otel collector. 
+* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.
+* **OTEL support** If endpoint supplied, publish all traces to an otel collector.
 
 ### Fixes
 
-* **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed. 
+* **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed.
 * **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
 
 ## 0.0.6
@@ -416,7 +447,7 @@
 
 ### Fixes
 
-* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models. 
+* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models.
 * **Local indexer recursive behavior** Local indexer was indexing directories as well as files. This was filtered out.
 
 ## 0.0.4
@@ -434,7 +465,7 @@
 ### Enhancements
 
 * **Improve documentation** Update the README's.
-* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones. 
+* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones.
 * **Add missing fsspec destination precheck** check connection in precheck for all fsspec-based destination connectors
 
 ## 0.0.2
@@ -442,7 +473,7 @@
 ### Enhancements
 
 * **Use uuid for s3 identifiers** Update unique id to use uuid derived from file path rather than the filepath itself.
-* **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality. 
+* **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality.
 * **Filter Step** Support dedicated step as part of the pipeline to filter documents.
 
 ## 0.0.1
@@ -455,7 +486,7 @@
 
 ### Fixes
 
-* **Remove old repo references** Any mention of the repo this project came from was removed. 
+* **Remove old repo references** Any mention of the repo this project came from was removed.
 
 ## 0.0.0
 
