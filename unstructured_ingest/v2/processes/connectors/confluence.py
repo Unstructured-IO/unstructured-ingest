@@ -7,7 +7,6 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.utils.html import convert_image_tags
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -195,6 +194,8 @@ class ConfluenceDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def run(self, file_data: FileData, **kwargs) -> DownloadResponse:
+        from unstructured_ingest.utils.html import convert_image_tags
+
         doc_id = file_data.identifier
         try:
             with self.connection_config.get_client() as client:
