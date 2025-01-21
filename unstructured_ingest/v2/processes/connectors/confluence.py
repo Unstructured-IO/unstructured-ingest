@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional
@@ -71,17 +72,19 @@ class ConfluenceConnectionConfig(ConnectionConfig):
             )
 
     @requires_dependencies(["atlassian"], extras="confluence")
+    @contextmanager
     def get_client(self) -> "Confluence":
         from atlassian import Confluence
 
         access_configs = self.access_config.get_secret_value()
-        return Confluence(
+        with Confluence(
             url=self.url,
             username=self.username,
             password=access_configs.password,
             token=access_configs.token,
             cloud=self.cloud,
-        )
+        ) as client:
+            yield client
 
 
 class ConfluenceIndexerConfig(IndexerConfig):
@@ -103,8 +106,8 @@ class ConfluenceIndexer(Indexer):
 
             # Attempt to retrieve a list of spaces with limit=1.
             # This should only succeed if all creds are valid
-            client = self.connection_config.get_client()
-            client.get_all_spaces(limit=1)
+            with self.connection_config.get_client() as client:
+                client.get_all_spaces(limit=1)
             logger.info("Connection to Confluence successful.")
             return True
         except Exception as e:
@@ -116,21 +119,21 @@ class ConfluenceIndexer(Indexer):
         if spaces:
             return spaces
         else:
-            client = self.connection_config.get_client()
-            all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
+            with self.connection_config.get_client() as client:
+                all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
             space_ids = [space["key"] for space in all_spaces["results"]]
             return space_ids
 
     def _get_docs_ids_within_one_space(self, space_id: str) -> List[dict]:
-        client = self.connection_config.get_client()
-        pages = client.get_all_pages_from_space(
-            space=space_id,
-            start=0,
-            limit=self.index_config.max_num_of_docs_from_each_space,
-            expand=None,
-            content_type="page",
-            status=None,
-        )
+        with self.connection_config.get_client() as client:
+            pages = client.get_all_pages_from_space(
+                space=space_id,
+                start=0,
+                limit=self.index_config.max_num_of_docs_from_each_space,
+                expand=None,
+                content_type="page",
+                status=None,
+            )
         doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
@@ -177,7 +180,11 @@ class ConfluenceIndexer(Indexer):
 
 
 class ConfluenceDownloaderConfig(DownloaderConfig):
-    pass
+    extract_images: bool = Field(
+        default=False,
+        description="if true, will download images and replace "
+        "the html content with base64 encoded images",
+    )
 
 
 @dataclass
@@ -187,13 +194,16 @@ class ConfluenceDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def run(self, file_data: FileData, **kwargs) -> DownloadResponse:
+        from unstructured_ingest.utils.html import convert_image_tags
+
         doc_id = file_data.identifier
         try:
-            client = self.connection_config.get_client()
-            page = client.get_page_by_id(
-                page_id=doc_id,
-                expand="history.lastUpdated,version,body.view",
-            )
+            with self.connection_config.get_client() as client:
+                page = client.get_page_by_id(
+                    page_id=doc_id,
+                    expand="history.lastUpdated,version,body.view",
+                )
+
         except Exception as e:
             logger.error(f"Failed to retrieve page with ID {doc_id}: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to retrieve page with ID {doc_id}: {e}")
@@ -202,6 +212,11 @@ class ConfluenceDownloader(Downloader):
             raise ValueError(f"Page with ID {doc_id} does not exist.")
 
         content = page["body"]["view"]["value"]
+        if self.download_config.extract_images:
+            with self.connection_config.get_client() as client:
+                content = convert_image_tags(
+                    url=file_data.metadata.url, original_html=content, session=client._session
+                )
 
         filepath = file_data.source_identifiers.relative_path
         download_path = Path(self.download_dir) / filepath
