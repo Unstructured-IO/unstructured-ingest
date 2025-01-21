@@ -107,12 +107,12 @@ class SftpIndexer(FsspecIndexer):
             file.identifier = new_identifier
             yield file
 
-    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
-        path = file_data["name"]
-        date_created = str(file_data.get("time").timestamp()) if "time" in file_data else None
-        date_modified = str(file_data.get("mtime").timestamp()) if "mtime" in file_data else None
+    def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
+        path = file_info["name"]
+        date_created = str(file_info.get("time").timestamp()) if "time" in file_info else None
+        date_modified = str(file_info.get("mtime").timestamp()) if "mtime" in file_info else None
 
-        file_size = file_data.get("size") if "size" in file_data else None
+        file_size = file_info.get("size") if "size" in file_info else None
 
         record_locator = {
             "protocol": self.index_config.protocol,
