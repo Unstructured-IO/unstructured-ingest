@@ -1,3 +1,9 @@
+## 0.4.1-dev0
+
+### Enhancements
+
+* **Support img base64 in html**
+
 ## 0.4.0
 
 ### Enhancements
