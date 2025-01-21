@@ -91,16 +91,33 @@ class SharepointConnectionConfig(ConnectionConfig):
     access_config: Secret[SharepointAccessConfig]
     permissions_config: Optional[SharepointPermissionsConfig] = None
 
-    @requires_dependencies(["office365"], extras="sharepoint")
+    @requires_dependencies(["msal"], extras="sharepoint")
     def get_client(self) -> "ClientContext":
-        from office365.runtime.auth.client_credential import ClientCredential
+        from msal import ConfidentialClientApplication
         from office365.sharepoint.client_context import ClientContext
 
         try:
-            credentials = ClientCredential(
-                self.client_id, self.access_config.get_secret_value().client_cred
+            # Acquire the token using MSAL, similar to get_permissions_token
+            app = ConfidentialClientApplication(
+                authority=f"{self.permissions_config.authority_url.get_secret_value()}/"
+                f"{self.permissions_config.permissions_tenant}",
+                client_id=self.client_id,
+                client_credential=self.permissions_config.permissions_client_cred.get_secret_value(),  # noqa: E501
             )
-            site_client = ClientContext(self.site).with_credentials(credentials)
+            token_result = app.acquire_token_for_client(
+                scopes=[
+                    f"https://{self.permissions_config.permissions_tenant}.sharepoint.com/.default"
+                ]
+            )
+            if "access_token" not in token_result:
+                raise SourceConnectionNetworkError(
+                    f"Failed to obtain token for SharePoint: \
+                    {token_result.get('error_description', '')}"
+                )
+            access_token = token_result["access_token"]
+
+            # Then set up the SharePoint client context with that token
+            site_client = ClientContext(self.site).with_access_token(access_token)
         except Exception as e:
             logger.error(f"Couldn't set Sharepoint client: {e}")
             raise e

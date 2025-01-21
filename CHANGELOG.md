@@ -1,3 +1,9 @@
+## 0.3.16-dev1
+
+### Enchancements
+
+* **Sharepoint coonner no longer uses depracted authorisation method. Uses EntraID instead via msal.**
+
 ## 0.3.16-dev0
 
 ### Fixes
