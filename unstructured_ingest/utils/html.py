@@ -27,6 +27,9 @@ def convert_image_tags(url: str, original_html: str, session: Optional[Session] 
             response = session.get(source_url)
             response.raise_for_status()
             image_content = response.content
+            logger.debug(
+                "img tag having src updated from {} to base64 content".format(image["src"])
+            )
             image["src"] = f"data:image/png;base64,{base64.b64encode(image_content).decode()}"
         except Exception:
             logger.warning(f"failed to download image content from: {source_url}", exc_info=True)
