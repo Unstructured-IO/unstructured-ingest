@@ -6,7 +6,12 @@ import pytest
 import snowflake.connector as sf
 from _pytest.fixtures import TopRequest
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, env_setup_path
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+    SOURCE_TAG,
+    SQL_TAG,
+    env_setup_path,
+)
 from test.integration.connectors.utils.docker import container_context
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
@@ -109,7 +114,7 @@ def destination_database_setup() -> dict:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, SQL_TAG)
 @requires_env("LOCALSTACK_AUTH_TOKEN")
 async def test_snowflake_source(temp_dir: Path, source_database_setup: dict):
     connection_config = SnowflakeConnectionConfig(
@@ -163,7 +168,7 @@ def validate_destination(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, "sql")
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @requires_env("LOCALSTACK_AUTH_TOKEN")
 async def test_snowflake_destination(
     upload_file: Path, temp_dir: Path, destination_database_setup: dict
@@ -222,6 +227,7 @@ async def test_snowflake_destination(
     )
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, SQL_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_snowflake_stager(
     request: TopRequest,

@@ -9,7 +9,7 @@ import pytest
 from _pytest.fixtures import TopRequest
 from qdrant_client import AsyncQdrantClient
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.docker import container_context
 from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
@@ -75,7 +75,7 @@ async def validate_upload(client: AsyncQdrantClient, upload_file: Path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(LOCAL_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant")
+@pytest.mark.tags(LOCAL_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant", VECTOR_DB_TAG)
 async def test_qdrant_destination_local(upload_file: Path, tmp_path: Path):
     connection_kwargs = {"path": str(tmp_path / "qdrant")}
     async with qdrant_client(connection_kwargs) as client:
@@ -117,7 +117,7 @@ def docker_context():
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant")
+@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant", VECTOR_DB_TAG)
 async def test_qdrant_destination_server(upload_file: Path, tmp_path: Path, docker_context):
     connection_kwargs = {"location": "http://localhost:6333"}
     async with qdrant_client(connection_kwargs) as client:
@@ -153,7 +153,7 @@ async def test_qdrant_destination_server(upload_file: Path, tmp_path: Path, dock
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant")
+@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant", VECTOR_DB_TAG)
 @requires_env("QDRANT_API_KEY", "QDRANT_SERVER_URL")
 async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
     server_url = os.environ["QDRANT_SERVER_URL"]
@@ -197,6 +197,7 @@ async def test_qdrant_destination_cloud(upload_file: Path, tmp_path: Path):
         await validate_upload(client=client, upload_file=upload_file)
 
 
+@pytest.mark.tags(SERVER_CONNECTOR_TYPE, DESTINATION_TAG, "qdrant", VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_qdrant_stager(
     request: TopRequest,

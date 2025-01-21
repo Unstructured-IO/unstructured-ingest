@@ -2,9 +2,7 @@ import os
 
 import pytest
 
-from test.integration.connectors.utils.constants import (
-    SOURCE_TAG,
-)
+from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
@@ -22,7 +20,7 @@ from unstructured_ingest.v2.processes.connectors.confluence import (
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
 async def test_confluence_source(temp_dir):
     # Retrieve environment variables
@@ -69,7 +67,7 @@ async def test_confluence_source(temp_dir):
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
 async def test_confluence_source_large(temp_dir):
     # Retrieve environment variables

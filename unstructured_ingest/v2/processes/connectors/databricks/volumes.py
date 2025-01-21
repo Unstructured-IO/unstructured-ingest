@@ -7,12 +7,13 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field
 
-from unstructured_ingest.error import (
-    DestinationConnectionError,
-    SourceConnectionError,
-    SourceConnectionNetworkError,
-)
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import (
+    ProviderError,
+    RateLimitError,
+    UserAuthError,
+    UserError,
+)
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -65,6 +66,29 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
         "Databricks accounts endpoint.",
     )
 
+    def wrap_error(self, e: Exception) -> Exception:
+        from databricks.sdk.errors.base import DatabricksError
+        from databricks.sdk.errors.platform import STATUS_CODE_MAPPING
+
+        if isinstance(e, ValueError):
+            error_message = e.args[0]
+            message_split = error_message.split(":")
+            if message_split[0].endswith("auth"):
+                return UserAuthError(e)
+        if isinstance(e, DatabricksError):
+            reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
+            if status_code := reverse_mapping.get(type(e)):
+                if status_code in [401, 403]:
+                    return UserAuthError(e)
+                if status_code == 429:
+                    return RateLimitError(e)
+                if 400 <= status_code < 500:
+                    return UserError(e)
+                if 500 <= status_code < 600:
+                    return ProviderError(e)
+        logger.error(f"unhandled exception from databricks: {e}", exc_info=True)
+        return e
+
     @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
     def get_client(self) -> "WorkspaceClient":
         from databricks.sdk import WorkspaceClient
@@ -88,32 +112,37 @@ class DatabricksVolumesIndexer(Indexer, ABC):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            raise self.connection_config.wrap_error(e=e) from e
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        for file_info in self.connection_config.get_client().dbfs.list(
-            path=self.index_config.path, recursive=self.index_config.recursive
-        ):
-            if file_info.is_dir:
-                continue
-            rel_path = file_info.path.replace(self.index_config.path, "")
-            if rel_path.startswith("/"):
-                rel_path = rel_path[1:]
-            filename = Path(file_info.path).name
-            yield FileData(
-                identifier=str(uuid5(NAMESPACE_DNS, file_info.path)),
-                connector_type=self.connector_type,
-                source_identifiers=SourceIdentifiers(
-                    filename=filename,
-                    rel_path=rel_path,
-                    fullpath=file_info.path,
-                ),
-                additional_metadata={"catalog": self.index_config.catalog, "path": file_info.path},
-                metadata=FileDataSourceMetadata(
-                    url=file_info.path, date_modified=str(file_info.modification_time)
-                ),
-            )
+        try:
+            for file_info in self.connection_config.get_client().dbfs.list(
+                path=self.index_config.path, recursive=self.index_config.recursive
+            ):
+                if file_info.is_dir:
+                    continue
+                rel_path = file_info.path.replace(self.index_config.path, "")
+                if rel_path.startswith("/"):
+                    rel_path = rel_path[1:]
+                filename = Path(file_info.path).name
+                yield FileData(
+                    identifier=str(uuid5(NAMESPACE_DNS, file_info.path)),
+                    connector_type=self.connector_type,
+                    source_identifiers=SourceIdentifiers(
+                        filename=filename,
+                        rel_path=rel_path,
+                        fullpath=file_info.path,
+                    ),
+                    additional_metadata={
+                        "catalog": self.index_config.catalog,
+                        "path": file_info.path,
+                    },
+                    metadata=FileDataSourceMetadata(
+                        url=file_info.path, date_modified=str(file_info.modification_time)
+                    ),
+                )
+        except Exception as e:
+            raise self.connection_config.wrap_error(e=e)
 
 
 class DatabricksVolumesDownloaderConfig(DownloaderConfig):
@@ -129,8 +158,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            raise self.connection_config.wrap_error(e=e)
 
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)
@@ -143,12 +171,10 @@ class DatabricksVolumesDownloader(Downloader, ABC):
         try:
             with self.connection_config.get_client().dbfs.download(path=volumes_path) as c:
                 read_content = c._read_handle.read()
-            with open(download_path, "wb") as f:
-                f.write(read_content)
         except Exception as e:
-            logger.error(f"failed to download file {file_data.identifier}: {e}", exc_info=True)
-            raise SourceConnectionNetworkError(f"failed to download file {file_data.identifier}")
-
+            raise self.connection_config.wrap_error(e=e)
+        with open(download_path, "wb") as f:
+            f.write(read_content)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
@@ -161,20 +187,25 @@ class DatabricksVolumesUploader(Uploader, ABC):
     upload_config: DatabricksVolumesUploaderConfig
     connection_config: DatabricksVolumesConnectionConfig
 
+    def get_output_path(self, file_data: FileData) -> str:
+        return os.path.join(
+            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
+        )
+
     def precheck(self) -> None:
         try:
             assert self.connection_config.get_client().current_user.me().active
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            raise self.connection_config.wrap_error(e=e)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        output_path = os.path.join(
-            self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
-        )
+        output_path = self.get_output_path(file_data=file_data)
         with open(path, "rb") as elements_file:
-            self.connection_config.get_client().files.upload(
-                file_path=output_path,
-                contents=elements_file,
-                overwrite=True,
-            )
+            try:
+                self.connection_config.get_client().files.upload(
+                    file_path=output_path,
+                    contents=elements_file,
+                    overwrite=True,
+                )
+            except Exception as e:
+                raise self.connection_config.wrap_error(e=e)

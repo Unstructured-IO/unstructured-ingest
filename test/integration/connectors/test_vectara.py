@@ -8,7 +8,7 @@ from uuid import uuid4
 import pytest
 import requests
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
@@ -211,7 +211,7 @@ def corpora_util() -> Generator[str, None, None]:
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(VECTARA_CONNECTOR_TYPE, DESTINATION_TAG, "vectara")
+@pytest.mark.tags(VECTARA_CONNECTOR_TYPE, DESTINATION_TAG, "vectara", NOSQL_TAG)
 @requires_env("VECTARA_OAUTH_CLIENT_ID", "VECTARA_OAUTH_SECRET", "VECTARA_CUSTOMER_ID")
 async def test_vectara_destination(
     upload_file: Path, tmp_path: Path, corpora_util: str, retries=30, interval=10

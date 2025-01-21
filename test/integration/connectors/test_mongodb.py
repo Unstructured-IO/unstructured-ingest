@@ -13,7 +13,7 @@ from pymongo.database import Database
 from pymongo.mongo_client import MongoClient
 from pymongo.operations import SearchIndexModel
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG, SOURCE_TAG
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
@@ -180,7 +180,7 @@ def validate_collection_vector(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 async def test_mongodb_source(temp_dir: Path):
     env_data = get_env_data()
@@ -205,7 +205,7 @@ async def test_mongodb_source(temp_dir: Path):
     )
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_mongodb_indexer_precheck_fail_no_host():
     indexer_config = MongoDBIndexerConfig(
         database="non-existent-database", collection="non-existent-database"
@@ -218,7 +218,7 @@ def test_mongodb_indexer_precheck_fail_no_host():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 def test_mongodb_indexer_precheck_fail_no_database():
     env_data = get_env_data()
@@ -233,7 +233,7 @@ def test_mongodb_indexer_precheck_fail_no_database():
         indexer.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 def test_mongodb_indexer_precheck_fail_no_collection():
     env_data = get_env_data()
@@ -249,7 +249,7 @@ def test_mongodb_indexer_precheck_fail_no_collection():
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 async def test_mongodb_destination(
     upload_file: Path,
@@ -289,7 +289,7 @@ async def test_mongodb_destination(
     validate_collection_count(collection=destination_collection, expected_records=expected_records)
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 def test_mongodb_uploader_precheck_fail_no_host():
     upload_config = MongoDBUploaderConfig(
         database="database",
@@ -303,7 +303,7 @@ def test_mongodb_uploader_precheck_fail_no_host():
         uploader.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 def test_mongodb_uploader_precheck_fail_no_database():
     env_data = get_env_data()
@@ -319,7 +319,7 @@ def test_mongodb_uploader_precheck_fail_no_database():
         uploader.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 @requires_env("MONGODB_URI", "MONGODB_DATABASE")
 def test_mongodb_uploader_precheck_fail_no_collection():
     env_data = get_env_data()

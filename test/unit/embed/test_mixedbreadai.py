@@ -23,6 +23,7 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
 
     # Mock get_client to return our mock_client
     mocker.patch.object(MixedbreadAIEmbeddingConfig, "get_client", return_value=mock_client)
+    mocker.patch.object(MixedbreadAIEmbeddingEncoder, "get_request_options", return_value={})
 
     encoder = MixedbreadAIEmbeddingEncoder(
         config=MixedbreadAIEmbeddingConfig(
@@ -30,7 +31,7 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
         )
     )
 
-    raw_elements = [{"text": f"This is sentence {i+1}"} for i in range(2)]
+    raw_elements = [{"text": f"This is sentence {i + 1}"} for i in range(2)]
     elements = encoder.embed_documents(
         elements=raw_elements,
     )

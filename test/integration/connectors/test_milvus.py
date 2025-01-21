@@ -13,7 +13,11 @@ from pymilvus import (
 )
 from pymilvus.milvus_client import IndexParams
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG, env_setup_path
+from test.integration.connectors.utils.constants import (
+    DESTINATION_TAG,
+    VECTOR_DB_TAG,
+    env_setup_path,
+)
 from test.integration.connectors.utils.docker import healthcheck_wait
 from test.integration.connectors.utils.docker_compose import docker_compose_context
 from test.integration.connectors.utils.validation.destination import (
@@ -112,7 +116,7 @@ def validate_count(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 async def test_milvus_destination(
     upload_file: Path,
     collection: str,
@@ -150,7 +154,7 @@ async def test_milvus_destination(
         validate_count(client=client, expected_count=expected_count)
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_precheck_succeeds(collection: str):
     uploader = MilvusUploader(
         connection_config=MilvusConnectionConfig(uri=DB_URI),
@@ -159,7 +163,7 @@ def test_precheck_succeeds(collection: str):
     uploader.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_precheck_fails_on_nonexistent_collection(collection: str):
     uploader = MilvusUploader(
         connection_config=MilvusConnectionConfig(uri=DB_URI),
@@ -174,7 +178,7 @@ def test_precheck_fails_on_nonexistent_collection(collection: str):
         uploader.precheck()
 
 
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_precheck_fails_on_nonexisting_db(collection: str):
     uploader = MilvusUploader(
         connection_config=MilvusConnectionConfig(uri=DB_URI),
@@ -187,6 +191,7 @@ def test_precheck_fails_on_nonexisting_db(collection: str):
         uploader.precheck()
 
 
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_milvus_stager(
     request: TopRequest,

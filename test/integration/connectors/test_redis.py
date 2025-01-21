@@ -9,7 +9,7 @@ import pytest
 from redis import exceptions as redis_exceptions
 from redis.asyncio import Redis, from_url
 
-from test.integration.connectors.utils.constants import DESTINATION_TAG
+from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.redisdb import (
@@ -96,7 +96,7 @@ async def redis_destination_test(
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG)
+@pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 @requires_env("AZURE_REDIS_INGEST_TEST_PASSWORD")
 async def test_redis_destination_azure_with_password(upload_file: Path, tmp_path: Path):
     connection_kwargs = {
@@ -110,7 +110,7 @@ async def test_redis_destination_azure_with_password(upload_file: Path, tmp_path
 
 
 @pytest.mark.asyncio
-@pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG, "redis")
+@pytest.mark.tags(REDIS_CONNECTOR_TYPE, DESTINATION_TAG, "redis", NOSQL_TAG)
 @requires_env("AZURE_REDIS_INGEST_TEST_PASSWORD")
 async def test_redis_destination_azure_with_uri(upload_file: Path, tmp_path: Path):
     connection_kwargs = {}

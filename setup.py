@@ -127,6 +127,9 @@ connectors_reqs = {
     "wikipedia": load_requirements("requirements/connectors/wikipedia.in"),
     "weaviate": load_requirements("requirements/connectors/weaviate.in"),
     "databricks-volumes": load_requirements("requirements/connectors/databricks-volumes.in"),
+    "databricks-delta-tables": load_requirements(
+        "requirements/connectors/databricks-delta-tables.in"
+    ),
     "singlestore": load_requirements("requirements/connectors/singlestore.in"),
     "vectara": load_requirements("requirements/connectors/vectara.in"),
 }
@@ -173,7 +176,7 @@ setup(
     long_description_content_type="text/markdown",
     keywords="NLP PDF HTML CV XML parsing preprocessing",
     url="https://github.com/Unstructured-IO/unstructured-ingest",
-    python_requires=">=3.9.0,<3.13",
+    python_requires=">=3.9.0,<3.14",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

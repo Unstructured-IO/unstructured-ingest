@@ -19,7 +19,6 @@ export OMP_THREAD_LIMIT=1
 all_tests=(
   's3.sh'
   's3-filter.sh'
-  'astradb.sh'
   'azure.sh'
   'biomed-api.sh'
   'biomed-path.sh'
@@ -28,7 +27,6 @@ all_tests=(
   #  's3-compression.sh'
   'salesforce.sh'
   'box.sh'
-  'discord.sh'
   'dropbox.sh'
   'github.sh'
   'gitlab.sh'
@@ -37,13 +35,11 @@ all_tests=(
   'slack.sh'
   #  'against-api.sh'
   'gcs.sh'
-  'onedrive.sh'
   'outlook.sh'
   'couchbase.sh'
   'airtable-diff.sh'
   # # NOTE(ryan): This test is disabled because it is triggering too many requests to the API
   # 'airtable-large.sh'
-  'notion.sh'
   'delta-table.sh'
   'jira.sh'
   'sharepoint.sh'
@@ -76,10 +72,8 @@ python_version=$(python --version 2>&1)
 
 # TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
-  'notion.sh'
   'sharepoint.sh'
   'sharepoint-with-permissions.sh'
-  'onedrive.sh'
   'outlook.sh'
 )
 

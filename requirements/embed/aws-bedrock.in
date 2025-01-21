@@ -1,3 +1,4 @@
 -c ../common/constraints.txt
 
 boto3
+aioboto3
