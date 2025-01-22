@@ -51,7 +51,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @contextmanager
-    @requires_dependencies(["vastdb"], extras="vastdb")
+    @requires_dependencies(["vastdb","ibis"], extras="vastdb")
     def get_connection(self) -> Generator["VastdbConnect", None, None]:
         from vastdb import connect
 
@@ -99,9 +99,9 @@ class VastdbDownloader(SQLDownloader):
     download_config: VastdbDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["psycopg2"], extras="postgres")
+    @requires_dependencies(["vastdb","ibis"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
-        from psycopg2 import sql
+        from ibis.expr import sql
 
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
