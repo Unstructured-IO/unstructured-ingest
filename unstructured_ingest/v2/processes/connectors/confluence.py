@@ -189,6 +189,10 @@ class ConfluenceDownloaderConfig(DownloaderConfig):
     extract_files: bool = Field(
         default=False, description="if true, will download any embedded files"
     )
+    force_download: bool = Field(
+        default=False,
+        description="if true, will redownload extracted files even if they already exist locally",
+    )
 
 
 @dataclass
@@ -212,6 +216,7 @@ class ConfluenceDownloader(Downloader):
             original_filedata=current_file_data,
             original_html=html,
             session=session,
+            force_download=self.download_config.force_download,
         )
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:

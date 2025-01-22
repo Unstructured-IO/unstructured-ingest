@@ -41,11 +41,15 @@ def convert_image_tags(url: str, original_html: str, session: Optional[Session] 
     return str(soup)
 
 
-def download_link(download_dir: Path, link: str, session: Optional[Session] = None) -> Path:
+def download_link(
+    download_dir: Path, link: str, session: Optional[Session] = None, force_download: bool = False
+) -> Path:
     session = session or requests.Session()
     filename = Path(urlparse(url=link).path).name
     download_path = download_dir / filename
     logger.debug(f"downloading file from {link} to {download_path}")
+    if download_path.exists() and download_path.is_file() and not force_download:
+        return download_path
     with download_path.open("wb") as downloaded_file:
         response = session.get(link)
         response.raise_for_status()
@@ -58,6 +62,7 @@ def download_embedded_files(
     original_filedata: FileData,
     original_html: str,
     session: Optional[Session] = None,
+    force_download: bool = False,
 ) -> list[DownloadResponse]:
     session = session or requests.Session()
     url = original_filedata.metadata.url
@@ -77,7 +82,10 @@ def download_embedded_files(
             source_url = base_url + current_source
         try:
             downloaded_path = download_link(
-                download_dir=download_dir, link=source_url, session=session
+                download_dir=download_dir,
+                link=source_url,
+                session=session,
+                force_download=force_download,
             )
         except Exception as e:
             logger.warning(f"failed to download file content from {source_url}: {e}")
