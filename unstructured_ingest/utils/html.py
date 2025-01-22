@@ -70,7 +70,11 @@ def download_embedded_files(
     base_url = parsed_url.scheme + "://" + parsed_url.netloc
     soup = BeautifulSoup(original_html, "html.parser")
     tags = soup.find_all("a", href=True)
-    hrefs = [tag["href"] for tag in tags if not tag["href"].startswith("#")]
+    hrefs = [
+        tag["href"]
+        for tag in tags
+        if not tag["href"].startswith("#") and Path(tag["href"]).suffix != ""
+    ]
     results = []
     for current_source in hrefs:
         download_dir.mkdir(parents=True, exist_ok=True)

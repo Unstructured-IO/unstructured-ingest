@@ -241,7 +241,9 @@ class ConfluenceDownloader(Downloader):
 
         content = page["body"]["view"]["value"]
         # This supports v2 html parsing in unstructured
-        content = f"<body class='Document' >{content}</body>"
+        title = page["title"]
+        title_html = f"<title>{title}</title>"
+        content = f"<body class='Document' >{title_html}{content}</body>"
         if self.download_config.extract_images:
             with self.connection_config.get_client() as client:
                 content = convert_image_tags(
@@ -259,7 +261,7 @@ class ConfluenceDownloader(Downloader):
         file_data.metadata.date_created = page["history"]["createdDate"]
         file_data.metadata.date_modified = page["version"]["when"]
         file_data.metadata.version = str(page["version"]["number"])
-        file_data.display_name = page["title"]
+        file_data.display_name = title
 
         download_response = self.generate_download_response(
             file_data=file_data, download_path=download_path
