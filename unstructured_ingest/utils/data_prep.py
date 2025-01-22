@@ -158,7 +158,7 @@ def write_data(path: Path, data: list[dict], indent: int = 2) -> None:
         if path.suffix == ".json":
             json.dump(data, f, indent=indent, ensure_ascii=False)
         elif path.suffix == ".ndjson":
-            ndjson.dumps(data, f, ensure_ascii=False)
+            ndjson.dump(data, f, ensure_ascii=False)
         else:
             raise IOError("Unsupported file type: {path}")
 
