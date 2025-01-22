@@ -93,15 +93,15 @@ class DropboxIndexer(FsspecIndexer):
     index_config: DropboxIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def get_path(self, file_data: dict) -> str:
-        return file_data["name"]
+    def get_path(self, file_info: dict) -> str:
+        return file_info["name"]
 
-    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
-        path = file_data["name"].lstrip("/")
+    def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
+        path = file_info["name"].lstrip("/")
         date_created = None
         date_modified = None
-        server_modified = file_data.get("server_modified")
-        client_modified = file_data.get("client_modified")
+        server_modified = file_info.get("server_modified")
+        client_modified = file_info.get("client_modified")
         if server_modified and client_modified and server_modified > client_modified:
             date_created = str(client_modified.timestamp())
             date_modified = str(server_modified.timestamp())
@@ -109,13 +109,13 @@ class DropboxIndexer(FsspecIndexer):
             date_created = str(server_modified.timestamp())
             date_modified = str(client_modified.timestamp())
 
-        file_size = file_data.get("size") if "size" in file_data else None
+        file_size = file_info.get("size") if "size" in file_info else None
 
-        version = file_data.get("content_hash")
+        version = file_info.get("content_hash")
         record_locator = {
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,
-            "file_id": file_data.get("id"),
+            "file_id": file_info.get("id"),
         }
         return FileDataSourceMetadata(
             date_created=date_created,

@@ -128,22 +128,22 @@ class AzureIndexer(FsspecIndexer):
     def sterilize_info(self, file_data: dict) -> dict:
         return sterilize_dict(data=file_data, default=azure_json_serial)
 
-    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
-        path = file_data["name"]
+    def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
+        path = file_info["name"]
         date_created = (
-            str(file_data.get("creation_time").timestamp())
-            if "creation_time" in file_data
+            str(file_info.get("creation_time").timestamp())
+            if "creation_time" in file_info
             else None
         )
         date_modified = (
-            str(file_data.get("last_modified").timestamp())
-            if "last_modified" in file_data
+            str(file_info.get("last_modified").timestamp())
+            if "last_modified" in file_info
             else None
         )
 
-        file_size = file_data.get("size") if "size" in file_data else None
+        file_size = file_info.get("size") if "size" in file_info else None
 
-        version = file_data.get("etag")
+        version = file_info.get("etag")
         record_locator = {
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,
