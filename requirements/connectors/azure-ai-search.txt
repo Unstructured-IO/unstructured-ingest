@@ -2,27 +2,25 @@
 #    uv pip compile ./connectors/azure-ai-search.in --output-file ./connectors/azure-ai-search.txt --no-strip-extras --python-version 3.9
 azure-common==1.1.28
     # via azure-search-documents
-azure-core==1.31.0
+azure-core==1.32.0
     # via azure-search-documents
-azure-search-documents==11.5.1
+azure-search-documents==11.5.2
     # via -r ./connectors/azure-ai-search.in
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
 idna==3.10
     # via requests
-isodate==0.6.1
+isodate==0.7.2
     # via azure-search-documents
 requests==2.32.3
     # via azure-core
-six==1.16.0
-    # via
-    #   azure-core
-    #   isodate
+six==1.17.0
+    # via azure-core
 typing-extensions==4.12.2
     # via
     #   azure-core
     #   azure-search-documents
-urllib3==2.2.3
+urllib3==2.3.0
     # via requests
