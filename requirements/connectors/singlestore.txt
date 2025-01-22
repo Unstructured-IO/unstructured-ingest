@@ -2,33 +2,31 @@
 #    uv pip compile ./connectors/singlestore.in --output-file ./connectors/singlestore.txt --no-strip-extras --python-version 3.9
 build==0.10.0
     # via singlestoredb
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
 idna==3.10
     # via requests
-packaging==23.2
-    # via
-    #   -c ./connectors/../common/constraints.txt
-    #   build
+packaging==24.2
+    # via build
 parsimonious==0.10.0
     # via singlestoredb
-pyjwt==2.9.0
+pyjwt==2.10.1
     # via singlestoredb
 pyproject-hooks==1.2.0
     # via build
-regex==2024.9.11
+regex==2024.11.6
     # via parsimonious
 requests==2.32.3
     # via singlestoredb
-setuptools==75.1.0
+setuptools==75.8.0
     # via singlestoredb
-singlestoredb==1.7.1
+singlestoredb==1.11.0
     # via -r ./connectors/singlestore.in
 sqlparams==6.1.0
     # via singlestoredb
-tomli==2.0.2
+tomli==2.2.1
     # via
     #   build
     #   singlestoredb
@@ -36,5 +34,5 @@ urllib3==1.26.20
     # via
     #   -c ./connectors/../common/constraints.txt
     #   requests
-wheel==0.44.0
+wheel==0.45.1
     # via singlestoredb

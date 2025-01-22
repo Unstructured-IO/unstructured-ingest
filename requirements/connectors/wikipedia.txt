@@ -2,9 +2,9 @@
 #    uv pip compile ./connectors/wikipedia.in --output-file ./connectors/wikipedia.txt --no-strip-extras --python-version 3.9
 beautifulsoup4==4.12.3
     # via wikipedia
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
 idna==3.10
     # via requests

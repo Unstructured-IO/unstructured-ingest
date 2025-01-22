@@ -2,19 +2,19 @@
 #    uv pip compile ./connectors/airtable.in --output-file ./connectors/airtable.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-certifi==2024.8.30
+certifi==2024.12.14
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
 idna==3.10
     # via requests
 inflection==0.5.1
     # via pyairtable
-pyairtable==2.3.3
+pyairtable==3.0.1
     # via -r ./connectors/airtable.in
-pydantic==2.9.2
+pydantic==2.10.5
     # via pyairtable
-pydantic-core==2.23.4
+pydantic-core==2.27.2
     # via pydantic
 requests==2.32.3
     # via pyairtable
