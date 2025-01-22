@@ -153,6 +153,16 @@ def get_data_by_suffix(path: Path) -> list[dict]:
             raise ValueError(f"Unsupported file type: {path}")
 
 
+def write_data(path: Path, data: list[dict], indent: int = 2) -> None:
+    with path.open("w") as f:
+        if path.suffix == ".json":
+            json.dump(data, f, indent=indent, ensure_ascii=False)
+        elif path.suffix == ".ndjson":
+            ndjson.dumps(data, f, ensure_ascii=False)
+        else:
+            raise IOError("Unsupported file type: {path}")
+
+
 def get_data(path: Path) -> list[dict]:
     try:
         return get_data_by_suffix(path=path)
@@ -178,8 +188,6 @@ def get_data(path: Path) -> list[dict]:
             return df.to_dict(orient="records")
         except Exception as e:
             logger.warning(f"failed to read {path} as parquet: {e}")
-
-    raise IOError(f"File could not be parsed: {path}")
 
 
 def get_data_df(path: Path) -> pd.DataFrame:
