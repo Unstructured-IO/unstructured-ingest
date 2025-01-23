@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Generator, Optional
 from pydantic import Field, Secret
 import numpy as np
 import pandas as pd
-import pyarrow as pa
-from ibis import _
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
@@ -69,6 +67,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     def get_cursor(self) -> Generator["VastdbTransaction", None, None]:
         return self.get_connection().transaction()
     
+    # I want to DRY the schema getting
     # def get_schema(self):
     #     with self.get_cursor() as cursor:
     #         bucket = cursor.bucket(self.vastdb_bucket)
@@ -103,7 +102,6 @@ class VastdbIndexer(SQLIndexer):
                 logger.info(bucket.schemas())
                 schema = bucket.schema(self.connection_config.vastdb_schema)
                 table = schema.table(self.index_config.table_name)
-                # cursor.execute("SELECT 1;")
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -172,14 +170,14 @@ class VastdbUploader(SQLUploader):
                 logger.info(bucket.schemas())
                 schema = bucket.schema(self.connection_config.vastdb_schema)
                 table = schema.table(self.upload_config.table_name)
-                # cursor.execute("SELECT 1;")
                 table.select()
-                logger.info("PRECHECK PASSED !!!!!!!!!!!!!!!!!!!")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
+    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        import pyarrow as pa
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
         else:
@@ -213,10 +211,14 @@ class VastdbUploader(SQLUploader):
                 bucket = cursor.bucket(self.connection_config.vastdb_bucket)
                 schema = bucket.schema(self.connection_config.vastdb_schema)
                 table = schema.table(self.upload_config.table_name)
+                # would be nice to LIMIT 1
                 self._columns = table.select().read_all().column_names
         return self._columns
 
+    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def delete_by_record_id(self, file_data: FileData) -> None:
+        from ibis import _ # imports the Ibis deferred expression
+
         logger.debug(
             f"deleting any content with data "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
