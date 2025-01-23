@@ -197,8 +197,7 @@ class VastdbUploader(SQLUploader):
         if self._columns is None:
             with self.get_cursor() as cursor:
                 table = self.connection_config.get_table(cursor, self.upload_config.table_name)
-                # would be nice to LIMIT 1
-                self._columns = table.select().read_all().column_names
+                self._columns = table.columns().names
         return self._columns
 
     @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
