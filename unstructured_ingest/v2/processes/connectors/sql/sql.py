@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from time import time
 from typing import Any, Generator, Union
@@ -364,8 +365,9 @@ class SQLUploader(Uploader):
         return output
 
     def _fit_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+        table_columns = self.get_table_columns()
         columns = set(df.columns)
-        schema_fields = set(columns)
+        schema_fields = set(table_columns)
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
 
@@ -423,9 +425,10 @@ class SQLUploader(Uploader):
                 logger.debug(f"running query: {stmt}")
                 cursor.executemany(stmt, values)
 
+    @lru_cache
     def get_table_columns(self) -> list[str]:
         with self.get_cursor() as cursor:
-            cursor.execute(f"SELECT * from {self.upload_config.table_name}")
+            cursor.execute(f"SELECT * from {self.upload_config.table_name} LIMIT 1")
             return [desc[0] for desc in cursor.description]
 
     def can_delete(self) -> bool:

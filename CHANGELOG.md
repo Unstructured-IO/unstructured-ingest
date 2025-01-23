@@ -1,9 +1,13 @@
-## 0.4.1-dev1
+## 0.4.1-dev2
 
 ### Enhancements
 
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
+
+### Fixes
+
+* **Fix how data updated before writing to sql tables based on columns in table**
 
 ## 0.4.0
 
