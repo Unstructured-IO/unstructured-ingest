@@ -99,7 +99,6 @@ class VastdbIndexer(SQLIndexer):
         try:
             with self.get_cursor() as cursor:
                 bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-                logger.info(bucket.schemas())
                 schema = bucket.schema(self.connection_config.vastdb_schema)
                 table = schema.table(self.index_config.table_name)
                 table.select()
