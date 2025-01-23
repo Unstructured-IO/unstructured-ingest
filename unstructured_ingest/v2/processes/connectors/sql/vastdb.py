@@ -3,7 +3,10 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generator, Optional
 
 from pydantic import Field, Secret
-
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -23,6 +26,10 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
+from unstructured_ingest.v2.interfaces import (
+    FileData,
+)
+from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe
 
 if TYPE_CHECKING:
     from vastdb import connect as VastdbConnect
@@ -51,7 +58,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     # @contextmanager
-    @requires_dependencies(["vastdb","ibis"], extras="vastdb")
+    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def get_connection(self) -> Generator["VastdbConnect", None, None]:
         from vastdb import connect
 
@@ -106,7 +113,7 @@ class VastdbDownloader(SQLDownloader):
     download_config: VastdbDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["vastdb","ibis"], extras="vastdb")
+    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         from ibis.expr import sql
 
@@ -150,7 +157,6 @@ class VastdbUploader(SQLUploader):
     upload_config: VastdbUploaderConfig = field(default_factory=VastdbUploaderConfig)
     connection_config: VastdbConnectionConfig
     connector_type: str = CONNECTOR_TYPE
-    values_delimiter: str = "%s"
 
     def precheck(self) -> None:
         try:
@@ -158,7 +164,7 @@ class VastdbUploader(SQLUploader):
                 bucket = cursor.bucket(self.connection_config.vastdb_bucket)
                 logger.info(bucket.schemas())
                 schema = bucket.schema(self.connection_config.vastdb_schema)
-                table = schema.table(self.connection_config.vastdb_table)
+                table = schema.table(self.upload_config.table_name)
                 # cursor.execute("SELECT 1;")
                 table.select()
                 logger.info("PRECHECK PASSED !!!!!!!!!!!!!!!!!!!")
@@ -166,6 +172,56 @@ class VastdbUploader(SQLUploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        if self.can_delete():
+            self.delete_by_record_id(file_data=file_data)
+        else:
+            logger.warning(
+                f"table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
+        df.replace({np.nan: None}, inplace=True)
+        self._fit_to_schema(df=df)
+
+        columns = list(df.columns)
+        logger.info("ABOUT TO INSERT !!!!!!!")
+        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+            table_name=self.upload_config.table_name,
+            columns=",".join(columns),
+            values=",".join([self.values_delimiter for _ in columns]),
+        )
+        logger.info(
+            f"writing a total of {len(df)} elements via"
+            f" document batches to destination"
+            f" table named {self.upload_config.table_name}"
+            f" with batch size {self.upload_config.batch_size}"
+        )
+        df.drop(['languages', 'date_created', 'date_modified','date_processed','parent_id'], axis=1, inplace=True)
+
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
+
+            with self.get_cursor() as cursor:
+                # values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # logger.info(values)
+            
+                # For debugging purposes:
+                # for val in values:
+                #     try:
+                #         cursor.execute(stmt, val)
+                #     except Exception as e:
+                #         print(f"Error: {e}")
+                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                # logger.debug(f"running query: {stmt}")
+                # cursor.executemany(stmt, values)
+                pa_table = pa.Table.from_pandas(df)
+                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+                schema = bucket.schema(self.connection_config.vastdb_schema)
+                table = schema.table(self.connection_config.vastdb_table)
+                table.insert(pa_table)
+
+    def can_delete(self) -> bool:
+        return False
 
 vastdb_source_entry = SourceRegistryEntry(
     connection_config=VastdbConnectionConfig,

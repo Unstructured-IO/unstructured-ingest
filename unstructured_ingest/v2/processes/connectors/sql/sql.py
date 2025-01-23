@@ -37,7 +37,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.utils import get_enhanced_element_id
-import pyarrow as pa
+
 _COLUMNS = (
     "id",
     "element_id",
@@ -146,9 +146,7 @@ class SQLIndexer(Indexer, ABC):
     def precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
-                breakpoint()
                 cursor.execute("SELECT 1;")
-                logger.info("PRECHECK PASSED !!!!!!!!!!!!!!!!!!!")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -310,11 +308,8 @@ class SQLUploadStager(UploadStager):
                 for element_dict in elements_contents
             ]
         )
-        logger.info("GOT HERE !!!!!!")
         df = self.conform_dataframe(df=df)
 
-        output_filename_suffix = Path(elements_filepath).suffix
-        output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
         self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
@@ -339,7 +334,6 @@ class SQLUploader(Uploader):
     def precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
-                breakpoint()
                 cursor.execute("SELECT 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -403,7 +397,6 @@ class SQLUploader(Uploader):
         self._fit_to_schema(df=df)
 
         columns = list(df.columns)
-        logger.info("ABOUT TO INSERT !!!!!!!")
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
             table_name=self.upload_config.table_name,
             columns=",".join(columns),
@@ -415,46 +408,18 @@ class SQLUploader(Uploader):
             f" table named {self.upload_config.table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-        df.drop(['languages', 'date_created', 'date_modified','date_processed'], axis=1, inplace=True)
-
-        # for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
-
-        with self.get_cursor() as cursor:
-            # values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-            # logger.info(values)
-        
-            # For debugging purposes:
-            # for val in values:
-            #     try:
-            #         cursor.execute(stmt, val)
-            #     except Exception as e:
-            #         print(f"Error: {e}")
-            #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
-            # logger.debug(f"running query: {stmt}")
-            # cursor.executemany(stmt, values)
-            pa_table = pa.Table.from_pandas(df)
-            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-            schema = bucket.schema(self.connection_config.vastdb_schema)
-            table = schema.table(self.connection_config.vastdb_table)
-            table.insert(pa_table)
-
-        ##### This works 
-        # columns = pa.schema([
-        #     ('c1', pa.int16()),
-        #     ('c2', pa.float32()),
-        #     ('c3', pa.utf8()),
-        # ])
-        # arrow_table = pa.table(schema=columns, data=[
-        #     [1111, 2222, 3333],
-        #     [0.55, 1.55, 2.55],
-        #     ['aaa', 'bbbb', 'ccccc'],
-        # ])
-        # with self.get_cursor() as cursor:
-        #         bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-        #         # logger.info(bucket.schemas())
-        #         schema = bucket.schema(self.connection_config.vastdb_schema)
-        #         table = schema.table(self.connection_config.vastdb_table)
-        #         table.insert(arrow_table)
+        for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
+            with self.get_cursor() as cursor:
+                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
+                # For debugging purposes:
+                # for val in values:
+                #     try:
+                #         cursor.execute(stmt, val)
+                #     except Exception as e:
+                #         print(f"Error: {e}")
+                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
+                logger.debug(f"running query: {stmt}")
+                cursor.executemany(stmt, values)
 
     def get_table_columns(self) -> list[str]:
         with self.get_cursor() as cursor:
@@ -462,7 +427,6 @@ class SQLUploader(Uploader):
             return [desc[0] for desc in cursor.description]
 
     def can_delete(self) -> bool:
-        return False
         return self.upload_config.record_id_key in self.get_table_columns()
 
     def delete_by_record_id(self, file_data: FileData) -> None:
