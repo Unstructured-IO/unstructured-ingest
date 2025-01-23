@@ -14,7 +14,7 @@ from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe
+from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe, write_data
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -314,7 +314,7 @@ class SQLUploadStager(UploadStager):
         output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
-        self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
+        write_data(path=output_path, data=df.to_dict(orient="records"))
         return output_path
 
 

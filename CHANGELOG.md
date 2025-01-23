@@ -1,9 +1,10 @@
-## 0.4.1-dev1
+## 0.4.1-dev2
 
 ### Enhancements
 
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
+* **Support href extraction to local file**
 
 ## 0.4.0
 
