@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
+import ndjson
+
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
@@ -37,21 +39,26 @@ class EmbedStep(PipelineStep):
             return True
         return not filepath.exists()
 
-    def get_output_filepath(self, filename: Path) -> Path:
-        hashed_output_file = f"{self.get_hash(extras=[filename.name])}.json"
+    def get_output_filepath(self, filename: Path, suffix: str = ".json") -> Path:
+        hashed_output_file = f"{self.get_hash(extras=[filename.name])}{suffix}"
         filepath = (self.cache_dir / hashed_output_file).resolve()
         filepath.parent.mkdir(parents=True, exist_ok=True)
         return filepath
 
-    def _save_output(self, output_filepath: str, embedded_content: list[dict]):
-        with open(str(output_filepath), "w") as f:
+    def _save_output(self, output_filepath: Path, embedded_content: list[dict]):
+        with output_filepath.open("w") as f:
             logger.debug(f"writing embedded output to: {output_filepath}")
-            json.dump(embedded_content, f, indent=2)
+            if output_filepath.suffix == ".json":
+                json.dump(embedded_content, f, indent=2)
+            elif output_filepath.suffix == ".ndjson":
+                ndjson.dump(embedded_content, f)
+            else:
+                raise ValueError(f"Unsupported input format: {output_filepath}")
 
     async def _run_async(self, fn: Callable, path: str, file_data_path: str) -> EmbedStepResponse:
         path = Path(path)
         file_data = file_data_from_file(path=file_data_path)
-        output_filepath = self.get_output_filepath(filename=path)
+        output_filepath = self.get_output_filepath(filename=path, suffix=Path(path).suffix)
         if not self.should_embed(filepath=output_filepath, file_data=file_data):
             logger.debug(f"skipping embedding, output already exists: {output_filepath}")
             return EmbedStepResponse(file_data_path=file_data_path, path=str(output_filepath))
@@ -65,7 +72,7 @@ class EmbedStep(PipelineStep):
             embed_content_raw = await fn(**fn_kwargs)
 
         self._save_output(
-            output_filepath=str(output_filepath),
+            output_filepath=output_filepath,
             embedded_content=embed_content_raw,
         )
         return EmbedStepResponse(file_data_path=file_data_path, path=str(output_filepath))

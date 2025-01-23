@@ -26,6 +26,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploader,
     FsspecUploaderConfig,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 CONNECTOR_TYPE = "s3"
 
@@ -182,4 +186,6 @@ s3_destination_entry = DestinationRegistryEntry(
     uploader=S3Uploader,
     uploader_config=S3UploaderConfig,
     connection_config=S3ConnectionConfig,
+    upload_stager=BlobStoreUploadStager,
+    upload_stager_config=BlobStoreUploadStagerConfig,
 )

@@ -17,6 +17,10 @@ from unstructured_ingest.v2.processes.connectors.databricks.volumes import (
     DatabricksVolumesUploader,
     DatabricksVolumesUploaderConfig,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 CONNECTOR_TYPE = "databricks_volumes_gcp"
 
@@ -74,6 +78,8 @@ databricks_gcp_volumes_destination_entry = DestinationRegistryEntry(
     connection_config=DatabricksGoogleVolumesConnectionConfig,
     uploader=DatabricksGoogleVolumesUploader,
     uploader_config=DatabricksGoogleVolumesUploaderConfig,
+    upload_stager=BlobStoreUploadStager,
+    upload_stager_config=BlobStoreUploadStagerConfig,
 )
 
 databricks_gcp_volumes_source_entry = SourceRegistryEntry(
