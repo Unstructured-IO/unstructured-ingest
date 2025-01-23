@@ -1,10 +1,10 @@
 import asyncio
 import hashlib
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
+from unstructured_ingest.utils.data_prep import write_data
 from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
@@ -44,9 +44,8 @@ class ChunkStep(PipelineStep):
         return filepath
 
     def _save_output(self, output_filepath: str, chunked_content: list[dict]):
-        with open(str(output_filepath), "w") as f:
-            logger.debug(f"writing chunker output to: {output_filepath}")
-            json.dump(chunked_content, f, indent=2)
+        logger.debug(f"writing chunker output to: {output_filepath}")
+        write_data(path=Path(output_filepath), data=chunked_content)
 
     async def _run_async(
         self, fn: Callable, path: str, file_data_path: str, **kwargs

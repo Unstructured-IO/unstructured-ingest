@@ -1,9 +1,35 @@
-## 0.3.15-dev3
+## 0.4.1-dev2
+
+### Enhancements
+
+* **Support img base64 in html**
+* **Fsspec support for direct URI**
+* **Support href extraction to local file**
+
+### Fixes
+
+* **Fix how data updated before writing to sql tables based on columns in table**
+
+## 0.4.0
+
+### Enhancements
+
+* **Change Confluence Source Connector authentication parameters to support password, api token, pat token and cloud authentication**
+
+### Fixes
+
+* **Fix SQL uploader stager** - When passed `output_filename` without a suffix it resulted in unsupported file format error. Now, it will take a suffix of `elements_filepath` and append it to `output_filename`.
+* **Fix Snowflake uploader** - Unexpected `columns` argument was passed to `_fit_to_schema` method inside SnowflakeUploader `upload_dataframe` method.
+
+## 0.3.15
 
 ### Enhancements
 
 * **Add databricks delta table connector**
 
+### Fixes
+
+* **Fixed namespace issue with pinecone, and added new test**
 
 ## 0.3.14
 

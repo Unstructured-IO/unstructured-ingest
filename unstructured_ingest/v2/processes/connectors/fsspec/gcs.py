@@ -131,22 +131,22 @@ class GcsIndexer(FsspecIndexer):
     index_config: GcsIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
-        path = file_data["name"]
+    def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
+        path = file_info["name"]
         date_created = None
         date_modified = None
-        if modified_at_str := file_data.get("updated"):
+        if modified_at_str := file_info.get("updated"):
             date_modified = str(parser.parse(modified_at_str).timestamp())
-        if created_at_str := file_data.get("timeCreated"):
+        if created_at_str := file_info.get("timeCreated"):
             date_created = str(parser.parse(created_at_str).timestamp())
 
-        file_size = file_data.get("size") if "size" in file_data else None
+        file_size = file_info.get("size") if "size" in file_info else None
 
-        version = file_data.get("etag")
+        version = file_info.get("etag")
         record_locator = {
             "protocol": self.index_config.protocol,
             "remote_file_path": self.index_config.remote_url,
-            "file_id": file_data.get("id"),
+            "file_id": file_info.get("id"),
         }
         return FileDataSourceMetadata(
             date_created=date_created,

@@ -119,7 +119,7 @@ class FsspecIndexer(Indexer):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise self.wrap_error(e=e)
 
-    def get_file_data(self) -> list[dict[str, Any]]:
+    def get_file_info(self) -> list[dict[str, Any]]:
         if not self.index_config.recursive:
             # fs.ls does not walk directories
             # directories that are listed in cloud storage can cause problems
@@ -156,24 +156,56 @@ class FsspecIndexer(Indexer):
 
         return random.sample(files, n)
 
-    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
+    def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
         raise NotImplementedError()
 
-    def get_path(self, file_data: dict) -> str:
-        return file_data["name"]
+    def get_path(self, file_info: dict) -> str:
+        return file_info["name"]
 
     def sterilize_info(self, file_data: dict) -> dict:
         return sterilize_dict(data=file_data)
 
+    def create_init_file_data(self, remote_filepath: Optional[str] = None) -> FileData:
+        # Create initial file data that requires no network calls and is constructed purely
+        # with information that exists in the config
+        remote_filepath = remote_filepath or self.index_config.remote_url
+        path_without_protocol = remote_filepath.split("://")[1]
+        rel_path = remote_filepath.replace(path_without_protocol, "").lstrip("/")
+        return FileData(
+            identifier=str(uuid5(NAMESPACE_DNS, remote_filepath)),
+            connector_type=self.connector_type,
+            display_name=remote_filepath,
+            source_identifiers=SourceIdentifiers(
+                filename=Path(remote_filepath).name,
+                rel_path=rel_path or None,
+                fullpath=remote_filepath,
+            ),
+            metadata=FileDataSourceMetadata(url=remote_filepath),
+        )
+
+    def hydrate_file_data(self, init_file_data: FileData):
+        # Get file info
+        with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+            files = client.ls(self.index_config.path_without_protocol, detail=True)
+        filtered_files = [
+            file for file in files if file.get("size") > 0 and file.get("type") == "file"
+        ]
+        if not filtered_files:
+            raise ValueError(f"{init_file_data} did not reference any valid file")
+        if len(filtered_files) > 1:
+            raise ValueError(f"{init_file_data} referenced more than one file")
+        file_info = filtered_files[0]
+        init_file_data.additional_metadata = self.get_metadata(file_info=file_info)
+
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        files = self.get_file_data()
-        for file_data in files:
-            file_path = self.get_path(file_data=file_data)
+        files = self.get_file_info()
+        for file_info in files:
+            file_path = self.get_path(file_info=file_info)
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
             rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip("/")
 
-            additional_metadata = self.sterilize_info(file_data=file_data)
+            additional_metadata = self.sterilize_info(file_data=file_info)
             additional_metadata["original_file_path"] = file_path
             yield FileData(
                 identifier=str(uuid5(NAMESPACE_DNS, file_path)),
@@ -183,7 +215,7 @@ class FsspecIndexer(Indexer):
                     rel_path=rel_path or None,
                     fullpath=file_path,
                 ),
-                metadata=self.get_metadata(file_data=file_data),
+                metadata=self.get_metadata(file_info=file_info),
                 additional_metadata=additional_metadata,
                 display_name=file_path,
             )
