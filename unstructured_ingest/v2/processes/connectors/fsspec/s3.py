@@ -110,22 +110,22 @@ class S3Indexer(FsspecIndexer):
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)
 
-    def get_path(self, file_data: dict) -> str:
-        return file_data["Key"]
+    def get_path(self, file_info: dict) -> str:
+        return file_info["Key"]
 
-    def get_metadata(self, file_data: dict) -> FileDataSourceMetadata:
-        path = file_data["Key"]
+    def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
+        path = file_info["Key"]
         date_created = None
         date_modified = None
-        modified = file_data.get("LastModified")
+        modified = file_info.get("LastModified")
         if modified:
             date_created = str(modified.timestamp())
             date_modified = str(modified.timestamp())
 
-        file_size = file_data.get("size") if "size" in file_data else None
-        file_size = file_size or file_data.get("Size")
+        file_size = file_info.get("size") if "size" in file_info else None
+        file_size = file_size or file_info.get("Size")
 
-        version = file_data.get("ETag").rstrip('"').lstrip('"') if "ETag" in file_data else None
+        version = file_info.get("ETag").rstrip('"').lstrip('"') if "ETag" in file_info else None
         metadata: dict[str, str] = {}
         with contextlib.suppress(AttributeError):
             with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
