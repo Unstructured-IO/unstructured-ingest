@@ -197,7 +197,8 @@ class VastdbUploader(SQLUploader):
             f" table named {self.upload_config.table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-        df.drop(['languages', 'date_created', 'date_modified','date_processed','parent_id'], axis=1, inplace=True)
+        breakpoint()
+        df.drop(['languages', 'date_created', 'date_modified','date_processed','parent_id'], axis=1, inplace=True, errors='ignore')
 
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
 
