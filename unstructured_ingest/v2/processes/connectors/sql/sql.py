@@ -332,6 +332,7 @@ class SQLUploader(Uploader):
     upload_config: SQLUploaderConfig
     connection_config: SQLConnectionConfig
     values_delimiter: str = "?"
+    _columns: list[str] = field(init=False, default=None)
 
     def precheck(self) -> None:
         try:
@@ -364,8 +365,9 @@ class SQLUploader(Uploader):
         return output
 
     def _fit_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+        table_columns = self.get_table_columns()
         columns = set(df.columns)
-        schema_fields = set(columns)
+        schema_fields = set(table_columns)
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
 
@@ -424,9 +426,11 @@ class SQLUploader(Uploader):
                 cursor.executemany(stmt, values)
 
     def get_table_columns(self) -> list[str]:
-        with self.get_cursor() as cursor:
-            cursor.execute(f"SELECT * from {self.upload_config.table_name}")
-            return [desc[0] for desc in cursor.description]
+        if self._columns is None:
+            with self.get_cursor() as cursor:
+                cursor.execute(f"SELECT * from {self.upload_config.table_name} LIMIT 1")
+                self._columns = [desc[0] for desc in cursor.description]
+        return self._columns
 
     def can_delete(self) -> bool:
         return self.upload_config.record_id_key in self.get_table_columns()

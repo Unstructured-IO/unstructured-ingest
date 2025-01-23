@@ -6,6 +6,10 @@
 * **Fsspec support for direct URI**
 * **Support href extraction to local file**
 
+### Fixes
+
+* **Fix how data updated before writing to sql tables based on columns in table**
+
 ## 0.4.0
 
 ### Enhancements
