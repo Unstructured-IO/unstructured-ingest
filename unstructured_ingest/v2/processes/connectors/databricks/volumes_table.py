@@ -78,7 +78,10 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     @contextmanager
     def get_cursor(self, **connect_kwargs) -> Generator[Any, None, None]:
         with self.connection_config.get_cursor(**connect_kwargs) as cursor:
+            logger.debug(f"executing: USE CATALOG: '{self.upload_config.catalog}'")
             cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
+            logger.debug(f"executing: USE DATABASE: {self.upload_config.database}")
+            cursor.execute(f"USE DATABASE {self.upload_config.database}")
             yield cursor
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
