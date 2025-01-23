@@ -1,12 +1,16 @@
-from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Generator, Optional
+from typing import TYPE_CHECKING, Optional
 
-from pydantic import Field, Secret
 import numpy as np
 import pandas as pd
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from pydantic import Field, Secret
+
+from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces import (
+    FileData,
+)
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -25,10 +29,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
-from unstructured_ingest.v2.interfaces import (
-    FileData,
-)
-from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe
 
 if TYPE_CHECKING:
     from vastdb import connect as VastdbConnect
@@ -51,7 +51,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     vastdb_schema: str
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
+    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
     def get_connection(self) -> "VastdbConnect":
         from vastdb import connect
 
@@ -60,13 +60,12 @@ class VastdbConnectionConfig(SQLConnectionConfig):
             endpoint=access_config.endpoint,
             access=access_config.access_key_id,
             secret=access_config.access_key_secret,
-
         )
         return connection
 
     def get_cursor(self) -> "VastdbTransaction":
         return self.get_connection().transaction()
-    
+
     def get_table(self, cursor, table_name):
         bucket = cursor.bucket(self.vastdb_bucket)
         schema = bucket.schema(self.vastdb_schema)
@@ -86,7 +85,7 @@ class VastdbIndexer(SQLIndexer):
 
     def _get_doc_ids(self) -> list[str]:
         with self.get_cursor() as cursor:
-            table = self.connection_config.get_table(cursor,self.index_config.table_name)
+            table = self.connection_config.get_table(cursor, self.index_config.table_name)
             reader = table.select(columns=[self.index_config.id_column])
             results = reader.read_all()  # Build a PyArrow Table from the RecordBatchReader
             ids = sorted([result[self.index_config.id_column] for result in results.to_pylist()])
@@ -95,7 +94,7 @@ class VastdbIndexer(SQLIndexer):
     def precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
-                table = self.connection_config.get_table(cursor,self.index_config.table_name)
+                table = self.connection_config.get_table(cursor, self.index_config.table_name)
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -112,16 +111,16 @@ class VastdbDownloader(SQLDownloader):
     download_config: VastdbDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
+    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
-        from ibis import _ # imports the Ibis deferred expression
+        from ibis import _  # imports the Ibis deferred expression
 
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
         ids = tuple([item.identifier for item in file_data.batch_items])
 
         with self.connection_config.get_cursor() as cursor:
-            table = self.connection_config.get_table(cursor,table_name)
+            table = self.connection_config.get_table(cursor, table_name)
 
             predicate = _[id_column].isin(ids)
 
@@ -158,15 +157,16 @@ class VastdbUploader(SQLUploader):
     def precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
-                table = self.connection_config.get_table(cursor,self.upload_config.table_name)
+                table = self.connection_config.get_table(cursor, self.upload_config.table_name)
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
+    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
         import pyarrow as pa
+
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
         else:
@@ -189,20 +189,20 @@ class VastdbUploader(SQLUploader):
 
             with self.get_cursor() as cursor:
                 pa_table = pa.Table.from_pandas(df)
-                table = self.connection_config.get_table(cursor,self.upload_config.table_name)
+                table = self.connection_config.get_table(cursor, self.upload_config.table_name)
                 table.insert(pa_table)
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
-                table = self.connection_config.get_table(cursor,self.upload_config.table_name)
+                table = self.connection_config.get_table(cursor, self.upload_config.table_name)
                 # would be nice to LIMIT 1
                 self._columns = table.select().read_all().column_names
         return self._columns
 
-    @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
+    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
     def delete_by_record_id(self, file_data: FileData) -> None:
-        from ibis import _ # imports the Ibis deferred expression
+        from ibis import _  # imports the Ibis deferred expression
 
         logger.debug(
             f"deleting any content with data "
@@ -211,10 +211,13 @@ class VastdbUploader(SQLUploader):
         )
         predicate = _[self.upload_config.record_id_key].isin([file_data.identifier])
         with self.get_cursor() as cursor:
-            table = self.connection_config.get_table(cursor,self.upload_config.table_name)
+            table = self.connection_config.get_table(cursor, self.upload_config.table_name)
             # Get the internal row id
-            rows_to_delete = table.select(columns=[],predicate=predicate, internal_row_id=True).read_all()
+            rows_to_delete = table.select(
+                columns=[], predicate=predicate, internal_row_id=True
+            ).read_all()
             table.delete(rows_to_delete)
+
 
 vastdb_source_entry = SourceRegistryEntry(
     connection_config=VastdbConnectionConfig,
