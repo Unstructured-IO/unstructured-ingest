@@ -122,7 +122,7 @@ class VastdbDownloader(SQLDownloader):
 
     @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
-        from ibis import _ # imports the deferred expression
+        from ibis import _ # imports the Ibis deferred expression
 
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
@@ -189,38 +189,18 @@ class VastdbUploader(SQLUploader):
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df)
+        df = self._fit_to_schema(df=df)
 
-        # columns = list(df.columns)
-        logger.info("ABOUT TO INSERT !!!!!!!")
-        # stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
-        #     table_name=self.upload_config.table_name,
-        #     columns=",".join(columns),
-        #     values=",".join([self.values_delimiter for _ in columns]),
-        # )
         logger.info(
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
             f" table named {self.upload_config.table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-        df.drop(['languages', 'date_created', 'date_modified','date_processed','parent_id'], axis=1, inplace=True, errors='ignore')
 
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
 
             with self.get_cursor() as cursor:
-                # values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                # logger.info(values)
-            
-                # For debugging purposes:
-                # for val in values:
-                #     try:
-                #         cursor.execute(stmt, val)
-                #     except Exception as e:
-                #         print(f"Error: {e}")
-                #         print(f"failed to write {len(columns)}, {len(val)}: {stmt} -> {val}")
-                # logger.debug(f"running query: {stmt}")
-                # cursor.executemany(stmt, values)
                 pa_table = pa.Table.from_pandas(df)
                 bucket = cursor.bucket(self.connection_config.vastdb_bucket)
                 schema = bucket.schema(self.connection_config.vastdb_schema)
@@ -228,12 +208,13 @@ class VastdbUploader(SQLUploader):
                 table.insert(pa_table)
 
     def get_table_columns(self) -> list[str]:
-        with self.get_cursor() as cursor:
-            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-            schema = bucket.schema(self.connection_config.vastdb_schema)
-            table = schema.table(self.upload_config.table_name)
-            return table.select().read_all().column_names
-            # return [desc[0] for desc in cursor.description]
+        if self._columns is None:
+            with self.get_cursor() as cursor:
+                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+                schema = bucket.schema(self.connection_config.vastdb_schema)
+                table = schema.table(self.upload_config.table_name)
+                self._columns = table.select().read_all().column_names
+        return self._columns
 
     def delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
@@ -241,24 +222,14 @@ class VastdbUploader(SQLUploader):
             f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from table {self.upload_config.table_name}"
         )
-        # stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"  # noqa: E501
         predicate = _[self.upload_config.record_id_key].isin([file_data.identifier])
         with self.get_cursor() as cursor:
-            # cursor.execute(stmt, [file_data.identifier])
-            # rowcount = cursor.rowcount
-            # if rowcount > 0:
-            #     logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
             bucket = cursor.bucket(self.connection_config.vastdb_bucket)
             schema = bucket.schema(self.connection_config.vastdb_schema)
             table = schema.table(self.upload_config.table_name)
+            # Get the internal row id
             rows_to_delete = table.select(columns=[],predicate=predicate, internal_row_id=True).read_all()
-            # row_ids= [result["$row_id"] for result in rows_to_delete.to_pylist()]
             table.delete(rows_to_delete)
-
-            # test
-            logger.info("DELETED !")
-            deleted = table.select().read_all()
-            logger.info(deleted)
 
 vastdb_source_entry = SourceRegistryEntry(
     connection_config=VastdbConnectionConfig,
