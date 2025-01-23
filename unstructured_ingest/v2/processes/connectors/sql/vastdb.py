@@ -33,6 +33,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 if TYPE_CHECKING:
     from vastdb import connect as VastdbConnect
     from vastdb import transaction as VastdbTransaction
+    from vastdb.table import Table as VastdbTable
 
 CONNECTOR_TYPE = "vastdb"
 
@@ -66,7 +67,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     def get_cursor(self) -> "VastdbTransaction":
         return self.get_connection().transaction()
 
-    def get_table(self, cursor, table_name):
+    def get_table(self, cursor: "VastdbTransaction", table_name: str) -> "VastdbTable":
         bucket = cursor.bucket(self.vastdb_bucket)
         schema = bucket.schema(self.vastdb_schema)
         table = schema.table(table_name)
