@@ -102,6 +102,35 @@ class VastdbIndexer(SQLIndexer):
     index_config: VastdbIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def _get_doc_ids(self) -> list[str]:
+        with self.get_cursor() as cursor:
+            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+            schema = bucket.schema(self.connection_config.vastdb_schema)
+            table = schema.table(self.index_config.table_name)
+            reader = table.select(columns=[self.index_config.id_column])
+            results = reader.read_all()  # Build a PyArrow Table from the RecordBatchReader
+
+            # cursor.execute(
+            #     f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
+            # )
+            # results = cursor.fetchall()
+            ids = sorted([result[self.index_config.id_column] for result in results.to_pylist()])
+            return ids
+
+    def precheck(self) -> None:
+        try:
+            with self.get_cursor() as cursor:
+                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+                logger.info(bucket.schemas())
+                schema = bucket.schema(self.connection_config.vastdb_schema)
+                table = schema.table(self.index_config.table_name)
+                # cursor.execute("SELECT 1;")
+                table.select()
+                logger.info("PRECHECK PASSED !!!!!!!!!!!!!!!!!!!")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
+
 
 class VastdbDownloaderConfig(SQLDownloaderConfig):
     pass
@@ -120,6 +149,7 @@ class VastdbDownloader(SQLDownloader):
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
         ids = tuple([item.identifier for item in file_data.batch_items])
+        breakpoint()
 
         with self.connection_config.get_cursor() as cursor:
             fields = (
@@ -197,7 +227,6 @@ class VastdbUploader(SQLUploader):
             f" table named {self.upload_config.table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
-        breakpoint()
         df.drop(['languages', 'date_created', 'date_modified','date_processed','parent_id'], axis=1, inplace=True, errors='ignore')
 
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
