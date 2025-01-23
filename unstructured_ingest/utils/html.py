@@ -52,8 +52,6 @@ class HtmlMixin(BaseModel):
             return base_url + tag_link
 
     def download_content(self, url: str, session: "Session") -> bytes:
-        print(f"Downloading: {url}")
-        return b"content"
         response = session.get(url)
         response.raise_for_status()
         return response.content
