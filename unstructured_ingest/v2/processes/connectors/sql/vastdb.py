@@ -52,7 +52,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
-    def get_connection(self) -> Generator["VastdbConnect", None, None]:
+    def get_connection(self) -> "VastdbConnect":
         from vastdb import connect
 
         access_config = self.access_config.get_secret_value()
@@ -64,15 +64,14 @@ class VastdbConnectionConfig(SQLConnectionConfig):
         )
         return connection
 
-    def get_cursor(self) -> Generator["VastdbTransaction", None, None]:
+    def get_cursor(self) -> "VastdbTransaction":
         return self.get_connection().transaction()
     
-    # I want to DRY the schema getting
-    # def get_schema(self):
-    #     with self.get_cursor() as cursor:
-    #         bucket = cursor.bucket(self.vastdb_bucket)
-    #         schema = bucket.schema(self.vastdb_schema)
-    #         return schema
+    def get_table(self, cursor, table_name):
+        bucket = cursor.bucket(self.vastdb_bucket)
+        schema = bucket.schema(self.vastdb_schema)
+        table = schema.table(table_name)
+        return table
 
 
 class VastdbIndexerConfig(SQLIndexerConfig):
@@ -87,9 +86,7 @@ class VastdbIndexer(SQLIndexer):
 
     def _get_doc_ids(self) -> list[str]:
         with self.get_cursor() as cursor:
-            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-            schema = bucket.schema(self.connection_config.vastdb_schema)
-            table = schema.table(self.index_config.table_name)
+            table = self.connection_config.get_table(cursor,self.index_config.table_name)
             reader = table.select(columns=[self.index_config.id_column])
             results = reader.read_all()  # Build a PyArrow Table from the RecordBatchReader
             ids = sorted([result[self.index_config.id_column] for result in results.to_pylist()])
@@ -98,9 +95,7 @@ class VastdbIndexer(SQLIndexer):
     def precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
-                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-                schema = bucket.schema(self.connection_config.vastdb_schema)
-                table = schema.table(self.index_config.table_name)
+                table = self.connection_config.get_table(cursor,self.index_config.table_name)
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -126,9 +121,7 @@ class VastdbDownloader(SQLDownloader):
         ids = tuple([item.identifier for item in file_data.batch_items])
 
         with self.connection_config.get_cursor() as cursor:
-            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-            schema = bucket.schema(self.connection_config.vastdb_schema)
-            table = schema.table(table_name)
+            table = self.connection_config.get_table(cursor,table_name)
 
             predicate = _[id_column].isin(ids)
 
@@ -165,10 +158,7 @@ class VastdbUploader(SQLUploader):
     def precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
-                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-                logger.info(bucket.schemas())
-                schema = bucket.schema(self.connection_config.vastdb_schema)
-                table = schema.table(self.upload_config.table_name)
+                table = self.connection_config.get_table(cursor,self.upload_config.table_name)
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -199,17 +189,13 @@ class VastdbUploader(SQLUploader):
 
             with self.get_cursor() as cursor:
                 pa_table = pa.Table.from_pandas(df)
-                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-                schema = bucket.schema(self.connection_config.vastdb_schema)
-                table = schema.table(self.upload_config.table_name)
+                table = self.connection_config.get_table(cursor,self.upload_config.table_name)
                 table.insert(pa_table)
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
-                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-                schema = bucket.schema(self.connection_config.vastdb_schema)
-                table = schema.table(self.upload_config.table_name)
+                table = self.connection_config.get_table(cursor,self.upload_config.table_name)
                 # would be nice to LIMIT 1
                 self._columns = table.select().read_all().column_names
         return self._columns
@@ -225,9 +211,7 @@ class VastdbUploader(SQLUploader):
         )
         predicate = _[self.upload_config.record_id_key].isin([file_data.identifier])
         with self.get_cursor() as cursor:
-            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
-            schema = bucket.schema(self.connection_config.vastdb_schema)
-            table = schema.table(self.upload_config.table_name)
+            table = self.connection_config.get_table(cursor,self.upload_config.table_name)
             # Get the internal row id
             rows_to_delete = table.select(columns=[],predicate=predicate, internal_row_id=True).read_all()
             table.delete(rows_to_delete)
