@@ -1,9 +1,13 @@
-## 0.4.1-dev1
+## 0.4.1-dev2
 
 ### Enhancements
 
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
+
+### Fixes
+
+* **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
 
 ## 0.4.0
 
