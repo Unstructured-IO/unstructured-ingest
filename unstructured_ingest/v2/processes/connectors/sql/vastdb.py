@@ -6,6 +6,7 @@ from pydantic import Field, Secret
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+from ibis import _
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
@@ -144,30 +145,37 @@ class VastdbDownloader(SQLDownloader):
 
     @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
-        from ibis.expr import sql
+        # from ibis.expr import sql
 
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
         ids = tuple([item.identifier for item in file_data.batch_items])
-        breakpoint()
 
         with self.connection_config.get_cursor() as cursor:
-            fields = (
-                sql.SQL(",").join(sql.Identifier(field) for field in self.download_config.fields)
-                if self.download_config.fields
-                else sql.SQL("*")
-            )
+            # fields = (
+            #     sql.SQL(",").join(sql.Identifier(field) for field in self.download_config.fields)
+            #     if self.download_config.fields
+            #     else sql.SQL("*")
+            # )
 
-            query = sql.SQL("SELECT {fields} FROM {table_name} WHERE {id_column} IN %s").format(
-                fields=fields,
-                table_name=sql.Identifier(table_name),
-                id_column=sql.Identifier(id_column),
-            )
-            logger.debug(f"running query: {cursor.mogrify(query, (ids,))}")
-            cursor.execute(query, (ids,))
-            rows = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
-            return rows, columns
+            # query = sql.SQL("SELECT {fields} FROM {table_name} WHERE {id_column} IN %s").format(
+            #     fields=fields,
+            #     table_name=sql.Identifier(table_name),
+            #     id_column=sql.Identifier(id_column),
+            # )
+            # logger.debug(f"running query: {cursor.mogrify(query, (ids,))}")
+            # cursor.execute(query, (ids,))
+            # rows = cursor.fetchall()
+            # columns = [col[0] for col in cursor.description]
+            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+            schema = bucket.schema(self.connection_config.vastdb_schema)
+            table = schema.table(table_name)
+            predicate = _[id_column].isin(ids)
+            logger.info(f"predicate: {predicate}")
+            reader = table.select(predicate=predicate)
+            results = reader.read_all()
+            df = results.to_pandas()
+            return [tuple(r) for r in df.to_numpy()], results.column_names
 
 
 class VastdbUploadStagerConfig(SQLUploadStagerConfig):
