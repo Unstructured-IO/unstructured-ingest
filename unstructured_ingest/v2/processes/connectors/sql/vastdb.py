@@ -49,16 +49,10 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     access_config: Secret[VastdbAccessConfig] = Field(
         default=VastdbAccessConfig(), validate_default=True
     )
-    # database: Optional[str] = Field(
-    #     default=None,
-    #     description="Database name.",
-    # )
     vastdb_bucket: str
     vastdb_schema: str
-    vastdb_table: str
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-    # @contextmanager
     @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def get_connection(self) -> Generator["VastdbConnect", None, None]:
         from vastdb import connect
@@ -71,26 +65,15 @@ class VastdbConnectionConfig(SQLConnectionConfig):
 
         )
         return connection
-        # try:
-        #     yield connection
-        # finally:
-        #     return
-        #     # connection.commit()
-        #     # connection.close()
 
-    # @contextmanager
     def get_cursor(self) -> Generator["VastdbTransaction", None, None]:
-        # with self.get_connection() as connection:
-        logger.info("GET CURSOR!!!")
-
-        cursor = self.get_connection().transaction()
-        return cursor
-        # breakpoint()
-        # try:
-        #     yield cursor
-        # finally:
-        #     return
-        #         # cursor.close()
+        return self.get_connection().transaction()
+    
+    # def get_schema(self):
+    #     with self.get_cursor() as cursor:
+    #         bucket = cursor.bucket(self.vastdb_bucket)
+    #         schema = bucket.schema(self.vastdb_schema)
+    #         return schema
 
 
 class VastdbIndexerConfig(SQLIndexerConfig):
@@ -110,11 +93,6 @@ class VastdbIndexer(SQLIndexer):
             table = schema.table(self.index_config.table_name)
             reader = table.select(columns=[self.index_config.id_column])
             results = reader.read_all()  # Build a PyArrow Table from the RecordBatchReader
-
-            # cursor.execute(
-            #     f"SELECT {self.index_config.id_column} FROM {self.index_config.table_name}"
-            # )
-            # results = cursor.fetchall()
             ids = sorted([result[self.index_config.id_column] for result in results.to_pylist()])
             return ids
 
@@ -127,7 +105,6 @@ class VastdbIndexer(SQLIndexer):
                 table = schema.table(self.index_config.table_name)
                 # cursor.execute("SELECT 1;")
                 table.select()
-                logger.info("PRECHECK PASSED !!!!!!!!!!!!!!!!!!!")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -145,34 +122,26 @@ class VastdbDownloader(SQLDownloader):
 
     @requires_dependencies(["vastdb","ibis","pyarrow"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
-        # from ibis.expr import sql
+        from ibis import _ # imports the deferred expression
 
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
         ids = tuple([item.identifier for item in file_data.batch_items])
 
         with self.connection_config.get_cursor() as cursor:
-            # fields = (
-            #     sql.SQL(",").join(sql.Identifier(field) for field in self.download_config.fields)
-            #     if self.download_config.fields
-            #     else sql.SQL("*")
-            # )
-
-            # query = sql.SQL("SELECT {fields} FROM {table_name} WHERE {id_column} IN %s").format(
-            #     fields=fields,
-            #     table_name=sql.Identifier(table_name),
-            #     id_column=sql.Identifier(id_column),
-            # )
-            # logger.debug(f"running query: {cursor.mogrify(query, (ids,))}")
-            # cursor.execute(query, (ids,))
-            # rows = cursor.fetchall()
-            # columns = [col[0] for col in cursor.description]
             bucket = cursor.bucket(self.connection_config.vastdb_bucket)
             schema = bucket.schema(self.connection_config.vastdb_schema)
             table = schema.table(table_name)
+
             predicate = _[id_column].isin(ids)
-            logger.info(f"predicate: {predicate}")
-            reader = table.select(predicate=predicate)
+
+            if self.download_config.fields:
+                # Vastdb requires the id column to be included in the fields
+                fields = self.download_config.fields + [id_column]
+                # dict.fromkeys to remove duplicates and keep order
+                reader = table.select(columns=list(dict.fromkeys(fields)), predicate=predicate)
+            else:
+                reader = table.select(predicate=predicate)
             results = reader.read_all()
             df = results.to_pandas()
             return [tuple(r) for r in df.to_numpy()], results.column_names
@@ -222,13 +191,13 @@ class VastdbUploader(SQLUploader):
         df.replace({np.nan: None}, inplace=True)
         self._fit_to_schema(df=df)
 
-        columns = list(df.columns)
+        # columns = list(df.columns)
         logger.info("ABOUT TO INSERT !!!!!!!")
-        stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
-            table_name=self.upload_config.table_name,
-            columns=",".join(columns),
-            values=",".join([self.values_delimiter for _ in columns]),
-        )
+        # stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
+        #     table_name=self.upload_config.table_name,
+        #     columns=",".join(columns),
+        #     values=",".join([self.values_delimiter for _ in columns]),
+        # )
         logger.info(
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
@@ -255,11 +224,41 @@ class VastdbUploader(SQLUploader):
                 pa_table = pa.Table.from_pandas(df)
                 bucket = cursor.bucket(self.connection_config.vastdb_bucket)
                 schema = bucket.schema(self.connection_config.vastdb_schema)
-                table = schema.table(self.connection_config.vastdb_table)
+                table = schema.table(self.upload_config.table_name)
                 table.insert(pa_table)
 
-    def can_delete(self) -> bool:
-        return False
+    def get_table_columns(self) -> list[str]:
+        with self.get_cursor() as cursor:
+            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+            schema = bucket.schema(self.connection_config.vastdb_schema)
+            table = schema.table(self.upload_config.table_name)
+            return table.select().read_all().column_names
+            # return [desc[0] for desc in cursor.description]
+
+    def delete_by_record_id(self, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with data "
+            f"{self.upload_config.record_id_key}={file_data.identifier} "
+            f"from table {self.upload_config.table_name}"
+        )
+        # stmt = f"DELETE FROM {self.upload_config.table_name} WHERE {self.upload_config.record_id_key} = {self.values_delimiter}"  # noqa: E501
+        predicate = _[self.upload_config.record_id_key].isin([file_data.identifier])
+        with self.get_cursor() as cursor:
+            # cursor.execute(stmt, [file_data.identifier])
+            # rowcount = cursor.rowcount
+            # if rowcount > 0:
+            #     logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
+            bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+            schema = bucket.schema(self.connection_config.vastdb_schema)
+            table = schema.table(self.upload_config.table_name)
+            rows_to_delete = table.select(columns=[],predicate=predicate, internal_row_id=True).read_all()
+            # row_ids= [result["$row_id"] for result in rows_to_delete.to_pylist()]
+            table.delete(rows_to_delete)
+
+            # test
+            logger.info("DELETED !")
+            deleted = table.select().read_all()
+            logger.info(deleted)
 
 vastdb_source_entry = SourceRegistryEntry(
     connection_config=VastdbConnectionConfig,
