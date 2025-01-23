@@ -41,16 +41,16 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     access_config: Secret[VastdbAccessConfig] = Field(
         default=VastdbAccessConfig(), validate_default=True
     )
-    database: Optional[str] = Field(
-        default=None,
-        description="Database name.",
-    )
+    # database: Optional[str] = Field(
+    #     default=None,
+    #     description="Database name.",
+    # )
     vastdb_bucket: str
     vastdb_schema: str
     vastdb_table: str
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-    @contextmanager
+    # @contextmanager
     @requires_dependencies(["vastdb","ibis"], extras="vastdb")
     def get_connection(self) -> Generator["VastdbConnect", None, None]:
         from vastdb import connect
@@ -62,20 +62,27 @@ class VastdbConnectionConfig(SQLConnectionConfig):
             secret=access_config.access_key_secret,
 
         )
-        try:
-            yield connection
-        finally:
-            connection.commit()
-            connection.close()
+        return connection
+        # try:
+        #     yield connection
+        # finally:
+        #     return
+        #     # connection.commit()
+        #     # connection.close()
 
-    @contextmanager
+    # @contextmanager
     def get_cursor(self) -> Generator["VastdbTransaction", None, None]:
-        with self.get_connection() as connection:
-            cursor = connection.transaction()
-            try:
-                yield cursor
-            finally:
-                cursor.close()
+        # with self.get_connection() as connection:
+        logger.info("GET CURSOR!!!")
+
+        cursor = self.get_connection().transaction()
+        return cursor
+        # breakpoint()
+        # try:
+        #     yield cursor
+        # finally:
+        #     return
+        #         # cursor.close()
 
 
 class VastdbIndexerConfig(SQLIndexerConfig):
@@ -145,8 +152,22 @@ class VastdbUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "%s"
 
+    def precheck(self) -> None:
+        try:
+            with self.get_cursor() as cursor:
+                bucket = cursor.bucket(self.connection_config.vastdb_bucket)
+                logger.info(bucket.schemas())
+                schema = bucket.schema(self.connection_config.vastdb_schema)
+                table = schema.table(self.connection_config.vastdb_table)
+                # cursor.execute("SELECT 1;")
+                table.select()
+                logger.info("PRECHECK PASSED !!!!!!!!!!!!!!!!!!!")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-postgres_source_entry = SourceRegistryEntry(
+
+vastdb_source_entry = SourceRegistryEntry(
     connection_config=VastdbConnectionConfig,
     indexer_config=VastdbIndexerConfig,
     indexer=VastdbIndexer,
@@ -154,7 +175,7 @@ postgres_source_entry = SourceRegistryEntry(
     downloader=VastdbDownloader,
 )
 
-postgres_destination_entry = DestinationRegistryEntry(
+vastdb_destination_entry = DestinationRegistryEntry(
     connection_config=VastdbConnectionConfig,
     uploader=VastdbUploader,
     uploader_config=VastdbUploaderConfig,
