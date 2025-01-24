@@ -49,7 +49,8 @@ class HtmlMixin(BaseModel):
         elif tag_link.startswith("http"):
             return tag_link
         else:
-            return base_url + tag_link
+            tag_link = tag_link.lstrip("/")
+            return f"{base_url}/{tag_link}"
 
     def download_content(self, url: str, session: "Session") -> bytes:
         response = session.get(url)
@@ -97,7 +98,9 @@ class HtmlMixin(BaseModel):
         ]
         absolute_urls = [self.get_absolute_url(tag_link=href, url=url) for href in hrefs]
         allowed_urls = [
-            self.can_download(url_to_download=url, original_url=url) for url in absolute_urls
+            url_to_download
+            for url_to_download in absolute_urls
+            if self.can_download(url_to_download=url_to_download, original_url=url)
         ]
         return allowed_urls
 
@@ -117,6 +120,8 @@ class HtmlMixin(BaseModel):
         )
         result_file_data = file_data.model_copy(deep=True)
         result_file_data.metadata.url = url
+        if result_file_data.metadata.record_locator is None:
+            result_file_data.metadata.record_locator = {}
         result_file_data.metadata.record_locator["parent_url"] = url
         result_file_data.identifier = str(uuid5(NAMESPACE_DNS, url + file_data.identifier))
         filename = Path(urlparse(url=url).path).name
