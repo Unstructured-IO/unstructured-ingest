@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar
 
-import ndjson
 from pydantic import BaseModel
 
+from unstructured_ingest.utils import ndjson
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
