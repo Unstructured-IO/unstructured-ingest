@@ -37,7 +37,7 @@ def test_extract_images(mocker: MockerFixture):
     urls_to_download = [
         call_args_list.kwargs["url"] for call_args_list in mocked_download_response.call_args_list
     ]
-    assert urls_to_download == ["http://mywebsite.com/img1.jpg", "http://mywebsite.comimg3.jpg"]
+    assert urls_to_download == ["http://mywebsite.com/img1.jpg", "http://mywebsite.com/img3.jpg"]
 
 
 def test_extract_images_allow_list(mocker: MockerFixture):
