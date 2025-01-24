@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 from uuid import NAMESPACE_DNS, uuid5
 
-from bs4 import BeautifulSoup
-from bs4.element import Tag
 from pydantic import BaseModel, Field
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -13,6 +11,7 @@ from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, Source
 from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
+    from bs4.element import Tag
     from requests import Session
 
 
@@ -67,7 +66,7 @@ class HtmlMixin(BaseModel):
         logger.info(f"Skipping url because it does not match the allow list: {url_to_download}")
         return False
 
-    def extract_image_src(self, image: Tag, url: str, session: "Session") -> Tag:
+    def extract_image_src(self, image: "Tag", url: str, session: "Session") -> "Tag":
         current_src = image["src"]
         if current_src.startswith("data:image/png;base64"):
             # already base64 encoded
@@ -80,7 +79,10 @@ class HtmlMixin(BaseModel):
         image["src"] = f"data:image/png;base64,{base64.b64encode(image_content).decode()}"
         return image
 
+    @requires_dependencies(["bs4"])
     def extract_html_images(self, url: str, html: str, session: Optional["Session"] = None) -> str:
+        from bs4 import BeautifulSoup
+
         session = session or self.get_default_session()
         soup = BeautifulSoup(html, "html.parser")
         images = soup.find_all("img")
@@ -88,7 +90,10 @@ class HtmlMixin(BaseModel):
             self.extract_image_src(image=image, url=url, session=session)
         return str(soup)
 
+    @requires_dependencies(["bs4"])
     def get_hrefs(self, url: str, html: str) -> list:
+        from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html, "html.parser")
         tags = soup.find_all("a", href=True)
         hrefs = [
