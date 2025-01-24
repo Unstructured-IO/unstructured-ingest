@@ -3,8 +3,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret
 import pandas as pd
+from pydantic import Field, Secret
 
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (

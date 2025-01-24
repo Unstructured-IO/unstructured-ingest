@@ -355,7 +355,7 @@ class SQLUploader(Uploader):
             parsed = []
             for column_name, value in zip(columns, row):
                 if column_name in _DATE_COLUMNS:
-                    if value is None or pd.isna(value): # pandas is nan
+                    if value is None or pd.isna(value):  # pandas is nan
                         parsed.append(None)
                     else:
                         parsed.append(parse_date_string(value))
