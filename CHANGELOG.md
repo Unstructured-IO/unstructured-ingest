@@ -1,10 +1,11 @@
-## 0.4.1-dev2
+## 0.4.1-dev3
 
 ### Enhancements
 
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
 * **Support href extraction to local file**
+* **Added VastDB source and destination connector**
 
 ### Fixes
 
