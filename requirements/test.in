@@ -12,6 +12,7 @@ faker
 docker
 universal_pathlib
 deepdiff
+bs4
 
 # Connector specific deps
 cryptography
