@@ -398,9 +398,7 @@ class SQLUploader(Uploader):
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df)
-        # just double checking that this isn't cause of tests fail will change it back
-        # df = self._fit_to_schema(df=df)
+        df = self._fit_to_schema(df=df)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(

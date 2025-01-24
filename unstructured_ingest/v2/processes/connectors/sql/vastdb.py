@@ -145,8 +145,13 @@ class VastdbDownloader(SQLDownloader):
 
 
 class VastdbUploadStagerConfig(SQLUploadStagerConfig):
-    rename_columns_map: Optional[dict] = None
-    additional_columns: Optional[list[str]] = field(default_factory=list)
+    rename_columns_map: Optional[dict] = Field(
+        default=None,
+        description="Map of column names to rename, ex: {'old_name': 'new_name'}",
+    )
+    additional_columns: Optional[list[str]] = field(
+        default_factory=list, description="Additional columns to include in the upload"
+    )
 
 
 class VastdbUploadStager(SQLUploadStager):
