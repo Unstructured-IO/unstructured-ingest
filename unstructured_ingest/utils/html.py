@@ -35,7 +35,7 @@ class HtmlMixin(BaseModel):
         "will default to the base url the original HTML came from",
     )
 
-    @requires_dependencies(["atlassian"], extras="confluence")
+    @requires_dependencies(["requests"])
     def get_default_session(self) -> "Session":
         import requests
 
