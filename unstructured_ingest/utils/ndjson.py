@@ -26,7 +26,7 @@ class writer(object):
         self.f = f
         self.kwargs = kwargs
 
-    def writerow(self, row):
+    def write(self, row):
         stringified = json.dumps(row, **self.kwargs)
         self.f.write(stringified + "\n")
 

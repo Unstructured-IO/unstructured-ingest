@@ -39,7 +39,7 @@ class UploadStager(BaseProcess, ABC):
                 writer = ndjson.writer(out_f)
                 for element in reader:
                     conformed_element = self.conform_dict(element_dict=element, file_data=file_data)
-                    writer.writerow(row=conformed_element)
+                    writer.write(row=conformed_element)
                     writer.f.flush()
 
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
