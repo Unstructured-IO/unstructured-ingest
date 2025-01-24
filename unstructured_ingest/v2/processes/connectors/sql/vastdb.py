@@ -149,7 +149,7 @@ class VastdbUploadStagerConfig(SQLUploadStagerConfig):
         default=None,
         description="Map of column names to rename, ex: {'old_name': 'new_name'}",
     )
-    additional_columns: Optional[list[str]] = field(
+    additional_columns: Optional[list[str]] = Field(
         default_factory=list, description="Additional columns to include in the upload"
     )
 
