@@ -397,8 +397,8 @@ class SQLUploader(Uploader):
                 f"record id column "
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
-        df.replace({np.nan: None}, inplace=True)
         df = self._fit_to_schema(df=df)
+        df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
