@@ -1,4 +1,4 @@
-import json
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -20,7 +20,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
     _COLUMNS,
-    _DATE_COLUMNS,
     SQLAccessConfig,
     SqlBatchFileData,
     SQLConnectionConfig,
@@ -32,7 +31,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
-    parse_date_string,
 )
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
@@ -59,6 +57,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @requires_dependencies(["vastdb"], extras="vastdb")
+    @contextmanager
     def get_connection(self) -> "VastdbConnect":
         from vastdb import connect
 
@@ -68,16 +67,21 @@ class VastdbConnectionConfig(SQLConnectionConfig):
             access=access_config.access_key_id,
             secret=access_config.access_key_secret,
         )
-        return connection
+        yield connection
 
+    @contextmanager
     def get_cursor(self) -> "VastdbTransaction":
-        return self.get_connection().transaction()
+        with self.get_connection() as connection:
+            with connection.transaction() as transaction:
+                yield transaction
 
-    def get_table(self, cursor: "VastdbTransaction", table_name: str) -> "VastdbTable":
-        bucket = cursor.bucket(self.vastdb_bucket)
-        schema = bucket.schema(self.vastdb_schema)
-        table = schema.table(table_name)
-        return table
+    @contextmanager
+    def get_table(self, table_name: str) -> "VastdbTable":
+        with self.get_cursor() as cursor:
+            bucket = cursor.bucket(self.vastdb_bucket)
+            schema = bucket.schema(self.vastdb_schema)
+            table = schema.table(table_name)
+            yield table
 
 
 class VastdbIndexerConfig(SQLIndexerConfig):
@@ -91,8 +95,7 @@ class VastdbIndexer(SQLIndexer):
     connector_type: str = CONNECTOR_TYPE
 
     def _get_doc_ids(self) -> list[str]:
-        with self.get_cursor() as cursor:
-            table = self.connection_config.get_table(cursor, self.index_config.table_name)
+        with self.connection_config.get_table(self.index_config.table_name) as table:
             reader = table.select(columns=[self.index_config.id_column])
             results = reader.read_all()  # Build a PyArrow Table from the RecordBatchReader
             ids = sorted([result[self.index_config.id_column] for result in results.to_pylist()])
@@ -100,8 +103,7 @@ class VastdbIndexer(SQLIndexer):
 
     def precheck(self) -> None:
         try:
-            with self.get_cursor() as cursor:
-                table = self.connection_config.get_table(cursor, self.index_config.table_name)
+            with self.connection_config.get_table(self.index_config.table_name) as table:
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -126,8 +128,7 @@ class VastdbDownloader(SQLDownloader):
         id_column = file_data.additional_metadata.id_column
         ids = tuple([item.identifier for item in file_data.batch_items])
 
-        with self.connection_config.get_cursor() as cursor:
-            table = self.connection_config.get_table(cursor, table_name)
+        with self.connection_config.get_table(table_name) as table:
 
             predicate = _[id_column].isin(ids)
 
@@ -171,20 +172,7 @@ class VastdbUploadStager(SQLUploadStager):
         return element
 
     def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
-            df[column] = df[column].apply(parse_date_string).apply(lambda date: date.timestamp())
-        for column in filter(
-            lambda x: x in df.columns,
-            ("permissions_data", "record_locator", "points", "links"),
-        ):
-            df[column] = df[column].apply(
-                lambda x: json.dumps(x) if isinstance(x, (list, dict)) else None
-            )
-        for column in filter(
-            lambda x: x in df.columns,
-            ("version", "page_number", "regex_metadata"),
-        ):
-            df[column] = df[column].apply(str)
+        df = super().conform_dataframe(df=df)
         if self.upload_stager_config.rename_columns_map:
             df.rename(columns=self.upload_stager_config.rename_columns_map, inplace=True)
         return df
@@ -202,8 +190,7 @@ class VastdbUploader(SQLUploader):
 
     def precheck(self) -> None:
         try:
-            with self.get_cursor() as cursor:
-                table = self.connection_config.get_table(cursor, self.upload_config.table_name)
+            with self.connection_config.get_table(self.upload_config.table_name) as table:
                 table.select()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -233,15 +220,13 @@ class VastdbUploader(SQLUploader):
 
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
 
-            with self.get_cursor() as cursor:
+            with self.connection_config.get_table(self.upload_config.table_name) as table:
                 pa_table = pa.Table.from_pandas(rows)
-                table = self.connection_config.get_table(cursor, self.upload_config.table_name)
                 table.insert(pa_table)
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
-            with self.get_cursor() as cursor:
-                table = self.connection_config.get_table(cursor, self.upload_config.table_name)
+            with self.connection_config.get_table(self.upload_config.table_name) as table:
                 self._columns = table.columns().names
         return self._columns
 
@@ -255,8 +240,7 @@ class VastdbUploader(SQLUploader):
             f"from table {self.upload_config.table_name}"
         )
         predicate = _[self.upload_config.record_id_key].isin([file_data.identifier])
-        with self.get_cursor() as cursor:
-            table = self.connection_config.get_table(cursor, self.upload_config.table_name)
+        with self.connection_config.get_table(self.upload_config.table_name) as table:
             # Get the internal row id
             rows_to_delete = table.select(
                 columns=[], predicate=predicate, internal_row_id=True
