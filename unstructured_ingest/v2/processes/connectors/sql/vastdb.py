@@ -58,7 +58,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     vastdb_schema: str
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
+    @requires_dependencies(["vastdb"], extras="vastdb")
     def get_connection(self) -> "VastdbConnect":
         from vastdb import connect
 
@@ -118,7 +118,7 @@ class VastdbDownloader(SQLDownloader):
     download_config: VastdbDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
+    @requires_dependencies(["ibis"], extras="vastdb")
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         from ibis import _  # imports the Ibis deferred expression
 
@@ -165,7 +165,7 @@ class VastdbUploadStager(SQLUploadStager):
 
         # remove extraneous, not supported columns
         # but also allow for additional columns
-        approved_columns = set(list(_COLUMNS) + self.upload_stager_config.additional_columns)
+        approved_columns = set(_COLUMNS).union(self.upload_stager_config.additional_columns)
         element = {k: v for k, v in data.items() if k in approved_columns}
         element[RECORD_ID_LABEL] = file_data.identifier
         return element
@@ -209,7 +209,7 @@ class VastdbUploader(SQLUploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
+    @requires_dependencies(["pyarrow"], extras="vastdb")
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
         import pyarrow as pa
 
@@ -234,7 +234,7 @@ class VastdbUploader(SQLUploader):
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
 
             with self.get_cursor() as cursor:
-                pa_table = pa.Table.from_pandas(df)
+                pa_table = pa.Table.from_pandas(rows)
                 table = self.connection_config.get_table(cursor, self.upload_config.table_name)
                 table.insert(pa_table)
 
@@ -245,7 +245,7 @@ class VastdbUploader(SQLUploader):
                 self._columns = table.columns().names
         return self._columns
 
-    @requires_dependencies(["vastdb", "ibis", "pyarrow"], extras="vastdb")
+    @requires_dependencies(["ibis"], extras="vastdb")
     def delete_by_record_id(self, file_data: FileData) -> None:
         from ibis import _  # imports the Ibis deferred expression
 
