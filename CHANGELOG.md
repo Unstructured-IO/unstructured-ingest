@@ -1,4 +1,4 @@
-## 0.4.1-dev2
+## 0.4.1-dev3
 
 ### Enhancements
 
@@ -9,9 +9,6 @@
 ### Fixes
 
 * **Fix how data updated before writing to sql tables based on columns in table**
-
-### Fixes
-
 * **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
 
 ## 0.4.0
