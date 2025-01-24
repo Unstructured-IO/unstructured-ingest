@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
@@ -8,6 +9,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     FileData,
 )
@@ -17,6 +19,8 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
+    _COLUMNS,
+    _DATE_COLUMNS,
     SQLAccessConfig,
     SqlBatchFileData,
     SQLConnectionConfig,
@@ -28,7 +32,9 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
+    parse_date_string,
 )
+from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from vastdb import connect as VastdbConnect
@@ -138,11 +144,50 @@ class VastdbDownloader(SQLDownloader):
 
 
 class VastdbUploadStagerConfig(SQLUploadStagerConfig):
-    pass
+    rename_columns_map: Optional[dict] = None
+    additional_columns: Optional[list] = None
 
 
 class VastdbUploadStager(SQLUploadStager):
     upload_stager_config: VastdbUploadStagerConfig
+
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        data = element_dict.copy()
+        metadata: dict[str, Any] = data.pop("metadata", {})
+        data_source = metadata.pop("data_source", {})
+        coordinates = metadata.pop("coordinates", {})
+
+        data.update(metadata)
+        data.update(data_source)
+        data.update(coordinates)
+
+        data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
+
+        # remove extraneous, not supported columns
+        # but also allow for additional columns
+        approved_columns = set(list(_COLUMNS) + self.upload_stager_config.additional_columns)
+        element = {k: v for k, v in data.items() if k in approved_columns}
+        element[RECORD_ID_LABEL] = file_data.identifier
+        return element
+
+    def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
+            df[column] = df[column].apply(parse_date_string).apply(lambda date: date.timestamp())
+        for column in filter(
+            lambda x: x in df.columns,
+            ("permissions_data", "record_locator", "points", "links"),
+        ):
+            df[column] = df[column].apply(
+                lambda x: json.dumps(x) if isinstance(x, (list, dict)) else None
+            )
+        for column in filter(
+            lambda x: x in df.columns,
+            ("version", "page_number", "regex_metadata"),
+        ):
+            df[column] = df[column].apply(str)
+        if self.upload_stager_config.rename_columns_map:
+            df.rename(columns=self.upload_stager_config.rename_columns_map, inplace=True)
+        return df
 
 
 class VastdbUploaderConfig(SQLUploaderConfig):
