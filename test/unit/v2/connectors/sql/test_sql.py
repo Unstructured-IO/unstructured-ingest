@@ -47,7 +47,9 @@ def test_run_output_filename_suffix(
     mock_get_output_path = mocker.patch.object(
         SQLUploadStager, "get_output_path", return_value=output_dir / expected
     )
-    mock_write_output = mocker.patch.object(SQLUploadStager, "write_output")
+    mock_write_output = mocker.patch(
+        "unstructured_ingest.v2.processes.connectors.sql.sql.write_data", return_value=None
+    )
 
     # Act
     result = mock_instance.run(
@@ -67,6 +69,6 @@ def test_run_output_filename_suffix(
     mock_conform_dataframe.assert_called_once()
     mock_get_output_path.assert_called_once_with(output_filename=expected, output_dir=output_dir)
     mock_write_output.assert_called_once_with(
-        output_path=output_dir / expected, data=[{"key": "value"}, {"key": "value2"}]
+        path=output_dir / expected, data=[{"key": "value"}, {"key": "value2"}]
     )
     assert result.name == expected

@@ -4,6 +4,11 @@
 
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
+* **Support href extraction to local file**
+
+### Fixes
+
+* **Fix how data updated before writing to sql tables based on columns in table**
 
 ### Fixes
 

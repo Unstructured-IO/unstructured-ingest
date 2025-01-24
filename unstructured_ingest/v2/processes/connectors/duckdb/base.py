@@ -4,7 +4,7 @@ from typing import Any
 
 import pandas as pd
 
-from unstructured_ingest.utils.data_prep import get_data
+from unstructured_ingest.utils.data_prep import get_data, write_data
 from unstructured_ingest.v2.interfaces import FileData, UploadStager
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
@@ -96,5 +96,5 @@ class BaseDuckDBUploadStager(UploadStager):
             df[column] = df[column].apply(str)
 
         data = df.to_dict(orient="records")
-        self.write_output(output_path=output_path, data=data)
+        write_data(path=output_path, data=data)
         return output_path

@@ -18,6 +18,7 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
+    download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -185,6 +186,13 @@ class ConfluenceDownloaderConfig(DownloaderConfig):
         description="if true, will download images and replace "
         "the html content with base64 encoded images",
     )
+    extract_files: bool = Field(
+        default=False, description="if true, will download any embedded files"
+    )
+    force_download: bool = Field(
+        default=False,
+        description="if true, will redownload extracted files even if they already exist locally",
+    )
 
 
 @dataclass
@@ -193,7 +201,27 @@ class ConfluenceDownloader(Downloader):
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
 
-    def run(self, file_data: FileData, **kwargs) -> DownloadResponse:
+    def download_embedded_files(
+        self, session, html: str, current_file_data: FileData
+    ) -> list[DownloadResponse]:
+        if not self.download_config.extract_files:
+            return []
+        from unstructured_ingest.utils.html import download_embedded_files
+
+        filepath = current_file_data.source_identifiers.relative_path
+        download_path = Path(self.download_dir) / filepath
+        download_dir = download_path.with_suffix("")
+        return download_embedded_files(
+            download_dir=download_dir,
+            original_filedata=current_file_data,
+            original_html=html,
+            session=session,
+            force_download=self.download_config.force_download,
+        )
+
+    def run(self, file_data: FileData, **kwargs) -> download_responses:
+        from bs4 import BeautifulSoup
+
         from unstructured_ingest.utils.html import convert_image_tags
 
         doc_id = file_data.identifier
@@ -212,6 +240,10 @@ class ConfluenceDownloader(Downloader):
             raise ValueError(f"Page with ID {doc_id} does not exist.")
 
         content = page["body"]["view"]["value"]
+        # This supports v2 html parsing in unstructured
+        title = page["title"]
+        title_html = f"<title>{title}</title>"
+        content = f"<body class='Document' >{title_html}{content}</body>"
         if self.download_config.extract_images:
             with self.connection_config.get_client() as client:
                 content = convert_image_tags(
@@ -222,15 +254,38 @@ class ConfluenceDownloader(Downloader):
         download_path = Path(self.download_dir) / filepath
         download_path.parent.mkdir(parents=True, exist_ok=True)
         with open(download_path, "w", encoding="utf8") as f:
-            f.write(content)
+            soup = BeautifulSoup(content, "html.parser")
+            f.write(soup.prettify())
 
         # Update file_data with metadata
         file_data.metadata.date_created = page["history"]["createdDate"]
         file_data.metadata.date_modified = page["version"]["when"]
         file_data.metadata.version = str(page["version"]["number"])
-        file_data.display_name = page["title"]
+        file_data.display_name = title
 
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        download_response = self.generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
+        if self.download_config.extract_files:
+            with self.connection_config.get_client() as client:
+                extracted_download_responses = self.download_embedded_files(
+                    html=content,
+                    current_file_data=download_response["file_data"],
+                    session=client._session,
+                )
+                if extracted_download_responses:
+                    for dr in extracted_download_responses:
+                        fd = dr["file_data"]
+                        source_file_path = Path(file_data.source_identifiers.fullpath).with_suffix(
+                            ""
+                        )
+                        new_fullpath = source_file_path / fd.source_identifiers.filename
+                        fd.source_identifiers = SourceIdentifiers(
+                            fullpath=new_fullpath.as_posix(), filename=new_fullpath.name
+                        )
+                    extracted_download_responses.append(download_response)
+                    return extracted_download_responses
+        return download_response
 
 
 confluence_source_entry = SourceRegistryEntry(

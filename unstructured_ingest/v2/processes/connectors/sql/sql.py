@@ -14,7 +14,7 @@ from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe
+from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dataframe, write_data
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -314,7 +314,7 @@ class SQLUploadStager(UploadStager):
         output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
-        self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
+        write_data(path=output_path, data=df.to_dict(orient="records"))
         return output_path
 
 
@@ -332,6 +332,7 @@ class SQLUploader(Uploader):
     upload_config: SQLUploaderConfig
     connection_config: SQLConnectionConfig
     values_delimiter: str = "?"
+    _columns: list[str] = field(init=False, default=None)
 
     def precheck(self) -> None:
         try:
@@ -364,8 +365,9 @@ class SQLUploader(Uploader):
         return output
 
     def _fit_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+        table_columns = self.get_table_columns()
         columns = set(df.columns)
-        schema_fields = set(columns)
+        schema_fields = set(table_columns)
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
 
@@ -424,9 +426,11 @@ class SQLUploader(Uploader):
                 cursor.executemany(stmt, values)
 
     def get_table_columns(self) -> list[str]:
-        with self.get_cursor() as cursor:
-            cursor.execute(f"SELECT * from {self.upload_config.table_name}")
-            return [desc[0] for desc in cursor.description]
+        if self._columns is None:
+            with self.get_cursor() as cursor:
+                cursor.execute(f"SELECT * from {self.upload_config.table_name} LIMIT 1")
+                self._columns = [desc[0] for desc in cursor.description]
+        return self._columns
 
     def can_delete(self) -> bool:
         return self.upload_config.record_id_key in self.get_table_columns()
