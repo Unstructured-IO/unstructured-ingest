@@ -15,11 +15,14 @@ from .snowflake import CONNECTOR_TYPE as SNOWFLAKE_CONNECTOR_TYPE
 from .snowflake import snowflake_destination_entry, snowflake_source_entry
 from .sqlite import CONNECTOR_TYPE as SQLITE_CONNECTOR_TYPE
 from .sqlite import sqlite_destination_entry, sqlite_source_entry
+from .vastdb import CONNECTOR_TYPE as VASTDB_CONNECTOR_TYPE
+from .vastdb import vastdb_destination_entry, vastdb_source_entry
 
 add_source_entry(source_type=SQLITE_CONNECTOR_TYPE, entry=sqlite_source_entry)
 add_source_entry(source_type=POSTGRES_CONNECTOR_TYPE, entry=postgres_source_entry)
 add_source_entry(source_type=SNOWFLAKE_CONNECTOR_TYPE, entry=snowflake_source_entry)
 add_source_entry(source_type=SINGLESTORE_CONNECTOR_TYPE, entry=singlestore_source_entry)
+add_source_entry(source_type=VASTDB_CONNECTOR_TYPE, entry=vastdb_source_entry)
 
 add_destination_entry(destination_type=SQLITE_CONNECTOR_TYPE, entry=sqlite_destination_entry)
 add_destination_entry(destination_type=POSTGRES_CONNECTOR_TYPE, entry=postgres_destination_entry)
@@ -31,3 +34,4 @@ add_destination_entry(
     destination_type=DATABRICKS_DELTA_TABLES_CONNECTOR_TYPE,
     entry=databricks_delta_tables_destination_entry,
 )
+add_destination_entry(destination_type=VASTDB_CONNECTOR_TYPE, entry=vastdb_destination_entry)

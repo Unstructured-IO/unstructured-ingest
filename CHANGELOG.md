@@ -5,6 +5,7 @@
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
 * **Support href extraction to local file**
+* **Added VastDB source and destination connector**
 
 ### Fixes
 

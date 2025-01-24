@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator
 
+import pandas as pd
 from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.v2.logger import logger
@@ -141,7 +142,7 @@ class SQLiteUploader(SQLUploader):
                 if isinstance(value, (list, dict)):
                     value = json.dumps(value)
                 if column_name in _DATE_COLUMNS:
-                    if value is None:
+                    if value is None or pd.isna(value):
                         parsed.append(None)
                     else:
                         parsed.append(parse_date_string(value))

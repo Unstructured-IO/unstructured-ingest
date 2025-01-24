@@ -132,6 +132,7 @@ connectors_reqs = {
     ),
     "singlestore": load_requirements("requirements/connectors/singlestore.in"),
     "vectara": load_requirements("requirements/connectors/vectara.in"),
+    "vastdb": load_requirements("requirements/connectors/vastdb.in"),
 }
 
 embed_reqs = {

@@ -1,0 +1,5 @@
+-c ../common/constraints.txt
+
+pyarrow
+vastdb
+ibis
