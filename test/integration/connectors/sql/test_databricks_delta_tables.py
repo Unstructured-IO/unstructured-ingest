@@ -17,11 +17,11 @@ from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connectors.sql.databricks_delta_tables import (
     CONNECTOR_TYPE,
-    DatabrickDeltaTablesAccessConfig,
-    DatabrickDeltaTablesConnectionConfig,
-    DatabrickDeltaTablesUploader,
-    DatabrickDeltaTablesUploaderConfig,
-    DatabrickDeltaTablesUploadStager,
+    DatabricksDeltaTablesAccessConfig,
+    DatabricksDeltaTablesConnectionConfig,
+    DatabricksDeltaTablesUploader,
+    DatabricksDeltaTablesUploaderConfig,
+    DatabricksDeltaTablesUploadStager,
 )
 
 CATALOG = "utic-dev-tech-fixtures"
@@ -112,7 +112,7 @@ async def test_databricks_delta_tables_destination(
         connector_type=CONNECTOR_TYPE,
         source_identifiers=SourceIdentifiers(filename=upload_file.name, fullpath=upload_file.name),
     )
-    stager = DatabrickDeltaTablesUploadStager()
+    stager = DatabricksDeltaTablesUploadStager()
     staged_path = stager.run(
         elements_filepath=upload_file,
         file_data=mock_file_data,
@@ -122,15 +122,15 @@ async def test_databricks_delta_tables_destination(
 
     assert staged_path.suffix == upload_file.suffix
 
-    uploader = DatabrickDeltaTablesUploader(
-        connection_config=DatabrickDeltaTablesConnectionConfig(
-            access_config=DatabrickDeltaTablesAccessConfig(
+    uploader = DatabricksDeltaTablesUploader(
+        connection_config=DatabricksDeltaTablesConnectionConfig(
+            access_config=DatabricksDeltaTablesAccessConfig(
                 token=env_data.access_token.get_secret_value()
             ),
             http_path=env_data.http_path,
             server_hostname=env_data.server_hostname,
         ),
-        upload_config=DatabrickDeltaTablesUploaderConfig(
+        upload_config=DatabricksDeltaTablesUploaderConfig(
             catalog=CATALOG, database="default", table_name=destination_table
         ),
     )

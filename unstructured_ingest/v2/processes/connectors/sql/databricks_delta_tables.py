@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "databricks_delta_tables"
 
 
-class DatabrickDeltaTablesAccessConfig(SQLAccessConfig):
+class DatabricksDeltaTablesAccessConfig(SQLAccessConfig):
     token: Optional[str] = Field(default=None, description="Databricks Personal Access Token")
     client_id: Optional[str] = Field(default=None, description="Client ID of the OAuth app.")
     client_secret: Optional[str] = Field(
@@ -39,8 +39,8 @@ class DatabrickDeltaTablesAccessConfig(SQLAccessConfig):
     )
 
 
-class DatabrickDeltaTablesConnectionConfig(SQLConnectionConfig):
-    access_config: Secret[DatabrickDeltaTablesAccessConfig]
+class DatabricksDeltaTablesConnectionConfig(SQLConnectionConfig):
+    access_config: Secret[DatabricksDeltaTablesAccessConfig]
     server_hostname: str = Field(description="server hostname connection config value")
     http_path: str = Field(description="http path connection config value")
     user_agent: str = "unstructuredio_oss"
@@ -102,24 +102,24 @@ class DatabrickDeltaTablesConnectionConfig(SQLConnectionConfig):
             yield cursor
 
 
-class DatabrickDeltaTablesUploadStagerConfig(SQLUploadStagerConfig):
+class DatabricksDeltaTablesUploadStagerConfig(SQLUploadStagerConfig):
     pass
 
 
-class DatabrickDeltaTablesUploadStager(SQLUploadStager):
-    upload_stager_config: DatabrickDeltaTablesUploadStagerConfig
+class DatabricksDeltaTablesUploadStager(SQLUploadStager):
+    upload_stager_config: DatabricksDeltaTablesUploadStagerConfig
 
 
-class DatabrickDeltaTablesUploaderConfig(SQLUploaderConfig):
+class DatabricksDeltaTablesUploaderConfig(SQLUploaderConfig):
     catalog: str = Field(description="Name of the catalog in the Databricks Unity Catalog service")
     database: str = Field(description="Database name", default="default")
     table_name: str = Field(description="Table name")
 
 
 @dataclass
-class DatabrickDeltaTablesUploader(SQLUploader):
-    upload_config: DatabrickDeltaTablesUploaderConfig
-    connection_config: DatabrickDeltaTablesConnectionConfig
+class DatabricksDeltaTablesUploader(SQLUploader):
+    upload_config: DatabricksDeltaTablesUploaderConfig
+    connection_config: DatabricksDeltaTablesConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
     @contextmanager
@@ -205,9 +205,9 @@ class DatabrickDeltaTablesUploader(SQLUploader):
 
 
 databricks_delta_tables_destination_entry = DestinationRegistryEntry(
-    connection_config=DatabrickDeltaTablesConnectionConfig,
-    uploader=DatabrickDeltaTablesUploader,
-    uploader_config=DatabrickDeltaTablesUploaderConfig,
-    upload_stager=DatabrickDeltaTablesUploadStager,
-    upload_stager_config=DatabrickDeltaTablesUploadStagerConfig,
+    connection_config=DatabricksDeltaTablesConnectionConfig,
+    uploader=DatabricksDeltaTablesUploader,
+    uploader_config=DatabricksDeltaTablesUploaderConfig,
+    upload_stager=DatabricksDeltaTablesUploadStager,
+    upload_stager_config=DatabricksDeltaTablesUploadStagerConfig,
 )

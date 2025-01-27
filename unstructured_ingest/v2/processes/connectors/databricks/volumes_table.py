@@ -15,9 +15,9 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.databricks.volumes import DatabricksPathMixin
 from unstructured_ingest.v2.processes.connectors.sql.databricks_delta_tables import (
-    DatabrickDeltaTablesConnectionConfig,
-    DatabrickDeltaTablesUploadStager,
-    DatabrickDeltaTablesUploadStagerConfig,
+    DatabricksDeltaTablesConnectionConfig,
+    DatabricksDeltaTablesUploadStager,
+    DatabricksDeltaTablesUploadStagerConfig,
 )
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
@@ -29,7 +29,7 @@ class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMix
 
 
 @dataclass
-class DatabricksVolumeDeltaTableStager(DatabrickDeltaTablesUploadStager):
+class DatabricksVolumeDeltaTableStager(DatabricksDeltaTablesUploadStager):
     def write_output(self, output_path: Path, data: list[dict]) -> None:
         # To avoid new line issues when migrating from volumes into delta tables, omit indenting
         # and always write it as a json file
@@ -38,7 +38,7 @@ class DatabricksVolumeDeltaTableStager(DatabrickDeltaTablesUploadStager):
 
 @dataclass
 class DatabricksVolumeDeltaTableUploader(Uploader):
-    connection_config: DatabrickDeltaTablesConnectionConfig
+    connection_config: DatabricksDeltaTablesConnectionConfig
     upload_config: DatabricksVolumeDeltaTableUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
@@ -101,9 +101,9 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
 
 
 databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
-    connection_config=DatabrickDeltaTablesConnectionConfig,
+    connection_config=DatabricksDeltaTablesConnectionConfig,
     uploader=DatabricksVolumeDeltaTableUploader,
     uploader_config=DatabricksVolumeDeltaTableUploaderConfig,
     upload_stager=DatabricksVolumeDeltaTableStager,
-    upload_stager_config=DatabrickDeltaTablesUploadStagerConfig,
+    upload_stager_config=DatabricksDeltaTablesUploadStagerConfig,
 )
