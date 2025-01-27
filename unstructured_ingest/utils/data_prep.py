@@ -153,7 +153,7 @@ def get_data_by_suffix(path: Path) -> list[dict]:
             raise ValueError(f"Unsupported file type: {path}")
 
 
-def write_data(path: Path, data: list[dict], indent: int = 2) -> None:
+def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
     with path.open("w") as f:
         if path.suffix == ".json":
             json.dump(data, f, indent=indent, ensure_ascii=False)
