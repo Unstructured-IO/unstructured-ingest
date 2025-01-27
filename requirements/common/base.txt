@@ -2,18 +2,16 @@
 #    uv pip compile base.in --output-file base.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-click==8.1.7
+click==8.1.8
     # via -r base.in
 dataclasses-json==0.6.7
     # via -r base.in
-deprecated==1.2.15
+deprecated==1.2.16
     # via opentelemetry-api
-marshmallow==3.23.1
+marshmallow==3.26.0
     # via dataclasses-json
 mypy-extensions==1.0.0
     # via typing-inspect
-ndjson==0.3.1
-    # via -r base.in
 numpy==1.26.4
     # via
     #   -c constraints.txt
@@ -28,9 +26,9 @@ packaging==24.2
     # via marshmallow
 pandas==2.2.3
     # via -r base.in
-pydantic==2.10.3
+pydantic==2.10.6
     # via -r base.in
-pydantic-core==2.27.1
+pydantic-core==2.27.2
     # via pydantic
 python-dateutil==2.9.0.post0
     # via
@@ -38,7 +36,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2024.2
     # via pandas
-setuptools==75.6.0
+setuptools==75.8.0
     # via
     #   opentelemetry-api
     #   opentelemetry-sdk
@@ -54,9 +52,9 @@ typing-extensions==4.12.2
     #   typing-inspect
 typing-inspect==0.9.0
     # via dataclasses-json
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
-wrapt==1.17.0
+wrapt==1.17.2
     # via
     #   -c constraints.txt
     #   deprecated

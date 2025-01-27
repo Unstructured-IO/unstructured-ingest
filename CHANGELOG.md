@@ -1,15 +1,21 @@
-## 0.4.1-dev3
+## 0.4.2-dev0
+
+### Fixes
+
+* **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
+
+## 0.4.1
 
 ### Enhancements
 
 * **Support img base64 in html**
 * **Fsspec support for direct URI**
 * **Support href extraction to local file**
+* **Added VastDB source and destination connector**
 
 ### Fixes
 
 * **Fix how data updated before writing to sql tables based on columns in table**
-* **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
 
 ## 0.4.0
 

@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
+import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.v2.logger import logger
@@ -139,7 +140,7 @@ class SingleStoreUploader(SQLUploader):
                 if isinstance(value, (list, dict)):
                     value = json.dumps(value)
                 if column_name in _DATE_COLUMNS:
-                    if value is None:
+                    if value is None or pd.isna(value):
                         parsed.append(None)
                     else:
                         parsed.append(parse_date_string(value))

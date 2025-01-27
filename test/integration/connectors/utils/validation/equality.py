@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
 
-import ndjson
 from bs4 import BeautifulSoup
 from deepdiff import DeepDiff
+
+from unstructured_ingest.utils import ndjson
 
 
 def json_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:

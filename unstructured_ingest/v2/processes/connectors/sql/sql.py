@@ -355,7 +355,7 @@ class SQLUploader(Uploader):
             parsed = []
             for column_name, value in zip(columns, row):
                 if column_name in _DATE_COLUMNS:
-                    if value is None:
+                    if value is None or pd.isna(value):  # pandas is nan
                         parsed.append(None)
                     else:
                         parsed.append(parse_date_string(value))
@@ -397,8 +397,8 @@ class SQLUploader(Uploader):
                 f"record id column "
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
+        df = self._fit_to_schema(df=df)
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(

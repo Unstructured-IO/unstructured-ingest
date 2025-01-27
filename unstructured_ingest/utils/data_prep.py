@@ -4,9 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
 
-import ndjson
 import pandas as pd
 
+from unstructured_ingest.utils import ndjson
 from unstructured_ingest.v2.logger import logger
 
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
