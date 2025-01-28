@@ -1,3 +1,9 @@
+## 0.4.2-dev0
+
+### Fixes
+
+* **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
+
 ## 0.4.1
 
 ### Enhancements

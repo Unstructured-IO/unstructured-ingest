@@ -3,10 +3,11 @@ import os
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Generator, Optional
+from typing import Any, Generator
 
 from pydantic import Field
 
+from unstructured_ingest.utils.data_prep import write_data
 from unstructured_ingest.v2.interfaces import FileData, Uploader, UploaderConfig
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -14,9 +15,9 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 from unstructured_ingest.v2.processes.connectors.databricks.volumes import DatabricksPathMixin
 from unstructured_ingest.v2.processes.connectors.sql.databricks_delta_tables import (
-    DatabrickDeltaTablesConnectionConfig,
-    DatabrickDeltaTablesUploadStager,
-    DatabrickDeltaTablesUploadStagerConfig,
+    DatabricksDeltaTablesConnectionConfig,
+    DatabricksDeltaTablesUploadStager,
+    DatabricksDeltaTablesUploadStagerConfig,
 )
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
@@ -28,17 +29,16 @@ class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMix
 
 
 @dataclass
-class DatabricksVolumeDeltaTableStager(DatabrickDeltaTablesUploadStager):
-    def write_output(self, output_path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
+class DatabricksVolumeDeltaTableStager(DatabricksDeltaTablesUploadStager):
+    def write_output(self, output_path: Path, data: list[dict]) -> None:
         # To avoid new line issues when migrating from volumes into delta tables, omit indenting
         # and always write it as a json file
-        with output_path.with_suffix(".json").open("w") as f:
-            json.dump(data, f)
+        write_data(path=output_path.with_suffix(".json"), data=data, indent=None)
 
 
 @dataclass
 class DatabricksVolumeDeltaTableUploader(Uploader):
-    connection_config: DatabrickDeltaTablesConnectionConfig
+    connection_config: DatabricksDeltaTablesConnectionConfig
     upload_config: DatabricksVolumeDeltaTableUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
@@ -78,7 +78,10 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     @contextmanager
     def get_cursor(self, **connect_kwargs) -> Generator[Any, None, None]:
         with self.connection_config.get_cursor(**connect_kwargs) as cursor:
+            logger.debug(f"executing: USE CATALOG: '{self.upload_config.catalog}'")
             cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
+            logger.debug(f"executing: USE DATABASE: {self.upload_config.database}")
+            cursor.execute(f"USE DATABASE {self.upload_config.database}")
             yield cursor
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
@@ -98,9 +101,9 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
 
 
 databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
-    connection_config=DatabrickDeltaTablesConnectionConfig,
+    connection_config=DatabricksDeltaTablesConnectionConfig,
     uploader=DatabricksVolumeDeltaTableUploader,
     uploader_config=DatabricksVolumeDeltaTableUploaderConfig,
     upload_stager=DatabricksVolumeDeltaTableStager,
-    upload_stager_config=DatabrickDeltaTablesUploadStagerConfig,
+    upload_stager_config=DatabricksDeltaTablesUploadStagerConfig,
 )
