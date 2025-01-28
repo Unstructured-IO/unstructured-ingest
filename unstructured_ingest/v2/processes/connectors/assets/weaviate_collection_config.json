@@ -1,5 +1,4 @@
 {
-    "class": "Elements",
     "invertedIndexConfig": {
         "bm25": {
             "b": 0.75,

@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, Generator, Optional
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -225,7 +225,6 @@ class WeaviateUploader(Uploader, ABC):
         collection_config["class"] = collection_name
         with self.connection_config.get_client() as weaviate_client:
             weaviate_client.collections.create_from_dict(config=collection_config)
-
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects

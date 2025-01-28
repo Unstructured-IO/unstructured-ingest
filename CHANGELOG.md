@@ -1,8 +1,9 @@
-## 0.4.3-dev0
+## 0.4.3-dev1
 
 ### Enhancements
 
 * **Add support for allow list when downloading from raw html**
+* **Add support for setting up destination as part of uploader**
 
 ## 0.4.2
 
