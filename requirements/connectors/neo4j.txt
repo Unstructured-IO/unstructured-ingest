@@ -2,7 +2,7 @@
 #    uv pip compile neo4j.in --output-file neo4j.txt --no-strip-extras --python-version 3.9
 cymple==0.12.0
     # via -r neo4j.in
-neo4j==5.27.0
+neo4j-rust-ext==5.27.0.0
     # via -r neo4j.in
 networkx==3.2.1
     # via -r neo4j.in
