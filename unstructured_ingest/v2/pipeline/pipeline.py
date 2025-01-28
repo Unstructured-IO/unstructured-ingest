@@ -11,6 +11,7 @@ from typing import Any
 from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
 from unstructured_ingest.v2.logger import logger, make_default_logger
 from unstructured_ingest.v2.otel import OtelHandler
+from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.pipeline.steps.chunk import Chunker, ChunkStep
 from unstructured_ingest.v2.pipeline.steps.download import DownloaderT, DownloadStep
 from unstructured_ingest.v2.pipeline.steps.embed import Embedder, EmbedStep
@@ -91,10 +92,6 @@ class Pipeline:
         self.chunker_step = ChunkStep(process=chunker, context=self.context) if chunker else None
 
         self.embedder_step = EmbedStep(process=embedder, context=self.context) if embedder else None
-        # TODO: support initialize() call from each step process
-        # Potential long call to download embedder models, run before any fanout:
-        if embedder and embedder.config:
-            embedder.config.get_embedder().initialize()
 
         self.stager_step = UploadStageStep(process=stager, context=self.context) if stager else None
         self.uploader_step = UploadStep(process=uploader, context=self.context)
@@ -135,6 +132,7 @@ class Pipeline:
             with otel_handler.get_tracer().start_as_current_span(
                 "ingest process", record_exception=True
             ):
+                self._run_inits()
                 self._run_prechecks()
                 self._run()
         finally:
@@ -156,7 +154,7 @@ class Pipeline:
         final = [f for f in flat if f]
         return final or None
 
-    def _run_prechecks(self):
+    def _get_all_steps(self) -> list[PipelineStep]:
         steps = [self.indexer_step, self.downloader_step, self.partitioner_step, self.uploader_step]
         if self.chunker_step:
             steps.append(self.chunker_step)
@@ -166,8 +164,24 @@ class Pipeline:
             steps.append(self.uncompress_step)
         if self.stager_step:
             steps.append(self.stager_step)
+        return steps
+
+    def _run_inits(self):
         failures = {}
-        for step in steps:
+
+        for step in self._get_all_steps():
+            try:
+                step.process.init()
+            except Exception as e:
+                failures[step.process.__class__.__name__] = f"[{type(e).__name__}] {e}"
+        if failures:
+            for k, v in failures.items():
+                logger.error(f"Step init failure: {k}: {v}")
+            raise PipelineError("Init failed")
+
+    def _run_prechecks(self):
+        failures = {}
+        for step in self._get_all_steps():
             try:
                 step.process.precheck()
             except Exception as e:
