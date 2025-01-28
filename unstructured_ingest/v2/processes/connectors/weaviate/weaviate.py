@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any, Generator, Optional
+from pathlib import Path
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -215,6 +216,16 @@ class WeaviateUploader(Uploader, ABC):
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+    def create_destination(self, collection_name: str = "elements", **kwargs: Any) -> Any:
+        connectors_dir = Path(__file__).parents[2]
+        collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
+        with collection_config_file.open() as f:
+            collection_config = json.load(f)
+        collection_config["class"] = collection_name
+        with self.connection_config.get_client() as weaviate_client:
+            weaviate_client.collections.create_from_dict(config=collection_config)
+
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects

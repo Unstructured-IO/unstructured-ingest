@@ -38,6 +38,9 @@ class Uploader(BaseProcess, BaseConnector, ABC):
     def run_batch(self, contents: list[UploadContent], **kwargs: Any) -> None:
         raise NotImplementedError()
 
+    def create_destination(self, collection_name: str, **kwargs: Any) -> Any:
+        raise NotImplementedError()
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_data(path=path)
         self.run_data(data=data, file_data=file_data, **kwargs)
