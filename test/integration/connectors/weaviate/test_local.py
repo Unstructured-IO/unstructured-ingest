@@ -34,15 +34,20 @@ def wait_for_container(timeout: int = 10, interval: int = 1) -> None:
 
 
 @pytest.fixture
-def collection(collections_schema_config: dict) -> str:
+def weaviate_instance():
     with container_context(
         image="semitechnologies/weaviate:1.27.3",
         ports={8080: 8080, 50051: 50051},
-    ):
+    ) as ctx:
         wait_for_container()
-        with weaviate.connect_to_local() as weaviate_client:
-            weaviate_client.collections.create_from_dict(config=collections_schema_config)
-        yield COLLECTION_NAME
+        yield ctx
+
+
+@pytest.fixture
+def collection(weaviate_instance, collections_schema_config: dict) -> str:
+    with weaviate.connect_to_local() as weaviate_client:
+        weaviate_client.collections.create_from_dict(config=collections_schema_config)
+    return COLLECTION_NAME
 
 
 def get_count(client: WeaviateClient) -> int:
@@ -129,3 +134,22 @@ def test_weaviate_local_destination(upload_file: Path, collection: str, tmp_path
         file_data=file_data,
         expected_count=expected_count,
     )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@pytest.mark.skip("This test is hanging forever")
+def test_weaviate_local_create_destination(weaviate_instance):
+    # TODO: figure out why this test never finishes
+    #  When stepping through this test via debugger, it finishes and passes
+    #  When running directly, test hangs forever.
+    uploader = LocalWeaviateUploader(
+        upload_config=LocalWeaviateUploaderConfig(),
+        connection_config=LocalWeaviateConnectionConfig(),
+    )
+    collection_name = "system_created"
+    created = uploader.create_destination(destination_name=collection_name)
+    assert created
+    with uploader.connection_config.get_client() as weaviate_client:
+        collections = weaviate_client.collections.list_all()
+        collection_names = [col.name.lower() for col in collections.values()]
+        assert collection_name in collection_names
