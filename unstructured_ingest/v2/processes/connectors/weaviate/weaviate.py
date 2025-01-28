@@ -229,6 +229,10 @@ class WeaviateUploader(Uploader, ABC):
             collection_config = json.load(f)
         collection_config["class"] = collection_name
         with connection_config.get_client() as weaviate_client:
+            existing_collections = weaviate_client.collections.list_all()
+            existing_collection_names = [collection.name for collection in existing_collections]
+            if collection_name in existing_collection_names:
+                return collection_name
             weaviate_client.collections.create_from_dict(config=collection_config)
         return collection_name
 
