@@ -276,6 +276,8 @@ class WeaviateUploader(Uploader, ABC):
             f"writing {len(data)} objects to destination "
             f"class {self.connection_config.access_config} "
         )
+        if not self.upload_config.collection:
+            raise ValueError("No collection specified")
 
         with self.connection_config.get_client() as weaviate_client:
             self.delete_by_record_id(client=weaviate_client, file_data=file_data)
