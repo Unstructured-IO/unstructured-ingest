@@ -16,10 +16,10 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    Uploader,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
+    VectorDBUploader,
 )
 from unstructured_ingest.v2.logger import logger
 
@@ -208,7 +208,7 @@ class WeaviateUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class WeaviateUploader(Uploader, ABC):
+class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
 
@@ -236,7 +236,9 @@ class WeaviateUploader(Uploader, ABC):
     def init(self, *kwargs: Any) -> None:
         self.create_destination()
 
-    def create_destination(self, destination_name: str = "elements", **kwargs: Any) -> bool:
+    def create_destination(
+        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+    ) -> bool:
         collection_name = self.upload_config.collection or destination_name
         self.upload_config.collection = collection_name
         connectors_dir = Path(__file__).parents[1]

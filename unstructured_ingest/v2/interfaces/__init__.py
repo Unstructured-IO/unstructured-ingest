@@ -5,7 +5,7 @@ from .indexer import Indexer, IndexerConfig
 from .process import BaseProcess
 from .processor import ProcessorConfig
 from .upload_stager import UploadStager, UploadStagerConfig
-from .uploader import UploadContent, Uploader, UploaderConfig
+from .uploader import UploadContent, Uploader, UploaderConfig, VectorDBUploader
 
 __all__ = [
     "DownloadResponse",
@@ -29,4 +29,5 @@ __all__ = [
     "FileDataSourceMetadata",
     "BatchFileData",
     "BatchItem",
+    "VectorDBUploader",
 ]

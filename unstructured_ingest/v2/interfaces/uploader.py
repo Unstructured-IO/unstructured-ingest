@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -56,3 +56,11 @@ class Uploader(BaseProcess, BaseConnector, ABC):
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         return self.run_data(data=data, file_data=file_data, **kwargs)
+
+
+@dataclass
+class VectorDBUploader(Uploader, ABC):
+    def create_destination(
+        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+    ) -> bool:
+        return False
