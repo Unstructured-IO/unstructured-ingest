@@ -217,14 +217,20 @@ class WeaviateUploader(Uploader, ABC):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def create_destination(self, collection_name: str = "elements", **kwargs: Any) -> Any:
-        connectors_dir = Path(__file__).parents[2]
+    @staticmethod
+    def create_destination(
+        connection_config: WeaviateConnectionConfig,
+        collection_name: str = "elements",
+        **kwargs: Any,
+    ) -> str:
+        connectors_dir = Path(__file__).parents[1]
         collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
         with collection_config_file.open() as f:
             collection_config = json.load(f)
         collection_config["class"] = collection_name
-        with self.connection_config.get_client() as weaviate_client:
+        with connection_config.get_client() as weaviate_client:
             weaviate_client.collections.create_from_dict(config=collection_config)
+        return collection_name
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects
