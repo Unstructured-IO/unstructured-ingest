@@ -212,9 +212,23 @@ class WeaviateUploader(Uploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
 
+    def _existing_collections(self) -> list[str]:
+        with self.connection_config.get_client() as weaviate_client:
+            existing_collections = weaviate_client.collections.list_all()
+            existing_collection_names = [col.name.lower() for col in existing_collections.values()]
+            return existing_collection_names
+
     def precheck(self) -> None:
         try:
             self.connection_config.get_client()
+            # only if collection name populated should we check that it exists
+            if (
+                self.upload_config.collection
+                and self.upload_config.collection not in self._existing_collections()
+            ):
+                raise DestinationConnectionError(
+                    f"collection '{self.upload_config.collection}' does not exist"
+                )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -230,19 +244,15 @@ class WeaviateUploader(Uploader, ABC):
         with collection_config_file.open() as f:
             collection_config = json.load(f)
         collection_config["class"] = collection_name
-        with self.connection_config.get_client() as weaviate_client:
-            existing_collections = weaviate_client.collections.list_all()
-            existing_collection_names = [col.name.lower() for col in existing_collections.values()]
-            if collection_name in existing_collection_names:
-                logger.debug(
-                    f"collection with name '{collection_name}' already exists, skipping creation"
-                )
-                return False
+        if collection_name not in self._existing_collections():
             logger.info(
                 f"creating default weaviate collection '{collection_name}' with default configs"
             )
-            weaviate_client.collections.create_from_dict(config=collection_config)
-        return True
+            with self.connection_config.get_client() as weaviate_client:
+                weaviate_client.collections.create_from_dict(config=collection_config)
+                return True
+        logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
+        return False
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects
