@@ -161,7 +161,8 @@ class WeaviateUploadStager(UploadStager):
 
 class WeaviateUploaderConfig(UploaderConfig):
     collection: Optional[str] = Field(
-        default=None, description="The name of the collection to write to"
+        default=None,
+        description=("The name of the collection to write to. Created if not provided by the user"),
     )
     batch_size: Optional[int] = Field(default=None, description="Number of records per batch")
     requests_per_minute: Optional[int] = Field(default=None, description="Rate limit for upload")
@@ -169,23 +170,6 @@ class WeaviateUploaderConfig(UploaderConfig):
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
-    )
-    embedding_model: Optional[str] = Field(
-        default=None, description="The embedding model used to embed the data"
-    )
-    embedding_model_dimension: Optional[int] = Field(
-        default=None, description="The dimension of the embedding model. Index dimension must match"
-    )
-    create_collection_flag: bool = Field(
-        default=False,
-        description="Permission flag to create a collection for the user",
-    )  # if a collection is not provided, this flag should be True
-    created_collection_name: Optional[str] = Field(
-        default=None,
-        description=(
-            "The name of the collection created by Unstructured. "
-            "If not None, this collection should be written to instead of `collection`"
-        ),
     )
 
     def model_post_init(self, __context: Any) -> None:
@@ -206,63 +190,114 @@ class WeaviateUploaderConfig(UploaderConfig):
             )
         logger.info(f"Uploader config instantiated with {enabled_batch_modes[0]} batch mode")
 
-        if not self.collection:
-            # no user input for collection is implicit permission for Unstructured to create one
-            self.create_collection_flag = True
-        self.prepare_weaviate_collection()
-
-    def prepare_weaviate_collection(self) -> None:
-        # TODO validation on having both model and dim needed? its wired by us in the operator
-        if self.embedding_model and not self.embedding_model_dimension:
+    # TODO / NOTE: the raises on returns from methods may be redundant
+    def prepare_weaviate_collection(
+        self,
+        user_collection: Optional[str],
+        create_collection_flag: bool,
+        embedding_model: Optional[str],
+        embedding_model_dimension: Optional[int],
+        workflow_name: str,
+    ) -> Optional[str]:
+        # TODO validation on having both model and dim needed? it's wired by us in the operator
+        if embedding_model and not embedding_model_dimension:
             raise ValueError(
                 "Embedding model dimension must be provided if embedding model is used"
             )
 
-        if not self.collection and not self.embedding_model:
+        if not user_collection and not embedding_model:
             # if no embedding model is used, just create an collection normally
             # TODO create normal index
-            pass
+            non_embedding_collection_name = f"Unstructured_created_index_{workflow_name}"
+            if create_collection_flag:
+                created_collection_name = self.ensure_dest_index(
+                    self.connection_config.get_client(),
+                    dest_index_name=non_embedding_collection_name,
+                )
+                if not created_collection_name:
+                    raise DestinationConnectionError(
+                        f"Failed to create a collection {non_embedding_collection_name}"
+                    )
+                return created_collection_name
 
         # Entry Point for Opinionated Writes: Index Creation
-        if self.collection and self.embedding_model:
+        embedding_index_name = f"{workflow_name}_{embedding_model}_{embedding_model_dimension}"
+
+        if user_collection and embedding_model:
             # user provided a collection and used an embedding model
             # connect and check the user collection dimensions
-            self.check_user_index_or_create(self.connection_config.get_client())
+            usable_collection = self.check_user_collection_or_create_new(
+                self.connection_config.get_client(),
+                user_collection,
+                create_collection_flag,
+                embedding_model,
+                embedding_model_dimension,
+                dest_index_name=embedding_index_name,
+            )
+            if not usable_collection:
+                raise DestinationConnectionError("Collection setup failed")
+            return usable_collection
 
-        if not self.collection and self.embedding_model:
+        if not user_collection and embedding_model:
             # user did not provide a collection but used an embedding model
             # create a collection with the embedding model dimension
-            if self.create_collection_flag:
-                self.ensure_dest_index(self.connection_config.get_client())
+            if create_collection_flag:
+                created_collection_name = self.ensure_dest_index(
+                    self.connection_config.get_client(),
+                    dest_index_name=embedding_index_name,
+                )
+                if not created_collection_name:
+                    raise DestinationConnectionError(
+                        f"Failed to create a collection {self.collection}"
+                    )
+                return created_collection_name
+            else:
+                raise DestinationConnectionError(
+                    "User did not provide a collection name and opted out of index creation"
+                )
 
-    def check_user_index_or_create_new(self, client: "WeaviateClient") -> None:
+    def check_user_collection_or_create_new(
+        self,
+        client: "WeaviateClient",
+        user_collection: str,
+        create_collection_flag: bool,
+        embedding_model: str,
+        embedding_model_dimension: int,
+        dest_index_name: str,
+    ) -> Optional[str]:
         """
         Note: an index in Weaviate is called a collection
 
-        Checks if a user's collection exists
+        Check if the user collection exists.
         If the collection does not exist, create it if the user has opted in
         If it does exist, check if the embedding model dimension matches the collection dimensions
         If the dimensions don't match, create an index if the user has opted in, otherwise fail
         """
 
         # check if collection exists
-        if client.collections.exists(self.collection):
-            logger.info(f"Collection {self.collection} exists")
+        if client.collections.exists(user_collection):
+            logger.info(f"Collection {user_collection} exists")
 
             # Get a vector
             result = client.query.get(self.collection).with_limit(1).with_additional("vector").do()
-            vector = result["data"]["Get"][self.collection][0]["_additional"]["vector"]
+            vector = result["data"]["Get"][self.collection][0]["_additional"]["vector"]  # TODO test
 
             # if a vector is not returned, any dimension can be written: collection is good to use
             if not vector:
-                return
+                return user_collection
 
             # check if the embedding model dimension matches the collection dimensions
             if len(vector) != self.embedding_model_dimension:
                 # create if opted in, otherwise fail
                 if self.create_collection_flag:
-                    self.ensure_dest_index(client)  # this will set the created name
-                    return
+                    created_collection_name = self.ensure_dest_index(
+                        client, dest_index_name=dest_index_name
+                    )
+                    if not created_collection_name:
+                        raise DestinationConnectionError(
+                            f"Failed to create a collection {self.collection}"
+                        )
+                    return created_collection_name
                 else:
                     raise DestinationConnectionError(
                         f"Embedding model dimension {self.embedding_model_dimension} "
@@ -275,37 +310,57 @@ class WeaviateUploaderConfig(UploaderConfig):
         else:
             # user collection doesnt exist: create a new one, or fail
             if self.create_collection_flag:
-                self.ensure_dest_index(client)  # this will set the created name
+                created_collection_name = self.ensure_dest_index(
+                    client, dest_index_name=dest_index_name
+                )
+                if not created_collection_name:
+                    raise DestinationConnectionError(
+                        f"Failed to create a collection {self.collection}"
+                    )
+                return created_collection_name
             else:
                 raise DestinationConnectionError(
                     f"Provided collection {self.collection} does not exist"
                 )
 
-    def ensure_dest_index(self, client: "WeaviateClient") -> None:
-        # an index in Weaviate is called a collection
+    def ensure_dest_index(
+        self,
+        client: "WeaviateClient",
+        dest_index_name: str,
+    ) -> Optional[str]:
+        """
+        Assumptions:
+        - an index in Weaviate is called a collection
+        - info for the embedding model and dimension is available from the workflow embed node
+        - user has opted in to Unstrucured index creation
 
-        embed_index_name = "name_using_model_and_dim"  # TODO
+        Create a new collection in Weaviate with the name following the naming convention:
+        {workflow_name}_{embedding_model}_{embedding_model_dimension}
+
+        """
+        if not dest_index_name:
+            # TODO how to find workflow name to add to the index name? workflow settings available?
+            dest_index_name = f"{workflow_name}_{embedding_model}_{embedding_model_dimension}"
 
         # check if named collection already exists
-        if client.collections.exists(embed_index_name):
-            logger.info(f"Collection {embed_index_name} already exists")
-            self.created_collection_name = embed_index_name
-            return
+        if client.collections.exists(dest_index_name):
+            logger.info(f"Collection {dest_index_name} already exists")
+            return dest_index_name
 
         # create the new collection following the naming convention
-        logger.info(f"Collection '{embed_index_name}' does not exist. Creating...")
+        logger.info(f"Collection '{dest_index_name}' does not exist. Creating...")
         new_collection = {
-            "name": embed_index_name,
-            "properties": [],  # TODO, record_id required
+            "name": dest_index_name,
+            "properties": [{"name": "record_id", "dataType": ["text"]}],
         }
         try:
             client.collections.create(new_collection)
-            logger.info(f"Collection '{embed_index_name}' successfully created.")
-            self.created_collection_name = embed_index_name
+            logger.info(f"Collection '{dest_index_name}' successfully created.")
+            return dest_index_name
         except Exception as e:
-            logger.error(f"Error while creating the weaviate collection '{embed_index_name}': {e}")
+            logger.error(f"Error while creating the weaviate collection '{dest_index_name}': {e}")
             raise DestinationConnectionError(
-                f"Weaviate collection {embed_index_name} could not be created"
+                f"Weaviate collection {dest_index_name} could not be created"
             )
 
     @contextmanager
