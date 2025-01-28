@@ -6,7 +6,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel
 
 from unstructured_ingest.utils.data_prep import get_data
-from unstructured_ingest.v2.interfaces.connector import BaseConnector, ConnectionConfigT
+from unstructured_ingest.v2.interfaces.connector import BaseConnector
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
@@ -38,11 +38,10 @@ class Uploader(BaseProcess, BaseConnector, ABC):
     def run_batch(self, contents: list[UploadContent], **kwargs: Any) -> None:
         raise NotImplementedError()
 
-    @staticmethod
-    def create_destination(
-        connection_config: ConnectionConfigT, collection_name: str, **kwargs: Any
-    ) -> Any:
-        raise NotImplementedError()
+    def create_destination(self, destination_name: str = "elements", **kwargs: Any) -> bool:
+        # Update the uploader config if needed with a new destination that gets created.
+        # Return a flag on if anything was created or not.
+        return False
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_data(path=path)

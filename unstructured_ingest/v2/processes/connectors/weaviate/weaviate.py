@@ -161,7 +161,9 @@ class WeaviateUploadStager(UploadStager):
 
 
 class WeaviateUploaderConfig(UploaderConfig):
-    collection: str = Field(description="The name of the collection this object belongs to")
+    collection: Optional[str] = Field(
+        description="The name of the collection this object belongs to", default=None
+    )
     batch_size: Optional[int] = Field(default=None, description="Number of records per batch")
     requests_per_minute: Optional[int] = Field(default=None, description="Rate limit for upload")
     dynamic_batch: bool = Field(default=True, description="Whether to use dynamic batch")
@@ -217,24 +219,25 @@ class WeaviateUploader(Uploader, ABC):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @staticmethod
     def create_destination(
-        connection_config: WeaviateConnectionConfig,
-        collection_name: str = "elements",
+        self,
+        destination_name: str,
         **kwargs: Any,
-    ) -> str:
+    ) -> bool:
+        collection_name = self.upload_config.collection or destination_name
+        self.upload_config.collection = collection_name
         connectors_dir = Path(__file__).parents[1]
         collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
         with collection_config_file.open() as f:
             collection_config = json.load(f)
         collection_config["class"] = collection_name
-        with connection_config.get_client() as weaviate_client:
+        with self.connection_config.get_client() as weaviate_client:
             existing_collections = weaviate_client.collections.list_all()
             existing_collection_names = [collection.name for collection in existing_collections]
             if collection_name in existing_collection_names:
-                return collection_name
+                return False
             weaviate_client.collections.create_from_dict(config=collection_config)
-        return collection_name
+        return True
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects
