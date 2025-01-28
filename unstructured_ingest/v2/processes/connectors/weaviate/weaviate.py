@@ -234,7 +234,13 @@ class WeaviateUploader(Uploader, ABC):
             existing_collections = weaviate_client.collections.list_all()
             existing_collection_names = [col.name.lower() for col in existing_collections.values()]
             if collection_name in existing_collection_names:
+                logger.debug(
+                    f"collection with name '{collection_name}' already exists, skipping creation"
+                )
                 return False
+            logger.info(
+                f"creating default weaviate collection '{collection_name}' with default configs"
+            )
             weaviate_client.collections.create_from_dict(config=collection_config)
         return True
 
