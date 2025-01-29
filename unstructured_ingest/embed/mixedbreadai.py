@@ -112,7 +112,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
         responses = []
         client = self.config.get_client()
-        for batch in batch_generator(texts, batch_size=self.config.batch_size):
+        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
             response = client.embeddings(
                 model=self.config.embedder_model_name,
                 normalized=True,
@@ -185,7 +185,7 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         """
         client = self.config.get_async_client()
         tasks = []
-        for batch in batch_generator(texts, batch_size=self.config.batch_size):
+        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
             tasks.append(
                 client.embeddings(
                     model=self.config.embedder_model_name,

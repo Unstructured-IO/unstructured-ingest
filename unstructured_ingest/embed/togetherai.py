@@ -74,7 +74,9 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
         client = self.config.get_client()
         embeddings = []
         try:
-            for batch in batch_generator(elements, batch_size=self.config.batch_size):
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
                 outputs = client.embeddings.create(
                     model=self.config.embedder_model_name, input=batch
                 )
@@ -103,7 +105,9 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         client = self.config.get_async_client()
         embeddings = []
         try:
-            for batch in batch_generator(elements, batch_size=self.config.batch_size):
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
                 outputs = await client.embeddings.create(
                     model=self.config.embedder_model_name, input=batch
                 )

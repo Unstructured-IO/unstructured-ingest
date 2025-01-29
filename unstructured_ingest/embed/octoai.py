@@ -93,7 +93,7 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         embeddings = []
         client = self.config.get_client()
         try:
-            for batch in batch_generator(texts, batch_size=self.config.batch_size):
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
                 response = client.embeddings.create(
                     input=batch, model=self.config.embedder_model_name
                 )
@@ -126,7 +126,7 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         client = self.config.get_async_client()
         embeddings = []
         try:
-            for batch in batch_generator(texts, batch_size=self.config.batch_size):
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
                 response = await client.embeddings.create(
                     input=batch, model=self.config.embedder_model_name
                 )

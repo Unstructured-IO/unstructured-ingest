@@ -85,7 +85,7 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         texts = [e.get("text", "") for e in elements]
         embeddings = []
         try:
-            for batch in batch_generator(texts, batch_size=self.config.batch_size):
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
                 response = client.embeddings.create(
                     input=batch, model=self.config.embedder_model_name
                 )
@@ -118,7 +118,7 @@ class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         texts = [e.get("text", "") for e in elements]
         embeddings = []
         try:
-            for batch in batch_generator(texts, batch_size=self.config.batch_size):
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
                 response = await client.embeddings.create(
                     input=batch, model=self.config.embedder_model_name
                 )

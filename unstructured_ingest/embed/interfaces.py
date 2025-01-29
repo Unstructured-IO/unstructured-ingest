@@ -1,13 +1,14 @@
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 from pydantic import BaseModel
 
 
 class EmbeddingConfig(BaseModel):
-    batch_size: int = 32
+    batch_size: Optional[int] = 32
 
 
 @dataclass

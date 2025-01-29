@@ -90,7 +90,7 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
         client = self.config.get_client()
         embeddings = []
         try:
-            for batch in batch_generator(inputs, batch_size=self.config.batch_size):
+            for batch in batch_generator(inputs, batch_size=self.config.batch_size or len(inputs)):
                 response = client.get_embeddings(batch)
                 embeddings.extend([e.values for e in response])
         except Exception as e:
@@ -125,7 +125,7 @@ class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         client = self.config.get_client()
         embeddings = []
         try:
-            for batch in batch_generator(inputs, batch_size=self.config.batch_size):
+            for batch in batch_generator(inputs, batch_size=self.config.batch_size or len(inputs)):
                 response = await client.get_embeddings_async(batch)
                 embeddings.extend([e.values for e in response])
         except Exception as e:
