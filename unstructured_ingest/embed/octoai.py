@@ -9,6 +9,7 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -89,12 +90,16 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         texts = [e.get("text", "") for e in elements]
+        embeddings = []
+        client = self.config.get_client()
         try:
-            client = self.config.get_client()
-            response = client.embeddings.create(input=texts, model=self.config.embedder_model_name)
+            for batch in batch_generator(texts, batch_size=self.config.batch_size):
+                response = client.embeddings.create(
+                    input=batch, model=self.config.embedder_model_name
+                )
+                embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        embeddings = [data.embedding for data in response.data]
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
 
@@ -119,12 +124,14 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
         texts = [e.get("text", "") for e in elements]
         client = self.config.get_async_client()
+        embeddings = []
         try:
-            response = await client.embeddings.create(
-                input=texts, model=self.config.embedder_model_name
-            )
+            for batch in batch_generator(texts, batch_size=self.config.batch_size):
+                response = await client.embeddings.create(
+                    input=batch, model=self.config.embedder_model_name
+                )
+                embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        embeddings = [data.embedding for data in response.data]
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings

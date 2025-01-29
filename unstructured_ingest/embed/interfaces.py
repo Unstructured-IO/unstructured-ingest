@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 class EmbeddingConfig(BaseModel):
-    pass
+    batch_size: int = 32
 
 
 @dataclass

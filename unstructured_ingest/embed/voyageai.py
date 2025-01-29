@@ -9,6 +9,7 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -91,12 +92,15 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self.config.wrap_error(e=e)
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client: VoyageAIClient = self.config.get_client()
+        client = self.config.get_client()
+        embeddings = []
         try:
-            response = client.embed(texts=elements, model=self.config.embedder_model_name)
+            for batch in batch_generator(elements, batch_size=self.config.batch_size):
+                response = client.embed(texts=batch, model=self.config.embedder_model_name)
+                embeddings.extend(response.embeddings)
         except Exception as e:
             raise self.wrap_error(e=e)
-        return response.embeddings
+        return embeddings
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = self._embed_documents([e.get("text", "") for e in elements])
@@ -115,11 +119,14 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()
+        embeddings = []
         try:
-            response = await client.embed(texts=elements, model=self.config.embedder_model_name)
+            for batch in batch_generator(elements, batch_size=self.config.batch_size):
+                response = await client.embed(texts=batch, model=self.config.embedder_model_name)
+                embeddings.extend(response.embeddings)
         except Exception as e:
             raise self.wrap_error(e=e)
-        return response.embeddings
+        return embeddings
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
         embeddings = await self._embed_documents([e.get("text", "") for e in elements])

@@ -13,6 +13,7 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import UserAuthError
 
@@ -86,12 +87,15 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
         from vertexai.language_models import TextEmbeddingInput
 
         inputs = [TextEmbeddingInput(text=element) for element in elements]
+        client = self.config.get_client()
+        embeddings = []
         try:
-            client = self.config.get_client()
-            embeddings = client.get_embeddings(inputs)
+            for batch in batch_generator(inputs, batch_size=self.config.batch_size):
+                response = client.get_embeddings(batch)
+                embeddings.extend([e.values for e in response])
         except Exception as e:
             raise self.wrap_error(e=e)
-        return [e.values for e in embeddings]
+        return embeddings
 
 
 @dataclass
@@ -118,9 +122,12 @@ class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         from vertexai.language_models import TextEmbeddingInput
 
         inputs = [TextEmbeddingInput(text=element) for element in elements]
+        client = self.config.get_client()
+        embeddings = []
         try:
-            client = self.config.get_client()
-            embeddings = await client.get_embeddings_async(inputs)
+            for batch in batch_generator(inputs, batch_size=self.config.batch_size):
+                response = await client.get_embeddings_async(batch)
+                embeddings.extend([e.values for e in response])
         except Exception as e:
             raise self.wrap_error(e=e)
-        return [e.values for e in embeddings]
+        return embeddings
