@@ -55,7 +55,7 @@ def test_raw_bedrock_embedder(embedder_file: Path):
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
-        expected_dimension=(1536,),
+        expected_dimension=1536,
         expected_is_unit_vector=False,
     )
 
