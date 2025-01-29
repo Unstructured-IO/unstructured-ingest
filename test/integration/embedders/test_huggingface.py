@@ -21,6 +21,4 @@ def test_huggingface_embedder(embedder_file: Path):
 
 def test_raw_hugginface_embedder(embedder_file: Path):
     embedder = HuggingFaceEmbeddingEncoder(config=HuggingFaceEmbeddingConfig())
-    validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(384,)
-    )
+    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=384)

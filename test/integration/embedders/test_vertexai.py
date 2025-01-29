@@ -46,9 +46,7 @@ def test_raw_vertexai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(768,)
-    )
+    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=768)
 
 
 @requires_env(API_KEY)
@@ -61,5 +59,5 @@ async def test_raw_async_vertexai_embedder(embedder_file: Path):
         )
     )
     await validate_raw_embedder_async(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(768,)
+        embedder=embedder, embedder_file=embedder_file, expected_dimension=768
     )

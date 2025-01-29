@@ -23,23 +23,22 @@ def validate_embedding_output(original_elements: list[dict], output_elements: li
 def validate_raw_embedder(
     embedder: BaseEmbeddingEncoder,
     embedder_file: Path,
-    expected_dimensions: Optional[tuple[int, ...]] = None,
+    expected_dimension: Optional[int] = None,
     expected_is_unit_vector: bool = True,
 ):
     with open(embedder_file) as f:
         elements = json.load(f)
     all_text = [element["text"] for element in elements]
     single_text = all_text[0]
-    num_of_dimensions = embedder.num_of_dimensions
-    if expected_dimensions:
+    dimension = embedder.dimension
+    if expected_dimension:
         assert (
-            num_of_dimensions == expected_dimensions
-        ), f"number of dimensions {num_of_dimensions} didn't match expected: {expected_dimensions}"
+            dimension == expected_dimension
+        ), f"dimensions {dimension} didn't match expected: {expected_dimension}"
     is_unit_vector = embedder.is_unit_vector
     assert is_unit_vector == expected_is_unit_vector
     single_embedding = embedder.embed_query(query=single_text)
-    expected_length = num_of_dimensions[0]
-    assert len(single_embedding) == expected_length
+    assert len(single_embedding) == dimension
     embedded_elements = embedder.embed_documents(elements=elements)
     validate_embedding_output(original_elements=elements, output_elements=embedded_elements)
 
@@ -47,22 +46,21 @@ def validate_raw_embedder(
 async def validate_raw_embedder_async(
     embedder: AsyncBaseEmbeddingEncoder,
     embedder_file: Path,
-    expected_dimensions: Optional[tuple[int, ...]] = None,
+    expected_dimension: Optional[int] = None,
     expected_is_unit_vector: bool = True,
 ):
     with open(embedder_file) as f:
         elements = json.load(f)
     all_text = [element["text"] for element in elements]
     single_text = all_text[0]
-    num_of_dimensions = await embedder.num_of_dimensions
-    if expected_dimensions:
+    dimension = await embedder.dimension
+    if expected_dimension:
         assert (
-            num_of_dimensions == expected_dimensions
-        ), f"number of dimensions {num_of_dimensions} didn't match expected: {expected_dimensions}"
+            dimension == expected_dimension
+        ), f"dimension {dimension} didn't match expected: {expected_dimension}"
     is_unit_vector = await embedder.is_unit_vector
     assert is_unit_vector == expected_is_unit_vector
     single_embedding = await embedder.embed_query(query=single_text)
-    expected_length = num_of_dimensions[0]
-    assert len(single_embedding) == expected_length
+    assert len(single_embedding) == dimension
     embedded_elements = await embedder.embed_documents(elements=elements)
     validate_embedding_output(original_elements=elements, output_elements=embedded_elements)
