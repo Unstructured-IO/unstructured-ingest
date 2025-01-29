@@ -1,20 +1,16 @@
-from openai.types.create_embedding_response import CreateEmbeddingResponse, Embedding, Usage
-
 from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
 
 
 def test_embed_documents_does_not_break_element_to_dict(mocker):
     # Mocked client with the desired behavior for embed_documents
     raw_elements = [{"text": f"This is sentence {i + 1}"} for i in range(2)]
-    mock_response = CreateEmbeddingResponse(
-        data=[
-            Embedding(embedding=[1, 2], index=1, object="embedding")
-            for i in range(len(raw_elements))
-        ],
-        model="model",
-        object="list",
-        usage=Usage(total_tokens=1, prompt_tokens=1),
-    )
+    mock_response = mocker.MagicMock()
+    mock_response_data = []
+    for i in range(len(raw_elements)):
+        mock_response_d = mocker.MagicMock()
+        mock_response_d.embedding = [1, 2]
+        mock_response_data.append(mock_response_d)
+    mock_response.data = mock_response_data
     mock_client = mocker.MagicMock()
     mock_client.embeddings.create.return_value = mock_response
 
