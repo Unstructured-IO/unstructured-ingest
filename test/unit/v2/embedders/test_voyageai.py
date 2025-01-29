@@ -14,7 +14,7 @@ def generate_embedder_config_params() -> dict:
     }
     if random.random() < 0.5:
         params["embedder_model_name"] = fake.word()
-        params["batch_size"] = fake.random_int()
+        params["batch_size"] = fake.random_int(max=100)
         params["truncation"] = fake.boolean()
         params["max_retries"] = fake.random_int()
         params["timeout_in_seconds"] = fake.random_int()
