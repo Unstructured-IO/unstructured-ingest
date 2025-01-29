@@ -25,7 +25,7 @@ def wait_for_container(timeout: int = 10, interval: int = 1) -> None:
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
-            requests.get("http://localhost:8080/v1/.well-known/read")
+            requests.get("http://localhost:8080/v1/.well-known/read", timeout=1)
             return
         except Exception as e:
             print(f"Failed to validate container healthy, sleeping for {interval} seconds: {e}")
@@ -137,11 +137,7 @@ def test_weaviate_local_destination(upload_file: Path, collection: str, tmp_path
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
-@pytest.mark.skip("This test is hanging forever")
 def test_weaviate_local_create_destination(weaviate_instance):
-    # TODO: figure out why this test never finishes
-    #  When stepping through this test via debugger, it finishes and passes
-    #  When running directly, test hangs forever.
     uploader = LocalWeaviateUploader(
         upload_config=LocalWeaviateUploaderConfig(),
         connection_config=LocalWeaviateConnectionConfig(),
