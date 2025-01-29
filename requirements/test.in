@@ -4,7 +4,6 @@ pytest
 pytest-cov
 pytest-mock
 pytest-check
-unstructured
 pytest-asyncio
 pytest_tagging
 pytest-json-report
@@ -12,6 +11,7 @@ faker
 docker
 universal_pathlib
 deepdiff
+bs4
 
 # Connector specific deps
 cryptography

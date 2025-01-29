@@ -7,6 +7,7 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.html import HtmlMixin
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -180,19 +181,8 @@ class ConfluenceIndexer(Indexer):
                 yield file_data
 
 
-class ConfluenceDownloaderConfig(DownloaderConfig):
-    extract_images: bool = Field(
-        default=False,
-        description="if true, will download images and replace "
-        "the html content with base64 encoded images",
-    )
-    extract_files: bool = Field(
-        default=False, description="if true, will download any embedded files"
-    )
-    force_download: bool = Field(
-        default=False,
-        description="if true, will redownload extracted files even if they already exist locally",
-    )
+class ConfluenceDownloaderConfig(DownloaderConfig, HtmlMixin):
+    pass
 
 
 @dataclass
@@ -206,23 +196,18 @@ class ConfluenceDownloader(Downloader):
     ) -> list[DownloadResponse]:
         if not self.download_config.extract_files:
             return []
-        from unstructured_ingest.utils.html import download_embedded_files
-
         filepath = current_file_data.source_identifiers.relative_path
         download_path = Path(self.download_dir) / filepath
         download_dir = download_path.with_suffix("")
-        return download_embedded_files(
+        return self.download_config.extract_embedded_files(
             download_dir=download_dir,
             original_filedata=current_file_data,
-            original_html=html,
+            html=html,
             session=session,
-            force_download=self.download_config.force_download,
         )
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
-
-        from unstructured_ingest.utils.html import convert_image_tags
 
         doc_id = file_data.identifier
         try:
@@ -246,8 +231,8 @@ class ConfluenceDownloader(Downloader):
         content = f"<body class='Document' >{title_html}{content}</body>"
         if self.download_config.extract_images:
             with self.connection_config.get_client() as client:
-                content = convert_image_tags(
-                    url=file_data.metadata.url, original_html=content, session=client._session
+                content = self.download_config.extract_html_images(
+                    url=file_data.metadata.url, html=content, session=client._session
                 )
 
         filepath = file_data.source_identifiers.relative_path

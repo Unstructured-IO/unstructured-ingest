@@ -1,3 +1,9 @@
+## 0.4.3-dev0
+
+### Enhancements
+
+* **Add support for allow list when downloading from raw html**
+
 ## 0.4.2
 
 ### Fixes

@@ -2,19 +2,23 @@
 #    uv pip compile test.in --output-file test.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-cachetools==5.5.0
+beautifulsoup4==4.12.3
+    # via bs4
+bs4==0.0.2
+    # via -r test.in
+cachetools==5.5.1
     # via google-auth
 certifi==2024.12.14
     # via requests
 cffi==1.17.1
     # via cryptography
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
-coverage[toml]==7.6.9
+coverage[toml]==7.6.10
     # via pytest-cov
 cryptography==44.0.0
     # via -r test.in
-deepdiff==8.0.1
+deepdiff==8.1.1
     # via -r test.in
 docker==7.1.0
     # via -r test.in
@@ -22,7 +26,7 @@ docstring-parser==0.16
     # via google-cloud-aiplatform
 exceptiongroup==1.2.2
     # via pytest
-faker==33.1.0
+faker==35.0.0
     # via -r test.in
 fsspec==2024.5.0
     # via
@@ -36,7 +40,7 @@ google-api-core[grpc]==2.24.0
     #   google-cloud-core
     #   google-cloud-resource-manager
     #   google-cloud-storage
-google-auth==2.37.0
+google-auth==2.38.0
     # via
     #   google-api-core
     #   google-cloud-aiplatform
@@ -46,7 +50,7 @@ google-auth==2.37.0
     #   google-cloud-storage
 google-cloud-aiplatform[all]==1.71.1
     # via vertexai
-google-cloud-bigquery==3.27.0
+google-cloud-bigquery==3.29.0
     # via google-cloud-aiplatform
 google-cloud-core==2.4.1
     # via
@@ -69,9 +73,9 @@ googleapis-common-protos[grpc]==1.66.0
     #   google-api-core
     #   grpc-google-iam-v1
     #   grpcio-status
-grpc-google-iam-v1==0.13.1
+grpc-google-iam-v1==0.14.0
     # via google-cloud-resource-manager
-grpcio==1.68.1
+grpcio==1.70.0
     # via
     #   -c ./common/constraints.txt
     #   google-api-core
@@ -88,7 +92,7 @@ numpy==1.26.4
     # via
     #   -c ./common/constraints.txt
     #   shapely
-orderly-set==5.2.2
+orderly-set==5.2.3
     # via deepdiff
 packaging==24.2
     # via
@@ -120,9 +124,9 @@ pyasn1-modules==0.4.1
     # via google-auth
 pycparser==2.22
     # via cffi
-pydantic==2.10.3
+pydantic==2.10.6
     # via google-cloud-aiplatform
-pydantic-core==2.27.1
+pydantic-core==2.27.2
     # via pydantic
 pytest==8.3.4
     # via
@@ -134,7 +138,7 @@ pytest==8.3.4
     #   pytest-metadata
     #   pytest-mock
     #   pytest-tagging
-pytest-asyncio==0.25.0
+pytest-asyncio==0.25.2
     # via -r test.in
 pytest-check==2.4.1
     # via -r test.in
@@ -164,6 +168,8 @@ shapely==2.0.6
     # via google-cloud-aiplatform
 six==1.17.0
     # via python-dateutil
+soupsieve==2.6
+    # via beautifulsoup4
 tomli==2.2.1
     # via
     #   coverage

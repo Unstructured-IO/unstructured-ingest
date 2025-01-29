@@ -1,109 +1,157 @@
 import base64
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 from uuid import NAMESPACE_DNS, uuid5
 
-import requests
-from bs4 import BeautifulSoup
-from requests import Session
+from pydantic import BaseModel, Field
 
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, SourceIdentifiers
 from unstructured_ingest.v2.logger import logger
 
+if TYPE_CHECKING:
+    from bs4.element import Tag
+    from requests import Session
 
-def convert_image_tags(url: str, original_html: str, session: Optional[Session] = None) -> str:
-    session = session or requests.Session()
-    parsed_url = urlparse(url)
-    base_url = parsed_url.scheme + "://" + parsed_url.netloc
-    soup = BeautifulSoup(original_html, "html.parser")
-    images = soup.find_all("img")
-    for image in images:
-        current_source = image["src"]
-        if current_source.startswith("//"):
-            source_url = f"{parsed_url.scheme}:{current_source}"
-        elif current_source.startswith("http"):
-            source_url = current_source
+
+class HtmlMixin(BaseModel):
+    extract_images: bool = Field(
+        default=False,
+        description="if true, will download images and replace "
+        "the html content with base64 encoded images",
+    )
+    extract_files: bool = Field(
+        default=False, description="if true, will download any embedded files"
+    )
+    force_download: bool = Field(
+        default=False,
+        description="if true, will redownload extracted files even if they already exist locally",
+    )
+    allow_list: Optional[list[str]] = Field(
+        default=None,
+        description="list of allowed urls to download, if not set, "
+        "will default to the base url the original HTML came from",
+    )
+
+    @requires_dependencies(["requests"])
+    def get_default_session(self) -> "Session":
+        import requests
+
+        return requests.Session()
+
+    def get_absolute_url(self, tag_link: str, url: str) -> str:
+        parsed_url = urlparse(url)
+        base_url = parsed_url.scheme + "://" + parsed_url.netloc
+        if tag_link.startswith("//"):
+            return f"{parsed_url.scheme}:{tag_link}"
+        elif tag_link.startswith("http"):
+            return tag_link
         else:
-            source_url = base_url + current_source
-        try:
-            response = session.get(source_url)
-            response.raise_for_status()
-            image_content = response.content
-            logger.debug(
-                "img tag having src updated from {} to base64 content".format(image["src"])
-            )
-            image["src"] = f"data:image/png;base64,{base64.b64encode(image_content).decode()}"
-        except Exception as e:
-            logger.warning(
-                f"failed to download image content from {source_url}: {e}", exc_info=True
-            )
-    return str(soup)
+            tag_link = tag_link.lstrip("/")
+            return f"{base_url}/{tag_link}"
 
-
-def download_link(
-    download_dir: Path, link: str, session: Optional[Session] = None, force_download: bool = False
-) -> Path:
-    session = session or requests.Session()
-    filename = Path(urlparse(url=link).path).name
-    download_path = download_dir / filename
-    logger.debug(f"downloading file from {link} to {download_path}")
-    if download_path.exists() and download_path.is_file() and not force_download:
-        return download_path
-    with download_path.open("wb") as downloaded_file:
-        response = session.get(link)
+    def download_content(self, url: str, session: "Session") -> bytes:
+        response = session.get(url)
         response.raise_for_status()
-        downloaded_file.write(response.content)
-    return download_path
+        return response.content
 
+    def can_download(self, url_to_download: str, original_url: str) -> bool:
+        parsed_original_url = urlparse(original_url)
+        base_url = parsed_original_url.scheme + "://" + parsed_original_url.netloc
+        allow_list = self.allow_list or [base_url]
+        for allowed_url in allow_list:
+            if url_to_download.startswith(allowed_url):
+                return True
+        logger.info(f"Skipping url because it does not match the allow list: {url_to_download}")
+        return False
 
-def download_embedded_files(
-    download_dir: Path,
-    original_filedata: FileData,
-    original_html: str,
-    session: Optional[Session] = None,
-    force_download: bool = False,
-) -> list[DownloadResponse]:
-    session = session or requests.Session()
-    url = original_filedata.metadata.url
-    parsed_url = urlparse(url)
-    base_url = parsed_url.scheme + "://" + parsed_url.netloc
-    soup = BeautifulSoup(original_html, "html.parser")
-    tags = soup.find_all("a", href=True)
-    hrefs = [
-        tag["href"]
-        for tag in tags
-        if not tag["href"].startswith("#") and Path(tag["href"]).suffix != ""
-    ]
-    results = []
-    for current_source in hrefs:
-        download_dir.mkdir(parents=True, exist_ok=True)
-        if current_source.startswith("//"):
-            source_url = f"{parsed_url.scheme}:{current_source}"
-        elif current_source.startswith("http"):
-            source_url = current_source
-        else:
-            source_url = base_url + current_source
-        try:
-            downloaded_path = download_link(
-                download_dir=download_dir,
-                link=source_url,
-                session=session,
-                force_download=force_download,
-            )
-        except Exception as e:
-            logger.warning(f"failed to download file content from {source_url}: {e}")
-            continue
-        result_file_data = original_filedata.model_copy(deep=True)
-        result_file_data.metadata.url = source_url
-        result_file_data.metadata.record_locator["parent_url"] = url
-        result_file_data.identifier = str(
-            uuid5(NAMESPACE_DNS, source_url + original_filedata.identifier)
+    def extract_image_src(self, image: "Tag", url: str, session: "Session") -> "Tag":
+        current_src = image["src"]
+        if current_src.startswith("data:image/png;base64"):
+            # already base64 encoded
+            return image
+        absolute_url = self.get_absolute_url(tag_link=image["src"], url=url)
+        if not self.can_download(url_to_download=absolute_url, original_url=url):
+            return image
+        image_content = self.download_content(url=absolute_url, session=session)
+        logger.debug("img tag having src updated from {} to base64 content".format(image["src"]))
+        image["src"] = f"data:image/png;base64,{base64.b64encode(image_content).decode()}"
+        return image
+
+    @requires_dependencies(["bs4"])
+    def extract_html_images(self, url: str, html: str, session: Optional["Session"] = None) -> str:
+        from bs4 import BeautifulSoup
+
+        session = session or self.get_default_session()
+        soup = BeautifulSoup(html, "html.parser")
+        images = soup.find_all("img")
+        for image in images:
+            self.extract_image_src(image=image, url=url, session=session)
+        return str(soup)
+
+    @requires_dependencies(["bs4"])
+    def get_hrefs(self, url: str, html: str) -> list:
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html, "html.parser")
+        tags = soup.find_all("a", href=True)
+        hrefs = [
+            tag["href"]
+            for tag in tags
+            if not tag["href"].startswith("#") and Path(tag["href"]).suffix != ""
+        ]
+        absolute_urls = [self.get_absolute_url(tag_link=href, url=url) for href in hrefs]
+        allowed_urls = [
+            url_to_download
+            for url_to_download in absolute_urls
+            if self.can_download(url_to_download=url_to_download, original_url=url)
+        ]
+        return allowed_urls
+
+    def write_content(self, content: bytes, path: Path) -> None:
+        if path.exists() and path.is_file() and not self.force_download:
+            return
+        with path.open("wb") as f:
+            f.write(content)
+
+    def get_download_response(
+        self, url: str, download_dir: Path, file_data: FileData, session: "Session"
+    ) -> DownloadResponse:
+        filename = Path(urlparse(url=url).path).name
+        download_path = download_dir / filename
+        self.write_content(
+            content=self.download_content(url=url, session=session), path=download_path
         )
-        filename = Path(urlparse(url=source_url).path).name
+        result_file_data = file_data.model_copy(deep=True)
+        result_file_data.metadata.url = url
+        if result_file_data.metadata.record_locator is None:
+            result_file_data.metadata.record_locator = {}
+        result_file_data.metadata.record_locator["parent_url"] = url
+        result_file_data.identifier = str(uuid5(NAMESPACE_DNS, url + file_data.identifier))
+        filename = Path(urlparse(url=url).path).name
         result_file_data.source_identifiers = SourceIdentifiers(
             filename=filename, fullpath=filename
         )
-        result_file_data.local_download_path = downloaded_path.as_posix()
-        results.append(DownloadResponse(file_data=result_file_data, path=downloaded_path))
-    return results
+        result_file_data.local_download_path = download_path.as_posix()
+        return DownloadResponse(file_data=result_file_data, path=download_path)
+
+    def extract_embedded_files(
+        self,
+        url: str,
+        html: str,
+        download_dir: Path,
+        original_filedata: FileData,
+        session: Optional["Session"] = None,
+    ) -> list[DownloadResponse]:
+        session = session or self.get_default_session()
+        urls_to_download = self.get_hrefs(url=url, html=html)
+        return [
+            self.get_download_response(
+                url=url_to_download,
+                download_dir=download_dir,
+                file_data=original_filedata,
+                session=session,
+            )
+            for url_to_download in urls_to_download
+        ]
