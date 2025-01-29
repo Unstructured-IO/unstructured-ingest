@@ -1,0 +1,23 @@
+{
+    "properties": [
+        {
+            "dataType": [
+                "text"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": true,
+            "name": "record_id",
+            "tokenization": "word"
+        },
+        {
+            "dataType": [
+                "text"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": true,
+            "name": "text",
+            "tokenization": "word"
+        }
+    ],
+    "vectorizer": "none"
+}

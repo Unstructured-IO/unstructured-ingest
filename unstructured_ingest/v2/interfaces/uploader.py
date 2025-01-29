@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -38,6 +38,11 @@ class Uploader(BaseProcess, BaseConnector, ABC):
     def run_batch(self, contents: list[UploadContent], **kwargs: Any) -> None:
         raise NotImplementedError()
 
+    def create_destination(self, destination_name: str = "elements", **kwargs: Any) -> bool:
+        # Update the uploader config if needed with a new destination that gets created.
+        # Return a flag on if anything was created or not.
+        return False
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_data(path=path)
         self.run_data(data=data, file_data=file_data, **kwargs)
@@ -51,3 +56,11 @@ class Uploader(BaseProcess, BaseConnector, ABC):
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         return self.run_data(data=data, file_data=file_data, **kwargs)
+
+
+@dataclass
+class VectorDBUploader(Uploader, ABC):
+    def create_destination(
+        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+    ) -> bool:
+        return False

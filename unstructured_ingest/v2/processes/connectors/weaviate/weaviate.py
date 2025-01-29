@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
@@ -15,10 +16,10 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    Uploader,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
+    VectorDBUploader,
 )
 from unstructured_ingest.v2.logger import logger
 
@@ -160,7 +161,9 @@ class WeaviateUploadStager(UploadStager):
 
 
 class WeaviateUploaderConfig(UploaderConfig):
-    collection: str = Field(description="The name of the collection this object belongs to")
+    collection: Optional[str] = Field(
+        description="The name of the collection this object belongs to", default=None
+    )
     batch_size: Optional[int] = Field(default=None, description="Number of records per batch")
     requests_per_minute: Optional[int] = Field(default=None, description="Rate limit for upload")
     dynamic_batch: bool = Field(default=True, description="Whether to use dynamic batch")
@@ -205,16 +208,49 @@ class WeaviateUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class WeaviateUploader(Uploader, ABC):
+class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
+
+    def _collection_exists(self, collection_name: Optional[str] = None):
+        collection_name = collection_name or self.upload_config.collection
+        with self.connection_config.get_client() as weaviate_client:
+            return weaviate_client.collections.exists(name=collection_name)
 
     def precheck(self) -> None:
         try:
             self.connection_config.get_client()
+            # only if collection name populated should we check that it exists
+            if self.upload_config.collection and not self._collection_exists():
+                raise DestinationConnectionError(
+                    f"collection '{self.upload_config.collection}' does not exist"
+                )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+    def init(self, *kwargs: Any) -> None:
+        self.create_destination()
+
+    def create_destination(
+        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+    ) -> bool:
+        collection_name = self.upload_config.collection or destination_name
+        self.upload_config.collection = collection_name
+        connectors_dir = Path(__file__).parents[1]
+        collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
+        with collection_config_file.open() as f:
+            collection_config = json.load(f)
+        collection_config["class"] = collection_name
+        if not self._collection_exists():
+            logger.info(
+                f"creating default weaviate collection '{collection_name}' with default configs"
+            )
+            with self.connection_config.get_client() as weaviate_client:
+                weaviate_client.collections.create_from_dict(config=collection_config)
+                return True
+        logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
+        return False
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects
@@ -253,6 +289,8 @@ class WeaviateUploader(Uploader, ABC):
             f"writing {len(data)} objects to destination "
             f"class {self.connection_config.access_config} "
         )
+        if not self.upload_config.collection:
+            raise ValueError("No collection specified")
 
         with self.connection_config.get_client() as weaviate_client:
             self.delete_by_record_id(client=weaviate_client, file_data=file_data)
