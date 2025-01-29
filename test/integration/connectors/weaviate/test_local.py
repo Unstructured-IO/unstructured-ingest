@@ -150,6 +150,7 @@ def test_weaviate_local_create_destination(weaviate_instance):
     created = uploader.create_destination(destination_name=collection_name)
     assert created
     with uploader.connection_config.get_client() as weaviate_client:
-        collections = weaviate_client.collections.list_all()
-        collection_names = [col.name.lower() for col in collections.values()]
-        assert collection_name in collection_names
+        assert weaviate_client.collections.exists(name=collection_name)
+
+    created = uploader.create_destination(destination_name=collection_name)
+    assert not created

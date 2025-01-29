@@ -212,20 +212,16 @@ class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
 
-    def _existing_collections(self) -> list[str]:
+    def _collection_exists(self, collection_name: Optional[str] = None):
+        collection_name = collection_name or self.upload_config.collection
         with self.connection_config.get_client() as weaviate_client:
-            existing_collections = weaviate_client.collections.list_all()
-            existing_collection_names = [col.name.lower() for col in existing_collections.values()]
-            return existing_collection_names
+            return weaviate_client.collections.exists(name=collection_name)
 
     def precheck(self) -> None:
         try:
             self.connection_config.get_client()
             # only if collection name populated should we check that it exists
-            if (
-                self.upload_config.collection
-                and self.upload_config.collection not in self._existing_collections()
-            ):
+            if self.upload_config.collection and not self._collection_exists():
                 raise DestinationConnectionError(
                     f"collection '{self.upload_config.collection}' does not exist"
                 )
@@ -246,7 +242,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
         with collection_config_file.open() as f:
             collection_config = json.load(f)
         collection_config["class"] = collection_name
-        if collection_name not in self._existing_collections():
+        if not self._collection_exists():
             logger.info(
                 f"creating default weaviate collection '{collection_name}' with default configs"
             )
