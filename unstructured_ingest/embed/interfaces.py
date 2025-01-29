@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class EmbeddingConfig(BaseModel):
-    batch_size: Optional[int] = 32
+    batch_size: Optional[int] = Field(
+        default=32, description="Optional batch size for embedding requests."
+    )
 
 
 @dataclass

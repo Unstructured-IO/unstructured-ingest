@@ -26,6 +26,11 @@ if TYPE_CHECKING:
 
 
 class VoyageAIEmbeddingConfig(EmbeddingConfig):
+    batch_size: int = Field(
+        default=32,
+        le=128,
+        description="Batch size for embedding requests. VoyageAI has a limit of 128.",
+    )
     api_key: SecretStr
     embedder_model_name: str = Field(default="voyage-3", alias="model_name")
     truncation: Optional[bool] = Field(default=None)
