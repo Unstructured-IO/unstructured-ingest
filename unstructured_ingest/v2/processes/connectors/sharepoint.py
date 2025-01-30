@@ -95,7 +95,7 @@ class SharepointConnectionConfig(ConnectionConfig):
     def get_client(self) -> "ClientContext":
         from msal import ConfidentialClientApplication
         from office365.sharepoint.client_context import ClientContext
-        from office365.runtime.auth.token_manager import TokenManager
+        from types import SimpleNamespace
 
         try:
             token_result = self.get_permissions_token()
@@ -106,10 +106,10 @@ class SharepointConnectionConfig(ConnectionConfig):
                 )
             access_token = token_result["access_token"]
 
+            def token_callback():
+                return SimpleNamespace(tokenType="Bearer", accessToken=access_token)
             # Then set up the SharePoint client context with that token
-            site_client = ClientContext(self.site).with_access_token(
-                TokenManager(lambda: {"tokenType": "Bearer", "accessToken": access_token})
-                )
+            site_client = ClientContext(self.site).with_access_token(token_callback)
             
         except Exception as e:
             logger.error(f"Couldn't set Sharepoint client: {e}")
