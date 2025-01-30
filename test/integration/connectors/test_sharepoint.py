@@ -2,7 +2,7 @@
 import os
 
 import pytest
-
+from pydantic import SecretStr
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
@@ -42,9 +42,10 @@ async def test_sharepoint_source(temp_dir):
     access_config = SharepointAccessConfig(client_cred=client_cred)
 
     permissions_config = SharepointPermissionsConfig(
-        permissions_application_id=None,
+        permissions_application_id=client_id,
+        permissions_client_cred=SecretStr(client_cred),
         permissions_tenant=tenant,
-        permissions_client_cred=None,  # or SecretStr(...)
+        authority_url=SecretStr("https://login.microsoftonline.com"),
     )
 
     connection_config = SharepointConnectionConfig(
