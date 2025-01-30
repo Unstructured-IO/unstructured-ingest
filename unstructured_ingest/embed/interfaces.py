@@ -1,13 +1,16 @@
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class EmbeddingConfig(BaseModel):
-    pass
+    batch_size: Optional[int] = Field(
+        default=32, description="Optional batch size for embedding requests."
+    )
 
 
 @dataclass
@@ -53,9 +56,9 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
         is properly configured: e.g., embed a single a element"""
 
     @property
-    def num_of_dimensions(self) -> tuple[int, ...]:
+    def dimension(self):
         exemplary_embedding = self.get_exemplary_embedding()
-        return np.shape(exemplary_embedding)
+        return len(exemplary_embedding)
 
     def get_exemplary_embedding(self) -> list[float]:
         return self.embed_query(query="Q")
@@ -91,9 +94,9 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
         is properly configured: e.g., embed a single a element"""
 
     @property
-    async def num_of_dimensions(self) -> tuple[int, ...]:
+    async def dimension(self):
         exemplary_embedding = await self.get_exemplary_embedding()
-        return np.shape(exemplary_embedding)
+        return len(exemplary_embedding)
 
     async def get_exemplary_embedding(self) -> list[float]:
         return await self.embed_query(query="Q")

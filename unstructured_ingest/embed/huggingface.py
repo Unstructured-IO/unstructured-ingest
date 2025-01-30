@@ -33,6 +33,11 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
             **self.embedder_model_kwargs,
         )
 
+    def get_encoder_kwargs(self) -> dict:
+        encoder_kwargs = self.encode_kwargs or {}
+        encoder_kwargs["batch_size"] = self.batch_size
+        return encoder_kwargs
+
 
 @dataclass
 class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -43,7 +48,7 @@ class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def _embed_documents(self, texts: list[str]) -> list[list[float]]:
         client = self.config.get_client()
-        embeddings = client.encode(texts, **self.config.encode_kwargs)
+        embeddings = client.encode(texts, **self.config.get_encoder_kwargs())
         return embeddings.tolist()
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:

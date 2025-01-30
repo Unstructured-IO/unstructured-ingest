@@ -9,6 +9,7 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
@@ -71,13 +72,18 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_client()
+        embeddings = []
         try:
-            outputs = client.embeddings.create(
-                model=self.config.embedder_model_name, input=elements
-            )
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
+                outputs = client.embeddings.create(
+                    model=self.config.embedder_model_name, input=batch
+                )
+                embeddings.extend([outputs.data[i].embedding for i in range(len(batch))])
         except Exception as e:
             raise self.wrap_error(e=e)
-        return [outputs.data[i].embedding for i in range(len(elements))]
+        return embeddings
 
 
 @dataclass
@@ -97,10 +103,15 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()
+        embeddings = []
         try:
-            outputs = await client.embeddings.create(
-                model=self.config.embedder_model_name, input=elements
-            )
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
+                outputs = await client.embeddings.create(
+                    model=self.config.embedder_model_name, input=batch
+                )
+                embeddings.extend([outputs.data[i].embedding for i in range(len(batch))])
         except Exception as e:
             raise self.wrap_error(e=e)
-        return [outputs.data[i].embedding for i in range(len(elements))]
+        return embeddings

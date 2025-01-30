@@ -46,9 +46,7 @@ def test_raw_voyageai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1024,)
-    )
+    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1024)
 
 
 @requires_env(API_KEY)
@@ -61,5 +59,5 @@ async def test_raw_async_voyageai_embedder(embedder_file: Path):
         )
     )
     await validate_raw_embedder_async(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1024,)
+        embedder=embedder, embedder_file=embedder_file, expected_dimension=1024
     )

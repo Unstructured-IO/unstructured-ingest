@@ -10,10 +10,10 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 USER_AGENT = "@mixedbread-ai/unstructured"
-BATCH_SIZE = 128
 TIMEOUT = 60
 MAX_RETRIES = 3
 ENCODING_FORMAT = "float"
@@ -109,13 +109,10 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         Returns:
             list[list[float]]: List of embeddings.
         """
-        batch_size = BATCH_SIZE
-        batch_itr = range(0, len(texts), batch_size)
 
         responses = []
         client = self.config.get_client()
-        for i in batch_itr:
-            batch = texts[i : i + batch_size]
+        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
             response = client.embeddings(
                 model=self.config.embedder_model_name,
                 normalized=True,
@@ -186,13 +183,9 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         Returns:
             list[list[float]]: List of embeddings.
         """
-        batch_size = BATCH_SIZE
-        batch_itr = range(0, len(texts), batch_size)
-
         client = self.config.get_async_client()
         tasks = []
-        for i in batch_itr:
-            batch = texts[i : i + batch_size]
+        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
             tasks.append(
                 client.embeddings(
                     model=self.config.embedder_model_name,

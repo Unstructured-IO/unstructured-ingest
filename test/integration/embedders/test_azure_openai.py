@@ -54,6 +54,4 @@ def test_raw_azure_openai_embedder(embedder_file: Path):
             azure_endpoint=azure_data.endpoint,
         )
     )
-    validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1536,)
-    )
+    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1536)

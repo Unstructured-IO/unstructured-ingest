@@ -46,7 +46,7 @@ def test_raw_togetherai_embedder(embedder_file: Path):
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
-        expected_dimensions=(768,),
+        expected_dimension=768,
         expected_is_unit_vector=False,
     )
 
@@ -66,6 +66,6 @@ async def test_raw_async_togetherai_embedder(embedder_file: Path):
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,
-        expected_dimensions=(768,),
+        expected_dimension=768,
         expected_is_unit_vector=False,
     )

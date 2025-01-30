@@ -9,6 +9,7 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -80,7 +81,17 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return response.data[0].embedding
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
+        client = self.config.get_client()
+        texts = [e.get("text", "") for e in elements]
+        embeddings = []
+        try:
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
+                response = client.embeddings.create(
+                    input=batch, model=self.config.embedder_model_name
+                )
+                embeddings.extend([data.embedding for data in response.data])
+        except Exception as e:
+            raise self.wrap_error(e=e)
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings
 
@@ -105,12 +116,14 @@ class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
         client = self.config.get_async_client()
         texts = [e.get("text", "") for e in elements]
+        embeddings = []
         try:
-            response = await client.embeddings.create(
-                input=texts, model=self.config.embedder_model_name
-            )
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
+                response = await client.embeddings.create(
+                    input=batch, model=self.config.embedder_model_name
+                )
+                embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        embeddings = [data.embedding for data in response.data]
         elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
         return elements_with_embeddings

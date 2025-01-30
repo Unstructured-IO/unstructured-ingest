@@ -1,9 +1,10 @@
-## 0.4.3-dev2
+## 0.4.3
 
 ### Enhancements
 
 * **Add support for allow list when downloading from raw html**
 * **Add support for setting up destination as part of uploader**
+* **Add batch support for all embedders**
 
 ### Fixes
 
