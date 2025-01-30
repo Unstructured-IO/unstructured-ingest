@@ -313,7 +313,7 @@ class Neo4jUploader(Uploader):
     def _main_label(self, labels: list[Label]) -> Label:
         if labels is None or len(labels) == 0: return None
 
-        for label in [Label.CHUNK, Label.DOCUMENT, Label.UNSTRUCTURED_ELEMENT]:
+        for label in Label:
             if label in labels:
                 return label
             else:
@@ -359,31 +359,31 @@ class Neo4jUploader(Uploader):
         client: AsyncDriver,
         in_parallel: bool = False,
     ) -> None:
+        from neo4j import EagerResult
+        results: list[EagerResult] = []
+        logger.info(f"Executing {len(queries_with_parameters)} {'parallel' if in_parallel else 'sequential'} Cypher statements.")
         if in_parallel:
-            logger.info(f"Executing {len(queries_with_parameters)} queries in parallel.")
-            await asyncio.gather(
+            results = await asyncio.gather(
                 *[
                     client.execute_query(query, parameters_=parameters)
                     for query, parameters in queries_with_parameters
                 ]
             )
-            logger.info("Finished executing parallel queries.")
         else:
-            logger.info(f"Executing {len(queries_with_parameters)} queries sequentially.")
             for i, (query, parameters) in enumerate(queries_with_parameters):
-                logger.info(f"Query #{i} started.")
-                await client.execute_query(query, parameters_=parameters)
-                logger.info(f"Query #{i} finished.")
-            logger.info(
-                f"Finished executing all ({len(queries_with_parameters)}) sequential queries."
-            )
+                logger.info(f"Statement #{i} started.")
+                results.append(await client.execute_query(query, parameters_=parameters))
+                logger.info(f"Statement #{i} finished.")
+        nodeCount = sum([res.summary.counters.nodes_created for res in results])
+        relCount = sum([res.summary.counters.relationships_created for res in results])
+        logger.info(f"Finished executing all ({len(queries_with_parameters)}) {'parallel' if in_parallel else 'sequential'} Cypher statements. Created {nodeCount} nodes, {relCount} relationships.")
 
     @staticmethod
     def _create_nodes_query(nodes: list[_Node], label: Label) -> tuple[str, dict]:
         logger.info(f"Preparing MERGE query for {len(nodes)} nodes labeled '{label}'.")
         query_string = f"""
             UNWIND $nodes AS node
-            MERGE (n: `{label}` {{id: node.id}})
+            MERGE (n: `{label.value}` {{id: node.id}})
             SET n += node.properties
             SET n:$(node.labels)
             WITH * WHERE node.vector IS NOT NULL
