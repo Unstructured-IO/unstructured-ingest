@@ -1,9 +1,14 @@
-## 0.4.3-dev1
+## 0.4.3-dev2
 
 ### Enhancements
 
 * **Add support for allow list when downloading from raw html**
 * **Add support for setting up destination as part of uploader**
+
+### Fixes
+
+* **Fix HtmlMixin error when saving downloaded files**
+* **Fix Confluence Downloader error when downloading embedded files**
 
 ## 0.4.2
 
