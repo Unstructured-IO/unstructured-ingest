@@ -125,7 +125,9 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         client = self.config.get_async_client()
         embeddings = []
         try:
-            for batch in batch_generator(elements, batch_size=self.config.batch_size):
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
                 response = await client.embed(texts=batch, model=self.config.embedder_model_name)
                 embeddings.extend(response.embeddings)
         except Exception as e:
