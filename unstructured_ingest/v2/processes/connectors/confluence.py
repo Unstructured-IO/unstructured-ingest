@@ -196,10 +196,18 @@ class ConfluenceDownloader(Downloader):
     ) -> list[DownloadResponse]:
         if not self.download_config.extract_files:
             return []
+        url = current_file_data.metadata.url
+        if url is None:
+            logger.warning(
+                f"""Missing URL for file: {current_file_data.source_identifiers.filename}.
+                Skipping file extraction."""
+            )
+            return []
         filepath = current_file_data.source_identifiers.relative_path
         download_path = Path(self.download_dir) / filepath
         download_dir = download_path.with_suffix("")
         return self.download_config.extract_embedded_files(
+            url=url,
             download_dir=download_dir,
             original_filedata=current_file_data,
             html=html,
