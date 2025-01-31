@@ -98,7 +98,8 @@ class SharepointConnectionConfig(ConnectionConfig):
         from types import SimpleNamespace
 
         try:
-            token_result = self.get_permissions_token()
+            token_scope = f"{self.site}/.default"
+            token_result = self.get_permissions_token(token_scope=token_scope)
             if "access_token" not in token_result:
                 raise SourceConnectionNetworkError(
                     f"Failed to obtain token for SharePoint: \
@@ -117,18 +118,18 @@ class SharepointConnectionConfig(ConnectionConfig):
         return site_client
 
     @requires_dependencies(["msal"], extras="sharepoint")
-    def get_permissions_token(self):
+    def get_permissions_token(self, token_scope: Optional[str] = "https://graph.microsoft.com/.default"):
         from msal import ConfidentialClientApplication
 
         try:
             client_credential = self.permissions_config.permissions_client_cred.get_secret_value()
             app = ConfidentialClientApplication(
-                authority=f"{self.permissions_config.authority_url.get_secret_value()}/"
+                authority=f"{self.permissions_config.authority_url.get_secret_value()}"
                 f"{self.permissions_config.permissions_tenant}",
                 client_id=self.permissions_config.permissions_application_id,
                 client_credential=client_credential,
             )
-            token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
+            token = app.acquire_token_for_client(scopes=[token_scope])
         except ValueError as exc:
             logger.error("Couldn't set up credentials for Sharepoint")
             raise exc

@@ -45,7 +45,7 @@ async def test_sharepoint_source(temp_dir):
         permissions_application_id=client_id,
         permissions_client_cred=SecretStr(client_cred),
         permissions_tenant=tenant,
-        authority_url=SecretStr("https://login.microsoftonline.com"),
+        authority_url=SecretStr("https://login.microsoftonline.com/"),
     )
 
     connection_config = SharepointConnectionConfig(
