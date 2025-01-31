@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, AsyncGenerator, Generator, Optional, TypeVar
 
 from pydantic import BaseModel
