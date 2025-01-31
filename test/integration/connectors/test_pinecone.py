@@ -351,3 +351,32 @@ def test_pinecone_stager(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+def test_pinecone_create_destination(pinecone_index):
+    uploader = PineconeUploader(
+        connection_config=PineconeConnectionConfig(
+            access_config=PineconeAccessConfig(api_key=get_api_key())
+        ),
+        upload_config=PineconeUploaderConfig(),
+    )
+
+    # generate random id with length less than 20 and more than 10
+    random_id = str(uuid4()).split("-")[0]
+
+    index_name = f"test-create-destination-{random_id}"
+
+    assert not uploader.index_exists(index_name=index_name)
+
+    try:
+        uploader.create_destination(destination_name=index_name, vector_length=1536)
+    except Exception as e:
+        raise pytest.fail(f"failed to create destination: {e}, {e.body}")
+
+    try:
+        pc = uploader.connection_config.get_client()
+        logger.info(f"deleting index for test create destination: {index_name}")
+        pc.delete_index(name=index_name)
+    except Exception as e:
+        raise pytest.fail(f"failed to cleanup / delete the destination: {e}")

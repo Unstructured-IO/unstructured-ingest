@@ -1,3 +1,9 @@
+## 0.4.4-dev
+
+### Enhancements
+
+* **Add support for setting up destination for Pinecone**
+
 ## 0.4.3
 
 ### Enhancements
