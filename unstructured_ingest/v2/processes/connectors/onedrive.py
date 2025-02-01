@@ -42,7 +42,8 @@ if TYPE_CHECKING:
     from office365.onedrive.drives.drive import Drive
 
 CONNECTOR_TYPE = "onedrive"
-MAX_BYTES_SIZE = 512_000_000
+# MAX_BYTES_SIZE = 2_000_000
+MAX_BYTES_SIZE = 5
 
 
 class OnedriveAccessConfig(AccessConfig):
@@ -337,7 +338,6 @@ class OnedriveUploader(Uploader):
             # If no relative path is provided, upload directly to the base destination folder
             destination_path = Path(base_destination_folder) / f"{path.name}.json"
 
-
         destination_folder = destination_path.parent
         file_name = destination_path.name
 
@@ -391,13 +391,16 @@ class OnedriveUploader(Uploader):
             # Use resumable upload for large files
             destination_drive_item = drive.root.get_by_path(destination_folder_str)
 
-            logger.info(f"Uploading {path.parent/file_name} to {destination_folder_str} using resumable upload")
+            logger.info(
+                f"Uploading {path.parent / file_name} to {destination_folder_str} using resumable upload"
+            )
 
             try:
                 uploaded_file = destination_drive_item.resumable_upload(
                     source_path=str(path)
                 ).execute_query()
                 # Rename the uploaded file to the original source name with a .json extension
+                ### we can't rename if the file is already there. So, we need to delete the file first
                 renamed_file = uploaded_file.rename(file_name).execute_query()
                 # Validate the upload
                 if not renamed_file or renamed_file.name != file_name:

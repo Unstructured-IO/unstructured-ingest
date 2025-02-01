@@ -1,3 +1,9 @@
+## 0.4.5-dev0
+
+### Fixes
+
+* **Fix Upload support for OneDrive connector**
+
 ## 0.4.4
 
 ### Fixes
