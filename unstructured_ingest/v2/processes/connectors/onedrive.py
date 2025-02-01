@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from office365.onedrive.drives.drive import Drive
 
 CONNECTOR_TYPE = "onedrive"
-MAX_MB_SIZE = 1
+MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
@@ -251,7 +251,7 @@ class OnedriveDownloader(Downloader):
             download_path = self.get_download_path(file_data=file_data)
             download_path.parent.mkdir(parents=True, exist_ok=True)
             logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
-            if fsize > MAX_MB_SIZE:
+            if fsize > MAX_BYTES_SIZE:
                 logger.info(f"downloading file with size: {fsize} bytes in chunks")
                 with download_path.open(mode="wb") as f:
                     file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
@@ -369,7 +369,7 @@ class OnedriveUploader(Uploader):
         # Check the size of the file
         file_size = path.stat().st_size
 
-        if file_size < MAX_MB_SIZE:
+        if file_size < MAX_BYTES_SIZE:
             # Use simple upload for small files
             with path.open("rb") as local_file:
                 content = local_file.read()
