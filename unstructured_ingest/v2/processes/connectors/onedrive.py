@@ -223,7 +223,7 @@ class OnedriveDownloader(Downloader):
     download_config: OnedriveDownloaderConfig
 
     @SourceConnectionNetworkError.wrap
-    def _fetch_file(self, file_data: FileData):
+    def _fetch_file(self, file_data: FileData) -> DriveItem:
         if file_data.source_identifiers is None or not file_data.source_identifiers.fullpath:
             raise ValueError(
                 f"file data doesn't have enough information to get "
@@ -257,7 +257,7 @@ class OnedriveDownloader(Downloader):
                     file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
             else:
                 with download_path.open(mode="wb") as f:
-                    file.download(f).execute_query()
+                    file.download_session(f).execute_query()
             return self.generate_download_response(file_data=file_data, download_path=download_path)
         except Exception as e:
             logger.error(f"[{CONNECTOR_TYPE}] Exception during downloading: {e}", exc_info=True)

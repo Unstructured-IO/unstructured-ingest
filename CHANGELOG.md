@@ -1,3 +1,9 @@
+## 0.4.5
+
+### Fixes
+
+* **Fix downloading large files for OneDrive**
+
 ## 0.4.4
 
 ### Fixes
