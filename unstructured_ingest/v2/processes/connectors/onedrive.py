@@ -388,7 +388,7 @@ class OnedriveUploader(Uploader):
             destination_drive_item = drive.root.get_by_path(destination_folder_str)
 
             logger.info(
-                f"Uploading {path.parent / file_name} to {destination_folder_str} using resumable upload"
+                f"Uploading {path.parent / file_name} to {destination_folder_str} using resumable upload"  # noqa: E501
             )
 
             try:
