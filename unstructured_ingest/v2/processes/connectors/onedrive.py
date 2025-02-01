@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, AsyncIterator, Generator, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -101,27 +101,6 @@ class OnedriveIndexerConfig(IndexerConfig):
     recursive: bool = False
 
 
-T = TypeVar("T")
-
-
-def async_iterable_to_sync_iterable(iterator: AsyncIterator[T]) -> Iterator[T]:
-    # This version works on Python 3.9 by manually handling the async iteration.
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        while True:
-            try:
-                # Instead of anext(iterator), we directly call __anext__().
-                # __anext__ returns a coroutine that we must run until complete.
-                future = iterator.__anext__()
-                result = loop.run_until_complete(future)
-                yield result
-            except StopAsyncIteration:
-                break
-    finally:
-        loop.close()
-
-
 @dataclass
 class OnedriveIndexer(Indexer):
     connection_config: OnedriveConnectionConfig
@@ -215,7 +194,10 @@ class OnedriveIndexer(Indexer):
         # Offload the file data creation if it's not guaranteed async
         return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
 
-    async def _run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
+    def is_async(self) -> bool:
+        return True
+
+    async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
             raise SourceConnectionError(
@@ -229,12 +211,6 @@ class OnedriveIndexer(Indexer):
         for drive_item in drive_items:
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
-
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        # Convert the async generator to a sync generator without loading all data into memory
-        async_gen = self._run_async(**kwargs)
-        for item in async_iterable_to_sync_iterable(async_gen):
-            yield item
 
 
 class OnedriveDownloaderConfig(DownloaderConfig):

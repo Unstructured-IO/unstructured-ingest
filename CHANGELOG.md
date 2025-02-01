@@ -1,3 +1,9 @@
+## 0.4.4
+
+### Fixes
+
+* **Fix AsyncIO support for OneDrive connector**
+
 ## 0.4.3
 
 ### Enhancements
