@@ -389,38 +389,26 @@ class OnedriveUploader(Uploader):
                     ) from e
         else:
             # Use resumable upload for large files
-            destination_fullpath = f"{destination_folder_str}/{file_name}"
-            # item_with_path doesn't exist
-            # destination_drive_item = drive.root.get_by_path(destination_fullpath)
             destination_drive_item = drive.root.get_by_path(destination_folder_str)
 
-            logger.info(f"Uploading {path} to {destination_folder_str} using resumable upload")
+            logger.info(f"Uploading {path.parent/file_name} to {destination_folder_str} using resumable upload")
 
-            # breakpoint()
-            # we need the source path but with real name and proper extension
-            # path is PosixPath('/Users/potter/Documents/potter-testing/tmp_ingest/localToOnedrive/partition/d19016894bb2.json')
-            uploaded_file = destination_drive_item.resumable_upload(
-                # source_path=str(path)
-                source_path=str(path)
-            ).execute_query()
-            breakpoint()
-
-            ### we have to rename the file to the original name
-
-            # try:
-            #     uploaded_file = destination_drive_item.resumable_upload(
-            #         source_path=str(path)
-            #     ).execute_query()
-            #     # Validate the upload
-            #     if not uploaded_file or uploaded_file.name != file_name:
-            #         raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
-            #     # Log details about the uploaded file
-            #     logger.info(f"Uploaded file {uploaded_file.name} with ID {uploaded_file.id}")
-            # except Exception as e:
-            #     logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
-            #     raise DestinationConnectionError(
-            #         f"Failed to upload file '{file_name}' using resumable upload: {e}"
-            #     ) from e
+            try:
+                uploaded_file = destination_drive_item.resumable_upload(
+                    source_path=str(path)
+                ).execute_query()
+                # Rename the uploaded file to the original source name with a .json extension
+                renamed_file = uploaded_file.rename(file_name).execute_query()
+                # Validate the upload
+                if not renamed_file or renamed_file.name != file_name:
+                    raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
+                # Log details about the uploaded file
+                logger.info(f"Uploaded file {renamed_file.name} with ID {renamed_file.id}")
+            except Exception as e:
+                logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
+                raise DestinationConnectionError(
+                    f"Failed to upload file '{file_name}' using resumable upload: {e}"
+                ) from e
 
 
 onedrive_source_entry = SourceRegistryEntry(
