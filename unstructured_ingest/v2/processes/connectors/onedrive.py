@@ -355,11 +355,12 @@ class OnedriveUploader(Uploader):
         if file_data.source_identifiers and file_data.source_identifiers.rel_path:
             # Combine the base destination folder with the file's relative path
             destination_path = Path(base_destination_folder) / Path(
-                file_data.source_identifiers.rel_path
+                f"{file_data.source_identifiers.rel_path}.json"
             )
         else:
             # If no relative path is provided, upload directly to the base destination folder
-            destination_path = Path(base_destination_folder) / path.name
+            destination_path = Path(base_destination_folder) / f"{path.name}.json"
+
 
         destination_folder = destination_path.parent
         file_name = destination_path.name
@@ -413,6 +414,7 @@ class OnedriveUploader(Uploader):
         else:
             # Use resumable upload for large files
             destination_fullpath = f"{destination_folder_str}/{file_name}"
+            # item_with_path doesn't exist
             destination_drive_item = drive.root.item_with_path(destination_fullpath)
 
             logger.info(f"Uploading {path} to {destination_fullpath} using resumable upload")
