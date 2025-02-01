@@ -322,7 +322,11 @@ class OnedriveUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
+    @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        from office365.onedrive.driveitems.conflict_behavior import ConflictBehavior
+        from office365.runtime.client_request_exception import ClientRequestException
+
         drive = self.connection_config.get_drive()
 
         # Use the remote_url from upload_config as the base destination folder
@@ -349,22 +353,14 @@ class OnedriveUploader(Uploader):
             # Attempt to get the folder
             folder = drive.root.get_by_path(destination_folder_str)
             folder.get().execute_query()
-        except Exception:
+        except ClientRequestException as e:
             # Folder doesn't exist, create it recursively
-            current_folder = drive.root
-            for part in destination_folder.parts:
-                # Use filter to find the folder by name
-                folders = (
-                    current_folder.children.filter(f"name eq '{part}' and folder ne null")
-                    .get()
-                    .execute_query()
-                )
-                if folders:
-                    current_folder = folders[0]
-                else:
-                    # Folder doesn't exist, create it
-                    current_folder = current_folder.create_folder(part).execute_query()
-            folder = current_folder
+            root = drive.root
+            root_folder = self.upload_config.root_folder
+            if e.message != "The resource could not be found.":
+                raise e
+            folder = root.create_folder(root_folder).execute_query()
+            logger.info(f"successfully created folder: {folder.name}")
 
         # Check the size of the file
         file_size = path.stat().st_size
@@ -400,8 +396,10 @@ class OnedriveUploader(Uploader):
                     source_path=str(path)
                 ).execute_query()
                 # Rename the uploaded file to the original source name with a .json extension
-                ### we can't rename if the file is already there. So, we need to delete the file first
-                renamed_file = uploaded_file.rename(file_name).execute_query()
+                # Overwrite the file if it already exists
+                renamed_file = uploaded_file.move(
+                    name=file_name, conflict_behavior=ConflictBehavior.Replace
+                ).execute_query()
                 # Validate the upload
                 if not renamed_file or renamed_file.name != file_name:
                     raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
