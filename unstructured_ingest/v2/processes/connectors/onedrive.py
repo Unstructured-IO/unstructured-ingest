@@ -357,7 +357,7 @@ class OnedriveUploader(Uploader):
             root = drive.root
             root_folder = self.upload_config.root_folder
             if not e.response.status_code == 404:
-                    raise e
+                raise e
             folder = root.create_folder(root_folder).execute_query()
             logger.info(f"successfully created folder: {folder.name}")
 
