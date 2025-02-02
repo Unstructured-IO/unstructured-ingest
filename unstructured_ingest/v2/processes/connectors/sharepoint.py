@@ -259,7 +259,7 @@ class SharepointDownloader(Downloader):
         except ClientRequestException:
             logger.info("Site not found")
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
-        
+
         if not file:
             raise FileNotFoundError(f"file not found: {server_relative_path}")
         return file
@@ -332,17 +332,17 @@ class SharepointUploader(Uploader):
                 raise SourceConnectionError(
                     "{} ({})".format(error, token_resp.get("error_description"))
                 )
-            drive = self.connection_config.get_drive()
-            root = drive.root
-            root_folder = self.upload_config.root_folder
-            folder = root.get_by_path(root_folder)
-            try:
-                folder.get().execute_query()
-            except ClientRequestException as e:
-                if not e.response.status_code == 404:
-                    raise e
-                folder = root.create_folder(root_folder).execute_query()
-                logger.info(f"successfully created folder: {folder.name}")
+            # drive = self.connection_config.get_drive()
+            # root = drive.root
+            # root_folder = self.upload_config.root_folder
+            # folder = root.get_by_path(root_folder)
+            # try:
+            #     folder.get().execute_query()
+            # except ClientRequestException as e:
+            #     if not e.response.status_code == 404:
+            #         raise e
+            #     folder = root.create_folder(root_folder).execute_query()
+            #     logger.info(f"successfully created folder: {folder.name}")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -352,7 +352,14 @@ class SharepointUploader(Uploader):
         from office365.onedrive.driveitems.conflict_behavior import ConflictBehavior
         from office365.runtime.client_request_exception import ClientRequestException
 
-        drive = self.connection_config.get_drive()
+        # drive = self.connection_config.get_drive()
+
+        client = self.connection_config.get_client()
+        try:
+            site= client.sites.get_by_url(self.connection_config.site).get().execute_query()
+            site_drive_item = site.drive.get().execute_query().root
+        except:
+            logger.info("Site not found")
 
         # Use the remote_url from upload_config as the base destination folder
         base_destination_folder = self.upload_config.url
@@ -373,19 +380,19 @@ class SharepointUploader(Uploader):
         # Convert destination folder to a string suitable for Sharepoint API
         destination_folder_str = str(destination_folder).replace("\\", "/")
 
-        # Resolve the destination folder in Sharepoint, creating it if necessary
-        try:
-            # Attempt to get the folder
-            folder = drive.root.get_by_path(destination_folder_str)
-            folder.get().execute_query()
-        except ClientRequestException as e:
-            # Folder doesn't exist, create it recursively
-            root = drive.root
-            root_folder = self.upload_config.root_folder
-            if not e.response.status_code == 404:
-                raise e
-            folder = root.create_folder(root_folder).execute_query()
-            logger.info(f"successfully created folder: {folder.name}")
+        # # Resolve the destination folder in Sharepoint, creating it if necessary
+        # try:
+        #     # Attempt to get the folder
+        #     folder = drive.root.get_by_path(destination_folder_str)
+        #     folder.get().execute_query()
+        # except ClientRequestException as e:
+        #     # Folder doesn't exist, create it recursively
+        #     root = drive.root
+        #     root_folder = self.upload_config.root_folder
+        #     if not e.response.status_code == 404:
+        #         raise e
+        #     folder = root.create_folder(root_folder).execute_query()
+        #     logger.info(f"successfully created folder: {folder.name}")
 
         # Check the size of the file
         file_size = path.stat().st_size
@@ -396,7 +403,8 @@ class SharepointUploader(Uploader):
                 content = local_file.read()
                 logger.info(f"Uploading {path} to {destination_path} using simple upload")
                 try:
-                    uploaded_file = folder.upload(file_name, content).execute_query()
+                    # uploaded_file = folder.upload(file_name, content).execute_query()
+                    uploaded_file = site_drive_item.upload(file_name, content).execute_query()
                     if not uploaded_file or uploaded_file.name != file_name:
                         raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
                     # Log details about the uploaded file
@@ -410,8 +418,11 @@ class SharepointUploader(Uploader):
                     ) from e
         else:
             # Use resumable upload for large files
-            destination_drive_item = drive.root.get_by_path(destination_folder_str)
+            destination_fullpath = f"{destination_folder_str}/{file_name}" #WWARN
+            # destination_drive_item = drive.root.get_by_path(destination_folder_str)
+            destination_drive_item = site_drive_item.root.item_with_path(destination_fullpath)
 
+            ###### change this to use the site_drive_item
             logger.info(
                 f"Uploading {path.parent / file_name} to {destination_folder_str} using resumable upload"  # noqa: E501
             )
