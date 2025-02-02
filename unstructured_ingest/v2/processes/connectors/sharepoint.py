@@ -51,6 +51,14 @@ class SharepointAccessConfig(AccessConfig):
 
 class SharepointConnectionConfig(ConnectionConfig):
     client_id: str = Field(description="Microsoft app client ID")
+    site: str = Field(
+        description="Sharepoint site url. Process either base url e.g \
+                    https://[tenant].sharepoint.com  or relative sites \
+                    https://[tenant].sharepoint.com/sites/<site_name>. \
+                    To process all sites within the tenant pass a site url as \
+                    https://[tenant]-admin.sharepoint.com.\
+                    This requires the app to be registered at a tenant level"
+    )
     user_pname: str = Field(description="User principal name, usually is your Azure AD email.")
     tenant: str = Field(
         repr=False, description="ID or domain name associated with your Azure AD instance"
@@ -196,8 +204,10 @@ class SharepointIndexer(Indexer):
 
     def is_async(self) -> bool:
         return True
-
+    
+    @requires_dependencies(["office365"], extras="onedrive")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
+        from office365.runtime.client_request_exception import ClientRequestException
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
             raise SourceConnectionError(
@@ -205,9 +215,15 @@ class SharepointIndexer(Indexer):
             )
 
         client = await asyncio.to_thread(self.connection_config.get_client)
-        root = await self.get_root(client=client)
-        drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
-
+        # root = await self.get_root(client=client)
+        # drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
+        try:
+            site= client.sites.get_by_url(self.connection_config.site).get().execute_query()
+            site_drive_item = site.drive.get().execute_query().root
+        except ClientRequestException:
+            logger.info("Site not found")
+        
+        drive_items = await self.list_objects(folder=site_drive_item, recursive=self.index_config.recursive)
         for drive_item in drive_items:
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
@@ -223,7 +239,9 @@ class SharepointDownloader(Downloader):
     download_config: SharepointDownloaderConfig
 
     @SourceConnectionNetworkError.wrap
+    @requires_dependencies(["office365"], extras="onedrive")
     def _fetch_file(self, file_data: FileData) -> DriveItem:
+        from office365.runtime.client_request_exception import ClientRequestException
         if file_data.source_identifiers is None or not file_data.source_identifiers.fullpath:
             raise ValueError(
                 f"file data doesn't have enough information to get "
@@ -232,8 +250,16 @@ class SharepointDownloader(Downloader):
 
         server_relative_path = file_data.source_identifiers.fullpath
         client = self.connection_config.get_client()
-        root = client.users[self.connection_config.user_pname].drive.get().execute_query().root
-        file = root.get_by_path(server_relative_path).get().execute_query()
+        # root = client.users[self.connection_config.user_pname].drive.get().execute_query().root
+        # file = root.get_by_path(server_relative_path).get().execute_query()
+
+        try:
+            site= client.sites.get_by_url(self.connection_config.site).get().execute_query()
+            site_drive_item = site.drive.get().execute_query().root
+        except ClientRequestException:
+            logger.info("Site not found")
+        file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
+        
         if not file:
             raise FileNotFoundError(f"file not found: {server_relative_path}")
         return file
