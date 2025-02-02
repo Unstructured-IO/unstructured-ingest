@@ -313,7 +313,7 @@ class OnedriveUploader(Uploader):
             try:
                 folder.get().execute_query()
             except ClientRequestException as e:
-                if e.message != "The resource could not be found.":
+                if not e.response.status_code == 404:
                     raise e
                 folder = root.create_folder(root_folder).execute_query()
                 logger.info(f"successfully created folder: {folder.name}")
@@ -356,8 +356,8 @@ class OnedriveUploader(Uploader):
             # Folder doesn't exist, create it recursively
             root = drive.root
             root_folder = self.upload_config.root_folder
-            if e.message != "The resource could not be found.":
-                raise e
+            if not e.response.status_code == 404:
+                    raise e
             folder = root.create_folder(root_folder).execute_query()
             logger.info(f"successfully created folder: {folder.name}")
 
