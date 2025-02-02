@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from office365.onedrive.drives.drive import Drive
 
 CONNECTOR_TYPE = "onedrive"
-MAX_MB_SIZE = 512_000_000
+MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
@@ -251,7 +251,7 @@ class OnedriveDownloader(Downloader):
             download_path = self.get_download_path(file_data=file_data)
             download_path.parent.mkdir(parents=True, exist_ok=True)
             logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
-            if fsize > MAX_MB_SIZE:
+            if fsize > MAX_BYTES_SIZE:
                 logger.info(f"downloading file with size: {fsize} bytes in chunks")
                 with download_path.open(mode="wb") as f:
                     file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
@@ -313,7 +313,7 @@ class OnedriveUploader(Uploader):
             try:
                 folder.get().execute_query()
             except ClientRequestException as e:
-                if e.message != "The resource could not be found.":
+                if not e.response.status_code == 404:
                     raise e
                 folder = root.create_folder(root_folder).execute_query()
                 logger.info(f"successfully created folder: {folder.name}")
@@ -321,7 +321,11 @@ class OnedriveUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
+    @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        from office365.onedrive.driveitems.conflict_behavior import ConflictBehavior
+        from office365.runtime.client_request_exception import ClientRequestException
+
         drive = self.connection_config.get_drive()
 
         # Use the remote_url from upload_config as the base destination folder
@@ -331,11 +335,11 @@ class OnedriveUploader(Uploader):
         if file_data.source_identifiers and file_data.source_identifiers.rel_path:
             # Combine the base destination folder with the file's relative path
             destination_path = Path(base_destination_folder) / Path(
-                file_data.source_identifiers.rel_path
+                f"{file_data.source_identifiers.rel_path}.json"
             )
         else:
             # If no relative path is provided, upload directly to the base destination folder
-            destination_path = Path(base_destination_folder) / path.name
+            destination_path = Path(base_destination_folder) / f"{path.name}.json"
 
         destination_folder = destination_path.parent
         file_name = destination_path.name
@@ -348,27 +352,19 @@ class OnedriveUploader(Uploader):
             # Attempt to get the folder
             folder = drive.root.get_by_path(destination_folder_str)
             folder.get().execute_query()
-        except Exception:
+        except ClientRequestException as e:
             # Folder doesn't exist, create it recursively
-            current_folder = drive.root
-            for part in destination_folder.parts:
-                # Use filter to find the folder by name
-                folders = (
-                    current_folder.children.filter(f"name eq '{part}' and folder ne null")
-                    .get()
-                    .execute_query()
-                )
-                if folders:
-                    current_folder = folders[0]
-                else:
-                    # Folder doesn't exist, create it
-                    current_folder = current_folder.create_folder(part).execute_query()
-            folder = current_folder
+            root = drive.root
+            root_folder = self.upload_config.root_folder
+            if not e.response.status_code == 404:
+                raise e
+            folder = root.create_folder(root_folder).execute_query()
+            logger.info(f"successfully created folder: {folder.name}")
 
         # Check the size of the file
         file_size = path.stat().st_size
 
-        if file_size < MAX_MB_SIZE:
+        if file_size < MAX_BYTES_SIZE:
             # Use simple upload for small files
             with path.open("rb") as local_file:
                 content = local_file.read()
@@ -388,19 +384,26 @@ class OnedriveUploader(Uploader):
                     ) from e
         else:
             # Use resumable upload for large files
-            destination_fullpath = f"{destination_folder_str}/{file_name}"
-            destination_drive_item = drive.root.item_with_path(destination_fullpath)
+            destination_drive_item = drive.root.get_by_path(destination_folder_str)
 
-            logger.info(f"Uploading {path} to {destination_fullpath} using resumable upload")
+            logger.info(
+                f"Uploading {path.parent / file_name} to {destination_folder_str} using resumable upload"  # noqa: E501
+            )
+
             try:
                 uploaded_file = destination_drive_item.resumable_upload(
                     source_path=str(path)
                 ).execute_query()
+                # Rename the uploaded file to the original source name with a .json extension
+                # Overwrite the file if it already exists
+                renamed_file = uploaded_file.move(
+                    name=file_name, conflict_behavior=ConflictBehavior.Replace
+                ).execute_query()
                 # Validate the upload
-                if not uploaded_file or uploaded_file.name != file_name:
+                if not renamed_file or renamed_file.name != file_name:
                     raise DestinationConnectionError(f"Upload failed for file '{file_name}'")
                 # Log details about the uploaded file
-                logger.info(f"Uploaded file {uploaded_file.name} with ID {uploaded_file.id}")
+                logger.info(f"Uploaded file {renamed_file.name} with ID {renamed_file.id}")
             except Exception as e:
                 logger.error(f"Failed to upload file '{file_name}' using resumable upload: {e}")
                 raise DestinationConnectionError(
