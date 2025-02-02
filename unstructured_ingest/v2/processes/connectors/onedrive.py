@@ -42,8 +42,7 @@ if TYPE_CHECKING:
     from office365.onedrive.drives.drive import Drive
 
 CONNECTOR_TYPE = "onedrive"
-# MAX_BYTES_SIZE = 2_000_000
-MAX_BYTES_SIZE = 5
+MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
