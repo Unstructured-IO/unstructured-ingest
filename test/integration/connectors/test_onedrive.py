@@ -89,7 +89,6 @@ def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
             fullpath=destination_fullpath,
-            # filename=upload_file.name[:-5],
             filename=upload_file.name,
         ),
         connector_type=CONNECTOR_TYPE,
