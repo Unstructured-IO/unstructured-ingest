@@ -216,7 +216,7 @@ class SharepointIndexer(OnedriveIndexer):
     # def is_async(self) -> bool:
     #     return True
     
-    @requires_dependencies(["office365"], extras="onedrive")
+    @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
         from office365.runtime.client_request_exception import ClientRequestException
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
@@ -275,31 +275,31 @@ class SharepointDownloader(OnedriveDownloader):
             raise FileNotFoundError(f"file not found: {server_relative_path}")
         return file
 
-    def get_download_path(self, file_data: FileData) -> Optional[Path]:
-        rel_path = file_data.source_identifiers.relative_path
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        return self.download_dir / Path(rel_path)
+    # def get_download_path(self, file_data: FileData) -> Optional[Path]:
+    #     rel_path = file_data.source_identifiers.relative_path
+    #     rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
+    #     return self.download_dir / Path(rel_path)
 
-    @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        try:
-            file = self._fetch_file(file_data=file_data)
-            fsize = file.get_property("size", 0)
-            download_path = self.get_download_path(file_data=file_data)
-            download_path.parent.mkdir(parents=True, exist_ok=True)
-            logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
-            if fsize > MAX_BYTES_SIZE:
-                logger.info(f"downloading file with size: {fsize} bytes in chunks")
-                with download_path.open(mode="wb") as f:
-                    file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
-            else:
-                with download_path.open(mode="wb") as f:
-                    file.download_session(f).execute_query()
-            return self.generate_download_response(file_data=file_data, download_path=download_path)
-        except Exception as e:
-            logger.error(f"[{CONNECTOR_TYPE}] Exception during downloading: {e}", exc_info=True)
-            # Re-raise to see full stack trace locally
-            raise
+    # @SourceConnectionError.wrap
+    # def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    #     try:
+    #         file = self._fetch_file(file_data=file_data)
+    #         fsize = file.get_property("size", 0)
+    #         download_path = self.get_download_path(file_data=file_data)
+    #         download_path.parent.mkdir(parents=True, exist_ok=True)
+    #         logger.info(f"downloading {file_data.source_identifiers.fullpath} to {download_path}")
+    #         if fsize > MAX_BYTES_SIZE:
+    #             logger.info(f"downloading file with size: {fsize} bytes in chunks")
+    #             with download_path.open(mode="wb") as f:
+    #                 file.download_session(f, chunk_size=1024 * 1024 * 100).execute_query()
+    #         else:
+    #             with download_path.open(mode="wb") as f:
+    #                 file.download_session(f).execute_query()
+    #         return self.generate_download_response(file_data=file_data, download_path=download_path)
+    #     except Exception as e:
+    #         logger.error(f"[{CONNECTOR_TYPE}] Exception during downloading: {e}", exc_info=True)
+    #         # Re-raise to see full stack trace locally
+    #         raise
 
 
 sharepoint_source_entry = SourceRegistryEntry(
