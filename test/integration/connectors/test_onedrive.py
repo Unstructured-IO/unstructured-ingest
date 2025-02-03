@@ -89,7 +89,8 @@ def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
             fullpath=destination_fullpath,
-            filename=upload_file.name[:-5],
+            # filename=upload_file.name[:-5],
+            filename=upload_file.name,
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="mock_file_data",
@@ -103,7 +104,10 @@ def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
 
     # Workaround: The input file should not have .json in the metadata.filename it comes from embedder
     uploaded_file = (
-        drive.root.get_by_path(f"{destination_fullpath}.json").select(["id", "name"]).get().execute_query()
+        drive.root.get_by_path(f"{destination_fullpath}.json")
+        .select(["id", "name"])
+        .get()
+        .execute_query()
     )
 
     # Check if the file exists
