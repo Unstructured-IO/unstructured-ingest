@@ -1,8 +1,9 @@
-## 0.4.7-dev0
+## 0.4.7-dev1
 
 ### Fixes
 
-* **Update Sharepont to support new Microsoft credential sequence**
+* **Update Sharepoint to support new Microsoft credential sequence**
+* **Update Sharepoint tests**
 
 ## 0.4.6
 
