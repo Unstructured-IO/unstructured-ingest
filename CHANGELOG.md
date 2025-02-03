@@ -1,3 +1,9 @@
+## 0.4.7-dev0
+
+### Fixes
+
+* **Update Sharepont to support new Microsoft credential sequence**
+
 ## 0.4.6
 
 ### Fixes

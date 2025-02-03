@@ -18,9 +18,6 @@ from unstructured_ingest.v2.processes.connectors.onedrive import (
 
 
 @pytest.fixture
-@pytest.mark.xfail(
-    reason="Issues with test setup on the provider side."
-)  # TODO: remove line when issues are addressed
 def onedrive_test_folder() -> str:
     """
     Pytest fixture that creates a test folder in OneDrive and deletes it after test run.
@@ -67,9 +64,6 @@ def get_connection_config():
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
-@pytest.mark.xfail(
-    reason="Issues with test setup on the provider side."
-)  # TODO: remove line when issues are addressed
 def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     """
     Integration test for the OneDrive destination connector.
@@ -107,10 +101,14 @@ def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     client = connection_config.get_client()
     drive = client.users[user_pname].drive
 
+    # Workaround: File should not have .json in the metadata.filename it comes from embedder
     uploaded_file = (
-        drive.root.get_by_path(destination_fullpath).select(["id", "name"]).get().execute_query()
+        drive.root.get_by_path(f"{destination_fullpath}.json")
+        .select(["id", "name"])
+        .get()
+        .execute_query()
     )
 
     # Check if the file exists
     assert uploaded_file is not None
-    assert uploaded_file.name == upload_file.name
+    assert uploaded_file.name == f"{upload_file.name}.json"
