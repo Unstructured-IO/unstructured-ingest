@@ -1,8 +1,9 @@
-## 0.4.6-dev0
+## 0.4.6
 
 ### Fixes
 
 * **Fix Upload support for OneDrive connector**
+* **Fix Databricks Delta Tables connector's "Service Principal" authentication method**
 
 ## 0.4.5
 

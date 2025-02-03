@@ -9,7 +9,8 @@ import pytest
 from databricks.sql import connect
 from databricks.sql.client import Connection as DeltaTableConnection
 from databricks.sql.client import Cursor as DeltaTableCursor
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Secret, SecretStr
+from pytest_mock import MockerFixture
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG, env_setup_path
 from test.integration.utils import requires_env
@@ -140,3 +141,30 @@ async def test_databricks_delta_tables_destination(
     uploader.precheck()
     uploader.run(path=staged_path, file_data=mock_file_data)
     validate_destination(expected_num_elements=expected_num_elements, table_name=destination_table)
+
+
+def test_get_credentials_provider_with_client_id_and_secret(mocker: MockerFixture):
+    access_config = DatabricksDeltaTablesAccessConfig(
+        client_id="test_client_id", client_secret="test_client_secret"
+    )
+    connection_config = DatabricksDeltaTablesConnectionConfig(
+        access_config=Secret(access_config),
+        server_hostname="test_server_hostname",
+        http_path="test_http_path",
+    )
+
+    credentials_provider = connection_config.get_credentials_provider()
+    assert credentials_provider is not False
+    assert type(credentials_provider).__name__ == "function"
+
+
+def test_get_credentials_provider_with_token(mocker: MockerFixture):
+    access_config = DatabricksDeltaTablesAccessConfig(token="test_token")
+    connection_config = DatabricksDeltaTablesConnectionConfig(
+        access_config=Secret(access_config),
+        server_hostname="test_server_hostname",
+        http_path="test_http_path",
+    )
+
+    credentials_provider = connection_config.get_credentials_provider()
+    assert credentials_provider is False

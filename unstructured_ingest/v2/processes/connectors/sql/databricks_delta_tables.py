@@ -51,9 +51,10 @@ class DatabricksDeltaTablesConnectionConfig(SQLConnectionConfig):
 
         host = f"https://{self.server_hostname}"
         access_configs = self.access_config.get_secret_value()
-        if (client_id := access_configs.client_id) and (
-            client_secret := access_configs.client_secret
-        ):
+        client_id = access_configs.client_id
+        client_secret = access_configs.client_secret
+
+        def _get_credentials_provider():
             return oauth_service_principal(
                 Config(
                     host=host,
@@ -61,6 +62,10 @@ class DatabricksDeltaTablesConnectionConfig(SQLConnectionConfig):
                     client_secret=client_secret,
                 )
             )
+
+        if client_id and client_secret:
+            return _get_credentials_provider
+
         return False
 
     def model_post_init(self, __context: Any) -> None:
