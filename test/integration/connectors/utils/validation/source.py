@@ -10,7 +10,12 @@ from pydantic import Field
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 
-NONSTANDARD_METADATA_FIELDS = {"additional_metadata.@microsoft.graph.downloadUrl":["additional_metadata", "@microsoft.graph.downloadUrl"]}
+NONSTANDARD_METADATA_FIELDS = {
+    "additional_metadata.@microsoft.graph.downloadUrl": [
+        "additional_metadata",
+        "@microsoft.graph.downloadUrl",
+    ]
+}
 
 
 class SourceValidationConfigs(ValidationConfig):
