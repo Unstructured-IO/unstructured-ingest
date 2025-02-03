@@ -48,6 +48,7 @@ class DatabricksDeltaTablesConnectionConfig(SQLConnectionConfig):
     @requires_dependencies(["databricks"], extras="databricks-delta-tables")
     def get_credentials_provider(self) -> "oauth_service_principal":
         from databricks.sdk.core import Config, oauth_service_principal
+
         host = f"https://{self.server_hostname}"
         access_configs = self.access_config.get_secret_value()
         client_id = access_configs.client_id

@@ -6,7 +6,6 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sql import connect
 from databricks.sql.client import Connection as DeltaTableConnection
 from databricks.sql.client import Cursor as DeltaTableCursor
