@@ -1,3 +1,9 @@
+## 0.4.6-dev0
+
+### Fixes
+
+* **Fix bug in GoogleDrive connector**
+
 ## 0.4.6
 
 ### Fixes
