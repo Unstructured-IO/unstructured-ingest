@@ -102,7 +102,7 @@ def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     client = connection_config.get_client()
     drive = client.users[user_pname].drive
 
-    # Workaround: The input file should not have .json in the metadata.filename it comes from embedder
+    # Workaround: File should not have .json in the metadata.filename it comes from embedder
     uploaded_file = (
         drive.root.get_by_path(f"{destination_fullpath}.json")
         .select(["id", "name"])
