@@ -10,6 +10,8 @@ from pydantic import Field
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.v2.interfaces import Downloader, FileData, Indexer
 
+NONSTANDARD_METADATA_FIELDS = {"additional_metadata.@microsoft.graph.downloadUrl":["additional_metadata", "@microsoft.graph.downloadUrl"]}
+
 
 class SourceValidationConfigs(ValidationConfig):
     expected_number_indexed_file_data: Optional[int] = None
@@ -26,7 +28,7 @@ class SourceValidationConfigs(ValidationConfig):
     def get_exclude_fields(self) -> list[str]:
         exclude_fields = self.exclude_fields
         exclude_fields.extend(self.exclude_fields_extend)
-        return exclude_fields
+        return list(set(exclude_fields))
 
     def run_file_data_validation(
         self, predownload_file_data: FileData, postdownload_file_data: FileData
@@ -45,8 +47,13 @@ class SourceValidationConfigs(ValidationConfig):
         exclude_fields = self.get_exclude_fields()
         # Ignore fields that dynamically change every time the tests run
         copied_data = data.copy()
+
         for exclude_field in exclude_fields:
-            exclude_field_vals = exclude_field.split(".")
+            exclude_field_vals = (
+                NONSTANDARD_METADATA_FIELDS[exclude_field]
+                if exclude_field in NONSTANDARD_METADATA_FIELDS
+                else exclude_field.split(".")
+            )
             if len(exclude_field_vals) == 1:
                 current_val = copied_data
                 drop_field = exclude_field_vals[0]
@@ -261,21 +268,38 @@ async def source_connector_validation(
     indexer.precheck()
     download_dir = downloader.download_config.download_dir
     test_output_dir = configs.test_output_dir()
-    for file_data in indexer.run():
-        assert file_data
-        predownload_file_data = file_data.model_copy(deep=True)
-        all_predownload_file_data.append(predownload_file_data)
-        if downloader.is_async():
-            resp = await downloader.run_async(file_data=file_data)
-        else:
-            resp = downloader.run(file_data=file_data)
-        if isinstance(resp, list):
-            for r in resp:
-                postdownload_file_data = r["file_data"].model_copy(deep=True)
+    if indexer.is_async():
+        async for file_data in indexer.run_async():
+            assert file_data
+            predownload_file_data = file_data.model_copy(deep=True)
+            all_predownload_file_data.append(predownload_file_data)
+            if downloader.is_async():
+                resp = await downloader.run_async(file_data=file_data)
+            else:
+                resp = downloader.run(file_data=file_data)
+            if isinstance(resp, list):
+                for r in resp:
+                    postdownload_file_data = r["file_data"].model_copy(deep=True)
+                    all_postdownload_file_data.append(postdownload_file_data)
+            else:
+                postdownload_file_data = resp["file_data"].model_copy(deep=True)
                 all_postdownload_file_data.append(postdownload_file_data)
-        else:
-            postdownload_file_data = resp["file_data"].model_copy(deep=True)
-            all_postdownload_file_data.append(postdownload_file_data)
+    else:
+        for file_data in indexer.run():
+            assert file_data
+            predownload_file_data = file_data.model_copy(deep=True)
+            all_predownload_file_data.append(predownload_file_data)
+            if downloader.is_async():
+                resp = await downloader.run_async(file_data=file_data)
+            else:
+                resp = downloader.run(file_data=file_data)
+            if isinstance(resp, list):
+                for r in resp:
+                    postdownload_file_data = r["file_data"].model_copy(deep=True)
+                    all_postdownload_file_data.append(postdownload_file_data)
+            else:
+                postdownload_file_data = resp["file_data"].model_copy(deep=True)
+                all_postdownload_file_data.append(postdownload_file_data)
     if not overwrite_fixtures:
         print("Running validation")
         run_all_validations(

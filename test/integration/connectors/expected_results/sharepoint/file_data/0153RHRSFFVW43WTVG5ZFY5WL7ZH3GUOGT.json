@@ -1,0 +1,34 @@
+{
+  "identifier": "0153RHRSFFVW43WTVG5ZFY5WL7ZH3GUOGT",
+  "connector_type": "onedrive",
+  "source_identifiers": {
+    "filename": "fake-email.txt",
+    "fullpath": "Folder1/Folder2/fake-email.txt",
+    "rel_path": "Folder1/Folder2/fake-email.txt"
+  },
+  "metadata": {
+    "url": "/drive/root:/Folder1/Folder2/fake-email.txt",
+    "version": "\"{BBB9ADA5-A64E-4BEE-8ED9-7FC9F66A38D3},1\"",
+    "record_locator": {
+      "user_pname": "devops@unstructuredio.onmicrosoft.com",
+      "server_relative_path": "Folder1/Folder2/fake-email.txt"
+    },
+    "date_created": "1738364377.0",
+    "date_modified": "1738364377.0",
+    "date_processed": "1738612987.5043042",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=bbb9ada5-a64e-4bee-8ed9-7fc9f66a38d3&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJwb3R0ZXItc2hhcmVwb2ludC1hcHAtcmVnaXN0cmF0aW9uIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3Mzg2MTY1NzUifQ.CgoKBHNuaWQSAjY0EgsI3O2Qhfml4j0QBRoNNDAuMTI2LjI2LjE2MSosUVo1V0pJa2twOU43RUdQMmRad0hKb0xWYjV5ajZhTzJGd1Fvd1lHYkdPMD0wnQE4AUIQoX35WA2gAHDEwbxlF5h7aUoQaGFzaGVkcHJvb2Z0b2tlbnoBMboBZXNoYXJlcG9pbnR0ZW5hbnRzZXR0aW5ncy5yZWFkd3JpdGUuYWxsIGFsbHNpdGVzLndyaXRlIGFsbHNpdGVzLm1hbmFnZSBhbGxmaWxlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkwgFJNmMxNjA3NTMtOWI2My00NzA5LWExNDAtMTdhMjdkMzA4N2E2QDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZMgBAQ.wLLvNK6h1GzSdmEboLh0H00mCgpRgpsa6aAoLpCpE1c&ApiVersion=2.0",
+    "eTag": "\"{BBB9ADA5-A64E-4BEE-8ED9-7FC9F66A38D3},1\"",
+    "id": "0153RHRSFFVW43WTVG5ZFY5WL7ZH3GUOGT",
+    "name": "fake-email.txt",
+    "webUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/Shared%20Documents/Folder1/Folder2/fake-email.txt",
+    "cTag": "\"c:{BBB9ADA5-A64E-4BEE-8ED9-7FC9F66A38D3},1\"",
+    "size": 836
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpif_eokxs/Folder1/Folder2/fake-email.txt",
+  "display_name": null
+}
