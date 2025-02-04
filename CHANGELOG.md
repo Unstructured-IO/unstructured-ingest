@@ -1,9 +1,15 @@
+## 0.4.8-dev0
+
+### Fixes
+
+* **Update Sharepoint tests**
+
 ## 0.4.7
 
 ### Fixes
 
 * **Add missing async azure openai embedder implementation**
-* **Update Sharepont to support new Microsoft credential sequence**
+* **Update Sharepoint to support new Microsoft credential sequence**
 
 ## 0.4.6
 

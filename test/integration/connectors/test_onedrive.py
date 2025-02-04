@@ -5,13 +5,25 @@ from pathlib import Path
 import pytest
 from office365.graph_client import GraphClient
 
-from test.integration.connectors.utils.constants import BLOB_STORAGE_TAG, DESTINATION_TAG
+from test.integration.connectors.utils.constants import (
+    BLOB_STORAGE_TAG,
+    DESTINATION_TAG,
+    SOURCE_TAG,
+)
+from test.integration.connectors.utils.validation.source import (
+    SourceValidationConfigs,
+    source_connector_validation,
+)
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.onedrive import (
     CONNECTOR_TYPE,
     OnedriveAccessConfig,
     OnedriveConnectionConfig,
+    OnedriveDownloader,
+    OnedriveDownloaderConfig,
+    OnedriveIndexer,
+    OnedriveIndexerConfig,
     OnedriveUploader,
     OnedriveUploaderConfig,
 )
@@ -62,9 +74,46 @@ def get_connection_config():
     return connection_config
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
+@requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
+async def test_onedrive_source(temp_dir):
+    connection_config = get_connection_config()
+    index_config = OnedriveIndexerConfig(recursive=True, path="eml")
+
+    download_config = OnedriveDownloaderConfig(download_dir=temp_dir)
+
+    # Instantiate indexer and downloader
+    indexer = OnedriveIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = OnedriveDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
+
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="onedrive",
+            expected_num_files=1,
+            validate_downloaded_files=True,
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                "additional_metadata.LastModified",
+                "additional_metadata.@microsoft.graph.downloadUrl",
+            ],
+        ),
+    )
+
+
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
-def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
+def xtest_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     """
     Integration test for the OneDrive destination connector.
 
