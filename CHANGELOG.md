@@ -1,7 +1,8 @@
-## 0.4.7-dev0
+## 0.4.7
 
 ### Fixes
 
+* **Add missing async azure openai embedder implementation**
 * **Update Sharepont to support new Microsoft credential sequence**
 
 ## 0.4.6

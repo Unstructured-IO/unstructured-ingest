@@ -204,4 +204,5 @@ setup(
     extras_require=extras_require,
     package_dir={"unstructured_ingest": "unstructured_ingest"},
     package_data={"unstructured_ingest": ["py.typed"]},
+    include_package_data=True,
 )
