@@ -15,6 +15,7 @@ all_partition_files = [path for path in assets_dir.iterdir() if path.is_file()]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
 ]
+supported_fast_partition_files = [path for path in non_image_partition_files if path.suffix != ".eml"]
 image_partition_files = [
     path for path in all_partition_files if path not in non_image_partition_files
 ]
@@ -33,18 +34,13 @@ async def test_partitioner_api_hi_res(partition_file: Path):
     )
     partitioner = Partitioner(config=partitioner_config)
     results = await partitioner.run_async(filename=partition_file)
-    results_dir = int_test_dir / "results"
-    results_dir.mkdir(exist_ok=True)
-    results_path = results_dir / f"{partition_file.name}.json"
-    with results_path.open("w") as f:
-        json.dump(results, f, indent=2)
     assert results
 
 
 @pytest.mark.parametrize(
     "partition_file",
-    non_image_partition_files,
-    ids=[path.name for path in non_image_partition_files],
+    supported_fast_partition_files,
+    ids=[path.name for path in supported_fast_partition_files],
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
