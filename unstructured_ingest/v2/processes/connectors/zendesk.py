@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Generator
 from dateutil import parser
 from pydantic import Field, Secret
 
+from contextlib import contextmanager
+
+
 from unstructured.errors import (
     SourceConnectionError,
     SourceConnectionNetworkError
@@ -47,9 +50,25 @@ class ZendeskAccessConfig(AccessConfig):
 
 class ZendeskConnectionConfig(ConnectionConfig):
     sub_domain: str = Field(description="Subdomain for zendesk site, <sub-domain>.company.com")
+    email: str = Field(description ="Email for zendesk site registered at the subdomain")
     access_config: Secret[ZendeskAccessConfig]
 
     @requires_dependencies(["zenpy"], extras="zenpy")
     @contextmanager
-    def get_client(self) -> Generator["ZendeskAPI", None, None]:
-        pass
+    def get_client(self) -> Generator["Zenpy", None, None]:
+        access_config = self.access_config.get_secret_value()
+        
+        options = {
+            'subdomain': self.sub_domain,
+            'email' : self.email, 
+            'token': access_config.api_token,
+        }
+
+        with Zenpy(**options) as client: 
+            yield client
+
+
+class ZendeskIndexerConfig(IndexerConfig):
+    batch_size: int = Field(default="10", description="Number of tickets ")
+    ticket_classification: str = Field(default="Open", description="Tickets can be either open or closed, if `Comment` is selected, it will only pursue comments of open/closed tickets")
+
