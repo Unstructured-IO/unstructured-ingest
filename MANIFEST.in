@@ -1,0 +1,2 @@
+# Connector specific assets
+include unstructured_ingest/v2/processes/connectors/assets/*

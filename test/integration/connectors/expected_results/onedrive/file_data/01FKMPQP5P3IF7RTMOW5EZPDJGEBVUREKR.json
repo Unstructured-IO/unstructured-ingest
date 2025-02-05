@@ -1,0 +1,33 @@
+{
+  "identifier": "01FKMPQP5P3IF7RTMOW5EZPDJGEBVUREKR",
+  "connector_type": "onedrive",
+  "source_identifiers": {
+    "filename": "fake-email.txt",
+    "fullpath": "eml/fake-email.txt",
+    "rel_path": "fake-email.txt"
+  },
+  "metadata": {
+    "url": "/drives/b!w-wVyIs-Gke7BHGEhl0_TU23BbcDDr9KgcPDJTfijYHwQaQUA8QFSa7nXPzLNQh2/root:/eml/fake-email.txt",
+    "version": "\"{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
+    "record_locator": {
+      "user_pname": "devops@unstructuredio.onmicrosoft.com",
+      "server_relative_path": "eml/fake-email.txt"
+    },
+    "date_created": "1738220193.0",
+    "date_modified": "1738220193.0",
+    "date_processed": "1738619849.74278",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "eTag": "\"{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
+    "id": "01FKMPQP5P3IF7RTMOW5EZPDJGEBVUREKR",
+    "name": "fake-email.txt",
+    "webUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/Documents/eml/fake-email.txt",
+    "cTag": "\"c:{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
+    "size": 830
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpcxhnms3v/fake-email.txt",
+  "display_name": null
+}

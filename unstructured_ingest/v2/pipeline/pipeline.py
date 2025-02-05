@@ -203,7 +203,14 @@ class Pipeline:
 
     def get_indices(self) -> list[dict]:
         if self.indexer_step.process.is_async():
-            indices = asyncio.run(self.indexer_step.run_async())
+
+            async def run_async():
+                output = []
+                async for i in self.indexer_step.run_async():
+                    output.append(i)
+                return output
+
+            indices = asyncio.run(run_async())
         else:
             indices = self.indexer_step.run()
         indices_inputs = [{"file_data_path": i} for i in indices]
@@ -322,9 +329,9 @@ class Pipeline:
         source_entry = {
             k: v
             for k, v in source_registry.items()
-            if isinstance(indexer_config, v.indexer_config)
-            and isinstance(downloader_config, v.downloader_config)
-            and isinstance(source_connection_config, v.connection_config)
+            if type(indexer_config) is v.indexer_config
+            and type(downloader_config) is v.downloader_config
+            and type(source_connection_config) is v.connection_config
         }
         if len(source_entry) > 1:
             raise ValueError(

@@ -1,8 +1,38 @@
-## 0.4.4-dev
+## 0.4.8-dev1
 
 ### Enhancements
 
 * **Add support for setting up destination for Pinecone**
+
+### Fixes
+
+* **Update Sharepoint tests**
+
+## 0.4.7
+
+### Fixes
+
+* **Add missing async azure openai embedder implementation**
+* **Update Sharepoint to support new Microsoft credential sequence**
+
+## 0.4.6
+
+### Fixes
+
+* **Fix Upload support for OneDrive connector**
+* **Fix Databricks Delta Tables connector's "Service Principal" authentication method**
+
+## 0.4.5
+
+### Fixes
+
+* **Fix downloading large files for OneDrive**
+
+## 0.4.4
+
+### Fixes
+
+* **Fix AsyncIO support for OneDrive connector**
 
 ## 0.4.3
 

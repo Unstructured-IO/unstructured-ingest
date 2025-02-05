@@ -24,7 +24,7 @@ from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex
-    from pinecone import Pinecone, ServerlessSpec
+    from pinecone import Pinecone
 
 
 CONNECTOR_TYPE = "pinecone"
@@ -195,6 +195,7 @@ class PineconeUploader(VectorDBUploader):
         **kwargs: Any,
     ) -> bool:
         from pinecone import ServerlessSpec
+
         index_name = destination_name or self.connection_config.index_name
         self.connection_config.index_name = index_name
 

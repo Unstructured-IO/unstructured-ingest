@@ -1,0 +1,33 @@
+{
+  "identifier": "0153RHRSABDC6JJIUHKJF2C5ZFGJF3C6XJ",
+  "connector_type": "onedrive",
+  "source_identifiers": {
+    "filename": "list-item-example.pdf",
+    "fullpath": "/list-item-example.pdf",
+    "rel_path": "list-item-example.pdf"
+  },
+  "metadata": {
+    "url": "/drive/root:/list-item-example.pdf",
+    "version": "\"{94BC1801-87A2-4B52-A177-25324BB17AE9},1\"",
+    "record_locator": {
+      "user_pname": "devops@unstructuredio.onmicrosoft.com",
+      "server_relative_path": "/list-item-example.pdf"
+    },
+    "date_created": "1738364795.0",
+    "date_modified": "1738364795.0",
+    "date_processed": "1738612979.826432",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "eTag": "\"{94BC1801-87A2-4B52-A177-25324BB17AE9},1\"",
+    "id": "0153RHRSABDC6JJIUHKJF2C5ZFGJF3C6XJ",
+    "name": "list-item-example.pdf",
+    "webUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/Shared%20Documents/list-item-example.pdf",
+    "cTag": "\"c:{94BC1801-87A2-4B52-A177-25324BB17AE9},1\"",
+    "size": 48981
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpif_eokxs/list-item-example.pdf",
+  "display_name": null
+}
