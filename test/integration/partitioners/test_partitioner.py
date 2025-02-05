@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 
@@ -15,7 +14,9 @@ all_partition_files = [path for path in assets_dir.iterdir() if path.is_file()]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
 ]
-supported_fast_partition_files = [path for path in non_image_partition_files if path.suffix != ".eml"]
+supported_fast_partition_files = [
+    path for path in non_image_partition_files if path.suffix != ".eml"
+]
 image_partition_files = [
     path for path in all_partition_files if path not in non_image_partition_files
 ]
