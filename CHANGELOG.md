@@ -1,8 +1,12 @@
-## 0.4.8-dev0
+## 0.4.8-dev1
 
 ### Fixes
 
 * **Update Sharepoint tests**
+
+### Enhancements
+
+* **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
 
 ## 0.4.7
 

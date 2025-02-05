@@ -1,3 +1,4 @@
+import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.errors import UserError
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.unstructured_api import call_api_async
@@ -72,6 +74,9 @@ class PartitionerConfig(BaseModel):
     )
     hi_res_model_name: Optional[str] = Field(
         default=None, description="Model name for hi-res strategy."
+    )
+    raise_unsupported_filetype: bool = Field(
+        default=False, description="Raise an error if the file type is not supported"
     )
 
     def model_post_init(self, __context: Any) -> None:
@@ -179,10 +184,31 @@ class Partitioner(BaseProcess, ABC):
             element["metadata"]["data_source"] = metadata
         return self.postprocess(elements=elements)
 
+    def is_error_unsupported_filetype(self, error: UserError) -> bool:
+        error_msg = error.args[0]
+        error_dict = json.loads(error_msg)
+        details = error_dict["detail"]
+        if details == "The fast strategy is not available for image files":
+            return True
+        return "file type" in details.lower() and "is not supported" in details.lower()
+
     def run(self, filename: Path, metadata: Optional[dict] = None, **kwargs) -> list[dict]:
         return self.partition_locally(filename, metadata=metadata, **kwargs)
 
     async def run_async(
         self, filename: Path, metadata: Optional[dict] = None, **kwargs
     ) -> list[dict]:
-        return await self.partition_via_api(filename, metadata=metadata, **kwargs)
+        try:
+            return await self.partition_via_api(filename, metadata=metadata, **kwargs)
+        except UserError as user_error:
+            if (
+                self.is_error_unsupported_filetype(error=user_error)
+                and self.config.raise_unsupported_filetype
+            ):
+                raise user_error
+            if self.is_error_unsupported_filetype(error=user_error):
+                logger.warning(
+                    f"Unsupported file type for strategy {self.config.strategy}: {filename}"
+                )
+                return []
+            raise user_error
