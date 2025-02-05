@@ -22,6 +22,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig, 
+    BatchFileData,
     Downloader, 
     DownloaderConfig, 
     DownloadResponse, 
@@ -70,5 +71,28 @@ class ZendeskConnectionConfig(ConnectionConfig):
 
 class ZendeskIndexerConfig(IndexerConfig):
     batch_size: int = Field(default="10", description="Number of tickets ")
-    ticket_classification: str = Field(default="Open", description="Tickets can be either open or closed, if `Comment` is selected, it will only pursue comments of open/closed tickets")
 
+@dataclass
+class ZendeskIndexer(Indexer):
+    connection_config: ZendeskConnectionConfig
+    index_config: ZendeskIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
+
+
+    def precheck(self) -> None:
+        """Validates connection to Zendesk api"""
+        try: 
+            with self.connection_config.get_client() as client: 
+                # there needs to be at least one user
+                if client.users()[:] == []:
+                    raise SourceConnectionError(
+                        f"users do not exist in zendesk subdomain {self.connection_config.sub_domain}"
+                    ) 
+
+        except Exception as e: 
+            logger.error(f'Failed to validate connection to Zendesk: {e}', exc_info=True)
+            raise SourceConnectionError(f"Failed to validate connection: {e}")
+
+    def run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
+        """Generates FileData objects for each ticket"""
+        pass 
