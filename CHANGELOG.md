@@ -1,7 +1,8 @@
-## 0.4.8-dev0
+## 0.5.0
 
 ### Fixes
 
+* **Change aws-bedrock to bedrock**
 * **Update Sharepoint tests**
 
 ## 0.4.7
