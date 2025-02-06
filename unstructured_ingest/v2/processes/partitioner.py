@@ -156,13 +156,25 @@ class Partitioner(BaseProcess, ABC):
         class FileDataSourceMetadata(DataSourceMetadata):
             filesize_bytes: Optional[int] = None
 
+        metadata = metadata or {}
         logger.debug(f"using local partition with kwargs: {self.config.to_partition_kwargs()}")
         logger.debug(f"partitioning file {filename} with metadata {metadata}")
-        elements = partition(
-            filename=str(filename.resolve()),
-            data_source_metadata=FileDataSourceMetadata.from_dict(metadata),
-            **self.config.to_partition_kwargs(),
-        )
+        try:
+            elements = partition(
+                filename=str(filename.resolve()),
+                data_source_metadata=FileDataSourceMetadata.from_dict(metadata),
+                **self.config.to_partition_kwargs(),
+            )
+        except ValueError as sdk_error:
+            if (
+                self.is_unstructured_error_unsupported_filetype(sdk_error=sdk_error)
+                and not self.config.raise_unsupported_filetype
+            ):
+                logger.warning(
+                    f"Unsupported file type for strategy {self.config.strategy}: {filename}"
+                )
+                return []
+            raise sdk_error
         return self.postprocess(elements=elements_to_dicts(elements))
 
     @requires_dependencies(dependencies=["unstructured_client"], extras="remote")
@@ -184,13 +196,21 @@ class Partitioner(BaseProcess, ABC):
             element["metadata"]["data_source"] = metadata
         return self.postprocess(elements=elements)
 
-    def is_error_unsupported_filetype(self, error: UserError) -> bool:
+    def is_unstructured_error_unsupported_filetype(self, sdk_error: ValueError) -> bool:
+        error_msg = sdk_error.args[0]
+        return (
+            "Invalid file" in error_msg
+            or "Unstructured schema" in error_msg
+            or "fast strategy is not available for image files" in error_msg
+        )
+
+    def is_client_error_unsupported_filetype(self, error: UserError) -> bool:
         error_msg = error.args[0]
         error_dict = json.loads(error_msg)
         details = error_dict["detail"]
-        if details == "The fast strategy is not available for image files":
-            return True
-        return "file type" in details.lower() and "is not supported" in details.lower()
+        return "fast strategy is not available for image files" in details or (
+            "file type" in details.lower() and "is not supported" in details.lower()
+        )
 
     def run(self, filename: Path, metadata: Optional[dict] = None, **kwargs) -> list[dict]:
         return self.partition_locally(filename, metadata=metadata, **kwargs)
@@ -202,11 +222,9 @@ class Partitioner(BaseProcess, ABC):
             return await self.partition_via_api(filename, metadata=metadata, **kwargs)
         except UserError as user_error:
             if (
-                self.is_error_unsupported_filetype(error=user_error)
-                and self.config.raise_unsupported_filetype
+                self.is_client_error_unsupported_filetype(error=user_error)
+                and not self.config.raise_unsupported_filetype
             ):
-                raise user_error
-            if self.is_error_unsupported_filetype(error=user_error):
                 logger.warning(
                     f"Unsupported file type for strategy {self.config.strategy}: {filename}"
                 )
