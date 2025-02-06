@@ -362,7 +362,6 @@ def test_pinecone_create_destination(pinecone_index):
         upload_config=PineconeUploaderConfig(),
     )
 
-    # generate random id with length less than 20 and more than 10
     random_id = str(uuid4()).split("-")[0]
 
     index_name = f"test-create-destination-{random_id}"
@@ -372,7 +371,10 @@ def test_pinecone_create_destination(pinecone_index):
     try:
         uploader.create_destination(destination_name=index_name, vector_length=1536)
     except Exception as e:
-        raise pytest.fail(f"failed to create destination: {e}, {e.body}")
+        error_body = getattr(e, "body", None)
+        raise pytest.fail(f"failed to create destination: {e} {error_body}")
+
+    assert uploader.index_exists(index_name=index_name), "destination was not created successfully"
 
     try:
         pc = uploader.connection_config.get_client()
@@ -380,3 +382,5 @@ def test_pinecone_create_destination(pinecone_index):
         pc.delete_index(name=index_name)
     except Exception as e:
         raise pytest.fail(f"failed to cleanup / delete the destination: {e}")
+
+    assert not uploader.index_exists(index_name=index_name), "cleanup failed"

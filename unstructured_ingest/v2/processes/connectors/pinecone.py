@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import Field, Secret
 
@@ -169,14 +169,29 @@ class PineconeUploader(VectorDBUploader):
         self.create_destination()
 
     def index_exists(self, index_name: Optional[str]) -> bool:
+        from pinecone.exceptions import NotFoundException
+
         index_name = index_name or self.connection_config.index_name
         pc = self.connection_config.get_client()
-        return index_name in [ind["name"] for ind in pc.list_indexes()]
+        try:
+            pc.describe_index(index_name)
+            return True
+        except NotFoundException:
+            return False
+        except Exception as e:
+            logger.error(f"failed to check if pinecone index exists : {e}")
+            raise DestinationConnectionError(f"failed to check if pinecone index exists : {e}")
 
     def precheck(self):
         try:
-            self.connection_config.get_client().list_indexes()
-            if self.connection_config.index_name and not self.index_exists():
+            pc = self.connection_config.get_client()
+
+            # just checking connection here
+            self.index_exists("just-checking-our-connection")
+
+            if self.connection_config.index_name and not pc.has_index(
+                self.connection_config.index_name
+            ):
                 raise DestinationConnectionError(
                     f"index {self.connection_config.index_name} does not exist"
                 )
@@ -186,15 +201,17 @@ class PineconeUploader(VectorDBUploader):
 
     def create_destination(
         self,
+        destination_name: str,
         vector_length: int,
-        # TODO: make name required to either be in config, or here, then remove default
-        destination_name: Optional[str] = "unstructured-pinecone-default-index",
-        cloud: Optional[str] = "aws",
-        region: Optional[str] = "us-east-1",
-        metric: Optional[str] = "cosine",
+        destination_type: Literal["pod", "serverless"] = "serverless",
+        serverless_cloud: str = "aws",
+        serverless_region: str = "us-west-2",
+        pod_environment: str = "us-east1-gcp",
+        pod_type: str = "p1.x1",
+        pod_count: int = 1,
         **kwargs: Any,
     ) -> bool:
-        from pinecone import ServerlessSpec
+        from pinecone import PodSpec, ServerlessSpec
 
         index_name = destination_name or self.connection_config.index_name
         self.connection_config.index_name = index_name
@@ -205,14 +222,29 @@ class PineconeUploader(VectorDBUploader):
 
             pc = self.connection_config.get_client()
 
-            pc.create_index(
-                name=destination_name,
-                dimension=vector_length,
-                metric=metric,
-                spec=ServerlessSpec(cloud=cloud, region=region),
-            )
+            if destination_type == "serverless":
+                pc.create_index(
+                    name=destination_name,
+                    dimension=vector_length,
+                    spec=ServerlessSpec(cloud=serverless_cloud, region=serverless_region),
+                    **kwargs,
+                )
 
-            return True
+                return True
+
+            elif destination_type == "pod":
+                pc.create_index(
+                    name=destination_name,
+                    dimension=vector_length,
+                    spec=PodSpec(environment=pod_environment, pod_type=pod_type, pods=pod_count),
+                    **kwargs,
+                )
+
+                return True
+
+            else:
+                raise ValueError(f"unexpected destination type: {destination_type}")
+
         else:
             logger.debug(f"index {index_name} already exists, skipping creation")
             return False
