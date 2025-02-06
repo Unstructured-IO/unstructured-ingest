@@ -44,9 +44,9 @@ class Neo4jAccessConfig(AccessConfig):
 class Neo4jConnectionConfig(ConnectionConfig):
     access_config: Secret[Neo4jAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
-    username: str
+    username: str = Field(default="neo4j")
     uri: str = Field(description="Neo4j Connection URI <scheme>://<host>:<port>")
-    database: str = Field(description="Name of the target database")
+    database: str = Field(default="neo4j", description="Name of the target database")
 
     @requires_dependencies(["neo4j"], extras="neo4j")
     @asynccontextmanager
@@ -189,7 +189,7 @@ class _GraphData(BaseModel):
                 source_id=u.id_,
                 source_labels=u.labels,
                 destination_id=v.id_,
-                destination_labels=v.labels, 
+                destination_labels=v.labels,
                 relationship=Relationship(data_dict["relationship"]),
             )
             for u, v, data_dict in nx_graph.edges(data=True)
@@ -261,7 +261,7 @@ class Neo4jUploader(Uploader):
         graph_data = _GraphData.model_validate(staged_data)
         async with self.connection_config.get_client() as client:
             await self._create_uniqueness_constraints(client)
-            # TODO need chunker config 
+            # TODO need chunker config
             # await self._create_vector_index(client, self.upload_config.dimensions, self.upload_config.similarity_function)
             await self._delete_old_data_if_exists(file_data, client=client)
             await self._merge_graph(graph_data=graph_data, client=client)
@@ -280,7 +280,9 @@ class Neo4jUploader(Uploader):
                 """
             )
 
-    async def _create_vector_index(self, client: AsyncDriver, dimensions : int, similarity_function: str) -> None:
+    async def _create_vector_index(
+        self, client: AsyncDriver, dimensions: int, similarity_function: str
+    ) -> None:
         label = Label.CHUNK
         logger.info(
             f"Adding id uniqueness constraint for nodes labeled '{label.value}'"
@@ -311,7 +313,8 @@ class Neo4jUploader(Uploader):
         )
 
     def _main_label(self, labels: list[Label]) -> Label:
-        if labels is None or len(labels) == 0: return None
+        if labels is None or len(labels) == 0:
+            return None
 
         for label in Label:
             if label in labels:
@@ -336,9 +339,17 @@ class Neo4jUploader(Uploader):
         )
         logger.info(f"Finished merging {len(graph_data.nodes)} graph nodes.")
 
-        edges_by_relationship: defaultdict[tuple[Relationship, Label, Label], list[_Edge]] = defaultdict(list)
+        edges_by_relationship: defaultdict[tuple[Relationship, Label, Label], list[_Edge]] = (
+            defaultdict(list)
+        )
         for edge in graph_data.edges:
-            key = tuple([edge.relationship, self._main_label(edge.source_labels), self._main_label(edge.destination_labels)])
+            key = tuple(
+                [
+                    edge.relationship,
+                    self._main_label(edge.source_labels),
+                    self._main_label(edge.destination_labels),
+                ]
+            )
             edges_by_relationship[key].append(edge)
 
         logger.info(f"Merging {len(graph_data.edges)} graph relationships (edges).")
@@ -360,8 +371,11 @@ class Neo4jUploader(Uploader):
         in_parallel: bool = False,
     ) -> None:
         from neo4j import EagerResult
+
         results: list[EagerResult] = []
-        logger.info(f"Executing {len(queries_with_parameters)} {'parallel' if in_parallel else 'sequential'} Cypher statements.")
+        logger.info(
+            f"Executing {len(queries_with_parameters)} {'parallel' if in_parallel else 'sequential'} Cypher statements."
+        )
         if in_parallel:
             results = await asyncio.gather(
                 *[
@@ -376,7 +390,9 @@ class Neo4jUploader(Uploader):
                 logger.info(f"Statement #{i} finished.")
         nodeCount = sum([res.summary.counters.nodes_created for res in results])
         relCount = sum([res.summary.counters.relationships_created for res in results])
-        logger.info(f"Finished executing all ({len(queries_with_parameters)}) {'parallel' if in_parallel else 'sequential'} Cypher statements. Created {nodeCount} nodes, {relCount} relationships.")
+        logger.info(
+            f"Finished executing all ({len(queries_with_parameters)}) {'parallel' if in_parallel else 'sequential'} Cypher statements. Created {nodeCount} nodes, {relCount} relationships."
+        )
 
     @staticmethod
     def _create_nodes_query(nodes: list[_Node], label: Label) -> tuple[str, dict]:
@@ -389,11 +405,23 @@ class Neo4jUploader(Uploader):
             WITH * WHERE node.vector IS NOT NULL
             CALL db.create.setNodeVectorProperty(n, 'embedding', node.vector)
             """
-        parameters = {"nodes": [{"id": node.id_, "labels":[l.value for l in node.labels if l != label],"vector":node.properties.pop('embedding', None), "properties": node.properties} for node in nodes]}
+        parameters = {
+            "nodes": [
+                {
+                    "id": node.id_,
+                    "labels": [l.value for l in node.labels if l != label],
+                    "vector": node.properties.pop("embedding", None),
+                    "properties": node.properties,
+                }
+                for node in nodes
+            ]
+        }
         return query_string, parameters
 
     @staticmethod
-    def _create_edges_query(edges: list[_Edge], relationship: tuple[Relationship,Label,Label]) -> tuple[str, dict]:
+    def _create_edges_query(
+        edges: list[_Edge], relationship: tuple[Relationship, Label, Label]
+    ) -> tuple[str, dict]:
         logger.info(f"Preparing MERGE query for {len(edges)} {relationship} relationships.")
         query_string = f"""
             UNWIND $edges AS edge
