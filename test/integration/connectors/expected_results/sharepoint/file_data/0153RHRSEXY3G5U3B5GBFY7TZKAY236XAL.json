@@ -1,6 +1,6 @@
 {
   "identifier": "0153RHRSEXY3G5U3B5GBFY7TZKAY236XAL",
-  "connector_type": "onedrive",
+  "connector_type": "sharepoint",
   "source_identifiers": {
     "filename": "fake-memo.pdf",
     "fullpath": "Folder1/fake-memo.pdf",
@@ -13,13 +13,14 @@
       "user_pname": "devops@unstructuredio.onmicrosoft.com",
       "server_relative_path": "Folder1/fake-memo.pdf"
     },
-    "date_created": "1738364779.0",
-    "date_modified": "1738364779.0",
-    "date_processed": "1738612983.5914721",
+    "date_created": "1738353979.0",
+    "date_modified": "1738353979.0",
+    "date_processed": "1738856438.628625",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=dacdc697-3d6c-4b30-8fcf-2a0635bf5c0b&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJhdWQiOiIwMDAwMDAwMy0wMDAwLTBmZjEtY2UwMC0wMDAwMDAwMDAwMDAvdW5zdHJ1Y3R1cmVkaW8uc2hhcmVwb2ludC5jb21AM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiZXhwIjoiMTczODg2MDAyNyJ9.CgoKBHNuaWQSAjY0EgsIxM_OztOz4z0QBRoMNDAuMTI2LjIzLjk2KixBZHFxaGhSYzUzQnhvSVJMYzVxRThQbVo4aXE3V1VPWEpqS08wMUNHTjlrPTCdATgBQhChfuGEiWAAcPRY1wpqmVvAShBoYXNoZWRwcm9vZnRva2VuegExugFlc2hhcmVwb2ludHRlbmFudHNldHRpbmdzLnJlYWR3cml0ZS5hbGwgYWxsc2l0ZXMud3JpdGUgYWxsc2l0ZXMubWFuYWdlIGFsbGZpbGVzLndyaXRlIGFsbHByb2ZpbGVzLnJlYWTCAUk2YzE2MDc1My05YjYzLTQ3MDktYTE0MC0xN2EyN2QzMDg3YTZAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkyAEB.cFODAGofUNUmLz8vTWsniOsFqm2hkc7kwX7IuAfpF9Y&ApiVersion=2.0",
     "eTag": "\"{DACDC697-3D6C-4B30-8FCF-2A0635BF5C0B},1\"",
     "id": "0153RHRSEXY3G5U3B5GBFY7TZKAY236XAL",
     "name": "fake-memo.pdf",
@@ -28,6 +29,6 @@
     "size": 13374
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpif_eokxs/Folder1/fake-memo.pdf",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpvx8o_6ca/Folder1/fake-memo.pdf",
   "display_name": null
 }
