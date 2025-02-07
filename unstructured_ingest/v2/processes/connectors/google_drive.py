@@ -319,7 +319,10 @@ class GoogleDriveDownloader(Downloader):
                 f"MimeType: {mime_type}"
             )
         with self.connection_config.get_client() as client:
-            if mime_type.startswith("application/vnd.google-apps"):
+            if (
+                mime_type.startswith("application/vnd.google-apps")
+                and mime_type in GOOGLE_DRIVE_EXPORT_TYPES
+            ):
                 export_mime = GOOGLE_DRIVE_EXPORT_TYPES.get(
                     mime_type,  # type: ignore
                 )
