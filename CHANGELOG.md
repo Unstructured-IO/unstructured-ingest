@@ -1,15 +1,20 @@
-## 0.4.8-dev1
+## 0.5.1-dev0
 
 ### Enchancements
 
 * **Improved google drive precheck mechanism**
 * **Added integration tests for google drive precheck and connector**
 
-## 0.4.8-dev0
+## 0.5.0
 
 ### Fixes
 
+* **Change aws-bedrock to bedrock**
 * **Update Sharepoint tests**
+
+### Enhancements
+
+* **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
 
 ## 0.4.7
 

@@ -1,6 +1,6 @@
 [
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "fb902c5b26b38e2d35a70a55d43a5de6",
     "text": "News Around NOAA",
     "metadata": {
@@ -23,7 +23,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "100233c72890df3d216e2bc2c36f7153",
     "text": "National Program",
     "metadata": {
@@ -69,7 +69,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "6ef25d028f4c859b5d955c777c4c597e",
     "text": "Weather.gov > News Around NOAA > Are You Weather-Ready for the Spring?",
     "metadata": {
@@ -100,7 +100,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "eddf006a8c46b1cda2aac3b820775397",
     "text": "Weather Safety",
     "metadata": {
@@ -709,7 +709,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "0225c2250f787f919e1e69d0f49dceff",
     "text": "Safety Campaigns",
     "metadata": {
@@ -912,7 +912,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "0640346478c8572ccec2dbe32e34a26d",
     "text": "Ambassador",
     "metadata": {
@@ -1262,10 +1262,10 @@
   {
     "type": "ListItem",
     "element_id": "3e05ad9b5d5efa415c86072900a544ca",
-    "text": "En Espa\u00f1ol",
+    "text": "En Español",
     "metadata": {
       "link_texts": [
-        "En Espa\u00f1ol"
+        "En Español"
       ],
       "link_urls": [
         "https://www.weather.gov/wrn/en-espanol"
@@ -1289,7 +1289,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "4f18297d6e97fe97131067c4614d0b56",
     "text": "Education",
     "metadata": {
@@ -1608,7 +1608,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "f5121742894f599f7bad9e6c204219cd",
     "text": "Collaboration",
     "metadata": {
@@ -1697,10 +1697,10 @@
   {
     "type": "ListItem",
     "element_id": "367c30facb2871ff643359f94ef54dbd",
-    "text": "WRN Ambassadors \u200b",
+    "text": "WRN Ambassadors ​",
     "metadata": {
       "link_texts": [
-        "WRN Ambassadors \u200b"
+        "WRN Ambassadors ​"
       ],
       "link_urls": [
         "https://www.weather.gov/wrn/ambassadors"
@@ -1842,10 +1842,10 @@
   {
     "type": "ListItem",
     "element_id": "a49caec66691ba6a0cc9d04c7e9ce9bc",
-    "text": "InteractiveNWS (iNWS) (core partners only)\u200b",
+    "text": "InteractiveNWS (iNWS) (core partners only)​",
     "metadata": {
       "link_texts": [
-        "InteractiveNWS (iNWS) (core partners only)\u200b"
+        "InteractiveNWS (iNWS) (core partners only)​"
       ],
       "link_urls": [
         "https://inws.ncep.noaa.gov/"
@@ -1898,7 +1898,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "556fb42a560167c2cc207d7cb6714bad",
     "text": "News & Events",
     "metadata": {
@@ -2043,7 +2043,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "4fd5499bdc7ef505fbd5ad7808cc15e4",
     "text": "International",
     "metadata": {
@@ -2072,7 +2072,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "aa70c71400e0cbb1efa4a90ffda7b576",
     "text": "About",
     "metadata": {
@@ -2393,7 +2393,7 @@
   {
     "type": "NarrativeText",
     "element_id": "a859a27443333ffa9b214673a011d832",
-    "text": "The spring season is all about change \u2013 a rebirth both literally and figuratively. Even though the spring season doesn\u2019t officially (astronomically, that is) begin until March 20 this year, climatologically, it starts March 1.",
+    "text": "The spring season is all about change – a rebirth both literally and figuratively. Even though the spring season doesn’t officially (astronomically, that is) begin until March 20 this year, climatologically, it starts March 1.",
     "metadata": {
       "languages": [
         "eng"
@@ -2439,7 +2439,7 @@
   {
     "type": "NarrativeText",
     "element_id": "e100f7b751351d8de4653bd7c5f69245",
-    "text": "First, take steps to better prepare for the seasonal hazards weather can throw at you. This could include a spring cleaning of your storm shelter or ensuring your emergency kit is fully stocked. Take a look at our infographics and social media posts to help you become \u201cweather-ready.\u201d",
+    "text": "First, take steps to better prepare for the seasonal hazards weather can throw at you. This could include a spring cleaning of your storm shelter or ensuring your emergency kit is fully stocked. Take a look at our infographics and social media posts to help you become “weather-ready.”",
     "metadata": {
       "emphasized_text_contents": [
         "First, take steps to better prepare for the seasonal hazards weather can throw at you."
@@ -2468,7 +2468,7 @@
   {
     "type": "NarrativeText",
     "element_id": "55d81694fcd2fade3dfc62ef52422f7b",
-    "text": "Second, encourage others to become Weather-Ready as well. Share the message by taking advantage of our vast array of weather safety content \u2013 everything posted on our Spring Safety website is freely available, and we encourage sharing on social media networks. Also remember those who are most vulnerable, like an elderly family member or neighbor who might have limited mobility or is isolated. Reach out to those who are at higher risk of being impacted by extreme weather, and help them get prepared. This simple act of caring could become heroic.",
+    "text": "Second, encourage others to become Weather-Ready as well. Share the message by taking advantage of our vast array of weather safety content – everything posted on our Spring Safety website is freely available, and we encourage sharing on social media networks. Also remember those who are most vulnerable, like an elderly family member or neighbor who might have limited mobility or is isolated. Reach out to those who are at higher risk of being impacted by extreme weather, and help them get prepared. This simple act of caring could become heroic.",
     "metadata": {
       "emphasized_text_contents": [
         "Second, encourage others to become Weather-Ready as well."
@@ -2503,7 +2503,7 @@
   {
     "type": "NarrativeText",
     "element_id": "cc697b1fe8918a5033fdc471d0f192f8",
-    "text": "This spring, the campaign is focused on heat dangers. Heat illness and death can occur even in spring\u2019s moderately warm weather. The majority of all heat-related deaths occur outside of heat waves and roughly a third of child hot car deaths occur outside of the summer months. Learn more by viewing the infographics that are now available.",
+    "text": "This spring, the campaign is focused on heat dangers. Heat illness and death can occur even in spring’s moderately warm weather. The majority of all heat-related deaths occur outside of heat waves and roughly a third of child hot car deaths occur outside of the summer months. Learn more by viewing the infographics that are now available.",
     "metadata": {
       "link_texts": [
         "infographics"
@@ -2588,7 +2588,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "a8eed54a458923d7f04b9d1641e98d43",
     "text": "Disclaimer Information Quality Help Glossary",
     "metadata": {
@@ -2623,7 +2623,7 @@
     }
   },
   {
-    "type": "Title",
+    "type": "UncategorizedText",
     "element_id": "b415705c2c1927eda24b454e6e91bea3",
     "text": "Privacy Policy Freedom of Information Act (FOIA) About Us Career Opportunities",
     "metadata": {
