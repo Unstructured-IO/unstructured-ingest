@@ -136,7 +136,8 @@ class GoogleDriveIndexer(Indexer):
     def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
         """
         Count non-folder files recursively under the given folder.
-        If `extensions` is provided, only count files whose `fileExtension` matches one of the values.
+        If `extensions` is provided, only count files 
+        whose `fileExtension` matches one of the values.
         """
         count = 0
         stack = [folder_id]
@@ -173,33 +174,34 @@ class GoogleDriveIndexer(Indexer):
 
     def precheck(self) -> None:
         """
-            Enhanced precheck that verifies not only connectivity
-            but also that the provided drive_id is valid and accessible.
+        Enhanced precheck that verifies not only connectivity
+        but also that the provided drive_id is valid and accessible.
         """
         try:
             with self.connection_config.get_client() as client:
                 # Try to retrieve metadata for the drive id.
                 # This will catch errors such as an invalid drive id or insufficient permissions.
                 root_info = self.get_root_info(
-                    files_client=client,
-                    object_id=self.connection_config.drive_id
+                    files_client=client, object_id=self.connection_config.drive_id
                 )
                 logger.info(
                     f"Successfully retrieved drive root info: "
                     f"{root_info.get('name', 'Unnamed')} (ID: {root_info.get('id')})"
                 )
-            
+
             # If the target is a folder, perform file count check.
             if self.is_dir(root_info):
                 if self.index_config.recursive:
                     file_count = self.count_files_recursively(
-                        client, self.connection_config.drive_id, 
-                        extensions=self.index_config.extensions
+                        client,
+                        self.connection_config.drive_id,
+                        extensions=self.index_config.extensions,
                     )
                     if file_count == 0:
                         raise SourceConnectionError(
                             "Empty folder: no files found recursively in the folder. "
-                            "Please verify that the folder contains files and that the service account has proper permissions."
+                            "Please verify that the folder contains files and \
+                            that the service account has proper permissions."
                         )
                     else:
                         logger.info(f"Found {file_count} files recursively in the folder.")
@@ -209,21 +211,24 @@ class GoogleDriveIndexer(Indexer):
                         spaces="drive",
                         fields="files(id)",
                         pageSize=1,
-                        q=f"'{self.connection_config.drive_id}' in parents"
+                        q=f"'{self.connection_config.drive_id}' in parents",
                     ).execute()
                     if not response.get("files"):
                         raise SourceConnectionError(
                             "Empty folder: no files found at the folder's root level. "
-                            "Please verify that the folder contains files and that the service account has proper permissions."
+                            "Please verify that the folder contains files and \
+                            that the service account has proper permissions."
                         )
                     else:
                         logger.info("Found files at the folder's root level.")
             else:
                 # If the target is a file, precheck passes.
                 logger.info("Drive ID corresponds to a file. Precheck passed.")
-    
+
         except Exception as e:
-            logger.error("Failed to validate Google Drive connection during precheck", exc_info=True)
+            logger.error(
+                "Failed to validate Google Drive connection during precheck", exc_info=True
+            )
             raise SourceConnectionError(f"Precheck failed: {e}")
 
     @staticmethod
