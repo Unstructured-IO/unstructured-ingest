@@ -268,6 +268,7 @@ class Pipeline:
 
         # Partition content
         elements = self.partitioner_step(downloaded_data)
+        elements = self.clean_results(results=elements)
         # Download data non longer needed, delete if possible
         self.downloader_step.delete_cache()
         elements = self.clean_results(results=elements)
@@ -329,9 +330,9 @@ class Pipeline:
         source_entry = {
             k: v
             for k, v in source_registry.items()
-            if isinstance(indexer_config, v.indexer_config)
-            and isinstance(downloader_config, v.downloader_config)
-            and isinstance(source_connection_config, v.connection_config)
+            if type(indexer_config) is v.indexer_config
+            and type(downloader_config) is v.downloader_config
+            and type(source_connection_config) is v.connection_config
         }
         if len(source_entry) > 1:
             raise ValueError(

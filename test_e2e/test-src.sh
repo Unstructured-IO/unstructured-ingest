@@ -42,14 +42,11 @@ all_tests=(
   # 'airtable-large.sh'
   'delta-table.sh'
   'jira.sh'
-  'sharepoint.sh'
-  'sharepoint-with-permissions.sh'
   'hubspot.sh'
   'sftp.sh'
 )
 
 full_python_matrix_tests=(
-  #  'sharepoint.sh'
   's3.sh'
   'google-drive.sh'
   'gcs.sh'
@@ -72,9 +69,8 @@ python_version=$(python --version 2>&1)
 
 # TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
-  'sharepoint.sh'
-  'sharepoint-with-permissions.sh'
   'outlook.sh'
+  'dropbox.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then

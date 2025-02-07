@@ -119,6 +119,9 @@ jobs:
         # S3
         S3_INGEST_TEST_ACCESS_KEY: ${{ secrets.S3_INGEST_TEST_ACCESS_KEY }}
         S3_INGEST_TEST_SECRET_KEY: ${{ secrets.S3_INGEST_TEST_SECRET_KEY }}
+        # Sharepoint
+        SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
+        SHAREPOINT_CRED: ${{ secrets.SHAREPOINT_CRED }}
       run : |
         source .venv/bin/activate
         make install-test

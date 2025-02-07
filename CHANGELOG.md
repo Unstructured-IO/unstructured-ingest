@@ -1,8 +1,26 @@
-## 0.4.6-dev0
+## 0.5.0-dev0
 
 ### Fixes
 
-* **Fix bug in GoogleDrive connector**
+* **Fix Attribute Not Exist bug in GoogleDrive connector**
+
+## 0.5.0
+
+### Fixes
+
+* **Change aws-bedrock to bedrock**
+* **Update Sharepoint tests**
+
+### Enhancements
+
+* **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
+
+## 0.4.7
+
+### Fixes
+
+* **Add missing async azure openai embedder implementation**
+* **Update Sharepoint to support new Microsoft credential sequence**
 
 ## 0.4.6
 

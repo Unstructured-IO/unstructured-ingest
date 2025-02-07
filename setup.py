@@ -142,7 +142,7 @@ embed_reqs = {
     "embed-voyageai": load_requirements("requirements/embed/voyageai.in"),
     "embed-mixedbreadai": load_requirements("requirements/embed/mixedbreadai.in"),
     "openai": load_requirements("requirements/embed/openai.in"),
-    "bedrock": load_requirements("requirements/embed/aws-bedrock.in"),
+    "bedrock": load_requirements("requirements/embed/bedrock.in"),
     "togetherai": load_requirements("requirements/embed/togetherai.in"),
 }
 
@@ -204,4 +204,5 @@ setup(
     extras_require=extras_require,
     package_dir={"unstructured_ingest": "unstructured_ingest"},
     package_data={"unstructured_ingest": ["py.typed"]},
+    include_package_data=True,
 )
