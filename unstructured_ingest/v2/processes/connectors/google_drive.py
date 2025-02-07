@@ -136,7 +136,7 @@ class GoogleDriveIndexer(Indexer):
     def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
         """
         Count non-folder files recursively under the given folder.
-        If `extensions` is provided, only count files 
+        If `extensions` is provided, only count files
         whose `fileExtension` matches one of the values.
         """
         count = 0
