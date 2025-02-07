@@ -1,3 +1,10 @@
+## 0.4.8-dev1
+
+### Enchancements
+
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
+
 ## 0.4.8-dev0
 
 ### Fixes
