@@ -172,3 +172,15 @@ def test_google_drive_precheck_empty_folder(google_drive_connection_config, goog
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
     assert "empty" in str(excinfo.value).lower()
+
+@pytest.mark.tags("google-drive", "count", "integration")
+@requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+def test_google_drive_count_files(google_drive_connection_config):
+    """
+    This test verifies that the count_files_recursively method returns the expected count of files.
+    According to the test credentials, there are 3 files in the root directory and 1 nested file,
+    so the total count should be 4.
+    """
+    with google_drive_connection_config.get_client() as client:
+        count = GoogleDriveIndexer.count_files_recursively(client, google_drive_connection_config.drive_id)
+    assert count == 4, f"Expected file count of 4, but got {count}"
