@@ -133,11 +133,49 @@ class GoogleDriveIndexer(Indexer):
     )
 
     def precheck(self) -> None:
+        """
+            Enhanced precheck that verifies not only connectivity
+            but also that the provided drive_id is valid and accessible.
+        """
         try:
-            self.connection_config.get_client()
+            with self.connection_config.get_client() as client:
+                # Try to retrieve metadata for the drive id.
+                # This will catch errors such as an invalid drive id or insufficient permissions.
+                root_info = self.get_root_info(
+                    files_client=client,
+                    object_id=self.connection_config.drive_id
+                )
+                logger.info(
+                    f"Successfully retrieved drive root info: "
+                    f"{root_info.get('name', 'Unnamed')} (ID: {root_info.get('id')})"
+                )
+            
+                # If the drive id represents a folder, do an additional check
+                if self.is_dir(root_info):
+                    logger.debug("Drive ID corresponds to a folder. Checking for file listings...")
+                    # List at most one file from the folder to verify that we can see its contents.
+                    response = client.list(
+                        spaces="drive",
+                        fields="files(id)",
+                        pageSize=1,
+                        q=f"'{self.connection_config.drive_id}' in parents"
+                    ).execute()
+                
+                    if not response.get("files"):
+                        # This may be a valid case (an empty folder) or a sign of misconfiguration.
+                        logger.error(
+                            "No files found in the folder. "
+                            "Please verify that the folder is not empty and that the service account "
+                            "has the proper permissions."
+                        )
+                        raise SourceConnectionError("No files found in given directory! Please verify that the folder is not empty \
+                        and that the service account has the proper permissions.")
+                else:
+                    logger.debug("Drive ID corresponds to a file. Precheck passed.")
+    
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error("Failed to validate Google Drive connection during precheck", exc_info=True)
+            raise SourceConnectionError(f"Precheck failed: {e}")
 
     @staticmethod
     def is_dir(record: dict) -> bool:
