@@ -310,20 +310,22 @@ class GoogleDriveDownloader(Downloader):
         from googleapiclient.http import MediaIoBaseDownload
 
         logger.debug(f"fetching file: {file_data.source_identifiers.fullpath}")
-        mime_type = file_data.additional_metadata["mimeType"]
         record_id = file_data.identifier
+        mime_type = file_data.additional_metadata["mimeType"]
+        if not mime_type:
+            raise TypeError(
+                f"File not supported. Name: {file_data.source_identifiers.filename} "
+                f"ID: {record_id} "
+                f"MimeType: {mime_type}"
+            )
         with self.connection_config.get_client() as client:
-            if mime_type.startswith("application/vnd.google-apps"):
+            if (
+                mime_type.startswith("application/vnd.google-apps")
+                and mime_type in GOOGLE_DRIVE_EXPORT_TYPES
+            ):
                 export_mime = GOOGLE_DRIVE_EXPORT_TYPES.get(
-                    self.meta.get("mimeType"),  # type: ignore
+                    mime_type,  # type: ignore
                 )
-                if not export_mime:
-                    raise TypeError(
-                        f"File not supported. Name: {file_data.source_identifiers.filename} "
-                        f"ID: {record_id} "
-                        f"MimeType: {mime_type}"
-                    )
-
                 request = client.export_media(
                     fileId=record_id,
                     mimeType=export_mime,
