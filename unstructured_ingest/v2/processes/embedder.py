@@ -18,7 +18,7 @@ class EmbedderConfig(BaseModel):
             "openai",
             "azure-openai",
             "huggingface",
-            "aws-bedrock",
+            "bedrock",
             "vertexai",
             "voyageai",
             "octoai",
@@ -162,7 +162,7 @@ class EmbedderConfig(BaseModel):
         if self.embedding_provider == "octoai":
             return self.get_octoai_embedder(embedding_kwargs=kwargs)
 
-        if self.embedding_provider == "aws-bedrock":
+        if self.embedding_provider == "bedrock":
             return self.get_bedrock_embedder()
 
         if self.embedding_provider == "vertexai":
