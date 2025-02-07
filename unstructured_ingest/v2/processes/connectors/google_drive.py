@@ -133,30 +133,39 @@ class GoogleDriveIndexer(Indexer):
     )
 
     @staticmethod
-    def count_files_recursively(files_client, folder_id: str) -> int:
+    def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
         """
         Count non-folder files recursively under the given folder.
+        If `extensions` is provided, only count files whose `fileExtension` matches one of the values.
         """
         count = 0
         stack = [folder_id]
         while stack:
             current_folder = stack.pop()
+            # Always list all items under the current folder.
             query = f"'{current_folder}' in parents"
             page_token = None
             while True:
                 response = files_client.list(
                     spaces="drive",
                     q=query,
-                    fields="nextPageToken, files(id, mimeType)",
+                    fields="nextPageToken, files(id, mimeType, fileExtension)",
                     pageToken=page_token,
                     pageSize=1000,
                 ).execute()
                 for item in response.get("files", []):
-                    # If the item is a folder, add it to the stack for further processing.
                     if item.get("mimeType") == "application/vnd.google-apps.folder":
+                        # Always traverse sub-folders regardless of extension filter.
                         stack.append(item["id"])
                     else:
-                        count += 1
+                        if extensions:
+                            # Use a case-insensitive comparison for the file extension.
+                            file_ext = (item.get("fileExtension") or "").lower()
+                            valid_exts = [e.lower() for e in extensions]
+                            if file_ext in valid_exts:
+                                count += 1
+                        else:
+                            count += 1
                 page_token = response.get("nextPageToken")
                 if not page_token:
                     break
@@ -184,11 +193,12 @@ class GoogleDriveIndexer(Indexer):
             if self.is_dir(root_info):
                 if self.index_config.recursive:
                     file_count = self.count_files_recursively(
-                        client, self.connection_config.drive_id
+                        client, self.connection_config.drive_id, 
+                        extensions=self.index_config.extensions
                     )
                     if file_count == 0:
                         raise SourceConnectionError(
-                            "No files found recursively in the folder. "
+                            "Empty folder: no files found recursively in the folder. "
                             "Please verify that the folder contains files and that the service account has proper permissions."
                         )
                     else:
@@ -203,7 +213,7 @@ class GoogleDriveIndexer(Indexer):
                     ).execute()
                     if not response.get("files"):
                         raise SourceConnectionError(
-                            "No files found at the folder's root level. "
+                            "Empty folder: no files found at the folder's root level. "
                             "Please verify that the folder contains files and that the service account has proper permissions."
                         )
                     else:

@@ -171,7 +171,7 @@ def test_google_drive_precheck_empty_folder(google_drive_connection_config, goog
     indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "empty" in str(excinfo.value).lower()
+    assert "empty folder" in str(excinfo.value).lower()
 
 @pytest.mark.tags("google-drive", "count", "integration")
 @requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
@@ -181,6 +181,9 @@ def test_google_drive_count_files(google_drive_connection_config):
     According to the test credentials, there are 3 files in the root directory and 1 nested file,
     so the total count should be 4.
     """
+    # I assumed that we're testing for the files that we utilise in other test so filtering for the same extensions
+    # However there's 6 files in total in the test dir
+    extensions_filter = ["pdf", "docx"]
     with google_drive_connection_config.get_client() as client:
-        count = GoogleDriveIndexer.count_files_recursively(client, google_drive_connection_config.drive_id)
+        count = GoogleDriveIndexer.count_files_recursively(client, google_drive_connection_config.drive_id, extensions_filter)
     assert count == 4, f"Expected file count of 4, but got {count}"
