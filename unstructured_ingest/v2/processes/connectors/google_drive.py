@@ -132,6 +132,29 @@ class GoogleDriveIndexer(Indexer):
         ]
     )
 
+    def verify_drive_api_enabled(client) -> None:
+        from googleapiclient.errors import HttpError
+
+        """
+        Makes a lightweight API call to verify that the Drive API is enabled.
+        If the API is not enabled, an HttpError should be raised.
+        """
+        try:
+            # A very minimal call: list 1 file from the drive.
+            client.list(spaces="drive", pageSize=1, fields="files(id)").execute()
+        except HttpError as e:
+            error_content = e.content.decode() if hasattr(e, "content") else ""
+            lower_error = error_content.lower()
+            if "drive api" in lower_error and (
+                "not enabled" in lower_error or "not been used" in lower_error
+            ):
+                raise SourceConnectionError(
+                    "Google Drive API is not enabled for your project. \
+                    Please enable it in the Google Cloud Console."
+                )
+            else:
+                raise SourceConnectionError("Google drive API unreachable for an unknown reason!")
+
     @staticmethod
     def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
         """
@@ -179,6 +202,9 @@ class GoogleDriveIndexer(Indexer):
         """
         try:
             with self.connection_config.get_client() as client:
+                # First, verify that the Drive API is enabled.
+                self.verify_drive_api_enabled(client)
+
                 # Try to retrieve metadata for the drive id.
                 # This will catch errors such as an invalid drive id or insufficient permissions.
                 root_info = self.get_root_info(
