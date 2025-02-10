@@ -225,11 +225,14 @@ class GoogleDriveIndexer(Indexer):
                         extensions=self.index_config.extensions,
                     )
                     if file_count == 0:
-                        raise SourceConnectionError(
-                            "Empty folder: no files found recursively in the folder. "
-                            "Please verify that the folder contains files and \
-                            that the service account has proper permissions."
-                        )
+                        logger.warning("Empty folder: no files found recursively in the folder. \
+                             Please verify that the folder contains files and \
+                             that the service account has proper permissions.")
+                        # raise SourceConnectionError(
+                        #     "Empty folder: no files found recursively in the folder. "
+                        #     "Please verify that the folder contains files and \
+                        #     that the service account has proper permissions."
+                        # )
                     else:
                         logger.info(f"Found {file_count} files recursively in the folder.")
                 else:
@@ -241,11 +244,16 @@ class GoogleDriveIndexer(Indexer):
                         q=f"'{self.connection_config.drive_id}' in parents",
                     ).execute()
                     if not response.get("files"):
-                        raise SourceConnectionError(
+                        logger.warning(
                             "Empty folder: no files found at the folder's root level. "
                             "Please verify that the folder contains files and \
                             that the service account has proper permissions."
                         )
+                        # raise SourceConnectionError(
+                        #     "Empty folder: no files found at the folder's root level. "
+                        #     "Please verify that the folder contains files and \
+                        #     that the service account has proper permissions."
+                        # )
                     else:
                         logger.info("Found files at the folder's root level.")
             else:

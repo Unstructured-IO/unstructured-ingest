@@ -205,22 +205,22 @@ def test_google_drive_precheck_no_permission(google_drive_connection_config, mon
 
 
 # Precheck fails when the folder is empty.
-@pytest.mark.tags("google-drive", "precheck")
-@requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
-def test_google_drive_precheck_empty_folder(
-    google_drive_connection_config, google_drive_empty_folder
-):
-    # Use the empty folder's ID as the target.
-    connection_config = GoogleDriveConnectionConfig(
-        drive_id=google_drive_empty_folder,
-        access_config=google_drive_connection_config.access_config,
-    )
+# @pytest.mark.tags("google-drive", "precheck")
+# @requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+# def test_google_drive_precheck_empty_folder(
+#     google_drive_connection_config, google_drive_empty_folder
+# ):
+#     # Use the empty folder's ID as the target.
+#     connection_config = GoogleDriveConnectionConfig(
+#         drive_id=google_drive_empty_folder,
+#         access_config=google_drive_connection_config.access_config,
+#     )
 
-    index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
-    with pytest.raises(SourceConnectionError) as excinfo:
-        indexer.precheck()
-    assert "empty folder" in str(excinfo.value).lower()
+#     index_config = GoogleDriveIndexerConfig(recursive=True)
+#     indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+#     with pytest.raises(SourceConnectionError) as excinfo:
+#         indexer.precheck()
+#     assert "empty folder" in str(excinfo.value).lower()
 
 
 @pytest.mark.tags("google-drive", "count", "integration")
