@@ -132,6 +132,7 @@ class GoogleDriveIndexer(Indexer):
         ]
     )
 
+    @staticmethod
     def verify_drive_api_enabled(client) -> None:
         from googleapiclient.errors import HttpError
 
