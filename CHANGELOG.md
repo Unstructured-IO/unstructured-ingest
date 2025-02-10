@@ -5,6 +5,17 @@
 * **Improved google drive precheck mechanism**
 * **Added integration tests for google drive precheck and connector**
 
+## 0.5.0-dev0
+
+### Fixes
+
+* **Fix Attribute Not Exist bug in GoogleDrive connector**
+
+### Enhancements
+
+* **Allow dynamic metadata for SQL Connectors**
+* **Add entities field to pinecone connector default fields**
+
 ## 0.5.0
 
 ### Fixes
