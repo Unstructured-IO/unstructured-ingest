@@ -1,8 +1,12 @@
-## 0.5.2-dev0
+## 0.5.2-dev1
 
 ### Enhancements
 
 * **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+
+### Fixes
+
+* **Address forward compatibility issue in unstructured-client** - As of unstructured-client==0.30.0, the `server_url` is passed to the method rather than the client instance.
 
 ## 0.5.1
 

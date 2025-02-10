@@ -87,13 +87,16 @@ async def call_api_async(
     """
     from unstructured_client import UnstructuredClient
 
+    # Note(austin) - the sdk takes the base url, but users may pass the full endpoint
+    # For consistency, strip off the path when it's given
+    base_url = server_url[:-19] if "/general/v0/general" in server_url else server_url
+
     client = UnstructuredClient(
-        server_url=server_url,
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     try:
-        res = await client.general.partition_async(request=partition_request)
+        res = await client.general.partition_async(server_url=base_url, request=partition_request)
     except Exception as e:
         raise wrap_error(e)
 
@@ -115,13 +118,16 @@ def call_api(
     """
     from unstructured_client import UnstructuredClient
 
+    # Note(austin) - the sdk takes the base url, but users may pass the full endpoint
+    # For consistency, strip off the path when it's given
+    base_url = server_url[:-19] if "/general/v0/general" in server_url else server_url
+
     client = UnstructuredClient(
-        server_url=server_url,
         api_key_auth=api_key,
     )
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     try:
-        res = client.general.partition(request=partition_request)
+        res = client.general.partition(server_url=base_url, request=partition_request)
     except Exception as e:
         raise wrap_error(e)
 
