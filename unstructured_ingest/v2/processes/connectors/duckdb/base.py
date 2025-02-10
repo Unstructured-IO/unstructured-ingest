@@ -81,6 +81,8 @@ class BaseDuckDBUploadStager(UploadStager):
         **kwargs: Any,
     ) -> Path:
         elements_contents = get_data(path=elements_filepath)
+        output_filename_suffix = Path(elements_filepath).suffix
+        output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
         output = [
