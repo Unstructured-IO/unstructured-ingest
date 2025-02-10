@@ -1,8 +1,10 @@
-## 0.5.0-dev0
+## 0.5.0-dev1
 
 ### Fixes
 
 * **Fix Attribute Not Exist bug in GoogleDrive connector**
+* **Fix query syntax error in MotherDuck uploader**
+* **Fix missing output filename suffix in DuckDB base stager**
 
 ### Enhancements
 
