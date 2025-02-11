@@ -107,8 +107,12 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return embeddings
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element["embedding"] = embedding
+        return elements
 
     def embed_query(self, query: str) -> list[float]:
         return self._embed_documents(elements=[query])[0]
@@ -135,8 +139,12 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return embeddings
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = await self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element["embedding"] = embedding
+        return elements
 
     async def embed_query(self, query: str) -> list[float]:
         embedding = await self._embed_documents(elements=[query])

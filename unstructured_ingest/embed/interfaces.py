@@ -26,27 +26,6 @@ class BaseEncoder(ABC):
         if possible"""
         return e
 
-    @staticmethod
-    def _add_embeddings_to_elements(
-        elements: list[dict], embeddings: list[list[float]]
-    ) -> list[dict]:
-        """
-        Add embeddings to elements.
-
-        Args:
-            elements (list[Element]): List of elements.
-            embeddings (list[list[float]]): List of embeddings.
-
-        Returns:
-            list[Element]: Elements with embeddings added.
-        """
-        assert len(elements) == len(embeddings)
-        elements_w_embedding = []
-        for i, element in enumerate(elements):
-            element["embeddings"] = embeddings[i]
-            elements_w_embedding.append(element)
-        return elements
-
 
 @dataclass
 class BaseEmbeddingEncoder(BaseEncoder, ABC):

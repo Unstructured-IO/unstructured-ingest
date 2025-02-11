@@ -82,7 +82,9 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         client = self.config.get_client()
-        texts = [e.get("text", "") for e in elements]
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
         embeddings = []
         try:
             for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
@@ -92,8 +94,9 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
                 embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element["embedding"] = embedding
+        return elements
 
 
 @dataclass
@@ -115,7 +118,9 @@ class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
         client = self.config.get_async_client()
-        texts = [e.get("text", "") for e in elements]
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
         embeddings = []
         try:
             for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
@@ -125,5 +130,6 @@ class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
                 embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element["embedding"] = embedding
+        return elements

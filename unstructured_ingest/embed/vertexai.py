@@ -75,9 +75,12 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self._embed_documents(elements=[query])[0]
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element["embedding"] = embedding
+        return elements
 
     @requires_dependencies(
         ["vertexai"],
@@ -110,9 +113,12 @@ class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return embedding[0]
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = await self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element["embedding"] = embedding
+        return elements
 
     @requires_dependencies(
         ["vertexai"],
