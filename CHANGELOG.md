@@ -1,3 +1,9 @@
+## 0.5.2-dev0
+
+### Enhancements
+
+* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+
 ## 0.5.1
 
 ### Fixes
