@@ -6,6 +6,8 @@ from typing import Optional
 import numpy as np
 from pydantic import BaseModel, Field
 
+EMBEDDINGS_KEY = "embeddings"
+
 
 class EmbeddingConfig(BaseModel):
     batch_size: Optional[int] = Field(

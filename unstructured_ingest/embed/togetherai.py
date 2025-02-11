@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
@@ -71,7 +72,7 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
         elements_with_text = [e for e in elements if e.get("text")]
         embeddings = self._embed_documents([e["text"] for e in elements_with_text])
         for element, embedding in zip(elements_with_text, embeddings):
-            element["embedding"] = embedding
+            element[EMBEDDINGS_KEY] = embedding
         return elements
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
@@ -106,7 +107,7 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         elements_with_text = [e for e in elements if e.get("text")]
         embeddings = await self._embed_documents([e["text"] for e in elements_with_text])
         for element, embedding in zip(elements_with_text, embeddings):
-            element["embedding"] = embedding
+            element[EMBEDDINGS_KEY] = embedding
         return elements
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:

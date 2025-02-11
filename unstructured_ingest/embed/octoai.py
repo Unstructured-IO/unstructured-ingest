@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
@@ -103,7 +104,7 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         except Exception as e:
             raise self.wrap_error(e=e)
         for element, embedding in zip(elements_with_text, embeddings):
-            element["embedding"] = embedding
+            element[EMBEDDINGS_KEY] = embedding
         return elements
 
 
@@ -139,5 +140,5 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         except Exception as e:
             raise self.wrap_error(e=e)
         for element, embedding in zip(elements_with_text, embeddings):
-            element["embedding"] = embedding
+            element[EMBEDDINGS_KEY] = embedding
         return elements
