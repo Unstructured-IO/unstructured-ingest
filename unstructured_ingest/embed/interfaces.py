@@ -129,7 +129,8 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
 
     async def _embed_query(self, query: str) -> list[float]:
         client = self.get_client()
-        return await self.embed_batch(client=client, batch=[query])[0]
+        embeddings = await self.embed_batch(client=client, batch=[query])
+        return embeddings[0]
 
     async def embed_query(self, query: str) -> list[float]:
         try:
