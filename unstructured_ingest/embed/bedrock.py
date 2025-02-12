@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, AsyncIterable
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
@@ -145,9 +146,12 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
             return response_body.get("embedding")
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = [self.embed_query(query=e.get("text", "")) for e in elements]
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = [self.embed_query(query=e["text"]) for e in elements_with_text]
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
 
 @dataclass
@@ -186,8 +190,11 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             raise ValueError(f"Error raised by inference endpoint: {e}")
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
         embeddings = await asyncio.gather(
-            *[self.embed_query(query=e.get("text", "")) for e in elements]
+            *[self.embed_query(query=e.get("text", "")) for e in elements_with_text]
         )
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements

@@ -1,15 +1,23 @@
-## 0.5.1-dev0
+## 0.5.2-dev1
 
 ### Enchancements
 
 * **Improved google drive precheck mechanism**
 * **Added integration tests for google drive precheck and connector**
 
-## 0.5.0-dev0
+## 0.5.2-dev0
+
+### Enhancements
+
+* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+
+## 0.5.1
 
 ### Fixes
 
 * **Fix Attribute Not Exist bug in GoogleDrive connector**
+* **Fix query syntax error in MotherDuck uploader**
+* **Fix missing output filename suffix in DuckDB base stager**
 
 ### Enhancements
 
