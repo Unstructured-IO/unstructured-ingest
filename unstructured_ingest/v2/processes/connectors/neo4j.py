@@ -10,7 +10,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, Secret
+from pydantic import BaseModel, ConfigDict, Field, Secret, field_validator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
@@ -186,10 +186,8 @@ class _GraphData(BaseModel):
         nodes = list(nx_graph.nodes())
         edges = [
             _Edge(
-                source_id=u.id_,
-                source_labels=u.labels,
-                destination_id=v.id_,
-                destination_labels=v.labels,
+                source=u,
+                destination=v,
                 relationship=Relationship(data_dict["relationship"]),
             )
             for u, v, data_dict in nx_graph.edges(data=True)
@@ -200,6 +198,8 @@ class _GraphData(BaseModel):
 class _Node(BaseModel):
     model_config = ConfigDict()
 
+    labels: list[Label]
+    properties: dict = Field(default_factory=dict)
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
     labels: list[Label] = Field(default_factory=list)
     properties: dict = Field(default_factory=dict)
@@ -207,14 +207,23 @@ class _Node(BaseModel):
     def __hash__(self):
         return hash(self.id_)
 
+    @property
+    def main_label(self) -> Label:
+        return self.labels[0]
+
+    @classmethod
+    @field_validator("labels", mode="after")
+    def require_at_least_one_label(cls, value: list[Label]) -> list[Label]:
+        if not value:
+            raise ValueError("Node must have at least one label.")
+        return value
+
 
 class _Edge(BaseModel):
     model_config = ConfigDict()
 
-    source_id: str
-    source_labels: list[Label]
-    destination_id: str
-    destination_labels: list[Label]
+    source: _Node
+    destination: _Node
     relationship: Relationship
 
 
@@ -325,7 +334,7 @@ class Neo4jUploader(Uploader):
     async def _merge_graph(self, graph_data: _GraphData, client: AsyncDriver) -> None:
         nodes_by_labels: defaultdict[Label, list[_Node]] = defaultdict(list)
         for node in graph_data.nodes:
-            nodes_by_labels[self._main_label(node.labels)].append(node)
+            nodes_by_labels[node.main_label].append(node)
         logger.info(f"Merging {len(graph_data.nodes)} graph nodes.")
         # NOTE: Processed in parallel as there's no overlap between accessed nodes
         await self._execute_queries(
@@ -343,21 +352,19 @@ class Neo4jUploader(Uploader):
             defaultdict(list)
         )
         for edge in graph_data.edges:
-            key = tuple(
-                [
-                    edge.relationship,
-                    self._main_label(edge.source_labels),
-                    self._main_label(edge.destination_labels),
-                ]
-            )
+            key = (edge.relationship, edge.source.main_label, edge.destination.main_label)
             edges_by_relationship[key].append(edge)
 
         logger.info(f"Merging {len(graph_data.edges)} graph relationships (edges).")
         # NOTE: Processed sequentially to avoid queries locking node access to one another
         await self._execute_queries(
             [
-                self._create_edges_query(edges_batch, relationship_key)
-                for relationship_key, edges in edges_by_relationship.items()
+                self._create_edges_query(edges_batch, relationship, source_label, destination_label)
+                for (
+                    relationship,
+                    source_label,
+                    destination_label,
+                ), edges in edges_by_relationship.items()
                 for edges_batch in batch_generator(edges, batch_size=self.upload_config.batch_size)
             ],
             client=client,
@@ -420,14 +427,17 @@ class Neo4jUploader(Uploader):
 
     @staticmethod
     def _create_edges_query(
-        edges: list[_Edge], relationship: tuple[Relationship, Label, Label]
+        edges: list[_Edge],
+        relationship: Relationship,
+        source_label: Label,
+        destination_label: Label,
     ) -> tuple[str, dict]:
         logger.info(f"Preparing MERGE query for {len(edges)} {relationship} relationships.")
         query_string = f"""
             UNWIND $edges AS edge
-            MATCH (u: `{relationship[1].value}` {{id: edge.source}})
-            MATCH (v: `{relationship[2].value}` {{id: edge.destination}})
-            MERGE (u)-[:`{relationship[0].value}`]->(v)
+            MATCH (u: `{source_label.value}` {{id: edge.source}})
+            MATCH (v: `{destination_label.value}` {{id: edge.destination}})
+            MERGE (u)-[:`{relationship.value}`]->(v)
             """
         parameters = {
             "edges": [
