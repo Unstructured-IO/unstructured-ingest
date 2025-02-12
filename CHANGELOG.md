@@ -1,7 +1,15 @@
+## 0.5.3-dev0
+
+### Enhancements
+
+### Fixes
+
 ## 0.5.2
 
 ### Enhancements
 
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
 * **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
 * **Improved google drive precheck mechanism**
 * **Added integration tests for google drive precheck and connector**

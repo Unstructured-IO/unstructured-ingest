@@ -6,7 +6,7 @@ aiobotocore[boto3]==2.13.1
     # via aioboto3
 aiofiles==24.1.0
     # via aioboto3
-aiohappyeyeballs==2.4.4
+aiohappyeyeballs==2.4.6
     # via aiohttp
 aiohttp==3.11.12
     # via aiobotocore
