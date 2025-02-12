@@ -1,15 +1,14 @@
-## 0.5.2-dev1
+## 0.5.2
 
 ### Enchancements
 
+* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
 * **Improved google drive precheck mechanism**
 * **Added integration tests for google drive precheck and connector**
 
-## 0.5.2-dev0
+### Fixes
 
-### Enhancements
-
-* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+* **Fix Snowflake Uploader error with array variable binding**
 
 ## 0.5.1
 
