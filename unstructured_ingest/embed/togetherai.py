@@ -13,10 +13,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
 )
-from unstructured_ingest.v2.errors import (
-    UserAuthError,
-    UserError,
-)
+from unstructured_ingest.v2.errors import UserAuthError, UserError, is_internal_error
 
 if TYPE_CHECKING:
     from together import AsyncTogether, Together
@@ -29,6 +26,8 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
     )
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         # https://docs.together.ai/docs/error-codes
         from together.error import AuthenticationError, RateLimitError, TogetherException
 
@@ -62,10 +61,6 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def embed_query(self, query: str) -> list[float]:
-        client = self.get_client()
-        return self.embed_batch(client=client, batch=[query])[0]
-
     def get_client(self) -> "Together":
         return self.config.get_client()
 
@@ -80,11 +75,6 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
-
-    async def embed_query(self, query: str) -> list[float]:
-        client = self.get_client()
-        embedding = await self.embed_batch(client=client, batch=[query])
-        return embedding[0]
 
     def get_client(self) -> "AsyncTogether":
         return self.config.get_async_client()

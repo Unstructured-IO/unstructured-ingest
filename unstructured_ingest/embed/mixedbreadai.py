@@ -111,19 +111,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         )
         return [datum.embedding for datum in response.data]
 
-    def embed_query(self, query: str) -> list[float]:
-        """
-        Embed a query string.
-
-        Args:
-            query (str): Query string to embed.
-
-        Returns:
-            list[float]: Embedding of the query.
-        """
-        client = self.get_client()
-        return self.embed_batch(client=client, batch=[query])[0]
-
 
 @dataclass
 class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
@@ -160,17 +147,3 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             input=batch,
         )
         return [datum.embedding for datum in response.data]
-
-    async def embed_query(self, query: str) -> list[float]:
-        """
-        Embed a query string.
-
-        Args:
-            query (str): Query string to embed.
-
-        Returns:
-            list[float]: Embedding of the query.
-        """
-        client = self.get_client()
-        embedding = await self.embed_batch(client=client, batch=[query])
-        return embedding[0]

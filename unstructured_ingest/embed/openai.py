@@ -16,6 +16,7 @@ from unstructured_ingest.v2.errors import (
     RateLimitError,
     UserAuthError,
     UserError,
+    is_internal_error,
 )
 
 if TYPE_CHECKING:
@@ -27,6 +28,8 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         # https://platform.openai.com/docs/guides/error-codes/api-errors
         from openai import APIStatusError
 
@@ -70,15 +73,6 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def embed_query(self, query: str) -> list[float]:
-
-        client = self.config.get_client()
-        try:
-            response = client.embeddings.create(input=query, model=self.config.embedder_model_name)
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return response.data[0].embedding
-
     def get_client(self) -> "OpenAI":
         return self.config.get_client()
 
@@ -93,16 +87,6 @@ class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
-
-    async def embed_query(self, query: str) -> list[float]:
-        client = self.config.get_async_client()
-        try:
-            response = await client.embeddings.create(
-                input=query, model=self.config.embedder_model_name
-            )
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return response.data[0].embedding
 
     def get_client(self) -> "AsyncOpenAI":
         return self.config.get_async_client()

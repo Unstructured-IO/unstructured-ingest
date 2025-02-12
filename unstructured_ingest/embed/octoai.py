@@ -16,6 +16,7 @@ from unstructured_ingest.v2.errors import (
     RateLimitError,
     UserAuthError,
     UserError,
+    is_internal_error,
 )
 
 if TYPE_CHECKING:
@@ -28,6 +29,8 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
     base_url: str = Field(default="https://text.octoai.run/v1")
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         # https://platform.openai.com/docs/guides/error-codes/api-errors
         from openai import APIStatusError
 
@@ -79,12 +82,9 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def embed_query(self, query: str):
-        try:
-            client = self.config.get_client()
-            response = client.embeddings.create(input=query, model=self.config.embedder_model_name)
-        except Exception as e:
-            raise self.wrap_error(e=e)
+    def _embed_query(self, query: str):
+        client = self.get_client()
+        response = client.embeddings.create(input=query, model=self.config.embedder_model_name)
         return response.data[0].embedding
 
     def get_client(self) -> "OpenAI":
@@ -101,16 +101,6 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
-
-    async def embed_query(self, query: str):
-        client = self.config.get_async_client()
-        try:
-            response = await client.embeddings.create(
-                input=query, model=self.config.embedder_model_name
-            )
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return response.data[0].embedding
 
     def get_client(self) -> "AsyncOpenAI":
         return self.config.get_async_client()

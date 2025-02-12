@@ -14,7 +14,7 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import UserAuthError
+from unstructured_ingest.v2.errors import UserAuthError, is_internal_error
 
 if TYPE_CHECKING:
     from vertexai.language_models import TextEmbeddingModel
@@ -38,6 +38,8 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     )
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         from google.auth.exceptions import GoogleAuthError
 
         if isinstance(e, GoogleAuthError):
@@ -70,10 +72,6 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def embed_query(self, query):
-        client = self.get_client()
-        return self.embed_batch(client=client, batch=[query])[0]
-
     def get_client(self) -> "TextEmbeddingModel":
         return self.config.get_client()
 
@@ -95,11 +93,6 @@ class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
-
-    async def embed_query(self, query: str) -> list[float]:
-        client = self.get_client()
-        embedding = await self.embed_batch(client=client, batch=[query])
-        return embedding[0]
 
     def get_client(self) -> "TextEmbeddingModel":
         return self.config.get_client()

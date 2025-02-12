@@ -10,11 +10,7 @@ from unstructured_ingest.embed.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import (
-    ProviderError,
-    UserAuthError,
-    UserError,
-)
+from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError, is_internal_error
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
 )
@@ -37,6 +33,8 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
     timeout_in_seconds: Optional[int] = None
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         # https://docs.voyageai.com/docs/error-codes
         from voyageai.error import AuthenticationError, RateLimitError, VoyageError
 
@@ -101,10 +99,6 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         response = client.embed(texts=batch, model=self.config.embedder_model_name)
         return response.embeddings
 
-    def embed_query(self, query: str) -> list[float]:
-        client = self.get_client()
-        return self.embed_batch(client=client, batch=[query])[0]
-
 
 @dataclass
 class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
@@ -121,8 +115,3 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     ) -> list[list[float]]:
         response = await client.embed(texts=batch, model=self.config.embedder_model_name)
         return response.embeddings
-
-    async def embed_query(self, query: str) -> list[float]:
-        client = self.get_client()
-        embedding = await self.embed_batch(client=client, batch=[query])
-        return embedding[0]
