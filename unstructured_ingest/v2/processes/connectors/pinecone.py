@@ -203,7 +203,7 @@ class PineconeUploader(VectorDBUploader):
     def create_destination(
         self,
         destination_name: str,
-        vector_length: int,
+        vector_length: int = 3072,
         destination_type: Literal["pod", "serverless"] = "serverless",
         serverless_cloud: str = "aws",
         serverless_region: str = "us-west-2",
