@@ -1,0 +1,114 @@
+{
+  "identifier": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV",
+  "connector_type": "google_drive",
+  "source_identifiers": {
+    "filename": "recalibrating-risk-report.pdf",
+    "fullpath": "utic-test-ingest-fixtures/recalibrating-risk-report.pdf",
+    "rel_path": "recalibrating-risk-report.pdf"
+  },
+  "metadata": {
+    "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+    "version": "7",
+    "record_locator": {
+      "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+    },
+    "date_created": "1718723636.34",
+    "date_modified": "1676196572.0",
+    "date_processed": null,
+    "permissions_data": [
+      {
+        "id": "anyoneWithLink",
+        "type": "anyone",
+        "kind": "drive#permission",
+        "role": "reader",
+        "allowFileDiscovery": false
+      },
+      {
+        "id": "18298851591250030956",
+        "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+        "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "04774006893477068632",
+        "displayName": "ryan",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+        "emailAddress": "ryan@unstructured.io",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "09147371668407854156",
+        "displayName": "roman",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+        "emailAddress": "roman@unstructured.io",
+        "role": "owner",
+        "deleted": false,
+        "pendingOwner": false
+      }
+    ],
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "fileExtension": "pdf",
+    "md5Checksum": "e690f37ef36368a509d150f373a0bbe0",
+    "mimeType": "application/pdf",
+    "headRevisionId": "0B8fLPtk3k4KOdlRMRDkvM0JCQkdtTU1NdjdpK0ZlSTJadXNjPQ",
+    "webViewLink": "https://drive.google.com/file/d/1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV/view?usp=drivesdk",
+    "id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV",
+    "originalFilename": "recalibrating-risk-report.pdf",
+    "capabilities": {
+      "canChangeViewersCanCopyContent": false,
+      "canEdit": true,
+      "canCopy": true,
+      "canComment": true,
+      "canAddChildren": false,
+      "canDelete": false,
+      "canDownload": true,
+      "canListChildren": false,
+      "canRemoveChildren": false,
+      "canRename": true,
+      "canTrash": false,
+      "canReadRevisions": true,
+      "canChangeCopyRequiresWriterPermission": false,
+      "canMoveItemIntoTeamDrive": false,
+      "canUntrash": false,
+      "canModifyContent": true,
+      "canMoveItemOutOfDrive": false,
+      "canAddMyDriveParent": false,
+      "canRemoveMyDriveParent": true,
+      "canMoveItemWithinDrive": true,
+      "canShare": true,
+      "canMoveChildrenWithinDrive": false,
+      "canModifyContentRestriction": true,
+      "canChangeSecurityUpdateEnabled": false,
+      "canAcceptOwnership": false,
+      "canReadLabels": false,
+      "canModifyLabels": false,
+      "canModifyEditorContentRestriction": true,
+      "canModifyOwnerContentRestriction": false,
+      "canRemoveContentRestriction": false
+    },
+    "permissionIds": [
+      "anyoneWithLink",
+      "18298851591250030956",
+      "04774006893477068632",
+      "09147371668407854156"
+    ],
+    "sha1Checksum": "57e64b7be1e099ecf9dcd9832bc09c81ffc5fc44",
+    "sha256Checksum": "076d8d243312e0b03a0fe2191e924c37fe159dd01d6b6ce3a3b2b7c642c36245"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmp9k8p4569/recalibrating-risk-report.pdf",
+  "display_name": null
+}

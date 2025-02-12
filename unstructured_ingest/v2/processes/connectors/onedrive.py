@@ -105,6 +105,7 @@ class OnedriveIndexerConfig(IndexerConfig):
 class OnedriveIndexer(Indexer):
     connection_config: OnedriveConnectionConfig
     index_config: OnedriveIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
         try:
@@ -172,7 +173,7 @@ class OnedriveIndexer(Indexer):
         )
         return FileData(
             identifier=drive_item.id,
-            connector_type=CONNECTOR_TYPE,
+            connector_type=self.connector_type,
             source_identifiers=SourceIdentifiers(
                 fullpath=server_path, filename=drive_item.name, rel_path=rel_path
             ),
@@ -201,7 +202,8 @@ class OnedriveIndexer(Indexer):
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
             raise SourceConnectionError(
-                f"[{CONNECTOR_TYPE}]: {token_resp['error']} ({token_resp.get('error_description')})"
+                f"[{self.connector_type}]: {token_resp['error']} "
+                f"({token_resp.get('error_description')})"
             )
 
         client = await asyncio.to_thread(self.connection_config.get_client)
@@ -221,6 +223,7 @@ class OnedriveDownloaderConfig(DownloaderConfig):
 class OnedriveDownloader(Downloader):
     connection_config: OnedriveConnectionConfig
     download_config: OnedriveDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @SourceConnectionNetworkError.wrap
     def _fetch_file(self, file_data: FileData) -> DriveItem:
@@ -260,7 +263,9 @@ class OnedriveDownloader(Downloader):
                     file.download_session(f).execute_query()
             return self.generate_download_response(file_data=file_data, download_path=download_path)
         except Exception as e:
-            logger.error(f"[{CONNECTOR_TYPE}] Exception during downloading: {e}", exc_info=True)
+            logger.error(
+                f"[{self.connector_type}] Exception during downloading: {e}", exc_info=True
+            )
             # Re-raise to see full stack trace locally
             raise
 

@@ -1,0 +1,34 @@
+{
+  "identifier": "0153RHRSAVBNSXPKVIBZC3ZD53KENINVGG",
+  "connector_type": "sharepoint",
+  "source_identifiers": {
+    "filename": "book-war-and-peace-1p.txt",
+    "fullpath": "/book-war-and-peace-1p.txt",
+    "rel_path": "book-war-and-peace-1p.txt"
+  },
+  "metadata": {
+    "url": "/drive/root:/book-war-and-peace-1p.txt",
+    "version": "\"{77650B15-A8AA-450E-BC8F-BB511A86D4C6},1\"",
+    "record_locator": {
+      "user_pname": "devops@unstructuredio.onmicrosoft.com",
+      "server_relative_path": "/book-war-and-peace-1p.txt"
+    },
+    "date_created": "1738874878.0",
+    "date_modified": "1738874878.0",
+    "date_processed": "1738857990.276329",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=77650b15-a8aa-450e-bc8f-bb511a86d4c6&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJhdWQiOiIwMDAwMDAwMy0wMDAwLTBmZjEtY2UwMC0wMDAwMDAwMDAwMDAvdW5zdHJ1Y3R1cmVkaW8uc2hhcmVwb2ludC5jb21AM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiZXhwIjoiMTczODg2MTU4OCJ9.CgoKBHNuaWQSAjY0EgsIztK48se04z0QBRoNNDAuMTI2LjIzLjE2MyosemVNQkkvcjlFQVVxeHg1QTZ0SVFmSjdFY0lUK2xvL25sNmhINVQ3U0ZsVT0wnQE4AUIQoX7jAZEAAHDEwbtGLnBa9koQaGFzaGVkcHJvb2Z0b2tlbnoBMboBZXNoYXJlcG9pbnR0ZW5hbnRzZXR0aW5ncy5yZWFkd3JpdGUuYWxsIGFsbHNpdGVzLndyaXRlIGFsbHNpdGVzLm1hbmFnZSBhbGxmaWxlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkwgFJNmMxNjA3NTMtOWI2My00NzA5LWExNDAtMTdhMjdkMzA4N2E2QDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZMgBAQ.bHf13EoNeJwt9Mfhr7KHDpwbwLaKvoPdCAQdBH5fptY&ApiVersion=2.0",
+    "eTag": "\"{77650B15-A8AA-450E-BC8F-BB511A86D4C6},1\"",
+    "id": "0153RHRSAVBNSXPKVIBZC3ZD53KENINVGG",
+    "name": "book-war-and-peace-1p.txt",
+    "webUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/Shared%20Documents/book-war-and-peace-1p.txt",
+    "cTag": "\"c:{77650B15-A8AA-450E-BC8F-BB511A86D4C6},1\"",
+    "size": 3045
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpebidcrdb/book-war-and-peace-1p.txt",
+  "display_name": null
+}

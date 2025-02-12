@@ -81,6 +81,7 @@ ALLOWED_FIELDS = (
     "link_urls",
     "link_texts",
     "text_as_html",
+    "entities",
 )
 
 

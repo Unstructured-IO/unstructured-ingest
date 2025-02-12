@@ -19,7 +19,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
-    _COLUMNS,
     SQLAccessConfig,
     SqlBatchFileData,
     SQLConnectionConfig,
@@ -149,13 +148,11 @@ class VastdbUploadStagerConfig(SQLUploadStagerConfig):
         default=None,
         description="Map of column names to rename, ex: {'old_name': 'new_name'}",
     )
-    additional_columns: Optional[list[str]] = Field(
-        default_factory=list, description="Additional columns to include in the upload"
-    )
 
 
+@dataclass
 class VastdbUploadStager(SQLUploadStager):
-    upload_stager_config: VastdbUploadStagerConfig
+    upload_stager_config: VastdbUploadStagerConfig = field(default_factory=VastdbUploadStagerConfig)
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         data = element_dict.copy()
@@ -168,13 +165,8 @@ class VastdbUploadStager(SQLUploadStager):
         data.update(coordinates)
 
         data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
-
-        # remove extraneous, not supported columns
-        # but also allow for additional columns
-        approved_columns = set(_COLUMNS).union(self.upload_stager_config.additional_columns)
-        element = {k: v for k, v in data.items() if k in approved_columns}
-        element[RECORD_ID_LABEL] = file_data.identifier
-        return element
+        data[RECORD_ID_LABEL] = file_data.identifier
+        return data
 
     def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         df = super().conform_dataframe(df=df)

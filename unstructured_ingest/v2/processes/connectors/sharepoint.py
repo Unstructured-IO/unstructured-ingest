@@ -56,6 +56,7 @@ class SharepointIndexerConfig(OnedriveIndexerConfig):
 class SharepointIndexer(OnedriveIndexer):
     connection_config: SharepointConnectionConfig
     index_config: SharepointIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
@@ -64,7 +65,8 @@ class SharepointIndexer(OnedriveIndexer):
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
             raise SourceConnectionError(
-                f"[{CONNECTOR_TYPE}]: {token_resp['error']} ({token_resp.get('error_description')})"
+                f"[{self.connector_type}]: {token_resp['error']} "
+                f"({token_resp.get('error_description')})"
             )
 
         client = await asyncio.to_thread(self.connection_config.get_client)
@@ -90,6 +92,7 @@ class SharepointDownloaderConfig(OnedriveDownloaderConfig):
 class SharepointDownloader(OnedriveDownloader):
     connection_config: SharepointConnectionConfig
     download_config: SharepointDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["office365"], extras="onedrive")

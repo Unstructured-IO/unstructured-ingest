@@ -1,12 +1,40 @@
-## 0.4.8-dev1
+## 0.5.2-dev2
+
+### Enchancements
+
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
+* **Add support for setting up destination for Pinecone**
+
+## 0.5.2-dev0
 
 ### Enhancements
 
-* **Add support for setting up destination for Pinecone**
+* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+
+## 0.5.1
 
 ### Fixes
 
+* **Fix Attribute Not Exist bug in GoogleDrive connector**
+* **Fix query syntax error in MotherDuck uploader**
+* **Fix missing output filename suffix in DuckDB base stager**
+
+### Enhancements
+
+* **Allow dynamic metadata for SQL Connectors**
+* **Add entities field to pinecone connector default fields**
+
+## 0.5.0
+
+### Fixes
+
+* **Change aws-bedrock to bedrock**
 * **Update Sharepoint tests**
+
+### Enhancements
+
+* **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
 
 ## 0.4.7
 
