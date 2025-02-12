@@ -1,4 +1,3 @@
-import asyncio
 import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -6,12 +5,10 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
-    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 USER_AGENT = "@mixedbread-ai/unstructured"
@@ -100,47 +97,19 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             additional_headers={"User-Agent": USER_AGENT},
         )
 
-    def _embed(self, texts: list[str]) -> list[list[float]]:
-        """
-        Embed a list of texts using the Mixedbread AI API.
+    def get_client(self) -> "MixedbreadAI":
+        return self.config.get_client()
 
-        Args:
-            texts (list[str]): List of texts to embed.
-
-        Returns:
-            list[list[float]]: List of embeddings.
-        """
-
-        responses = []
-        client = self.config.get_client()
-        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
-            response = client.embeddings(
-                model=self.config.embedder_model_name,
-                normalized=True,
-                encoding_format=ENCODING_FORMAT,
-                truncation_strategy=TRUNCATION_STRATEGY,
-                request_options=self.get_request_options(),
-                input=batch,
-            )
-            responses.append(response)
-        return [item.embedding for response in responses for item in response.data]
-
-    def embed_documents(self, elements: list[dict]) -> list[dict]:
-        """
-        Embed a list of document elements.
-
-        Args:
-            elements (list[Element]): List of document elements.
-
-        Returns:
-            list[Element]: Elements with embeddings.
-        """
-        elements = elements.copy()
-        elements_with_text = [e for e in elements if e.get("text")]
-        embeddings = self._embed([e["text"] for e in elements_with_text])
-        for element, embedding in zip(elements_with_text, embeddings):
-            element[EMBEDDINGS_KEY] = embedding
-        return elements
+    def embed_batch(self, client: "MixedbreadAI", batch: list[str]) -> list[list[float]]:
+        response = client.embeddings(
+            model=self.config.embedder_model_name,
+            normalized=True,
+            encoding_format=ENCODING_FORMAT,
+            truncation_strategy=TRUNCATION_STRATEGY,
+            request_options=self.get_request_options(),
+            input=batch,
+        )
+        return [datum.embedding for datum in response.data]
 
     def embed_query(self, query: str) -> list[float]:
         """
@@ -152,7 +121,8 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         Returns:
             list[float]: Embedding of the query.
         """
-        return self._embed([query])[0]
+        client = self.get_client()
+        return self.embed_batch(client=client, batch=[query])[0]
 
 
 @dataclass
@@ -178,48 +148,19 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             additional_headers={"User-Agent": USER_AGENT},
         )
 
-    async def _embed(self, texts: list[str]) -> list[list[float]]:
-        """
-        Embed a list of texts using the Mixedbread AI API.
+    def get_client(self) -> "AsyncMixedbreadAI":
+        return self.config.get_async_client()
 
-        Args:
-            texts (list[str]): List of texts to embed.
-
-        Returns:
-            list[list[float]]: List of embeddings.
-        """
-        client = self.config.get_async_client()
-        tasks = []
-        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
-            tasks.append(
-                client.embeddings(
-                    model=self.config.embedder_model_name,
-                    normalized=True,
-                    encoding_format=ENCODING_FORMAT,
-                    truncation_strategy=TRUNCATION_STRATEGY,
-                    request_options=self.get_request_options(),
-                    input=batch,
-                )
-            )
-        responses = await asyncio.gather(*tasks)
-        return [item.embedding for response in responses for item in response.data]
-
-    async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        """
-        Embed a list of document elements.
-
-        Args:
-            elements (list[Element]): List of document elements.
-
-        Returns:
-            list[Element]: Elements with embeddings.
-        """
-        elements = elements.copy()
-        elements_with_text = [e for e in elements if e.get("text")]
-        embeddings = await self._embed([e["text"] for e in elements_with_text])
-        for element, embedding in zip(elements_with_text, embeddings):
-            element[EMBEDDINGS_KEY] = embedding
-        return elements
+    async def embed_batch(self, client: "AsyncMixedbreadAI", batch: list[str]) -> list[list[float]]:
+        response = await client.embeddings(
+            model=self.config.embedder_model_name,
+            normalized=True,
+            encoding_format=ENCODING_FORMAT,
+            truncation_strategy=TRUNCATION_STRATEGY,
+            request_options=self.get_request_options(),
+            input=batch,
+        )
+        return [datum.embedding for datum in response.data]
 
     async def embed_query(self, query: str) -> list[float]:
         """
@@ -231,5 +172,6 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         Returns:
             list[float]: Embedding of the query.
         """
-        embedding = await self._embed([query])
+        client = self.get_client()
+        embedding = await self.embed_batch(client=client, batch=[query])
         return embedding[0]

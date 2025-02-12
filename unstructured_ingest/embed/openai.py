@@ -4,13 +4,11 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
-    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -81,23 +79,12 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
             raise self.wrap_error(e=e)
         return response.data[0].embedding
 
-    def embed_documents(self, elements: list[dict]) -> list[dict]:
-        client = self.config.get_client()
-        elements = elements.copy()
-        elements_with_text = [e for e in elements if e.get("text")]
-        texts = [e["text"] for e in elements_with_text]
-        embeddings = []
-        try:
-            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
-                response = client.embeddings.create(
-                    input=batch, model=self.config.embedder_model_name
-                )
-                embeddings.extend([data.embedding for data in response.data])
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        for element, embedding in zip(elements_with_text, embeddings):
-            element[EMBEDDINGS_KEY] = embedding
-        return elements
+    def get_client(self) -> "OpenAI":
+        return self.config.get_client()
+
+    def embed_batch(self, client: "OpenAI", batch: list[str]) -> list[list[float]]:
+        response = client.embeddings.create(input=batch, model=self.config.embedder_model_name)
+        return [data.embedding for data in response.data]
 
 
 @dataclass
@@ -117,20 +104,11 @@ class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             raise self.wrap_error(e=e)
         return response.data[0].embedding
 
-    async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        client = self.config.get_async_client()
-        elements = elements.copy()
-        elements_with_text = [e for e in elements if e.get("text")]
-        texts = [e["text"] for e in elements_with_text]
-        embeddings = []
-        try:
-            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
-                response = await client.embeddings.create(
-                    input=batch, model=self.config.embedder_model_name
-                )
-                embeddings.extend([data.embedding for data in response.data])
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        for element, embedding in zip(elements_with_text, embeddings):
-            element[EMBEDDINGS_KEY] = embedding
-        return elements
+    def get_client(self) -> "AsyncOpenAI":
+        return self.config.get_async_client()
+
+    async def embed_batch(self, client: "AsyncOpenAI", batch: list[str]) -> list[list[float]]:
+        response = await client.embeddings.create(
+            input=batch, model=self.config.embedder_model_name
+        )
+        return [data.embedding for data in response.data]
