@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, Secret, field_validator
 
@@ -29,6 +29,8 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+
+SimilarityFunction = Literal["cosine"]
 
 if TYPE_CHECKING:
     from neo4j import AsyncDriver, Auth
@@ -201,8 +203,6 @@ class _Node(BaseModel):
     labels: list[Label]
     properties: dict = Field(default_factory=dict)
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    labels: list[Label] = Field(default_factory=list)
-    properties: dict = Field(default_factory=dict)
 
     def __hash__(self):
         return hash(self.id_)
@@ -244,6 +244,10 @@ class Neo4jUploaderConfig(UploaderConfig):
     batch_size: int = Field(
         default=1000, description="Maximal number of nodes/relationships created per transaction."
     )
+    similarity_function: SimilarityFunction = Field(
+        default="cosine",
+        description="Vector similarity function used to create index on Chunk nodes",
+    )
 
 
 @dataclass
@@ -270,8 +274,13 @@ class Neo4jUploader(Uploader):
         graph_data = _GraphData.model_validate(staged_data)
         async with self.connection_config.get_client() as client:
             await self._create_uniqueness_constraints(client)
-            # TODO need chunker config
-            # await self._create_vector_index(client, self.upload_config.dimensions, self.upload_config.similarity_function)
+            embedding_dimensions = self._get_embedding_dimensions(graph_data)
+            if embedding_dimensions:
+                await self._create_vector_index(
+                    client,
+                    dimensions=embedding_dimensions,
+                    similarity_function=self.upload_config.similarity_function,
+                )
             await self._delete_old_data_if_exists(file_data, client=client)
             await self._merge_graph(graph_data=graph_data, client=client)
 
@@ -290,19 +299,21 @@ class Neo4jUploader(Uploader):
             )
 
     async def _create_vector_index(
-        self, client: AsyncDriver, dimensions: int, similarity_function: str
+        self, client: AsyncDriver, dimensions: int, similarity_function: SimilarityFunction
     ) -> None:
         label = Label.CHUNK
         logger.info(
-            f"Adding id uniqueness constraint for nodes labeled '{label.value}'"
-            " if it does not already exist."
+            f"Creating index on nodes labeled '{label.value}' if it does not already exist."
         )
         index_name = f"{label.value.lower()}_vector"
         await client.execute_query(
             f"""
             CREATE VECTOR INDEX {index_name} IF NOT EXISTS
             FOR (n:{label.value}) ON n.embedding
-            OPTIONS {{`vector.similarity_function`: '{similarity_function}', `vector.dimensions`: {dimensions}}}
+            OPTIONS {{indexConfig: {{
+                `vector.similarity_function`: '{similarity_function}',
+                `vector.dimensions`: {dimensions}}}
+            }}
             """
         )
 
@@ -320,16 +331,6 @@ class Neo4jUploader(Uploader):
             f"Deleted {summary.counters.nodes_deleted} nodes"
             f" and {summary.counters.relationships_deleted} relationships."
         )
-
-    def _main_label(self, labels: list[Label]) -> Label:
-        if labels is None or len(labels) == 0:
-            return None
-
-        for label in Label:
-            if label in labels:
-                return label
-            else:
-                return labels[0]
 
     async def _merge_graph(self, graph_data: _GraphData, client: AsyncDriver) -> None:
         nodes_by_labels: defaultdict[Label, list[_Node]] = defaultdict(list)
@@ -441,10 +442,18 @@ class Neo4jUploader(Uploader):
             """
         parameters = {
             "edges": [
-                {"source": edge.source_id, "destination": edge.destination_id} for edge in edges
+                {"source": edge.source.id_, "destination": edge.destination.id_} for edge in edges
             ]
         }
         return query_string, parameters
+
+    def _get_embedding_dimensions(self, graph_data: _GraphData) -> int | None:
+        """Embedding dimensions inferred from chunk nodes or None if it can't be determined."""
+        for node in graph_data.nodes:
+            if Label.CHUNK in node.labels and "embeddings" in node.properties:
+                return len(node.properties["embeddings"])
+
+        return None
 
 
 neo4j_destination_entry = DestinationRegistryEntry(
