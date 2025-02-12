@@ -30,7 +30,7 @@ idna==3.10
     #   requests
 jiter==0.8.2
     # via openai
-openai==1.61.1
+openai==1.62.0
     # via -r ./embed/octoai.in
 pydantic==2.10.6
     # via openai

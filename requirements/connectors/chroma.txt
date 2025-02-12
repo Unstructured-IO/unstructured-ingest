@@ -113,7 +113,7 @@ packaging==24.2
     # via
     #   huggingface-hub
     #   onnxruntime
-posthog==3.12.1
+posthog==3.13.0
     # via chromadb
 protobuf==4.23.4
     # via

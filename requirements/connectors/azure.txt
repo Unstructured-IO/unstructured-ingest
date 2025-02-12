@@ -19,7 +19,7 @@ azure-core==1.32.0
     #   azure-storage-blob
 azure-datalake-store==0.0.53
     # via adlfs
-azure-identity==1.19.0
+azure-identity==1.20.0
     # via adlfs
 azure-storage-blob==12.24.1
     # via adlfs

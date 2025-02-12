@@ -29,3 +29,6 @@ numpy<2
 
 # deltalake >=0.23.0 currently has a bug with the versio of pyarrow it installs
 deltalake<=0.22.0
+
+# TODO: investigate breaking changed introdced in lancedb>0.15.0
+lancedb<=0.15.0
