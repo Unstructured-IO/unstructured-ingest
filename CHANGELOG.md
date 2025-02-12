@@ -1,6 +1,6 @@
 ## 0.5.2
 
-### Enchancements
+### Enhancements
 
 * **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
 * **Improved google drive precheck mechanism**
