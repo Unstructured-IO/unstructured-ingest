@@ -185,12 +185,10 @@ class PineconeUploader(VectorDBUploader):
 
     def precheck(self):
         try:
-            pc = self.connection_config.get_client()
-
-            # just checking connection here
+            # just a connection check here. not an actual index_exists check
             self.index_exists("just-checking-our-connection")
 
-            if self.connection_config.index_name and not pc.has_index(
+            if self.connection_config.index_name and not self.index_exists(
                 self.connection_config.index_name
             ):
                 raise DestinationConnectionError(
