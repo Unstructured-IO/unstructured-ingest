@@ -1,6 +1,8 @@
 import os
+import uuid
 
 import pytest
+from googleapiclient.errors import HttpError
 
 from test.integration.connectors.utils.constants import (
     SOURCE_TAG,
@@ -13,6 +15,9 @@ from test.integration.connectors.utils.validation.source import (
     update_fixtures,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.error import (
+    SourceConnectionError,
+)
 from unstructured_ingest.v2.interfaces import Downloader, Indexer
 from unstructured_ingest.v2.processes.connectors.google_drive import (
     CONNECTOR_TYPE,
@@ -23,6 +28,49 @@ from unstructured_ingest.v2.processes.connectors.google_drive import (
     GoogleDriveIndexer,
     GoogleDriveIndexerConfig,
 )
+
+
+@pytest.fixture
+def google_drive_connection_config():
+    """
+    Build a valid GoogleDriveConnectionConfig using the environment variables.
+    Expects:
+      - GOOGLE_DRIVE_ID
+      - GOOGLE_DRIVE_SERVICE_KEY
+    """
+    drive_id = os.getenv("GOOGLE_DRIVE_ID")
+    service_key = os.getenv("GOOGLE_DRIVE_SERVICE_KEY")
+    if not drive_id or not service_key:
+        pytest.skip("Google Drive credentials not provided in environment variables.")
+
+    access_config = GoogleDriveAccessConfig(service_account_key=service_key)
+    return GoogleDriveConnectionConfig(drive_id=drive_id, access_config=access_config)
+
+
+@pytest.fixture
+def google_drive_empty_folder(google_drive_connection_config):
+    """
+    Creates an empty folder on Google Drive for testing the "empty folder" case.
+    The folder is deleted after the test.
+    """
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+
+    access_config = google_drive_connection_config.access_config.get_secret_value()
+    creds = service_account.Credentials.from_service_account_info(access_config.service_account_key)
+    service = build("drive", "v3", credentials=creds)
+
+    # Create an empty folder.
+    file_metadata = {
+        "name": f"utic-empty-folder-{uuid.uuid4()}",
+        "mimeType": "application/vnd.google-apps.folder",
+    }
+    folder = service.files().create(body=file_metadata, fields="id, name").execute()
+    folder_id = folder.get("id")
+    try:
+        yield folder_id
+    finally:
+        service.files().delete(fileId=folder_id).execute()
 
 
 @requires_env("GOOGLE_DRIVE_SERVICE_KEY")
@@ -114,3 +162,96 @@ def source_connector_validation(
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
         )
+
+
+# Precheck fails when the drive ID has an appended parameter (simulate copy-paste error)
+@pytest.mark.tags("google-drive", "precheck")
+@requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+def test_google_drive_precheck_invalid_parameter(google_drive_connection_config):
+    # Append a query parameter as often happens when copying from a URL.
+    invalid_drive_id = google_drive_connection_config.drive_id + "?usp=sharing"
+    connection_config = GoogleDriveConnectionConfig(
+        drive_id=invalid_drive_id,
+        access_config=google_drive_connection_config.access_config,
+    )
+    index_config = GoogleDriveIndexerConfig(recursive=True)
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    with pytest.raises(SourceConnectionError) as excinfo:
+        indexer.precheck()
+    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+
+
+# Precheck fails due to lack of permission (simulate via monkeypatching).
+@pytest.mark.tags("google-drive", "precheck")
+@requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+def test_google_drive_precheck_no_permission(google_drive_connection_config, monkeypatch):
+    index_config = GoogleDriveIndexerConfig(recursive=True)
+    indexer = GoogleDriveIndexer(
+        connection_config=google_drive_connection_config,
+        index_config=index_config,
+    )
+
+    # Monkeypatch get_root_info to always raise an HTTP 403 error.
+    def fake_get_root_info(files_client, object_id):
+        raise HttpError(
+            resp=type("Response", (), {"status": 403, "reason": "Forbidden"})(),
+            content=b"Forbidden",
+        )
+
+    monkeypatch.setattr(indexer, "get_root_info", fake_get_root_info)
+    with pytest.raises(SourceConnectionError) as excinfo:
+        indexer.precheck()
+    assert "forbidden" in str(excinfo.value).lower() or "permission" in str(excinfo.value).lower()
+
+
+# Precheck fails when the folder is empty.
+# @pytest.mark.tags("google-drive", "precheck")
+# @requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+# def test_google_drive_precheck_empty_folder(
+#     google_drive_connection_config, google_drive_empty_folder
+# ):
+#     # Use the empty folder's ID as the target.
+#     connection_config = GoogleDriveConnectionConfig(
+#         drive_id=google_drive_empty_folder,
+#         access_config=google_drive_connection_config.access_config,
+#     )
+
+#     index_config = GoogleDriveIndexerConfig(recursive=True)
+#     indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+#     with pytest.raises(SourceConnectionError) as excinfo:
+#         indexer.precheck()
+#     assert "empty folder" in str(excinfo.value).lower()
+
+
+@pytest.mark.tags("google-drive", "count", "integration")
+@requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+def test_google_drive_count_files(google_drive_connection_config):
+    """
+    This test verifies that the count_files_recursively method returns the expected count of files.
+    According to the test credentials, there are 3 files in the root directory and 1 nested file,
+    so the total count should be 4.
+    """
+    # I assumed that we're applying the same extension filter as with other tests
+    # However there's 6 files in total in the test dir
+    extensions_filter = ["pdf", "docx"]
+    with google_drive_connection_config.get_client() as client:
+        count = GoogleDriveIndexer.count_files_recursively(
+            client, google_drive_connection_config.drive_id, extensions_filter
+        )
+    assert count == 4, f"Expected file count of 4, but got {count}"
+
+
+# Precheck fails with a completely invalid drive ID.
+@pytest.mark.tags("google-drive", "precheck")
+@requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
+    invalid_drive_id = "invalid_drive_id"
+    connection_config = GoogleDriveConnectionConfig(
+        drive_id=invalid_drive_id,
+        access_config=google_drive_connection_config.access_config,
+    )
+    index_config = GoogleDriveIndexerConfig(recursive=True)
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    with pytest.raises(SourceConnectionError) as excinfo:
+        indexer.precheck()
+    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()

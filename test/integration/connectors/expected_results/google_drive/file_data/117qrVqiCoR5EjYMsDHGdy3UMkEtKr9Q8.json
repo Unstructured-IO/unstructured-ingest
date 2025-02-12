@@ -1,0 +1,114 @@
+{
+  "identifier": "117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8",
+  "connector_type": "google_drive",
+  "source_identifiers": {
+    "filename": "test-drive-doc.docx",
+    "fullpath": "utic-test-ingest-fixtures/test-drive-doc.docx",
+    "rel_path": "test-drive-doc.docx"
+  },
+  "metadata": {
+    "url": "https://drive.google.com/uc?id=117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8&export=download",
+    "version": "32",
+    "record_locator": {
+      "file_id": "117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8"
+    },
+    "date_created": "1686809758.931",
+    "date_modified": "1686809744.0",
+    "date_processed": null,
+    "permissions_data": [
+      {
+        "id": "anyoneWithLink",
+        "type": "anyone",
+        "kind": "drive#permission",
+        "role": "reader",
+        "allowFileDiscovery": false
+      },
+      {
+        "id": "18298851591250030956",
+        "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+        "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "04774006893477068632",
+        "displayName": "ryan",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+        "emailAddress": "ryan@unstructured.io",
+        "role": "owner",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "09147371668407854156",
+        "displayName": "roman",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+        "emailAddress": "roman@unstructured.io",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      }
+    ],
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "fileExtension": "docx",
+    "md5Checksum": "b6bd26fa317493cf447882754dac5e9d",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "headRevisionId": "0B5wM1A2PIvPWOVFKa0U4MHQ1T2E0b0wzSWtGSkRZR1hwRUpzPQ",
+    "webViewLink": "https://docs.google.com/document/d/117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8/edit?usp=drivesdk&ouid=116756094827511368604&rtpof=true&sd=true",
+    "id": "117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8",
+    "originalFilename": "test-drive-doc.docx",
+    "capabilities": {
+      "canChangeViewersCanCopyContent": false,
+      "canEdit": true,
+      "canCopy": true,
+      "canComment": true,
+      "canAddChildren": false,
+      "canDelete": false,
+      "canDownload": true,
+      "canListChildren": false,
+      "canRemoveChildren": false,
+      "canRename": true,
+      "canTrash": false,
+      "canReadRevisions": true,
+      "canChangeCopyRequiresWriterPermission": false,
+      "canMoveItemIntoTeamDrive": false,
+      "canUntrash": false,
+      "canModifyContent": true,
+      "canMoveItemOutOfDrive": false,
+      "canAddMyDriveParent": false,
+      "canRemoveMyDriveParent": true,
+      "canMoveItemWithinDrive": true,
+      "canShare": true,
+      "canMoveChildrenWithinDrive": false,
+      "canModifyContentRestriction": true,
+      "canChangeSecurityUpdateEnabled": false,
+      "canAcceptOwnership": false,
+      "canReadLabels": false,
+      "canModifyLabels": false,
+      "canModifyEditorContentRestriction": true,
+      "canModifyOwnerContentRestriction": false,
+      "canRemoveContentRestriction": false
+    },
+    "permissionIds": [
+      "anyoneWithLink",
+      "18298851591250030956",
+      "04774006893477068632",
+      "09147371668407854156"
+    ],
+    "sha1Checksum": "70daaa25dd03bc56192ccc18fc25f53aa06b7b36",
+    "sha256Checksum": "9dd205eea9d2fa9f4e7a993697c8d5b6c4ec7a92ccd12fff772b1dff084deca8"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmp9k8p4569/test-drive-doc.docx",
+  "display_name": null
+}

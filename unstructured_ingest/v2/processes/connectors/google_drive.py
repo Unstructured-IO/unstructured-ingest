@@ -132,12 +132,141 @@ class GoogleDriveIndexer(Indexer):
         ]
     )
 
-    def precheck(self) -> None:
+    @staticmethod
+    def verify_drive_api_enabled(client) -> None:
+        from googleapiclient.errors import HttpError
+
+        """
+        Makes a lightweight API call to verify that the Drive API is enabled.
+        If the API is not enabled, an HttpError should be raised.
+        """
         try:
-            self.connection_config.get_client()
+            # A very minimal call: list 1 file from the drive.
+            client.list(spaces="drive", pageSize=1, fields="files(id)").execute()
+        except HttpError as e:
+            error_content = e.content.decode() if hasattr(e, "content") else ""
+            lower_error = error_content.lower()
+            if "drive api" in lower_error and (
+                "not enabled" in lower_error or "not been used" in lower_error
+            ):
+                raise SourceConnectionError(
+                    "Google Drive API is not enabled for your project. \
+                    Please enable it in the Google Cloud Console."
+                )
+            else:
+                raise SourceConnectionError("Google drive API unreachable for an unknown reason!")
+
+    @staticmethod
+    def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
+        """
+        Count non-folder files recursively under the given folder.
+        If `extensions` is provided, only count files
+        whose `fileExtension` matches one of the values.
+        """
+        count = 0
+        stack = [folder_id]
+        while stack:
+            current_folder = stack.pop()
+            # Always list all items under the current folder.
+            query = f"'{current_folder}' in parents"
+            page_token = None
+            while True:
+                response = files_client.list(
+                    spaces="drive",
+                    q=query,
+                    fields="nextPageToken, files(id, mimeType, fileExtension)",
+                    pageToken=page_token,
+                    pageSize=1000,
+                ).execute()
+                for item in response.get("files", []):
+                    if item.get("mimeType") == "application/vnd.google-apps.folder":
+                        # Always traverse sub-folders regardless of extension filter.
+                        stack.append(item["id"])
+                    else:
+                        if extensions:
+                            # Use a case-insensitive comparison for the file extension.
+                            file_ext = (item.get("fileExtension") or "").lower()
+                            valid_exts = [e.lower() for e in extensions]
+                            if file_ext in valid_exts:
+                                count += 1
+                        else:
+                            count += 1
+                page_token = response.get("nextPageToken")
+                if not page_token:
+                    break
+        return count
+
+    def precheck(self) -> None:
+        """
+        Enhanced precheck that verifies not only connectivity
+        but also that the provided drive_id is valid and accessible.
+        """
+        try:
+            with self.connection_config.get_client() as client:
+                # First, verify that the Drive API is enabled.
+                self.verify_drive_api_enabled(client)
+
+                # Try to retrieve metadata for the drive id.
+                # This will catch errors such as an invalid drive id or insufficient permissions.
+                root_info = self.get_root_info(
+                    files_client=client, object_id=self.connection_config.drive_id
+                )
+                logger.info(
+                    f"Successfully retrieved drive root info: "
+                    f"{root_info.get('name', 'Unnamed')} (ID: {root_info.get('id')})"
+                )
+
+            # If the target is a folder, perform file count check.
+            if self.is_dir(root_info):
+                if self.index_config.recursive:
+                    file_count = self.count_files_recursively(
+                        client,
+                        self.connection_config.drive_id,
+                        extensions=self.index_config.extensions,
+                    )
+                    if file_count == 0:
+                        logger.warning(
+                            "Empty folder: no files found recursively in the folder. \
+                             Please verify that the folder contains files and \
+                             that the service account has proper permissions."
+                        )
+                        # raise SourceConnectionError(
+                        #     "Empty folder: no files found recursively in the folder. "
+                        #     "Please verify that the folder contains files and \
+                        #     that the service account has proper permissions."
+                        # )
+                    else:
+                        logger.info(f"Found {file_count} files recursively in the folder.")
+                else:
+                    # Non-recursive: check for at least one immediate non-folder child.
+                    response = client.list(
+                        spaces="drive",
+                        fields="files(id)",
+                        pageSize=1,
+                        q=f"'{self.connection_config.drive_id}' in parents",
+                    ).execute()
+                    if not response.get("files"):
+                        logger.warning(
+                            "Empty folder: no files found at the folder's root level. "
+                            "Please verify that the folder contains files and \
+                            that the service account has proper permissions."
+                        )
+                        # raise SourceConnectionError(
+                        #     "Empty folder: no files found at the folder's root level. "
+                        #     "Please verify that the folder contains files and \
+                        #     that the service account has proper permissions."
+                        # )
+                    else:
+                        logger.info("Found files at the folder's root level.")
+            else:
+                # If the target is a file, precheck passes.
+                logger.info("Drive ID corresponds to a file. Precheck passed.")
+
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(
+                "Failed to validate Google Drive connection during precheck", exc_info=True
+            )
+            raise SourceConnectionError(f"Precheck failed: {e}")
 
     @staticmethod
     def is_dir(record: dict) -> bool:
