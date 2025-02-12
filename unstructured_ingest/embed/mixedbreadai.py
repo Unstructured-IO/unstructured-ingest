@@ -82,7 +82,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
-        return self._embed(["Q"])[0]
+        return self.embed_query(query="Q")
 
     @requires_dependencies(
         ["mixedbread_ai"],
@@ -132,8 +132,7 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def get_exemplary_embedding(self) -> list[float]:
         """Get an exemplary embedding to determine dimensions and unit vector status."""
-        embedding = await self._embed(["Q"])
-        return embedding[0]
+        return await self.embed_query(query="Q")
 
     @requires_dependencies(
         ["mixedbread_ai"],
