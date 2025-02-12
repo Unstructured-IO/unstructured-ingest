@@ -27,7 +27,6 @@ def generate_embedder_config_params() -> dict:
             if random.random() < 0.5
             else None
         )
-        params["cache_folder"] = fake.file_path() if random.random() < 0.5 else None
     return params
 
 
