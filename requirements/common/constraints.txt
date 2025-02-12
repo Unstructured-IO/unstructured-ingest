@@ -26,3 +26,6 @@ wrapt>=1.14.0
 # instead of 7.2.0. Need to investigate
 importlib-metadata==7.1.0
 numpy<2
+
+# deltalake >=0.23.0 currently has a bug with the versio of pyarrow it installs
+deltalake<=0.22.0
