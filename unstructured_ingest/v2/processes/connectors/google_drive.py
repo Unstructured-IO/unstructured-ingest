@@ -225,9 +225,11 @@ class GoogleDriveIndexer(Indexer):
                         extensions=self.index_config.extensions,
                     )
                     if file_count == 0:
-                        logger.warning("Empty folder: no files found recursively in the folder. \
+                        logger.warning(
+                            "Empty folder: no files found recursively in the folder. \
                              Please verify that the folder contains files and \
-                             that the service account has proper permissions.")
+                             that the service account has proper permissions."
+                        )
                         # raise SourceConnectionError(
                         #     "Empty folder: no files found recursively in the folder. "
                         #     "Please verify that the folder contains files and \
