@@ -32,3 +32,6 @@ deltalake<=0.22.0
 
 # TODO: investigate breaking changed introdced in lancedb>0.15.0
 lancedb<=0.15.0
+
+# Vulnerability found in versions < 4.48.0
+transformers>=4.48.0
