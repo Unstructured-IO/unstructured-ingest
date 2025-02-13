@@ -248,6 +248,9 @@ class Neo4jUploaderConfig(UploaderConfig):
         default="cosine",
         description="Vector similarity function used to create index on Chunk nodes",
     )
+    create_destination: bool = Field(
+        default=True, description="Create destination if it does not exist"
+    )
 
 
 @dataclass
@@ -275,7 +278,7 @@ class Neo4jUploader(Uploader):
         async with self.connection_config.get_client() as client:
             await self._create_uniqueness_constraints(client)
             embedding_dimensions = self._get_embedding_dimensions(graph_data)
-            if embedding_dimensions:
+            if embedding_dimensions and self.upload_config.create_destination:
                 await self._create_vector_index(
                     client,
                     dimensions=embedding_dimensions,
