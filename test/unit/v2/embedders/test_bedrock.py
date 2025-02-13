@@ -15,7 +15,7 @@ def generate_embedder_config_params() -> dict:
         "region_name": fake.city(),
     }
     if random.random() < 0.5:
-        params["embed_model_name"] = fake.word()
+        params["embedder_model_name"] = fake.word()
     return params
 
 
