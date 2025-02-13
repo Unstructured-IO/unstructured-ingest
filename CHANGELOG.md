@@ -1,6 +1,8 @@
-## 0.5.3-dev0
+## 0.5.3-dev1
 
 ### Enhancements
+
+* **Optimize embedder code** - Move duplicate code to base interface, exit early if no elements have text. 
 
 ### Fixes
 
