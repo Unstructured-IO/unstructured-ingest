@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 
 
 class HuggingFaceEmbeddingConfig(EmbeddingConfig):
-    embedder_model_name: Optional[str] = Field(
-        default="sentence-transformers/all-MiniLM-L6-v2", alias="model_name"
-    )
+    embedder_model_name: Optional[str] = Field(default="all-MiniLM-L6-v2", alias="model_name")
     embedder_model_kwargs: Optional[dict] = Field(
         default_factory=lambda: {"device": "cpu"}, alias="model_kwargs"
     )
