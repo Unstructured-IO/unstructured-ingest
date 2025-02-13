@@ -226,7 +226,7 @@ class EmbeddingConfig(BaseConfig):
             )
 
             return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig(**kwargs))
-        elif self.provider == "aws-bedrock":
+        elif self.provider == "bedrock":
             from unstructured_ingest.embed.bedrock import (
                 BedrockEmbeddingConfig,
                 BedrockEmbeddingEncoder,

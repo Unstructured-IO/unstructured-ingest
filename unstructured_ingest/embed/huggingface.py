@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import Field
 
-from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder, EmbeddingConfig
+from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
+    BaseEmbeddingEncoder,
+    EmbeddingConfig,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -33,6 +37,11 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
             **self.embedder_model_kwargs,
         )
 
+    def get_encoder_kwargs(self) -> dict:
+        encoder_kwargs = self.encode_kwargs or {}
+        encoder_kwargs["batch_size"] = self.batch_size
+        return encoder_kwargs
+
 
 @dataclass
 class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
@@ -43,10 +52,13 @@ class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def _embed_documents(self, texts: list[str]) -> list[list[float]]:
         client = self.config.get_client()
-        embeddings = client.encode(texts, **self.config.encode_kwargs)
+        embeddings = client.encode(texts, **self.config.get_encoder_kwargs())
         return embeddings.tolist()
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements

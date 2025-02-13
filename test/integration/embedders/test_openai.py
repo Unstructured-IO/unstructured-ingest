@@ -47,9 +47,7 @@ def test_raw_openai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1536,)
-    )
+    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1536)
 
 
 def test_raw_openai_embedder_invalid_credentials():
@@ -72,5 +70,5 @@ async def test_raw_async_openai_embedder(embedder_file: Path):
         )
     )
     await validate_raw_embedder_async(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1536,)
+        embedder=embedder, embedder_file=embedder_file, expected_dimension=1536
     )

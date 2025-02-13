@@ -47,9 +47,7 @@ def test_raw_octoai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
-    validate_raw_embedder(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1024,)
-    )
+    validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1024)
 
 
 @pytest.mark.skip(reason="Unexpected connection error at the moment")
@@ -73,5 +71,5 @@ async def test_raw_async_octoai_embedder(embedder_file: Path):
         )
     )
     await validate_raw_embedder_async(
-        embedder=embedder, embedder_file=embedder_file, expected_dimensions=(1024,)
+        embedder=embedder, embedder_file=embedder_file, expected_dimension=1024
     )

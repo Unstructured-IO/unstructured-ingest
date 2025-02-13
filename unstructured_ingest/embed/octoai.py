@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -88,15 +90,22 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return response.data[0].embedding
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        texts = [e.get("text", "") for e in elements]
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
+        embeddings = []
+        client = self.config.get_client()
         try:
-            client = self.config.get_client()
-            response = client.embeddings.create(input=texts, model=self.config.embedder_model_name)
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
+                response = client.embeddings.create(
+                    input=batch, model=self.config.embedder_model_name
+                )
+                embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        embeddings = [data.embedding for data in response.data]
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
 
 @dataclass
@@ -117,14 +126,19 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return response.data[0].embedding
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        texts = [e.get("text", "") for e in elements]
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
         client = self.config.get_async_client()
+        embeddings = []
         try:
-            response = await client.embeddings.create(
-                input=texts, model=self.config.embedder_model_name
-            )
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
+                response = await client.embeddings.create(
+                    input=batch, model=self.config.embedder_model_name
+                )
+                embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        embeddings = [data.embedding for data in response.data]
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements

@@ -417,7 +417,7 @@ class CliEmbeddingConfig(EmbeddingConfig, CliMixin):
         embed_providers = [
             "openai",
             "huggingface",
-            "aws-bedrock",
+            "bedrock",
             "vertexai",
             "voyageai",
             "octoai",

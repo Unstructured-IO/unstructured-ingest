@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING, Optional
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     ProviderError,
@@ -25,9 +27,13 @@ if TYPE_CHECKING:
 
 
 class VoyageAIEmbeddingConfig(EmbeddingConfig):
+    batch_size: int = Field(
+        default=32,
+        le=128,
+        description="Batch size for embedding requests. VoyageAI has a limit of 128.",
+    )
     api_key: SecretStr
     embedder_model_name: str = Field(default="voyage-3", alias="model_name")
-    batch_size: Optional[int] = Field(default=None)
     truncation: Optional[bool] = Field(default=None)
     max_retries: int = 0
     timeout_in_seconds: Optional[int] = None
@@ -91,16 +97,23 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self.config.wrap_error(e=e)
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client: VoyageAIClient = self.config.get_client()
+        client = self.config.get_client()
+        embeddings = []
         try:
-            response = client.embed(texts=elements, model=self.config.embedder_model_name)
+            for batch in batch_generator(elements, batch_size=self.config.batch_size):
+                response = client.embed(texts=batch, model=self.config.embedder_model_name)
+                embeddings.extend(response.embeddings)
         except Exception as e:
             raise self.wrap_error(e=e)
-        return response.embeddings
+        return embeddings
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     def embed_query(self, query: str) -> list[float]:
         return self._embed_documents(elements=[query])[0]
@@ -115,15 +128,24 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()
+        embeddings = []
         try:
-            response = await client.embed(texts=elements, model=self.config.embedder_model_name)
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
+                response = await client.embed(texts=batch, model=self.config.embedder_model_name)
+                embeddings.extend(response.embeddings)
         except Exception as e:
             raise self.wrap_error(e=e)
-        return response.embeddings
+        return embeddings
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = await self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     async def embed_query(self, query: str) -> list[float]:
         embedding = await self._embed_documents(elements=[query])

@@ -112,6 +112,8 @@ class HtmlMixin(BaseModel):
     def write_content(self, content: bytes, path: Path) -> None:
         if path.exists() and path.is_file() and not self.force_download:
             return
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True)
         with path.open("wb") as f:
             f.write(content)
 

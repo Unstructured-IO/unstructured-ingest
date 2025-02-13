@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
@@ -66,18 +68,27 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self._embed_documents(elements=[query])[0]
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_client()
+        embeddings = []
         try:
-            outputs = client.embeddings.create(
-                model=self.config.embedder_model_name, input=elements
-            )
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
+                outputs = client.embeddings.create(
+                    model=self.config.embedder_model_name, input=batch
+                )
+                embeddings.extend([outputs.data[i].embedding for i in range(len(batch))])
         except Exception as e:
             raise self.wrap_error(e=e)
-        return [outputs.data[i].embedding for i in range(len(elements))]
+        return embeddings
 
 
 @dataclass
@@ -92,15 +103,24 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return embedding[0]
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = await self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()
+        embeddings = []
         try:
-            outputs = await client.embeddings.create(
-                model=self.config.embedder_model_name, input=elements
-            )
+            for batch in batch_generator(
+                elements, batch_size=self.config.batch_size or len(elements)
+            ):
+                outputs = await client.embeddings.create(
+                    model=self.config.embedder_model_name, input=batch
+                )
+                embeddings.extend([outputs.data[i].embedding for i in range(len(batch))])
         except Exception as e:
             raise self.wrap_error(e=e)
-        return [outputs.data[i].embedding for i in range(len(elements))]
+        return embeddings

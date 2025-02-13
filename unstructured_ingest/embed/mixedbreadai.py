@@ -6,14 +6,15 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 USER_AGENT = "@mixedbread-ai/unstructured"
-BATCH_SIZE = 128
 TIMEOUT = 60
 MAX_RETRIES = 3
 ENCODING_FORMAT = "float"
@@ -109,13 +110,10 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         Returns:
             list[list[float]]: List of embeddings.
         """
-        batch_size = BATCH_SIZE
-        batch_itr = range(0, len(texts), batch_size)
 
         responses = []
         client = self.config.get_client()
-        for i in batch_itr:
-            batch = texts[i : i + batch_size]
+        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
             response = client.embeddings(
                 model=self.config.embedder_model_name,
                 normalized=True,
@@ -137,8 +135,12 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         Returns:
             list[Element]: Elements with embeddings.
         """
-        embeddings = self._embed([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     def embed_query(self, query: str) -> list[float]:
         """
@@ -186,13 +188,9 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         Returns:
             list[list[float]]: List of embeddings.
         """
-        batch_size = BATCH_SIZE
-        batch_itr = range(0, len(texts), batch_size)
-
         client = self.config.get_async_client()
         tasks = []
-        for i in batch_itr:
-            batch = texts[i : i + batch_size]
+        for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
             tasks.append(
                 client.embeddings(
                     model=self.config.embedder_model_name,
@@ -216,8 +214,12 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         Returns:
             list[Element]: Elements with embeddings.
         """
-        embeddings = await self._embed([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = await self._embed([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     async def embed_query(self, query: str) -> list[float]:
         """
