@@ -15,7 +15,13 @@ from unstructured_ingest.embed.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
+from unstructured_ingest.v2.errors import (
+    ProviderError,
+    RateLimitError,
+    UserAuthError,
+    UserError,
+    is_internal_error,
+)
 
 if TYPE_CHECKING:
     from botocore.client import BaseClient
@@ -54,6 +60,8 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         from botocore.exceptions import ClientError
 
         if isinstance(e, ClientError):
@@ -148,6 +156,8 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         elements = elements.copy()
         elements_with_text = [e for e in elements if e.get("text")]
+        if not elements_with_text:
+            return elements
         embeddings = [self.embed_query(query=e["text"]) for e in elements_with_text]
         for element, embedding in zip(elements_with_text, embeddings):
             element[EMBEDDINGS_KEY] = embedding
