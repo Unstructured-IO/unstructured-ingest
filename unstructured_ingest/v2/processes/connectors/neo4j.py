@@ -385,7 +385,8 @@ class Neo4jUploader(Uploader):
 
         results: list[EagerResult] = []
         logger.info(
-            f"Executing {len(queries_with_parameters)} {'parallel' if in_parallel else 'sequential'} Cypher statements."
+            f"Executing {len(queries_with_parameters)} "
+            + f"{'parallel' if in_parallel else 'sequential'} Cypher statements."
         )
         if in_parallel:
             results = await asyncio.gather(
@@ -402,7 +403,9 @@ class Neo4jUploader(Uploader):
         nodeCount = sum([res.summary.counters.nodes_created for res in results])
         relCount = sum([res.summary.counters.relationships_created for res in results])
         logger.info(
-            f"Finished executing all ({len(queries_with_parameters)}) {'parallel' if in_parallel else 'sequential'} Cypher statements. Created {nodeCount} nodes, {relCount} relationships."
+            f"Finished executing all ({len(queries_with_parameters)}) "
+            + f"{'parallel' if in_parallel else 'sequential'} Cypher statements. "
+            + f"Created {nodeCount} nodes, {relCount} relationships."
         )
 
     @staticmethod
@@ -420,7 +423,7 @@ class Neo4jUploader(Uploader):
             "nodes": [
                 {
                     "id": node.id_,
-                    "labels": [l.value for l in node.labels if l != label],
+                    "labels": [l.value for l in node.labels if l != label],  # noqa: E741
                     "vector": node.properties.pop("embedding", None),
                     "properties": node.properties,
                 }
