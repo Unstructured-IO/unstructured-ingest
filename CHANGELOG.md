@@ -1,6 +1,8 @@
-## 0.5.3-dev0
+## 0.5.3-dev1
 
 ### Enhancements
+
+* **Improvements on Neo4J uploader, and ability to create a vector index**
 
 ### Fixes
 
