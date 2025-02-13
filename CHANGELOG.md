@@ -1,8 +1,10 @@
-## 0.5.3-dev0
+## 0.5.3
 
 ### Enhancements
 
 ### Fixes
+
+* **Fix bedrock embedder: rename embed_model_name to embedder_model_name**
 
 ## 0.5.2
 
