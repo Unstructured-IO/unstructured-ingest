@@ -2,6 +2,8 @@
 
 ### Enhancements
 
+* **Optimize embedder code** - Move duplicate code to base interface, exit early if no elements have text. 
+
 ### Fixes
 
 * **Fix bedrock embedder: rename embed_model_name to embedder_model_name**
