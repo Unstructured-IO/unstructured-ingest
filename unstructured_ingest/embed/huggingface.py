@@ -47,7 +47,7 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
 class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
     config: HuggingFaceEmbeddingConfig
 
-    def embed_query(self, query: str) -> list[float]:
+    def _embed_query(self, query: str) -> list[float]:
         return self._embed_documents(texts=[query])[0]
 
     def _embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -58,6 +58,8 @@ class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         elements = elements.copy()
         elements_with_text = [e for e in elements if e.get("text")]
+        if not elements_with_text:
+            return elements
         embeddings = self._embed_documents([e["text"] for e in elements_with_text])
         for element, embedding in zip(elements_with_text, embeddings):
             element[EMBEDDINGS_KEY] = embedding

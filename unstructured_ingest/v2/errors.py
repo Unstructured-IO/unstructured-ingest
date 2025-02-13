@@ -16,3 +16,10 @@ class QuotaError(UserError):
 
 class ProviderError(Exception):
     pass
+
+
+recognized_errors = [UserError, UserAuthError, RateLimitError, QuotaError, ProviderError]
+
+
+def is_internal_error(e: Exception) -> bool:
+    return any(isinstance(e, recognized_error) for recognized_error in recognized_errors)
