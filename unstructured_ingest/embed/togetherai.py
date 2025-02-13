@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
@@ -67,8 +68,12 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self._embed_documents(elements=[query])[0]
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_client()
@@ -98,8 +103,12 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return embedding[0]
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        embeddings = await self._embed_documents([e["text"] for e in elements_with_text])
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
     async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
         client = self.config.get_async_client()

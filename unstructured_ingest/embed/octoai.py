@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
+    EMBEDDINGS_KEY,
     AsyncBaseEmbeddingEncoder,
     BaseEmbeddingEncoder,
     EmbeddingConfig,
@@ -89,7 +90,9 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return response.data[0].embedding
 
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        texts = [e.get("text", "") for e in elements]
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
         embeddings = []
         client = self.config.get_client()
         try:
@@ -100,8 +103,9 @@ class OctoAIEmbeddingEncoder(BaseEmbeddingEncoder):
                 embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
 
 @dataclass
@@ -122,7 +126,9 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return response.data[0].embedding
 
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        texts = [e.get("text", "") for e in elements]
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
         client = self.config.get_async_client()
         embeddings = []
         try:
@@ -133,5 +139,6 @@ class AsyncOctoAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
                 embeddings.extend([data.embedding for data in response.data])
         except Exception as e:
             raise self.wrap_error(e=e)
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements

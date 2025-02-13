@@ -1,0 +1,114 @@
+{
+  "identifier": "1SpQuE7jHz9nMt5hfQXsiok1SgIdRYX5o",
+  "connector_type": "google_drive",
+  "source_identifiers": {
+    "filename": "fake.docx",
+    "fullpath": "utic-test-ingest-fixtures/fake.docx",
+    "rel_path": "fake.docx"
+  },
+  "metadata": {
+    "url": "https://drive.google.com/uc?id=1SpQuE7jHz9nMt5hfQXsiok1SgIdRYX5o&export=download",
+    "version": "36",
+    "record_locator": {
+      "file_id": "1SpQuE7jHz9nMt5hfQXsiok1SgIdRYX5o"
+    },
+    "date_created": "1686809759.687",
+    "date_modified": "1686809743.0",
+    "date_processed": null,
+    "permissions_data": [
+      {
+        "id": "anyoneWithLink",
+        "type": "anyone",
+        "kind": "drive#permission",
+        "role": "reader",
+        "allowFileDiscovery": false
+      },
+      {
+        "id": "18298851591250030956",
+        "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+        "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "04774006893477068632",
+        "displayName": "ryan",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXeWpu7QcZuYqIl3p1mwqzS8XGFJ4RqA3Xjljfkm1DcFZ9M7A=s64",
+        "emailAddress": "ryan@unstructured.io",
+        "role": "owner",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "09147371668407854156",
+        "displayName": "roman",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjWoGrFCgXcF6CtiBIBLnAfM68qUnQaJOcgvg3qzfQ3W8Ch6dA=s64",
+        "emailAddress": "roman@unstructured.io",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      }
+    ],
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "fileExtension": "docx",
+    "md5Checksum": "5ddd25c0e5d5f6996a93c154830dc7aa",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "headRevisionId": "0B5wM1A2PIvPWOEoxZ2FjcDRsRUJsb2sveEQzTmJZZ1luY3JVPQ",
+    "webViewLink": "https://docs.google.com/document/d/1SpQuE7jHz9nMt5hfQXsiok1SgIdRYX5o/edit?usp=drivesdk&ouid=116756094827511368604&rtpof=true&sd=true",
+    "id": "1SpQuE7jHz9nMt5hfQXsiok1SgIdRYX5o",
+    "originalFilename": "fake.docx",
+    "capabilities": {
+      "canChangeViewersCanCopyContent": false,
+      "canEdit": true,
+      "canCopy": true,
+      "canComment": true,
+      "canAddChildren": false,
+      "canDelete": false,
+      "canDownload": true,
+      "canListChildren": false,
+      "canRemoveChildren": false,
+      "canRename": true,
+      "canTrash": false,
+      "canReadRevisions": true,
+      "canChangeCopyRequiresWriterPermission": false,
+      "canMoveItemIntoTeamDrive": false,
+      "canUntrash": false,
+      "canModifyContent": true,
+      "canMoveItemOutOfDrive": false,
+      "canAddMyDriveParent": false,
+      "canRemoveMyDriveParent": true,
+      "canMoveItemWithinDrive": true,
+      "canShare": true,
+      "canMoveChildrenWithinDrive": false,
+      "canModifyContentRestriction": true,
+      "canChangeSecurityUpdateEnabled": false,
+      "canAcceptOwnership": false,
+      "canReadLabels": false,
+      "canModifyLabels": false,
+      "canModifyEditorContentRestriction": true,
+      "canModifyOwnerContentRestriction": false,
+      "canRemoveContentRestriction": false
+    },
+    "permissionIds": [
+      "anyoneWithLink",
+      "18298851591250030956",
+      "04774006893477068632",
+      "09147371668407854156"
+    ],
+    "sha1Checksum": "07efd2a6bd828801d8d1d4bd77fcb15120bbad94",
+    "sha256Checksum": "690b185fb657a76dfe5d304911e720f8998b328edb6677cbf2c846152284dfb3"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmp9k8p4569/fake.docx",
+  "display_name": null
+}

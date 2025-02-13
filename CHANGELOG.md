@@ -1,3 +1,36 @@
+## 0.5.3-dev0
+
+### Enhancements
+
+### Fixes
+
+## 0.5.2
+
+### Enhancements
+
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
+* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
+
+### Fixes
+
+* **Fix Snowflake Uploader error with array variable binding**
+
+## 0.5.1
+
+### Fixes
+
+* **Fix Attribute Not Exist bug in GoogleDrive connector**
+* **Fix query syntax error in MotherDuck uploader**
+* **Fix missing output filename suffix in DuckDB base stager**
+
+### Enhancements
+
+* **Allow dynamic metadata for SQL Connectors**
+* **Add entities field to pinecone connector default fields**
+
 ## 0.5.0
 
 ### Fixes
