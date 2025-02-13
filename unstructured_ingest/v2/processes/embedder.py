@@ -98,11 +98,11 @@ class EmbedderConfig(BaseModel):
             BedrockEmbeddingEncoder,
         )
 
-        embedding_kwargs = embedding_kwargs | dict(
-            aws_access_key_id=self.embedding_aws_access_key_id,
-            aws_secret_access_key=self.embedding_aws_secret_access_key.get_secret_value(),
-            region_name=self.embedding_aws_region,
-        )
+        embedding_kwargs = embedding_kwargs | {
+            "aws_access_key_id": self.embedding_aws_access_key_id,
+            "aws_secret_access_key": self.embedding_aws_secret_access_key.get_secret_value(),
+            "region_name": self.embedding_aws_region,
+        }
 
         return BedrockEmbeddingEncoder(
             config=BedrockEmbeddingConfig.model_validate(embedding_kwargs)
