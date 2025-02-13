@@ -1,7 +1,8 @@
-## 0.5.3-dev1
+## 0.5.3-dev2
 
 ### Enhancements
 
+* **Improvements on Neo4J uploader, and ability to create a vector index**
 * **Optimize embedder code** - Move duplicate code to base interface, exit early if no elements have text. 
 
 ### Fixes
