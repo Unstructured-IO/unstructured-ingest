@@ -163,7 +163,7 @@ class EmbedderConfig(BaseModel):
             return self.get_octoai_embedder(embedding_kwargs=kwargs)
 
         if self.embedding_provider == "bedrock":
-            return self.get_bedrock_embedder()
+            return self.get_bedrock_embedder(embedding_kwargs=kwargs)
 
         if self.embedding_provider == "vertexai":
             return self.get_vertexai_embedder(embedding_kwargs=kwargs)

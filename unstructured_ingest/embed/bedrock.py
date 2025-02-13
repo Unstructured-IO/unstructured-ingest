@@ -50,7 +50,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_access_key_id: SecretStr
     aws_secret_access_key: SecretStr
     region_name: str = "us-west-2"
-    embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
+    embedder_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
 
     def wrap_error(self, e: Exception) -> Exception:
         from botocore.exceptions import ClientError
@@ -121,7 +121,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
-        provider = self.config.embed_model_name.split(".")[0]
+        provider = self.config.embedder_model_name.split(".")[0]
         body = conform_query(query=query, provider=provider)
 
         bedrock_client = self.config.get_client()
@@ -129,7 +129,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
         try:
             response = bedrock_client.invoke_model(
                 body=json.dumps(body),
-                modelId=self.config.embed_model_name,
+                modelId=self.config.embedder_model_name,
                 accept="application/json",
                 contentType="application/json",
             )
@@ -159,7 +159,7 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
-        provider = self.config.embed_model_name.split(".")[0]
+        provider = self.config.embedder_model_name.split(".")[0]
         body = conform_query(query=query, provider=provider)
         try:
             async with self.config.get_async_client() as bedrock_client:
@@ -167,7 +167,7 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
                 try:
                     response = await bedrock_client.invoke_model(
                         body=json.dumps(body),
-                        modelId=self.config.embed_model_name,
+                        modelId=self.config.embedder_model_name,
                         accept="application/json",
                         contentType="application/json",
                     )
