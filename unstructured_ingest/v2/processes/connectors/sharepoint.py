@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator
 
 from pydantic import Field
 
@@ -49,9 +49,7 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
 
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
-    path: Optional[str] = Field(
-        default=None, description="Server relative path. If None, will pull from root. "
-    )
+    pass
 
 
 @dataclass
