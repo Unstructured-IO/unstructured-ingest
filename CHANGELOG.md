@@ -1,3 +1,9 @@
+## 0.5.4
+
+### Enhancements
+
+* **Sharepoint support for nested folders and remove need for default path Shared Documents**
+
 ## 0.5.3
 
 ### Enhancements
