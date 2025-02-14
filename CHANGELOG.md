@@ -1,3 +1,9 @@
+## 0.5.4-dev0
+
+### Enhancements
+
+* **Sharepoint support for nested folders**
+
 ## 0.5.3
 
 ### Enhancements
