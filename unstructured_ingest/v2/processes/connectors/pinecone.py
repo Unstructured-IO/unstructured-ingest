@@ -165,9 +165,8 @@ class PineconeUploader(VectorDBUploader):
     connection_config: PineconeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    # TODO: question this
     def init(self, **kwargs: Any) -> None:
-        self.create_destination()
+        self.create_destination(**kwargs)
 
     def index_exists(self, index_name: Optional[str]) -> bool:
         from pinecone.exceptions import NotFoundException
@@ -200,8 +199,8 @@ class PineconeUploader(VectorDBUploader):
 
     def create_destination(
         self,
-        destination_name: str,
-        vector_length: int = 3072,
+        vector_length: int,
+        destination_name: str = "elements",
         destination_type: Literal["pod", "serverless"] = "serverless",
         serverless_cloud: str = "aws",
         serverless_region: str = "us-west-2",

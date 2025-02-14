@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -61,6 +61,6 @@ class Uploader(BaseProcess, BaseConnector, ABC):
 @dataclass
 class VectorDBUploader(Uploader, ABC):
     def create_destination(
-        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+        self, vector_length: int, destination_name: str = "elements", **kwargs: Any
     ) -> bool:
         return False
