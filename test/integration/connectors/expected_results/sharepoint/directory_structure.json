@@ -1,8 +1,6 @@
 {
   "directory_structure": [
-    "Folder1/Folder2/fake-email.txt",
-    "Folder1/fake-memo.pdf",
-    "book-war-and-peace-1p.txt",
-    "list-item-example.pdf"
+    "Folder2/fake-email.txt",
+    "fake-memo.pdf"
   ]
 }

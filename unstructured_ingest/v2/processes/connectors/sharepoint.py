@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AsyncIterator
+from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
 from pydantic import Field
 
@@ -49,7 +49,9 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
 
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
-    pass
+    path: Optional[str] = Field(
+        default=None, description="Server relative path. If None, will pull from root. "
+    )
 
 
 @dataclass
@@ -76,10 +78,11 @@ class SharepointIndexer(OnedriveIndexer):
         except ClientRequestException:
             logger.info("Site not found")
 
-        drive_items = await self.list_objects(
-            folder=site_drive_item, recursive=self.index_config.recursive
-        )
-        for drive_item in drive_items:
+        if path := self.index_config.path:
+            site_drive_item = site_drive_item.get_by_path(path).get().execute_query()
+        for drive_item in site_drive_item.get_files(
+            recursive=self.index_config.recursive
+        ).execute_query():
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
 

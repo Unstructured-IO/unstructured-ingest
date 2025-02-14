@@ -39,7 +39,7 @@ async def test_sharepoint_source(temp_dir):
         user_pname=user_pname,
         access_config=access_config,
     )
-    index_config = SharepointIndexerConfig(recursive=True)
+    index_config = SharepointIndexerConfig(recursive=True, path="Folder1")
 
     download_config = SharepointDownloaderConfig(download_dir=temp_dir)
 
@@ -59,7 +59,7 @@ async def test_sharepoint_source(temp_dir):
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="sharepoint",
-            expected_num_files=4,
+            expected_num_files=2,
             validate_downloaded_files=True,
             exclude_fields_extend=[
                 "metadata.date_created",
