@@ -19,24 +19,31 @@ from unstructured_ingest.v2.processes.connectors.sharepoint import (
 )
 
 
+def sharepoint_config():
+    class SharepointTestConfig:
+        def __init__(self):
+            self.client_id = os.environ["SHAREPOINT_CLIENT_ID"]
+            self.client_cred = os.environ["SHAREPOINT_CRED"]
+            self.user_pname = os.environ["MS_USER_PNAME"]
+            self.tenant = os.environ["MS_TENANT_ID"]
+
+    return SharepointTestConfig()
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
 async def test_sharepoint_source(temp_dir):
-    # Retrieve environment variables
     site = "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source"
-    client_id = os.environ["SHAREPOINT_CLIENT_ID"]
-    client_cred = os.environ["SHAREPOINT_CRED"]
-    user_pname = os.environ["MS_USER_PNAME"]
-    tenant = os.environ["MS_TENANT_ID"]
+    config = sharepoint_config()
 
     # Create connection and indexer configurations
-    access_config = SharepointAccessConfig(client_cred=client_cred)
+    access_config = SharepointAccessConfig(client_cred=config.client_cred)
     connection_config = SharepointConnectionConfig(
-        client_id=client_id,
+        client_id=config.client_id,
         site=site,
-        tenant=tenant,
-        user_pname=user_pname,
+        tenant=config.tenant,
+        user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True)
@@ -70,24 +77,21 @@ async def test_sharepoint_source(temp_dir):
         ),
     )
 
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
 async def test_sharepoint_source_with_path(temp_dir):
-    # Retrieve environment variables
     site = "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source"
-    client_id = os.environ["SHAREPOINT_CLIENT_ID"]
-    client_cred = os.environ["SHAREPOINT_CRED"]
-    user_pname = os.environ["MS_USER_PNAME"]
-    tenant = os.environ["MS_TENANT_ID"]
+    config = sharepoint_config()
 
     # Create connection and indexer configurations
-    access_config = SharepointAccessConfig(client_cred=client_cred)
+    access_config = SharepointAccessConfig(client_cred=config.client_cred)
     connection_config = SharepointConnectionConfig(
-        client_id=client_id,
+        client_id=config.client_id,
         site=site,
-        tenant=tenant,
-        user_pname=user_pname,
+        tenant=config.tenant,
+        user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True, path="Folder1")
@@ -121,24 +125,21 @@ async def test_sharepoint_source_with_path(temp_dir):
         ),
     )
 
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
 async def test_sharepoint_root_with_path(temp_dir):
-    # Retrieve environment variables
     site = "https://unstructuredio.sharepoint.com/"
-    client_id = os.environ["SHAREPOINT_CLIENT_ID"]
-    client_cred = os.environ["SHAREPOINT_CRED"]
-    user_pname = os.environ["MS_USER_PNAME"]
-    tenant = os.environ["MS_TENANT_ID"]
+    config = sharepoint_config()
 
     # Create connection and indexer configurations
-    access_config = SharepointAccessConfig(client_cred=client_cred)
+    access_config = SharepointAccessConfig(client_cred=config.client_cred)
     connection_config = SharepointConnectionConfig(
-        client_id=client_id,
+        client_id=config.client_id,
         site=site,
-        tenant=tenant,
-        user_pname=user_pname,
+        tenant=config.tenant,
+        user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True, path="e2e-test-folder")
