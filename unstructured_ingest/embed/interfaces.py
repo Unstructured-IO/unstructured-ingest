@@ -1,10 +1,11 @@
-import asyncio
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from pydantic import BaseModel, Field
+
+from unstructured_ingest.utils.data_prep import batch_generator
 
 EMBEDDINGS_KEY = "embeddings"
 
@@ -50,21 +51,37 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
-    @abstractmethod
+    def get_client(self):
+        raise NotImplementedError
+
+    def embed_batch(self, client: Any, batch: list[str]) -> list[list[float]]:
+        raise NotImplementedError
+
     def embed_documents(self, elements: list[dict]) -> list[dict]:
-        pass
+        client = self.get_client()
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
+        embeddings = []
+        try:
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
+                embeddings = self.embed_batch(client=client, batch=batch)
+                embeddings.extend(embeddings)
+        except Exception as e:
+            raise self.wrap_error(e=e)
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
-    @abstractmethod
+    def _embed_query(self, query: str) -> list[float]:
+        client = self.get_client()
+        return self.embed_batch(client=client, batch=[query])[0]
+
     def embed_query(self, query: str) -> list[float]:
-        pass
-
-    def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        results = []
-        for text in elements:
-            response = self.embed_query(query=text)
-            results.append(response)
-
-        return results
+        try:
+            return self._embed_query(query=query)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
 
 @dataclass
@@ -88,14 +105,35 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
         exemplary_embedding = await self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
 
-    @abstractmethod
+    def get_client(self):
+        raise NotImplementedError
+
+    async def embed_batch(self, client: Any, batch: list[str]) -> list[list[float]]:
+        raise NotImplementedError
+
     async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        pass
+        client = self.get_client()
+        elements = elements.copy()
+        elements_with_text = [e for e in elements if e.get("text")]
+        texts = [e["text"] for e in elements_with_text]
+        embeddings = []
+        try:
+            for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
+                embeddings = await self.embed_batch(client=client, batch=batch)
+                embeddings.extend(embeddings)
+        except Exception as e:
+            raise self.wrap_error(e=e)
+        for element, embedding in zip(elements_with_text, embeddings):
+            element[EMBEDDINGS_KEY] = embedding
+        return elements
 
-    @abstractmethod
+    async def _embed_query(self, query: str) -> list[float]:
+        client = self.get_client()
+        embeddings = await self.embed_batch(client=client, batch=[query])
+        return embeddings[0]
+
     async def embed_query(self, query: str) -> list[float]:
-        pass
-
-    async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        results = await asyncio.gather(*[self.embed_query(query=text) for text in elements])
-        return results
+        try:
+            return await self._embed_query(query=query)
+        except Exception as e:
+            raise self.wrap_error(e=e)

@@ -15,7 +15,13 @@ from unstructured_ingest.embed.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
+from unstructured_ingest.v2.errors import (
+    ProviderError,
+    RateLimitError,
+    UserAuthError,
+    UserError,
+    is_internal_error,
+)
 
 if TYPE_CHECKING:
     from botocore.client import BaseClient
@@ -51,9 +57,11 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_access_key_id: SecretStr
     aws_secret_access_key: SecretStr
     region_name: str = "us-west-2"
-    embed_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
+    embedder_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         from botocore.exceptions import ClientError
 
         if isinstance(e, ClientError):
@@ -122,7 +130,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
 
     def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
-        provider = self.config.embed_model_name.split(".")[0]
+        provider = self.config.embedder_model_name.split(".")[0]
         body = conform_query(query=query, provider=provider)
 
         bedrock_client = self.config.get_client()
@@ -130,7 +138,7 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
         try:
             response = bedrock_client.invoke_model(
                 body=json.dumps(body),
-                modelId=self.config.embed_model_name,
+                modelId=self.config.embedder_model_name,
                 accept="application/json",
                 contentType="application/json",
             )
@@ -148,6 +156,8 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     def embed_documents(self, elements: list[dict]) -> list[dict]:
         elements = elements.copy()
         elements_with_text = [e for e in elements if e.get("text")]
+        if not elements_with_text:
+            return elements
         embeddings = [self.embed_query(query=e["text"]) for e in elements_with_text]
         for element, embedding in zip(elements_with_text, embeddings):
             element[EMBEDDINGS_KEY] = embedding
@@ -163,7 +173,7 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
 
     async def embed_query(self, query: str) -> list[float]:
         """Call out to Bedrock embedding endpoint."""
-        provider = self.config.embed_model_name.split(".")[0]
+        provider = self.config.embedder_model_name.split(".")[0]
         body = conform_query(query=query, provider=provider)
         try:
             async with self.config.get_async_client() as bedrock_client:
@@ -171,7 +181,7 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
                 try:
                     response = await bedrock_client.invoke_model(
                         body=json.dumps(body),
-                        modelId=self.config.embed_model_name,
+                        modelId=self.config.embedder_model_name,
                         accept="application/json",
                         contentType="application/json",
                     )
