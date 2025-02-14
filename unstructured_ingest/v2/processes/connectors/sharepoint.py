@@ -78,7 +78,7 @@ class SharepointIndexer(OnedriveIndexer):
             logger.info("Site not found")
 
         path = self.index_config.path
-        # Deprecated sharepoint sdk needed a default path. Microsoft Graph SDK doesn't need it.
+        # Deprecated sharepoint sdk needed a default path. Microsoft Graph SDK does not.
         if path and path != LEGACY_DEFAULT_PATH:
             site_drive_item = site_drive_item.get_by_path(path).get().execute_query()
 
