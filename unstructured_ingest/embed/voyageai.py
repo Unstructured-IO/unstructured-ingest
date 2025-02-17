@@ -9,13 +9,8 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import (
-    ProviderError,
-    UserAuthError,
-    UserError,
-)
+from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError, is_internal_error
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
 )
@@ -38,6 +33,8 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
     timeout_in_seconds: Optional[int] = None
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         # https://docs.voyageai.com/docs/error-codes
         from voyageai.error import AuthenticationError, RateLimitError, VoyageError
 
@@ -95,23 +92,12 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client = self.config.get_client()
-        embeddings = []
-        try:
-            for batch in batch_generator(elements, batch_size=self.config.batch_size):
-                response = client.embed(texts=batch, model=self.config.embedder_model_name)
-                embeddings.extend(response.embeddings)
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return embeddings
+    def get_client(self) -> "VoyageAIClient":
+        return self.config.get_client()
 
-    def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
-
-    def embed_query(self, query: str) -> list[float]:
-        return self._embed_documents(elements=[query])[0]
+    def embed_batch(self, client: "VoyageAIClient", batch: list[str]) -> list[list[float]]:
+        response = client.embed(texts=batch, model=self.config.embedder_model_name)
+        return response.embeddings
 
 
 @dataclass
@@ -121,23 +107,11 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client = self.config.get_async_client()
-        embeddings = []
-        try:
-            for batch in batch_generator(
-                elements, batch_size=self.config.batch_size or len(elements)
-            ):
-                response = await client.embed(texts=batch, model=self.config.embedder_model_name)
-                embeddings.extend(response.embeddings)
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return embeddings
+    def get_client(self) -> "AsyncVoyageAIClient":
+        return self.config.get_async_client()
 
-    async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
-
-    async def embed_query(self, query: str) -> list[float]:
-        embedding = await self._embed_documents(elements=[query])
-        return embedding[0]
+    async def embed_batch(
+        self, client: "AsyncVoyageAIClient", batch: list[str]
+    ) -> list[list[float]]:
+        response = await client.embed(texts=batch, model=self.config.embedder_model_name)
+        return response.embeddings

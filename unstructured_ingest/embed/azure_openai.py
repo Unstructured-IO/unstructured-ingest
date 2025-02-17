@@ -44,7 +44,13 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
 class AzureOpenAIEmbeddingEncoder(OpenAIEmbeddingEncoder):
     config: AzureOpenAIEmbeddingConfig
 
+    def get_client(self) -> "AzureOpenAI":
+        return self.config.get_client()
+
 
 @dataclass
 class AsyncAzureOpenAIEmbeddingEncoder(AsyncOpenAIEmbeddingEncoder):
     config: AzureOpenAIEmbeddingConfig
+
+    def get_client(self) -> "AsyncAzureOpenAI":
+        return self.config.get_async_client()

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field, SecretStr
 
@@ -9,15 +9,11 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
 )
-from unstructured_ingest.v2.errors import (
-    UserAuthError,
-    UserError,
-)
+from unstructured_ingest.v2.errors import UserAuthError, UserError, is_internal_error
 
 if TYPE_CHECKING:
     from together import AsyncTogether, Together
@@ -30,6 +26,8 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
     )
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         # https://docs.together.ai/docs/error-codes
         from together.error import AuthenticationError, RateLimitError, TogetherException
 
@@ -63,27 +61,12 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def embed_query(self, query: str) -> list[float]:
-        return self._embed_documents(elements=[query])[0]
+    def get_client(self) -> "Together":
+        return self.config.get_client()
 
-    def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
-
-    def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client = self.config.get_client()
-        embeddings = []
-        try:
-            for batch in batch_generator(
-                elements, batch_size=self.config.batch_size or len(elements)
-            ):
-                outputs = client.embeddings.create(
-                    model=self.config.embedder_model_name, input=batch
-                )
-                embeddings.extend([outputs.data[i].embedding for i in range(len(batch))])
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return embeddings
+    def embed_batch(self, client: "Together", batch: list[str]) -> list[list[float]]:
+        outputs = client.embeddings.create(model=self.config.embedder_model_name, input=batch)
+        return [outputs.data[i].embedding for i in range(len(batch))]
 
 
 @dataclass
@@ -93,25 +76,9 @@ class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    async def embed_query(self, query: str) -> list[float]:
-        embedding = await self._embed_documents(elements=[query])
-        return embedding[0]
+    def get_client(self) -> "AsyncTogether":
+        return self.config.get_async_client()
 
-    async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        return self._add_embeddings_to_elements(elements, embeddings)
-
-    async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
-        client = self.config.get_async_client()
-        embeddings = []
-        try:
-            for batch in batch_generator(
-                elements, batch_size=self.config.batch_size or len(elements)
-            ):
-                outputs = await client.embeddings.create(
-                    model=self.config.embedder_model_name, input=batch
-                )
-                embeddings.extend([outputs.data[i].embedding for i in range(len(batch))])
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return embeddings
+    async def embed_batch(self, client: Any, batch: list[str]) -> list[list[float]]:
+        outputs = await client.embeddings.create(model=self.config.embedder_model_name, input=batch)
+        return [outputs.data[i].embedding for i in range(len(batch))]

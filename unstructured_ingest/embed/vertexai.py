@@ -13,9 +13,8 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import UserAuthError
+from unstructured_ingest.v2.errors import UserAuthError, is_internal_error
 
 if TYPE_CHECKING:
     from vertexai.language_models import TextEmbeddingModel
@@ -39,6 +38,8 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
     )
 
     def wrap_error(self, e: Exception) -> Exception:
+        if is_internal_error(e=e):
+            return e
         from google.auth.exceptions import GoogleAuthError
 
         if isinstance(e, GoogleAuthError):
@@ -71,31 +72,19 @@ class VertexAIEmbeddingEncoder(BaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    def embed_query(self, query):
-        return self._embed_documents(elements=[query])[0]
-
-    def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = self._embed_documents([e.get("text", "") for e in elements])
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+    def get_client(self) -> "TextEmbeddingModel":
+        return self.config.get_client()
 
     @requires_dependencies(
         ["vertexai"],
         extras="embed-vertexai",
     )
-    def _embed_documents(self, elements: list[str]) -> list[list[float]]:
+    def embed_batch(self, client: "TextEmbeddingModel", batch: list[str]) -> list[list[float]]:
         from vertexai.language_models import TextEmbeddingInput
 
-        inputs = [TextEmbeddingInput(text=element) for element in elements]
-        client = self.config.get_client()
-        embeddings = []
-        try:
-            for batch in batch_generator(inputs, batch_size=self.config.batch_size or len(inputs)):
-                response = client.get_embeddings(batch)
-                embeddings.extend([e.values for e in response])
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return embeddings
+        inputs = [TextEmbeddingInput(text=text) for text in batch]
+        response = client.get_embeddings(inputs)
+        return [e.values for e in response]
 
 
 @dataclass
@@ -105,29 +94,16 @@ class AsyncVertexAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
-    async def embed_query(self, query):
-        embedding = await self._embed_documents(elements=[query])
-        return embedding[0]
-
-    async def embed_documents(self, elements: list[dict]) -> list[dict]:
-        embeddings = await self._embed_documents([e.get("text", "") for e in elements])
-        elements_with_embeddings = self._add_embeddings_to_elements(elements, embeddings)
-        return elements_with_embeddings
+    def get_client(self) -> "TextEmbeddingModel":
+        return self.config.get_client()
 
     @requires_dependencies(
         ["vertexai"],
         extras="embed-vertexai",
     )
-    async def _embed_documents(self, elements: list[str]) -> list[list[float]]:
+    async def embed_batch(self, client: Any, batch: list[str]) -> list[list[float]]:
         from vertexai.language_models import TextEmbeddingInput
 
-        inputs = [TextEmbeddingInput(text=element) for element in elements]
-        client = self.config.get_client()
-        embeddings = []
-        try:
-            for batch in batch_generator(inputs, batch_size=self.config.batch_size or len(inputs)):
-                response = await client.get_embeddings_async(batch)
-                embeddings.extend([e.values for e in response])
-        except Exception as e:
-            raise self.wrap_error(e=e)
-        return embeddings
+        inputs = [TextEmbeddingInput(text=text) for text in batch]
+        response = await client.get_embeddings_async(inputs)
+        return [e.values for e in response]

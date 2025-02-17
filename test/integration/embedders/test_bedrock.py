@@ -31,7 +31,7 @@ def get_aws_credentials() -> dict:
 def test_bedrock_embedder(embedder_file: Path):
     aws_credentials = get_aws_credentials()
     embedder_config = EmbedderConfig(
-        embedding_provider="aws-bedrock",
+        embedding_provider="bedrock",
         embedding_aws_access_key_id=aws_credentials["aws_access_key_id"],
         embedding_aws_secret_access_key=aws_credentials["aws_secret_access_key"],
     )

@@ -1,0 +1,98 @@
+{
+  "identifier": "1r-RDeDtKprFQWST4PCIPV618y_sBL7N7EEWg7q4kZrU",
+  "connector_type": "google_drive",
+  "source_identifiers": {
+    "filename": "ingest_integration_test_do_not_change",
+    "fullpath": "ingest_integration_test_do_not_change/ingest_integration_test_do_not_change",
+    "rel_path": "ingest_integration_test_do_not_change"
+  },
+  "metadata": {
+    "url": null,
+    "version": "29",
+    "record_locator": {
+      "file_id": "1r-RDeDtKprFQWST4PCIPV618y_sBL7N7EEWg7q4kZrU"
+    },
+    "date_created": "1738365200.695",
+    "date_modified": "1738601393.049",
+    "date_processed": null,
+    "permissions_data": [
+      {
+        "id": "03252897642318370246k",
+        "displayName": "Unstructured AI",
+        "type": "domain",
+        "kind": "drive#permission",
+        "role": "writer",
+        "allowFileDiscovery": false,
+        "domain": "unstructured.io"
+      },
+      {
+        "id": "18298851591250030956",
+        "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
+        "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
+        "role": "writer",
+        "deleted": false,
+        "pendingOwner": false
+      },
+      {
+        "id": "03909661036819820693",
+        "displayName": "bryan.chen",
+        "type": "user",
+        "kind": "drive#permission",
+        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjW_y8aRy0z-MgGdTg9ybw86182DzfQZCuS0P4b-1JkQNnHvzQ=s64",
+        "emailAddress": "bryan.chen@unstructured.io",
+        "role": "owner",
+        "deleted": false,
+        "pendingOwner": false
+      }
+    ],
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "mimeType": "application/vnd.google-apps.document",
+    "webViewLink": "https://docs.google.com/document/d/1r-RDeDtKprFQWST4PCIPV618y_sBL7N7EEWg7q4kZrU/edit?usp=drivesdk",
+    "id": "1r-RDeDtKprFQWST4PCIPV618y_sBL7N7EEWg7q4kZrU",
+    "capabilities": {
+      "canChangeViewersCanCopyContent": false,
+      "canEdit": true,
+      "canCopy": true,
+      "canComment": true,
+      "canAddChildren": false,
+      "canDelete": false,
+      "canDownload": true,
+      "canListChildren": false,
+      "canRemoveChildren": false,
+      "canRename": true,
+      "canTrash": false,
+      "canReadRevisions": true,
+      "canChangeCopyRequiresWriterPermission": false,
+      "canMoveItemIntoTeamDrive": false,
+      "canUntrash": false,
+      "canModifyContent": true,
+      "canMoveItemOutOfDrive": false,
+      "canAddMyDriveParent": false,
+      "canRemoveMyDriveParent": true,
+      "canMoveItemWithinDrive": true,
+      "canShare": true,
+      "canMoveChildrenWithinDrive": false,
+      "canModifyContentRestriction": true,
+      "canChangeSecurityUpdateEnabled": false,
+      "canAcceptOwnership": false,
+      "canReadLabels": false,
+      "canModifyLabels": false,
+      "canModifyEditorContentRestriction": true,
+      "canModifyOwnerContentRestriction": false,
+      "canRemoveContentRestriction": false
+    },
+    "permissionIds": [
+      "03252897642318370246k",
+      "18298851591250030956",
+      "03909661036819820693"
+    ]
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/h7/n848df9s5yn7ml8rxb61vhyc0000gp/T/tmp9lg5f7kk/ingest_integration_test_do_not_change",
+  "display_name": null
+}

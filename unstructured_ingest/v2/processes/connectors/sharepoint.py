@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from office365.onedrive.driveitems.driveItem import DriveItem
 
 CONNECTOR_TYPE = "sharepoint"
+LEGACY_DEFAULT_PATH = "Shared Documents"
 
 
 class SharepointAccessConfig(OnedriveAccessConfig):
@@ -56,6 +57,7 @@ class SharepointIndexerConfig(OnedriveIndexerConfig):
 class SharepointIndexer(OnedriveIndexer):
     connection_config: SharepointConnectionConfig
     index_config: SharepointIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
@@ -64,7 +66,8 @@ class SharepointIndexer(OnedriveIndexer):
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
         if "error" in token_resp:
             raise SourceConnectionError(
-                f"[{CONNECTOR_TYPE}]: {token_resp['error']} ({token_resp.get('error_description')})"
+                f"[{self.connector_type}]: {token_resp['error']} "
+                f"({token_resp.get('error_description')})"
             )
 
         client = await asyncio.to_thread(self.connection_config.get_client)
@@ -74,10 +77,14 @@ class SharepointIndexer(OnedriveIndexer):
         except ClientRequestException:
             logger.info("Site not found")
 
-        drive_items = await self.list_objects(
-            folder=site_drive_item, recursive=self.index_config.recursive
-        )
-        for drive_item in drive_items:
+        path = self.index_config.path
+        # Deprecated sharepoint sdk needed a default path. Microsoft Graph SDK does not.
+        if path and path != LEGACY_DEFAULT_PATH:
+            site_drive_item = site_drive_item.get_by_path(path).get().execute_query()
+
+        for drive_item in site_drive_item.get_files(
+            recursive=self.index_config.recursive
+        ).execute_query():
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
 
@@ -90,6 +97,7 @@ class SharepointDownloaderConfig(OnedriveDownloaderConfig):
 class SharepointDownloader(OnedriveDownloader):
     connection_config: SharepointConnectionConfig
     download_config: SharepointDownloaderConfig
+    connector_type: str = CONNECTOR_TYPE
 
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["office365"], extras="onedrive")
