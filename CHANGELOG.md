@@ -1,5 +1,7 @@
 ## 0.5.5-dev0 
 
+### Enhancements
+
 * **Added in Zendesk connector and tests**
 
 ## 0.5.4
