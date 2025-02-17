@@ -30,7 +30,7 @@ from unstructured_ingest.v2.processes.connectors.zendesk import (
 )
 
 
-def zendesk_source_test(
+async def zendesk_source_test(
         tmp_path: Path, 
         token: Optional[str] = None,    
         endpoint: Optional[str] = None, 
@@ -45,20 +45,34 @@ def zendesk_source_test(
         endpoint=endpoint,
         access_config = access_config)
     
-    index_config = ZendeskIndexerConfig(batch_size=10)
+    index_config = ZendeskIndexerConfig(batch_size=1)
 
     indexer = ZendeskIndexer(
         connection_config=connection_config, 
         index_config=index_config,
-        connector_type = ZENDESK_CONNECTOR_TYPE,
+        connector_type = "zendesk",
+    )
+    
+    # handle downloader. 
+    download_config = ZendeskDownloaderConfig(download_dir=tmp_path)
+
+    downloader = ZendeskDownloader(connection_config=connection_config,
+                                   download_config=download_config,
+                                   connector_type="zendesk")
+
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="zendesk", expected_num_files=8, validate_file_data=False
+        ),
     )
 
-    # validate this garbage here 
-    breakpoint() 
-
+@pytest.mark.asyncio
 @requires_env("ZENDESK_ENDPOINT", "ZENDESK_TOKEN")
-def test_zendesk_source(temp_dir):
-    zendesk_source_test(tmp_path=temp_dir, 
+async def test_zendesk_source(temp_dir):
+    await zendesk_source_test(tmp_path=temp_dir, 
                         token=os.environ["ZENDESK_TOKEN"],
                         endpoint=os.environ["ZENDESK_ENDPOINT"],
                         email="test@unstructured.io",

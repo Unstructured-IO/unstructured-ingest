@@ -10,14 +10,16 @@ import io
 
 from dateutil import parser
 from pydantic import Field, Secret
+import hashlib
 
 from contextlib import contextmanager
 
 
-from unstructured.errors import (
+from unstructured_ingest.error import (
     SourceConnectionError,
-    SourceConnectionNetworkError
 )
+
+import datetime
 
 
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
@@ -26,7 +28,6 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig, 
-    BatchFileData,
     Downloader, 
     DownloaderConfig, 
     DownloadResponse, 
@@ -35,8 +36,6 @@ from unstructured_ingest.v2.interfaces import (
     Indexer, 
     IndexerConfig, 
     SourceIdentifiers,
-    Uploader, 
-    UploaderConfig
 )
 
 from unstructured_ingest.v2.logger import logger
@@ -62,6 +61,7 @@ class ZendeskConnectionConfig(ConnectionConfig):
     @requires_dependencies(["zenpy"], extras="zenpy")
     @contextmanager
     def get_client(self) -> Generator["Zenpy", None, None]:
+        import zenpy
         access_config = self.access_config.get_secret_value()
         
         options = {
@@ -70,12 +70,12 @@ class ZendeskConnectionConfig(ConnectionConfig):
             'token': access_config.api_token,
         }
 
-        with Zenpy(**options) as client: 
-            yield client
+        client = zenpy.Zenpy(**options)
+        yield client
 
 
 class ZendeskIndexerConfig(IndexerConfig):
-    batch_size: int = Field(default="10", description="Number of tickets")
+    batch_size: int = Field(default="1", description="[NotImplemented]Number of tickets: Currently batching is not supported")
 
 @dataclass
 class ZendeskIndexer(Indexer):
@@ -87,8 +87,9 @@ class ZendeskIndexer(Indexer):
     def precheck(self) -> None:
         """Validates connection to Zendesk api"""
         try: 
+            # there is no context manager method for Zenpy. 
             with self.connection_config.get_client() as client: 
-                # there needs to be at least one user
+
                 if client.users()[:] == []:
                     raise SourceConnectionError(
                         f"users do not exist in zendesk subdomain {self.connection_config.sub_domain}"
@@ -112,38 +113,117 @@ class ZendeskIndexer(Indexer):
     def _list_comments(self, ticket_generator, ticket_id: int):
         return ticket_generator.comments(ticket=ticket_id)
 
+
+    def _generate_fullpath(self, ticket) -> Path:
+        return Path(hashlib.sha256(str(ticket.id).encode("utf-8")).hexdigest()[:16] + ".txt")
+
+
     # require dependency zenpy
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each ticket"""
-        
         ticket_generator = self._list_tickets()
 
-        # need to handle indexing here for now. 
+        for ticket in ticket_generator:
+
+            metadata = FileDataSourceMetadata(
+                date_processed=str(time()),
+                record_locator={
+                    "id": str(ticket.id),
+                    "subject": str(ticket.subject)
+                },
+            )            
+
+            full_path = self._generate_fullpath(ticket)
+
+            source_identifiers=SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
             
-        return ticket_generator
+            file_data = FileData(
+                identifier=str(ticket.id),
+                connector_type=self.connector_type, 
+                metadata=metadata,
+                source_identifiers=source_identifiers
+            )
+
+            yield file_data
 
 class ZendeskDownloaderConfig(DownloaderConfig):
     pass 
 
 @dataclass 
 class ZendeskDownloader(Downloader):
+    download_config: ZendeskDownloaderConfig
+    connection_config: ZendeskConnectionConfig
+    connector_type: str = CONNECTOR_TYPE
 
-    def _write_file(self, file_data: FileData, file_contents: io.BytesIO) -> DownloadResponse:
-        download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"writing {file_data.source_identifiers.fullpath} to {download_path}")
-        with open(download_path, "wb") as handler:
-            handler.write(file_contents.getbuffer())
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
-    
 
+    @SourceConnectionError.wrap
+    @requires_dependencies(["zenpy"], extras="zenpy")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse: 
 
-        logger.debug(f"fetching file: {file_data.source_identifiers.fullpath}")
-        file_contents = io.BytesIO() # placeholder. 
-        return self._write_file(file_data=file_data, file_contents=file_contents)
+        zendesk_filedata: FileData = FileData.cast(file_data=file_data)
 
+        with self.connection_config.get_client() as client:
+            
+            comments = []
+            # each ticket consists of comments, to which I will dump in a txt file. 
+            first_date = None
+            for comment in client.tickets.comments(ticket=zendesk_filedata.identifier):
+                
+                if isinstance(comment.created, datetime.datetime):
+                    date_created = comment.created.isoformat()
+                else:
+                    date_created = str(comment.created)
 
+                if first_date is None: 
+                    first_date = date_created
+
+                comments.append({'comment_id':comment.id,
+                                 'author_id':comment.author_id, 
+                                 'body':comment.body, 
+                                 'num_attachments':len(comment.attachments),
+                                 'date_created': date_created
+                                 })
+
+            # handle filedata bs
+            cast_file_data = FileData.cast(file_data=file_data)
+            cast_file_data.identifier = file_data.identifier
+
+            # Determine the download path
+            download_path = self.get_download_path(file_data=cast_file_data)
+            if download_path is None:
+                raise ValueError("Download path could not be determined")
+
+            download_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write the values to the file    
+            with open(download_path, "w", encoding="utf8") as f:
+                
+                # handle json dump here
+                f.write('ticket\n')
+                f.write(file_data.identifier)
+                f.write('\n')
+                f.write(first_date)
+                f.write('\n')
+                for comment in comments: 
+                    f.write('comment')
+                    f.write('\n')
+                    f.write(str(comment['comment_id']))
+                    f.write('\n')
+                    f.write(str(comment['author_id']))
+                    f.write('\n')
+                    f.write(comment['body'])
+                    f.write('\n')
+                    f.write(str(comment['num_attachments']))
+                    f.write('\n')
+                    f.write(comment['date_created'])
+                    f.write('\n')
+        
+            # Update metadata
+            cast_file_data.metadata.date_created = first_date
+
+            return super().generate_download_response(
+                file_data=cast_file_data, download_path=download_path
+            )
 
 # create entry 
 zendesk_source_entry = SourceRegistryEntry(
