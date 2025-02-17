@@ -1,12 +1,61 @@
-## 0.4.8-dev1 
+## 0.5.5-dev0 
 
-* **Added in sharepoint connector and tests**
+* **Added in Zendesk connector and tests**
 
-## 0.4.8-dev0
+## 0.5.4
+
+### Enhancements
+
+* **Sharepoint support for nested folders and remove need for default path Shared Documents**
+
+## 0.5.3
+
+### Enhancements
+
+* **Improvements on Neo4J uploader, and ability to create a vector index**
+* **Optimize embedder code** - Move duplicate code to base interface, exit early if no elements have text. 
 
 ### Fixes
 
+* **Fix bedrock embedder: rename embed_model_name to embedder_model_name**
+
+## 0.5.2
+
+### Enhancements
+
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
+* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
+* **Improved google drive precheck mechanism**
+* **Added integration tests for google drive precheck and connector**
+
+### Fixes
+
+* **Fix Snowflake Uploader error with array variable binding**
+
+## 0.5.1
+
+### Fixes
+
+* **Fix Attribute Not Exist bug in GoogleDrive connector**
+* **Fix query syntax error in MotherDuck uploader**
+* **Fix missing output filename suffix in DuckDB base stager**
+
+### Enhancements
+
+* **Allow dynamic metadata for SQL Connectors**
+* **Add entities field to pinecone connector default fields**
+
+## 0.5.0
+
+### Fixes
+
+* **Change aws-bedrock to bedrock**
 * **Update Sharepoint tests**
+
+### Enhancements
+
+* **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
 
 ## 0.4.7
 

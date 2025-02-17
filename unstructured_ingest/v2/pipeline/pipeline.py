@@ -268,6 +268,7 @@ class Pipeline:
 
         # Partition content
         elements = self.partitioner_step(downloaded_data)
+        elements = self.clean_results(results=elements)
         # Download data non longer needed, delete if possible
         self.downloader_step.delete_cache()
         elements = self.clean_results(results=elements)

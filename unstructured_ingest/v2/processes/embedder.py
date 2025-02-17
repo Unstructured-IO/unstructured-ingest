@@ -18,7 +18,7 @@ class EmbedderConfig(BaseModel):
             "openai",
             "azure-openai",
             "huggingface",
-            "aws-bedrock",
+            "bedrock",
             "vertexai",
             "voyageai",
             "octoai",
@@ -92,18 +92,20 @@ class EmbedderConfig(BaseModel):
 
         return OctoAIEmbeddingEncoder(config=OctoAiEmbeddingConfig.model_validate(embedding_kwargs))
 
-    def get_bedrock_embedder(self) -> "BaseEmbeddingEncoder":
+    def get_bedrock_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.bedrock import (
             BedrockEmbeddingConfig,
             BedrockEmbeddingEncoder,
         )
 
+        embedding_kwargs = embedding_kwargs | {
+            "aws_access_key_id": self.embedding_aws_access_key_id,
+            "aws_secret_access_key": self.embedding_aws_secret_access_key.get_secret_value(),
+            "region_name": self.embedding_aws_region,
+        }
+
         return BedrockEmbeddingEncoder(
-            config=BedrockEmbeddingConfig(
-                aws_access_key_id=self.embedding_aws_access_key_id,
-                aws_secret_access_key=self.embedding_aws_secret_access_key.get_secret_value(),
-                region_name=self.embedding_aws_region,
-            )
+            config=BedrockEmbeddingConfig.model_validate(embedding_kwargs)
         )
 
     def get_vertexai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
@@ -162,8 +164,8 @@ class EmbedderConfig(BaseModel):
         if self.embedding_provider == "octoai":
             return self.get_octoai_embedder(embedding_kwargs=kwargs)
 
-        if self.embedding_provider == "aws-bedrock":
-            return self.get_bedrock_embedder()
+        if self.embedding_provider == "bedrock":
+            return self.get_bedrock_embedder(embedding_kwargs=kwargs)
 
         if self.embedding_provider == "vertexai":
             return self.get_vertexai_embedder(embedding_kwargs=kwargs)

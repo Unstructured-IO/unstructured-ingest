@@ -61,7 +61,7 @@ class MotherDuckConnectionConfig(ConnectionConfig):
                 "custom_user_agent": f"unstructured-io-ingest/{unstructured_io_ingest_version}"
             },
         ) as conn:
-            conn.sql(f"USE {self.database}")
+            conn.sql(f'USE "{self.database}"')
             yield conn
 
     @contextmanager
@@ -102,11 +102,12 @@ class MotherDuckUploader(Uploader):
 
     def upload_dataframe(self, df: pd.DataFrame) -> None:
         logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")
+        database = self.connection_config.database
+        db_schema = self.connection_config.db_schema
+        table = self.connection_config.table
 
         with self.connection_config.get_client() as conn:
-            conn.query(
-                f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df"  # noqa: E501
-            )
+            conn.query(f'INSERT INTO "{database}"."{db_schema}"."{table}" BY NAME SELECT * FROM df')
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         df = pd.DataFrame(data=data)

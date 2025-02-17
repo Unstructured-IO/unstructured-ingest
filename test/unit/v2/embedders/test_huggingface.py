@@ -16,7 +16,7 @@ fake = faker.Faker()
 def generate_embedder_config_params() -> dict:
     params = {}
     if random.random() < 0.5:
-        params["embed_model_name"] = fake.word() if random.random() < 0.5 else None
+        params["embedder_model_name"] = fake.word() if random.random() < 0.5 else None
         params["embedder_model_kwargs"] = (
             generate_random_dictionary(key_type=str, value_type=Any)
             if random.random() < 0.5

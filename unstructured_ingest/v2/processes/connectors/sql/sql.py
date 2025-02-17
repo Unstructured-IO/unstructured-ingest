@@ -38,48 +38,6 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
-_COLUMNS = (
-    "id",
-    "element_id",
-    "text",
-    "embeddings",
-    "type",
-    "system",
-    "layout_width",
-    "layout_height",
-    "points",
-    "url",
-    "version",
-    "date_created",
-    "date_modified",
-    "date_processed",
-    "permissions_data",
-    "record_locator",
-    "category_depth",
-    "parent_id",
-    "attached_filename",
-    "filetype",
-    "last_modified",
-    "file_directory",
-    "filename",
-    "languages",
-    "page_number",
-    "links",
-    "page_name",
-    "link_urls",
-    "link_texts",
-    "sent_from",
-    "sent_to",
-    "subject",
-    "section",
-    "header_footer_type",
-    "emphasized_text_contents",
-    "emphasized_text_tags",
-    "text_as_html",
-    "regex_metadata",
-    "detection_class_prob",
-)
-
 _DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
 
 
@@ -270,10 +228,8 @@ class SQLUploadStager(UploadStager):
 
         data["id"] = get_enhanced_element_id(element_dict=data, file_data=file_data)
 
-        # remove extraneous, not supported columns
-        element = {k: v for k, v in data.items() if k in _COLUMNS}
-        element[RECORD_ID_LABEL] = file_data.identifier
-        return element
+        data[RECORD_ID_LABEL] = file_data.identifier
+        return data
 
     def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
@@ -375,7 +331,7 @@ class SQLUploader(Uploader):
         missing_columns = schema_fields - columns
 
         if columns_to_drop:
-            logger.warning(
+            logger.info(
                 "Following columns will be dropped to match the table's schema: "
                 f"{', '.join(columns_to_drop)}"
             )
