@@ -1,3 +1,7 @@
+## 0.4.8-dev1 
+
+* **Added in sharepoint connector and tests**
+
 ## 0.4.8-dev0
 
 ### Fixes

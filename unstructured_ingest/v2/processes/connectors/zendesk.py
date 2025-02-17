@@ -1,25 +1,18 @@
 from __future__ import annotations
 
+import datetime
+import hashlib
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret
-import hashlib
-
-from contextlib import contextmanager
-
 
 from unstructured_ingest.error import (
     SourceConnectionError,
 )
-
-import datetime
-
-
-from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -33,14 +26,11 @@ from unstructured_ingest.v2.interfaces import (
     IndexerConfig,
     SourceIdentifiers,
 )
-
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-
 if TYPE_CHECKING:
     from zenpy import Zenpy
-    from zenpy.lib.api_objects.chat_objects import Tickets
 
 CONNECTOR_TYPE = "zendesk"
 

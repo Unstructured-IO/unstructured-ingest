@@ -1,34 +1,21 @@
-import asyncio
-import json
 import os
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import pytest
-
-from zenpy import Zenpy, ZenpyException
 
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
-
-from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.zendesk import (
-    CONNECTOR_TYPE as ZENDESK_CONNECTOR_TYPE,
-)
-
-
-from unstructured_ingest.v2.processes.connectors.zendesk import (
-    ZendeskConnectionConfig,
     ZendeskAccessConfig,
-    ZendeskIndexerConfig,
-    ZendeskIndexer,
-    ZendeskDownloaderConfig,
+    ZendeskConnectionConfig,
     ZendeskDownloader,
+    ZendeskDownloaderConfig,
+    ZendeskIndexer,
+    ZendeskIndexerConfig,
 )
 
 
