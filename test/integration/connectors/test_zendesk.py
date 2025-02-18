@@ -40,6 +40,12 @@ async def zendesk_source_test(
         connector_type="zendesk",
     )
 
+    with connection_config.get_client() as client:
+        tickets = client.get_tickets()
+        client.get_users()
+        for ticket in tickets:
+            client.get_comments(ticket.id)
+
     # handle downloader.
     download_config = ZendeskDownloaderConfig(download_dir=tmp_path)
 
@@ -48,6 +54,10 @@ async def zendesk_source_test(
         download_config=download_config,
         connector_type="zendesk",
     )
+
+    # fdata  = list(indexer.run())
+
+    # result = downloader.run(file_data=fdata[0])
 
     # Run the source connector validation
     await source_connector_validation(

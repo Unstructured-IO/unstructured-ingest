@@ -6,14 +6,13 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Generator
+from typing import Any, Generator
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import (
     SourceConnectionError,
 )
-from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -29,8 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-if TYPE_CHECKING:
-    from zenpy import Zenpy
+from .wrapper import ZendeskWrapper
 
 CONNECTOR_TYPE = "zendesk"
 
@@ -46,20 +44,18 @@ class ZendeskConnectionConfig(ConnectionConfig):
     email: str = Field(description="Email for zendesk site registered at the subdomain")
     access_config: Secret[ZendeskAccessConfig]
 
-    @requires_dependencies(["zenpy"], extras="zenpy")
     @contextmanager
-    def get_client(self) -> Generator["Zenpy", None, None]:
-        import zenpy
+    def get_client(self) -> Generator["ZendeskWrapper", None, None]:
 
         access_config = self.access_config.get_secret_value()
 
         options = {
-            "subdomain": self.sub_domain,
             "email": self.email,
+            "subdomain": self.sub_domain,
             "token": access_config.api_token,
         }
 
-        client = zenpy.Zenpy(**options)
+        client = ZendeskWrapper(**options)
         yield client
 
 
@@ -82,9 +78,9 @@ class ZendeskIndexer(Indexer):
             # there is no context manager method for Zenpy.
             with self.connection_config.get_client() as client:
 
-                if client.users()[:] == []:
+                if client.get_users() == []:
                     raise SourceConnectionError(
-                        f"users do not exist in subdomain {self.connection_config.sub_domain}"
+                        f"users do not exist in subdomain {self.connection_config.sub_domain}.zendesk.com"
                     )
 
         except Exception as e:
@@ -99,16 +95,15 @@ class ZendeskIndexer(Indexer):
 
     def _list_tickets(self):
         with self.connection_config.get_client() as client:
-            tickets = client.tickets()
+            tickets = client.get_tickets()
             return tickets
 
     def _list_comments(self, ticket_generator, ticket_id: int):
-        return ticket_generator.comments(ticket=ticket_id)
+        return ticket_generator.get_comments(ticket_id)
 
     def _generate_fullpath(self, ticket) -> Path:
         return Path(hashlib.sha256(str(ticket.id).encode("utf-8")).hexdigest()[:16] + ".txt")
 
-    # require dependency zenpy
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each ticket"""
         ticket_generator = self._list_tickets()
@@ -145,7 +140,6 @@ class ZendeskDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     @SourceConnectionError.wrap
-    @requires_dependencies(["zenpy"], extras="zenpy")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
 
         zendesk_filedata: FileData = FileData.cast(file_data=file_data)
@@ -155,12 +149,12 @@ class ZendeskDownloader(Downloader):
             comments = []
             # each ticket consists of comments, to which I will dump in a txt file.
             first_date = None
-            for comment in client.tickets.comments(ticket=zendesk_filedata.identifier):
+            for comment in client.get_comments(ticket_id=zendesk_filedata.identifier):
 
-                if isinstance(comment.created, datetime.datetime):
-                    date_created = comment.created.isoformat()
+                if isinstance(comment.metadata["created_at"], datetime.datetime):
+                    date_created = comment.metadata["created_at"].isoformat()
                 else:
-                    date_created = str(comment.created)
+                    date_created = str(comment.metadata["created_at"])
 
                 if first_date is None:
                     first_date = date_created
@@ -170,7 +164,6 @@ class ZendeskDownloader(Downloader):
                         "comment_id": comment.id,
                         "author_id": comment.author_id,
                         "body": comment.body,
-                        "num_attachments": len(comment.attachments),
                         "date_created": date_created,
                     }
                 )
@@ -203,8 +196,6 @@ class ZendeskDownloader(Downloader):
                     f.write(str(comment["author_id"]))
                     f.write("\n")
                     f.write(comment["body"])
-                    f.write("\n")
-                    f.write(str(comment["num_attachments"]))
                     f.write("\n")
                     f.write(comment["date_created"])
                     f.write("\n")
