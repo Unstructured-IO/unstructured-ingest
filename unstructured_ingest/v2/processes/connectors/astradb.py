@@ -42,6 +42,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
+from unstructured_ingest.v2.processes.connectors.utils import format_and_truncate_orig_elements
 
 if TYPE_CHECKING:
     from astrapy import AsyncCollection as AstraDBAsyncCollection
@@ -318,6 +319,7 @@ class AstraDBUploadStager(UploadStager):
                 element_dict["metadata"]["text_as_html"] = truncate_string_bytes(
                     text_as_html, MAX_CONTENT_PARAM_BYTE_SIZE
                 )
+            metadata["original_elements"] = format_and_truncate_orig_elements(element_dict)
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
