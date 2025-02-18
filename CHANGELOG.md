@@ -1,8 +1,14 @@
-## 0.5.4-dev0
+## 0.5.5-dev0
 
 ### Enhancements
 
 * **Add support for setting up destination for Pinecone**
+
+## 0.5.4
+
+### Enhancements
+
+* **Sharepoint support for nested folders and remove need for default path Shared Documents**
 
 ## 0.5.3
 

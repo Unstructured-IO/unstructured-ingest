@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from office365.onedrive.driveitems.driveItem import DriveItem
 
 CONNECTOR_TYPE = "sharepoint"
+LEGACY_DEFAULT_PATH = "Shared Documents"
 
 
 class SharepointAccessConfig(OnedriveAccessConfig):
@@ -76,10 +77,14 @@ class SharepointIndexer(OnedriveIndexer):
         except ClientRequestException:
             logger.info("Site not found")
 
-        drive_items = await self.list_objects(
-            folder=site_drive_item, recursive=self.index_config.recursive
-        )
-        for drive_item in drive_items:
+        path = self.index_config.path
+        # Deprecated sharepoint sdk needed a default path. Microsoft Graph SDK does not.
+        if path and path != LEGACY_DEFAULT_PATH:
+            site_drive_item = site_drive_item.get_by_path(path).get().execute_query()
+
+        for drive_item in site_drive_item.get_files(
+            recursive=self.index_config.recursive
+        ).execute_query():
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
 
