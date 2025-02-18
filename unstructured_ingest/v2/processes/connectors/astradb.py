@@ -151,10 +151,10 @@ class AstraDBDownloaderConfig(DownloaderConfig):
 
 
 class AstraDBUploaderConfig(UploaderConfig):
-    collection_name: str = Field(
+    collection_name: Optional[str] = Field(
         description="The name of the Astra DB collection. "
         "Note that the collection name must only include letters, "
-        "numbers, and underscores."
+        "numbers, and underscores.", default=None
     )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
@@ -356,6 +356,41 @@ class AstraDBUploader(Uploader):
             keyspace=self.upload_config.keyspace,
         )
 
+    # Shreya: 
+    def create_destination(
+        self, destination_name: str = "elements", vector_length: int = 3072, similarity_metric: Optional[str] = "cosine", **kwargs: Any
+    ) -> bool:
+        collection_name = self.upload_config.collection_name or destination_name
+        self.upload_config.collection_name = collection_name
+
+        connectors_dir = Path(__file__).parents[1]
+        collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
+        with collection_config_file.open() as f:
+            collection_config = json.load(f)
+        collection_config["class"] = collection_name
+
+        # if keyspace set, use, otherwise default_keyspace
+        # TODO update get_astra_collection functions to return db
+        # sep fn to check if collection exists in the keyspace
+        # then create the collection if not exists
+
+        collection = database.create_collection(
+            collection_name,
+            dimension=vector_length,
+            metric=similarity_metric,
+        )
+        print(f"* Collection: {collection.full_name}\n")
+        
+        # if not self._collection_exists():
+        #     logger.info(
+        #         f"creating default weaviate collection '{collection_name}' with default configs"
+        #     )
+        #     with self.connection_config.get_client() as weaviate_client:
+        #         weaviate_client.collections.create_from_dict(config=collection_config)
+        #         return True
+        logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
+        return False
+    
     def delete_by_record_id(self, collection: "AstraDBCollection", file_data: FileData):
         logger.debug(
             f"deleting records from collection {collection.name} "
