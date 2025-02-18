@@ -79,8 +79,9 @@ class ZendeskIndexer(Indexer):
             with self.connection_config.get_client() as client:
 
                 if client.get_users() == []:
+                    subdomain_endpoint = f"{self.connection_config.sub_domain}.zendesk.com"
                     raise SourceConnectionError(
-                        f"users do not exist in subdomain {self.connection_config.sub_domain}.zendesk.com"
+                        f"users do not exist in subdomain {subdomain_endpoint}"
                     )
 
         except Exception as e:
