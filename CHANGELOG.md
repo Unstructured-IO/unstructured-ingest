@@ -1,3 +1,9 @@
+## 0.5.5
+
+### Enhancements
+
+* **Improve orig_elements handling in astra and neo4j connectors**
+
 ## 0.5.4
 
 ### Enhancements
