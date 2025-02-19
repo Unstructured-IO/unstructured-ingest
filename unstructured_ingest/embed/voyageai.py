@@ -96,7 +96,11 @@ class VoyageAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self.config.get_client()
 
     def embed_batch(self, client: "VoyageAIClient", batch: list[str]) -> list[list[float]]:
-        response = client.embed(texts=batch, model=self.config.embedder_model_name)
+        if self.config.embedder_model_name == "voyage-multimodal-3":
+            batch = [[text] for text in batch]
+            response = client.multimodal_embed(inputs=batch, model=self.config.embedder_model_name)
+        else:
+            response = client.embed(texts=batch, model=self.config.embedder_model_name)
         return response.embeddings
 
 
@@ -113,5 +117,11 @@ class AsyncVoyageAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     async def embed_batch(
         self, client: "AsyncVoyageAIClient", batch: list[str]
     ) -> list[list[float]]:
-        response = await client.embed(texts=batch, model=self.config.embedder_model_name)
+        if self.config.embedder_model_name == "voyage-multimodal-3":
+            batch = [[text] for text in batch]
+            response = await client.multimodal_embed(
+                inputs=batch, model=self.config.embedder_model_name
+            )
+        else:
+            response = await client.embed(texts=batch, model=self.config.embedder_model_name)
         return response.embeddings

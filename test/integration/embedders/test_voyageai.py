@@ -61,3 +61,19 @@ async def test_raw_async_voyageai_embedder(embedder_file: Path):
     await validate_raw_embedder_async(
         embedder=embedder, embedder_file=embedder_file, expected_dimension=1024
     )
+
+
+@requires_env(API_KEY)
+def test_voyageai_multimodal_embedder(embedder_file: Path):
+    api_key = get_api_key()
+    embedder_config = EmbedderConfig(
+        embedding_provider="voyageai",
+        embedding_api_key=api_key,
+        embedding_model_name="voyage-multimodal-3",
+    )
+    embedder = Embedder(config=embedder_config)
+    results = embedder.run(elements_filepath=embedder_file)
+    assert results
+    with embedder_file.open("r") as f:
+        original_elements = json.load(f)
+    validate_embedding_output(original_elements=original_elements, output_elements=results)
