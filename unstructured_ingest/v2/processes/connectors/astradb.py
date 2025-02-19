@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from astrapy import AsyncCollection as AstraDBAsyncCollection
     from astrapy import Collection as AstraDBCollection
     from astrapy import DataAPIClient as AstraDBClient
+    from astrapy import Database as AstraDB
 
 
 CONNECTOR_TYPE = "astradb"
@@ -112,13 +114,16 @@ def get_astra_collection(
 ) -> "AstraDBCollection":
     astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
 
-    # Connect to the collection
+    # TODO check if collection exists first?
+    # astradb will return a collection object in all cases
     astra_db_collection = astra_db.get_collection(name=collection_name)
+
     return astra_db_collection
 
 
-async def get_async_astra_db(
+async def get_async_astra_collection(
     connection_config: AstraDBConnectionConfig,
+    collection_name: str,
     keyspace: str,
 ) -> "AstraDBAsyncCollection":
     # Build the Astra DB object.
@@ -351,6 +356,7 @@ class AstraDBUploader(Uploader):
     def precheck(self) -> None:
         try:
             if self.upload_config.collection_name:
+                print("im here", self.upload_config.collection_name)
                 get_astra_collection(
                     connection_config=self.connection_config,
                     collection_name=self.upload_config.collection_name,
@@ -373,8 +379,7 @@ class AstraDBUploader(Uploader):
             keyspace=self.upload_config.keyspace,
         )
 
-    def _collection_exists(self, collection_name: Optional[str] = None):
-        collection_name = collection_name or self.upload_config.collection_name
+    def _collection_exists(self, collection_name: str):
         astra_db = get_astra_db(
             connection_config=self.connection_config,
             keyspace=self.upload_config.keyspace,
@@ -409,7 +414,7 @@ class AstraDBUploader(Uploader):
                 f"creating default astra collection '{collection_name}' with dimension "
                 f"{vector_length} and metric {similarity_metric}"
             )
-            collection = astra_db.create_collection(
+            astra_db.create_collection(
                 collection_name,
                 dimension=vector_length,
                 metric=similarity_metric,
