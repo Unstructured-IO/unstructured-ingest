@@ -1,3 +1,9 @@
+## 0.5.6-dev1
+
+### Fixes
+
+* **Fix voyageai embedder: add multimodal embedder function**
+
 ## 0.5.6
 
 ### Enhancements
