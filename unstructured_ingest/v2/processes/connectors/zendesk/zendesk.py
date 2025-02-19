@@ -99,9 +99,6 @@ class ZendeskIndexer(Indexer):
             tickets = client.get_tickets()
             return tickets
 
-    def _list_comments(self, ticket_generator, ticket_id: int) -> List[Comment]:
-        return ticket_generator.get_comments(ticket_id)
-
     def _generate_fullpath(self, ticket: ZendeskTicket) -> Path:
         return Path(hashlib.sha256(str(ticket.id).encode("utf-8")).hexdigest()[:16] + ".txt")
 
