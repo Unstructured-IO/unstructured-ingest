@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
@@ -197,6 +198,13 @@ class PineconeUploader(VectorDBUploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
+    def format_destination_name(self, destination_name: str) -> str:
+        # Pinecone naming requirements:
+        # can only contain lowercase letters, numbers, and hyphens
+        # must be 45 characters or less
+        formatted = re.sub(r"[^a-z0-9]", "-", destination_name.lower())
+        return formatted
+
     def create_destination(
         self,
         vector_length: int,
@@ -212,6 +220,7 @@ class PineconeUploader(VectorDBUploader):
         from pinecone import PodSpec, ServerlessSpec
 
         index_name = destination_name or self.connection_config.index_name
+        index_name = self.format_destination_name(index_name)
         self.connection_config.index_name = index_name
 
         if not self.index_exists(index_name):
