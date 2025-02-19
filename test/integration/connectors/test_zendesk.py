@@ -55,10 +55,6 @@ async def zendesk_source_test(
         connector_type="zendesk",
     )
 
-    # fdata  = list(indexer.run())
-
-    # result = downloader.run(file_data=fdata[0])
-
     # Run the source connector validation
     await source_connector_validation(
         indexer=indexer,

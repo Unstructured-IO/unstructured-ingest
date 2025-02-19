@@ -22,7 +22,7 @@ class ZendeskTicket:
     metadata: dict
 
 
-class ZendeskWrapper:
+class ZendeskClient:
 
     def __init__(self, token: str, subdomain: str, email: str):
 
@@ -97,9 +97,8 @@ class ZendeskWrapper:
             response = requests.get(tickets_url, auth=self._auth)
             if response.status_code == 200:
                 tickets_in_response: List[dict] = response.json()["tickets"]
-
             else:
-                raise RuntimeError(f"Tickets could not be acquired from url: {tickets_url}")
+                raise RuntimeError(f"Tickets could not be acquired from url: {tickets_url}, status {response.status_code}")
         else:
             # get some tickets according to id
             if isinstance(ticket_id, list):
@@ -119,28 +118,4 @@ class ZendeskWrapper:
             tickets.append(ticket)
 
         return tickets
-
-
-if __name__ == "__main__":
-
-    print("Running zendesk wrapper test")
-
-    ENDPOINT = "unstructuredhelp.zendesk.com"
-    API_TOKEN = "MjdxjP8ffGEorZfUUOOdyiNlyhMYrf1KwvHucCez"
-
-    # # Define your credentials
-    # credentials = {
-    #     "email": "test@unstructured.io",
-    #     "token": API_TOKEN,
-    #     "subdomain": "unstructuredhelp"
-    # }
-
-    z = ZendeskWrapper(token=API_TOKEN, subdomain=ENDPOINT, email="test@unstructured.io")
-
-    tickets = z.get_tickets()
-
-    first_ticket = tickets[0]
-
-    comments = z.get_comments(ticket_id=first_ticket.id)
-
-    breakpoint()
+    

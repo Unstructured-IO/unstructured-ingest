@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import Any, Generator
+from typing import Any, Generator, List
 
 from pydantic import Field, Secret
 
@@ -28,7 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-from .wrapper import ZendeskWrapper
+from .wrapper import ZendeskClient, ZendeskTicket, Comment
 
 CONNECTOR_TYPE = "zendesk"
 
@@ -45,7 +45,7 @@ class ZendeskConnectionConfig(ConnectionConfig):
     access_config: Secret[ZendeskAccessConfig]
 
     @contextmanager
-    def get_client(self) -> Generator["ZendeskWrapper", None, None]:
+    def get_client(self) -> Generator["ZendeskClient", None, None]:
 
         access_config = self.access_config.get_secret_value()
 
@@ -55,13 +55,13 @@ class ZendeskConnectionConfig(ConnectionConfig):
             "token": access_config.api_token,
         }
 
-        client = ZendeskWrapper(**options)
+        client = ZendeskClient(**options)
         yield client
 
 
 class ZendeskIndexerConfig(IndexerConfig):
     batch_size: int = Field(
-        default="1",
+        default=1,
         description="[NotImplemented]Number of tickets: Currently batching is not supported",
     )
 
@@ -94,15 +94,15 @@ class ZendeskIndexer(Indexer):
     def is_async(self) -> bool:
         return False
 
-    def _list_tickets(self):
+    def _list_tickets(self) -> List[ZendeskTicket]:
         with self.connection_config.get_client() as client:
             tickets = client.get_tickets()
             return tickets
 
-    def _list_comments(self, ticket_generator, ticket_id: int):
+    def _list_comments(self, ticket_generator, ticket_id: int) -> List[Comment]:
         return ticket_generator.get_comments(ticket_id)
 
-    def _generate_fullpath(self, ticket) -> Path:
+    def _generate_fullpath(self, ticket: ZendeskTicket) -> Path:
         return Path(hashlib.sha256(str(ticket.id).encode("utf-8")).hexdigest()[:16] + ".txt")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
