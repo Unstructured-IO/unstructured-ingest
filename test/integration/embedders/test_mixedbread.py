@@ -50,7 +50,7 @@ def test_raw_mixedbread_embedder(embedder_file: Path):
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimension=1024,
-        expected_is_unit_vector=False,
+        expected_is_unit_vector=True,
     )
 
 
@@ -67,5 +67,5 @@ async def test_raw_async_mixedbread_embedder(embedder_file: Path):
         embedder=embedder,
         embedder_file=embedder_file,
         expected_dimension=1024,
-        expected_is_unit_vector=False,
+        expected_is_unit_vector=True,
     )
