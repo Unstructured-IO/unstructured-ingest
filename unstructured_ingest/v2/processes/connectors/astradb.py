@@ -85,11 +85,10 @@ class AstraDBConnectionConfig(ConnectionConfig):
         )
 
 
-def get_astra_collection(
+def get_astra_db(
     connection_config: AstraDBConnectionConfig,
-    collection_name: str,
     keyspace: str,
-) -> "AstraDBCollection":
+) -> "AstraDB":
     # Build the Astra DB object.
     access_configs = connection_config.access_config.get_secret_value()
 
@@ -103,15 +102,23 @@ def get_astra_collection(
         token=access_configs.token,
         keyspace=keyspace,
     )
+    return astra_db
+
+
+def get_astra_collection(
+    connection_config: AstraDBConnectionConfig,
+    collection_name: str,
+    keyspace: str,
+) -> "AstraDBCollection":
+    astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
 
     # Connect to the collection
     astra_db_collection = astra_db.get_collection(name=collection_name)
     return astra_db_collection
 
 
-async def get_async_astra_collection(
+async def get_async_astra_db(
     connection_config: AstraDBConnectionConfig,
-    collection_name: str,
     keyspace: str,
 ) -> "AstraDBAsyncCollection":
     # Build the Astra DB object.
@@ -338,23 +345,42 @@ class AstraDBUploader(Uploader):
     upload_config: AstraDBUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def init(self, **kwargs: Any) -> None:
+        self.create_destination(**kwargs)
+
     def precheck(self) -> None:
         try:
-            get_astra_collection(
-                connection_config=self.connection_config,
-                collection_name=self.upload_config.collection_name,
-                keyspace=self.upload_config.keyspace,
-            ).options()
+            if self.upload_config.collection_name:
+                get_astra_collection(
+                    connection_config=self.connection_config,
+                    collection_name=self.upload_config.collection_name,
+                    keyspace=self.upload_config.keyspace,
+                )
+            else:
+                get_astra_db(
+                    connection_config=self.connection_config,
+                    keyspace=self.upload_config.keyspace,
+                )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def get_collection(self) -> "AstraDBCollection":
+    def get_collection(self, collection_name: Optional[str] = None) -> "AstraDBCollection":
         return get_astra_collection(
             connection_config=self.connection_config,
-            collection_name=self.upload_config.collection_name,
+            collection_name=collection_name or self.upload_config.collection_name,
             keyspace=self.upload_config.keyspace,
+        )
+
+    def _collection_exists(self, collection_name: Optional[str] = None):
+        collection_name = collection_name or self.upload_config.collection_name
+        astra_db = get_astra_db(
+            connection_config=self.connection_config,
+            keyspace=self.upload_config.keyspace,
+        )
+        return collection_name in astra_db.list_collection_names(
+            keyspace=self.upload_config.keyspace
         )
 
     def format_destination_name(self, destination_name: str) -> str:
@@ -366,8 +392,8 @@ class AstraDBUploader(Uploader):
 
     def create_destination(
         self,
+        vector_length: int,
         destination_name: str = "elements",
-        vector_length: int = 3072,
         similarity_metric: Optional[str] = "cosine",
         **kwargs: Any,
     ) -> bool:
@@ -375,31 +401,20 @@ class AstraDBUploader(Uploader):
         collection_name = self.upload_config.collection_name or destination_name
         self.upload_config.collection_name = collection_name
 
-        connectors_dir = Path(__file__).parents[1]
-        collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
-        with collection_config_file.open() as f:
-            collection_config = json.load(f)
-        collection_config["class"] = collection_name
-
-        # if keyspace set, use, otherwise default_keyspace
-        # TODO update get_astra_collection functions to return db
-        # sep fn to check if collection exists in the keyspace
-        # then create the collection if not exists
-
-        collection = database.create_collection(
-            collection_name,
-            dimension=vector_length,
-            metric=similarity_metric,
-        )
-        print(f"* Collection: {collection.full_name}\n")
-
-        # if not self._collection_exists():
-        #     logger.info(
-        #         f"creating default weaviate collection '{collection_name}' with default configs"
-        #     )
-        #     with self.connection_config.get_client() as weaviate_client:
-        #         weaviate_client.collections.create_from_dict(config=collection_config)
-        #         return True
+        if not self._collection_exists(collection_name):
+            astra_db = get_astra_db(
+                connection_config=self.connection_config, keyspace=self.upload_config.keyspace
+            )
+            logger.info(
+                f"creating default astra collection '{collection_name}' with dimension "
+                f"{vector_length} and metric {similarity_metric}"
+            )
+            collection = astra_db.create_collection(
+                collection_name,
+                dimension=vector_length,
+                metric=similarity_metric,
+            )
+            return True
         logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
         return False
 
