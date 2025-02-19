@@ -1,3 +1,9 @@
+## 0.5.6-dev0
+
+### Enhancements
+
+* Add name formatting to Weaviate destination uploader
+
 ## 0.5.5
 
 ### Enhancements

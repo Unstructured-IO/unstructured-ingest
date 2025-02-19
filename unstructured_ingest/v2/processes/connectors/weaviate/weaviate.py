@@ -236,10 +236,10 @@ class WeaviateUploader(VectorDBUploader, ABC):
     def format_destination_name(self, destination_name: str) -> str:
         # Weaviate naming requirements:
         # must be alphanumeric and underscores only
-        formatted = re.sub(r'[^a-zA-Z0-9]', '_', destination_name)
+        formatted = re.sub(r"[^a-zA-Z0-9]", "_", destination_name)
         # must begin with capital letter
         return formatted.capitalize()
-    
+
     def create_destination(
         self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
     ) -> bool:
@@ -252,7 +252,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
         with collection_config_file.open() as f:
             collection_config = json.load(f)
         collection_config["class"] = collection_name
-        
+
         if not self._collection_exists():
             logger.info(
                 f"creating default weaviate collection '{collection_name}' with default configs"
