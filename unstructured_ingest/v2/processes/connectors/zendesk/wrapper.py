@@ -65,7 +65,7 @@ class ZendeskClient:
                 comments.append(comment)
         else:
             raise RuntimeError(
-                f"Comments for ticket id:{ticket_id} could not be acquried from url: {comments_url}"
+                f"Comments for ticket id:{ticket_id} could not be acquired from url: {comments_url}"
             )
 
         return comments
