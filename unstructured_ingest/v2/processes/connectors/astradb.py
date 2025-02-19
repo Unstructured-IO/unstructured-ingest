@@ -154,7 +154,8 @@ class AstraDBUploaderConfig(UploaderConfig):
     collection_name: Optional[str] = Field(
         description="The name of the Astra DB collection. "
         "Note that the collection name must only include letters, "
-        "numbers, and underscores.", default=None
+        "numbers, and underscores.",
+        default=None,
     )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
@@ -356,10 +357,21 @@ class AstraDBUploader(Uploader):
             keyspace=self.upload_config.keyspace,
         )
 
-    # Shreya: 
+    def format_destination_name(self, destination_name: str) -> str:
+        # AstraDB collection naming requirements:
+        # must be below 50 characters
+        # must be lowercase alphanumeric and underscores only
+        formatted = re.sub(r"[^a-z0-9]", "_", destination_name.lower())
+        return formatted
+
     def create_destination(
-        self, destination_name: str = "elements", vector_length: int = 3072, similarity_metric: Optional[str] = "cosine", **kwargs: Any
+        self,
+        destination_name: str = "elements",
+        vector_length: int = 3072,
+        similarity_metric: Optional[str] = "cosine",
+        **kwargs: Any,
     ) -> bool:
+        destination_name = self.format_destination_name(destination_name)
         collection_name = self.upload_config.collection_name or destination_name
         self.upload_config.collection_name = collection_name
 
@@ -380,7 +392,7 @@ class AstraDBUploader(Uploader):
             metric=similarity_metric,
         )
         print(f"* Collection: {collection.full_name}\n")
-        
+
         # if not self._collection_exists():
         #     logger.info(
         #         f"creating default weaviate collection '{collection_name}' with default configs"
@@ -390,7 +402,7 @@ class AstraDBUploader(Uploader):
         #         return True
         logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
         return False
-    
+
     def delete_by_record_id(self, collection: "AstraDBCollection", file_data: FileData):
         logger.debug(
             f"deleting records from collection {collection.name} "
