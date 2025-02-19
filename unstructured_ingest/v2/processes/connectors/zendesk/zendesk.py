@@ -110,7 +110,8 @@ class ZendeskIndexer(Indexer):
 
             metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
-                record_locator={"id": str(ticket.id), "subject": str(ticket.subject)},
+                record_locator={"id": str(ticket.id), "subject": str(ticket.subject), 
+                                "description": str(ticket.description)},
             )
 
             full_path = self._generate_fullpath(ticket)
@@ -166,7 +167,6 @@ class ZendeskDownloader(Downloader):
                     }
                 )
 
-            # handle filedata bs
             cast_file_data = FileData.cast(file_data=file_data)
             cast_file_data.identifier = file_data.identifier
 
@@ -183,6 +183,10 @@ class ZendeskDownloader(Downloader):
                 # handle json dump here
                 f.write("ticket\n")
                 f.write(file_data.identifier)
+                f.write("\n")
+                f.write(zendesk_filedata.metadata.record_locator['subject'])
+                f.write("\n")
+                f.write(zendesk_filedata.metadata.record_locator['description'])
                 f.write("\n")
                 f.write(first_date)
                 f.write("\n")
