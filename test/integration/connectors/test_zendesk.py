@@ -29,7 +29,7 @@ async def zendesk_source_test(
 
     access_config = ZendeskAccessConfig(api_token=token)
     connection_config = ZendeskConnectionConfig(
-        sub_domain=subdomain, email=email, endpoint=endpoint, access_config=access_config
+        subdomain=subdomain, email=email, endpoint=endpoint, access_config=access_config
     )
 
     index_config = ZendeskIndexerConfig(batch_size=1)

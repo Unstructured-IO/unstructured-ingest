@@ -40,7 +40,7 @@ class ZendeskAccessConfig(AccessConfig):
 
 
 class ZendeskConnectionConfig(ConnectionConfig):
-    sub_domain: str = Field(description="Subdomain for zendesk site, <sub-domain>.company.com")
+    subdomain: str = Field(description="Subdomain for zendesk site, <sub-domain>.company.com")
     email: str = Field(description="Email for zendesk site registered at the subdomain")
     access_config: Secret[ZendeskAccessConfig]
 
@@ -51,7 +51,7 @@ class ZendeskConnectionConfig(ConnectionConfig):
 
         options = {
             "email": self.email,
-            "subdomain": self.sub_domain,
+            "subdomain": self.subdomain,
             "token": access_config.api_token,
         }
 
@@ -79,7 +79,7 @@ class ZendeskIndexer(Indexer):
             with self.connection_config.get_client() as client:
 
                 if client.get_users() == []:
-                    subdomain_endpoint = f"{self.connection_config.sub_domain}.zendesk.com"
+                    subdomain_endpoint = f"{self.connection_config.subdomain}.zendesk.com"
                     raise SourceConnectionError(
                         f"users do not exist in subdomain {subdomain_endpoint}"
                     )
