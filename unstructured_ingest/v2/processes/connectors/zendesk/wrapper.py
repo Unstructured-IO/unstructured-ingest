@@ -98,11 +98,11 @@ class ZendeskClient:
             if response.status_code == 200:
                 tickets_in_response: List[dict] = response.json()["tickets"]
             else:
-                message = f"Tickets could not be acquired from url: {tickets_url}" +  \
-                f"status {response.status_code}"
-                raise RuntimeError(
-                    message
+                message = (
+                    f"Tickets could not be acquired from url: {tickets_url}"
+                    + f"status {response.status_code}"
                 )
+                raise RuntimeError(message)
         else:
             # get some tickets according to id
             if isinstance(ticket_id, list):
