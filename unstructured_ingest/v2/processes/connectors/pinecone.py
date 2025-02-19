@@ -1,6 +1,7 @@
 import json
+import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import Field, Secret
 
@@ -13,10 +14,10 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    Uploader,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
+    VectorDBUploader,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
@@ -41,7 +42,7 @@ class PineconeAccessConfig(AccessConfig):
 
 
 class PineconeConnectionConfig(ConnectionConfig):
-    index_name: str = Field(description="Name of the index to connect to.")
+    index_name: Optional[str] = Field(description="Name of the index to connect to.", default=None)
     access_config: Secret[PineconeAccessConfig] = Field(
         default=PineconeAccessConfig(), validate_default=True
     )
@@ -160,17 +161,100 @@ class PineconeUploadStager(UploadStager):
 
 
 @dataclass
-class PineconeUploader(Uploader):
+class PineconeUploader(VectorDBUploader):
     upload_config: PineconeUploaderConfig
     connection_config: PineconeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def init(self, **kwargs: Any) -> None:
+        self.create_destination(**kwargs)
+
+    def index_exists(self, index_name: Optional[str]) -> bool:
+        from pinecone.exceptions import NotFoundException
+
+        index_name = index_name or self.connection_config.index_name
+        pc = self.connection_config.get_client()
+        try:
+            pc.describe_index(index_name)
+            return True
+        except NotFoundException:
+            return False
+        except Exception as e:
+            logger.error(f"failed to check if pinecone index exists : {e}")
+            raise DestinationConnectionError(f"failed to check if pinecone index exists : {e}")
+
     def precheck(self):
         try:
-            self.connection_config.get_index()
+            # just a connection check here. not an actual index_exists check
+            self.index_exists("just-checking-our-connection")
+
+            if self.connection_config.index_name and not self.index_exists(
+                self.connection_config.index_name
+            ):
+                raise DestinationConnectionError(
+                    f"index {self.connection_config.index_name} does not exist"
+                )
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+    def format_destination_name(self, destination_name: str) -> str:
+        # Pinecone naming requirements:
+        # can only contain lowercase letters, numbers, and hyphens
+        # must be 45 characters or less
+        formatted = re.sub(r"[^a-z0-9]", "-", destination_name.lower())
+        return formatted
+
+    def create_destination(
+        self,
+        vector_length: int,
+        destination_name: str = "elements",
+        destination_type: Literal["pod", "serverless"] = "serverless",
+        serverless_cloud: str = "aws",
+        serverless_region: str = "us-west-2",
+        pod_environment: str = "us-east1-gcp",
+        pod_type: str = "p1.x1",
+        pod_count: int = 1,
+        **kwargs: Any,
+    ) -> bool:
+        from pinecone import PodSpec, ServerlessSpec
+
+        index_name = destination_name or self.connection_config.index_name
+        index_name = self.format_destination_name(index_name)
+        self.connection_config.index_name = index_name
+
+        if not self.index_exists(index_name):
+
+            logger.info(f"creating pinecone index {index_name}")
+
+            pc = self.connection_config.get_client()
+
+            if destination_type == "serverless":
+                pc.create_index(
+                    name=destination_name,
+                    dimension=vector_length,
+                    spec=ServerlessSpec(cloud=serverless_cloud, region=serverless_region),
+                    **kwargs,
+                )
+
+                return True
+
+            elif destination_type == "pod":
+                pc.create_index(
+                    name=destination_name,
+                    dimension=vector_length,
+                    spec=PodSpec(environment=pod_environment, pod_type=pod_type, pods=pod_count),
+                    **kwargs,
+                )
+
+                return True
+
+            else:
+                raise ValueError(f"unexpected destination type: {destination_type}")
+
+        else:
+            logger.debug(f"index {index_name} already exists, skipping creation")
+            return False
 
     def pod_delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(
@@ -266,6 +350,10 @@ class PineconeUploader(Uploader):
         )
         # Determine if serverless or pod based index
         pinecone_client = self.connection_config.get_client()
+
+        if not self.connection_config.index_name:
+            raise ValueError("No index name specified")
+
         index_description = pinecone_client.describe_index(name=self.connection_config.index_name)
         if "serverless" in index_description.get("spec"):
             self.serverless_delete_by_record_id(file_data=file_data)
