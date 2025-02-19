@@ -352,7 +352,7 @@ def test_pinecone_stager(
         tmp_dir=tmp_path,
     )
 
-
+@requires_env(API_KEY)
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_pinecone_create_destination(pinecone_index):
     uploader = PineconeUploader(
