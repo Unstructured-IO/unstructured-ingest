@@ -1,8 +1,9 @@
-## 0.5.6-dev0
+## 0.5.6
 
 ### Enhancements
 
 * **Add support for setting up destination for Pinecone**
+* Add name formatting to Weaviate destination uploader
 
 ## 0.5.5
 
