@@ -1,8 +1,12 @@
-## 0.5.5-dev0 
+## 0.5.6-dev0 
 
 ### Enhancements
 
 * **Added in Zendesk connector and tests**
+
+## 0.5.5
+
+* **Improve orig_elements handling in astra and neo4j connectors**
 
 ## 0.5.4
 

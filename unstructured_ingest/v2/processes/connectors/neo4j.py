@@ -14,7 +14,6 @@ from pydantic import BaseModel, ConfigDict, Field, Secret, field_validator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -29,6 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured_ingest.v2.processes.connectors.utils import format_and_truncate_orig_elements
 
 SimilarityFunction = Literal["cosine"]
 
@@ -132,7 +132,7 @@ class Neo4jUploadStager(UploadStager):
             if self._is_chunk(element):
                 origin_element_nodes = [
                     self._create_element_node(origin_element)
-                    for origin_element in self._get_origin_elements(element)
+                    for origin_element in format_and_truncate_orig_elements(element)
                 ]
                 graph.add_edges_from(
                     [
@@ -166,17 +166,17 @@ class Neo4jUploadStager(UploadStager):
         return _Node(id_=file_data.identifier, properties=properties, labels=[Label.DOCUMENT])
 
     def _create_element_node(self, element: dict) -> _Node:
-        properties = {"id": element["element_id"], "text": element["text"]}
+        properties = {"id": element["element_id"]}
+
+        if text := element.get("text"):
+            # if we have chunks, we won't have text here for the original elements
+            properties["text"] = text
 
         if embeddings := element.get("embeddings"):
             properties["embeddings"] = embeddings
 
         label = Label.CHUNK if self._is_chunk(element) else Label.UNSTRUCTURED_ELEMENT
         return _Node(id_=element["element_id"], properties=properties, labels=[label])
-
-    def _get_origin_elements(self, chunk_element: dict) -> list[dict]:
-        orig_elements = chunk_element.get("metadata", {}).get("orig_elements")
-        return elements_from_base64_gzipped_json(raw_s=orig_elements)
 
 
 class _GraphData(BaseModel):
