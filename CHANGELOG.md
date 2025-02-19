@@ -1,8 +1,14 @@
-## 0.5.5-dev0
+## 0.5.6-dev0
 
 ### Enhancements
 
 * **Add support for setting up destination for Pinecone**
+
+## 0.5.5
+
+### Enhancements
+
+* **Improve orig_elements handling in astra and neo4j connectors**
 
 ## 0.5.4
 
