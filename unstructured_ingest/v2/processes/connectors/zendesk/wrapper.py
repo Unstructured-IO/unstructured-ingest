@@ -89,7 +89,7 @@ class ZendeskClient:
 
         return users
 
-    def get_tickets(self, ticket_id=None) -> List[ZendeskTicket]:
+    def get_tickets(self, ticket_id: int | List = None) -> List[ZendeskTicket]:
         tickets: List[ZendeskTicket] = []
 
         if ticket_id is None:
