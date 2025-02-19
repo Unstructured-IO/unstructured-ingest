@@ -28,7 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-from .wrapper import ZendeskClient, ZendeskTicket, Comment
+from .wrapper import Comment, ZendeskClient, ZendeskTicket
 
 CONNECTOR_TYPE = "zendesk"
 
