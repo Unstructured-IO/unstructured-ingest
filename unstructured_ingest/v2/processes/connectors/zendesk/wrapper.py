@@ -89,27 +89,19 @@ class ZendeskClient:
 
         return users
 
-    def get_tickets(self, ticket_id: int | List = None) -> List[ZendeskTicket]:
+    def get_tickets(self) -> List[ZendeskTicket]:
         tickets: List[ZendeskTicket] = []
 
-        if ticket_id is None:
-            tickets_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets"
-            response = requests.get(tickets_url, auth=self._auth)
-            if response.status_code == 200:
-                tickets_in_response: List[dict] = response.json()["tickets"]
-            else:
-                message = (
-                    f"Tickets could not be acquired from url: {tickets_url}"
-                    + f"status {response.status_code}"
-                )
-                raise RuntimeError(message)
+        tickets_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets"
+        response = requests.get(tickets_url, auth=self._auth)
+        if response.status_code == 200:
+            tickets_in_response: List[dict] = response.json()["tickets"]
         else:
-            # get some tickets according to id
-            if isinstance(ticket_id, list):
-                raise NotImplementedError("Multiple id queries not implemented yet")
-
-            if isinstance(ticket_id, int):
-                pass
+            message = (
+                f"Tickets could not be acquired from url: {tickets_url}"
+                + f"status {response.status_code}"
+            )
+            raise RuntimeError(message)
 
         for entry in tickets_in_response:
             ticket = ZendeskTicket(
