@@ -11,7 +11,7 @@ from unstructured_ingest.v2.utils import serialize_base_model_json
 
 IndexerT = TypeVar("IndexerT", bound=Indexer)
 
-STEP_ID = "index"
+STEP_ID = "indexer"
 
 
 @dataclass

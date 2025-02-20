@@ -208,7 +208,7 @@ class PineconeUploader(VectorDBUploader):
     def create_destination(
         self,
         vector_length: int,
-        destination_name: str = "elements",
+        destination_name: str = "unstructuredautocreated",
         destination_type: Literal["pod", "serverless"] = "serverless",
         serverless_cloud: str = "aws",
         serverless_region: str = "us-west-2",
@@ -219,7 +219,7 @@ class PineconeUploader(VectorDBUploader):
     ) -> bool:
         from pinecone import PodSpec, ServerlessSpec
 
-        index_name = destination_name or self.connection_config.index_name
+        index_name = self.connection_config.index_name or destination_name
         index_name = self.format_destination_name(index_name)
         self.connection_config.index_name = index_name
 
@@ -228,10 +228,9 @@ class PineconeUploader(VectorDBUploader):
             logger.info(f"creating pinecone index {index_name}")
 
             pc = self.connection_config.get_client()
-
             if destination_type == "serverless":
                 pc.create_index(
-                    name=destination_name,
+                    name=index_name,
                     dimension=vector_length,
                     spec=ServerlessSpec(cloud=serverless_cloud, region=serverless_region),
                     **kwargs,

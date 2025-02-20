@@ -63,14 +63,14 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
     @property
     def pinecone_index(self):
         if self._index is None:
-            self._index = self.create_index()
+            self._index = self.get_index()
         return self._index
 
     def initialize(self):
         pass
 
     @requires_dependencies(["pinecone"], extras="pinecone")
-    def create_index(self) -> "PineconeIndex":
+    def get_index(self) -> "PineconeIndex":
         from pinecone import Pinecone
         from unstructured import __version__ as unstructured_version
 
@@ -82,6 +82,14 @@ class PineconeDestinationConnector(IngestDocSessionHandleMixin, BaseDestinationC
         index = pc.Index(self.connector_config.index_name)
         logger.debug(f"connected to index: {pc.describe_index(self.connector_config.index_name)}")
         return index
+    
+    @requires_dependencies(["pinecone"], extras="pinecone")
+    def create_index(self) -> "PineconeIndex":
+        logger.warning("create_index (a misleading name as of now) will be deprecated soon. "+\
+                       "Use get_index instead. This is due to unstructured supporting actual "+\
+                        "index creation/provisioning now. "+\
+                        "(Support for v2 connectors only. you are currently using a v1 connector.)")
+        return self.get_index()
 
     @DestinationConnectionError.wrap
     def check_connection(self):
