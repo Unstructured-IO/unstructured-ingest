@@ -241,7 +241,10 @@ class WeaviateUploader(VectorDBUploader, ABC):
         return formatted.capitalize()
 
     def create_destination(
-        self, destination_name: str = "unstructuredautocreated", vector_length: Optional[int] = None, **kwargs: Any
+        self,
+        destination_name: str = "unstructuredautocreated",
+        vector_length: Optional[int] = None,
+        **kwargs: Any,
     ) -> bool:
         collection_name = self.upload_config.collection or destination_name
         collection_name = self.format_destination_name(collection_name)
@@ -254,9 +257,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
         collection_config["class"] = collection_name
 
         if not self._collection_exists():
-            logger.info(
-                f"creating weaviate collection '{collection_name}' with default configs"
-            )
+            logger.info(f"creating weaviate collection '{collection_name}' with default configs")
             with self.connection_config.get_client() as weaviate_client:
                 weaviate_client.collections.create_from_dict(config=collection_config)
                 return True

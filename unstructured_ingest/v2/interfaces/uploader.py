@@ -38,7 +38,9 @@ class Uploader(BaseProcess, BaseConnector, ABC):
     def run_batch(self, contents: list[UploadContent], **kwargs: Any) -> None:
         raise NotImplementedError()
 
-    def create_destination(self, destination_name: str = "unstructuredautocreated", **kwargs: Any) -> bool:
+    def create_destination(
+        self, destination_name: str = "unstructuredautocreated", **kwargs: Any
+    ) -> bool:
         # Update the uploader config if needed with a new destination that gets created.
         # Return a flag on if anything was created or not.
         return False
