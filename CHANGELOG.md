@@ -1,3 +1,9 @@
+## 0.5.8
+
+### Fixes
+
+* **Fix on pinecone index creation functionality**
+
 ## 0.5.7
 
 ### Fixes
