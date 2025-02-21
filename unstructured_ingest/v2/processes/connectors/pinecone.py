@@ -233,7 +233,6 @@ class PineconeUploader(VectorDBUploader):
                     name=index_name,
                     dimension=vector_length,
                     spec=ServerlessSpec(cloud=serverless_cloud, region=serverless_region),
-                    **kwargs,
                 )
 
                 return True
@@ -243,7 +242,6 @@ class PineconeUploader(VectorDBUploader):
                     name=destination_name,
                     dimension=vector_length,
                     spec=PodSpec(environment=pod_environment, pod_type=pod_type, pods=pod_count),
-                    **kwargs,
                 )
 
                 return True
