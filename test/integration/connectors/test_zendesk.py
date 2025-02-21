@@ -55,14 +55,31 @@ async def zendesk_source_test(
         connector_type="zendesk",
     )
 
-    # Run the source connector validation
-    await source_connector_validation(
-        indexer=indexer,
-        downloader=downloader,
-        configs=SourceValidationConfigs(
-            test_id="zendesk", expected_num_files=8, validate_file_data=False
-        ),
-    )
+    # test script 
+    #TODO(Remove later)
+    from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
+
+
+    with connection_config.get_client() as async_client:
+        # tickets = await async_client.get_tickets_async()
+        articles = async_client.get_articles()
+
+    breakpoint() 
+
+    # tickets = list( await indexer.run())
+
+    # fdata = tickets[0]
+
+    # result = await downloader.run(fdata)
+    
+    # # Run the source connector validation
+    # await source_connector_validation(
+    #     indexer=indexer,
+    #     downloader=downloader,
+    #     configs=SourceValidationConfigs(
+    #         test_id="zendesk", expected_num_files=8, validate_file_data=False
+    #     ),
+    # )
 
 
 @pytest.mark.asyncio

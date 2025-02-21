@@ -75,7 +75,6 @@ class ZendeskIndexer(Indexer):
     def precheck(self) -> None:
         """Validates connection to Zendesk api"""
         try:
-            # there is no context manager method for Zenpy.
             with self.connection_config.get_client() as client:
 
                 if client.get_users() == []:
@@ -101,6 +100,11 @@ class ZendeskIndexer(Indexer):
 
     def _generate_fullpath(self, ticket: ZendeskTicket) -> Path:
         return Path(hashlib.sha256(str(ticket.id).encode("utf-8")).hexdigest()[:16] + ".txt")
+    
+    async def run_async(self, **kwargs: Any) -> Generator[FileData, None, None]: 
+        # get tickets async. 
+        pass
+        
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Generates FileData objects for each ticket"""

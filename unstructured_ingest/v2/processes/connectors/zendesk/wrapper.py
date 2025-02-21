@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import List
 
 import requests
-
+import httpx
 
 @dataclass
 class Comment:
@@ -21,11 +21,18 @@ class ZendeskTicket:
     generated_ts: int
     metadata: dict
 
+@dataclass
+class ZendeskArticle:
+    id: str 
+    author_id: str
+    title: str 
+    content: str
+
 
 class ZendeskClient:
 
     def __init__(self, token: str, subdomain: str, email: str):
-
+        # should be okay to be blocking. 
         url_to_check = f"https://{subdomain}.zendesk.com/api/v2/groups.json"
         auth = f"{email}/token", token
         try:
@@ -41,6 +48,66 @@ class ZendeskClient:
         self._subdomain = subdomain
         self._email = email
         self._auth = auth
+
+    async def get_articles_async(self) -> List[ZendeskArticle]:
+        """
+        Retrieves article content from Zendesk asynchronously.
+        """
+
+        articles: List[ZendeskArticle] = []
+
+        article_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles.json"
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(article_url, auth=self._auth)
+
+        if response.status_code == 200:
+            articles_in_response: List[dict] = response.json()["articles"]
+
+            articles = [
+                ZendeskArticle(
+                    id=str(entry["id"]),
+                    author_id=str(entry["author_id"]),
+                    title=str(entry["title"]),
+                    content=entry["body"],
+                )
+                for entry in articles_in_response
+            ]
+            return articles
+
+        raise RuntimeError(
+            f"Articles were not able to be acquired from url: {article_url}. Status Code: {response.status_code}"
+        )
+
+    def get_articles(self) -> List[ZendeskArticle]:
+        """
+        retrieves article content from zendesk using requests
+        """
+
+        articles : List[ZendeskArticle] = [] 
+        
+        article_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles.json"
+
+        response = requests.get(article_url, auth=self._auth)
+
+        if response.status_code == 200:
+            articles_in_response: list[dict] = response.json()['articles']
+            for entry in articles_in_response:
+                articles.append(
+                        ZendeskArticle(
+                        id = str(entry['id']),
+                        author_id=str(entry['author_id']), 
+                        title = str(entry['title']),
+                        content = entry['body']
+                    ))
+
+        else:
+            raise RuntimeError(
+                f"Articles wer enot able to be acquired from url: {article_url}"
+            )
+        
+        return articles
+    
 
     def get_comments(self, ticket_id: int) -> List[Comment]:
 
@@ -70,6 +137,29 @@ class ZendeskClient:
 
         return comments
 
+    async def get_comments_async(self, ticket_id: int) -> List["Comment"]:
+        comments_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets/{ticket_id}/comments"
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(comments_url, auth=self._auth)
+
+        if response.status_code == 200:
+            return [
+                Comment(
+                    id=entry["id"],
+                    author_id=entry["author_id"],
+                    body=entry["body"],
+                    metadata=entry,
+                    parent_ticket_id=ticket_id,
+                )
+                for entry in response.json()["comments"]
+            ]
+
+        raise RuntimeError(
+            f"Comments for ticket id:{ticket_id} could not be acquired from url: {comments_url}"
+        )
+
+
     def get_users(self) -> List[dict]:
 
         users: List[dict] = []
@@ -80,14 +170,52 @@ class ZendeskClient:
 
         if response.status_code == 200:
             users_in_response: List[dict] = response.json()["users"]
-
-            # TODO(convert this into a dataclass later, right now just set it as a list of dicts)
             users = users_in_response
 
         else:
             raise RuntimeError(f"Users could not be acquried from url: {users_url}")
 
         return users
+    
+    async def get_users_async(self) -> List[dict]:  
+        users_url = f"https://{self._subdomain}.zendesk.com/api/v2/users"
+
+        async with httpx.AsyncClient() as client:  
+            response = await client.get(users_url, auth=self._auth)
+
+        if response.status_code == 200:
+            return response.json()["users"]
+
+        raise RuntimeError(f"Users could not be acquired from url: {users_url}")
+
+
+    async def get_tickets_async(self) -> List["ZendeskTicket"]:
+        tickets: List["ZendeskTicket"] = []
+        tickets_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets"
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(tickets_url, auth=self._auth)
+
+        if response.status_code == 200:
+            tickets_in_response: List[dict] = response.json()["tickets"]
+        else:
+            message = (
+                f"Tickets could not be acquired from url: {tickets_url} "
+                f"status {response.status_code}"
+            )
+            raise RuntimeError(message)
+
+        for entry in tickets_in_response:
+            ticket = ZendeskTicket(
+                id=entry["id"],
+                subject=entry["subject"],
+                description=entry["description"],
+                generated_ts=entry["generated_timestamp"],
+                metadata=entry,
+            )
+            tickets.append(ticket)
+
+        return tickets
 
     def get_tickets(self) -> List[ZendeskTicket]:
         tickets: List[ZendeskTicket] = []
