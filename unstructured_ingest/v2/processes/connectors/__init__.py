@@ -34,6 +34,8 @@ from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
+from .jira import jira_source_entry
+from .jira import CONNECTOR_TYPE as JIRA_CONNECTOR_TYPE
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
 from .kdbai import kdbai_destination_entry
 from .local import CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE
@@ -115,3 +117,5 @@ add_source_entry(source_type=CONFLUENCE_CONNECTOR_TYPE, entry=confluence_source_
 
 add_source_entry(source_type=DISCORD_CONNECTOR_TYPE, entry=discord_source_entry)
 add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
+
+add_source_entry(source_type=JIRA_CONNECTOR_TYPE, entry=jira_source_entry)
