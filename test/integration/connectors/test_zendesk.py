@@ -48,12 +48,19 @@ async def zendesk_source_test(
         connection_config=connection_config,
         download_config=download_config,
         connector_type="zendesk",
-    )
+    )   
+
+
 
 #     # # test script 
 #     # #TODO(Remove later)
-#     from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
+    from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
 
+    with connection_config.get_client() as client: 
+        articles = client.get_articles()
+        example_id = articles[0].id
+
+        results = client.get_article_attachments(article_id=example_id)
 
 #     ticket_generator = indexer.run_async()
 #     tickets = [] 

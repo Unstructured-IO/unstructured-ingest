@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
-
+import requests
+import base64
 import requests
 import httpx
 
@@ -242,3 +243,53 @@ class ZendeskClient:
             tickets.append(ticket)
 
         return tickets
+
+    def get_article_attachments(self, article_id: str): 
+        """
+        Handles article attachments such as images and stores them as UTF-8 encoded bytes.
+        """
+        
+        # Construct the URL to retrieve attachments for a specific article
+        article_attachment_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/{article_id}/attachments"
+        # Send the GET request to retrieve the attachments
+        response = requests.get(article_attachment_url, auth=self._auth)
+        
+        if response.status_code == 200:
+            # Parse the response and extract attachment information
+            attachments_in_response: List[dict] = response.json().get("article_attachments", [])
+
+            # Prepare a list to store attachment information
+            attachments = []
+
+            for attachment in attachments_in_response:
+                attachment_data = {
+                    "id": attachment["id"],
+                    "file_name": attachment["file_name"],
+                    "content_type": attachment["content_type"],
+                    "size": attachment["size"],
+                    "url": attachment["url"],
+                    "content_url": attachment["content_url"]
+                }
+                attachments.append(attachment_data)
+
+                # Download the attachment using the URL
+                attachment_url = attachment['content_url']
+                download_response = requests.get(attachment_url, auth=self._auth)
+
+                if download_response.status_code == 200:
+                    # Encode the file content as base64 bytes
+                    encoded_content = base64.b64encode(download_response.content).decode("utf-8")
+                    print(f"Encoded attachment {attachment['file_name']} successfully.")
+
+                    # You can store the encoded content as part of the attachment data
+                    attachment_data["encoded_content"] = encoded_content
+                else:
+                    print(f"Failed to download attachment {attachment['file_name']}.")
+
+            return attachments
+        else:
+            message = (
+                f"Attachments could not be acquired from url: {article_attachment_url} "
+                + f"status {response.status_code}"
+            )
+            raise RuntimeError(message)
