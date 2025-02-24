@@ -7,12 +7,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import Any, Generator, List, AsyncGenerator
+import aiofiles
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import (
     SourceConnectionError,
 )
+
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -250,6 +252,7 @@ class ZendeskDownloaderConfig(DownloaderConfig):
     pass
 
 
+
 @dataclass
 class ZendeskDownloader(Downloader):
     download_config: ZendeskDownloaderConfig
@@ -261,7 +264,6 @@ class ZendeskDownloader(Downloader):
         processes the ticket information, downloads the comments for each ticket
         and proceeds accordingly. 
         """
-
         file_data: FileData = FileData.cast(file_data=file_data)
 
         # Determine the download path
@@ -273,22 +275,15 @@ class ZendeskDownloader(Downloader):
 
         # Write the values to the file
         with open(download_path, "w", encoding="utf8") as f:
-
-            # handle json dump here
             f.write("article\n")
-            f.write(file_data.identifier)
-            f.write("\n")
-            f.write(file_data.metadata.record_locator["title"])
-            f.write("\n")
-            f.write(file_data.metadata.record_locator['content'])
-            f.write('\n')
-            f.write(file_data.metadata.record_locator['author_id'])
-            f.write('\n')
+            f.write(file_data.identifier + "\n")
+            f.write(file_data.metadata.record_locator["title"] + "\n")
+            f.write(file_data.metadata.record_locator['content'] + "\n")
+            f.write(file_data.metadata.record_locator['author_id'] + "\n")
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path
         )
-
 
     def handle_tickets(self, client, file_data: FileData) -> DownloadResponse:
         """
@@ -327,36 +322,121 @@ class ZendeskDownloader(Downloader):
 
         # Write the values to the file
         with open(download_path, "w", encoding="utf8") as f:
-
-            # handle json dump here
             f.write("ticket\n")
-            f.write(file_data.identifier)
-            f.write("\n")
-            f.write(file_data.metadata.record_locator["subject"])
-            f.write("\n")
-            f.write(file_data.metadata.record_locator["description"])
-            f.write("\n")
-            f.write(first_date)
-            f.write("\n")
+            f.write(file_data.identifier + "\n")
+            f.write(file_data.metadata.record_locator["subject"] + "\n")
+            f.write(file_data.metadata.record_locator["description"] + "\n")
+            f.write(first_date + "\n")
             for comment in comments:
-                f.write("comment")
-                f.write("\n")
-                f.write(str(comment["comment_id"]))
-                f.write("\n")
-                f.write(str(comment["author_id"]))
-                f.write("\n")
-                f.write(comment["body"])
-                f.write("\n")
-                f.write(comment["date_created"])
-                f.write("\n")
+                f.write("comment\n")
+                f.write(str(comment["comment_id"]) + "\n")
+                f.write(str(comment["author_id"]) + "\n")
+                f.write(comment["body"] + "\n")
+                f.write(comment["date_created"] + "\n")
+
+        return super().generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
+
+    async def handle_articles_async(self, client, file_data: FileData):
+        """
+        processes the ticket information, downloads the comments for each ticket
+        and proceeds accordingly. 
+        """
+        file_data: FileData = FileData.cast(file_data=file_data)
+
+        # Determine the download path
+        download_path = self.get_download_path(file_data)
+        if download_path is None:
+            raise ValueError("Download path could not be determined")
+
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Asynchronously write the values to the file
+        async with aiofiles.open(download_path, "w", encoding="utf8") as f:
+            await f.write("article\n")
+            await f.write(file_data.identifier + "\n")
+            await f.write(file_data.metadata.record_locator["title"] + "\n")
+            await f.write(file_data.metadata.record_locator['content'] + "\n")
+            await f.write(file_data.metadata.record_locator['author_id'] + "\n")
+
+        return super().generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
+
+
+    async def handle_tickets_async(self, client: ZendeskClient, file_data: FileData) -> DownloadResponse:
+        """
+        processes an article's information, parses it and proceeds accordingly. 
+        """
+
+        comments: List[Comment] = [] 
+
+        # each ticket consists of comments, to which I will dump in a txt file.
+        first_date = None
+        for comment in await client.get_comments_async(ticket_id=file_data.identifier):
+
+            if isinstance(comment.metadata["created_at"], datetime.datetime):
+                date_created = comment.metadata["created_at"].isoformat()
+            else:
+                date_created = str(comment.metadata["created_at"])
+
+            if first_date is None:
+                first_date = date_created
+
+            comments.append(
+                {
+                    "comment_id": comment.id,
+                    "author_id": comment.author_id,
+                    "body": comment.body,
+                    "date_created": date_created,
+                }
+            )
+
+        # Determine the download path
+        download_path = self.get_download_path(file_data)
+        if download_path is None:
+            raise ValueError("Download path could not be determined")
+
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Asynchronously write the values to the file
+        async with aiofiles.open(download_path, "w", encoding="utf8") as f:
+            await f.write("ticket\n")
+            await f.write(file_data.identifier + "\n")
+            await f.write(file_data.metadata.record_locator["subject"] + "\n")
+            await f.write(file_data.metadata.record_locator["description"] + "\n")
+            await f.write(first_date + "\n")
+            for comment in comments:
+                await f.write("comment\n")
+                await f.write(str(comment["comment_id"]) + "\n")
+                await f.write(str(comment["author_id"]) + "\n")
+                await f.write(comment["body"] + "\n")
+                await f.write(comment["date_created"] + "\n")
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path
         )
 
     @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
 
+        zendesk_filedata: FileData = FileData.cast(file_data=file_data)
+
+        async with self.connection_config.get_client_async() as client:
+            
+            item_type = zendesk_filedata.metadata.record_locator['item_type']
+            cast_file_data = FileData.cast(file_data=file_data)
+            cast_file_data.identifier = file_data.identifier
+
+            if item_type == "articles":
+                return await self.handle_articles_async(client, cast_file_data)
+            elif item_type == "tickets":
+                return await self.handle_tickets_async(client, cast_file_data)
+            else: 
+                raise RuntimeError(f"Item type {item_type} cannot be handled by the downloader")
+
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         zendesk_filedata: FileData = FileData.cast(file_data=file_data)
 
         with self.connection_config.get_client() as client:

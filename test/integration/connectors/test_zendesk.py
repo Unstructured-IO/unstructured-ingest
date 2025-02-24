@@ -33,7 +33,7 @@ async def zendesk_source_test(
     )
 
     index_config = ZendeskIndexerConfig(batch_size=1,
-                                        item_type='articles')
+                                        item_type='tickets')
     
     indexer = ZendeskIndexer(
         connection_config=connection_config,
@@ -50,23 +50,24 @@ async def zendesk_source_test(
         connector_type="zendesk",
     )
 
-    # # test script 
-    # #TODO(Remove later)
-    from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
+#     # # test script 
+#     # #TODO(Remove later)
+#     from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
 
 
-    ticket_generator = indexer.run_async()
-    tickets = [] 
+#     ticket_generator = indexer.run_async()
+#     tickets = [] 
 
-    async for ticket in ticket_generator: 
-        tickets.append(ticket)
+#     async for ticket in ticket_generator: 
+#         tickets.append(ticket)
 
-    fdata = tickets[0]
+#     fdata = tickets[0]
 
-    result = downloader.run(fdata)
+# # Now call the async downloader's `run_async` method
+#     result = await downloader.run_async(fdata)
 
-    breakpoint()
-    exit()
+#     breakpoint()
+#     exit()
 
     # Run the source connector validation
     await source_connector_validation(
