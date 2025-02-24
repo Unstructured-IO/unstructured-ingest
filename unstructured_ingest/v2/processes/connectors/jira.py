@@ -62,6 +62,19 @@ class FieldGetter(dict):
         return value
 
 
+def nested_object_to_field_getter(object: dict) -> Union[FieldGetter, dict]:
+    if isinstance(object, abc.Mapping):
+        new_object = {}
+        for k, v in object.items():
+            if isinstance(v, abc.Mapping):
+                new_object[k] = FieldGetter(nested_object_to_field_getter(v))
+            else:
+                new_object[k] = v
+        return FieldGetter(new_object)
+    else:
+        return object
+
+
 def issues_fetcher_wrapper(func, results_key="results", number_of_issues_to_fetch: int = 100):
     def wrapper(*args, **kwargs) -> list:
         """Wraps a function to obtain scroll functionality.
@@ -90,19 +103,6 @@ def issues_fetcher_wrapper(func, results_key="results", number_of_issues_to_fetc
         return all_results
 
     return wrapper
-
-
-def nested_object_to_field_getter(object: dict) -> Union[FieldGetter, dict]:
-    if isinstance(object, abc.Mapping):
-        new_object = {}
-        for k, v in object.items():
-            if isinstance(v, abc.Mapping):
-                new_object[k] = FieldGetter(nested_object_to_field_getter(v))
-            else:
-                new_object[k] = v
-        return FieldGetter(new_object)
-    else:
-        return object
 
 
 class JiraAccessConfig(AccessConfig):
@@ -201,6 +201,9 @@ class JiraIndexer(Indexer):
                 if "total" not in number_of_issues_to_fetch:
                     raise KeyError('Response object is missing "total" key.')
                 number_of_issues_to_fetch = number_of_issues_to_fetch["total"]
+            if not number_of_issues_to_fetch:
+                logger.warning(f"No issues found in project: {project_key}. Skipping!")
+                return []
             get_project_issues = issues_fetcher_wrapper(
                 client.get_all_project_issues,
                 results_key="issues",
