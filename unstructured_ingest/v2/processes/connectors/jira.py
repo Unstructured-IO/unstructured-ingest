@@ -76,9 +76,27 @@ def nested_object_to_field_getter(object: dict) -> Union[FieldGetter, dict]:
 
 
 def issues_fetcher_wrapper(func, results_key="results", number_of_issues_to_fetch: int = 100):
+    """
+    A decorator function that wraps around a function to fetch issues from Jira API in a paginated
+    manner. This is required because the Jira API has a limit of 100 issues per request.
+
+    Args:
+        func (callable): The function to be wrapped. This function should accept `limit` and `start`
+        as keyword arguments.
+        results_key (str, optional): The key in the response dictionary that contains the list of
+        results. Defaults to "results".
+        number_of_issues_to_fetch (int, optional): The total number of issues to fetch. Defaults to
+        100.
+
+    Returns:
+        list: A list of all fetched issues.
+
+    Raises:
+        KeyError: If the response dictionary does not contain the specified `results_key`.
+        TypeError: If the response type from the Jira API is neither list nor dict.
+    """
+
     def wrapper(*args, **kwargs) -> list:
-        """Wraps a function to obtain scroll functionality.
-        Function needs to be able to accept 'start' and 'limit' arguments."""
         kwargs["limit"] = min(100, number_of_issues_to_fetch)
         kwargs["start"] = kwargs.get("start", 0)
 
@@ -161,11 +179,9 @@ class JiraConnectionConfig(ConnectionConfig):
 
 
 class JiraIndexerConfig(IndexerConfig):
-    projects: Optional[List[str]] = Field(None, description="List of projects")
-    boards: Optional[List[str]] = Field(None, description="List of boards")
-    # TODO: (Marek Połom) - add support for sprints
-    sprints: Optional[List[str]] = Field(None, description="List of sprints")
-    issues: Optional[List[str]] = Field(None, description="List of issues")
+    projects: Optional[List[str]] = Field(None, description="List of project keys")
+    boards: Optional[List[str]] = Field(None, description="List of board IDs")
+    issues: Optional[List[str]] = Field(None, description="List of issue keys or IDs")
 
 
 @dataclass
@@ -210,6 +226,7 @@ class JiraIndexer(Indexer):
                 number_of_issues_to_fetch=number_of_issues_to_fetch,
             )
             issues = get_project_issues(project=project_key, fields=["key", "id"])
+            logger.debug(f"Found {len(issues)} issues in project: {project_key}")
             return [JiraIssueMetadata(id=issue["id"], key=issue["key"]) for issue in issues]
 
     def _get_issues_within_projects(self) -> List[JiraIssueMetadata]:
@@ -237,6 +254,7 @@ class JiraIndexer(Indexer):
                 results_key="issues",
             )
             issues = get_board_issues(board_id=board_id, fields=["key", "id"], jql=None)
+            logger.debug(f"Found {len(issues)} issues in board: {board_id}")
             return [
                 JiraIssueMetadata(id=issue["id"], key=issue["key"], board_id=board_id)
                 for issue in issues
