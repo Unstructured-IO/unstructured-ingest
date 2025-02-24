@@ -120,6 +120,7 @@ class ZendeskIndexer(Indexer):
                     "author_id": str(article.author_id),
                     "title": str(article.title),
                     "content": str(article.content),
+                    "item_type": "article",
                 },
             )
             full_path = self._generate_fullpath(str(article.id))
@@ -141,6 +142,7 @@ class ZendeskIndexer(Indexer):
                     "id": str(ticket.id),
                     "subject": str(ticket.subject),
                     "description": str(ticket.description),
+                    "item_type": "ticket",
                 },
             )
             full_path = self._generate_fullpath(str(ticket.id))
