@@ -32,19 +32,14 @@ async def zendesk_source_test(
         subdomain=subdomain, email=email, endpoint=endpoint, access_config=access_config
     )
 
-    index_config = ZendeskIndexerConfig(batch_size=1)
-
+    index_config = ZendeskIndexerConfig(batch_size=1,
+                                        item_type='tickets')
+    
     indexer = ZendeskIndexer(
         connection_config=connection_config,
         index_config=index_config,
         connector_type="zendesk",
     )
-
-    with connection_config.get_client() as client:
-        tickets = client.get_tickets()
-        client.get_users()
-        for ticket in tickets:
-            client.get_comments(ticket.id)
 
     # handle downloader.
     download_config = ZendeskDownloaderConfig(download_dir=tmp_path)
@@ -55,16 +50,16 @@ async def zendesk_source_test(
         connector_type="zendesk",
     )
 
-    # test script 
-    #TODO(Remove later)
-    from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
+    # # test script 
+    # #TODO(Remove later)
+    # from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
 
 
-    with connection_config.get_client() as async_client:
-        # tickets = await async_client.get_tickets_async()
-        articles = async_client.get_articles()
+    # with connection_config.get_client() as async_client:
+    #     # tickets = await async_client.get_tickets_async()
+    #     articles = async_client.get_articles()
 
-    breakpoint() 
+    # breakpoint() 
 
     # tickets = list( await indexer.run())
 
@@ -72,14 +67,14 @@ async def zendesk_source_test(
 
     # result = await downloader.run(fdata)
     
-    # # Run the source connector validation
-    # await source_connector_validation(
-    #     indexer=indexer,
-    #     downloader=downloader,
-    #     configs=SourceValidationConfigs(
-    #         test_id="zendesk", expected_num_files=8, validate_file_data=False
-    #     ),
-    # )
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="zendesk", expected_num_files=8, validate_file_data=False
+        ),
+    )
 
 
 @pytest.mark.asyncio

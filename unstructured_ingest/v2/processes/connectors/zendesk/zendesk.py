@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import Any, Generator, List
+from typing import Any, Generator, List, AsyncGenerator
 
 from pydantic import Field, Secret
 
@@ -28,7 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-from .wrapper import ZendeskClient, ZendeskTicket
+from .wrapper import ZendeskClient, ZendeskTicket, ZendeskArticle   
 
 CONNECTOR_TYPE = "zendesk"
 
@@ -62,9 +62,12 @@ class ZendeskConnectionConfig(ConnectionConfig):
 class ZendeskIndexerConfig(IndexerConfig):
     batch_size: int = Field(
         default=1,
-        description="[NotImplemented]Number of tickets: Currently batching is not supported",
+        description="[NotImplemented]Number of tickets: Currently batching is not supported.",
     )
-
+    item_type: str = Field(
+        default='tickets',
+        description="Type of item from zendesk to parse, can only be tickets or articles."
+    )
 
 @dataclass
 class ZendeskIndexer(Indexer):
@@ -73,45 +76,65 @@ class ZendeskIndexer(Indexer):
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
-        """Validates connection to Zendesk api"""
+        """Validates connection to Zendesk API."""
         try:
             with self.connection_config.get_client() as client:
-
-                if client.get_users() == []:
+                if not client.get_users():
                     subdomain_endpoint = f"{self.connection_config.subdomain}.zendesk.com"
                     raise SourceConnectionError(
-                        f"users do not exist in subdomain {subdomain_endpoint}"
+                        f"Users do not exist in subdomain {subdomain_endpoint}"
                     )
-
         except Exception as e:
             logger.error(f"Failed to validate connection to Zendesk: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
-
-    def run_async(self, **kwargs):
-        return NotImplementedError
-
+    
     def is_async(self) -> bool:
         return False
 
+    async def _list_articles_async(self) -> List[ZendeskArticle]:
+        async with self.connection_config.get_client() as client:
+            return await client.get_articles_async()
+
+    def _list_articles(self) -> List[ZendeskArticle]:
+        with self.connection_config.get_client() as client:
+            return client.get_articles()
+
+    async def _list_tickets_async(self) -> List[ZendeskTicket]:
+        async with self.connection_config.get_client() as client:
+            return await client.get_tickets_async()
+
     def _list_tickets(self) -> List[ZendeskTicket]:
         with self.connection_config.get_client() as client:
-            tickets = client.get_tickets()
-            return tickets
+            return client.get_tickets()
 
-    def _generate_fullpath(self, ticket: ZendeskTicket) -> Path:
-        return Path(hashlib.sha256(str(ticket.id).encode("utf-8")).hexdigest()[:16] + ".txt")
-    
-    async def run_async(self, **kwargs: Any) -> Generator[FileData, None, None]: 
-        # get tickets async. 
-        pass
-        
+    def _generate_fullpath(self, identifier: str) -> Path:
+        return Path(hashlib.sha256(identifier.encode("utf-8")).hexdigest()[:16] + ".txt")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        """Generates FileData objects for each ticket"""
-        ticket_generator = self._list_tickets()
+    def handle_articles(self, articles: List[ZendeskArticle]) -> Generator[FileData, None, None]:
+        """Parses articles from a list and yields FileData objects."""
+        for article in articles:
+            metadata = FileDataSourceMetadata(
+                date_processed=str(time()),
+                record_locator={
+                    "id": str(article.id),
+                    "author_id": str(article.author_id),
+                    "title": str(article.title),
+                    "content": str(article.content),
+                },
+            )
+            full_path = self._generate_fullpath(str(article.id))
+            source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
-        for ticket in ticket_generator:
+            yield FileData(
+                identifier=str(article.id),
+                connector_type=self.connector_type,
+                metadata=metadata,
+                source_identifiers=source_identifiers,
+            )
 
+    def handle_tickets(self, tickets: List[ZendeskTicket]) -> Generator[FileData, None, None]:
+        """Parses tickets from a list and yields FileData objects."""
+        for ticket in tickets:
             metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
@@ -120,20 +143,41 @@ class ZendeskIndexer(Indexer):
                     "description": str(ticket.description),
                 },
             )
-
-            full_path = self._generate_fullpath(ticket)
-
+            full_path = self._generate_fullpath(str(ticket.id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
-            file_data = FileData(
+            yield FileData(
                 identifier=str(ticket.id),
                 connector_type=self.connector_type,
                 metadata=metadata,
                 source_identifiers=source_identifiers,
             )
 
-            yield file_data
+    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
+        """Determines item type and processes accordingly."""
+        item_type = self.index_config.item_type
 
+        if item_type == "articles":
+            articles = await self._list_articles_async()
+            async for file_data in self.handle_articles(articles):
+                yield file_data
+
+        elif item_type == "tickets":
+            tickets = await self._list_tickets_async()
+            async for file_data in self.handle_tickets(tickets):
+                yield file_data
+    
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        """Determines item type and processes accordingly."""
+        item_type = self.index_config.item_type
+
+        if item_type == "articles":
+            articles = self._list_articles()
+            yield from self.handle_articles(articles)
+        
+        elif item_type == "tickets":
+            tickets = self._list_tickets()
+            yield from self.handle_tickets(tickets)
 
 class ZendeskDownloaderConfig(DownloaderConfig):
     pass
