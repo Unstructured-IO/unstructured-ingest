@@ -303,7 +303,7 @@ class JiraIndexer(Indexer):
         for issue in issues:
             # Build metadata
             metadata = FileDataSourceMetadata(
-                date_created=str(time()),
+                date_processed=str(time()),
                 record_locator=issue.to_dict(),
             )
 
