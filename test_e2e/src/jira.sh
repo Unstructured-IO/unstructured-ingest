@@ -64,8 +64,8 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --url https://unstructured-jira-connector-test.atlassian.net \
-  --user-email "$JIRA_INGEST_USER_EMAIL" \
-  --api-token "$JIRA_INGEST_API_TOKEN" \
+  --username "$JIRA_INGEST_USER_EMAIL" \
+  --password "$JIRA_INGEST_API_TOKEN" \
   --projects "JCTP3" \
   --boards "1" \
   --issues "JCTP2-4,JCTP2-7,JCTP2-8,10012,JCTP2-11" \
