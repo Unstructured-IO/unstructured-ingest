@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 import requests
 import base64
 import requests
@@ -244,6 +244,7 @@ class ZendeskClient:
 
         return tickets
 
+
     def get_article_attachments(self, article_id: str): 
         """
         Handles article attachments such as images and stores them as UTF-8 encoded bytes.
@@ -282,7 +283,9 @@ class ZendeskClient:
                     print(f"Encoded attachment {attachment['file_name']} successfully.")
 
                     # You can store the encoded content as part of the attachment data
-                    attachment_data["encoded_content"] = encoded_content
+                    encoded_string_injection = f"data:{attachment_data["content_type"]};base64,{encoded_content}"
+                    attachment_data["encoded_content"] = encoded_string_injection
+
                 else:
                     print(f"Failed to download attachment {attachment['file_name']}.")
 
@@ -293,3 +296,44 @@ class ZendeskClient:
                 + f"status {response.status_code}"
             )
             raise RuntimeError(message)
+
+    async def get_article_attachments_async(self, article_id: str):
+        """
+        Handles article attachments such as images and stores them as UTF-8 encoded bytes.
+        """
+        article_attachment_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/{article_id}/attachments"
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(article_attachment_url, auth=self._auth)
+            
+            if response.status_code == 200:
+                attachments_in_response: List[Dict] = response.json().get("article_attachments", [])
+                attachments = []
+                
+                for attachment in attachments_in_response:
+                    attachment_data = {
+                        "id": attachment["id"],
+                        "file_name": attachment["file_name"],
+                        "content_type": attachment["content_type"],
+                        "size": attachment["size"],
+                        "url": attachment["url"],
+                        "content_url": attachment["content_url"]
+                    }
+                    
+                    download_response = await client.get(attachment['content_url'], auth=self._auth)
+                    
+                    if download_response.status_code == 200:
+                        encoded_content = base64.b64encode(download_response.content).decode("utf-8")
+                        attachment_data["encoded_content"] = f"data:{attachment_data['content_type']};base64,{encoded_content}"
+                    else:
+                        print(f"Failed to download attachment {attachment['file_name']}.")
+                    
+                    attachments.append(attachment_data)
+                
+                return attachments
+            else:
+                message = (
+                    f"Attachments could not be acquired from URL: {article_attachment_url} "
+                    f"Status {response.status_code}"
+                )
+                raise RuntimeError(message)

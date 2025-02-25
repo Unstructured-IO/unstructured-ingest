@@ -50,32 +50,6 @@ async def zendesk_source_test(
         connector_type="zendesk",
     )   
 
-
-
-#     # # test script 
-#     # #TODO(Remove later)
-    from unstructured_ingest.v2.processes.connectors.zendesk.wrapper import ZendeskClient
-
-    with connection_config.get_client() as client: 
-        articles = client.get_articles()
-        example_id = articles[0].id
-
-        results = client.get_article_attachments(article_id=example_id)
-
-#     ticket_generator = indexer.run_async()
-#     tickets = [] 
-
-#     async for ticket in ticket_generator: 
-#         tickets.append(ticket)
-
-#     fdata = tickets[0]
-
-# # Now call the async downloader's `run_async` method
-#     result = await downloader.run_async(fdata)
-
-#     breakpoint()
-#     exit()
-
     # Run the source connector validation
     await source_connector_validation(
         indexer=indexer,

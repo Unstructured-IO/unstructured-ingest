@@ -8,6 +8,7 @@ from pathlib import Path
 from time import time
 from typing import Any, Generator, List, AsyncGenerator
 import aiofiles
+import bs4
 
 from pydantic import Field, Secret
 
@@ -29,6 +30,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.utils.html import HtmlMixin
 
 from .wrapper import ZendeskClient, ZendeskTicket, ZendeskArticle, Comment 
 
@@ -108,7 +110,7 @@ class ZendeskIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {e}")
     
     def is_async(self) -> bool:
-        return False  # As per your logic, it seems the implementation is expected to be async.
+        return True 
 
     async def _list_articles_async(self) -> List[ZendeskArticle]:
         async with self.connection_config.get_client_async() as client:
@@ -273,6 +275,19 @@ class ZendeskDownloader(Downloader):
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
+        html_data_str = file_data.metadata.record_locator['content']
+
+        soup = bs4.BeautifulSoup(html_data_str, "html.parser")
+
+        # get article attachments
+        image_data_decoded: List = client.get_article_attachments(article_id=file_data.metadata.record_locator['id'])
+        img_tags = soup.find_all("img")
+
+        for i, img_tag in enumerate(img_tags):
+            img_tag['src'] = image_data_decoded[i]['encoded_content']
+        
+        file_data.metadata.record_locator['content'] = str(soup)
+
         # Write the values to the file
         with open(download_path, "w", encoding="utf8") as f:
             f.write("article\n")
@@ -338,10 +353,10 @@ class ZendeskDownloader(Downloader):
             file_data=file_data, download_path=download_path
         )
 
-    async def handle_articles_async(self, client, file_data: FileData):
+    async def handle_articles_async(self, client: ZendeskClient, file_data: FileData):
         """
-        processes the ticket information, downloads the comments for each ticket
-        and proceeds accordingly. 
+        Processes the ticket information, downloads the comments for each ticket, 
+        and proceeds accordingly.
         """
         file_data: FileData = FileData.cast(file_data=file_data)
 
@@ -352,13 +367,31 @@ class ZendeskDownloader(Downloader):
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
+        html_data_str = file_data.metadata.record_locator['content']
+        soup = bs4.BeautifulSoup(html_data_str, "html.parser")
+
+        # Get article attachments asynchronously
+        article_id = file_data.metadata.record_locator.get('id')
+        if article_id is None:
+            raise ValueError("Article ID is missing in metadata")
+
+        image_data_decoded: List = await client.get_article_attachments_async(article_id=article_id)
+        img_tags = soup.find_all("img")
+
+        # Ensure we don't exceed the available images
+        for img_tag, img_data in zip(img_tags, image_data_decoded):
+            img_tag['src'] = img_data.get('encoded_content', '')
+
+        # Update content with modified images
+        file_data.metadata.record_locator['content'] = str(soup)
+
         # Asynchronously write the values to the file
         async with aiofiles.open(download_path, "w", encoding="utf8") as f:
             await f.write("article\n")
-            await f.write(file_data.identifier + "\n")
-            await f.write(file_data.metadata.record_locator["title"] + "\n")
-            await f.write(file_data.metadata.record_locator['content'] + "\n")
-            await f.write(file_data.metadata.record_locator['author_id'] + "\n")
+            await f.write(f"{file_data.identifier}\n")
+            await f.write(f"{file_data.metadata.record_locator.get('title', '')}\n")
+            await f.write(f"{file_data.metadata.record_locator['content']}\n")
+            await f.write(f"{file_data.metadata.record_locator.get('author_id', '')}\n")
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path
