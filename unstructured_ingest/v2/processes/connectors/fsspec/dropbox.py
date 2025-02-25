@@ -115,7 +115,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
             yield client
         finally:
             # Not all fsspec filesystems require explicit close, 
-            # but it’s good practice to do so if it's available.
+            # but it's good practice to do so if it's available.
             close_method = getattr(client, "close", None)
             if callable(close_method):
                 close_method()
