@@ -78,7 +78,6 @@ def run_uploader_and_validate(
     validate_count(expected_count=expected_count)
 
 
-@pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_weaviate_local_destination(upload_file: Path, collection: str, tmp_path: Path):
     file_data = FileData(
@@ -142,11 +141,12 @@ def test_weaviate_local_create_destination(weaviate_instance):
         upload_config=LocalWeaviateUploaderConfig(),
         connection_config=LocalWeaviateConnectionConfig(),
     )
-    collection_name = "system_created"
+    collection_name = "system_created-123"
+    formatted_collection_name = "System_created_123"
     created = uploader.create_destination(destination_name=collection_name)
     assert created
     with uploader.connection_config.get_client() as weaviate_client:
-        assert weaviate_client.collections.exists(name=collection_name)
+        assert weaviate_client.collections.exists(name=formatted_collection_name)
 
     created = uploader.create_destination(destination_name=collection_name)
     assert not created

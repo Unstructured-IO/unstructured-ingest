@@ -126,14 +126,32 @@ class Pipeline:
                 for kk, vv in v.items():
                     logger.error(f"{k}: [{kk}] {vv}")
 
+    def _run_initialization(self):
+        failures = {}
+        init_kwargs = {}
+        for step in self._get_ordered_steps():
+            try:
+                step.process.init(**init_kwargs)
+                step.process.precheck()
+                # Make sure embedder dimensions available for downstream steps
+                if isinstance(step.process, Embedder):
+                    embed_dimensions = step.process.config.get_embedder().dimension
+                    init_kwargs["vector_length"] = embed_dimensions
+
+            except Exception as e:
+                failures[step.process.__class__.__name__] = f"[{type(e).__name__}] {e}"
+        if failures:
+            for k, v in failures.items():
+                logger.error(f"Step initialization failure: {k}: {v}")
+            raise PipelineError("Initialization failed")
+
     def run(self):
         otel_handler = OtelHandler(otel_endpoint=self.context.otel_endpoint, log_out=logger.info)
         try:
             with otel_handler.get_tracer().start_as_current_span(
                 "ingest process", record_exception=True
             ):
-                self._run_inits()
-                self._run_prechecks()
+                self._run_initialization()
                 self._run()
         finally:
             self.log_statuses()
@@ -154,42 +172,19 @@ class Pipeline:
         final = [f for f in flat if f]
         return final or None
 
-    def _get_all_steps(self) -> list[PipelineStep]:
-        steps = [self.indexer_step, self.downloader_step, self.partitioner_step, self.uploader_step]
+    def _get_ordered_steps(self) -> list[PipelineStep]:
+        steps = [self.indexer_step, self.downloader_step]
+        if self.uncompress_step:
+            steps.append(self.uncompress_step)
+        steps.append(self.partitioner_step)
         if self.chunker_step:
             steps.append(self.chunker_step)
         if self.embedder_step:
             steps.append(self.embedder_step)
-        if self.uncompress_step:
-            steps.append(self.uncompress_step)
         if self.stager_step:
             steps.append(self.stager_step)
+        steps.append(self.uploader_step)
         return steps
-
-    def _run_inits(self):
-        failures = {}
-
-        for step in self._get_all_steps():
-            try:
-                step.process.init()
-            except Exception as e:
-                failures[step.process.__class__.__name__] = f"[{type(e).__name__}] {e}"
-        if failures:
-            for k, v in failures.items():
-                logger.error(f"Step init failure: {k}: {v}")
-            raise PipelineError("Init failed")
-
-    def _run_prechecks(self):
-        failures = {}
-        for step in self._get_all_steps():
-            try:
-                step.process.precheck()
-            except Exception as e:
-                failures[step.process.__class__.__name__] = f"[{type(e).__name__}] {e}"
-        if failures:
-            for k, v in failures.items():
-                logger.error(f"Step precheck failure: {k}: {v}")
-            raise PipelineError("Precheck failed")
 
     def apply_filter(self, records: list[dict]) -> list[dict]:
         if not self.filter_step:

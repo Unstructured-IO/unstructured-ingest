@@ -1,3 +1,22 @@
+## 0.5.8
+
+### Fixes
+
+* **Fix on pinecone index creation functionality**
+
+## 0.5.7
+
+### Fixes
+
+* **Fix voyageai embedder: add multimodal embedder function**
+
+## 0.5.6
+
+### Enhancements
+
+* **Add support for setting up destination for Pinecone**
+* Add name formatting to Weaviate destination uploader
+
 ## 0.5.5
 
 ### Enhancements

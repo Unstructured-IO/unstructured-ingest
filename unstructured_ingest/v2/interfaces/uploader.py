@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -38,7 +38,9 @@ class Uploader(BaseProcess, BaseConnector, ABC):
     def run_batch(self, contents: list[UploadContent], **kwargs: Any) -> None:
         raise NotImplementedError()
 
-    def create_destination(self, destination_name: str = "elements", **kwargs: Any) -> bool:
+    def create_destination(
+        self, destination_name: str = "unstructuredautocreated", **kwargs: Any
+    ) -> bool:
         # Update the uploader config if needed with a new destination that gets created.
         # Return a flag on if anything was created or not.
         return False
@@ -61,6 +63,6 @@ class Uploader(BaseProcess, BaseConnector, ABC):
 @dataclass
 class VectorDBUploader(Uploader, ABC):
     def create_destination(
-        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+        self, vector_length: int, destination_name: str = "unstructuredautocreated", **kwargs: Any
     ) -> bool:
         return False
