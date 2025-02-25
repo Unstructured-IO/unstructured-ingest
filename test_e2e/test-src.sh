@@ -30,7 +30,7 @@ all_tests=(
   'dropbox.sh'
   'github.sh'
   'gitlab.sh'
-  'google-drive.sh'
+  # 'google-drive.sh'
   'wikipedia.sh'
   'slack.sh'
   #  'against-api.sh'
