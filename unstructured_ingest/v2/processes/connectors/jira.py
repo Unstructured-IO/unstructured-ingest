@@ -348,7 +348,7 @@ class JiraDownloader(Downloader):
     ) -> str:
         if "project" in issue:
             return (
-                f"ProjectID_Key:{issue["project"]["key"]}{c_sep}{issue["project"]["name"]}{r_sep}"
+                f"ProjectID_Key:{issue['project']['key']}{c_sep}{issue['project']['name']}{r_sep}"
             )
         else:
             return ""
