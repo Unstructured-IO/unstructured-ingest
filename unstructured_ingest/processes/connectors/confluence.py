@@ -170,18 +170,29 @@ class ConfluenceIndexer(Indexer):
         doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
+    # TODO need connector that extends permission config interface? dont think so but check w ahmet
+    def _get_permissions_for_doc(self, doc_id: str) -> List[dict]:
+        # TODO check space permissions too? client.get_space_permissions(space_key)
+        with self.connection_config.get_client() as client:
+            doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+
+        # TODO parse into acl shape; change return type
+        return doc_permissions
+
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
-        space_ids_and_keys = self._get_space_ids_and_keys()
-        for space_key, space_id in space_ids_and_keys:
-            doc_ids = self._get_docs_ids_within_one_space(space_key)
+        space_ids = self._get_space_ids()
+        for space_id in space_ids:
+            doc_ids = self._get_docs_ids_within_one_space(space_id)
+            # read space permissions here?
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
+                    permissions_data=self._get_permissions_for_doc(doc_id),
                     record_locator={
                         "space_id": space_key,
                         "document_id": doc_id,
