@@ -21,12 +21,12 @@ from unstructured_ingest.v2.processes.connectors.jira import (
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
-@requires_env("JIRA_USER_EMAIL", "JIRA_API_TOKEN")
-async def test_jira_source_all(temp_dir):
+@requires_env("JIRA_INGEST_USER_EMAIL", "JIRA_INGEST_API_TOKEN")
+async def test_jira_source(temp_dir):
     # Retrieve environment variables
-    jira_url = os.environ["JIRA_URL"]
-    user_email = os.environ["JIRA_USER_EMAIL"]
-    api_token = os.environ["JIRA_API_TOKEN"]
+    jira_url = os.environ.get("JIRA_INGEST_URL", "https://unstructured-jira-connector-test.atlassian.net")
+    user_email = os.environ["JIRA_INGEST_USER_EMAIL"]
+    api_token = os.environ["JIRA_INGEST_API_TOKEN"]
     projects = ["JCTP1"]
     boards = ["3"]
     issues = ["JCTP2-1", "JCTP2-2", "JCTP2-3"]
