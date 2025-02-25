@@ -73,7 +73,7 @@ def test_jira_indexer_precheck_no_permission(
 
 
 @pytest.mark.parametrize(
-    "project_issues_count, expected_issues_count", [(2, 2), ({"total": 2}, 2), (0, 0)]
+    ("project_issues_count", "expected_issues_count"), [(2, 2), ({"total": 2}, 2), (0, 0)]
 )
 def test_jira_indexer_get_issues_within_single_project(
     jira_indexer: JiraIndexer,

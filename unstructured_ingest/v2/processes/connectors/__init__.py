@@ -34,8 +34,8 @@ from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
-from .jira import jira_source_entry
 from .jira import CONNECTOR_TYPE as JIRA_CONNECTOR_TYPE
+from .jira import jira_source_entry
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
 from .kdbai import kdbai_destination_entry
 from .local import CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE
