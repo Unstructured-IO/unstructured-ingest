@@ -46,10 +46,14 @@ class DropboxIndexerConfig(FsspecIndexerConfig):
 
 
 class DropboxAccessConfig(FsspecAccessConfig):
-    token: Optional[str] = Field(default=None, description="Dropbox access token.") #This is the short lived (4h) token that needs to be generated anew each time.
+    token: Optional[str] = Field(
+        default=None, description="Dropbox access token."
+    )  # This is the short lived (4h) token that needs to be generated anew each time.
     app_key: Optional[str] = Field(default=None, description="Dropbox app key.")
     app_secret: Optional[str] = Field(default=None, description="Dropbox app secret.")
-    refresh_token: Optional[str] = Field(default=None, description="Dropbox refresh token.") #This is the long lived token that doesn't expire
+    refresh_token: Optional[str] = Field(
+        default=None, description="Dropbox refresh token."
+    )  # This is the long lived token that doesn't expire
 
 
 class DropboxConnectionConfig(FsspecConnectionConfig):
@@ -59,12 +63,9 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-
     @requires_dependencies(["dropbox"])
     def get_dropbox_access_token_from_refresh(
-        refresh_token: str, 
-        app_key: str, 
-        app_secret: str
+        refresh_token: str, app_key: str, app_secret: str
     ) -> str:
         import dropbox
 
@@ -78,7 +79,9 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         dbx.check_and_refresh_access_token()
 
         # The Dropbox SDK will have fetched a new short-lived token under the hood
-        short_lived_token = dbx._oauth2_access_token  # official attribute is private, but commonly used
+        short_lived_token = (
+            dbx._oauth2_access_token
+        )  # official attribute is private, but commonly used
         return short_lived_token
 
     @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
@@ -114,7 +117,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         try:
             yield client
         finally:
-            # Not all fsspec filesystems require explicit close, 
+            # Not all fsspec filesystems require explicit close,
             # but it's good practice to do so if it's available.
             close_method = getattr(client, "close", None)
             if callable(close_method):
