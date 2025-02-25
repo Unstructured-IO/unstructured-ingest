@@ -33,22 +33,28 @@ fi
 # Required arguments:
 # --url
 #   --> Atlassian (Jira) domain URL
-# --api-token
-#   --> Api token to authenticate into Atlassian (Jira).
+# AND
+# --password
+#   --> Password or API token to authenticate into Atlassian (Jira).
 #       Check https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/ for more info.
-# --user-email
-#   --> User email for the domain, such as xyz@unstructured.io
+# --username
+#   --> Username or email for the domain, such as xyz@unstructured.io
+# OR
+# --token
+#   --> Jira Personal Access Token
 
 # Optional arguments:
-# --list-of-projects
+# --projects
 #     --> Comma separated project ids or keys
-# --list-of-boards
+# --boards
 #     --> Comma separated board ids or keys
-# --list-of-issues
+# --issues
 #     --> Comma separated issue ids or keys
+# --cloud/--no-cloud
+#     --> If the Jira instance is a Jira Cloud, use --cloud, otherwise use --no-cloud. Default is --no-cloud.
 
-# Note: When any of the optional arguments are provided, connector will ingest only those components, and nothing else.
-#       When none of the optional arguments are provided, all issues in all projects will be ingested.
+# Note: When projects, boards or/and issues are provided, connector will ingest only those components, and nothing else.
+#       When none of these arguments are provided, all issues in all projects will be ingested.
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
@@ -64,8 +70,8 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
   --url https://unstructured-jira-connector-test.atlassian.net \
-  --user-email "$JIRA_INGEST_USER_EMAIL" \
-  --api-token "$JIRA_INGEST_API_TOKEN" \
+  --username "$JIRA_INGEST_USER_EMAIL" \
+  --password "$JIRA_INGEST_API_TOKEN" \
   --projects "JCTP3" \
   --boards "1" \
   --issues "JCTP2-4,JCTP2-7,JCTP2-8,10012,JCTP2-11" \

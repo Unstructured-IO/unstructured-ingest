@@ -1,0 +1,33 @@
+{
+  "identifier": "10005",
+  "connector_type": "jira",
+  "source_identifiers": {
+    "filename": "10005.txt",
+    "fullpath": "JCTP2/10005.txt",
+    "rel_path": "JCTP2/10005.txt"
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "id": "10005",
+      "key": "JCTP2-3",
+      "board_id": null,
+      "project_id": "JCTP2"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1740409360.680108",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "id": "10005",
+    "key": "JCTP2-3",
+    "board_id": null,
+    "project_id": "JCTP2"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmpj2ak4ry3/JCTP2/10005.txt",
+  "display_name": null
+}

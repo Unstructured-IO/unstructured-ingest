@@ -1,0 +1,33 @@
+{
+  "identifier": "10013",
+  "connector_type": "jira",
+  "source_identifiers": {
+    "filename": "10013.txt",
+    "fullpath": "JCTP1/10013.txt",
+    "rel_path": "JCTP1/10013.txt"
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "id": "10013",
+      "key": "JCTP1-4",
+      "board_id": null,
+      "project_id": "JCTP1"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1740409358.8760052",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "id": "10013",
+    "key": "JCTP1-4",
+    "board_id": null,
+    "project_id": "JCTP1"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmpj2ak4ry3/JCTP1/10013.txt",
+  "display_name": null
+}
