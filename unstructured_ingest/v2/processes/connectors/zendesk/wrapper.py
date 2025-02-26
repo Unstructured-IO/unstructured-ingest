@@ -4,6 +4,7 @@ import requests
 import base64
 import requests
 import httpx
+from unstructured_ingest.v2.logger import logger
 
 @dataclass
 class Comment:
@@ -280,14 +281,14 @@ class ZendeskClient:
                 if download_response.status_code == 200:
                     # Encode the file content as base64 bytes
                     encoded_content = base64.b64encode(download_response.content).decode("utf-8")
-                    print(f"Encoded attachment {attachment['file_name']} successfully.")
+                    logger.debug(f"Encoded attachment {attachment['file_name']} successfully.")
 
                     # You can store the encoded content as part of the attachment data
                     encoded_string_injection = f"data:{attachment_data["content_type"]};base64,{encoded_content}"
                     attachment_data["encoded_content"] = encoded_string_injection
 
                 else:
-                    print(f"Failed to download attachment {attachment['file_name']}.")
+                    logger.error(f"Failed to download attachment {attachment['file_name']}.")
 
             return attachments
         else:
@@ -326,7 +327,7 @@ class ZendeskClient:
                         encoded_content = base64.b64encode(download_response.content).decode("utf-8")
                         attachment_data["encoded_content"] = f"data:{attachment_data['content_type']};base64,{encoded_content}"
                     else:
-                        print(f"Failed to download attachment {attachment['file_name']}.")
+                        logger.error(f"Failed to download attachment {attachment['file_name']}.")
                     
                     attachments.append(attachment_data)
                 
