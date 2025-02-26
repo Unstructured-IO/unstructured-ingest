@@ -47,7 +47,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --reprocess \
   --output-dir "$OUTPUT_DIR" \
   --verbose \
-  --refresh_token "$DROPBOX_REFRESH_TOKEN" \
+  --refresh-token "$DROPBOX_REFRESH_TOKEN" \
   --app_key "$DROPBOX_APP_KEY" \
   --app_secret "$DROPBOX_APP_SECRET" \
   --recursive \
