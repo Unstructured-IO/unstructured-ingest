@@ -30,7 +30,6 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-from unstructured_ingest.utils.html import HtmlMixin
 
 from .wrapper import ZendeskClient, ZendeskTicket, ZendeskArticle, Comment 
 
