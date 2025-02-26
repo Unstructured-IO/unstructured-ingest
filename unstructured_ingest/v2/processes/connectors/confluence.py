@@ -233,9 +233,9 @@ class ConfluenceDownloader(Downloader):
             raise ValueError(f"Page with ID {doc_id} does not exist.")
 
         content = page["body"]["view"]["value"]
-        # This supports v2 html parsing in unstructured
         title = page["title"]
-        title_html = f"<title>{title}</title>"
+        # Using h1 for title is supported by both v1 and v2 html parsing in unstructured
+        title_html = f"<h1>{title}</h1>"
         content = f"<body class='Document' >{title_html}{content}</body>"
         if self.download_config.extract_images:
             with self.connection_config.get_client() as client:
