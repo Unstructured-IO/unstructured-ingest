@@ -253,7 +253,6 @@ class ZendeskDownloaderConfig(DownloaderConfig):
     pass
 
 
-
 @dataclass
 class ZendeskDownloader(Downloader):
     download_config: ZendeskDownloaderConfig
@@ -289,11 +288,14 @@ class ZendeskDownloader(Downloader):
 
         # Write the values to the file
         with open(download_path, "w", encoding="utf8") as f:
-            f.write("article\n")
-            f.write(file_data.identifier + "\n")
-            f.write(file_data.metadata.record_locator["title"] + "\n")
-            f.write(file_data.metadata.record_locator['content'] + "\n")
-            f.write(file_data.metadata.record_locator['author_id'] + "\n")
+            content = (
+                "article\n"
+                f"{file_data.identifier}\n"
+                f"{file_data.metadata.record_locator.get('title', '')}\n"
+                f"{file_data.metadata.record_locator.get('content', '')}\n"
+                f"{file_data.metadata.record_locator.get('author_id', '')}\n"
+            )
+            f.write(content)
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path
@@ -336,17 +338,24 @@ class ZendeskDownloader(Downloader):
 
         # Write the values to the file
         with open(download_path, "w", encoding="utf8") as f:
-            f.write("ticket\n")
-            f.write(file_data.identifier + "\n")
-            f.write(file_data.metadata.record_locator["subject"] + "\n")
-            f.write(file_data.metadata.record_locator["description"] + "\n")
-            f.write(first_date + "\n")
+            content = (
+                "ticket\n"
+                f"{file_data.identifier}\n"
+                f"{file_data.metadata.record_locator.get('subject', '')}\n"
+                f"{file_data.metadata.record_locator.get('description', '')}\n"
+                f"{first_date}\n"
+            )
+
             for comment in comments:
-                f.write("comment\n")
-                f.write(str(comment["comment_id"]) + "\n")
-                f.write(str(comment["author_id"]) + "\n")
-                f.write(comment["body"] + "\n")
-                f.write(comment["date_created"] + "\n")
+                content += (
+                    "comment\n"
+                    f"{comment.get('comment_id', '')}\n"
+                    f"{comment.get('author_id', '')}\n"
+                    f"{comment.get('body', '')}\n"
+                    f"{comment.get('date_created', '')}\n"
+                )
+
+            f.write(content)
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path
@@ -386,11 +395,16 @@ class ZendeskDownloader(Downloader):
 
         # Asynchronously write the values to the file
         async with aiofiles.open(download_path, "w", encoding="utf8") as f:
-            await f.write("article\n")
-            await f.write(f"{file_data.identifier}\n")
-            await f.write(f"{file_data.metadata.record_locator.get('title', '')}\n")
-            await f.write(f"{file_data.metadata.record_locator['content']}\n")
-            await f.write(f"{file_data.metadata.record_locator.get('author_id', '')}\n")
+            content = (
+                "article\n"
+                f"{file_data.identifier}\n"
+                f"{file_data.metadata.record_locator.get('title', '')}\n"
+                f"{file_data.metadata.record_locator['content']}\n"
+                f"{file_data.metadata.record_locator.get('author_id', '')}\n"
+            )
+
+            await f.write(content)
+
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path
@@ -434,17 +448,25 @@ class ZendeskDownloader(Downloader):
 
         # Asynchronously write the values to the file
         async with aiofiles.open(download_path, "w", encoding="utf8") as f:
-            await f.write("ticket\n")
-            await f.write(file_data.identifier + "\n")
-            await f.write(file_data.metadata.record_locator["subject"] + "\n")
-            await f.write(file_data.metadata.record_locator["description"] + "\n")
-            await f.write(first_date + "\n")
+            content = (
+                "ticket\n"
+                + file_data.identifier + "\n"
+                + file_data.metadata.record_locator["subject"] + "\n"
+                + file_data.metadata.record_locator["description"] + "\n"
+                + first_date + "\n"
+            )
+
             for comment in comments:
-                await f.write("comment\n")
-                await f.write(str(comment["comment_id"]) + "\n")
-                await f.write(str(comment["author_id"]) + "\n")
-                await f.write(comment["body"] + "\n")
-                await f.write(comment["date_created"] + "\n")
+                content += (
+                    "comment\n"
+                    + str(comment["comment_id"]) + "\n"
+                    + str(comment["author_id"]) + "\n"
+                    + comment["body"] + "\n"
+                    + comment["date_created"] + "\n"
+                )
+
+            await f.write(content)
+
 
         return super().generate_download_response(
             file_data=file_data, download_path=download_path

@@ -12,6 +12,7 @@ from .zendesk import (
     ZendeskIndexerConfig,
     ZendeskTicket,
     zendesk_source_entry,
+    CONNECTOR_TYPE
 )
 
 __all__ = [
@@ -27,4 +28,4 @@ __all__ = [
     "ZendeskTicket",
 ]
 
-add_source_entry(source_type="zendesk", entry=zendesk_source_entry)
+add_source_entry(source_type=CONNECTOR_TYPE, entry=zendesk_source_entry)
