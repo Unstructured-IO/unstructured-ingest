@@ -130,7 +130,6 @@ class ZendeskClient:
                     metadata=entry,
                     parent_ticket_id=ticket_id,
                 )
-
                 comments.append(comment)
         else:
             raise RuntimeError(
