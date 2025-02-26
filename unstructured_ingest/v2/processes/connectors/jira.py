@@ -62,17 +62,17 @@ class FieldGetter(dict):
         return value
 
 
-def nested_object_to_field_getter(object: dict) -> Union[FieldGetter, dict]:
-    if isinstance(object, abc.Mapping):
+def nested_object_to_field_getter(obj: dict) -> Union[FieldGetter, dict]:
+    if isinstance(obj, abc.Mapping):
         new_object = {}
-        for k, v in object.items():
+        for k, v in obj.items():
             if isinstance(v, abc.Mapping):
                 new_object[k] = FieldGetter(nested_object_to_field_getter(v))
             else:
                 new_object[k] = v
         return FieldGetter(new_object)
     else:
-        return object
+        return obj
 
 
 def issues_fetcher_wrapper(func, results_key="results", number_of_issues_to_fetch: int = 100):
@@ -401,7 +401,11 @@ class JiraDownloader(Downloader):
         return f"{comment['author']['displayName']}{c_sep}{comment['body']}{r_sep}"
 
     def form_templated_string(
-        self, issue: dict, parsed_fields, c_sep: str = "|||", r_sep: str = "\n\n\n"
+        self,
+        issue: dict,
+        parsed_fields: Union[FieldGetter, dict],
+        c_sep: str = "|||",
+        r_sep: str = "\n\n\n",
     ) -> str:
         """Forms a template string via parsing the fields from the API response object on the issue
         The template string will be saved to the disk, and then will be processed by partition."""
@@ -444,7 +448,7 @@ class JiraDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
         with open(download_path, "w") as f:
             f.write(issue_str)
-
+        self.update_file_data(file_data, issue)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
