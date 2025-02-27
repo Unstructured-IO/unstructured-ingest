@@ -27,8 +27,7 @@ async def test_dropbox_source(temp_dir):
     Integration test for the Dropbox source connector.
 
     This test indexes data from dropbox://test-input/ and downloads the resulting files,
-    then compares them to fixture data. On the first run, set OVERWRITE_FIXTURES=true 
-    to generate (or overwrite) the baseline fixture data for future comparisons.
+    then compares them to fixture data.
     """
     refresh_token = os.getenv("DROPBOX_REFRESH_TOKEN")
     app_key = os.getenv("DROPBOX_APP_KEY")
