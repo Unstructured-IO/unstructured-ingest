@@ -1,4 +1,8 @@
-## 0.5.9-dev0
+## 0.5.9-dev1
+
+### Features
+
+* Add auto create collection support for AstraDB destination
 
 ### Fixes
 
