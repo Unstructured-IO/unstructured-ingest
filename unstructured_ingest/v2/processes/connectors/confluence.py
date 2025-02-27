@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional
 
 from pydantic import Field, Secret
+from requests.exceptions import HTTPError
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -160,13 +161,20 @@ class ConfluenceIndexer(Indexer):
         return doc_ids
 
     # TODO need connector that extends permission config interface? dont think so but check w ahmet
-    def _get_permissions_for_doc(self, doc_id: str) -> List[dict]:
-        # TODO check space permissions too? client.get_space_permissions(space_key)
+    def _get_permissions_for_doc(self, space_id: str, doc_id: str) -> Optional[List[dict]]:
         with self.connection_config.get_client() as client:
-            doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+            try:
+                space_permissions = client.get_space_permissions(space_key=space_id)
+                doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+            except HTTPError:
+                # skip writing any permission metadata
+                return None
 
         # TODO parse into acl shape; change return type
-        return doc_permissions
+        # permissions_data is currently a list type.
+        # TODO adjust permissions_data FileDataSourceMetadata type to match
+        # final normalized form (list or dict)
+        return [doc_permissions]
 
     def run(self) -> Generator[FileData, None, None]:
         from time import time
@@ -181,7 +189,7 @@ class ConfluenceIndexer(Indexer):
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
-                    permissions_data=self._get_permissions_for_doc(doc_id),
+                    permissions_data=self._get_permissions_for_doc(space_id, doc_id),
                     record_locator={
                         "space_id": space_id,
                         "document_id": doc_id,
