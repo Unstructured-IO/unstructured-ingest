@@ -43,7 +43,7 @@ async def test_dropbox_source(temp_dir):
 
     index_config = DropboxIndexerConfig(
         recursive=True,
-        path="dropbox://test-input",
+        remote_url="dropbox://test-input",
     )
     downloader_config = DropboxDownloaderConfig(download_dir=temp_dir)
 
