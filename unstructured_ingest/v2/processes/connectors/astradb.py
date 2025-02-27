@@ -112,18 +112,11 @@ def get_astra_collection(
     collection_name: str,
     keyspace: str,
 ) -> "AstraDBCollection":
-    from astrapy.exceptions import CollectionNotFoundException
 
     astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
 
-    astra_db_collection = astra_db.get_collection(name=collection_name)
     # astradb will return a collection object in all cases (even if it doesn't exist)
-    try:
-        astra_db_collection.options()
-    except CollectionNotFoundException:
-        if not keyspace:
-            keyspace = "default_keyspace"
-        raise ValueError(f"Collection {collection_name} not found in keyspace {keyspace}")
+    astra_db_collection = astra_db.get_collection(name=collection_name)
 
     return astra_db_collection
 
@@ -363,13 +356,9 @@ class AstraDBUploader(Uploader):
     def precheck(self) -> None:
         try:
             if self.upload_config.collection_name:
-                get_astra_collection(
-                    connection_config=self.connection_config,
-                    collection_name=self.upload_config.collection_name,
-                    keyspace=self.upload_config.keyspace,
-                )
+                self.get_collection(collection_name=self.upload_config.collection_name).options()
             else:
-                # only check for db connection if collection name is not provided
+                # check for db connection only if collection name is not provided
                 get_astra_db(
                     connection_config=self.connection_config,
                     keyspace=self.upload_config.keyspace,
@@ -389,13 +378,14 @@ class AstraDBUploader(Uploader):
     def _collection_exists(self, collection_name: str):
         from astrapy.exceptions import CollectionNotFoundException
 
-        astra_db = get_astra_db(
+        collection = get_astra_collection(
             connection_config=self.connection_config,
+            collection_name=collection_name,
             keyspace=self.upload_config.keyspace,
         )
-        collection_obj = astra_db.get_collection(name=collection_name)
+
         try:
-            collection_obj.options()
+            collection.options()
             return True
         except CollectionNotFoundException:
             return False
