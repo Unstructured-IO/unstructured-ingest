@@ -192,9 +192,7 @@ class JiraIndexer(Indexer):
 
     def precheck(self) -> None:
         try:
-            client: "Jira"
             with self.connection_config.get_client() as client:
-                # TODO: (Marek Połom) - what do we check here?
                 response = client.get_permissions("BROWSE_PROJECTS")
                 permitted = response["permissions"]["BROWSE_PROJECTS"]["havePermission"]
         except Exception as e:
@@ -202,15 +200,13 @@ class JiraIndexer(Indexer):
             raise SourceConnectionError(f"Failed to connect to Jira: {e}")
         if not permitted:
             raise ValueError(
-                """The user with the provided *user_email* and the *api_token*
-                                    is not permitted to browse projects for the jira organization
-                                    for the provided *url*. Try checking user_email, api_token,
-                                    and the url arguments.""",
+                """The provided user is not permitted to browse projects
+                from the given Jira organization URL. 
+                Try checking username, password, token and the url arguments.""",
             )
         logger.info("Connection to Jira successful.")
 
     def _get_issues_within_single_project(self, project_key: str) -> List[JiraIssueMetadata]:
-        client: "Jira"
         with self.connection_config.get_client() as client:
             number_of_issues_to_fetch = client.get_project_issues_count(project=project_key)
             if isinstance(number_of_issues_to_fetch, dict):
@@ -237,7 +233,6 @@ class JiraIndexer(Indexer):
                 return []
             # for when no components are provided. all projects will be ingested
             else:
-                client: "Jira"
                 with self.connection_config.get_client() as client:
                     project_keys = [project["key"] for project in client.projects()]
         return [
@@ -247,7 +242,6 @@ class JiraIndexer(Indexer):
         ]
 
     def _get_issues_within_single_board(self, board_id: str) -> List[JiraIssueMetadata]:
-        client: "Jira"
         with self.connection_config.get_client() as client:
             get_board_issues = issues_fetcher_wrapper(
                 client.get_issues_for_board,
@@ -270,7 +264,6 @@ class JiraIndexer(Indexer):
         ]
 
     def _get_issues(self) -> List[JiraIssueMetadata]:
-        client: "Jira"
         with self.connection_config.get_client() as client:
             issues = [
                 client.get_issue(issue_id_or_key=issue_key, fields=["key", "id"])
@@ -426,7 +419,6 @@ class JiraDownloader(Downloader):
         file_data.display_name = issue["fields"]["project"]["name"]
 
     def get_issue(self, issue_key: str) -> dict:
-        client: "Jira"
         try:
             with self.connection_config.get_client() as client:
                 return client.issue(key=issue_key)
