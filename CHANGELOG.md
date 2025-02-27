@@ -1,3 +1,9 @@
+## 0.5.9-dev0
+
+### Fixes
+
+* **Fix Confluence Source page title not being processed during partition**
+
 ## 0.5.8
 
 ### Fixes
