@@ -4,6 +4,10 @@
 
 * Add auto create collection support for AstraDB destination
 
+### Fixes
+
+* **Fix Confluence Source page title not being processed during partition**
+
 ## 0.5.8
 
 ### Fixes
