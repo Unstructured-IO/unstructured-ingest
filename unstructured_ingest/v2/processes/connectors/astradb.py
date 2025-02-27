@@ -6,6 +6,7 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
+from astrapy.exceptions import CollectionNotFoundException
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest import __name__ as integration_name
@@ -114,9 +115,14 @@ def get_astra_collection(
 ) -> "AstraDBCollection":
     astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
 
-    # TODO check if collection exists first?
-    # astradb will return a collection object in all cases
     astra_db_collection = astra_db.get_collection(name=collection_name)
+    # astradb will return a collection object in all cases (even if it doesn't exist)
+    try:
+        astra_db_collection.options()
+    except CollectionNotFoundException:
+        if not keyspace:
+            keyspace = "default_keyspace"
+        raise ValueError(f"Collection {collection_name} not found in keyspace {keyspace}")
 
     return astra_db_collection
 
@@ -356,13 +362,13 @@ class AstraDBUploader(Uploader):
     def precheck(self) -> None:
         try:
             if self.upload_config.collection_name:
-                print("im here", self.upload_config.collection_name)
                 get_astra_collection(
                     connection_config=self.connection_config,
                     collection_name=self.upload_config.collection_name,
                     keyspace=self.upload_config.keyspace,
                 )
             else:
+                # only check for db connection if collection name is not provided
                 get_astra_db(
                     connection_config=self.connection_config,
                     keyspace=self.upload_config.keyspace,
@@ -384,9 +390,15 @@ class AstraDBUploader(Uploader):
             connection_config=self.connection_config,
             keyspace=self.upload_config.keyspace,
         )
-        return collection_name in astra_db.list_collection_names(
-            keyspace=self.upload_config.keyspace
-        )
+        collection_obj = astra_db.get_collection(name=collection_name)
+        try:
+            collection_obj.options()
+            return True
+        except CollectionNotFoundException:
+            return False
+        except Exception as e:
+            logger.error(f"failed to check if astra collection exists : {e}")
+            raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
 
     def format_destination_name(self, destination_name: str) -> str:
         # AstraDB collection naming requirements:
@@ -398,7 +410,7 @@ class AstraDBUploader(Uploader):
     def create_destination(
         self,
         vector_length: int,
-        destination_name: str = "elements",
+        destination_name: str = "unstructuredautocreated",
         similarity_metric: Optional[str] = "cosine",
         **kwargs: Any,
     ) -> bool:

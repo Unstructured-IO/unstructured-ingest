@@ -86,7 +86,6 @@ def test_precheck_fails_indexer(connection_config: AstraDBConnectionConfig):
         indexer.precheck()
 
 
-@pytest.mark.skip("Returning success")
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @requires_env("ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_API_ENDPOINT")
 def test_precheck_fails_uploader(connection_config: AstraDBConnectionConfig):
@@ -237,6 +236,11 @@ def test_astra_create_destination():
 
     created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
     assert not created
+
+    # cleanup
+    client = AstraDBClient()
+    db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
+    db.drop_collection(formatted_collection_name)
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
