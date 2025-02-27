@@ -72,8 +72,8 @@ local \
 dropbox \
 --refresh-token "$DROPBOX_REFRESH_TOKEN" \
 --remote-url "dropbox://$DESTINATION_DROPBOX" \
-  --app_key "$DROPBOX_APP_KEY" \
-  --app_secret "$DROPBOX_APP_SECRET"
+--app-key "$DROPBOX_APP_KEY" \
+--app-secret "$DROPBOX_APP_SECRET"
 
 # Simply check the number of files uploaded
 expected_num_files=1

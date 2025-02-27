@@ -48,8 +48,8 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
 	--output-dir "$OUTPUT_DIR" \
 	--verbose \
 	--refresh-token "$DROPBOX_REFRESH_TOKEN" \
-	--app_key "$DROPBOX_APP_KEY" \
-	--app_secret "$DROPBOX_APP_SECRET" \
+	--app-key "$DROPBOX_APP_KEY" \
+	--app-secret "$DROPBOX_APP_SECRET" \
 	--recursive \
 	--remote-url "dropbox://test-input/" \
 	--work-dir "$WORK_DIR"
