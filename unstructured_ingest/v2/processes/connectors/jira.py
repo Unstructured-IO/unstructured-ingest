@@ -201,7 +201,7 @@ class JiraIndexer(Indexer):
         if not permitted:
             raise ValueError(
                 """The provided user is not permitted to browse projects
-                from the given Jira organization URL. 
+                from the given Jira organization URL.
                 Try checking username, password, token and the url arguments.""",
             )
         logger.info("Connection to Jira successful.")
