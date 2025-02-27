@@ -15,21 +15,21 @@ cd "$SCRIPT_DIR"/.. || exit 1
 export OMP_THREAD_LIMIT=1
 
 all_tests=(
-  #'azure.sh'
-  #'box.sh'
+  'azure.sh'
+  'box.sh'
   #  'clarifai.sh'
-  #'couchbase.sh'
+  'couchbase.sh'
   'dropbox.sh'
-  #'gcs.sh'
-  #'s3.sh'
-  #'sharepoint-embed-cog-index.sh'
+  'gcs.sh'
+  's3.sh'
+  'sharepoint-embed-cog-index.sh'
   #  'kdbai.sh'
 )
 
 full_python_matrix_tests=(
-  #'azure.sh'
-  #'gcs.sh'
-  #'s3.sh'
+  'azure.sh'
+  'gcs.sh'
+  's3.sh'
 )
 
 CURRENT_TEST="none"
@@ -47,8 +47,8 @@ trap print_last_run EXIT
 python_version=$(python --version 2>&1)
 
 tests_to_ignore=(
-  #'dropbox.sh'
-  #'sharepoint.sh'
+  'dropbox.sh'
+  'sharepoint.sh'
 )
 
 for test in "${all_tests[@]}"; do
