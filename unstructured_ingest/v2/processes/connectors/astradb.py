@@ -6,7 +6,6 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from astrapy.exceptions import CollectionNotFoundException
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest import __name__ as integration_name
@@ -113,6 +112,8 @@ def get_astra_collection(
     collection_name: str,
     keyspace: str,
 ) -> "AstraDBCollection":
+    from astrapy.exceptions import CollectionNotFoundException
+
     astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
 
     astra_db_collection = astra_db.get_collection(name=collection_name)
@@ -386,6 +387,8 @@ class AstraDBUploader(Uploader):
         )
 
     def _collection_exists(self, collection_name: str):
+        from astrapy.exceptions import CollectionNotFoundException
+
         astra_db = get_astra_db(
             connection_config=self.connection_config,
             keyspace=self.upload_config.keyspace,
