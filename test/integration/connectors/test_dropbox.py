@@ -34,7 +34,6 @@ async def test_dropbox_source(temp_dir):
     app_key = os.getenv("DROPBOX_APP_KEY")
     app_secret = os.getenv("DROPBOX_APP_SECRET")
 
-    # 1) Create the connection config using your Dropbox credentials
     connection_config = DropboxConnectionConfig(
         access_config=DropboxAccessConfig(
             refresh_token=refresh_token,
@@ -43,15 +42,12 @@ async def test_dropbox_source(temp_dir):
         )
     )
 
-    # 2) Build the indexer and downloader configs.
-    #    For Dropbox, the path can be "test-input" (equivalent to dropbox://test-input/).
     index_config = DropboxIndexerConfig(
         recursive=True,
-        path="test-input",  # effectively "dropbox://test-input/"
+        path="dropbox://test-input",
     )
     downloader_config = DropboxDownloaderConfig(download_dir=temp_dir)
 
-    # 3) Instantiate the indexer and downloader classes
     indexer = DropboxIndexer(
         connection_config=connection_config,
         index_config=index_config,
@@ -61,20 +57,17 @@ async def test_dropbox_source(temp_dir):
         download_config=downloader_config,
     )
 
-    # 4) Run the standard source connector validation.
-    #    Set overwrite_fixtures=True on the first run to capture initial fixture data.
     await source_connector_validation(
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="dropbox",
-            expected_num_files=1,  # Adjust to match how many files are in test-input
+            expected_num_files=1,
             validate_downloaded_files=True,
             exclude_fields_extend=[
-                # Skip fields that vary (e.g., timestamps) in your fixture comparisons.
                 "metadata.date_created",
                 "metadata.date_modified",
             ],
         ),
-        overwrite_fixtures=True,  # or rely on OVERWRITE_FIXTURES env var
+        overwrite_fixtures=True,
     )
