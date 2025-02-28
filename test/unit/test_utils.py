@@ -184,20 +184,24 @@ def test_truncate_string_bytes_return_untouched_string():
     assert result == "abcdef"
     assert len(result.encode("utf-8")) <= max_bytes
 
+
 def test_fix_double_escaped_unicode_valid():
     text = "This is a test with unescaped unicode: \\u0041"
     expected = "This is a test with unescaped unicode: \u0041"
     assert fix_unescaped_unicode(text) == expected
+
 
 def test_fix_double_escaped_unicode_no_double_escape():
     text = "This is a test with no unescaped unicode: \u0041"
     expected = "This is a test with no unescaped unicode: \u0041"
     assert fix_unescaped_unicode(text) == expected
 
+
 def test_fix_double_escaped_unicode_invalid_unicode():
     text = "This is a test with invalid unescaped unicode: \\uZZZZ"
     expected = "This is a test with invalid unescaped unicode: \\uZZZZ"
     assert fix_unescaped_unicode(text) == expected
+
 
 def test_fix_double_escaped_unicode_encoding_error(caplog: pytest.LogCaptureFixture):
     text = "This is a test with unescaped unicode: \\uD83D"

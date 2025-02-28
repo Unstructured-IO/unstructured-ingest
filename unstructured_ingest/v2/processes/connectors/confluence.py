@@ -236,9 +236,7 @@ class ConfluenceDownloader(Downloader):
         title = page["title"]
         # Using h1 for title is supported by both v1 and v2 html parsing in unstructured
         title_html = f"<h1>{title}</h1>"
-        content = fix_unescaped_unicode(
-            f"<body class='Document' >{title_html}{content}</body>"
-        )
+        content = fix_unescaped_unicode(f"<body class='Document' >{title_html}{content}</body>")
         if self.download_config.extract_images:
             with self.connection_config.get_client() as client:
                 content = self.download_config.extract_html_images(
