@@ -1,0 +1,45 @@
+{
+  "identifier": "8139a859-73b6-5442-866e-b5de0d81b6e6",
+  "connector_type": "dropbox",
+  "source_identifiers": {
+    "filename": "handbook-1p.docx",
+    "fullpath": "/test-input/handbook-1p.docx",
+    "rel_path": "handbook-1p.docx"
+  },
+  "metadata": {
+    "url": "dropbox://test-input/handbook-1p.docx",
+    "version": "2ddaae143b824b304ab42bb607d0cd4a96e2d0d0a60a30025e4ce749a53a0b8e",
+    "record_locator": {
+      "protocol": "dropbox",
+      "remote_file_path": "dropbox://test-input",
+      "file_id": "id:De4ZYtDd-JoAAAAAAAAACQ"
+    },
+    "date_created": "1687386968.0",
+    "date_modified": "1697625367.0",
+    "date_processed": "1740750096.1792338",
+    "permissions_data": null,
+    "filesize_bytes": 10308
+  },
+  "additional_metadata": {
+    "id": "id:De4ZYtDd-JoAAAAAAAAACQ",
+    "client_modified": "2023-06-22T00:36:08",
+    "server_modified": "2023-10-18T12:36:07",
+    "rev": "01607fce21f137700000001020c8d31",
+    "size": 10308,
+    "media_info": null,
+    "symlink_info": null,
+    "sharing_info": null,
+    "is_downloadable": true,
+    "export_info": null,
+    "property_groups": null,
+    "has_explicit_shared_members": null,
+    "content_hash": "2ddaae143b824b304ab42bb607d0cd4a96e2d0d0a60a30025e4ce749a53a0b8e",
+    "file_lock_info": null,
+    "name": "/test-input/handbook-1p.docx",
+    "type": "file",
+    "original_file_path": "/test-input/handbook-1p.docx"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmph8ip2dyb/handbook-1p.docx",
+  "display_name": "/test-input/handbook-1p.docx"
+}

@@ -1,0 +1,45 @@
+{
+  "identifier": "00a08c10-1e52-5ade-8561-0819e1bdec38",
+  "connector_type": "dropbox",
+  "source_identifiers": {
+    "filename": "science-exploration-1p.pptx",
+    "fullpath": "/test-input/science-exploration-1p.pptx",
+    "rel_path": "science-exploration-1p.pptx"
+  },
+  "metadata": {
+    "url": "dropbox://test-input/science-exploration-1p.pptx",
+    "version": "82ebb5e422916b72fa2bd283cae3b9f41b96a9d0af59f92a8edd6e9556ca5510",
+    "record_locator": {
+      "protocol": "dropbox",
+      "remote_file_path": "dropbox://test-input",
+      "file_id": "id:De4ZYtDd-JoAAAAAAAAACA"
+    },
+    "date_created": "1687386962.0",
+    "date_modified": "1697625367.0",
+    "date_processed": "1740750104.742579",
+    "permissions_data": null,
+    "filesize_bytes": 1235192
+  },
+  "additional_metadata": {
+    "id": "id:De4ZYtDd-JoAAAAAAAAACA",
+    "client_modified": "2023-06-22T00:36:02",
+    "server_modified": "2023-10-18T12:36:07",
+    "rev": "01607fce2243a4800000001020c8d31",
+    "size": 1235192,
+    "media_info": null,
+    "symlink_info": null,
+    "sharing_info": null,
+    "is_downloadable": true,
+    "export_info": null,
+    "property_groups": null,
+    "has_explicit_shared_members": null,
+    "content_hash": "82ebb5e422916b72fa2bd283cae3b9f41b96a9d0af59f92a8edd6e9556ca5510",
+    "file_lock_info": null,
+    "name": "/test-input/science-exploration-1p.pptx",
+    "type": "file",
+    "original_file_path": "/test-input/science-exploration-1p.pptx"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmph8ip2dyb/science-exploration-1p.pptx",
+  "display_name": "/test-input/science-exploration-1p.pptx"
+}

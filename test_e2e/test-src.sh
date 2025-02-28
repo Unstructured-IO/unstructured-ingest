@@ -27,7 +27,6 @@ all_tests=(
   #  's3-compression.sh'
   'salesforce.sh'
   'box.sh'
-  'dropbox.sh'
   'github.sh'
   'gitlab.sh'
   'google-drive.sh'
@@ -69,7 +68,6 @@ python_version=$(python --version 2>&1)
 # TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
   'outlook.sh'
-  'dropbox.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then

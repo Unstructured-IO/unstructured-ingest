@@ -1,3 +1,9 @@
+## 0.5.10-dev1
+
+### Fixes
+
+* **Dropbox connector can now use long lived refresh token and generate access token internally**
+
 ## 0.5.10-dev0
 
 ### Enhancements
