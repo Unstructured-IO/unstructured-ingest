@@ -1,4 +1,9 @@
-## 0.5.10-dev0
+## 0.5.10-dev1
+
+### Enhancements
+
+* **Migrate Jira Source connector from V1 to V2**
+* **Add Jira Source connector integration and unit tests**
 
 ### Fixes
 
