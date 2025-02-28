@@ -1,6 +1,7 @@
 import os
-import requests
+
 import pytest
+import requests
 
 from test.integration.connectors.utils.constants import (
     BLOB_STORAGE_TAG,
