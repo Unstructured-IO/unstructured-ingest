@@ -1,3 +1,9 @@
+## 0.5.10-dev0
+
+### Fixes
+
+* **Fix Confluence unescaped Unicode characters**
+
 ## 0.5.9
 
 ### Features
