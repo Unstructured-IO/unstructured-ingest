@@ -1,9 +1,19 @@
-## 0.5.9-dev0
+## 0.5.10-dev0
 
 ### Enhancements
 
 * **Migrate Jira Source connector from V1 to V2**
 * **Add Jira Source connector integration and unit tests**
+
+## 0.5.9
+
+### Features
+
+* Add auto create collection support for AstraDB destination
+
+### Fixes
+
+* **Fix Confluence Source page title not being processed during partition**
 
 ## 0.5.8
 
