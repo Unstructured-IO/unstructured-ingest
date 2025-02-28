@@ -8,6 +8,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
+from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicode
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -224,7 +225,6 @@ class ConfluenceDownloader(Downloader):
                     page_id=doc_id,
                     expand="history.lastUpdated,version,body.view",
                 )
-
         except Exception as e:
             logger.error(f"Failed to retrieve page with ID {doc_id}: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to retrieve page with ID {doc_id}: {e}")
@@ -236,7 +236,9 @@ class ConfluenceDownloader(Downloader):
         title = page["title"]
         # Using h1 for title is supported by both v1 and v2 html parsing in unstructured
         title_html = f"<h1>{title}</h1>"
-        content = f"<body class='Document' >{title_html}{content}</body>"
+        content = fix_unescaped_unicode(
+            f"<body class='Document' >{title_html}{content}</body>"
+        )
         if self.download_config.extract_images:
             with self.connection_config.get_client() as client:
                 content = self.download_config.extract_html_images(
