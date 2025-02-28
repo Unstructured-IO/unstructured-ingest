@@ -65,7 +65,7 @@ async def test_partitioner_api_fast_error(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
-        strategy="fast",
+        strategy="hi_res",
         partition_by_api=True,
         api_key=api_key,
         partition_endpoint=api_url,
