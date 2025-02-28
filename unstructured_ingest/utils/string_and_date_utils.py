@@ -56,16 +56,16 @@ def fix_unescaped_unicode(text: str, encoding: str = "utf-8") -> str:
     """
     Fix unescaped Unicode sequences in text.
     """
-    _text: str = json.dumps(text)
-
-    # Pattern to match unescaped Unicode sequences like \\uXXXX
-    pattern = r"\\\\u([0-9A-Fa-f]{4})"
-    # Replace with properly escaped Unicode sequences \uXXXX
-    _text = re.sub(pattern, r"\\u\1", _text)
-
-    _text = json.loads(_text)
     try:
-        # Check for encoding errors
+        _text: str = json.dumps(text)
+
+        # Pattern to match unescaped Unicode sequences like \\uXXXX
+        pattern = r"\\\\u([0-9A-Fa-f]{4})"
+        # Replace with properly escaped Unicode sequences \uXXXX
+        _text = re.sub(pattern, r"\\u\1", _text)
+        _text = json.loads(_text)
+        
+        # Encode the text to check for encoding errors
         _text.encode(encoding)
         return _text
     except Exception as e:
