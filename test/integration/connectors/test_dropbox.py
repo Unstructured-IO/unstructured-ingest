@@ -68,5 +68,4 @@ async def test_dropbox_source(temp_dir):
                 "metadata.date_modified",
             ],
         ),
-        overwrite_fixtures=True,
     )

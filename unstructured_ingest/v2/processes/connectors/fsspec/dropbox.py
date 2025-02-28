@@ -57,16 +57,21 @@ class DropboxAccessConfig(FsspecAccessConfig):
 
 
 class DropboxConnectionConfig(FsspecConnectionConfig):
-    supported_protocols: list[str] = field(default_factory=lambda: ["dropbox"], init=False)
     access_config: Secret[DropboxAccessConfig] = Field(
         default=DropboxAccessConfig(), validate_default=True
     )
-    connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    connector_type: str = Field(default=CONNECTOR_TYPE)
 
     @requires_dependencies(["dropbox"])
     def get_dropbox_access_token_from_refresh(
-        refresh_token: str, app_key: str, app_secret: str
+        self,
+        refresh_token: str,
+        app_key: str,
+        app_secret: str,
     ) -> str:
+        """
+        Uses the Dropbox Python SDK to exchange a long-lived refresh token for a short-lived access token.
+        """
         import dropbox
 
         dbx = dropbox.Dropbox(
@@ -76,63 +81,60 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
             app_secret=app_secret,
         )
 
+        # This call fetches a new short-lived token and auto-updates dbx._oauth2_access_token
         dbx.check_and_refresh_access_token()
-
-        # The Dropbox SDK will have fetched a new short-lived token under the hood
-        short_lived_token = (
-            dbx._oauth2_access_token
-        )  # official attribute is private, but commonly used
+        short_lived_token = dbx._oauth2_access_token  # Private attr, but standard usage
         return short_lived_token
 
-    @requires_dependencies(["dropboxdrivefs", "fsspec"], extras="dropbox")
-    @contextmanager
-    def get_client(self, protocol: str) -> Generator["DropboxDriveFileSystem", None, None]:
-        from fsspec import get_filesystem_class
-
+    def get_access_config(self) -> dict[str, Any]:
         """
-        Create a DropboxDriveFileSystem client with a fresh short-lived token,
-        if a refresh token is available. Otherwise, just fall back to a user-
-        supplied short-lived token.
+        Overrides the parent FsspecConnectionConfig.get_access_config() to ensure
+        that we always provide an access token if refresh credentials exist.
         """
-        access_conf = self.get_access_config()  # -> dict[str, Any]
+        base_conf = super().get_access_config() 
 
-        short_lived_token = access_conf.get("token")
-        refresh_token = access_conf.get("refresh_token")
-        app_key = access_conf.get("app_key")
-        app_secret = access_conf.get("app_secret")
+        refresh_token = base_conf.get("refresh_token")
+        app_key = base_conf.get("app_key")
+        app_secret = base_conf.get("app_secret")
 
-        # If refresh creds are present, refresh the token
+        # Standard scenario - we have refresh a token and creds provided
+        # which we're going to use to retrieve access token 
         if refresh_token and app_key and app_secret:
-            short_lived_token = self.get_dropbox_access_token_from_refresh(
+            logger.debug("Attempting to generate access token from refresh token...")
+            new_token = self.get_dropbox_access_token_from_refresh(
                 refresh_token=refresh_token,
                 app_key=app_key,
                 app_secret=app_secret,
             )
-            # Update our config dict with the fresh short-lived token.
-            access_conf["token"] = short_lived_token
+            if not new_token:
+                raise ValueError(
+                    "Unable to retrieve an access token from Dropbox. "
+                    "Please check that your refresh token, app key, and secret are valid."
+                )
+            base_conf["token"] = new_token
+        elif not base_conf.get("token"): # we might already have an access token from outside 
+            # We have neither an existing short?lived token nor refresh credentials
+            raise ValueError(
+                "No valid token or refresh_token with app credentials was found. "
+                "Please check that your refresh token, app key, and secret are valid "
+                "or provide a valid short-lived token"
+            )
 
-        # Hand off to fsspec using the short-lived token
-        fs_class = get_filesystem_class(protocol)
-        client = fs_class(**access_conf)
-        try:
-            yield client
-        finally:
-            # Not all fsspec filesystems require explicit close,
-            # but it's good practice to do so if it's available.
-            close_method = getattr(client, "close", None)
-            if callable(close_method):
-                close_method()
+        return base_conf
 
+    @requires_dependencies(["dropbox"])
     def wrap_error(self, e: Exception) -> Exception:
         from dropbox.exceptions import AuthError, HttpError, RateLimitError
 
         if not isinstance(e, HttpError):
-            logger.error(f"unhandled exception from dropbox ({type(e)}): {e}", exc_info=True)
+            logger.error(f"Unhandled Dropbox exception: {repr(e)}", exc_info=True)
             return e
+
         if isinstance(e, AuthError):
             raise UserAuthError(e.error)
-        if isinstance(e, RateLimitError):
+        elif isinstance(e, RateLimitError):
             return CustomRateLimitError(e.error)
+
         status_code = e.status_code
         if 400 <= status_code < 500:
             if body := getattr(e, "body", None):
@@ -144,7 +146,8 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
                 return ProviderError(body)
             else:
                 return ProviderError(e.body)
-        logger.error(f"unhandled exception from dropbox ({type(e)}): {e}", exc_info=True)
+
+        logger.error(f"Unhandled Dropbox HttpError: {repr(e)}", exc_info=True)
         return e
 
 
