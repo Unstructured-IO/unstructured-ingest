@@ -185,25 +185,25 @@ def test_truncate_string_bytes_return_untouched_string():
     assert len(result.encode("utf-8")) <= max_bytes
 
 
-def test_fix_double_escaped_unicode_valid():
+def test_fix_unescaped_unicode_valid():
     text = "This is a test with unescaped unicode: \\u0041"
     expected = "This is a test with unescaped unicode: \u0041"
     assert fix_unescaped_unicode(text) == expected
 
 
-def test_fix_double_escaped_unicode_no_double_escape():
+def test_fix_unescaped_unicode_no_unescaped_chars():
     text = "This is a test with no unescaped unicode: \u0041"
     expected = "This is a test with no unescaped unicode: \u0041"
     assert fix_unescaped_unicode(text) == expected
 
 
-def test_fix_double_escaped_unicode_invalid_unicode():
+def test_fix_unescaped_unicode_invalid_unicode():
     text = "This is a test with invalid unescaped unicode: \\uZZZZ"
     expected = "This is a test with invalid unescaped unicode: \\uZZZZ"
     assert fix_unescaped_unicode(text) == expected
 
 
-def test_fix_double_escaped_unicode_encoding_error(caplog: pytest.LogCaptureFixture):
+def test_fix_unescaped_unicode_encoding_error(caplog: pytest.LogCaptureFixture):
     text = "This is a test with unescaped unicode: \\uD83D"
     fix_unescaped_unicode(text)
     with caplog.at_level("WARNING"):
