@@ -255,3 +255,23 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
     assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+
+
+# ai test
+# def test_get_permissions():
+#     """Test function to get permissions for a specific file."""
+#     # Set up auth and client
+#     credentials = get_credentials()
+#     service = discovery.build("drive", "v3", credentials=credentials)
+#     files_client = service.files()
+
+#     # Replace with a real file ID
+#     test_file_id = "your_test_file_id"
+
+#     # Get permissions
+#     permissions = get_file_permissions(files_client, test_file_id)
+
+#     # Print results
+#     print(f"Permissions for file {test_file_id}:")
+#     for perm in permissions:
+#         print(f"- {perm.get('role')} access for {perm.get('type')} {perm.get('emailAddress', perm.get('domain', 'unknown'))}")

@@ -86,12 +86,11 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
     access_config: Secret[GoogleDriveAccessConfig]
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
-    @contextmanager
-    def get_client(self) -> Generator["GoogleAPIResource", None, None]:
+    def get_service(self) -> "GoogleAPIResource":
+        """Authenticate and create a Google Drive service."""
         from google.auth import exceptions
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
-        from googleapiclient.errors import HttpError
 
         access_config = self.access_config.get_secret_value()
         key_data = access_config.get_service_account_key()
@@ -99,12 +98,31 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
         try:
             creds = service_account.Credentials.from_service_account_info(key_data)
             service = build("drive", "v3", credentials=creds)
+            return service
+        except exceptions.DefaultCredentialsError:
+            raise ValueError("The provided API key is invalid.")
+
+    @contextmanager
+    def get_client(self) -> Generator["GoogleAPIResource", None, None]:
+        from googleapiclient.errors import HttpError
+
+        service = self.get_service()
+        try:
             with service.files() as client:
                 yield client
         except HttpError as exc:
             raise ValueError(f"{exc.reason}")
-        except exceptions.DefaultCredentialsError:
-            raise ValueError("The provided API key is invalid.")
+
+    @contextmanager
+    def get_permissions_client(self) -> Generator["GoogleAPIResource", None, None]:
+        from googleapiclient.errors import HttpError
+
+        service = self.get_service()
+        try:
+            with service.permissions() as permissions_client:
+                yield permissions_client
+        except HttpError as exc:
+            raise ValueError(f"{exc.reason}")
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):
