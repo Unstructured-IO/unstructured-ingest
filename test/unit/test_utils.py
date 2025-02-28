@@ -10,6 +10,7 @@ from unstructured_ingest.cli.utils import extract_config
 from unstructured_ingest.interfaces import BaseConfig
 from unstructured_ingest.utils.string_and_date_utils import (
     ensure_isoformat_datetime,
+    fix_unescaped_unicode,
     json_to_dict,
     truncate_string_bytes,
 )
@@ -182,3 +183,29 @@ def test_truncate_string_bytes_return_untouched_string():
     result = truncate_string_bytes(test_string, max_bytes)
     assert result == "abcdef"
     assert len(result.encode("utf-8")) <= max_bytes
+
+
+def test_fix_unescaped_unicode_valid():
+    text = "This is a test with unescaped unicode: \\u0041"
+    expected = "This is a test with unescaped unicode: \u0041"
+    assert fix_unescaped_unicode(text) == expected
+
+
+def test_fix_unescaped_unicode_no_unescaped_chars():
+    text = "This is a test with no unescaped unicode: \u0041"
+    expected = "This is a test with no unescaped unicode: \u0041"
+    assert fix_unescaped_unicode(text) == expected
+
+
+def test_fix_unescaped_unicode_invalid_unicode():
+    text = "This is a test with invalid unescaped unicode: \\uZZZZ"
+    expected = "This is a test with invalid unescaped unicode: \\uZZZZ"
+    assert fix_unescaped_unicode(text) == expected
+
+
+def test_fix_unescaped_unicode_encoding_error(caplog: pytest.LogCaptureFixture):
+    text = "This is a test with unescaped unicode: \\uD83D"
+    fix_unescaped_unicode(text)
+    with caplog.at_level("WARNING"):
+        fix_unescaped_unicode(text)
+        assert "Failed to fix unescaped Unicode sequences" in caplog.text
