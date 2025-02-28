@@ -1,8 +1,15 @@
-## 0.5.10-dev0
+## 0.5.10-dev1
 
 ### Fixes
 
 * **Dropbox connector can now use long lived refresh token and generate access token internally**
+
+## 0.5.10-dev0
+
+### Enhancements
+
+* **Migrate Jira Source connector from V1 to V2**
+* **Add Jira Source connector integration and unit tests**
 
 ## 0.5.9
 

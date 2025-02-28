@@ -40,7 +40,6 @@ all_tests=(
   # # NOTE(ryan): This test is disabled because it is triggering too many requests to the API
   # 'airtable-large.sh'
   'delta-table.sh'
-  'jira.sh'
   'hubspot.sh'
   'sftp.sh'
 )
