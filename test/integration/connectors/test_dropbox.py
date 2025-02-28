@@ -1,5 +1,7 @@
 import os
+
 import pytest
+
 from test.integration.connectors.utils.constants import (
     BLOB_STORAGE_TAG,
     SOURCE_TAG,
@@ -11,6 +13,8 @@ from test.integration.connectors.utils.validation.source import (
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.processes.connectors.fsspec.dropbox import (
     CONNECTOR_TYPE as DROPBOX_CONNECTOR_TYPE,
+)
+from unstructured_ingest.v2.processes.connectors.fsspec.dropbox import (
     DropboxAccessConfig,
     DropboxConnectionConfig,
     DropboxDownloader,
@@ -18,6 +22,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.dropbox import (
     DropboxIndexer,
     DropboxIndexerConfig,
 )
+
 
 @pytest.mark.asyncio
 @pytest.mark.tags(DROPBOX_CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)

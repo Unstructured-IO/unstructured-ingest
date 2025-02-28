@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
-from typing import TYPE_CHECKING, Generator, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
 from pydantic import Field, Secret
 
@@ -34,7 +33,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
 )
 
 if TYPE_CHECKING:
-    from dropboxdrivefs import DropboxDriveFileSystem
+    pass
 
 CONNECTOR_TYPE = "dropbox"
 
@@ -70,7 +69,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         app_secret: str,
     ) -> str:
         """
-        Uses the Dropbox Python SDK to exchange a long-lived refresh token for a short-lived access token.
+        Uses the Dropbox Python SDK to exchange a long-lived refresh token for an access token.
         """
         import dropbox
 
@@ -91,14 +90,14 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         Overrides the parent FsspecConnectionConfig.get_access_config() to ensure
         that we always provide an access token if refresh credentials exist.
         """
-        base_conf = super().get_access_config() 
+        base_conf = super().get_access_config()
 
         refresh_token = base_conf.get("refresh_token")
         app_key = base_conf.get("app_key")
         app_secret = base_conf.get("app_secret")
 
         # Standard scenario - we have refresh a token and creds provided
-        # which we're going to use to retrieve access token 
+        # which we're going to use to retrieve access token
         if refresh_token and app_key and app_secret:
             logger.debug("Attempting to generate access token from refresh token...")
             new_token = self.get_dropbox_access_token_from_refresh(
@@ -112,7 +111,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
                     "Please check that your refresh token, app key, and secret are valid."
                 )
             base_conf["token"] = new_token
-        elif not base_conf.get("token"): # we might already have an access token from outside 
+        elif not base_conf.get("token"):  # we might already have an access token from outside
             # We have neither an existing short?lived token nor refresh credentials
             raise ValueError(
                 "No valid token or refresh_token with app credentials was found. "
