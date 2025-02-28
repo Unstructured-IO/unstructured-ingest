@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from astrapy import AsyncCollection as AstraDBAsyncCollection
     from astrapy import Collection as AstraDBCollection
     from astrapy import DataAPIClient as AstraDBClient
+    from astrapy import Database as AstraDB
 
 
 CONNECTOR_TYPE = "astradb"
@@ -85,11 +87,10 @@ class AstraDBConnectionConfig(ConnectionConfig):
         )
 
 
-def get_astra_collection(
+def get_astra_db(
     connection_config: AstraDBConnectionConfig,
-    collection_name: str,
     keyspace: str,
-) -> "AstraDBCollection":
+) -> "AstraDB":
     # Build the Astra DB object.
     access_configs = connection_config.access_config.get_secret_value()
 
@@ -103,9 +104,20 @@ def get_astra_collection(
         token=access_configs.token,
         keyspace=keyspace,
     )
+    return astra_db
 
-    # Connect to the collection
+
+def get_astra_collection(
+    connection_config: AstraDBConnectionConfig,
+    collection_name: str,
+    keyspace: str,
+) -> "AstraDBCollection":
+
+    astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
+
+    # astradb will return a collection object in all cases (even if it doesn't exist)
     astra_db_collection = astra_db.get_collection(name=collection_name)
+
     return astra_db_collection
 
 
@@ -151,10 +163,11 @@ class AstraDBDownloaderConfig(DownloaderConfig):
 
 
 class AstraDBUploaderConfig(UploaderConfig):
-    collection_name: str = Field(
+    collection_name: Optional[str] = Field(
         description="The name of the Astra DB collection. "
         "Note that the collection name must only include letters, "
-        "numbers, and underscores."
+        "numbers, and underscores.",
+        default=None,
     )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
@@ -337,24 +350,83 @@ class AstraDBUploader(Uploader):
     upload_config: AstraDBUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def init(self, **kwargs: Any) -> None:
+        self.create_destination(**kwargs)
+
     def precheck(self) -> None:
         try:
-            get_astra_collection(
-                connection_config=self.connection_config,
-                collection_name=self.upload_config.collection_name,
-                keyspace=self.upload_config.keyspace,
-            ).options()
+            if self.upload_config.collection_name:
+                self.get_collection(collection_name=self.upload_config.collection_name).options()
+            else:
+                # check for db connection only if collection name is not provided
+                get_astra_db(
+                    connection_config=self.connection_config,
+                    keyspace=self.upload_config.keyspace,
+                )
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def get_collection(self) -> "AstraDBCollection":
+    def get_collection(self, collection_name: Optional[str] = None) -> "AstraDBCollection":
         return get_astra_collection(
             connection_config=self.connection_config,
-            collection_name=self.upload_config.collection_name,
+            collection_name=collection_name or self.upload_config.collection_name,
             keyspace=self.upload_config.keyspace,
         )
+
+    def _collection_exists(self, collection_name: str):
+        from astrapy.exceptions import CollectionNotFoundException
+
+        collection = get_astra_collection(
+            connection_config=self.connection_config,
+            collection_name=collection_name,
+            keyspace=self.upload_config.keyspace,
+        )
+
+        try:
+            collection.options()
+            return True
+        except CollectionNotFoundException:
+            return False
+        except Exception as e:
+            logger.error(f"failed to check if astra collection exists : {e}")
+            raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
+
+    def format_destination_name(self, destination_name: str) -> str:
+        # AstraDB collection naming requirements:
+        # must be below 50 characters
+        # must be lowercase alphanumeric and underscores only
+        formatted = re.sub(r"[^a-z0-9]", "_", destination_name.lower())
+        return formatted
+
+    def create_destination(
+        self,
+        vector_length: int,
+        destination_name: str = "unstructuredautocreated",
+        similarity_metric: Optional[str] = "cosine",
+        **kwargs: Any,
+    ) -> bool:
+        destination_name = self.format_destination_name(destination_name)
+        collection_name = self.upload_config.collection_name or destination_name
+        self.upload_config.collection_name = collection_name
+
+        if not self._collection_exists(collection_name):
+            astra_db = get_astra_db(
+                connection_config=self.connection_config, keyspace=self.upload_config.keyspace
+            )
+            logger.info(
+                f"creating default astra collection '{collection_name}' with dimension "
+                f"{vector_length} and metric {similarity_metric}"
+            )
+            astra_db.create_collection(
+                collection_name,
+                dimension=vector_length,
+                metric=similarity_metric,
+            )
+            return True
+        logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
+        return False
 
     def delete_by_record_id(self, collection: "AstraDBCollection", file_data: FileData):
         logger.debug(

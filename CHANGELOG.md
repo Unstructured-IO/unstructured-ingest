@@ -1,8 +1,18 @@
-## 0.5.9-dev0
+## 0.5.10-dev0
 
 ### Fixes
 
 * **Dropbox connector can now use long lived refresh token and generate access token internally**
+
+## 0.5.9
+
+### Features
+
+* Add auto create collection support for AstraDB destination
+
+### Fixes
+
+* **Fix Confluence Source page title not being processed during partition**
 
 ## 0.5.8
 
