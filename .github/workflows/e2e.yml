@@ -278,6 +278,8 @@ jobs:
         CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
         # Notion
         NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        # Zendesk 
+        ZENDESK_TOKEN: ${{ secrets.ZENDESK_TOKEN }}
       run : |
         source .venv/bin/activate
         make install-test

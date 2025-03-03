@@ -283,7 +283,7 @@ class ZendeskClient:
                     logger.debug(f"Encoded attachment {attachment['file_name']} successfully.")
 
                     # You can store the encoded content as part of the attachment data
-                    encoded_string_injection = f"data:{attachment_data["content_type"]};base64,{encoded_content}"
+                    encoded_string_injection = f'data:{attachment_data["content_type"]};base64,{encoded_content}'
                     attachment_data["encoded_content"] = encoded_string_injection
 
                 else:

@@ -8,6 +8,8 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
+from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
+
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.processes.connectors.zendesk import (
     ZendeskAccessConfig,
@@ -16,20 +18,20 @@ from unstructured_ingest.v2.processes.connectors.zendesk import (
     ZendeskDownloaderConfig,
     ZendeskIndexer,
     ZendeskIndexerConfig,
+    CONNECTOR_TYPE,
 )
 
 
 async def zendesk_source_test(
     tmp_path: Path,
     token: Optional[str] = None,
-    endpoint: Optional[str] = None,
     email: Optional[str] = None,
     subdomain: Optional[str] = None,
 ):
 
     access_config = ZendeskAccessConfig(api_token=token)
     connection_config = ZendeskConnectionConfig(
-        subdomain=subdomain, email=email, endpoint=endpoint, access_config=access_config
+        subdomain=subdomain, email=email, access_config=access_config
     )
 
     index_config = ZendeskIndexerConfig(batch_size=1,
@@ -38,7 +40,7 @@ async def zendesk_source_test(
     indexer = ZendeskIndexer(
         connection_config=connection_config,
         index_config=index_config,
-        connector_type="zendesk",
+        connector_type=CONNECTOR_TYPE,
     )
 
     # handle downloader.
@@ -47,7 +49,7 @@ async def zendesk_source_test(
     downloader = ZendeskDownloader(
         connection_config=connection_config,
         download_config=download_config,
-        connector_type="zendesk",
+        connector_type=CONNECTOR_TYPE,
     )   
 
     # Run the source connector validation
@@ -61,12 +63,12 @@ async def zendesk_source_test(
 
 
 @pytest.mark.asyncio
-@requires_env("ZENDESK_ENDPOINT", "ZENDESK_TOKEN")
+@pytest.mark.tags(SOURCE_TAG, CONNECTOR_TYPE, UNCATEGORIZED_TAG)
+@requires_env("ZENDESK_TOKEN")
 async def test_zendesk_source(temp_dir):
     await zendesk_source_test(
         tmp_path=temp_dir,
         token=os.environ["ZENDESK_TOKEN"],
-        endpoint=os.environ["ZENDESK_ENDPOINT"],
         email="test@unstructured.io",
         subdomain="unstructuredhelp",
     )
