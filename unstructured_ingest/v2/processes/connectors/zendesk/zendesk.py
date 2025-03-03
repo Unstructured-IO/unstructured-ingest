@@ -55,7 +55,6 @@ class ZendeskFileDataSourceMetadata(FileDataSourceMetadata):
     """
 
 
-
 class ZendeskBatchFileData(BatchFileData):
     additional_metadata: ZendeskAdditionalMetadata
 
