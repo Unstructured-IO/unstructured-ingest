@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import Field, SecretStr
 
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 class OpenAIEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
+    base_url: Optional[str] = Field(default=None)
 
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):
@@ -57,13 +58,13 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     def get_client(self) -> "OpenAI":
         from openai import OpenAI
 
-        return OpenAI(api_key=self.api_key.get_secret_value())
+        return OpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncOpenAI":
         from openai import AsyncOpenAI
 
-        return AsyncOpenAI(api_key=self.api_key.get_secret_value())
+        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
 
 
 @dataclass
