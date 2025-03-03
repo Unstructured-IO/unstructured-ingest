@@ -53,7 +53,14 @@ def create_partition_request(filename: Path, parameters_dict: dict) -> "Partitio
 
 
 def wrap_error(e: Exception) -> Exception:
+    from unstructured_client.models.errors.httpvalidationerror import HTTPValidationError
     from unstructured_client.models.errors.sdkerror import SDKError
+    from unstructured_client.models.errors.servererror import ServerError
+
+    if isinstance(e, HTTPValidationError):
+        return UserError(e.data.detail)
+    if isinstance(e, ServerError):
+        return ProviderError(e.data.detail)
 
     if not isinstance(e, SDKError):
         logger.error(f"Uncaught Error calling API: {e}")
