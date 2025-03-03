@@ -4,21 +4,20 @@ from typing import Optional
 
 import pytest
 
+from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
-from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
-
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.processes.connectors.zendesk import (
+    CONNECTOR_TYPE,
     ZendeskAccessConfig,
     ZendeskConnectionConfig,
     ZendeskDownloader,
     ZendeskDownloaderConfig,
     ZendeskIndexer,
     ZendeskIndexerConfig,
-    CONNECTOR_TYPE,
 )
 
 
@@ -34,9 +33,8 @@ async def zendesk_source_test(
         subdomain=subdomain, email=email, access_config=access_config
     )
 
-    index_config = ZendeskIndexerConfig(batch_size=1,
-                                        item_type='tickets')
-    
+    index_config = ZendeskIndexerConfig(batch_size=1, item_type="tickets")
+
     indexer = ZendeskIndexer(
         connection_config=connection_config,
         index_config=index_config,
@@ -50,7 +48,7 @@ async def zendesk_source_test(
         connection_config=connection_config,
         download_config=download_config,
         connector_type=CONNECTOR_TYPE,
-    )   
+    )
 
     # Run the source connector validation
     await source_connector_validation(

@@ -1,10 +1,12 @@
-from dataclasses import dataclass
-from typing import List, Dict
-import requests
 import base64
-import requests
+from dataclasses import dataclass
+from typing import Dict, List
+
 import httpx
+import requests
+
 from unstructured_ingest.v2.logger import logger
+
 
 @dataclass
 class Comment:
@@ -23,18 +25,19 @@ class ZendeskTicket:
     generated_ts: int
     metadata: dict
 
+
 @dataclass
 class ZendeskArticle:
-    id: str 
+    id: str
     author_id: str
-    title: str 
+    title: str
     content: str
 
 
 class ZendeskClient:
 
     def __init__(self, token: str, subdomain: str, email: str):
-        # should be okay to be blocking. 
+        # should be okay to be blocking.
         url_to_check = f"https://{subdomain}.zendesk.com/api/v2/groups.json"
         auth = f"{email}/token", token
         try:
@@ -86,30 +89,28 @@ class ZendeskClient:
         retrieves article content from zendesk using requests
         """
 
-        articles : List[ZendeskArticle] = [] 
-        
+        articles: List[ZendeskArticle] = []
+
         article_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles.json"
 
         response = requests.get(article_url, auth=self._auth)
 
         if response.status_code == 200:
-            articles_in_response: list[dict] = response.json()['articles']
+            articles_in_response: list[dict] = response.json()["articles"]
             for entry in articles_in_response:
                 articles.append(
-                        ZendeskArticle(
-                        id = str(entry['id']),
-                        author_id=str(entry['author_id']), 
-                        title = str(entry['title']),
-                        content = entry['body']
-                    ))
+                    ZendeskArticle(
+                        id=str(entry["id"]),
+                        author_id=str(entry["author_id"]),
+                        title=str(entry["title"]),
+                        content=entry["body"],
+                    )
+                )
 
         else:
-            raise RuntimeError(
-                f"Articles wer enot able to be acquired from url: {article_url}"
-            )
-        
+            raise RuntimeError(f"Articles wer enot able to be acquired from url: {article_url}")
+
         return articles
-    
 
     def get_comments(self, ticket_id: int) -> List[Comment]:
 
@@ -160,7 +161,6 @@ class ZendeskClient:
             f"Comments for ticket id:{ticket_id} could not be acquired from url: {comments_url}"
         )
 
-
     def get_users(self) -> List[dict]:
 
         users: List[dict] = []
@@ -177,18 +177,17 @@ class ZendeskClient:
             raise RuntimeError(f"Users could not be acquried from url: {users_url}")
 
         return users
-    
-    async def get_users_async(self) -> List[dict]:  
+
+    async def get_users_async(self) -> List[dict]:
         users_url = f"https://{self._subdomain}.zendesk.com/api/v2/users"
 
-        async with httpx.AsyncClient() as client:  
+        async with httpx.AsyncClient() as client:
             response = await client.get(users_url, auth=self._auth)
 
         if response.status_code == 200:
             return response.json()["users"]
 
         raise RuntimeError(f"Users could not be acquired from url: {users_url}")
-
 
     async def get_tickets_async(self) -> List["ZendeskTicket"]:
         tickets: List["ZendeskTicket"] = []
@@ -244,17 +243,16 @@ class ZendeskClient:
 
         return tickets
 
-
-    def get_article_attachments(self, article_id: str): 
+    def get_article_attachments(self, article_id: str):
         """
         Handles article attachments such as images and stores them as UTF-8 encoded bytes.
         """
-        
+
         # Construct the URL to retrieve attachments for a specific article
         article_attachment_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/{article_id}/attachments"
         # Send the GET request to retrieve the attachments
         response = requests.get(article_attachment_url, auth=self._auth)
-        
+
         if response.status_code == 200:
             # Parse the response and extract attachment information
             attachments_in_response: List[dict] = response.json().get("article_attachments", [])
@@ -269,12 +267,12 @@ class ZendeskClient:
                     "content_type": attachment["content_type"],
                     "size": attachment["size"],
                     "url": attachment["url"],
-                    "content_url": attachment["content_url"]
+                    "content_url": attachment["content_url"],
                 }
                 attachments.append(attachment_data)
 
                 # Download the attachment using the URL
-                attachment_url = attachment['content_url']
+                attachment_url = attachment["content_url"]
                 download_response = requests.get(attachment_url, auth=self._auth)
 
                 if download_response.status_code == 200:
@@ -283,7 +281,9 @@ class ZendeskClient:
                     logger.debug(f"Encoded attachment {attachment['file_name']} successfully.")
 
                     # You can store the encoded content as part of the attachment data
-                    encoded_string_injection = f'data:{attachment_data["content_type"]};base64,{encoded_content}'
+                    encoded_string_injection = (
+                        f'data:{attachment_data["content_type"]};base64,{encoded_content}'
+                    )
                     attachment_data["encoded_content"] = encoded_string_injection
 
                 else:
@@ -302,14 +302,14 @@ class ZendeskClient:
         Handles article attachments such as images and stores them as UTF-8 encoded bytes.
         """
         article_attachment_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/{article_id}/attachments"
-        
+
         async with httpx.AsyncClient() as client:
             response = await client.get(article_attachment_url, auth=self._auth)
-            
+
             if response.status_code == 200:
                 attachments_in_response: List[Dict] = response.json().get("article_attachments", [])
                 attachments = []
-                
+
                 for attachment in attachments_in_response:
                     attachment_data = {
                         "id": attachment["id"],
@@ -317,19 +317,23 @@ class ZendeskClient:
                         "content_type": attachment["content_type"],
                         "size": attachment["size"],
                         "url": attachment["url"],
-                        "content_url": attachment["content_url"]
+                        "content_url": attachment["content_url"],
                     }
-                    
-                    download_response = await client.get(attachment['content_url'], auth=self._auth)
-                    
+
+                    download_response = await client.get(attachment["content_url"], auth=self._auth)
+
                     if download_response.status_code == 200:
-                        encoded_content = base64.b64encode(download_response.content).decode("utf-8")
-                        attachment_data["encoded_content"] = f"data:{attachment_data['content_type']};base64,{encoded_content}"
+                        encoded_content = base64.b64encode(download_response.content).decode(
+                            "utf-8"
+                        )
+                        attachment_data["encoded_content"] = (
+                            f"data:{attachment_data['content_type']};base64,{encoded_content}"
+                        )
                     else:
                         logger.error(f"Failed to download attachment {attachment['file_name']}.")
-                    
+
                     attachments.append(attachment_data)
-                
+
                 return attachments
             else:
                 message = (

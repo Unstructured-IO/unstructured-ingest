@@ -3,6 +3,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
 )
 
 from .zendesk import (
+    CONNECTOR_TYPE,
     ZendeskAccessConfig,
     ZendeskClient,
     ZendeskConnectionConfig,
@@ -12,7 +13,6 @@ from .zendesk import (
     ZendeskIndexerConfig,
     ZendeskTicket,
     zendesk_source_entry,
-    CONNECTOR_TYPE
 )
 
 __all__ = [
