@@ -4,6 +4,7 @@
 
 * **Migrate Jira Source connector from V1 to V2**
 * **Add Jira Source connector integration and unit tests**
+* **Support custom endpoint for openai embedder**
 
 ### Fixes
 
