@@ -180,18 +180,16 @@ class ZendeskIndexer(Indexer):
                         "item_type": "articles",
                 },
             )
-        
-            batch_items: List[ZendeskBatchItemArticle] = []
-            
-            for article in article_batch: 
-                batch_items.append(
-                    ZendeskBatchItemArticle(
-                        identifier=str(article.id),
-                        author_id=str(article.author_id),
-                        title=str(article.title),
-                        content= str(article.content),
-                    )
+                    
+            batch_items: List[ZendeskBatchItemArticle] = [
+                ZendeskBatchItemArticle(
+                    identifier=str(article.id),
+                    author_id=str(article.author_id),
+                    title=str(article.title),
+                    content=str(article.content),
                 )
+                for article in article_batch
+            ]
 
             full_path = self._generate_fullpath(str(article_batch[0].id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
@@ -223,17 +221,15 @@ class ZendeskIndexer(Indexer):
                 },
             )
         
-            batch_items: List[ZendeskBatchItemArticle] = []
-            
-            for article in article_batch: 
-                batch_items.append(
-                    ZendeskBatchItemArticle(
-                        identifier=str(article.id),
-                        author_id=str(article.author_id),
-                        title=str(article.title),
-                        content=str(article.content),
-                    )
+            batch_items: List[ZendeskBatchItemArticle] = [
+                ZendeskBatchItemArticle(
+                    identifier=str(article.id),
+                    author_id=str(article.author_id),
+                    title=str(article.title),
+                    content=str(article.content),
                 )
+                for article in article_batch
+            ]
 
             full_path = self._generate_fullpath(str(article_batch[0].id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
@@ -267,15 +263,14 @@ class ZendeskIndexer(Indexer):
                     },
             )
 
-            batch_items: List[ZendeskBatchItemTicket] = []
-
-            for ticket in ticket_batch: 
-                batch_items.append(
-                    ZendeskBatchItemTicket(
-                        identifier=str(ticket.id),
-                        subject=str(ticket.subject),
-                        description=str(ticket.description),)
+            batch_items: List[ZendeskBatchItemTicket] = [
+                ZendeskBatchItemTicket(
+                    identifier=str(ticket.id),
+                    subject=str(ticket.subject),
+                    description=str(ticket.description),
                 )
+                for ticket in ticket_batch
+            ]
 
             # handle identifiers using leading batch id
             full_path = self._generate_fullpath(str(ticket_batch[0].id))
@@ -308,16 +303,14 @@ class ZendeskIndexer(Indexer):
                 },
             )
         
-            batch_items: List[ZendeskBatchItemTicket] = []
-            
-            for ticket in ticket_batch: 
-                batch_items.append(
-                    ZendeskBatchItemTicket(
-                        identifier=str(ticket.id),
-                        subject=str(ticket.subject),
-                        description=str(ticket.description),
-                    )
+            batch_items: List[ZendeskBatchItemTicket] = [
+                ZendeskBatchItemTicket(
+                    identifier=str(ticket.id),
+                    subject=str(ticket.subject),
+                    description=str(ticket.description),
                 )
+                for ticket in ticket_batch
+            ]
 
             full_path = self._generate_fullpath(str(ticket_batch[0].id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
