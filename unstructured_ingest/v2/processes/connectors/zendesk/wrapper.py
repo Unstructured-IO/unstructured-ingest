@@ -81,7 +81,8 @@ class ZendeskClient:
             return articles
 
         raise RuntimeError(
-            f"Articles were not able to be acquired from url: {article_url}. Status Code: {response.status_code}"
+            f"Articles were not able to be acquired from url: {article_url}. "
+            f"Status Code: {response.status_code}"
         )
 
     def get_articles(self) -> List[ZendeskArticle]:
@@ -249,7 +250,10 @@ class ZendeskClient:
         """
 
         # Construct the URL to retrieve attachments for a specific article
-        article_attachment_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/{article_id}/attachments"
+        article_attachment_url = (
+            f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/"
+            f"{article_id}/attachments"
+        )
         # Send the GET request to retrieve the attachments
         response = requests.get(article_attachment_url, auth=self._auth)
 
@@ -301,7 +305,10 @@ class ZendeskClient:
         """
         Handles article attachments such as images and stores them as UTF-8 encoded bytes.
         """
-        article_attachment_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles/{article_id}/attachments"
+        article_attachment_url = (
+            f"https://{self._subdomain}.zendesk.com/api/v2/help_center/"
+            f"articles/{article_id}/attachments"
+        )
 
         async with httpx.AsyncClient() as client:
             response = await client.get(article_attachment_url, auth=self._auth)

@@ -10,7 +10,7 @@ from typing import Any, AsyncGenerator, Generator, List
 
 import aiofiles
 import bs4
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.error import (
     SourceConnectionError,
@@ -36,9 +36,6 @@ from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEn
 from .wrapper import ZendeskArticle, ZendeskClient, ZendeskTicket
 
 CONNECTOR_TYPE = "zendesk"
-
-
-from pydantic import BaseModel
 
 
 class ZendeskAdditionalMetadata(BaseModel):
