@@ -52,6 +52,11 @@ class EmbedderConfig(BaseModel):
     embedding_azure_api_version: Optional[str] = Field(
         description="Azure API version", default=None
     )
+    embedding_openai_endpoint: Optional[str] = Field(
+        default=None,
+        description="Your custom OpenAI base url, "
+        "e.g. `https://custom-openai-deployment.com/`",
+    )
 
     def get_huggingface_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.huggingface import (
@@ -66,7 +71,16 @@ class EmbedderConfig(BaseModel):
     def get_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
 
-        return OpenAIEmbeddingEncoder(config=OpenAIEmbeddingConfig.model_validate(embedding_kwargs))
+        config_kwargs = {
+            "api_key": self.embedding_api_key,
+            "base_url": self.embedding_openai_endpoint,
+        }
+        if model_name := self.embedding_model_name:
+            config_kwargs["model_name"] = model_name
+
+        return OpenAIEmbeddingEncoder(
+            config=OpenAIEmbeddingConfig.model_validate(config_kwargs)
+            )
 
     def get_azure_openai_embedder(self, embedding_kwargs: dict) -> "BaseEmbeddingEncoder":
         from unstructured_ingest.embed.azure_openai import (
