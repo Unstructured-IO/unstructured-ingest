@@ -1,4 +1,4 @@
-## 0.5.10-dev1
+## 0.5.10-dev2
 
 ### Enhancements
 
@@ -8,6 +8,7 @@
 ### Fixes
 
 * **Fix Confluence unescaped Unicode characters**
+* **Update use of unstructured client to leverage new error handling**
 
 ## 0.5.9
 
