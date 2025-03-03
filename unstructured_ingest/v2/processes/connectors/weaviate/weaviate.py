@@ -1,4 +1,5 @@
 import json
+import re
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -229,23 +230,34 @@ class WeaviateUploader(VectorDBUploader, ABC):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def init(self, *kwargs: Any) -> None:
-        self.create_destination()
+    def init(self, **kwargs: Any) -> None:
+        self.create_destination(**kwargs)
+
+    def format_destination_name(self, destination_name: str) -> str:
+        # Weaviate naming requirements:
+        # must be alphanumeric and underscores only
+        formatted = re.sub(r"[^a-zA-Z0-9]", "_", destination_name)
+        # must begin with capital letter
+        return formatted.capitalize()
 
     def create_destination(
-        self, destination_name: str = "elements", vector_length: Optional[int] = None, **kwargs: Any
+        self,
+        destination_name: str = "unstructuredautocreated",
+        vector_length: Optional[int] = None,
+        **kwargs: Any,
     ) -> bool:
         collection_name = self.upload_config.collection or destination_name
+        collection_name = self.format_destination_name(collection_name)
         self.upload_config.collection = collection_name
+
         connectors_dir = Path(__file__).parents[1]
         collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
         with collection_config_file.open() as f:
             collection_config = json.load(f)
         collection_config["class"] = collection_name
+
         if not self._collection_exists():
-            logger.info(
-                f"creating default weaviate collection '{collection_name}' with default configs"
-            )
+            logger.info(f"creating weaviate collection '{collection_name}' with default configs")
             with self.connection_config.get_client() as weaviate_client:
                 weaviate_client.collections.create_from_dict(config=collection_config)
                 return True

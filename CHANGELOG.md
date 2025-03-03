@@ -1,4 +1,49 @@
-## 0.5.6-dev0 
+## 0.5.10-dev2 
+
+### Features 
+* Added Zendesk as a source connector.
+
+## 0.5.10-dev1
+
+### Enhancements
+
+* **Migrate Jira Source connector from V1 to V2**
+* **Add Jira Source connector integration and unit tests**
+
+### Fixes
+
+* **Fix Confluence unescaped Unicode characters**
+
+## 0.5.9
+
+### Features
+
+* Add auto create collection support for AstraDB destination
+
+### Fixes
+
+* **Fix Confluence Source page title not being processed during partition**
+
+## 0.5.8
+
+### Fixes
+
+* **Fix on pinecone index creation functionality**
+
+## 0.5.7
+
+### Fixes
+
+* **Fix voyageai embedder: add multimodal embedder function**
+
+## 0.5.6
+
+### Enhancements
+
+* **Add support for setting up destination for Pinecone**
+* Add name formatting to Weaviate destination uploader
+
+## 0.5.5
 
 ### Enhancements
 

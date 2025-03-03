@@ -56,12 +56,7 @@ def test_precheck_succeeds_indexer(connection_config: AstraDBConnectionConfig):
         connection_config=connection_config,
         index_config=AstraDBIndexerConfig(collection_name=EXISTENT_COLLECTION_NAME),
     )
-    uploader = AstraDBUploader(
-        connection_config=connection_config,
-        upload_config=AstraDBUploaderConfig(collection_name=EXISTENT_COLLECTION_NAME),
-    )
     indexer.precheck()
-    uploader.precheck()
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
@@ -72,6 +67,12 @@ def test_precheck_succeeds_uploader(connection_config: AstraDBConnectionConfig):
         upload_config=AstraDBUploaderConfig(collection_name=EXISTENT_COLLECTION_NAME),
     )
     uploader.precheck()
+
+    uploader2 = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(),
+    )
+    uploader2.precheck()
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, VECTOR_DB_TAG)
@@ -214,6 +215,32 @@ async def test_astra_search_destination(
         f"Expected count ({expected_count}) doesn't match how "
         f"much came back from collection: {current_count}"
     )
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@requires_env("ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN")
+def test_astra_create_destination():
+    env_data = get_env_data()
+    connection_config = AstraDBConnectionConfig(
+        access_config=AstraDBAccessConfig(api_endpoint=env_data.api_endpoint, token=env_data.token),
+    )
+    uploader = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(),
+    )
+    collection_name = "system_created-123"
+    formatted_collection_name = "system_created_123"
+    created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
+    assert created
+    assert uploader.upload_config.collection_name == formatted_collection_name
+
+    created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
+    assert not created
+
+    # cleanup
+    client = AstraDBClient()
+    db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
+    db.drop_collection(formatted_collection_name)
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)

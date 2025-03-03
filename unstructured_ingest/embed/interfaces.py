@@ -49,7 +49,7 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
     def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
         exemplary_embedding = self.get_exemplary_embedding()
-        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
+        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0, rtol=1e-03)
 
     def get_client(self):
         raise NotImplementedError
@@ -103,7 +103,7 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
     async def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
         exemplary_embedding = await self.get_exemplary_embedding()
-        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0)
+        return np.isclose(np.linalg.norm(exemplary_embedding), 1.0, rtol=1e-03)
 
     def get_client(self):
         raise NotImplementedError
