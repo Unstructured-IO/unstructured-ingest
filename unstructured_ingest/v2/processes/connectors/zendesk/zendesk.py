@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import Any, Generator, List, AsyncGenerator
+from unstructured_ingest.utils.data_prep import batch_generator
 import aiofiles
 import bs4
 
@@ -25,6 +26,8 @@ from unstructured_ingest.v2.interfaces import (
     FileData,
     FileDataSourceMetadata,
     Indexer,
+    BatchFileData,
+    BatchItem,
     IndexerConfig,
     SourceIdentifiers,
 )
@@ -36,11 +39,41 @@ from .wrapper import ZendeskClient, ZendeskTicket, ZendeskArticle, Comment
 CONNECTOR_TYPE = "zendesk"
 
 
+from pydantic import BaseModel, Field, Secret
+
+class ZendeskAdditionalMetadata(BaseModel):
+    item_type: str 
+    leading_id: str # is the same as id just being verbose.
+    tail_id: str # last id in the batch.
+
+
+class ZendeskFileDataSourceMetadata(FileDataSourceMetadata):
+    """
+    inherits metadata object as tickets and articles 
+    are treated in single batch, we need to denote indices ticket/article
+    as the source metadata.     
+    """
+    pass 
+
+
+class ZendeskBatchFileData(BatchFileData):
+    additional_metadata: ZendeskAdditionalMetadata
+
 class ZendeskAccessConfig(AccessConfig):
     api_token: str = Field(
         description="API token for zendesk generated under Apps and Integrations"
     )
 
+class ZendeskBatchItemTicket(BatchItem):
+     subject: str 
+     description: str 
+     item_type: str = "tickets" # placeholder for downloader
+
+class ZendeskBatchItemArticle(BatchItem):
+    title: str
+    author_id: str 
+    title: str
+    content: str
 
 class ZendeskConnectionConfig(ConnectionConfig):
     subdomain: str = Field(description="Subdomain for zendesk site, <sub-domain>.company.com")
@@ -79,11 +112,11 @@ class ZendeskConnectionConfig(ConnectionConfig):
 class ZendeskIndexerConfig(IndexerConfig):
     batch_size: int = Field(
         default=1,
-        description="[NotImplemented]Number of tickets: Currently batching is not supported.",
+        description="Number of tickets or articles.",
     )
     item_type: str = Field(
         default='tickets',
-        description="Type of item from zendesk to parse, can only be tickets or articles."
+        description="Type of item from zendesk to parse, can only be `tickets` or `articles`."
     )
 
 @dataclass
@@ -109,7 +142,7 @@ class ZendeskIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {e}")
     
     def is_async(self) -> bool:
-        return True 
+        return False #TODO(set to true when testing async and before PR.) 
 
     async def _list_articles_async(self) -> List[ZendeskArticle]:
         async with self.connection_config.get_client_async() as client:
@@ -130,123 +163,202 @@ class ZendeskIndexer(Indexer):
     def _generate_fullpath(self, identifier: str) -> Path:
         return Path(hashlib.sha256(identifier.encode("utf-8")).hexdigest()[:16] + ".txt")
 
-    def handle_articles(self, articles: List[ZendeskArticle]) -> Generator[FileData, None, None]:
+    def handle_articles(self, articles: List[ZendeskArticle], batch_size: int) -> Generator[ZendeskBatchFileData, None, None]:
         """Parses articles from a list and yields FileData objects."""
-        for article in articles:
-            metadata = FileDataSourceMetadata(
+
+        for article_batch in batch_generator(articles, batch_size=batch_size):
+            additional_metadata = ZendeskAdditionalMetadata(
+                item_type='articles',
+                leading_id=str(article_batch[0].id),
+                tail_id=str(article_batch[-1].id),
+            )
+            
+            metadata = ZendeskFileDataSourceMetadata(
+                date_processed=str(time()),
+                    record_locator={
+                        "id": str(article_batch[0].id),
+                        "item_type": "articles",
+                },
+            )
+        
+            batch_items: List[ZendeskBatchItemArticle] = []
+            
+            for article in article_batch: 
+                batch_items.append(
+                    ZendeskBatchItemArticle(
+                        identifier=str(article.id),
+                        author_id=str(article.author_id),
+                        title=str(article.title),
+                        content= str(article.content),
+                    )
+                )
+
+            full_path = self._generate_fullpath(str(article_batch[0].id))
+            source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
+
+            batched_file_data = ZendeskBatchFileData(
+                connector_type=self.connector_type,
+                metadata=metadata,
+                batch_items=batch_items,
+                additional_metadata=additional_metadata,
+                source_identifiers=source_identifiers,
+            )
+            
+            yield batched_file_data
+
+    async def handle_articles_async(self, articles: List[ZendeskArticle], batch_size: int) -> AsyncGenerator[ZendeskBatchFileData, None]:
+        """Parses articles from a list and yields FileData objects asynchronously in batches."""
+        for article_batch in batch_generator(articles, batch_size=batch_size):
+            additional_metadata = ZendeskAdditionalMetadata(
+                item_type='articles',
+                leading_id=str(article_batch[0].id),
+                tail_id=str(article_batch[-1].id),
+            )
+
+            metadata = ZendeskFileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
-                    "id": str(article.id),
-                    "author_id": str(article.author_id),
-                    "title": str(article.title),
-                    "content": str(article.content),
+                    "id": str(article_batch[0].id),
                     "item_type": "articles",
                 },
             )
-            full_path = self._generate_fullpath(str(article.id))
+        
+            batch_items: List[ZendeskBatchItemArticle] = []
+            
+            for article in article_batch: 
+                batch_items.append(
+                    ZendeskBatchItemArticle(
+                        identifier=str(article.id),
+                        author_id=str(article.author_id),
+                        title=str(article.title),
+                        content=str(article.content),
+                    )
+                )
+
+            full_path = self._generate_fullpath(str(article_batch[0].id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
-            yield FileData(
-                identifier=str(article.id),
+            batched_file_data = ZendeskBatchFileData(
                 connector_type=self.connector_type,
                 metadata=metadata,
+                batch_items=batch_items,
+                additional_metadata=additional_metadata,
                 source_identifiers=source_identifiers,
             )
+            
+            yield batched_file_data
 
-    async def handle_articles_async(self, articles: List[ZendeskArticle]) -> AsyncGenerator[FileData, None]:
-        """Parses articles from a list and yields FileData objects asynchronously."""
-        for article in articles:
-            metadata = FileDataSourceMetadata(
-                date_processed=str(time()),
-                record_locator={
-                    "id": str(article.id),
-                    "author_id": str(article.author_id),
-                    "title": str(article.title),
-                    "content": str(article.content),
-                    "item_type": "articles",
-                },
-            )
-            full_path = self._generate_fullpath(str(article.id))
-            source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
-            yield FileData(
-                identifier=str(article.id),
-                connector_type=self.connector_type,
-                metadata=metadata,
-                source_identifiers=source_identifiers,
-            )
-
-    def handle_tickets(self, tickets: List[ZendeskTicket]) -> Generator[FileData, None, None]:
+    def handle_tickets(self, tickets: List[ZendeskTicket], batch_size: int) -> Generator[ZendeskBatchFileData, None, None]:
         """Parses tickets from a list and yields FileData objects."""
-        for ticket in tickets:
-            metadata = FileDataSourceMetadata(
-                date_processed=str(time()),
-                record_locator={
-                    "id": str(ticket.id),
-                    "subject": str(ticket.subject),
-                    "description": str(ticket.description),
-                    "item_type": "tickets",
-                },
+
+        for ticket_batch in batch_generator(tickets, batch_size=batch_size):
+
+            additional_metadata = ZendeskAdditionalMetadata(
+                    leading_id=str(ticket_batch[0].id),
+                    tail_id=str(ticket_batch[-1].id),
+                    item_type='tickets')
+
+            metadata = ZendeskFileDataSourceMetadata(
+                    date_processed=str(time()),
+                    record_locator={
+                        "id": str(ticket_batch[0].id),
+                        "item_type": "tickets",
+                    },
             )
-            full_path = self._generate_fullpath(str(ticket.id))
+
+            batch_items: List[ZendeskBatchItemTicket] = []
+
+            for ticket in ticket_batch: 
+                batch_items.append(
+                    ZendeskBatchItemTicket(
+                        identifier=str(ticket.id),
+                        subject=str(ticket.subject),
+                        description=str(ticket.description),)
+                )
+
+            # handle identifiers using leading batch id
+            full_path = self._generate_fullpath(str(ticket_batch[0].id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
-            yield FileData(
-                identifier=str(ticket.id),
+            batched_file_data = ZendeskBatchFileData(
                 connector_type=self.connector_type,
                 metadata=metadata,
+                batch_items=batch_items,
+                additional_metadata=additional_metadata,
                 source_identifiers=source_identifiers,
             )
 
-    # Asynchronous version of handle_tickets
-    async def handle_tickets_async(self, tickets: List[ZendeskTicket]) -> AsyncGenerator[FileData, None]:
-        """Parses tickets from a list and yields FileData objects asynchronously."""
-        for ticket in tickets:
-            metadata = FileDataSourceMetadata(
+            yield batched_file_data
+            
+    async def handle_tickets_async(self, tickets: List[ZendeskTicket], batch_size: int) -> AsyncGenerator[ZendeskBatchFileData, None]:
+        """Parses tickets from a list and yields FileData objects asynchronously in batches."""
+        for ticket_batch in batch_generator(tickets, batch_size=batch_size):
+            additional_metadata = ZendeskAdditionalMetadata(
+                item_type='tickets',
+                leading_id=str(ticket_batch[0].id),
+                tail_id=str(ticket_batch[-1].id),
+            )
+
+            metadata = ZendeskFileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
-                    "id": str(ticket.id),
-                    "subject": str(ticket.subject),
-                    "description": str(ticket.description),
+                    "id": str(ticket_batch[0].id),
                     "item_type": "tickets",
                 },
             )
-            full_path = self._generate_fullpath(str(ticket.id))
+        
+            batch_items: List[ZendeskBatchItemTicket] = []
+            
+            for ticket in ticket_batch: 
+                batch_items.append(
+                    ZendeskBatchItemTicket(
+                        identifier=str(ticket.id),
+                        subject=str(ticket.subject),
+                        description=str(ticket.description),
+                    )
+                )
+
+            full_path = self._generate_fullpath(str(ticket_batch[0].id))
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
-            yield FileData(
-                identifier=str(ticket.id),
+            batched_file_data = ZendeskBatchFileData(
                 connector_type=self.connector_type,
                 metadata=metadata,
+                batch_items=batch_items,
+                additional_metadata=additional_metadata,
                 source_identifiers=source_identifiers,
             )
+            
+            yield batched_file_data
 
     async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
         """Determines item type and processes accordingly asynchronously."""
         item_type = self.index_config.item_type
+        batch_size = self.index_config.batch_size
 
         if item_type == "articles":
             articles = await self._list_articles_async()
-            async for file_data in self.handle_articles_async(articles):  # Using async version
+            async for file_data in self.handle_articles_async(articles, batch_size):  # Using async version
                 yield file_data
 
         elif item_type == "tickets":
             tickets = await self._list_tickets_async()
-            async for file_data in self.handle_tickets_async(tickets):  # Using async version
+            async for file_data in self.handle_tickets_async(tickets, batch_size):  # Using async version
                 yield file_data
-
     
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) ->  Generator[BatchFileData, None, None]:
         """Determines item type and processes accordingly."""
         item_type = self.index_config.item_type
+        batch_size = self.index_config.batch_size
 
         if item_type == "articles":
             articles = self._list_articles()
-            yield from self.handle_articles(articles)
+            yield from self.handle_articles(articles, batch_size)
         
         elif item_type == "tickets":
             tickets = self._list_tickets()
-            yield from self.handle_tickets(tickets)
+            yield from self.handle_tickets(tickets, batch_size)
 
 
 class ZendeskDownloaderConfig(DownloaderConfig):
@@ -259,250 +371,245 @@ class ZendeskDownloader(Downloader):
     connection_config: ZendeskConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def handle_articles(self, client, file_data: FileData):
+    def handle_articles(self, client, batch_file_data: ZendeskBatchFileData):
         """
         processes the ticket information, downloads the comments for each ticket
         and proceeds accordingly. 
         """
-        file_data: FileData = FileData.cast(file_data=file_data)
 
         # Determine the download path
-        download_path = self.get_download_path(file_data)
+        download_path = self.get_download_path(batch_file_data)
         if download_path is None:
             raise ValueError("Download path could not be determined")
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        html_data_str = file_data.metadata.record_locator['content']
+        for article in batch_file_data.batch_items:
 
-        soup = bs4.BeautifulSoup(html_data_str, "html.parser")
+            html_data_str = article.content
+            soup = bs4.BeautifulSoup(html_data_str, "html.parser")
 
-        # get article attachments
-        image_data_decoded: List = client.get_article_attachments(article_id=file_data.metadata.record_locator['id'])
-        img_tags = soup.find_all("img")
+            # get article attachments
+            image_data_decoded: List = client.get_article_attachments(article_id=article.identifier)
+            img_tags = soup.find_all("img")
 
-        for i, img_tag in enumerate(img_tags):
-            img_tag['src'] = image_data_decoded[i]['encoded_content']
+            for i, img_tag in enumerate(img_tags):
+                img_tag['src'] = image_data_decoded[i]['encoded_content']
         
-        file_data.metadata.record_locator['content'] = str(soup)
+            article.content = str(soup)
 
-        # Write the values to the file
-        with open(download_path, "w", encoding="utf8") as f:
-            content = (
-                "article\n"
-                f"{file_data.identifier}\n"
-                f"{file_data.metadata.record_locator.get('title', '')}\n"
-                f"{file_data.metadata.record_locator.get('content', '')}\n"
-                f"{file_data.metadata.record_locator.get('author_id', '')}\n"
-            )
-            f.write(content)
+            # Write the values to the file
+            with open(download_path, "a", encoding="utf8") as f:
+                content = (
+                    "article\n"
+                    f"{article.identifier}\n"
+                    f"{article.title}\n"
+                    f"{article.content}\n"
+                    f"{article.author_id}\n"
+                )
+                f.write(content)
 
         return super().generate_download_response(
-            file_data=file_data, download_path=download_path
+            file_data=batch_file_data, download_path=download_path
         )
 
-    def handle_tickets(self, client, file_data: FileData) -> DownloadResponse:
+    def handle_tickets(self, client: ZendeskClient, batch_file_data: ZendeskBatchFileData) -> DownloadResponse:
         """
         processes an article's information, parses it and proceeds accordingly. 
         """
 
-        comments: List[Comment] = [] 
-
-        # each ticket consists of comments, to which I will dump in a txt file.
-        first_date = None
-        for comment in client.get_comments(ticket_id=file_data.identifier):
-
-            if isinstance(comment.metadata["created_at"], datetime.datetime):
-                date_created = comment.metadata["created_at"].isoformat()
-            else:
-                date_created = str(comment.metadata["created_at"])
-
-            if first_date is None:
-                first_date = date_created
-
-            comments.append(
-                {
-                    "comment_id": comment.id,
-                    "author_id": comment.author_id,
-                    "body": comment.body,
-                    "date_created": date_created,
-                }
-            )
-
         # Determine the download path
-        download_path = self.get_download_path(file_data)
+        download_path = self.get_download_path(batch_file_data)
         if download_path is None:
             raise ValueError("Download path could not be determined")
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write the values to the file
-        with open(download_path, "w", encoding="utf8") as f:
-            content = (
-                "ticket\n"
-                f"{file_data.identifier}\n"
-                f"{file_data.metadata.record_locator.get('subject', '')}\n"
-                f"{file_data.metadata.record_locator.get('description', '')}\n"
-                f"{first_date}\n"
-            )
+        # go through batches of tickets
+        for batch_item in batch_file_data.batch_items:
 
-            for comment in comments:
-                content += (
-                    "comment\n"
-                    f"{comment.get('comment_id', '')}\n"
-                    f"{comment.get('author_id', '')}\n"
-                    f"{comment.get('body', '')}\n"
-                    f"{comment.get('date_created', '')}\n"
+            # process ith ticket and dump it into file. 
+            ticket_identifier = batch_item.identifier
+            first_date = None
+            with open(download_path, "a", encoding="utf8") as f:
+                        content = (
+                            "\nticket\n"
+                            f"{batch_item.identifier}\n"
+                            f"{batch_file_data.metadata.record_locator.get('subject', '')}\n"
+                            f"{batch_file_data.metadata.record_locator.get('description', '')}\n"
+                            f"{first_date}\n"
+                        )
+            
+            comments: List[dict] = [] 
+
+            for comment in client.get_comments(ticket_id=ticket_identifier):
+
+                if isinstance(comment.metadata["created_at"], datetime.datetime):
+                    date_created = comment.metadata["created_at"].isoformat()
+                else:
+                    date_created = str(comment.metadata["created_at"])
+
+                if first_date is None:
+                    first_date = date_created
+
+                comments.append(
+                    {
+                        "comment_id": comment.id,
+                        "author_id": comment.author_id,
+                        "body": comment.body,
+                        "date_created": date_created,
+                    }
                 )
 
-            f.write(content)
+            with open(download_path, "a", encoding="utf8") as f:
+
+                for comment in comments:
+                    content += (
+                        "comment\n"
+                        f"{comment.get('comment_id', '')}\n"
+                        f"{comment.get('author_id', '')}\n"
+                        f"{comment.get('body', '')}\n"
+                        f"{comment.get('date_created', '')}\n"
+                    )
+
+                f.write(content)
 
         return super().generate_download_response(
-            file_data=file_data, download_path=download_path
+            file_data=batch_file_data, download_path=download_path
         )
 
-    async def handle_articles_async(self, client: ZendeskClient, file_data: FileData):
+    async def handle_articles_async(self, client: ZendeskClient, batch_file_data: ZendeskBatchFileData):
         """
-        Processes the ticket information, downloads the comments for each ticket, 
-        and proceeds accordingly.
+        Processes the article information, downloads the attachments for each article,
+        and updates the content accordingly.
         """
-        file_data: FileData = FileData.cast(file_data=file_data)
-
         # Determine the download path
-        download_path = self.get_download_path(file_data)
+        download_path = self.get_download_path(batch_file_data)
         if download_path is None:
             raise ValueError("Download path could not be determined")
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        html_data_str = file_data.metadata.record_locator['content']
-        soup = bs4.BeautifulSoup(html_data_str, "html.parser")
+        async with aiofiles.open(download_path, "a", encoding="utf8") as f:
+            for article in batch_file_data.batch_items:
+                html_data_str = article.content
+                soup = bs4.BeautifulSoup(html_data_str, "html.parser")
 
-        # Get article attachments asynchronously
-        article_id = file_data.metadata.record_locator.get('id')
-        if article_id is None:
-            raise ValueError("Article ID is missing in metadata")
+                # Get article attachments asynchronously
+                image_data_decoded: List = await client.get_article_attachments_async(article_id=article.identifier)
+                img_tags = soup.find_all("img")
 
-        image_data_decoded: List = await client.get_article_attachments_async(article_id=article_id)
-        img_tags = soup.find_all("img")
+                # Ensure we don't exceed the available images
+                for img_tag, img_data in zip(img_tags, image_data_decoded):
+                    img_tag['src'] = img_data.get('encoded_content', '')
 
-        # Ensure we don't exceed the available images
-        for img_tag, img_data in zip(img_tags, image_data_decoded):
-            img_tag['src'] = img_data.get('encoded_content', '')
+                # Update content with modified images
+                article.content = str(soup)
 
-        # Update content with modified images
-        file_data.metadata.record_locator['content'] = str(soup)
-
-        # Asynchronously write the values to the file
-        async with aiofiles.open(download_path, "w", encoding="utf8") as f:
-            content = (
-                "article\n"
-                f"{file_data.identifier}\n"
-                f"{file_data.metadata.record_locator.get('title', '')}\n"
-                f"{file_data.metadata.record_locator['content']}\n"
-                f"{file_data.metadata.record_locator.get('author_id', '')}\n"
-            )
-
-            await f.write(content)
-
+                # Write the values to the file
+                content = (
+                    "article\n"
+                    f"{article.identifier}\n"
+                    f"{article.title}\n"
+                    f"{article.content}\n"
+                    f"{article.author_id}\n"
+                )
+                await f.write(content)
 
         return super().generate_download_response(
-            file_data=file_data, download_path=download_path
+            file_data=batch_file_data, download_path=download_path
         )
 
-
-    async def handle_tickets_async(self, client: ZendeskClient, file_data: FileData) -> DownloadResponse:
+    async def handle_tickets_async(self, client: ZendeskClient, batch_file_data: ZendeskBatchFileData) -> DownloadResponse:
         """
-        processes an article's information, parses it and proceeds accordingly. 
+        Processes a batch of tickets asynchronously, writing their details and comments to a file.
         """
-
-        comments: List[Comment] = [] 
-
-        # each ticket consists of comments, to which I will dump in a txt file.
-        first_date = None
-        for comment in await client.get_comments_async(ticket_id=file_data.identifier):
-
-            if isinstance(comment.metadata["created_at"], datetime.datetime):
-                date_created = comment.metadata["created_at"].isoformat()
-            else:
-                date_created = str(comment.metadata["created_at"])
-
-            if first_date is None:
-                first_date = date_created
-
-            comments.append(
-                {
-                    "comment_id": comment.id,
-                    "author_id": comment.author_id,
-                    "body": comment.body,
-                    "date_created": date_created,
-                }
-            )
-
         # Determine the download path
-        download_path = self.get_download_path(file_data)
+        download_path = self.get_download_path(batch_file_data)
         if download_path is None:
             raise ValueError("Download path could not be determined")
 
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Asynchronously write the values to the file
-        async with aiofiles.open(download_path, "w", encoding="utf8") as f:
-            content = (
-                "ticket\n"
-                + file_data.identifier + "\n"
-                + file_data.metadata.record_locator["subject"] + "\n"
-                + file_data.metadata.record_locator["description"] + "\n"
-                + first_date + "\n"
-            )
+        # Process each ticket in the batch
+        async with aiofiles.open(download_path, "a", encoding="utf8") as f:
+            for batch_item in batch_file_data.batch_items:
+                ticket_identifier = batch_item.identifier
+                first_date = None
+                comments: List[dict] = []
 
-            for comment in comments:
-                content += (
-                    "comment\n"
-                    + str(comment["comment_id"]) + "\n"
-                    + str(comment["author_id"]) + "\n"
-                    + comment["body"] + "\n"
-                    + comment["date_created"] + "\n"
+                # Fetch comments asynchronously
+                comments_list = await client.get_comments_async(ticket_id=ticket_identifier)  # Await the coroutine
+                
+                for comment in comments_list:  # Iterate over the resolved list
+                    date_created = (
+                        comment.metadata["created_at"].isoformat()
+                        if isinstance(comment.metadata["created_at"], datetime.datetime)
+                        else str(comment.metadata["created_at"])
+                    )
+
+                    if first_date is None:
+                        first_date = date_created
+
+                    comments.append(
+                        {
+                            "comment_id": comment.id,
+                            "author_id": comment.author_id,
+                            "body": comment.body,
+                            "date_created": date_created,
+                        }
+                    )
+
+                # Write ticket details to file
+                content = (
+                    "\nticket\n"
+                    f"{batch_item.identifier}\n"
+                    f"{batch_file_data.metadata.record_locator.get('subject', '')}\n"
+                    f"{batch_file_data.metadata.record_locator.get('description', '')}\n"
+                    f"{first_date}\n"
                 )
 
-            await f.write(content)
+                # Append comments
+                for comment in comments:
+                    content += (
+                        "comment\n"
+                        f"{comment.get('comment_id', '')}\n"
+                        f"{comment.get('author_id', '')}\n"
+                        f"{comment.get('body', '')}\n"
+                        f"{comment.get('date_created', '')}\n"
+                    )
 
+                await f.write(content)
 
         return super().generate_download_response(
-            file_data=file_data, download_path=download_path
+            file_data=batch_file_data, download_path=download_path
         )
-
     @SourceConnectionError.wrap
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    async def run_async(self, file_data: ZendeskBatchFileData, **kwargs: Any) -> DownloadResponse:
 
         zendesk_filedata: FileData = FileData.cast(file_data=file_data)
 
         async with self.connection_config.get_client_async() as client:
             
             item_type = zendesk_filedata.metadata.record_locator['item_type']
-            cast_file_data = FileData.cast(file_data=file_data)
-            cast_file_data.identifier = file_data.identifier
 
             if item_type == "articles":
-                return await self.handle_articles_async(client, cast_file_data)
+                return await self.handle_articles_async(client, file_data)
             elif item_type == "tickets":
-                return await self.handle_tickets_async(client, cast_file_data)
+                return await self.handle_tickets_async(client, file_data)
             else: 
                 raise RuntimeError(f"Item type {item_type} cannot be handled by the downloader")
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-        zendesk_filedata: FileData = FileData.cast(file_data=file_data)
+    def run(self, file_data: ZendeskBatchFileData, **kwargs: Any) -> DownloadResponse:
 
         with self.connection_config.get_client() as client:
             
-            item_type = zendesk_filedata.metadata.record_locator['item_type']
-            cast_file_data = FileData.cast(file_data=file_data)
-            cast_file_data.identifier = file_data.identifier
+            item_type = file_data.metadata.record_locator['item_type']
 
             if item_type == "articles":
-                return self.handle_articles(client, cast_file_data)
+                return self.handle_articles(client, file_data)
             elif item_type == "tickets":
-                return self.handle_tickets(client, cast_file_data)
+                return self.handle_tickets(client, file_data)
             else: 
                 raise RuntimeError(f"Item type {item_type} cannot be handled by the downloader")
 
