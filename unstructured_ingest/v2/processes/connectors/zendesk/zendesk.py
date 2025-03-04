@@ -143,7 +143,7 @@ class ZendeskIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     def is_async(self) -> bool:
-        return True  # TODO(set to true when testing async and before PR.)
+        return True
 
     async def _list_articles_async(self) -> List[ZendeskArticle]:
         async with self.connection_config.get_client_async() as client:
@@ -376,6 +376,9 @@ class ZendeskDownloader(Downloader):
     download_config: ZendeskDownloaderConfig
     connection_config: ZendeskConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+
+    def is_async(self) -> bool:
+        return True
 
     def handle_articles(self, client, batch_file_data: ZendeskBatchFileData):
         """
