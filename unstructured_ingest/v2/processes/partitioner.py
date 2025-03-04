@@ -1,4 +1,3 @@
-import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
@@ -206,10 +205,8 @@ class Partitioner(BaseProcess, ABC):
 
     def is_client_error_unsupported_filetype(self, error: UserError) -> bool:
         error_msg = error.args[0]
-        error_dict = json.loads(error_msg)
-        details = error_dict["detail"]
-        return "fast strategy is not available for image files" in details or (
-            "file type" in details.lower() and "is not supported" in details.lower()
+        return "fast strategy is not available for image files" in error_msg or (
+            "file type" in error_msg.lower() and "is not supported" in error_msg.lower()
         )
 
     def run(self, filename: Path, metadata: Optional[dict] = None, **kwargs) -> list[dict]:

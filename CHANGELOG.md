@@ -1,15 +1,21 @@
-## 0.5.10-dev1
+## 0.5.10-dev4
 
 ### Fixes
 
 * **Dropbox connector can now use long lived refresh token and generate access token internally**
 
-## 0.5.10-dev0
+## 0.5.10-dev3
 
 ### Enhancements
 
 * **Migrate Jira Source connector from V1 to V2**
 * **Add Jira Source connector integration and unit tests**
+* **Support custom endpoint for openai embedder**
+
+### Fixes
+
+* **Fix Confluence unescaped Unicode characters**
+* **Update use of unstructured client to leverage new error handling**
 
 ## 0.5.9
 
