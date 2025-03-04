@@ -1,24 +1,28 @@
-## 0.5.10-dev2 
+## 0.5.11-dev1
 
 ### Features 
 * Added Zendesk as a source connector.
 
-## 0.5.10-dev1
+## 0.5.10
 
 ### Enhancements
 
 * **Migrate Jira Source connector from V1 to V2**
 * **Add Jira Source connector integration and unit tests**
+* **Support custom endpoint for openai embedder**
 
 ### Fixes
 
 * **Fix Confluence unescaped Unicode characters**
+* **Update use of unstructured client to leverage new error handling**
+* **Dropbox connector can now use long lived refresh token and generate access token internally**
+* **Delta Tables connector can evolve schema**
 
 ## 0.5.9
 
 ### Features
 
-* Add auto create collection support for AstraDB destination
+* **Add auto create collection support for AstraDB destination**
 
 ### Fixes
 

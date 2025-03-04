@@ -1,0 +1,45 @@
+{
+  "identifier": "364c6697-4ed5-5976-88bf-c9c4dac07283",
+  "connector_type": "dropbox",
+  "source_identifiers": {
+    "filename": "ideas-page.html",
+    "fullpath": "/test-input/nested-1/ideas-page.html",
+    "rel_path": "nested-1/ideas-page.html"
+  },
+  "metadata": {
+    "url": "dropbox://test-input/nested-1/ideas-page.html",
+    "version": "7a31fe250cc57a9733f8d50e61b9b265c53f5dd12faedf4829e559e2c3a8845e",
+    "record_locator": {
+      "protocol": "dropbox",
+      "remote_file_path": "dropbox://test-input",
+      "file_id": "id:De4ZYtDd-JoAAAAAAAAACw"
+    },
+    "date_created": "1687386994.0",
+    "date_modified": "1697625366.0",
+    "date_processed": "1740750098.8805876",
+    "permissions_data": null,
+    "filesize_bytes": 6161
+  },
+  "additional_metadata": {
+    "id": "id:De4ZYtDd-JoAAAAAAAAACw",
+    "client_modified": "2023-06-22T00:36:34",
+    "server_modified": "2023-10-18T12:36:06",
+    "rev": "01607fce21029b200000001020c8d31",
+    "size": 6161,
+    "media_info": null,
+    "symlink_info": null,
+    "sharing_info": null,
+    "is_downloadable": true,
+    "export_info": null,
+    "property_groups": null,
+    "has_explicit_shared_members": null,
+    "content_hash": "7a31fe250cc57a9733f8d50e61b9b265c53f5dd12faedf4829e559e2c3a8845e",
+    "file_lock_info": null,
+    "name": "/test-input/nested-1/ideas-page.html",
+    "type": "file",
+    "original_file_path": "/test-input/nested-1/ideas-page.html"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmph8ip2dyb/nested-1/ideas-page.html",
+  "display_name": "/test-input/nested-1/ideas-page.html"
+}
