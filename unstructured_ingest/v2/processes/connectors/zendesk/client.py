@@ -6,6 +6,7 @@ import httpx
 import requests
 
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.errors import ProviderError, UserError
 
 
 @dataclass
@@ -25,6 +26,9 @@ class ZendeskTicket:
     generated_ts: int
     metadata: dict
 
+    def __lt__(self, other):
+        return self.id < other.id  
+
 
 @dataclass
 class ZendeskArticle:
@@ -33,6 +37,8 @@ class ZendeskArticle:
     title: str
     content: str
 
+    def __lt__(self, other):
+        return self.id < other.id  
 
 class ZendeskClient:
 
@@ -43,8 +49,17 @@ class ZendeskClient:
         try:
             response = requests.get(url_to_check, auth=auth)
 
-            if response.status_code != 200:
+            http_code = response.status_code
+
+            if 400 <= http_code < 500:
+                return UserError(f'Failed to connect to {url_to_check} using zendesk response, status code {http_code}')
+            if http_code >= 500:
+                return ProviderError(message)
+            
+            if http_code != 200:
                 raise Exception(f"Failed to connect to {url_to_check} using zendesk response")
+
+
 
         except Exception as e:
             raise RuntimeError(f"Failed to instantiate response: {e}") from e

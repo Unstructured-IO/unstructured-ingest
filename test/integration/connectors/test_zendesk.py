@@ -33,7 +33,7 @@ async def zendesk_source_test(
         subdomain=subdomain, email=email, access_config=access_config
     )
 
-    index_config = ZendeskIndexerConfig(batch_size=1, item_type="tickets")
+    index_config = ZendeskIndexerConfig(batch_size=2, item_type="tickets")
 
     indexer = ZendeskIndexer(
         connection_config=connection_config,
@@ -55,9 +55,51 @@ async def zendesk_source_test(
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="zendesk", expected_num_files=8, validate_file_data=False
+            test_id="zendesk", expected_num_files=4, validate_file_data=False
         ),
     )
+
+
+
+
+async def zendesk_source_articles_test(
+    tmp_path: Path,
+    token: Optional[str] = None,
+    email: Optional[str] = None,
+    subdomain: Optional[str] = None,
+):
+
+    access_config = ZendeskAccessConfig(api_token=token)
+    connection_config = ZendeskConnectionConfig(
+        subdomain=subdomain, email=email, access_config=access_config
+    )
+
+    index_config = ZendeskIndexerConfig(batch_size=2, item_type="articles")
+
+    indexer = ZendeskIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+        connector_type=CONNECTOR_TYPE,
+    )
+
+    # handle downloader.
+    download_config = ZendeskDownloaderConfig(download_dir=tmp_path)
+
+    downloader = ZendeskDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+        connector_type=CONNECTOR_TYPE,
+    )
+
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="zendesk-articles", expected_num_files=4, validate_file_data=False
+        ),
+    )
+
 
 
 @pytest.mark.asyncio
@@ -65,6 +107,18 @@ async def zendesk_source_test(
 @requires_env("ZENDESK_TOKEN")
 async def test_zendesk_source(temp_dir):
     await zendesk_source_test(
+        tmp_path=temp_dir,
+        token=os.environ["ZENDESK_TOKEN"],
+        email="test@unstructured.io",
+        subdomain="unstructuredhelp",
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(SOURCE_TAG, CONNECTOR_TYPE, UNCATEGORIZED_TAG)
+@requires_env("ZENDESK_TOKEN")
+async def test_zendesk_source_articles(temp_dir):
+    await zendesk_source_articles_test(
         tmp_path=temp_dir,
         token=os.environ["ZENDESK_TOKEN"],
         email="test@unstructured.io",
