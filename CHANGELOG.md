@@ -1,11 +1,4 @@
-## 0.5.10-dev5
-
-### Fixes
-
-* **Dropbox connector can now use long lived refresh token and generate access token internally**
-* **Delta Tables connector can evolve schema**
-
-## 0.5.10-dev3
+## 0.5.10
 
 ### Enhancements
 
@@ -17,6 +10,8 @@
 
 * **Fix Confluence unescaped Unicode characters**
 * **Update use of unstructured client to leverage new error handling**
+* **Dropbox connector can now use long lived refresh token and generate access token internally**
+* **Delta Tables connector can evolve schema**
 
 ## 0.5.9
 
