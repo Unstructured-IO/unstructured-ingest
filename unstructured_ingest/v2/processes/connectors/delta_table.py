@@ -92,7 +92,7 @@ class DeltaTableUploadStager(UploadStager):
         output_path = Path(output_dir) / Path(f"{output_filename}.parquet")
 
         df = convert_to_pandas_dataframe(elements_dict=elements_contents)
-        df = df.dropna(axis=1, how='all')
+        df = df.dropna(axis=1, how="all")
         df.to_parquet(output_path)
 
         return output_path
