@@ -101,7 +101,7 @@ class ZendeskIndexerConfig(IndexerConfig):
         default=2,
         description="Number of tickets or articles.",
     )
-    item_type: str = Field(
+    item_type: Literal["tickets", "articles"] = Field(
         default="tickets",
         description="Type of item from zendesk to parse, can only be `tickets` or `articles`.",
     )
