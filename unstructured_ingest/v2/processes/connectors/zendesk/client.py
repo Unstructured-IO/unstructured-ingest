@@ -5,8 +5,8 @@ from typing import Dict, List
 import httpx
 import requests
 
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.errors import ProviderError, UserError
+from unstructured_ingest.v2.logger import logger
 
 
 @dataclass
@@ -27,7 +27,7 @@ class ZendeskTicket:
     metadata: dict
 
     def __lt__(self, other):
-        return self.id < other.id  
+        return self.id < other.id
 
 
 @dataclass
@@ -38,7 +38,8 @@ class ZendeskArticle:
     content: str
 
     def __lt__(self, other):
-        return self.id < other.id  
+        return self.id < other.id
+
 
 class ZendeskClient:
 
@@ -52,14 +53,17 @@ class ZendeskClient:
             http_code = response.status_code
 
             if 400 <= http_code < 500:
-                return UserError(f'Failed to connect to {url_to_check} using zendesk response, status code {http_code}')
+                message = (
+                    f"Failed to connect to {url_to_check} using zendesk response"
+                    f"status code {http_code}"
+                )
+                return UserError(message)
+
             if http_code >= 500:
-                return ProviderError(message)
-            
+                return ProviderError(f"Failed to connect to {url_to_check} using zendesk response")
+
             if http_code != 200:
                 raise Exception(f"Failed to connect to {url_to_check} using zendesk response")
-
-
 
         except Exception as e:
             raise RuntimeError(f"Failed to instantiate response: {e}") from e
@@ -96,7 +100,7 @@ class ZendeskClient:
             return articles
 
         raise RuntimeError(
-            f"Articles were not able to be acquired from url: {article_url}. "
+            f"Articles were not able to be acquired from url: {article_url}."
             f"Status Code: {response.status_code}"
         )
 

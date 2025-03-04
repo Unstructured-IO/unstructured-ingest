@@ -60,8 +60,6 @@ async def zendesk_source_test(
     )
 
 
-
-
 async def zendesk_source_articles_test(
     tmp_path: Path,
     token: Optional[str] = None,
@@ -99,7 +97,6 @@ async def zendesk_source_articles_test(
             test_id="zendesk-articles", expected_num_files=4, validate_file_data=False
         ),
     )
-
 
 
 @pytest.mark.asyncio

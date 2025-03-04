@@ -5,18 +5,14 @@ import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import Any, AsyncGenerator, Generator, List
+from typing import Any, AsyncGenerator, List
 
 import aiofiles
 import bs4
 from pydantic import BaseModel, Field, Secret
 
-from unstructured_ingest.v2.errors import (
-UserAuthError
-)
-
-
 from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     BatchFileData,
@@ -85,19 +81,20 @@ class ZendeskConnectionConfig(ConnectionConfig):
         """Provides an async manager for ZendeskClient."""
         access_config = self.access_config.get_secret_value()
 
-        client = ZendeskClient(email=self.email,
-                               subdomain=self.subdomain,
-                               token=access_config.api_token)
+        client = ZendeskClient(
+            email=self.email, subdomain=self.subdomain, token=access_config.api_token
+        )
         return client
 
     def get_client(self) -> ZendeskClient:
 
         access_config = self.access_config.get_secret_value()
 
-        client = ZendeskClient(email=self.email,
-                               subdomain=self.subdomain,
-                               token=access_config.api_token)
+        client = ZendeskClient(
+            email=self.email, subdomain=self.subdomain, token=access_config.api_token
+        )
         return client
+
 
 class ZendeskIndexerConfig(IndexerConfig):
     batch_size: int = Field(
@@ -122,9 +119,7 @@ class ZendeskIndexer(Indexer):
             client = self.connection_config.get_client()
             if not client.get_users():
                 subdomain_endpoint = f"{self.connection_config.subdomain}.zendesk.com"
-                raise UserAuthError(
-                    f"Users do not exist in subdomain {subdomain_endpoint}"
-                )
+                raise UserAuthError(f"Users do not exist in subdomain {subdomain_endpoint}")
         except UserAuthError as e:
             logger.error(f"Source connection error: {e}", exc_info=True)
             raise
@@ -197,7 +192,7 @@ class ZendeskIndexer(Indexer):
     ) -> AsyncGenerator[ZendeskBatchFileData, None]:
         """Parses tickets from a list and yields FileData objects asynchronously in batches."""
         for ticket_batch in batch_generator(tickets, batch_size=batch_size):
-            
+
             sorted_batch = sorted(ticket_batch)
 
             additional_metadata = ZendeskAdditionalMetadata(
@@ -254,6 +249,7 @@ class ZendeskIndexer(Indexer):
                 tickets, batch_size
             ):  # Using async version
                 yield file_data
+
 
 class ZendeskDownloaderConfig(DownloaderConfig):
     pass
@@ -335,9 +331,7 @@ class ZendeskDownloader(Downloader):
                 comments: List[dict] = []
 
                 # Fetch comments asynchronously
-                comments_list = await client.get_comments_async(
-                    ticket_id=int(ticket_identifier)
-                )
+                comments_list = await client.get_comments_async(ticket_id=int(ticket_identifier))
 
                 for comment in comments_list:  # Iterate over the resolved list
                     date_created = (
