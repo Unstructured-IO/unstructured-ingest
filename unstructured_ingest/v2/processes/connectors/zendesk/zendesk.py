@@ -33,7 +33,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 
-from .wrapper import ZendeskArticle, ZendeskClient, ZendeskTicket
+from .client import ZendeskArticle, ZendeskClient, ZendeskTicket
 
 CONNECTOR_TYPE = "zendesk"
 
@@ -143,7 +143,7 @@ class ZendeskIndexer(Indexer):
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
     def is_async(self) -> bool:
-        return False  # TODO(set to true when testing async and before PR.)
+        return True  # TODO(set to true when testing async and before PR.)
 
     async def _list_articles_async(self) -> List[ZendeskArticle]:
         async with self.connection_config.get_client_async() as client:
