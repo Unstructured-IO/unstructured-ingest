@@ -5,7 +5,7 @@ import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from time import time
-from typing import Any, AsyncGenerator, List
+from typing import Any, AsyncGenerator, List, Literal
 
 import aiofiles
 import bs4
