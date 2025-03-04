@@ -1,8 +1,9 @@
-## 0.5.10-dev4
+## 0.5.10-dev5
 
 ### Fixes
 
 * **Dropbox connector can now use long lived refresh token and generate access token internally**
+* **Delta Tables connector can evolve schema**
 
 ## 0.5.10-dev3
 
@@ -21,7 +22,7 @@
 
 ### Features
 
-* Add auto create collection support for AstraDB destination
+* **Add auto create collection support for AstraDB destination**
 
 ### Fixes
 
