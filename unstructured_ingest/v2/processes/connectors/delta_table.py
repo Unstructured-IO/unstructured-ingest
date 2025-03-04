@@ -92,6 +92,7 @@ class DeltaTableUploadStager(UploadStager):
         output_path = Path(output_dir) / Path(f"{output_filename}.parquet")
 
         df = convert_to_pandas_dataframe(elements_dict=elements_contents)
+        df = df.dropna(axis=1, how='all')
         df.to_parquet(output_path)
 
         return output_path
@@ -153,6 +154,7 @@ class DeltaTableUploader(Uploader):
             "table_or_uri": updated_upload_path,
             "data": df,
             "mode": "overwrite",
+            "schema_mode": "merge",
             "storage_options": storage_options,
         }
         queue = Queue()
