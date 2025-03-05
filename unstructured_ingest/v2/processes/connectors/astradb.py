@@ -336,6 +336,11 @@ class AstraDBUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
+        # move metadata to top level so it isn't nested in metadata column
+        metadata = element_dict.pop("metadata", None)
+        if metadata:
+            element_dict.update(metadata)
+
         return {
             "$vector": element_dict.pop("embeddings", None),
             "content": element_dict.pop("text", None),
