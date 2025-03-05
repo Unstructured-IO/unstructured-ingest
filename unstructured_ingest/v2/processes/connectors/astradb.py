@@ -455,7 +455,6 @@ class AstraDBUploader(Uploader):
         collection = self.get_collection()
 
         self.delete_by_record_id(collection=collection, file_data=file_data)
-        breakpoint()
 
         for chunk in batch_generator(data, astra_db_batch_size):
             collection.insert_many(chunk)
