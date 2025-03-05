@@ -60,7 +60,7 @@ class ZendeskClient:
                 raise UserError(message)
 
             if http_code >= 500:
-                return ProviderError(f"Failed to connect to {url_to_check} using zendesk response")
+                raise ProviderError(f"Failed to connect to {url_to_check} using zendesk response")
 
             if http_code != 200:
                 raise Exception(f"Failed to connect to {url_to_check} using zendesk response")
