@@ -177,7 +177,7 @@ class ZendeskIndexer(Indexer):
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
             batched_file_data = ZendeskBatchFileData(
-                identifier=article_batch[0].id,
+                identifier=str(article_batch[0].id),
                 connector_type=self.connector_type,
                 metadata=metadata,
                 batch_items=batch_items,
