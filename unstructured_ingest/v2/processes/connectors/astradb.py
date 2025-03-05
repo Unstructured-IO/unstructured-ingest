@@ -336,9 +336,9 @@ class AstraDBUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
-        # move metadata to top level so it isn't nested in metadata field
+        # move metadata to top level so it isn't nested in metadata column
         metadata = element_dict.pop("metadata", None)
-        if metadata is not None:
+        if metadata:
             element_dict.update(metadata)
 
         return {
