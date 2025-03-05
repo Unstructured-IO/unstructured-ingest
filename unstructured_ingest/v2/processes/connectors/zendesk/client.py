@@ -62,7 +62,7 @@ class ZendeskClient:
             if http_code >= 500:
                 raise ProviderError(f"Failed to connect to {url_to_check} using zendesk response")
 
-            if http_code != 200:
+            response.raise_for_status()
                 raise Exception(f"Failed to connect to {url_to_check} using zendesk response")
 
         except Exception as e:
