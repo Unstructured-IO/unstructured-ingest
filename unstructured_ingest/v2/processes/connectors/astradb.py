@@ -336,6 +336,11 @@ class AstraDBUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
+        # move metadata to top level so it isn't nested in metadata field
+        metadata = element_dict.pop("metadata", None)
+        if metadata is not None:
+            element_dict.update(metadata)
+
         return {
             "$vector": element_dict.pop("embeddings", None),
             "content": element_dict.pop("text", None),
@@ -450,6 +455,7 @@ class AstraDBUploader(Uploader):
         collection = self.get_collection()
 
         self.delete_by_record_id(collection=collection, file_data=file_data)
+        breakpoint()
 
         for chunk in batch_generator(data, astra_db_batch_size):
             collection.insert_many(chunk)

@@ -1,3 +1,9 @@
+## 0.5.11-dev0
+
+### Fixes
+
+* **Fix move metadata to top level in AstraDB destination**
+
 ## 0.5.10
 
 ### Enhancements
