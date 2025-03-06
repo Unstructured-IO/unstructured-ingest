@@ -117,16 +117,16 @@ class PipelineStep(ABC):
     @instrument()
     def __call__(self, iterable: Optional[iterable_input] = None) -> Any:
         iterable = iterable or []
-        # if iterable:
-        #     logger.info(
-        #         f"calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
-        #     )
-        # else:
-        #     logger.info(f"calling {self.__class__.__name__} with no inputs")
-        # if self.context.async_supported and self.process.is_async():
-        #     return self.process_async(iterable=iterable)
-        # if self.context.mp_supported:
-        #     return self.process_multiprocess(iterable=iterable)
+        if iterable:
+            logger.info(
+                f"calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
+            )
+        else:
+            logger.info(f"calling {self.__class__.__name__} with no inputs")
+        if self.context.async_supported and self.process.is_async():
+            return self.process_async(iterable=iterable)
+        if self.context.mp_supported:
+            return self.process_multiprocess(iterable=iterable)
         return self.process_serially(iterable=iterable)
 
     def _run(self, fn: Callable, **kwargs: Any) -> Optional[Any]:
