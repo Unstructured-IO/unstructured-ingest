@@ -1,4 +1,8 @@
-## 0.5.11-dev0
+## 0.5.11-dev1
+
+### Features 
+
+* **Added Zendesk as a source connector.**
 
 ### Fixes
 
@@ -49,8 +53,6 @@
 * Add name formatting to Weaviate destination uploader
 
 ## 0.5.5
-
-### Enhancements
 
 * **Improve orig_elements handling in astra and neo4j connectors**
 

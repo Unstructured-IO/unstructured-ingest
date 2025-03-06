@@ -1,5 +1,5 @@
 import os
-from abc import ABC, abstractmethod
+from abc import ABC
 from pathlib import Path
 from typing import Any, Optional, TypedDict, TypeVar, Union
 
@@ -81,9 +81,8 @@ class Downloader(BaseProcess, BaseConnector, ABC):
     def is_async(self) -> bool:
         return True
 
-    @abstractmethod
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
-        pass
+        raise NotImplementedError()
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         return self.run(file_data=file_data, **kwargs)

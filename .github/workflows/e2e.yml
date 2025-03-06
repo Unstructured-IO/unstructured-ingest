@@ -277,10 +277,12 @@ jobs:
         CONFLUENCE_USER_EMAIL: ${{secrets.CONFLUENCE_USER_EMAIL}}
         CONFLUENCE_API_TOKEN: ${{secrets.CONFLUENCE_API_TOKEN}}
         # Notion
-        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}        
         # Jira
         JIRA_INGEST_API_TOKEN: ${{ secrets.JIRA_INGEST_API_TOKEN }}
         JIRA_INGEST_USER_EMAIL: ${{ secrets.JIRA_INGEST_USER_EMAIL }}
+        # Zendesk 
+        ZENDESK_TOKEN: ${{ secrets.ZENDESK_TOKEN }}
       run : |
         source .venv/bin/activate
         make install-test

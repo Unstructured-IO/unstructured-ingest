@@ -1,0 +1,29 @@
+
+ticket
+5
+
+
+2025-02-04T19:50:57Z
+comment
+33640792192923
+33640792176411
+Hello, I’m the Chief of Staff to our new CFO and as part of my role, I’m in charge of understanding and aligning our accounts payable process, which includes handling invoices from our service providers.
+
+I noticed that our invoice reflects tax deductions, but I’m uncertain how these have been calculated. We are registered in the U.S., and I understand that sales tax may vary from state to state. Could you clarify how these figures are formulated for invoices in USD?
+
+Any assistance you can provide as I navigate through these initial stages of my role would be deeply appreciated.
+
+Kind Regards,
+Berlin Torres
+2025-02-04T19:50:57Z
+
+ticket
+6
+
+
+2025-02-05T12:06:34Z
+comment
+33669564757915
+33639722684443
+whats up bro.
+2025-02-05T12:06:34Z
