@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional
 
 from pydantic import Field, Secret
-from requests.exceptions import HTTPError
 
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -159,22 +158,6 @@ class ConfluenceIndexer(Indexer):
             )
         doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
         return doc_ids
-
-    # TODO need connector that extends permission config interface? dont think so but check w ahmet
-    def _get_permissions_for_doc(self, space_id: str, doc_id: str) -> Optional[List[dict]]:
-        with self.connection_config.get_client() as client:
-            try:
-                space_permissions = client.get_space_permissions(space_key=space_id)
-                doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
-            except HTTPError:
-                # skip writing any permission metadata
-                return None
-
-        # TODO parse into acl shape; change return type
-        # permissions_data is currently a list type.
-        # TODO adjust permissions_data FileDataSourceMetadata type to match
-        # final normalized form (list or dict)
-        return [doc_permissions]
 
     def run(self) -> Generator[FileData, None, None]:
         from time import time
