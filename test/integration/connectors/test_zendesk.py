@@ -95,7 +95,10 @@ async def zendesk_source_articles_test(
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="zendesk-articles", expected_num_files=4, validate_file_data=False
+            test_id="zendesk-articles", 
+            expected_num_files=4,
+            validate_file_data=False, 
+            validate_downloaded_files=True,
         ),
     )
 
