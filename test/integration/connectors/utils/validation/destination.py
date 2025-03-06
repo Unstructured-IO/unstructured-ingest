@@ -9,9 +9,10 @@ from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers, Uploa
 
 class StagerValidationConfigs(ValidationConfig):
     expected_count: int
+    expected_folder: str = "stager"
 
     def stager_output_dir(self) -> Path:
-        dir = self.test_output_dir() / "stager"
+        dir = self.test_output_dir() / self.expected_folder
         dir.mkdir(exist_ok=True, parents=True)
         return dir
 

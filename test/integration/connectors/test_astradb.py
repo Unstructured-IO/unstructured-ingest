@@ -31,6 +31,7 @@ from unstructured_ingest.v2.processes.connectors.astradb import (
     AstraDBUploader,
     AstraDBUploaderConfig,
     AstraDBUploadStager,
+    AstraDBUploadStagerConfig,
     DestinationConnectionError,
     SourceConnectionError,
 )
@@ -254,6 +255,23 @@ def test_astra_stager(
     stager = AstraDBUploadStager()
     stager_validation(
         configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22),
+        input_file=upload_file,
+        stager=stager,
+        tmp_dir=tmp_path,
+    )
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
+def test_astra_stager_flatten_metadata(
+    request: TopRequest,
+    upload_file_str: str,
+    tmp_path: Path,
+):
+    stager_config = AstraDBUploadStagerConfig(flatten_metadata=True)
+    upload_file: Path = request.getfixturevalue(upload_file_str)
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+    stager_validation(
+        configs=StagerValidationConfigs(test_id=CONNECTOR_TYPE, expected_count=22, expected_folder="stager_flatten_metadata"),
         input_file=upload_file,
         stager=stager,
         tmp_dir=tmp_path,

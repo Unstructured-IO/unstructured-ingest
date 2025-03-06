@@ -144,10 +144,6 @@ async def get_async_astra_collection(
     return async_astra_db_collection
 
 
-class AstraDBUploadStagerConfig(UploadStagerConfig):
-    pass
-
-
 class AstraDBIndexerConfig(IndexerConfig):
     collection_name: str = Field(
         description="The name of the Astra DB collection. "
@@ -156,30 +152,6 @@ class AstraDBIndexerConfig(IndexerConfig):
     )
     keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
     batch_size: int = Field(default=20, description="Number of records per batch")
-
-
-class AstraDBDownloaderConfig(DownloaderConfig):
-    fields: list[str] = field(default_factory=list)
-
-
-class AstraDBUploaderConfig(UploaderConfig):
-    collection_name: Optional[str] = Field(
-        description="The name of the Astra DB collection. "
-        "Note that the collection name must only include letters, "
-        "numbers, and underscores.",
-        default=None,
-    )
-    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
-    requested_indexing_policy: Optional[dict[str, Any]] = Field(
-        default=None,
-        description="The indexing policy to use for the collection.",
-        examples=['{"deny": ["metadata"]}'],
-    )
-    batch_size: int = Field(default=20, description="Number of records per batch")
-    record_id_key: str = Field(
-        default=RECORD_ID_LABEL,
-        description="searchable key to find entries for the same record on previous runs",
-    )
 
 
 @dataclass
@@ -237,6 +209,10 @@ class AstraDBIndexer(Indexer):
                 batch_items=[BatchItem(identifier=b) for b in batch],
             )
             yield fd
+
+
+class AstraDBDownloaderConfig(DownloaderConfig):
+    fields: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -315,6 +291,12 @@ class AstraDBDownloader(Downloader):
         return download_responses
 
 
+class AstraDBUploadStagerConfig(UploadStagerConfig):
+    flatten_metadata: Optional[bool] = Field(
+        default=False, description="Move metadata to top level of the record."
+    )
+
+
 @dataclass
 class AstraDBUploadStager(UploadStager):
     upload_stager_config: AstraDBUploadStagerConfig = field(
@@ -336,10 +318,11 @@ class AstraDBUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)
-        # move metadata to top level so it isn't nested in metadata column
-        metadata = element_dict.pop("metadata", None)
-        if metadata:
-            element_dict.update(metadata)
+        if self.upload_stager_config.flatten_metadata:
+            # move metadata to top level so it isn't nested in metadata column
+            metadata = element_dict.pop("metadata", None)
+            if metadata:
+                element_dict.update(metadata)
 
         return {
             "$vector": element_dict.pop("embeddings", None),
@@ -347,6 +330,26 @@ class AstraDBUploadStager(UploadStager):
             RECORD_ID_LABEL: file_data.identifier,
             "metadata": element_dict,
         }
+
+
+class AstraDBUploaderConfig(UploaderConfig):
+    collection_name: Optional[str] = Field(
+        description="The name of the Astra DB collection. "
+        "Note that the collection name must only include letters, "
+        "numbers, and underscores.",
+        default=None,
+    )
+    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
+    requested_indexing_policy: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="The indexing policy to use for the collection.",
+        examples=['{"deny": ["metadata"]}'],
+    )
+    batch_size: int = Field(default=20, description="Number of records per batch")
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="searchable key to find entries for the same record on previous runs",
+    )
 
 
 @dataclass
