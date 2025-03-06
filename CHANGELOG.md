@@ -1,4 +1,4 @@
-## 0.5.11-dev1
+## 0.5.11-dev2
 
 ### Features 
 
@@ -7,6 +7,7 @@
 ### Fixes
 
 * **Fix move metadata to top level in AstraDB destination**
+* **Add option to move metadata to top level in AstraDB destination**
 
 ## 0.5.10
 
