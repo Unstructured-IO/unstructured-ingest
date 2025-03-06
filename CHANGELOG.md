@@ -4,8 +4,6 @@
 
 * **Added Zendesk as a source connector.**
 
-## 0.5.11-dev0
-
 ### Fixes
 
 * **Fix move metadata to top level in AstraDB destination**
