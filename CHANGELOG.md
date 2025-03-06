@@ -1,7 +1,14 @@
 ## 0.5.11-dev1
 
 ### Features 
-* Added Zendesk as a source connector.
+
+* **Added Zendesk as a source connector.**
+
+## 0.5.11-dev0
+
+### Fixes
+
+* **Fix move metadata to top level in AstraDB destination**
 
 ## 0.5.10
 
