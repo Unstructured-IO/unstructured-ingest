@@ -86,11 +86,12 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
     access_config: Secret[GoogleDriveAccessConfig]
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
-    def get_service(self) -> "GoogleAPIResource":
-        """Authenticate and create a Google Drive service."""
+    @contextmanager
+    def get_client(self) -> Generator["GoogleAPIResource", None, None]:
         from google.auth import exceptions
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
+        from googleapiclient.errors import HttpError
 
         access_config = self.access_config.get_secret_value()
         key_data = access_config.get_service_account_key()
@@ -98,31 +99,12 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
         try:
             creds = service_account.Credentials.from_service_account_info(key_data)
             service = build("drive", "v3", credentials=creds)
-            return service
-        except exceptions.DefaultCredentialsError:
-            raise ValueError("The provided API key is invalid.")
-
-    @contextmanager
-    def get_client(self) -> Generator["GoogleAPIResource", None, None]:
-        from googleapiclient.errors import HttpError
-
-        service = self.get_service()
-        try:
             with service.files() as client:
                 yield client
         except HttpError as exc:
             raise ValueError(f"{exc.reason}")
-
-    @contextmanager
-    def get_permissions_client(self) -> Generator["GoogleAPIResource", None, None]:
-        from googleapiclient.errors import HttpError
-
-        service = self.get_service()
-        try:
-            with service.permissions() as permissions_client:
-                yield permissions_client
-        except HttpError as exc:
-            raise ValueError(f"{exc.reason}")
+        except exceptions.DefaultCredentialsError:
+            raise ValueError("The provided API key is invalid.")
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):
@@ -409,6 +391,7 @@ class GoogleDriveIndexer(Indexer):
     ) -> list[FileData]:
         root_info = self.get_root_info(files_client=files_client, object_id=object_id)
         if not self.is_dir(root_info):
+            root_info["permissions"] = self.extract_permissions(root_info.get("permissions"))
             data = [self.map_file_data(root_info)]
         else:
             file_contents = self.get_paginated_results(
@@ -418,10 +401,27 @@ class GoogleDriveIndexer(Indexer):
                 recursive=recursive,
                 previous_path=root_info["name"],
             )
-            data = [self.map_file_data(f=f) for f in file_contents]
+            data = []
+            for f in file_contents:
+                f["permissions"] = self.extract_permissions(f.get("permissions"))
+                data.append(self.map_file_data(f=f))
         for d in data:
             d.metadata.record_locator["drive_id"]: object_id
         return data
+
+    def extract_permissions(self, permissions: list[dict]) -> list[dict]:
+        if not permissions:
+            return []
+
+        return [
+            {
+                "type": item.get("type", ""),
+                "id": item["id"],
+                "email": item.get("emailAddress", ""),
+                "role": item["role"],
+            }
+            for item in permissions
+        ]
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:
