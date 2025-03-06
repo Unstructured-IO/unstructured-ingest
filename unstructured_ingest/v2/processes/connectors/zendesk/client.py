@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import httpx
 
-from unstructured_ingest.v2.errors import ProviderError, UserError
+from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
 from unstructured_ingest.v2.logger import logger
 
 
@@ -63,6 +63,18 @@ class ZendeskClient:
             return e
         url = e.request.url
         response_code = e.response.status_code
+        if response_code == 401:
+            logger.error(
+                f"Failed to connect via auth,"
+                f"{url} using zendesk response, status code {response_code}"
+            )
+            return UserAuthError(e)
+        if response_code == 429:
+            logger.error(
+                f"Failed to connect via rate limits"
+                f"{url} using zendesk response, status code {response_code}"
+            )
+            return RateLimitError(e)
         if 400 <= response_code < 500:
             logger.error(
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"

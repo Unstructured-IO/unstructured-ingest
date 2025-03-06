@@ -12,6 +12,7 @@ import bs4
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.html import HtmlMixin
 from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -174,6 +175,8 @@ class ZendeskIndexer(Indexer):
             ]
 
             full_path = self._generate_fullpath(str(article_batch[0].id))
+            full_path = Path(str(full_path).replace(".txt", ".html"))
+
             source_identifiers = SourceIdentifiers(filename=full_path.name, fullpath=str(full_path))
 
             batched_file_data = ZendeskBatchFileData(
@@ -251,7 +254,7 @@ class ZendeskIndexer(Indexer):
                 yield file_data
 
 
-class ZendeskDownloaderConfig(DownloaderConfig):
+class ZendeskDownloaderConfig(DownloaderConfig, HtmlMixin):
     pass
 
 
@@ -264,6 +267,29 @@ class ZendeskDownloader(Downloader):
     def is_async(self) -> bool:
         return True
 
+    def download_embedded_files(
+        self, session, html: str, current_file_data: FileData
+    ) -> list[DownloadResponse]:
+        if not self.download_config.extract_files:
+            return []
+        url = current_file_data.metadata.url
+        if url is None:
+            logger.warning(
+                f"""Missing URL for file: {current_file_data.source_identifiers.filename}.
+                Skipping file extraction."""
+            )
+            return []
+        filepath = current_file_data.source_identifiers.relative_path
+        download_path = Path(self.download_dir) / filepath
+        download_dir = download_path.with_suffix("")
+        return self.download_config.extract_embedded_files(
+            url=url,
+            download_dir=download_dir,
+            original_filedata=current_file_data,
+            html=html,
+            session=session,
+        )
+
     async def handle_articles_async(
         self, client: ZendeskClient, batch_file_data: ZendeskBatchFileData
     ):
@@ -273,6 +299,7 @@ class ZendeskDownloader(Downloader):
         """
         # Determine the download path
         download_path = self.get_download_path(batch_file_data)
+
         if download_path is None:
             raise ValueError("Download path could not be determined")
 
@@ -283,28 +310,18 @@ class ZendeskDownloader(Downloader):
                 html_data_str = article.content
                 soup = bs4.BeautifulSoup(html_data_str, "html.parser")
 
-                # Get article attachments asynchronously
-                image_data_decoded: List = await client.get_article_attachments_async(
-                    article_id=article.identifier
-                )
-                img_tags = soup.find_all("img")
+                if self.download_config.extract_images:
+                    # Get article attachments asynchronously
+                    image_data_decoded: List = await client.get_article_attachments_async(
+                        article_id=article.identifier
+                    )
+                    img_tags = soup.find_all("img")
 
-                # Ensure we don't exceed the available images
-                for img_tag, img_data in zip(img_tags, image_data_decoded):
-                    img_tag["src"] = img_data.get("encoded_content", "")
+                    # Ensure we don't exceed the available images
+                    for img_tag, img_data in zip(img_tags, image_data_decoded):
+                        img_tag["src"] = img_data.get("encoded_content", "")
 
-                # Update content with modified images
-                article.content = str(soup)
-
-                # Write the values to the file
-                content = (
-                    "article\n"
-                    f"{article.identifier}\n"
-                    f"{article.title}\n"
-                    f"{article.content}\n"
-                    f"{article.author_id}\n"
-                )
-                await f.write(content)
+            await f.write(soup.prettify())
 
         return super().generate_download_response(
             file_data=batch_file_data, download_path=download_path

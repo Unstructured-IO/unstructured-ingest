@@ -10,6 +10,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.processes.connectors.zendesk import (
     CONNECTOR_TYPE,
     ZendeskAccessConfig,
@@ -81,7 +82,7 @@ async def zendesk_source_articles_test(
     )
 
     # handle downloader.
-    download_config = ZendeskDownloaderConfig(download_dir=tmp_path)
+    download_config = ZendeskDownloaderConfig(download_dir=tmp_path, extract_images=True)
 
     downloader = ZendeskDownloader(
         connection_config=connection_config,
@@ -121,3 +122,15 @@ async def test_zendesk_source_articles(temp_dir):
         email="test@unstructured.io",
         subdomain="unstructuredhelp",
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(SOURCE_TAG, CONNECTOR_TYPE, UNCATEGORIZED_TAG)
+async def test_zendesk_source_articles_fail(temp_dir):
+    with pytest.raises(expected_exception=UserAuthError):
+        await zendesk_source_articles_test(
+            tmp_path=temp_dir,
+            token="FORCE_FAIL_TOKEN",
+            email="test@unstructured.io",
+            subdomain="unstructuredhelp",
+        )
