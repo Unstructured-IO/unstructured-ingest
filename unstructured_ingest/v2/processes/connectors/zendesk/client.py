@@ -1,6 +1,6 @@
 import base64
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import httpx
 
@@ -47,34 +47,34 @@ class ZendeskClient:
         url_to_check = f"https://{subdomain}.zendesk.com/api/v2/groups.json"
         auth = f"{email}/token", token
 
-        response = httpx.get(url_to_check, auth=auth)
+        try:
+            _ = httpx.get(url_to_check, auth=auth)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
-        self.handle_response(response, url_to_check)
         self._token = token
         self._subdomain = subdomain
         self._email = email
         self._auth = auth
 
-    def handle_response(self, response: httpx.Response, url: Optional[str] = None):
-        """
-        Handles response code and raises appropriate errors based on the response status.
-        """
-        response_code = response.status_code
-
+    def wrap_error(self, e: Exception) -> Exception:
+        if not isinstance(e, httpx.HTTPStatusError):
+            logger.error(f"unhandled exception from Zendesk client: {e}", exc_info=True)
+            return e
+        url = e.request.url
+        response_code = e.response.status_code
         if 400 <= response_code < 500:
-            message = (
-                f"Failed to connect to {url} using zendesk response, status code {response_code}"
-                if url
-                else f"Failed to connect using zendesk response, status code {response_code}"
-            )
-            raise UserError(message)
-
-        if response_code >= 500:
-            raise ProviderError(
+            logger.error(
                 f"Failed to connect to {url} using zendesk response, status code {response_code}"
             )
-
-        response.raise_for_status()
+            return UserError(e)
+        if response_code > 500:
+            logger.error(
+                f"Failed to connect to {url} using zendesk response, status code {response_code}"
+            )
+            return ProviderError(e)
+        logger.error(f"unhandled http status error from Zendesk client: {e}", exc_info=True)
+        return e
 
     async def get_articles_async(self) -> List[ZendeskArticle]:
         """
@@ -85,58 +85,57 @@ class ZendeskClient:
 
         article_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles.json"
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(article_url, auth=self._auth)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(article_url, auth=self._auth)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
-        if response.status_code == 200:
-            articles_in_response: List[dict] = response.json()["articles"]
+        articles_in_response: List[dict] = response.json()["articles"]
 
-            articles = [
-                ZendeskArticle(
-                    id=int(entry["id"]),
-                    author_id=str(entry["author_id"]),
-                    title=str(entry["title"]),
-                    content=entry["body"],
-                )
-                for entry in articles_in_response
-            ]
-            return articles
-        else:
-            self.handle_response(response, url=article_url)
+        articles = [
+            ZendeskArticle(
+                id=int(entry["id"]),
+                author_id=str(entry["author_id"]),
+                title=str(entry["title"]),
+                content=entry["body"],
+            )
+            for entry in articles_in_response
+        ]
+        return articles
 
     async def get_comments_async(self, ticket_id: int) -> List["Comment"]:
         comments_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets/{ticket_id}/comments"
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(comments_url, auth=self._auth)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(comments_url, auth=self._auth)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
-        if response.status_code == 200:
-            return [
-                Comment(
-                    id=int(entry["id"]),
-                    author_id=entry["author_id"],
-                    body=entry["body"],
-                    metadata=entry,
-                    parent_ticket_id=ticket_id,
-                )
-                for entry in response.json()["comments"]
-            ]
-        else:
-            self.handle_response(response)
+        return [
+            Comment(
+                id=int(entry["id"]),
+                author_id=entry["author_id"],
+                body=entry["body"],
+                metadata=entry,
+                parent_ticket_id=ticket_id,
+            )
+            for entry in response.json()["comments"]
+        ]
 
     def get_users(self) -> List[dict]:
 
         users: List[dict] = []
 
         users_url = f"https://{self._subdomain}.zendesk.com/api/v2/users"
+        try:
+            response = httpx.get(users_url, auth=self._auth)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
-        response = httpx.get(users_url, auth=self._auth)
-
-        if response.status_code == 200:
-            users_in_response: List[dict] = response.json()["users"]
-            users = users_in_response
-        else:
-            self.handle_response(response, url=users_url)
+        users_in_response: List[dict] = response.json()["users"]
+        users = users_in_response
 
         return users
 
@@ -144,13 +143,13 @@ class ZendeskClient:
         tickets: List["ZendeskTicket"] = []
         tickets_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets"
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(tickets_url, auth=self._auth)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(tickets_url, auth=self._auth)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
-        if response.status_code == 200:
-            tickets_in_response: List[dict] = response.json()["tickets"]
-        else:
-            self.handle_response(response, url=tickets_url)
+        tickets_in_response: List[dict] = response.json()["tickets"]
 
         for entry in tickets_in_response:
             ticket = ZendeskTicket(
@@ -173,37 +172,36 @@ class ZendeskClient:
             f"articles/{article_id}/attachments"
         )
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(article_attachment_url, auth=self._auth)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(article_attachment_url, auth=self._auth)
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
-            if response.status_code == 200:
-                attachments_in_response: List[Dict] = response.json().get("article_attachments", [])
-                attachments = []
+        attachments_in_response: List[Dict] = response.json().get("article_attachments", [])
+        attachments = []
 
-                for attachment in attachments_in_response:
-                    attachment_data = {
-                        "id": attachment["id"],
-                        "file_name": attachment["file_name"],
-                        "content_type": attachment["content_type"],
-                        "size": attachment["size"],
-                        "url": attachment["url"],
-                        "content_url": attachment["content_url"],
-                    }
+        for attachment in attachments_in_response:
+            attachment_data = {
+                "id": attachment["id"],
+                "file_name": attachment["file_name"],
+                "content_type": attachment["content_type"],
+                "size": attachment["size"],
+                "url": attachment["url"],
+                "content_url": attachment["content_url"],
+            }
 
+            try:
+                async with httpx.AsyncClient() as client:
                     download_response = await client.get(attachment["content_url"], auth=self._auth)
+            except Exception as e:
+                raise self.wrap_error(e=e)
 
-                    if download_response.status_code == 200:
-                        encoded_content = base64.b64encode(download_response.content).decode(
-                            "utf-8"
-                        )
-                        attachment_data["encoded_content"] = (
-                            f"data:{attachment_data['content_type']};base64,{encoded_content}"
-                        )
-                    else:
-                        logger.error(f"Failed to download attachment {attachment['file_name']}.")
+            encoded_content = base64.b64encode(download_response.content).decode("utf-8")
+            attachment_data["encoded_content"] = (
+                f"data:{attachment_data['content_type']};base64,{encoded_content}"
+            )
 
-                    attachments.append(attachment_data)
+            attachments.append(attachment_data)
 
-                return attachments
-            else:
-                self.handle_response(response, url=article_attachment_url)
+        return attachments
