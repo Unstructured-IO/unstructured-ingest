@@ -176,14 +176,12 @@ class ConfluenceIndexer(Indexer):
         space_ids = self._get_space_ids()
         for space_id in space_ids:
             doc_ids = self._get_docs_ids_within_one_space(space_id)
-            # read space permissions here?
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
-                    permissions_data=self._get_permissions_for_doc(space_id, doc_id),
                     record_locator={
                         "space_id": space_key,
                         "document_id": doc_id,
