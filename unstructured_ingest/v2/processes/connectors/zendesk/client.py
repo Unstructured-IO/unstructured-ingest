@@ -88,6 +88,7 @@ class ZendeskClient:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(article_url, auth=self._auth)
+                response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -110,6 +111,7 @@ class ZendeskClient:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(comments_url, auth=self._auth)
+                response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -131,6 +133,7 @@ class ZendeskClient:
         users_url = f"https://{self._subdomain}.zendesk.com/api/v2/users"
         try:
             response = httpx.get(users_url, auth=self._auth)
+            response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -146,6 +149,7 @@ class ZendeskClient:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(tickets_url, auth=self._auth)
+                response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -175,6 +179,7 @@ class ZendeskClient:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(article_attachment_url, auth=self._auth)
+                response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -194,6 +199,7 @@ class ZendeskClient:
             try:
                 async with httpx.AsyncClient() as client:
                     download_response = await client.get(attachment["content_url"], auth=self._auth)
+                    download_response.raise_for_status()
             except Exception as e:
                 raise self.wrap_error(e=e)
 
