@@ -1,3 +1,9 @@
+## 0.5.12
+
+### Fixes
+
+Fixed zendesk dependency warning
+
 ## 0.5.11
 
 ### Features 
