@@ -2,7 +2,8 @@
 
 # ==================================== ERRORS ====================================
 # _________ ERROR collecting test/integration/connectors/test_chroma.py __________
-# ImportError while importing test module '/home/runner/work/unstructured-ingest/unstructured-ingest/test/integration/connectors/test_chroma.py'.
+# ImportError while importing test module '/home/runner/work/unstructured-ingest/
+# unstructured-ingest/test/integration/connectors/test_chroma.py'.
 # Hint: make sure your test modules/packages have valid Python names.
 # Traceback:
 # /opt/hostedtoolcache/Python/3.10.16/x64/lib/python3.10/importlib/__init__.py:126: in import_module
