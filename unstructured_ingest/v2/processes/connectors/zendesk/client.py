@@ -2,8 +2,7 @@ import base64
 from dataclasses import dataclass
 from typing import Dict, List
 
-import httpx
-
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
 from unstructured_ingest.v2.logger import logger
 
@@ -42,7 +41,10 @@ class ZendeskArticle:
 
 class ZendeskClient:
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     def __init__(self, token: str, subdomain: str, email: str):
+        import httpx
+
         # should be okay to be blocking.
         url_to_check = f"https://{subdomain}.zendesk.com/api/v2/groups.json"
         auth = f"{email}/token", token
@@ -57,7 +59,10 @@ class ZendeskClient:
         self._email = email
         self._auth = auth
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     def wrap_error(self, e: Exception) -> Exception:
+        import httpx
+
         if not isinstance(e, httpx.HTTPStatusError):
             logger.error(f"unhandled exception from Zendesk client: {e}", exc_info=True)
             return e
@@ -88,10 +93,12 @@ class ZendeskClient:
         logger.error(f"unhandled http status error from Zendesk client: {e}", exc_info=True)
         return e
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     async def get_articles_async(self) -> List[ZendeskArticle]:
         """
         Retrieves article content from Zendesk asynchronously.
         """
+        import httpx
 
         articles: List[ZendeskArticle] = []
 
@@ -117,7 +124,10 @@ class ZendeskClient:
         ]
         return articles
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     async def get_comments_async(self, ticket_id: int) -> List["Comment"]:
+        import httpx
+
         comments_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets/{ticket_id}/comments"
 
         try:
@@ -138,7 +148,9 @@ class ZendeskClient:
             for entry in response.json()["comments"]
         ]
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     def get_users(self) -> List[dict]:
+        import httpx
 
         users: List[dict] = []
 
@@ -154,7 +166,10 @@ class ZendeskClient:
 
         return users
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     async def get_tickets_async(self) -> List["ZendeskTicket"]:
+        import httpx
+
         tickets: List["ZendeskTicket"] = []
         tickets_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets"
 
@@ -179,10 +194,13 @@ class ZendeskClient:
 
         return tickets
 
+    @requires_dependencies(["httpx"], extras="zendesk")
     async def get_article_attachments_async(self, article_id: str):
         """
         Handles article attachments such as images and stores them as UTF-8 encoded bytes.
         """
+        import httpx
+
         article_attachment_url = (
             f"https://{self._subdomain}.zendesk.com/api/v2/help_center/"
             f"articles/{article_id}/attachments"

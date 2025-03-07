@@ -7,11 +7,10 @@ from pathlib import Path
 from time import time
 from typing import Any, AsyncGenerator, List, Literal
 
-import aiofiles
-import bs4
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
 from unstructured_ingest.v2.errors import UserAuthError
 from unstructured_ingest.v2.interfaces import (
@@ -290,6 +289,7 @@ class ZendeskDownloader(Downloader):
             session=session,
         )
 
+    @requires_dependencies(["bs4", "aiofiles"], extras="zendesk")
     async def handle_articles_async(
         self, client: ZendeskClient, batch_file_data: ZendeskBatchFileData
     ):
@@ -297,6 +297,9 @@ class ZendeskDownloader(Downloader):
         Processes the article information, downloads the attachments for each article,
         and updates the content accordingly.
         """
+        import aiofiles
+        import bs4
+
         # Determine the download path
         download_path = self.get_download_path(batch_file_data)
 
@@ -327,12 +330,15 @@ class ZendeskDownloader(Downloader):
             file_data=batch_file_data, download_path=download_path
         )
 
+    @requires_dependencies(["aiofiles"], extras="zendesk")
     async def handle_tickets_async(
         self, client: ZendeskClient, batch_file_data: ZendeskBatchFileData
     ) -> DownloadResponse:
         """
         Processes a batch of tickets asynchronously, writing their details and comments to a file.
         """
+        import aiofiles
+
         # Determine the download path
         download_path = self.get_download_path(batch_file_data)
         if download_path is None:
