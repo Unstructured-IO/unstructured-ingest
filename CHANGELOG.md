@@ -1,3 +1,9 @@
+## 0.5.10-dev4
+
+### Fixes
+
+* **Added extensive logging to sharepoint connector**
+
 ## 0.5.10-dev3
 
 ### Enhancements
