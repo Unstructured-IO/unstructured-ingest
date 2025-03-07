@@ -81,7 +81,9 @@ class SharepointIndexer(OnedriveIndexer):
 
         try:
             site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            logger.info(f"[{self.connector_type}] Successfully retrieved site object: {site.properties}")
+            logger.info(
+                f"[{self.connector_type}] Successfully retrieved site object: {site.properties}"
+            )
 
             site_drive_item = site.drive.get().execute_query().root
             if site_drive_item is None:
