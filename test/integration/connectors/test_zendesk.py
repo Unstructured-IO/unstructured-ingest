@@ -29,6 +29,11 @@ async def zendesk_source_test(
     subdomain: Optional[str] = None,
 ):
 
+    # tmp_path=temp_dir,
+    # token="FORCE_FAIL_TOKEN",
+    # email="test@unstructured.io",
+    # subdomain="unstructuredhelp",
+
     access_config = ZendeskAccessConfig(api_token=token)
     connection_config = ZendeskConnectionConfig(
         subdomain=subdomain, email=email, access_config=access_config
