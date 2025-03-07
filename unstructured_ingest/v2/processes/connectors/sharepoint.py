@@ -65,33 +65,40 @@ class SharepointIndexer(OnedriveIndexer):
 
         logger.info(f"[{self.connector_type}] Fetching access token...")
         token_resp = await asyncio.to_thread(self.connection_config.get_token)
-    
+
         if "error" in token_resp:
             error_message = f"[{self.connector_type}] Authentication error: {token_resp['error']} \
             ({token_resp.get('error_description')})"
             logger.error(error_message)
             raise SourceConnectionError(error_message)
 
-        logger.info(f"[{self.connector_type}] Successfully obtained access token. \
-        Connecting to SharePoint site: {self.connection_config.site}")
+        logger.info(
+            f"[{self.connector_type}] Successfully obtained access token. \
+        Connecting to SharePoint site: {self.connection_config.site}"
+        )
 
         client = await asyncio.to_thread(self.connection_config.get_client)
 
         try:
             site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
             logger.info(f"[{self.connector_type}] Successfully retrieved site object: {site.url}")
-        
+
             site_drive_item = site.drive.get().execute_query().root
             if site_drive_item is None:
-                raise ValueError(f"[{self.connector_type}] No root drive found for site {self.connection_config.site}. \
-                Please check site permissions or if the site has a document library.")
-        
+                raise ValueError(
+                    f"[{self.connector_type}] \
+                    No root drive found for site {self.connection_config.site}. \
+                Please check site permissions or if the site has a document library."
+                )
+
             logger.info(f"[{self.connector_type}] Successfully retrieved site drive root.")
-        
+
         except ClientRequestException as e:
             logger.error(f"[{self.connector_type}] Failed to fetch SharePoint site: {str(e)}")
-            raise SourceConnectionError(f"[{self.connector_type}] Site not found or inaccessible: {str(e)}")
-    
+            raise SourceConnectionError(
+                f"[{self.connector_type}] Site not found or inaccessible: {str(e)}"
+            )
+
         # Check if a path was provided and attempt to retrieve the specific path
         path = self.index_config.path
         if path and path != LEGACY_DEFAULT_PATH:
@@ -99,16 +106,25 @@ class SharepointIndexer(OnedriveIndexer):
 
             try:
                 site_drive_item = site_drive_item.get_by_path(path).get().execute_query()
-                logger.info(f"[{self.connector_type}] Successfully retrieved site drive item at path: {path}")
+                logger.info(
+                    f"[{self.connector_type}] \
+                    Successfully retrieved site drive item at path: {path}"
+                )
             except ClientRequestException as e:
-                logger.error(f"[{self.connector_type}] Invalid path '{path}'. \
-                Please verify the path exists in SharePoint. Error: {str(e)}")
-                raise ValueError(f"[{self.connector_type}] Invalid path '{path}' or path does not exist.")
+                logger.error(
+                    f"[{self.connector_type}] Invalid path '{path}'. \
+                Please verify the path exists in SharePoint. Error: {str(e)}"
+                )
+                raise ValueError(
+                    f"[{self.connector_type}] Invalid path '{path}' or path does not exist."
+                )
 
         # Final validation before proceeding to file retrieval
         if site_drive_item is None:
-            error_msg = f"[{self.connector_type}] Unable to retrieve site drive item. \
-            This may be due to incorrect site URL, missing permissions, or an empty document library."
+            error_msg = f"[{self.connector_type}] \
+            Unable to retrieve site drive item. \
+            This may be due to incorrect site URL, \
+            missing permissions, or an empty document library."
             logger.error(error_msg)
             raise ValueError(error_msg)
 
@@ -117,7 +133,6 @@ class SharepointIndexer(OnedriveIndexer):
         ).execute_query():
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
             yield file_data
-
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):
