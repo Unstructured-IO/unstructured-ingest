@@ -1,6 +1,8 @@
-## 0.5.12
+## 0.5.12-dev1
 
-* **This is JUST TO TEST THE CI TESTS**
+### Fixes
+
+Fixed zendesk dependency warning
 
 ## 0.5.11
 
