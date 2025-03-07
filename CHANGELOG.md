@@ -1,3 +1,7 @@
+## 0.5.12
+
+* **This is JUST TO TEST THE CI TESTS**
+
 ## 0.5.11
 
 ### Features 
