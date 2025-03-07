@@ -1,10 +1,21 @@
-## 0.5.10-dev4
+## 0.5.12-dev0
 
 ### Fixes
 
 * **Added extensive logging to sharepoint connector**
 
-## 0.5.10-dev3
+## 0.5.11
+
+### Features 
+
+* **Added Zendesk as a source connector.**
+
+### Fixes
+
+* **Fix move metadata to top level in AstraDB destination**
+* **Add option to move metadata to top level in AstraDB destination**
+
+## 0.5.10
 
 ### Enhancements
 
@@ -16,12 +27,14 @@
 
 * **Fix Confluence unescaped Unicode characters**
 * **Update use of unstructured client to leverage new error handling**
+* **Dropbox connector can now use long lived refresh token and generate access token internally**
+* **Delta Tables connector can evolve schema**
 
 ## 0.5.9
 
 ### Features
 
-* Add auto create collection support for AstraDB destination
+* **Add auto create collection support for AstraDB destination**
 
 ### Fixes
 
@@ -47,8 +60,6 @@
 * Add name formatting to Weaviate destination uploader
 
 ## 0.5.5
-
-### Enhancements
 
 * **Improve orig_elements handling in astra and neo4j connectors**
 
