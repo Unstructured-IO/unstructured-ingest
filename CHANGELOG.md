@@ -1,3 +1,9 @@
+## 0.5.12-dev0
+
+### Fixes
+
+* **Added extensive logging to sharepoint connector**
+
 ## 0.5.11
 
 ### Features 
