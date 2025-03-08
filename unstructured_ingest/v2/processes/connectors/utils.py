@@ -31,7 +31,7 @@ def conform_string_to_dict(value: Any) -> dict:
     raise ValidationError(f"Input could not be mapped to a valid dict: {value}")
 
 
-def format_and_truncate_orig_elements(element: dict) -> list[dict[str, Any]]:
+def format_and_truncate_orig_elements(element: dict, include_text: bool = False) -> list[dict[str, Any]]:
     """
     This function is used to format and truncate the orig_elements field in the metadata.
     This is used to remove the text field and other larger fields from the orig_elements
@@ -42,7 +42,8 @@ def format_and_truncate_orig_elements(element: dict) -> list[dict[str, Any]]:
     orig_elements = []
     if raw_orig_elements is not None:
         for element in elements_from_base64_gzipped_json(raw_orig_elements):
-            element.pop("text", None)
+            if not include_text:
+                element.pop("text", None)
             for prop in (
                 "image_base64",
                 "text_as_html",

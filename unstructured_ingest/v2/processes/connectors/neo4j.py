@@ -154,7 +154,7 @@ class Neo4jUploadStager(UploadStager):
             self._add_entities(element, graph, element_node)
 
             if self._is_chunk(element):
-                for origin_element in format_and_truncate_orig_elements(element):
+                for origin_element in format_and_truncate_orig_elements(element, include_text=True):
                     origin_element_node = self._create_element_node(origin_element)
 
                     graph.add_edge(
