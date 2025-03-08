@@ -121,7 +121,7 @@ class Neo4jUploadStager(UploadStager):
         for entity in entities:
             if not isinstance(entity, dict):
                 continue
-            if 'entity' not in entity or 'type' not in entity:
+            if "entity" not in entity or "type" not in entity:
                 continue
             graph.add_edge(
                 _Node(
@@ -159,28 +159,20 @@ class Neo4jUploadStager(UploadStager):
             self._add_entities(element, graph, element_node)
 
             if self._is_chunk(element):
-                origin_element_nodes = [
-                    self._create_element_node(origin_element)
-                    for origin_element in format_and_truncate_orig_elements(element)
-                ]
-                graph.add_edges_from(
-                    [
-                        (origin_element_node, element_node)
-                        for origin_element_node in origin_element_nodes
-                    ],
-                    relationship=Relationship.PART_OF_CHUNK,
-                )
-                graph.add_edges_from(
-                    [
-                        (origin_element_node, document_node)
-                        for origin_element_node in origin_element_nodes
-                    ],
-                    relationship=Relationship.PART_OF_DOCUMENT,
-                )
                 for origin_element in format_and_truncate_orig_elements(element):
-                    self._add_entities(
-                        origin_element, graph, self._create_element_node(origin_element)
+                    origin_element_node = self._create_element_node(origin_element)
+
+                    graph.add_edge(
+                        origin_element_node,
+                        element_node,
+                        relationship=Relationship.PART_OF_CHUNK,
                     )
+                    graph.add_edge(
+                        origin_element_node,
+                        document_node,
+                        relationship=Relationship.PART_OF_DOCUMENT,
+                    )
+                    self._add_entities(origin_element, graph, origin_element_node)
 
         return graph
 
