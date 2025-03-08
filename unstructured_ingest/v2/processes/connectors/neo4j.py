@@ -123,20 +123,15 @@ class Neo4jUploadStager(UploadStager):
                 continue
             if "entity" not in entity or "type" not in entity:
                 continue
+            entity_node = _Node(
+                labels=[Label.ENTITY], properties={"id": entity["entity"]}, id_=entity["entity"]
+            )
             graph.add_edge(
-                _Node(
-                    labels=[Label.ENTITY], properties={"id": entity["entity"]}, id_=entity["entity"]
-                ),
+                entity_node,
                 _Node(labels=[Label.ENTITY], properties={"id": entity["type"]}, id_=entity["type"]),
                 relationship=Relationship.ENTITY_TYPE,
             )
-            graph.add_edge(
-                element_node,
-                _Node(
-                    labels=[Label.ENTITY], properties={"id": entity["entity"]}, id_=entity["entity"]
-                ),
-                relationship=Relationship.HAS_ENTITY,
-            )
+            graph.add_edge(element_node, entity_node, relationship=Relationship.HAS_ENTITY)
 
     def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> "Graph":
         import networkx as nx
