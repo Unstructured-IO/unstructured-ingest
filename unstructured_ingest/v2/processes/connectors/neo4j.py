@@ -111,6 +111,28 @@ class Neo4jUploadStager(UploadStager):
 
         return output_filepath
 
+    def _add_entities(self, element: dict, graph: "Graph", element_node: _Node) -> None:
+        entities = element.get("metadata", {}).get("entities", [])
+        if not entities:
+            return None
+        if not isinstance(entities, list):
+            return None
+
+        for entity in entities:
+            if not isinstance(entity, dict):
+                continue
+            if "entity" not in entity or "type" not in entity:
+                continue
+            entity_node = _Node(
+                labels=[Label.ENTITY], properties={"id": entity["entity"]}, id_=entity["entity"]
+            )
+            graph.add_edge(
+                entity_node,
+                _Node(labels=[Label.ENTITY], properties={"id": entity["type"]}, id_=entity["type"]),
+                relationship=Relationship.ENTITY_TYPE,
+            )
+            graph.add_edge(element_node, entity_node, relationship=Relationship.HAS_ENTITY)
+
     def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> "Graph":
         import networkx as nx
 
@@ -129,25 +151,23 @@ class Neo4jUploadStager(UploadStager):
             previous_node = element_node
             graph.add_edge(element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT)
 
+            self._add_entities(element, graph, element_node)
+
             if self._is_chunk(element):
-                origin_element_nodes = [
-                    self._create_element_node(origin_element)
-                    for origin_element in format_and_truncate_orig_elements(element)
-                ]
-                graph.add_edges_from(
-                    [
-                        (origin_element_node, element_node)
-                        for origin_element_node in origin_element_nodes
-                    ],
-                    relationship=Relationship.PART_OF_CHUNK,
-                )
-                graph.add_edges_from(
-                    [
-                        (origin_element_node, document_node)
-                        for origin_element_node in origin_element_nodes
-                    ],
-                    relationship=Relationship.PART_OF_DOCUMENT,
-                )
+                for origin_element in format_and_truncate_orig_elements(element):
+                    origin_element_node = self._create_element_node(origin_element)
+
+                    graph.add_edge(
+                        origin_element_node,
+                        element_node,
+                        relationship=Relationship.PART_OF_CHUNK,
+                    )
+                    graph.add_edge(
+                        origin_element_node,
+                        document_node,
+                        relationship=Relationship.PART_OF_DOCUMENT,
+                    )
+                    self._add_entities(origin_element, graph, origin_element_node)
 
         return graph
 
@@ -231,6 +251,7 @@ class Label(Enum):
     UNSTRUCTURED_ELEMENT = "UnstructuredElement"
     CHUNK = "Chunk"
     DOCUMENT = "Document"
+    ENTITY = "Entity"
 
 
 class Relationship(Enum):
@@ -238,6 +259,8 @@ class Relationship(Enum):
     PART_OF_CHUNK = "PART_OF_CHUNK"
     NEXT_CHUNK = "NEXT_CHUNK"
     NEXT_ELEMENT = "NEXT_ELEMENT"
+    ENTITY_TYPE = "ENTITY_TYPE"
+    HAS_ENTITY = "HAS_ENTITY"
 
 
 class Neo4jUploaderConfig(UploaderConfig):
