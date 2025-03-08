@@ -1,3 +1,10 @@
+## 0.5.13
+
+### Fixes 
+
+* **Handle schema conflict on neo4j**
+
+### Fixes
 
 ## 0.5.12
 

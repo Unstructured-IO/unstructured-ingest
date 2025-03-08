@@ -327,13 +327,16 @@ class Neo4jUploader(Uploader):
     async def _create_vector_index(
         self, client: AsyncDriver, dimensions: int, similarity_function: SimilarityFunction
     ) -> None:
+        import neo4j.exceptions
+
         label = Label.CHUNK
         logger.info(
             f"Creating index on nodes labeled '{label.value}' if it does not already exist."
         )
         index_name = f"{label.value.lower()}_vector"
-        await client.execute_query(
-            f"""
+        try:
+            await client.execute_query(
+                f"""
             CREATE VECTOR INDEX {index_name} IF NOT EXISTS
             FOR (n:{label.value}) ON n.embedding
             OPTIONS {{indexConfig: {{
@@ -341,7 +344,12 @@ class Neo4jUploader(Uploader):
                 `vector.dimensions`: {dimensions}}}
             }}
             """
-        )
+            )
+        except neo4j.exceptions.ClientError as e:
+            if e.code == "Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists":
+                logger.info(f"Index on nodes labeled '{label.value}' already exists.")
+            else:
+                raise
 
     async def _delete_old_data_if_exists(self, file_data: FileData, client: AsyncDriver) -> None:
         logger.info(f"Deleting old data for the record '{file_data.identifier}' (if present).")
