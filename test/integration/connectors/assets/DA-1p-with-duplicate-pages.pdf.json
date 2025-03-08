@@ -10,7 +10,25 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJzdUk1v2zAM/SuCz0lmO/LXbsFWDDu0hy7DDl1R0BJlC7UlQ5KbZsX++yinRYthGLpbsYsgkU+PfHy8ekhwwBFNuNEyec8SVeVcNIhVqWSZQVoXDc8zVQmsIW2RJyuWjBhAQgDCPyTxcuPt7ATG90/KKz2ggTG+k4+7dTatDzr0azlPgxYQcD1Bh34zSZU8osNxWtAwnSDamneP6QFMN0c85a8SNF1yTdHIcGPmsUVH8SxWDXgfIsf57vMF+7Q7P4u/n4j3OgyYEOx3vaQt50UpSy6qgkSWvM7yGnK+zdtWpuXb1/vh8my3/3p59uVVegWmBdLB660AXtWyarBIt1VTFEUl0vzt6921dtRm4XiV4rbhSPus8rZEFEVWVLnKq6bBDIFzVG9T8RJx/+DbyxF9T74hA+f0HUqmDQs9MokgmVXM6K4PG0aAngItIqUdiFttugU3woCKOnZMWcckHP2KgZFM0cyH4bj86vXIhHUGHcrNZsMI6C07IBHYOdK/NOaCGiH9d7iP3f3BoAzEtm5TrnDLK5WmsG0xF7xKQSnkmP2HBu18nBaVdhZEj5JGzHo7IrMns1B2GM2K92APhuH9NFgZgR6NjF55atsEdD7iDtbKR5d8WHv9g3wX/Wxul6yzgi6EtoyGxhxQ/HkD5sBGG+3wVIo57JydJ1oMsh+Jjw4H2hChcnZcOvK3x9XpYmcjlxISfXCziFNkB0fCTotHqrREO3s2QFwMdM8sAmP7Tyrv9DDQgP+2Ode/AK1jKL8="
+      "orig_elements": "eJzdUk1v2zAM/SuCz0lmO/LXbsFWDDu0hy7DDl1R0BJlC7UlQ5KbZsX++yinRYthGLpbsYsgkU+PfHy8ekhwwBFNuNEyec8SVeVcNIhVqWSZQVoXDc8zVQmsIW2RJyuWjBhAQgDCPyTxcuPt7ATG90/KKz2ggTG+k4+7dTatDzr0azlPgxYQcD1Bh34zSZU8osNxWtAwnSDamneP6QFMN0c85a8SNF1yTdHIcGPmsUVH8SxWDXgfIsf57vMF+7Q7P4u/n4j3OgyYEOx3vaQt50UpSy6qgkSWvM7yGnK+zdtWpuXb1/vh8my3/3p59uVVegWmBdLB660AXtWyarBIt1VTFEUl0vzt6921dtRm4XiV4rbhSPus8rZEFEVWVLnKq6bBDIFzVG9T8RJx/+DbyxF9T74hA+f0HUqmDQs9MokgmVXM6K4PG0aAngItIqUdiFttugU3woCKOnZMWcckHP2KgZFM0cyH4bj86vXIhHUGHcrNZsMI6C07IBHYOdK/NOaCGiH9d7iP3f3BoAzEtm5TrnDLK5WmsG0xF7xKQSnkmP2HBu18nBaVdhZEj5JGzHo7IrMns1B2GM2K92APhuH9NFgZgR6NjF55atsEdD7iDtbKR5d8WHv9g3wX/Wxul6yzgi6EtoyGxhxQ/HkD5sBGG+3wVIo57JydJ1oMsh+Jjw4H2hChcnZcOvK3x9XpYmcjlxISfXCziFNkB0fCTotHqrREO3s2QFwMdM8sAmP7Tyrv9DDQgP+2Ode/AK1jKL8=",
+      "entities": [
+        {
+          "entity": "Apple",
+          "type": "Organization"
+        },
+        {
+          "entity": "Banana",
+          "type": "Organization"
+        },
+        {
+          "entity": "Cherry",
+          "type": "Organization"
+        },
+        {
+          "entity": "Steve Jobs",
+          "type": "Person"
+        }
+      ]
     },
     "embeddings": [
       0.07777129113674164,
@@ -410,7 +428,25 @@
         "eng"
       ],
       "page_number": 1,
-      "orig_elements": "eJxFj8FuwyAQRH9lxTlOTWxkp7dWPfeUWxRFW1hsJAwI46RRlH8vuKl6QTszT+zO8c7I0kQunY1ir8A6rYTUWPOety1J0dO+abTedVxSzbliG2ATJVSYMPN3Vobz7JcoqehHzrWx5HAqmn28VTxUV5PGSi3BGomJqoADzdugNHvS6RZWGsMvYrx7ecYW3bAUPudHRm5gp+yWH85umb4oZp+vTvxvkW8VlJ+2byS2Xa+6PYm66fZCiE7WO1bOTPSdCnwYKdIGAkU5kgJMPkAaCeZgIoHXq7gYa/NOkCO6FG8bmJP3ao2m7G/hfUmQxRVnGJcJHTgP1ruB4rbU+Gv4iTHmfhc6lO2P0w//aXwR"
+      "orig_elements": "eJxFj8FuwyAQRH9lxTlOTWxkp7dWPfeUWxRFW1hsJAwI46RRlH8vuKl6QTszT+zO8c7I0kQunY1ir8A6rYTUWPOety1J0dO+abTedVxSzbliG2ATJVSYMPN3Vobz7JcoqehHzrWx5HAqmn28VTxUV5PGSi3BGomJqoADzdugNHvS6RZWGsMvYrx7ecYW3bAUPudHRm5gp+yWH85umb4oZp+vTvxvkW8VlJ+2byS2Xa+6PYm66fZCiE7WO1bOTPSdCnwYKdIGAkU5kgJMPkAaCeZgIoHXq7gYa/NOkCO6FG8bmJP3ao2m7G/hfUmQxRVnGJcJHTgP1ruB4rbU+Gv4iTHmfhc6lO2P0w//aXwR",
+      "entities": [
+        {
+          "entity": "Apple",
+          "type": "Organization"
+        },
+        {
+          "entity": "Banana",
+          "type": "Organization"
+        },
+        {
+          "entity": "Cherry",
+          "type": "Organization"
+        },
+        {
+          "entity": "Steve Jobs",
+          "type": "Person"
+        }
+      ]
     },
     "embeddings": [
       0.06515897065401077,

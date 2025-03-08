@@ -1,4 +1,9 @@
-## 0.5.12-dev1
+
+## 0.5.12
+
+### Features 
+
+* **Support for entities in neo4j connector**
 
 ### Fixes
 
