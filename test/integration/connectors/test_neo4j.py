@@ -35,7 +35,6 @@ URI = "neo4j://localhost:7687"
 DATABASE = "neo4j"
 
 EXPECTED_DOCUMENT_COUNT = 1
-EXPECTED_ENTITY_COUNT = 6
 
 
 # NOTE: Precheck tests are read-only so we utilize the same container for all tests.
@@ -194,12 +193,7 @@ async def validate_uploaded_graph(upload_file: Path):
             for origin_element in chunk["metadata"]["orig_elements"]
         }
     )
-    expected_nodes_count = (
-        expected_chunks_count
-        + expected_element_count
-        + EXPECTED_DOCUMENT_COUNT
-        + EXPECTED_ENTITY_COUNT
-    )
+    expected_nodes_count = expected_chunks_count + expected_element_count + EXPECTED_DOCUMENT_COUNT
 
     driver = AsyncGraphDatabase.driver(uri=URI, auth=(USERNAME, PASSWORD))
     try:
