@@ -1,3 +1,4 @@
+import time
 import typing as t
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,17 +23,27 @@ if t.TYPE_CHECKING:
 class SimpleWikipediaConfig(BaseConnectorConfig):
     page_title: str
     auto_suggest: bool = False
+    request_delay: float = 1.0  # Delay between requests in seconds
 
 
 @dataclass
 class WikipediaIngestDoc(IngestDocCleanupMixin, BaseSingleIngestDoc):
     connector_config: SimpleWikipediaConfig = field(repr=False)
 
+    _last_request_time: float = field(default=0.0, init=False)
+
     @property
     @requires_dependencies(["wikipedia"], extras="wikipedia")
     def page(self) -> "WikipediaPage":
         import wikipedia
 
+        # Rate limiting implementation
+        current_time = time.time()
+        elapsed = current_time - self._last_request_time
+        if elapsed < self.connector_config.request_delay:
+            time.sleep(self.connector_config.request_delay - elapsed)
+        
+        self._last_request_time = time.time()
         return wikipedia.page(
             self.connector_config.page_title,
             auto_suggest=self.connector_config.auto_suggest,
