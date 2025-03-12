@@ -59,7 +59,6 @@ class ConfluenceConnectionConfig(ConnectionConfig):
         description="Access configuration for Confluence"
     )
 
-
     def model_post_init(self, __context):
         access_configs = self.access_config.get_secret_value()
         if access_configs.password and access_configs.api_token:
@@ -88,8 +87,8 @@ class ConfluenceConnectionConfig(ConnectionConfig):
         # Confluence takes either password or API token under the same field: password
         # This ambiguity led to confusion, so we are making it specific what you are passing in
         access_configs = self.access_config.get_secret_value()
-        if self.access_config.password:
-            return self.access_config.password
+        if access_configs.password:
+            return access_configs.password
         return access_configs.api_token
 
     @requires_dependencies(["atlassian"], extras="confluence")
