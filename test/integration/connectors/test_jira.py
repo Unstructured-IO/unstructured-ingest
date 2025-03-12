@@ -41,7 +41,6 @@ async def test_jira_source(temp_dir):
 
     download_config = JiraDownloaderConfig(download_dir=temp_dir)
 
-    # Instantiate indexer and downloader
     indexer = JiraIndexer(
         connection_config=connection_config,
         index_config=index_config,
@@ -51,7 +50,6 @@ async def test_jira_source(temp_dir):
         download_config=download_config,
     )
 
-    # Run the source connector validation
     await source_connector_validation(
         indexer=indexer,
         downloader=downloader,
