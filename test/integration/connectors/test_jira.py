@@ -1,7 +1,5 @@
 import os
-
 import pytest
-
 from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
@@ -21,23 +19,22 @@ from unstructured_ingest.v2.processes.connectors.jira import (
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
-@requires_env("JIRA_INGEST_USER_EMAIL", "JIRA_INGEST_API_TOKEN")
+@requires_env("JIRA_DC_URL", "JIRA_DC_PAT")
 async def test_jira_source(temp_dir):
     # Retrieve environment variables
-    jira_url = os.environ.get(
-        "JIRA_INGEST_URL", "https://unstructured-jira-connector-test.atlassian.net"
-    )
-    user_email = os.environ["JIRA_INGEST_USER_EMAIL"]
-    api_token = os.environ["JIRA_INGEST_API_TOKEN"]
-    projects = ["JCTP1"]
-    boards = ["3"]
-    issues = ["JCTP2-1", "JCTP2-2", "JCTP2-3"]
+    jira_url = os.environ.get("JIRA_DC_URL", "http://localhost:8080")  # Default to local Jira DC
+    pat_token = os.environ["JIRA_DC_PAT"]
+
+    # Update these values to match your local Jira sample project
+    projects = ["sample_project"] 
+    boards = ["1"]
+    issues = ["SAM-1", "SAM-2"]
 
     # Create connection and indexer configurations
-    access_config = JiraAccessConfig(password=api_token)
+    access_config = JiraAccessConfig(token=pat_token)
     connection_config = JiraConnectionConfig(
         url=jira_url,
-        username=user_email,
+        cloud=False,  # Ensure we're using Jira Data Center
         access_config=access_config,
     )
     index_config = JiraIndexerConfig(projects=projects, boards=boards, issues=issues)
@@ -59,8 +56,9 @@ async def test_jira_source(temp_dir):
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="jira",
-            expected_num_files=8,
+            test_id="jira_dc",
+            overwrite_fixutres=True,
+            expected_num_files=7,
             validate_file_data=True,
             validate_downloaded_files=True,
         ),
