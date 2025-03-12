@@ -1,5 +1,10 @@
 ## 0.5.13
 
+### Enhancements
+
+* **Add rate limiting to Wikipedia connector** Added configurable delay between API requests to avoid rate limiting.
+* **Add comprehensive test coverage for Wikipedia connector** Added unit tests for all Wikipedia connector functionality including rate limiting.
+
 ### Fixes 
 
 * **Handle schema conflict on neo4j**
