@@ -95,7 +95,7 @@ python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
 # shellcheck disable=SC2012
 stage_file=$(ls -1 "$WORK_DIR"/upload_stage | head -n 1)
 
-PYTHONPATH=. python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
+python "$SCRIPT_DIR"/python/test-ingest-couchbase-output.py \
   --connection-string "$CB_CONN_STR" \
   --username "$CB_USERNAME" \
   --password "$CB_PASSWORD" \
