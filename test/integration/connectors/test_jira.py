@@ -55,8 +55,8 @@ async def test_jira_source(temp_dir):
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="jira_dc",
-            overwrite_fixutres=True,
-            expected_num_files=7,
+            overwrite_fixtures=True,
+            expected_num_files=23,
             validate_file_data=True,
             validate_downloaded_files=True,
         ),
