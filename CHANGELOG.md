@@ -1,3 +1,9 @@
+## 0.5.14
+
+### Fixes
+
+* **Fixed Zendesk connector registering method**
+
 ## 0.5.13
 
 ### Fixes 
