@@ -1,4 +1,3 @@
-import json
 import math
 import time
 from datetime import timedelta
@@ -9,6 +8,8 @@ from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions, SearchOptions
 from couchbase.vector_search import VectorQuery, VectorSearch
+
+from unstructured_ingest.utils.data_prep import get_data
 
 index_name = "unstructured_test_search"
 
@@ -87,10 +88,10 @@ def check(ctx, expected_docs):
 
 
 @cli.command()
-@click.option("--output-json", type=click.File())
+@click.option("--output-json", type=click.Path())
 @click.pass_context
-def check_vector(ctx, output_json):
-    json_content = json.load(output_json)
+def check_vector(ctx, output_json: str):
+    json_content = get_data(path=output_json)
     key_0 = next(iter(json_content[0]))  # Get the first key
     exact_embedding = json_content[0][key_0]["embedding"]
     exact_text = json_content[0][key_0]["text"]

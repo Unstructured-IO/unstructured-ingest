@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import Field
@@ -15,14 +15,11 @@ if TYPE_CHECKING:
 
 
 class HuggingFaceEmbeddingConfig(EmbeddingConfig):
-    embedder_model_name: Optional[str] = Field(
-        default="sentence-transformers/all-MiniLM-L6-v2", alias="model_name"
-    )
+    embedder_model_name: Optional[str] = Field(default="all-MiniLM-L6-v2", alias="model_name")
     embedder_model_kwargs: Optional[dict] = Field(
         default_factory=lambda: {"device": "cpu"}, alias="model_kwargs"
     )
     encode_kwargs: Optional[dict] = Field(default_factory=lambda: {"normalize_embeddings": False})
-    cache_folder: Optional[str] = Field(default=None)
 
     @requires_dependencies(
         ["sentence_transformers"],
@@ -33,7 +30,6 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
 
         return SentenceTransformer(
             model_name_or_path=self.embedder_model_name,
-            cache_folder=self.cache_folder,
             **self.embedder_model_kwargs,
         )
 
@@ -45,7 +41,7 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
 
 @dataclass
 class HuggingFaceEmbeddingEncoder(BaseEmbeddingEncoder):
-    config: HuggingFaceEmbeddingConfig
+    config: HuggingFaceEmbeddingConfig = field(default_factory=HuggingFaceEmbeddingConfig)
 
     def _embed_query(self, query: str) -> list[float]:
         return self._embed_documents(texts=[query])[0]
