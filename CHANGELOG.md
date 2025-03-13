@@ -1,8 +1,12 @@
-## 0.5.15-dev0
+## 0.5.15-dev1
 
 ### Fixes 
 
 * **Separate password and api_token for Confluence connector**
+
+### Features 
+
+* Support NDJSON for data between pipeline steps for data streaming**
 
 ## 0.5.14
 

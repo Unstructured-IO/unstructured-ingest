@@ -26,6 +26,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploaderConfig,
 )
 from unstructured_ingest.v2.processes.connectors.fsspec.utils import json_serial, sterilize_dict
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     from adlfs import AzureBlobFileSystem
@@ -194,4 +198,6 @@ azure_destination_entry = DestinationRegistryEntry(
     uploader=AzureUploader,
     uploader_config=AzureUploaderConfig,
     connection_config=AzureConnectionConfig,
+    upload_stager_config=BlobStoreUploadStagerConfig,
+    upload_stager=BlobStoreUploadStager,
 )

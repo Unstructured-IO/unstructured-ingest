@@ -31,6 +31,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploader,
     FsspecUploaderConfig,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     pass
@@ -228,4 +232,6 @@ dropbox_destination_entry = DestinationRegistryEntry(
     uploader=DropboxUploader,
     uploader_config=DropboxUploaderConfig,
     connection_config=DropboxConnectionConfig,
+    upload_stager_config=BlobStoreUploadStagerConfig,
+    upload_stager=BlobStoreUploadStager,
 )
