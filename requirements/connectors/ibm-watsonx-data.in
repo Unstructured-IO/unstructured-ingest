@@ -1,0 +1,5 @@
+-c ../common/constraints.txt
+
+pyiceberg
+requests
+pyarrow
