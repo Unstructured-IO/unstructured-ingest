@@ -1,3 +1,9 @@
+## 0.5.14-dev0
+
+### Fixes 
+
+* **Separate password and api_token for Confluence connector**
+
 ## 0.5.13
 
 ### Fixes 
