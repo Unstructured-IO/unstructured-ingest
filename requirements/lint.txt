@@ -6,7 +6,7 @@ black==25.1.0
     # via -r ./lint.in
 click==8.1.8
     # via black
-flake8==7.1.1
+flake8==7.1.2
     # via
     #   -r ./lint.in
     #   flake8-print
@@ -34,7 +34,7 @@ pyflakes==3.2.0
     # via
     #   autoflake
     #   flake8
-ruff==0.9.6
+ruff==0.9.10
     # via -r ./lint.in
 tomli==2.2.1
     # via

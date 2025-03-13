@@ -15,7 +15,7 @@ cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.1
     # via requests
-cryptography==44.0.1
+cryptography==44.0.2
     # via unstructured-client
 eval-type-backport==0.2.2
     # via unstructured-client
@@ -32,10 +32,6 @@ idna==3.10
     #   anyio
     #   httpx
     #   requests
-jsonpath-python==1.0.6
-    # via unstructured-client
-mypy-extensions==1.0.0
-    # via typing-inspect
 nest-asyncio==1.6.0
     # via unstructured-client
 pycparser==2.22
@@ -44,7 +40,7 @@ pydantic==2.10.6
     # via unstructured-client
 pydantic-core==2.27.2
     # via pydantic
-pypdf==5.3.0
+pypdf==5.3.1
     # via unstructured-client
 python-dateutil==2.9.0.post0
     # via unstructured-client
@@ -62,10 +58,10 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   pypdf
-    #   typing-inspect
-typing-inspect==0.9.0
+    #   typing-inspection
+typing-inspection==0.4.0
     # via unstructured-client
-unstructured-client==0.29.0
+unstructured-client==0.31.1
     # via
     #   -c ./remote/../common/constraints.txt
     #   -r ./remote/client.in

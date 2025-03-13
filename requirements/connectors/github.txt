@@ -8,7 +8,7 @@ cffi==1.17.1
     #   pynacl
 charset-normalizer==3.4.1
     # via requests
-cryptography==44.0.1
+cryptography==44.0.2
     # via pyjwt
 deprecated==1.2.18
     # via pygithub
@@ -16,7 +16,7 @@ idna==3.10
     # via requests
 pycparser==2.22
     # via cffi
-pygithub==2.5.0
+pygithub==2.6.1
     # via -r ./connectors/github.in
 pyjwt[crypto]==2.10.1
     # via pygithub

@@ -15,11 +15,11 @@ cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.1
     # via requests
-cryptography==44.0.1
+cryptography==44.0.2
     # via authlib
 exceptiongroup==1.2.2
     # via anyio
-grpcio==1.70.0
+grpcio==1.71.0
     # via
     #   -c ./connectors/../common/constraints.txt
     #   grpcio-health-checking
@@ -53,7 +53,7 @@ pydantic-core==2.27.2
     # via pydantic
 requests==2.32.3
     # via weaviate-client
-setuptools==75.8.0
+setuptools==76.0.0
     # via grpcio-tools
 sniffio==1.3.1
     # via

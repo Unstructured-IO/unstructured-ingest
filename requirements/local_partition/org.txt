@@ -25,7 +25,7 @@ click==8.1.8
     # via
     #   nltk
     #   python-oxmsg
-cryptography==44.0.1
+cryptography==44.0.2
     # via unstructured-client
 dataclasses-json==0.6.7
     # via unstructured
@@ -52,8 +52,6 @@ idna==3.10
     #   requests
 joblib==1.4.2
     # via nltk
-jsonpath-python==1.0.6
-    # via unstructured-client
 langdetect==1.0.9
     # via unstructured
 lxml==5.3.1
@@ -74,7 +72,7 @@ olefile==0.47
     # via python-oxmsg
 packaging==24.2
     # via marshmallow
-psutil==6.1.1
+psutil==7.0.0
     # via unstructured
 pycparser==2.22
     # via cffi
@@ -84,17 +82,17 @@ pydantic-core==2.27.2
     # via pydantic
 pypandoc==1.15
     # via unstructured
-pypdf==5.3.0
+pypdf==5.3.1
     # via unstructured-client
 python-dateutil==2.9.0.post0
     # via unstructured-client
-python-iso639==2025.2.8
+python-iso639==2025.2.18
     # via unstructured
 python-magic==0.4.27
     # via unstructured
 python-oxmsg==0.0.2
     # via unstructured
-rapidfuzz==3.12.1
+rapidfuzz==3.12.2
     # via unstructured
 regex==2024.11.6
     # via nltk
@@ -126,14 +124,15 @@ typing-extensions==4.12.2
     #   pypdf
     #   python-oxmsg
     #   typing-inspect
+    #   typing-inspection
     #   unstructured
 typing-inspect==0.9.0
-    # via
-    #   dataclasses-json
-    #   unstructured-client
-unstructured[org]==0.16.20
+    # via dataclasses-json
+typing-inspection==0.4.0
+    # via unstructured-client
+unstructured[org]==0.17.0
     # via -r ./local_partition/org.in
-unstructured-client==0.29.0
+unstructured-client==0.31.1
     # via
     #   -c ./local_partition/../common/constraints.txt
     #   unstructured

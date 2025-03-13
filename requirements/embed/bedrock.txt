@@ -6,9 +6,9 @@ aiobotocore[boto3]==2.13.1
     # via aioboto3
 aiofiles==24.1.0
     # via aioboto3
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.12
+aiohttp==3.11.13
     # via aiobotocore
 aioitertools==0.12.0
     # via aiobotocore
@@ -16,7 +16,7 @@ aiosignal==1.3.2
     # via aiohttp
 async-timeout==5.0.1
     # via aiohttp
-attrs==25.1.0
+attrs==25.3.0
     # via aiohttp
 boto3==1.34.131
     # via
@@ -42,7 +42,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-propcache==0.2.1
+propcache==0.3.0
     # via
     #   aiohttp
     #   yarl

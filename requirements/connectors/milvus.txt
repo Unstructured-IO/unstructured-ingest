@@ -16,7 +16,7 @@ protobuf==4.23.4
     # via
     #   -c ./connectors/../common/constraints.txt
     #   pymilvus
-pymilvus==2.5.4
+pymilvus==2.5.5
     # via -r ./connectors/milvus.in
 python-dateutil==2.9.0.post0
     # via pandas
@@ -24,7 +24,7 @@ python-dotenv==1.0.1
     # via pymilvus
 pytz==2025.1
     # via pandas
-setuptools==75.8.0
+setuptools==76.0.0
     # via pymilvus
 six==1.17.0
     # via python-dateutil

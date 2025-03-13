@@ -6,13 +6,13 @@ cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.1
     # via requests
-cryptography==44.0.1
+cryptography==44.0.2
     # via
     #   msal
     #   pyjwt
 idna==3.10
     # via requests
-msal==1.31.1
+msal==1.32.0
     # via
     #   -r ./connectors/sharepoint.in
     #   office365-rest-python-client

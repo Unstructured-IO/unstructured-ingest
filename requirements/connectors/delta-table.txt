@@ -15,7 +15,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-pyarrow==19.0.0
+pyarrow==19.0.1
     # via deltalake
 python-dateutil==2.9.0.post0
     # via botocore

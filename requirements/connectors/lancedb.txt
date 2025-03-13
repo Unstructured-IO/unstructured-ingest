@@ -2,9 +2,9 @@
 #    uv pip compile ./connectors/lancedb.in --output-file ./connectors/lancedb.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-attrs==25.1.0
+attrs==25.3.0
     # via lancedb
-cachetools==5.5.1
+cachetools==5.5.2
     # via lancedb
 certifi==2025.1.31
     # via requests
@@ -28,7 +28,7 @@ packaging==24.2
     # via
     #   deprecation
     #   lancedb
-pyarrow==19.0.0
+pyarrow==19.0.1
     # via pylance
 pydantic==2.10.6
     # via lancedb

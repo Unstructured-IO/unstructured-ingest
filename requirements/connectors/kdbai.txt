@@ -19,7 +19,7 @@ pandas==2.2.3
     # via
     #   kdbai-client
     #   pykx
-pykx==2.3.0
+pykx==2.5.5
     # via kdbai-client
 python-dateutil==2.9.0.post0
     # via pandas
