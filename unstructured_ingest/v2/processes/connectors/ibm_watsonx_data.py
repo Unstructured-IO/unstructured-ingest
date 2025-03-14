@@ -162,6 +162,8 @@ class IbmWatsonxDataUploader(Uploader):
         with self.connection_config.get_catalog() as catalog:
             table_schema = data_table.schema
             current_retry = 0
+            # Automatic retries are not available in pyiceberg
+            # So, we are manually retrying the transaction
             while current_retry < self.upload_config.max_retries:
                 try:
                     with self.get_table() as table:
