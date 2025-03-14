@@ -14,8 +14,6 @@ from unstructured_ingest.v2.interfaces import (
     FileData,
     Uploader,
     UploaderConfig,
-    UploadStager,
-    UploadStagerConfig,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
