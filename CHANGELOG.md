@@ -1,8 +1,14 @@
-## 0.5.14-dev0
+## 0.5.15-dev0
 
 ### Fixes 
 
 * **Separate password and api_token for Confluence connector**
+
+## 0.5.14
+
+### Fixes
+
+* **Fixed Zendesk connector registering method**
 
 ## 0.5.13
 
