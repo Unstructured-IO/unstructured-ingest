@@ -85,6 +85,7 @@ jobs:
           CI: "true"
         run: |
           source .venv/bin/activate
+          pip install deepdiff
           sudo make install-docker-compose
           docker compose version
           pip freeze

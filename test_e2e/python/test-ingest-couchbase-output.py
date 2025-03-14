@@ -2,6 +2,7 @@ import json
 import math
 import time
 from datetime import timedelta
+from pathlib import Path
 
 import click
 from couchbase import search
@@ -87,10 +88,17 @@ def check(ctx, expected_docs):
 
 
 @cli.command()
-@click.option("--output-json", type=click.File())
+@click.option("--output-json", type=click.Path())
 @click.pass_context
-def check_vector(ctx, output_json):
-    json_content = json.load(output_json)
+def check_vector(ctx, output_json: str):
+    output_json_path = Path(output_json)
+    with open(output_json_path) as f:
+        if output_json_path.suffix == ".json":
+            json_content = json.load(f)
+        elif output_json_path.suffix == ".ndjson":
+            json_content = [json.loads(line) for line in f.readlines()]
+        else:
+            raise ValueError(f"Unsupported file type: {output_json}")
     key_0 = next(iter(json_content[0]))  # Get the first key
     exact_embedding = json_content[0][key_0]["embedding"]
     exact_text = json_content[0][key_0]["text"]

@@ -27,6 +27,10 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 CONNECTOR_TYPE = "local"
 
@@ -213,5 +217,8 @@ local_source_entry = SourceRegistryEntry(
 )
 
 local_destination_entry = DestinationRegistryEntry(
-    uploader=LocalUploader, uploader_config=LocalUploaderConfig
+    uploader=LocalUploader,
+    uploader_config=LocalUploaderConfig,
+    upload_stager_config=BlobStoreUploadStagerConfig,
+    upload_stager=BlobStoreUploadStager,
 )
