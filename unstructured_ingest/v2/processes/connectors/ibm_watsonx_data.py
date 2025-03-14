@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING, Any, Generator, Tuple
 
 from pydantic import Field, Secret
 
@@ -20,9 +21,14 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured_ingest.v2.processes.connectors.sql.sql import (
+    SQLUploadStager,
+    SQLUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     from pyiceberg.catalog.rest import RestCatalog
+    from pyiceberg.table import Table
 
 CONNECTOR_TYPE = "ibm_watsonx_data"
 
@@ -70,7 +76,8 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
         return response.json()["access_token"]
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
-    def get_catalog(self) -> "RestCatalog":
+    @contextmanager
+    def get_catalog(self) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
 
         try:
@@ -87,25 +94,31 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
                     "s3.region": self.object_storage_region,
                 },
             )
-            return catalog
         except Exception as e:
             logger.error(f"Failed to connect to catalog '{self.catalog}': {e}", exc_info=True)
             raise DestinationConnectionError(f"Failed to connect to catalog '{self.catalog}': {e}")
 
+        yield catalog
+
 
 @dataclass
-class IbmWatsonxDataUploadStagerConfig(UploadStagerConfig):
+class IbmWatsonxDataUploadStagerConfig(SQLUploadStagerConfig):
     pass
 
 
 @dataclass
-class IbmWatsonxDataUploadStager(UploadStager):
-    pass
+class IbmWatsonxDataUploadStager(SQLUploadStager):
+    upload_stager_config: IbmWatsonxDataUploadStagerConfig = field(
+        default_factory=IbmWatsonxDataUploadStagerConfig
+    )
 
 
 class IbmWatsonxDataUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
+    max_retries: int = Field(
+        default=3, description="Maximum number of retries to upload data", ge=2, le=5
+    )
 
     @property
     def table_identifier(self) -> Tuple[str, str]:
@@ -119,15 +132,15 @@ class IbmWatsonxDataUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
-        catalog = self.connection_config.get_catalog()
-        if not catalog.namespace_exists(self.upload_config.namespace):
-            err_msg = f"Namespace {self.upload_config.namespace} does not exist"
-            logger.error(err_msg)
-            raise DestinationConnectionError(err_msg)
-        if not catalog.table_exists(self.upload_config.table_identifier):
-            err_msg = f"Table {self.upload_config.table} does not exist in namespace {self.upload_config.namespace}"
-            logger.error(err_msg)
-            raise DestinationConnectionError(err_msg)
+        with self.connection_config.get_catalog() as catalog:
+            if not catalog.namespace_exists(self.upload_config.namespace):
+                err_msg = f"Namespace '{self.upload_config.namespace}' does not exist"
+                logger.error(err_msg)
+                raise DestinationConnectionError(err_msg)
+            if not catalog.table_exists(self.upload_config.table_identifier):
+                err_msg = f"Table '{self.upload_config.table}' does not exist in namespace '{self.upload_config.namespace}'"
+                logger.error(err_msg)
+                raise DestinationConnectionError(err_msg)
 
     @requires_dependencies(["pyarrow"], extras="ibm-watsonx-data")
     def _get_data_table(self, path: Path) -> Any:
@@ -136,17 +149,36 @@ class IbmWatsonxDataUploader(Uploader):
         df = get_data_df(path)
         return pa.Table.from_pandas(df)
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        catalog = self.connection_config.get_catalog()
-
-        data_table = self._get_data_table(path)
-
-        try:
+    @contextmanager
+    def get_table(self) -> Generator["Table", None, None]:
+        with self.connection_config.get_catalog() as catalog:
             table = catalog.load_table(self.upload_config.table_identifier)
-            table.append(data_table)
-        except Exception as e:
-            logger.error(f"Failed to append data to table: {e}", exc_info=True)
-            raise DestinationConnectionError(f"Failed to append data to table: {e}")
+            yield table
+
+    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
+    def upload_data(self, data_table: Any) -> None:
+        from pyiceberg.exceptions import CommitFailedException
+
+        with self.connection_config.get_catalog() as catalog:
+            table_schema = data_table.schema
+            current_retry = 0
+            while current_retry < self.upload_config.max_retries:
+                try:
+                    with self.get_table() as table:
+                        with table.update_schema() as update:
+                            update.union_by_name(table_schema)
+                        with table.transaction() as transaction:
+                            transaction.append(data_table)
+                    break
+                except CommitFailedException as e:
+                    current_retry += 1
+                except Exception as e:
+                    logger.error(f"Failed to append data to table: {e}", exc_info=True)
+                    raise DestinationConnectionError(f"Failed to append data to table: {e}")
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        data_table = self._get_data_table(path)
+        self.upload_data(data_table)
 
 
 ibm_watsonx_data_destination_entry = DestinationRegistryEntry(
