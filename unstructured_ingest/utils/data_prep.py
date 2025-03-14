@@ -166,7 +166,6 @@ def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
 def get_data(path: Union[Path, str]) -> list[dict]:
     if isinstance(path, str):
         path = Path(path)
-    path = Path(path)
     try:
         return get_data_by_suffix(path=path)
     except Exception as e:
