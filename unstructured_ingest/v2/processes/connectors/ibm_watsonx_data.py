@@ -1,13 +1,15 @@
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Tuple
+from typing import TYPE_CHECKING, Any, Generator, Tuple, Union
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -35,17 +37,19 @@ DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 
 
 class IbmWatsonxDataAccessConfig(AccessConfig):
-    iam_api_key: str = Field(description="")
-    access_key_id: str = Field(description="")
-    secret_access_key: str = Field(description="")
+    iam_api_key: str = Field(description="IBM IAM API Key")
+    access_key_id: str = Field(description="Cloud Object Storage HMAC Access Key ID")
+    secret_access_key: str = Field(description="Cloud Object Storage HMAC Secret Access Key")
 
 
 class IbmWatsonxDataConnectionConfig(ConnectionConfig):
     access_config: Secret[IbmWatsonxDataAccessConfig]
-    iceberg_endpoint: str = Field(description="")
-    object_storage_public_endpoint: str = Field(description="")
-    object_storage_region: str = Field(description="")
+    iceberg_endpoint: str = Field(description="Iceberg REST endpoint")
+    object_storage_endpoint: str = Field(description="Cloud Object Storage public endpoint")
+    object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
+
+    _bearer_token: Union[dict[str, Any], None] = None
 
     @property
     def iceberg_url(self) -> str:
@@ -53,10 +57,18 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
 
     @property
     def object_storage_url(self) -> str:
-        return f"https://{self.object_storage_public_endpoint.strip("/")}"
+        return f"https://{self.object_storage_endpoint.strip("/")}"
+
+    @property
+    def bearer_token(self) -> str:
+        # Add 60 seconds to deal with edge cases where the token expires before the request is made
+        timestamp = int(time.time()) + 60
+        if self._bearer_token is None or self._bearer_token.get("expiration", 0) <= timestamp:
+            self._bearer_token = self.generate_bearer_token()
+        return self._bearer_token["access_token"]
 
     @requires_dependencies(["requests"], extras="ibm-watsonx-data")
-    def generate_bearer_token(self) -> str:
+    def generate_bearer_token(self) -> dict[str, Any]:
         import requests
 
         iam_url = "https://iam.cloud.ibm.com/identity/token"
@@ -69,9 +81,10 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
             "apikey": self.access_config.get_secret_value().iam_api_key,
         }
 
+        logger.info("Generating IBM IAM Bearer Token")
         response = requests.post(iam_url, headers=headers, data=data)
         response.raise_for_status()
-        return response.json()["access_token"]
+        return response.json()
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
     @contextmanager
@@ -84,7 +97,7 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
                 **{
                     "type": DEFAULT_ICEBERG_CATALOG_TYPE,
                     "uri": self.iceberg_url,
-                    "token": self.generate_bearer_token(),
+                    "token": self.bearer_token,
                     "warehouse": self.catalog,
                     "s3.endpoint": self.object_storage_url,
                     "s3.access-key-id": self.access_config.get_secret_value().access_key_id,
@@ -117,6 +130,10 @@ class IbmWatsonxDataUploaderConfig(UploaderConfig):
     max_retries: int = Field(
         default=3, description="Maximum number of retries to upload data", ge=2, le=5
     )
+    record_id_key: str = Field(
+        default=RECORD_ID_LABEL,
+        description="Searchable key to find entries for the same record on previous runs",
+    )
 
     @property
     def table_identifier(self) -> Tuple[str, str]:
@@ -132,13 +149,13 @@ class IbmWatsonxDataUploader(Uploader):
     def precheck(self) -> None:
         with self.connection_config.get_catalog() as catalog:
             if not catalog.namespace_exists(self.upload_config.namespace):
-                err_msg = f"Namespace '{self.upload_config.namespace}' does not exist"
-                logger.error(err_msg)
-                raise DestinationConnectionError(err_msg)
+                raise DestinationConnectionError(
+                    f"Namespace '{self.upload_config.namespace}' does not exist"
+                )
             if not catalog.table_exists(self.upload_config.table_identifier):
-                err_msg = f"Table '{self.upload_config.table}' does not exist in namespace '{self.upload_config.namespace}'"
-                logger.error(err_msg)
-                raise DestinationConnectionError(err_msg)
+                raise DestinationConnectionError(
+                    f"Table '{self.upload_config.table}' does not exist in namespace '{self.upload_config.namespace}'"  # noqa: E501
+                )
 
     @requires_dependencies(["pyarrow"], extras="ibm-watsonx-data")
     def _get_data_table(self, path: Path) -> Any:
@@ -154,31 +171,43 @@ class IbmWatsonxDataUploader(Uploader):
             yield table
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
-    def upload_data(self, data_table: Any) -> None:
+    def upload_data(self, data_table: Any, file_data: FileData) -> None:
         from pyiceberg.exceptions import CommitFailedException
+        from pyiceberg.expressions import EqualTo
 
-        with self.connection_config.get_catalog() as catalog:
-            table_schema = data_table.schema
+        with self.get_table() as table:
             current_retry = 0
             # Automatic retries are not available in pyiceberg
-            # So, we are manually retrying the transaction
+            # So, we are manually retrying failed transactions
             while current_retry < self.upload_config.max_retries:
                 try:
-                    with self.get_table() as table:
-                        with table.update_schema() as update:
-                            update.union_by_name(table_schema)
-                        with table.transaction() as transaction:
-                            transaction.append(data_table)
+                    with table.transaction() as transaction:
+                        with transaction.update_schema() as update:
+                            update.union_by_name(data_table.schema)
+                        if self.upload_config.record_id_key in table.schema().column_names:
+                            transaction.delete(
+                                delete_filter=EqualTo(
+                                    self.upload_config.record_id_key, file_data.identifier
+                                )
+                            )
+                        transaction.append(data_table)
                     break
-                except CommitFailedException as e:
+                except CommitFailedException:
                     current_retry += 1
+                    table.refresh()
+                    logger.debug(
+                        f"Failed to commit transaction. Retrying! ({current_retry} / {self.upload_config.max_retries})"  # noqa: E501
+                    )
                 except Exception as e:
-                    logger.error(f"Failed to append data to table: {e}", exc_info=True)
                     raise DestinationConnectionError(f"Failed to append data to table: {e}")
+            if current_retry >= self.upload_config.max_retries:
+                raise DestinationConnectionError(
+                    f"Failed to commit transaction after {self.upload_config.max_retries} retries"
+                )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data_table = self._get_data_table(path)
-        self.upload_data(data_table)
+        self.upload_data(data_table, file_data)
 
 
 ibm_watsonx_data_destination_entry = DestinationRegistryEntry(
