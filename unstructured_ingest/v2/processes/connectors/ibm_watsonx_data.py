@@ -93,11 +93,11 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
 
     @property
     def iceberg_url(self) -> str:
-        return f"https://{self.iceberg_endpoint.strip("/")}{DEFAULT_ICEBERG_URI_PATH}"
+        return f"https://{self.iceberg_endpoint.strip('/')}{DEFAULT_ICEBERG_URI_PATH}"
 
     @property
     def object_storage_url(self) -> str:
-        return f"https://{self.object_storage_endpoint.strip("/")}"
+        return f"https://{self.object_storage_endpoint.strip('/')}"
 
     @property
     def bearer_token(self) -> str:
