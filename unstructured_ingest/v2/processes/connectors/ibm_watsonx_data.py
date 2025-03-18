@@ -234,44 +234,52 @@ class IbmWatsonxDataUploader(Uploader):
                     f"Table '{self.upload_config.table}' does not exist in namespace '{self.upload_config.namespace}'"  # noqa: E501
                 )
 
-    @requires_dependencies(["pyarrow"], extras="ibm-watsonx-data")
-    def _get_data_table(self, path: Path) -> Any:
-        import pyarrow as pa
-
-        df = get_data_df(path)
-        return pa.Table.from_pandas(df)
-
     @contextmanager
     def get_table(self) -> Generator["Table", None, None]:
         with self.connection_config.get_catalog() as catalog:
             table = catalog.load_table(self.upload_config.table_identifier)
             yield table
 
+    @requires_dependencies(["pyarrow"], extras="ibm-watsonx-data")
+    def _get_data_table(self, table: "Table", path: Path) -> Any:
+        import pyarrow as pa
+
+        df = get_data_df(path)
+        table_column_names = table.schema().column_names
+        df_column_names = list(df.columns.values)
+        # Only upload columns that are common between the table and the dataframe
+        common_columns = list(set(table_column_names).intersection(df_column_names))
+        if not common_columns:
+            raise ValueError(
+                "Iceberg table schema doesn't contain proper columns"
+                f"Expected columns: {df_column_names}"
+                f"Found columns: {table_column_names}"
+            )
+        return pa.Table.from_pandas(df[common_columns])
+
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
-    def upload_data(self, data_table: Any, file_data: FileData) -> None:
+    def upload_data(self, table: "Table", data_table: Any, file_data: FileData) -> None:
         from pyiceberg.expressions import EqualTo
 
         def _upload_data(transaction: "Transaction", data_table: Any, file_data: FileData) -> None:
-            with transaction.update_schema() as update:
-                update.union_by_name(data_table.schema)
             if self.upload_config.record_id_key in transaction._table.schema().column_names:
                 transaction.delete(
                     delete_filter=EqualTo(self.upload_config.record_id_key, file_data.identifier)
                 )
             transaction.append(data_table)
 
-        with self.get_table() as table:
-            _transaction_wrapper(
-                table=table,
-                fn=_upload_data,
-                max_retries=self.upload_config.max_retries,
-                file_data=file_data,
-                data_table=data_table,
-            )
+        _transaction_wrapper(
+            table=table,
+            fn=_upload_data,
+            max_retries=self.upload_config.max_retries,
+            file_data=file_data,
+            data_table=data_table,
+        )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data_table = self._get_data_table(path)
-        self.upload_data(data_table, file_data)
+        with self.get_table() as table:
+            data_table = self._get_data_table(table, path)
+            self.upload_data(table, data_table, file_data)
 
 
 ibm_watsonx_data_destination_entry = DestinationRegistryEntry(

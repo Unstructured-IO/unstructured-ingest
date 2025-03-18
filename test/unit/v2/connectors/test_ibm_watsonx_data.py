@@ -1,6 +1,8 @@
 import time
+from pathlib import Path
 from unittest.mock import MagicMock
 
+import pandas as pd
 import pytest
 from pydantic import Secret
 from pyiceberg.exceptions import CommitFailedException
@@ -105,14 +107,8 @@ def mock_get_table(mocker: MockerFixture, mock_table: MagicMock):
 
 
 @pytest.fixture
-def mock_update_schema(mocker: MockerFixture):
-    return mocker.MagicMock()
-
-
-@pytest.fixture
-def mock_transaction(mocker: MockerFixture, mock_table: MagicMock, mock_update_schema: MagicMock):
+def mock_transaction(mocker: MockerFixture, mock_table: MagicMock):
     mock_transaction = mocker.MagicMock()
-    mock_transaction.update_schema.return_value.__enter__.return_value = mock_update_schema
     mock_table.transaction.return_value.__enter__.return_value = mock_transaction
     return mock_transaction
 
@@ -385,16 +381,14 @@ def test_upload_data_success(
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
     mock_transaction_wrapper: MagicMock,
-    mock_update_schema: MagicMock,
     file_data: FileData,
 ):
     mock_column_names = mocker.MagicMock()
     mock_column_names.column_names = ["test_column_1", "test_record_id_key", "test_column_2"]
     mock_transaction._table.schema.return_value = mock_column_names
 
-    uploader.upload_data(mock_data_table, file_data)
+    uploader.upload_data(mock_table, mock_data_table, file_data)
 
-    mock_get_table.assert_called_once()
     mock_transaction_wrapper.assert_called_once_with(
         table=mock_table,
         fn=mocker.ANY,
@@ -402,7 +396,6 @@ def test_upload_data_success(
         file_data=file_data,
         data_table=mock_data_table,
     )
-    mock_update_schema.union_by_name.assert_called_once_with("schema")
     mock_transaction.delete.assert_called_once_with(
         delete_filter=EqualTo("test_record_id_key", "test_identifier")
     )
@@ -417,16 +410,14 @@ def test_upload_data_success_no_delete(
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
     mock_transaction_wrapper: MagicMock,
-    mock_update_schema: MagicMock,
     file_data: FileData,
 ):
     mock_column_names = mocker.MagicMock()
     mock_column_names.column_names = ["test_column_1", "test_column_2"]
     mock_transaction._table.schema.return_value = mock_column_names
 
-    uploader.upload_data(mock_data_table, file_data)
+    uploader.upload_data(mock_table, mock_data_table, file_data)
 
-    mock_get_table.assert_called_once()
     mock_transaction_wrapper.assert_called_once_with(
         table=mock_table,
         fn=mocker.ANY,
@@ -434,6 +425,58 @@ def test_upload_data_success_no_delete(
         file_data=file_data,
         data_table=mock_data_table,
     )
-    mock_update_schema.union_by_name.assert_called_once_with("schema")
     mock_transaction.delete.assert_not_called()
     mock_transaction.append.assert_called_once_with(mock_data_table)
+
+
+def test_get_data_table_success(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxDataUploader,
+    mock_table: MagicMock,
+):
+    mock_df = pd.DataFrame(
+        {
+            "test_column_0": [True, False, True],
+            "test_column_1": [1, 2, 3],
+            "test_column_2": ["a", "b", "c"],
+        }
+    )
+    mock_table.schema.return_value.column_names = [
+        "test_column_1",
+        "test_column_2",
+        "test_column_3",
+    ]
+    mock_get_data_df = mocker.patch(
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data.get_data_df",
+        return_value=mock_df,
+    )
+
+    path = Path("/tmp/test_file.pdf")
+    result = uploader._get_data_table(mock_table, path)
+
+    mock_get_data_df.assert_called_once_with(path)
+    assert len(result.column_names) == 2
+    assert "test_column_1" in result.column_names
+    assert "test_column_2" in result.column_names
+
+
+def test_get_data_table_no_common_columns(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxDataUploader,
+    mock_table: MagicMock,
+):
+    mock_df = pd.DataFrame({"test_column_4": [1, 2, 3], "test_column_5": ["a", "b", "c"]})
+    mock_table.schema.return_value.column_names = [
+        "test_column_1",
+        "test_column_2",
+        "test_column_3",
+    ]
+    mock_get_data_df = mocker.patch(
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data.get_data_df",
+        return_value=mock_df,
+    )
+
+    path = Path("/tmp/test_file.pdf")
+    with pytest.raises(ValueError, match="Iceberg table schema doesn't contain proper columns"):
+        uploader._get_data_table(mock_table, path)
+    mock_get_data_df.assert_called_once_with(path)
