@@ -66,6 +66,8 @@ from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
 from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
 from .vectara import vectara_destination_entry
+from .zendesk.zendesk import CONNECTOR_TYPE as ZENDESK_CONNECTOR_TYPE
+from .zendesk.zendesk import zendesk_source_entry
 
 add_source_entry(source_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_source_entry)
 add_destination_entry(destination_type=ASTRA_DB_CONNECTOR_TYPE, entry=astra_db_destination_entry)
@@ -121,6 +123,8 @@ add_source_entry(source_type=DISCORD_CONNECTOR_TYPE, entry=discord_source_entry)
 add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
 
 add_source_entry(source_type=JIRA_CONNECTOR_TYPE, entry=jira_source_entry)
+
+add_source_entry(source_type=ZENDESK_CONNECTOR_TYPE, entry=zendesk_source_entry)
 
 add_destination_entry(
     destination_type=IBM_WATSONX_DATA_CONNECTOR_TYPE, entry=ibm_watsonx_data_destination_entry

@@ -35,7 +35,11 @@ CONNECTOR_TYPE = "confluence"
 
 class ConfluenceAccessConfig(AccessConfig):
     password: Optional[str] = Field(
-        description="Confluence password or Cloud API token",
+        description="Confluence password",
+        default=None,
+    )
+    api_token: Optional[str] = Field(
+        description="Confluence Cloud API token",
         default=None,
     )
     token: Optional[str] = Field(
@@ -57,7 +61,12 @@ class ConfluenceConnectionConfig(ConnectionConfig):
 
     def model_post_init(self, __context):
         access_configs = self.access_config.get_secret_value()
-        basic_auth = self.username and access_configs.password
+        if access_configs.password and access_configs.api_token:
+            raise ValueError(
+                "both password and api_token provided, only one allowed, "
+                "see: https://atlassian-python-api.readthedocs.io/"
+            )
+        basic_auth = bool(self.username and (access_configs.password or access_configs.api_token))
         pat_auth = access_configs.token
         if self.cloud and not basic_auth:
             raise ValueError(
@@ -74,6 +83,14 @@ class ConfluenceConnectionConfig(ConnectionConfig):
                 "no form of auth provided, see: https://atlassian-python-api.readthedocs.io/"
             )
 
+    def password_or_api_token(self) -> str:
+        # Confluence takes either password or API token under the same field: password
+        # This ambiguity led to confusion, so we are making it specific what you are passing in
+        access_configs = self.access_config.get_secret_value()
+        if access_configs.password:
+            return access_configs.password
+        return access_configs.api_token
+
     @requires_dependencies(["atlassian"], extras="confluence")
     @contextmanager
     def get_client(self) -> "Confluence":
@@ -83,7 +100,7 @@ class ConfluenceConnectionConfig(ConnectionConfig):
         with Confluence(
             url=self.url,
             username=self.username,
-            password=access_configs.password,
+            password=self.password_or_api_token(),
             token=access_configs.token,
             cloud=self.cloud,
         ) as client:

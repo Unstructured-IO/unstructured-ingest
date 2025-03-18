@@ -28,6 +28,10 @@ from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
     FsspecUploader,
     FsspecUploaderConfig,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     from gcsfs import GCSFileSystem
@@ -194,4 +198,6 @@ gcs_destination_entry = DestinationRegistryEntry(
     uploader=GcsUploader,
     uploader_config=GcsUploaderConfig,
     connection_config=GcsConnectionConfig,
+    upload_stager_config=BlobStoreUploadStagerConfig,
+    upload_stager=BlobStoreUploadStager,
 )
