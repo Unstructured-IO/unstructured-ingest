@@ -33,11 +33,11 @@ google-cloud-core==2.4.3
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-google-cloud-resource-manager==1.14.1
+google-cloud-resource-manager==1.14.2
     # via google-cloud-aiplatform
 google-cloud-storage==2.19.0
     # via google-cloud-aiplatform
-google-crc32c==1.6.0
+google-crc32c==1.7.0
     # via
     #   google-cloud-storage
     #   google-resumable-media
@@ -45,12 +45,12 @@ google-resumable-media==2.7.2
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos[grpc]==1.69.1
+googleapis-common-protos[grpc]==1.69.2
     # via
     #   google-api-core
     #   grpc-google-iam-v1
     #   grpcio-status
-grpc-google-iam-v1==0.14.1
+grpc-google-iam-v1==0.14.2
     # via google-cloud-resource-manager
 grpcio==1.71.0
     # via

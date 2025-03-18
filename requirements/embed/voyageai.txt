@@ -2,7 +2,7 @@
 #    uv pip compile ./embed/voyageai.in --output-file ./embed/voyageai.txt --no-strip-extras --python-version 3.9
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.13
+aiohttp==3.11.14
     # via voyageai
 aiolimiter==1.2.1
     # via voyageai
@@ -18,7 +18,7 @@ certifi==2025.1.31
     # via requests
 charset-normalizer==3.4.1
     # via requests
-filelock==3.17.0
+filelock==3.18.0
     # via huggingface-hub
 frozenlist==1.5.0
     # via
@@ -34,7 +34,7 @@ idna==3.10
     # via
     #   requests
     #   yarl
-multidict==6.1.0
+multidict==6.2.0
     # via
     #   aiohttp
     #   yarl

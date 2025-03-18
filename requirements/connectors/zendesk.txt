@@ -2,7 +2,7 @@
 #    uv pip compile ./connectors/zendesk.in --output-file ./connectors/zendesk.txt --no-strip-extras --python-version 3.9
 aiofiles==24.1.0
     # via -r ./connectors/zendesk.in
-anyio==4.8.0
+anyio==4.9.0
     # via httpx
 beautifulsoup4==4.13.3
     # via bs4

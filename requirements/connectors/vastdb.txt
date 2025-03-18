@@ -19,7 +19,7 @@ flatbuffers==25.2.10
     # via vastdb
 ibis==3.3.0
     # via -r ./connectors/vastdb.in
-ibis-framework==10.3.0
+ibis-framework==10.3.1
     # via vastdb
 idna==3.10
     # via requests
@@ -37,8 +37,6 @@ python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   ibis-framework
-pytz==2025.1
-    # via ibis-framework
 requests==2.32.3
     # via
     #   aws-requests-auth
@@ -47,11 +45,13 @@ s3transfer==0.10.4
     # via boto3
 six==1.17.0
     # via python-dateutil
-sqlglot==26.10.0
+sqlglot==26.11.1
     # via ibis-framework
 toolz==1.0.0
     # via ibis-framework
 typing-extensions==4.12.2
+    # via ibis-framework
+tzdata==2025.1
     # via ibis-framework
 urllib3==1.26.20
     # via

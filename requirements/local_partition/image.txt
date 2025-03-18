@@ -6,7 +6,7 @@ annotated-types==0.7.0
     # via pydantic
 antlr4-python3-runtime==4.9.3
     # via omegaconf
-anyio==4.8.0
+anyio==4.9.0
     # via httpx
 backoff==2.2.1
     # via unstructured
@@ -53,7 +53,7 @@ eval-type-backport==0.2.2
     # via unstructured-client
 exceptiongroup==1.2.2
     # via anyio
-filelock==3.17.0
+filelock==3.18.0
     # via
     #   huggingface-hub
     #   torch
@@ -75,9 +75,9 @@ google-auth==2.38.0
     # via
     #   google-api-core
     #   google-cloud-vision
-google-cloud-vision==3.10.0
+google-cloud-vision==3.10.1
     # via unstructured
-googleapis-common-protos==1.69.1
+googleapis-common-protos==1.69.2
     # via
     #   google-api-core
     #   grpcio-status
@@ -219,7 +219,7 @@ pdfminer-six==20240706
     # via
     #   unstructured
     #   unstructured-inference
-pi-heif==0.21.0
+pi-heif==0.22.0
     # via unstructured
 pikepdf==9.5.2
     # via unstructured
@@ -263,7 +263,7 @@ pydantic-core==2.27.2
     # via pydantic
 pyparsing==3.2.1
     # via matplotlib
-pypdf==5.3.1
+pypdf==5.4.0
     # via
     #   unstructured
     #   unstructured-client

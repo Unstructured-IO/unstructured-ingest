@@ -2,7 +2,7 @@
 #    uv pip compile ./connectors/chroma.in --output-file ./connectors/chroma.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-anyio==4.8.0
+anyio==4.9.0
     # via
     #   starlette
     #   watchfiles
@@ -41,7 +41,7 @@ exceptiongroup==1.2.2
     # via anyio
 fastapi==0.115.11
     # via chromadb
-filelock==3.17.0
+filelock==3.18.0
     # via huggingface-hub
 flatbuffers==25.2.10
     # via onnxruntime
@@ -51,7 +51,7 @@ fsspec==2024.5.0
     #   huggingface-hub
 google-auth==2.38.0
     # via kubernetes
-googleapis-common-protos==1.69.1
+googleapis-common-protos==1.69.2
     # via opentelemetry-exporter-otlp-proto-grpc
 grpcio==1.71.0
     # via
@@ -115,7 +115,7 @@ packaging==24.2
     # via
     #   huggingface-hub
     #   onnxruntime
-posthog==3.19.1
+posthog==3.21.0
     # via chromadb
 protobuf==4.23.4
     # via
@@ -166,7 +166,7 @@ rich==13.9.4
     # via typer
 rsa==4.9
     # via google-auth
-setuptools==76.0.0
+setuptools==76.1.0
     # via
     #   opentelemetry-api
     #   opentelemetry-sdk
