@@ -205,7 +205,7 @@ class IbmWatsonxDataUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
     max_retries: int = Field(
-        default=3, description="Maximum number of retries to upload data", ge=2, le=5
+        default=5, description="Maximum number of retries to upload data", ge=2, le=10
     )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
