@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "ibm_watsonx_data"
 
+DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 
@@ -144,7 +145,6 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
     def generate_bearer_token(self) -> dict[str, Any]:
         import httpx
 
-        iam_url = "https://iam.cloud.ibm.com/identity/token"
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "Accept": "application/json",
@@ -156,7 +156,7 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
 
         logger.info("Generating IBM IAM Bearer Token")
         try:
-            response = httpx.post(iam_url, headers=headers, data=data)
+            response = httpx.post(DEFAULT_IBM_CLOUD_AUTH_URL, headers=headers, data=data)
             response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e)
