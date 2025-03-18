@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unstructured_ingest.v2.processes.connector_registry import (
     add_source_entry,
 )
