@@ -68,7 +68,6 @@ class ZendeskBatchItemTicket(BatchItem):
 class ZendeskBatchItemArticle(BatchItem):
     title: str
     author_id: str
-    title: str
     content: str
 
 
