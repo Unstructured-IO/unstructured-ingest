@@ -259,6 +259,13 @@ class IbmWatsonxDataUploader(Uploader):
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
     def upload_data(self, table: "Table", data_table: Any, file_data: FileData) -> None:
+        """
+        Uploads data to a specified table.
+
+        This method handles the process of uploading data to a table, including
+        deleting existing records if necessary and appending new data. It uses
+        a transaction wrapper to ensure the operation is retried if it fails.
+        """
         from pyiceberg.expressions import EqualTo
 
         def _upload_data(transaction: "Transaction", data_table: Any, file_data: FileData) -> None:
