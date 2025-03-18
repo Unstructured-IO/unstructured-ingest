@@ -1,5 +1,5 @@
 -c ../common/constraints.txt
 
 pyiceberg
-requests
+httpx
 pyarrow
