@@ -2,7 +2,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Generator, Tuple, Union
 
 from pydantic import Field, Secret
 
@@ -10,6 +10,7 @@ from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
+from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -28,12 +29,50 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 
 if TYPE_CHECKING:
     from pyiceberg.catalog.rest import RestCatalog
-    from pyiceberg.table import Table
+    from pyiceberg.table import Table, Transaction
 
 CONNECTOR_TYPE = "ibm_watsonx_data"
 
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
+
+
+@requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
+def _transaction_wrapper(table: "Table", fn: Callable, max_retries: int, **kwargs: Any) -> None:
+    """
+    Executes a function within a table transaction, with automatic retries on failure.
+
+    Args:
+        table (Table): The table object on which the transaction is performed.
+        fn (Callable): The function to execute within the transaction.
+        max_retries (int): The maximum number of retries allowed for the transaction.
+        **kwargs (Any): Additional keyword arguments to pass to the function `fn`.
+
+    Raises:
+        DestinationConnectionError: If the transaction fails after the maximum number of retries.
+    """
+    from pyiceberg.exceptions import CommitFailedException
+
+    current_retry = 0
+    # Automatic retries are not available in pyiceberg
+    # So, we are manually retrying failed transactions
+    while current_retry < max_retries:
+        try:
+            with table.transaction() as transaction:
+                fn(transaction, **kwargs)
+            break
+        except CommitFailedException:
+            current_retry += 1
+            table.refresh()
+            logger.debug(
+                f"Failed to commit transaction. Retrying! ({current_retry} / {max_retries})"
+            )
+        except Exception as e:
+            raise DestinationConnectionError(f"Failed to append data to table: {e}")
+    if current_retry >= max_retries:
+        raise DestinationConnectionError(
+            f"Failed to commit transaction after {max_retries} retries"
+        )
 
 
 class IbmWatsonxDataAccessConfig(AccessConfig):
@@ -67,9 +106,43 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
             self._bearer_token = self.generate_bearer_token()
         return self._bearer_token["access_token"]
 
-    @requires_dependencies(["requests"], extras="ibm-watsonx-data")
+    @requires_dependencies(["httpx"], extras="ibm-watsonx-data")
+    def wrap_error(self, e: Exception) -> Exception:
+        import httpx
+
+        if not isinstance(e, httpx.HTTPStatusError):
+            logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
+            return e
+        url = e.request.url
+        response_code = e.response.status_code
+        if response_code == 401:
+            logger.error(
+                f"Failed to authenticate IBM watsonx.data user {url}, status code {response_code}"
+            )
+            return UserAuthError(e)
+        if response_code == 403:
+            logger.error(
+                f"Given IBM watsonx.data user is not authorized {url}, status code {response_code}"
+            )
+            return UserAuthError(e)
+        if 400 <= response_code < 500:
+            logger.error(
+                f"Request to {url} failed"
+                f"in IBM watsonx.data connector, status code {response_code}"
+            )
+            return UserError(e)
+        if response_code > 500:
+            logger.error(
+                f"Request to {url} failed"
+                f"in IBM watsonx.data connector, status code {response_code}"
+            )
+            return ProviderError(e)
+        logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
+        return e
+
+    @requires_dependencies(["httpx"], extras="ibm-watsonx-data")
     def generate_bearer_token(self) -> dict[str, Any]:
-        import requests
+        import httpx
 
         iam_url = "https://iam.cloud.ibm.com/identity/token"
         headers = {
@@ -82,8 +155,11 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
         }
 
         logger.info("Generating IBM IAM Bearer Token")
-        response = requests.post(iam_url, headers=headers, data=data)
-        response.raise_for_status()
+        try:
+            response = httpx.post(iam_url, headers=headers, data=data)
+            response.raise_for_status()
+        except Exception as e:
+            raise self.wrap_error(e)
         return response.json()
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
@@ -91,13 +167,14 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
     def get_catalog(self) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
 
+        bearer_token = self.bearer_token
         try:
             catalog = load_catalog(
                 self.catalog,
                 **{
                     "type": DEFAULT_ICEBERG_CATALOG_TYPE,
                     "uri": self.iceberg_url,
-                    "token": self.bearer_token,
+                    "token": bearer_token,
                     "warehouse": self.catalog,
                     "s3.endpoint": self.object_storage_url,
                     "s3.access-key-id": self.access_config.get_secret_value().access_key_id,
@@ -172,38 +249,25 @@ class IbmWatsonxDataUploader(Uploader):
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
     def upload_data(self, data_table: Any, file_data: FileData) -> None:
-        from pyiceberg.exceptions import CommitFailedException
         from pyiceberg.expressions import EqualTo
 
-        with self.get_table() as table:
-            current_retry = 0
-            # Automatic retries are not available in pyiceberg
-            # So, we are manually retrying failed transactions
-            while current_retry < self.upload_config.max_retries:
-                try:
-                    with table.transaction() as transaction:
-                        with transaction.update_schema() as update:
-                            update.union_by_name(data_table.schema)
-                        if self.upload_config.record_id_key in table.schema().column_names:
-                            transaction.delete(
-                                delete_filter=EqualTo(
-                                    self.upload_config.record_id_key, file_data.identifier
-                                )
-                            )
-                        transaction.append(data_table)
-                    break
-                except CommitFailedException:
-                    current_retry += 1
-                    table.refresh()
-                    logger.debug(
-                        f"Failed to commit transaction. Retrying! ({current_retry} / {self.upload_config.max_retries})"  # noqa: E501
-                    )
-                except Exception as e:
-                    raise DestinationConnectionError(f"Failed to append data to table: {e}")
-            if current_retry >= self.upload_config.max_retries:
-                raise DestinationConnectionError(
-                    f"Failed to commit transaction after {self.upload_config.max_retries} retries"
+        def _upload_data(transaction: "Transaction", data_table: Any, file_data: FileData) -> None:
+            with transaction.update_schema() as update:
+                update.union_by_name(data_table.schema)
+            if self.upload_config.record_id_key in transaction._table.schema().column_names:
+                transaction.delete(
+                    delete_filter=EqualTo(self.upload_config.record_id_key, file_data.identifier)
                 )
+            transaction.append(data_table)
+
+        with self.get_table() as table:
+            _transaction_wrapper(
+                table=table,
+                fn=_upload_data,
+                max_retries=self.upload_config.max_retries,
+                file_data=file_data,
+                data_table=data_table,
+            )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data_table = self._get_data_table(path)
