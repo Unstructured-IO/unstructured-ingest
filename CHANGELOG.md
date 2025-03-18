@@ -1,3 +1,19 @@
+## 0.5.16
+
+### Fixes
+
+* **Fixed Zendesk connector registering method**
+
+## 0.5.15
+
+### Fixes 
+
+* **Separate password and api_token for Confluence connector**
+
+### Features 
+
+* Support NDJSON for data between pipeline steps for data streaming**
+
 ## 0.5.14
 
 ### Fixes

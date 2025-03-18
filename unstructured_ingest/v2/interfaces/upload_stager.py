@@ -1,4 +1,3 @@
-import json
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,6 +6,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel
 
 from unstructured_ingest.utils import ndjson
+from unstructured_ingest.utils.data_prep import get_data, write_data
 from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 
@@ -43,16 +43,13 @@ class UploadStager(BaseProcess, ABC):
                     writer.f.flush()
 
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
-        with input_file.open() as in_f:
-            elements_contents = json.load(in_f)
+        elements_contents = get_data(path=input_file)
 
         conformed_elements = [
             self.conform_dict(element_dict=element, file_data=file_data)
             for element in elements_contents
         ]
-
-        with open(output_file, "w") as out_f:
-            json.dump(conformed_elements, out_f, indent=2)
+        write_data(path=output_file, data=conformed_elements)
 
     def run(
         self,

@@ -2,7 +2,7 @@ import itertools
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
+from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
 
 import pandas as pd
 
@@ -163,7 +163,9 @@ def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
             raise IOError("Unsupported file type: {path}")
 
 
-def get_data(path: Path) -> list[dict]:
+def get_data(path: Union[Path, str]) -> list[dict]:
+    if isinstance(path, str):
+        path = Path(path)
     try:
         return get_data_by_suffix(path=path)
     except Exception as e:
