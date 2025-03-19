@@ -232,7 +232,7 @@ class ZendeskIndexer(Indexer):
 
             yield batched_file_data
 
-    async def run_async(self, **kwargs: Any) -> AsyncGenerator[FileData, None]:
+    async def run_async(self, **kwargs: Any) -> AsyncGenerator[ZendeskBatchFileData, None]:
         """Determines item type and processes accordingly asynchronously."""
         item_type = self.index_config.item_type
         batch_size = self.index_config.batch_size
@@ -299,6 +299,9 @@ class ZendeskDownloader(Downloader):
         import aiofiles
         import bs4
 
+        if not isinstance(ZendeskBatchFileData):
+            raise TypeError(f"batch_file_data is of type{batch_file_data}, not of ZendeskBatchFileData")
+
         # Determine the download path
         download_path = self.get_download_path(batch_file_data)
 
@@ -309,6 +312,7 @@ class ZendeskDownloader(Downloader):
 
         async with aiofiles.open(download_path, "a", encoding="utf8") as f:
             for article in batch_file_data.batch_items:
+                
                 html_data_str = article.content
                 soup = bs4.BeautifulSoup(html_data_str, "html.parser")
 
