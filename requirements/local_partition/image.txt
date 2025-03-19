@@ -381,7 +381,7 @@ unstructured-client==0.31.1
     # via
     #   -c ./local_partition/../common/constraints.txt
     #   unstructured
-unstructured-inference==0.8.9
+unstructured-inference==0.8.10
     # via unstructured
 unstructured-pytesseract==0.3.15
     # via unstructured

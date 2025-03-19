@@ -4,7 +4,7 @@ certifi==2025.1.31
     # via requests
 charset-normalizer==3.4.1
     # via requests
-databricks-sql-connector==4.0.0
+databricks-sql-connector==4.0.1
     # via -r ./connectors/databricks-delta-tables.in
 et-xmlfile==2.0.0
     # via openpyxl
@@ -15,7 +15,6 @@ lz4==4.4.3
 numpy==1.26.4
     # via
     #   -c ./connectors/../common/constraints.txt
-    #   databricks-sql-connector
     #   pandas
 oauthlib==3.2.2
     # via databricks-sql-connector
@@ -24,7 +23,9 @@ openpyxl==3.1.5
 pandas==2.2.3
     # via databricks-sql-connector
 python-dateutil==2.9.0.post0
-    # via pandas
+    # via
+    #   databricks-sql-connector
+    #   pandas
 pytz==2025.1
     # via pandas
 requests==2.32.3

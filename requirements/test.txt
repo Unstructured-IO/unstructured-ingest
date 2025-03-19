@@ -7,13 +7,17 @@ beautifulsoup4==4.13.3
 bs4==0.0.2
     # via -r ./test.in
 cachetools==5.5.2
-    # via google-auth
+    # via
+    #   google-auth
+    #   pyiceberg
 certifi==2025.1.31
     # via requests
 cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.1
     # via requests
+click==8.1.8
+    # via pyiceberg
 coverage[toml]==7.7.0
     # via pytest-cov
 cryptography==44.0.2
@@ -26,12 +30,13 @@ docstring-parser==0.16
     # via google-cloud-aiplatform
 exceptiongroup==1.2.2
     # via pytest
-faker==37.0.0
+faker==37.0.1
     # via -r ./test.in
 fsspec==2024.5.0
     # via
     #   -c ././common/constraints.txt
     #   -r ./test.in
+    #   pyiceberg
     #   universal-pathlib
 google-api-core[grpc]==2.24.2
     # via
@@ -88,6 +93,12 @@ idna==3.10
     # via requests
 iniconfig==2.0.0
     # via pytest
+markdown-it-py==3.0.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
+mmh3==5.1.0
+    # via pyiceberg
 numpy==1.26.4
     # via
     #   -c ././common/constraints.txt
@@ -125,9 +136,17 @@ pyasn1-modules==0.4.1
 pycparser==2.22
     # via cffi
 pydantic==2.10.6
-    # via google-cloud-aiplatform
+    # via
+    #   google-cloud-aiplatform
+    #   pyiceberg
 pydantic-core==2.27.2
     # via pydantic
+pygments==2.19.1
+    # via rich
+pyiceberg==0.9.0
+    # via -r ./test.in
+pyparsing==3.2.1
+    # via pyiceberg
 pytest==8.3.5
     # via
     #   -r ./test.in
@@ -140,7 +159,7 @@ pytest==8.3.5
     #   pytest-tagging
 pytest-asyncio==0.25.3
     # via -r ./test.in
-pytest-check==2.5.0
+pytest-check==2.5.1
     # via -r ./test.in
 pytest-cov==6.0.0
     # via -r ./test.in
@@ -153,21 +172,32 @@ pytest-mock==3.14.0
 pytest-tagging==1.6.0
     # via -r ./test.in
 python-dateutil==2.9.0.post0
-    # via google-cloud-bigquery
+    # via
+    #   google-cloud-bigquery
+    #   strictyaml
 requests==2.32.3
     # via
     #   docker
     #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-storage
+    #   pyiceberg
+rich==13.9.4
+    # via pyiceberg
 rsa==4.9
     # via google-auth
 shapely==2.0.7
     # via google-cloud-aiplatform
 six==1.17.0
     # via python-dateutil
+sortedcontainers==2.4.0
+    # via pyiceberg
 soupsieve==2.6
     # via beautifulsoup4
+strictyaml==1.7.3
+    # via pyiceberg
+tenacity==9.0.0
+    # via pyiceberg
 tomli==2.2.1
     # via
     #   coverage
@@ -178,6 +208,7 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   pytest-check
+    #   rich
 tzdata==2025.1
     # via faker
 universal-pathlib==0.2.6
