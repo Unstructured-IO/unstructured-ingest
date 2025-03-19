@@ -299,7 +299,7 @@ class ZendeskDownloader(Downloader):
         import aiofiles
         import bs4
 
-        if not isinstance(ZendeskBatchFileData):
+        if not isinstance(batch_file_data, ZendeskBatchFileData):
             raise TypeError(f"batch_file_data is of type{batch_file_data}, not of ZendeskBatchFileData")
 
         # Determine the download path
