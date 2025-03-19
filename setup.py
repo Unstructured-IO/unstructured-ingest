@@ -102,6 +102,7 @@ connectors_reqs = {
     "gitlab": load_requirements("requirements/connectors/gitlab.in"),
     "google-drive": load_requirements("requirements/connectors/google-drive.in"),
     "hubspot": load_requirements("requirements/connectors/hubspot.in"),
+    "ibm-watsonx-data": load_requirements("requirements/connectors/ibm-watsonx-data.in"),
     "jira": load_requirements("requirements/connectors/jira.in"),
     "kafka": load_requirements("requirements/connectors/kafka.in"),
     "kdbai": load_requirements("requirements/connectors/kdbai.in"),
