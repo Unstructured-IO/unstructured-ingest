@@ -48,10 +48,11 @@ class ZendeskFileDataSourceMetadata(FileDataSourceMetadata):
     as the source metadata.
     """
 
+
 class ZendeskBatchFileData(BatchFileData):
     additional_metadata: ZendeskAdditionalMetadata
     metadata: ZendeskFileDataSourceMetadata
-    batch_items: List[Union[ZendeskBatchItemArticle,ZendeskBatchItemTicket]]  
+    batch_items: List[Union[ZendeskBatchItemArticle, ZendeskBatchItemTicket]]
 
     @classmethod
     def cast(cls, file_data: "FileData", **kwargs) -> "ZendeskBatchFileData":
@@ -61,8 +62,10 @@ class ZendeskBatchFileData(BatchFileData):
         batch_items = file_data_dict.get("batch_items", [])
         item_type = file_data.additional_metadata.item_type
         if item_type == "articles":
-            cast_batch_items = [ZendeskBatchItemArticle.model_validate(item) for item in batch_items]
-        else: 
+            cast_batch_items = [
+                ZendeskBatchItemArticle.model_validate(item) for item in batch_items
+            ]
+        else:
             cast_batch_items = [ZendeskBatchItemTicket.model_validate(item) for item in batch_items]
 
         # Ensure the transformed batch_items are included in the final object
@@ -75,6 +78,7 @@ class ZendeskBatchItemArticle(BatchItem):
     title: str
     author_id: str
     content: str
+
 
 class ZendeskAccessConfig(AccessConfig):
     api_token: str = Field(
@@ -428,7 +432,7 @@ class ZendeskDownloader(Downloader):
 
         client = await self.connection_config.get_client_async()
         item_type = zendesk_filedata.metadata.record_locator["item_type"]
-        
+
         if item_type == "articles":
             return await self.handle_articles_async(client, zendesk_filedata)
         elif item_type == "tickets":
