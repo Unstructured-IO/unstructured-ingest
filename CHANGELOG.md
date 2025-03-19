@@ -1,6 +1,9 @@
-## 0.5.16
+## 0.5.16-dev0
 
-Zendesk fix for debug
+### Fixes 
+
+* **Fix databricks volumes table uploader precheck**
+* **Zendesk fix for debug**
 
 ## 0.5.15
 

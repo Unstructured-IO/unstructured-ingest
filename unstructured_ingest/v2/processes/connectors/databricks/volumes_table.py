@@ -61,8 +61,9 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                         self.upload_config.database, ", ".join(databases)
                     )
                 )
-            cursor.execute("SHOW TABLES")
+            cursor.execute(f"SHOW TABLES IN {self.upload_config.database}")
             table_names = [r[1] for r in cursor.fetchall()]
+            print(table_names)
             if self.upload_config.table_name not in table_names:
                 raise ValueError(
                     "Table {} not found in {}".format(
