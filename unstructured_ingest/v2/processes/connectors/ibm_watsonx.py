@@ -217,8 +217,9 @@ class IbmWatsonxUploader(SQLUploader):
     def _df_to_arrow_table(self, df: pd.DataFrame) -> "ArrowTable":
         import pyarrow as pa
 
-        # For some reason Iceberg doesn't accept null filled columns
-        # it will automatically fill missing columns with nulls
+        # Iceberg will automatically fill missing columns with nulls
+        # Iceberg will throw an error if the DataFrame column has only null values
+        # because it can't infer the type of the column and match it with the table schema
         return pa.Table.from_pandas(self._fit_to_schema(df, add_missing_columns=False))
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
