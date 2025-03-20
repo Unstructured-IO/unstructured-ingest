@@ -144,7 +144,12 @@ class ConfluenceIndexer(Indexer):
         """
         spaces = self.index_config.spaces
         if spaces:
-            return spaces
+            with self.connection_config.get_client() as client:
+                space_ids_and_keys = []
+                for space_key in spaces:
+                    space = client.get_space(space_key)
+                    space_ids_and_keys.append((space_key, space["id"]))
+                return space_ids_and_keys
         else:
             with self.connection_config.get_client() as client:
                 all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
