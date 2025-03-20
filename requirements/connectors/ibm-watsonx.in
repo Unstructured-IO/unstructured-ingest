@@ -3,3 +3,4 @@
 pyiceberg
 httpx
 pyarrow
+tenacity

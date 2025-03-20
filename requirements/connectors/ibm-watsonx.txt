@@ -65,7 +65,9 @@ sortedcontainers==2.4.0
 strictyaml==1.7.3
     # via pyiceberg
 tenacity==9.0.0
-    # via pyiceberg
+    # via
+    #   -r ./connectors/ibm-watsonx.in
+    #   pyiceberg
 typing-extensions==4.12.2
     # via
     #   anyio
