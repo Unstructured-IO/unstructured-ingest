@@ -1,5 +1,4 @@
 import time
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -8,8 +7,9 @@ from pydantic import Secret
 from pyiceberg.exceptions import CommitFailedException
 from pyiceberg.expressions import EqualTo
 from pytest_mock import MockerFixture
+from tenacity import RetryError
 
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
     CONNECTOR_TYPE as IBM_WATSONX_CONNECTOR_TYPE,
@@ -19,7 +19,6 @@ from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
     IbmWatsonxConnectionConfig,
     IbmWatsonxUploader,
     IbmWatsonxUploaderConfig,
-    _transaction_wrapper,
 )
 
 
@@ -59,7 +58,6 @@ def uploader_config():
     return IbmWatsonxUploaderConfig(
         namespace="test_namespace",
         table="test_table",
-        max_retries=3,
         record_id_key="test_record_id_key",
     )
 
@@ -119,10 +117,13 @@ def mock_data_table(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_transaction_wrapper(mocker: MockerFixture, mock_transaction: MagicMock):
-    return mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx._transaction_wrapper",
-        side_effect=lambda table, fn, max_retries, **kwargs: fn(mock_transaction, **kwargs),
+def test_df():
+    return pd.DataFrame(
+        {
+            "test_column_0": [True, False, True],
+            "test_column_1": [1, 2, 3],
+            "test_column_2": ["a", "b", "c"],
+        }
     )
 
 
@@ -255,12 +256,12 @@ def test_ibm_watsonx_connection_config_get_catalog_failure(
         "bearer_token",
         new="test_bearer_token",
     )
-    with pytest.raises(DestinationConnectionError):
+    with pytest.raises(ProviderError):
         with connection_config.get_catalog():
             pass
 
 
-def test_precheck_namespace_exists_table_exists(
+def test_ibm_watsonx_uploader_precheck_namespace_exists_table_exists(
     mock_get_catalog: MagicMock,
     mock_catalog: MagicMock,
     uploader: IbmWatsonxUploader,
@@ -271,23 +272,21 @@ def test_precheck_namespace_exists_table_exists(
     mock_catalog.table_exists.assert_called_once_with(("test_namespace", "test_table"))
 
 
-def test_precheck_namespace_does_not_exist(
+def test_ibm_watsonx_uploader_precheck_namespace_does_not_exist(
     mock_get_catalog: MagicMock,
     mock_catalog: MagicMock,
     uploader: IbmWatsonxUploader,
 ):
     mock_catalog.namespace_exists.return_value = False
 
-    with pytest.raises(
-        DestinationConnectionError, match="Namespace 'test_namespace' does not exist"
-    ):
+    with pytest.raises(UserError, match="Namespace 'test_namespace' does not exist"):
         uploader.precheck()
 
     mock_catalog.namespace_exists.assert_called_once_with("test_namespace")
     mock_catalog.table_exists.assert_not_called()
 
 
-def test_precheck_table_does_not_exist(
+def test_ibm_watsonx_uploader_precheck_table_does_not_exist(
     mock_get_catalog: MagicMock,
     mock_catalog: MagicMock,
     uploader: IbmWatsonxUploader,
@@ -295,7 +294,7 @@ def test_precheck_table_does_not_exist(
     mock_catalog.table_exists.return_value = False
 
     with pytest.raises(
-        DestinationConnectionError,
+        UserError,
         match="Table 'test_table' does not exist in namespace 'test_namespace'",
     ):
         uploader.precheck()
@@ -304,177 +303,155 @@ def test_precheck_table_does_not_exist(
     mock_catalog.table_exists.assert_called_once_with(("test_namespace", "test_table"))
 
 
-def test_transaction_wrapper_success(
-    mocker: MockerFixture, mock_table: MagicMock, mock_transaction: MagicMock
-):
-    mock_fn = mocker.MagicMock()
-
-    _transaction_wrapper(
-        mock_table, mock_fn, max_retries=3, test_arg_1="test_arg_1", test_arg_2="test_arg_2"
-    )
-
-    mock_table.transaction.assert_called_once()
-    mock_fn.assert_called_once_with(
-        mock_transaction, test_arg_1="test_arg_1", test_arg_2="test_arg_2"
-    )
-    mock_table.refresh.assert_not_called()
-
-
-def test_transaction_wrapper_succeed_after_refresh(
-    mocker: MockerFixture, mock_table: MagicMock, mock_transaction: MagicMock
-):
-    mock_fn = mocker.MagicMock()
-    mock_fn.side_effect = CommitFailedException
-
-    def remove_side_effect():
-        mock_fn.side_effect = None
-
-    mock_table.refresh.side_effect = remove_side_effect
-
-    _transaction_wrapper(mock_table, mock_fn, max_retries=3)
-
-    assert mock_table.transaction.call_count == 2
-    assert mock_fn.call_count == 2
-    assert mock_table.refresh.call_count == 1
-
-
-def test_transaction_wrapper_other_exception(
-    mocker: MockerFixture, mock_table: MagicMock, mock_transaction: MagicMock
-):
-    mock_fn = mocker.MagicMock()
-    mock_fn.side_effect = Exception("Test exception")
-
-    with pytest.raises(
-        DestinationConnectionError, match="Failed to append data to table: Test exception"
-    ):
-        _transaction_wrapper(mock_table, mock_fn, max_retries=3)
-
-    mock_table.transaction.assert_called_once()
-    mock_fn.assert_called_once_with(mock_transaction)
-    mock_table.refresh.assert_not_called()
-
-
-def test_transaction_wrapper_max_retries_exceeded(
-    mocker: MockerFixture, mock_table: MagicMock, mock_transaction: MagicMock
-):
-
-    mock_fn = mocker.MagicMock()
-    mock_fn.side_effect = CommitFailedException
-
-    with pytest.raises(
-        DestinationConnectionError, match="Failed to commit transaction after 3 retries"
-    ):
-        _transaction_wrapper(mock_table, mock_fn, max_retries=3)
-
-    assert mock_table.transaction.call_count == 3
-    assert mock_fn.call_count == 3
-    assert mock_table.refresh.call_count == 3
-
-
-def test_upload_data_success(
+def test_ibm_watsonx_uploader_upload_data_table_success(
     mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
-    mock_get_table: MagicMock,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
-    mock_transaction_wrapper: MagicMock,
     file_data: FileData,
 ):
-    mock_column_names = mocker.MagicMock()
-    mock_column_names.column_names = ["test_column_1", "test_record_id_key", "test_column_2"]
-    mock_transaction._table.schema.return_value = mock_column_names
+    mocker.patch("tenacity.retry", return_value=lambda x: x)
+    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
 
-    uploader.upload_data(mock_table, mock_data_table, file_data)
+    uploader._upload_data_table(mock_table, mock_data_table, file_data)
 
-    mock_transaction_wrapper.assert_called_once_with(
-        table=mock_table,
-        fn=mocker.ANY,
-        max_retries=uploader.upload_config.max_retries,
-        file_data=file_data,
-        data_table=mock_data_table,
-    )
     mock_transaction.delete.assert_called_once_with(
         delete_filter=EqualTo("test_record_id_key", "test_identifier")
     )
     mock_transaction.append.assert_called_once_with(mock_data_table)
 
 
-def test_upload_data_success_no_delete(
+def test_ibm_watsonx_uploader_upload_data_table_success_no_delete(
+    caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
-    mock_get_table: MagicMock,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
-    mock_transaction_wrapper: MagicMock,
     file_data: FileData,
 ):
-    mock_column_names = mocker.MagicMock()
-    mock_column_names.column_names = ["test_column_1", "test_column_2"]
-    mock_transaction._table.schema.return_value = mock_column_names
+    mocker.patch("tenacity.retry", return_value=lambda x: x)
+    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=False)
 
-    uploader.upload_data(mock_table, mock_data_table, file_data)
+    uploader._upload_data_table(mock_table, mock_data_table, file_data)
 
-    mock_transaction_wrapper.assert_called_once_with(
-        table=mock_table,
-        fn=mocker.ANY,
-        max_retries=uploader.upload_config.max_retries,
-        file_data=file_data,
-        data_table=mock_data_table,
-    )
     mock_transaction.delete.assert_not_called()
     mock_transaction.append.assert_called_once_with(mock_data_table)
+    assert (
+        "Table doesn't contain expected record id column test_record_id_key, skipping delete"
+        in caplog.text
+    )
 
 
-def test_get_data_table_success(
+def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
     mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
 ):
-    mock_df = pd.DataFrame(
-        {
-            "test_column_0": [True, False, True],
-            "test_column_1": [1, 2, 3],
-            "test_column_2": ["a", "b", "c"],
-        }
-    )
-    mock_table.schema.return_value.column_names = [
-        "test_column_1",
-        "test_column_2",
-        "test_column_3",
-    ]
-    mock_get_data_df = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.get_data_df",
-        return_value=mock_df,
+    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
+    mock_transaction.append.side_effect = CommitFailedException()
+
+    with pytest.raises(RetryError):
+        uploader._upload_data_table(mock_table, mock_data_table, file_data)
+    assert mock_table.refresh.call_count == 5
+
+
+def test_ibm_watsonx_uploader_upload_data_table_exception(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
+    mock_transaction.append.side_effect = Exception()
+
+    with pytest.raises(ProviderError):
+        uploader._upload_data_table(mock_table, mock_data_table, file_data)
+    assert mock_table.refresh.call_count == 0
+
+
+def test_ibm_watsonx_uploader_df_to_arrow_table(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+):
+    mock_fit_to_schema = mocker.patch.object(
+        IbmWatsonxUploader, "_fit_to_schema", return_value=test_df
     )
 
-    path = Path("/tmp/test_file.pdf")
-    result = uploader._get_data_table(mock_table, path)
+    result = uploader._df_to_arrow_table(test_df)
 
-    mock_get_data_df.assert_called_once_with(path)
-    assert len(result.column_names) == 2
+    mock_fit_to_schema.assert_called_once_with(test_df, add_missing_columns=False)
+    assert len(result.column_names) == 3
+    assert "test_column_0" in result.column_names
     assert "test_column_1" in result.column_names
     assert "test_column_2" in result.column_names
 
 
-def test_get_data_table_no_common_columns(
+def test_ibm_watsonx_uploader_can_delete_column_exists(
     mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
-    mock_table: MagicMock,
 ):
-    mock_df = pd.DataFrame({"test_column_4": [1, 2, 3], "test_column_5": ["a", "b", "c"]})
-    mock_table.schema.return_value.column_names = [
-        "test_column_1",
-        "test_column_2",
-        "test_column_3",
-    ]
-    mock_get_data_df = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.get_data_df",
-        return_value=mock_df,
+    mocker.patch.object(
+        IbmWatsonxUploader, "get_table_columns", return_value=["test_record_id_key"]
     )
 
-    path = Path("/tmp/test_file.pdf")
-    with pytest.raises(ValueError, match="Iceberg table schema doesn't contain proper columns"):
-        uploader._get_data_table(mock_table, path)
-    mock_get_data_df.assert_called_once_with(path)
+    assert uploader.can_delete() is True
+
+
+def test_ibm_watsonx_uploader_can_delete_column_does_not_exist(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+):
+    mocker.patch.object(IbmWatsonxUploader, "get_table_columns", return_value=["other_column"])
+
+    assert uploader.can_delete() is False
+
+
+def test_ibm_watsonx_uploader_get_table_columns_cache(
+    uploader: IbmWatsonxUploader,
+):
+    uploader._columns = ["cached_column"]
+
+    result = uploader.get_table_columns()
+
+    assert result == ["cached_column"]
+
+
+def test_ibm_watsonx_uploader_get_table_columns_no_cache(
+    uploader: IbmWatsonxUploader,
+    mock_get_table: MagicMock,
+    mock_table: MagicMock,
+):
+    uploader._columns = None
+    mock_table.schema.return_value.column_names = ["column_1", "column_2"]
+
+    result = uploader.get_table_columns()
+
+    mock_get_table.assert_called_once()
+    assert result == ["column_1", "column_2"]
+    assert uploader._columns == ["column_1", "column_2"]
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_success(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(IbmWatsonxUploader, "_upload_data_table")
+
+    uploader.upload_dataframe(test_df, file_data)
+
+    mock_get_table.assert_called_once()
+    mock_upload_data_table.assert_called_once_with(mock_table, mock_data_table, file_data)
