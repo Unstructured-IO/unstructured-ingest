@@ -135,54 +135,191 @@ class ConfluenceIndexer(Indexer):
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to connect to Confluence: {e}")
 
-    def _get_space_ids(self) -> List[str]:
+    def _get_space_ids_and_keys(self): # -> List[(str, int)]:
+        """
+        Get a list of space IDs and keys from Confluence.
+        Example space ID (int): 98503 
+        Example space key (str): "SD"
+        """
         spaces = self.index_config.spaces
         if spaces:
             return spaces
         else:
             with self.connection_config.get_client() as client:
                 all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
-            space_ids = [space["key"] for space in all_spaces["results"]]
-            return space_ids
+            space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces["results"]]
+            return space_ids_and_keys
 
-    def _get_docs_ids_within_one_space(self, space_id: str) -> List[dict]:
+    def _get_docs_ids_within_one_space(self, space_key: str) -> List[dict]:
         with self.connection_config.get_client() as client:
             pages = client.get_all_pages_from_space(
-                space=space_id,
+                space=space_key,
                 start=0,
                 limit=self.index_config.max_num_of_docs_from_each_space,
                 expand=None,
-                content_type="page",
+                content_type="page", # blogpost and comment types not currently supported
                 status=None,
             )
-        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
+        doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in pages]
         return doc_ids
+
+    def _get_permissions_for_doc(self, space_id: int, doc_id: str, space_key: str) -> Optional[List[dict]]:
+        from requests.exceptions import HTTPError
+        
+        def parse_permissions(doc_permissions: dict, space_permissions: list):
+            # space: list of SpacePermissionAssignment
+            # doc: ContentRestrictionArray
+            
+            # get doc perms. if they exist, they will override space level, and only delete comes from space
+            # if they dont exist, use space perms for read and write
+            # if space perms dont exist, use default perms for read and write
+
+            normalized_perms_dict = {}
+
+            # flag for if page restrictions are enabled
+            page_restrictions_found = False
+
+            for action, permissions in doc_permissions.items():
+                restrictions_dict = permissions.get("restrictions", {})
+
+                for entity_type, entity_data in restrictions_dict.items():
+                    for entity in entity_data.get("results"):
+                        page_restrictions_found = True
+                        if entity_type == "user":
+                            entity_id = entity["accountId"]
+                        elif entity_type == "group":
+                            entity_id = entity["id"]
+
+                        if entity_id in normalized_perms_dict:
+                            # Update existing entry
+                            print(f"DOC update id {entity_id} with action {action}")
+                            if action not in normalized_perms_dict[entity_id]["role"]:
+                                normalized_perms_dict[entity_id]["role"].add(action)
+                    
+                        else:
+                            # Create a new permission entry
+                            print(f"DOC create id {entity_id} with action {action}")
+                            normalized_perms_dict[entity_id] = {
+                                "type": entity_type,
+                                "id": entity_id,
+                                "email_address": entity.get("email", None),
+                                "role": {action}, # set
+                            }
+            
+            print("page_restrictions_found", page_restrictions_found)
+            
+            for space_perm in space_permissions:
+                if space_perm["operation"]["targetType"] in ["page", "space"]:
+                    print("SPACE PSPERM: ", space_perm)
+                    # if page restrictions are not enabled, use all space permissions
+                    if not page_restrictions_found:
+                        relevant_space_permissions = ["read", "administer", "delete"]
+                        if (space_operation := space_perm["operation"]["key"]) in relevant_space_permissions:
+                            space_entity_id = space_perm["principal"]["id"]
+                            space_operation = {space_operation}
+                            if space_operation == {"administer"}:
+                                space_operation = {"read", "update"}
+                            if space_entity_id in normalized_perms_dict:
+                                print(f"SPACE update id {space_entity_id} with action {space_operation}")
+                                normalized_perms_dict[space_entity_id]["role"].update(space_operation)
+                            else:
+                                # Create a new entry
+                                print(f"SPACE create id {space_entity_id} with action {space_operation}")
+                                normalized_perms_dict[space_entity_id] = {
+                                    "type": space_perm["principal"]["type"],
+                                    "id": space_entity_id,
+                                    "email_address": None,
+                                    "role": space_operation,
+                                }
+                    # add space level delete info
+                    else: 
+                        space_operation = "delete"
+                        if space_perm["operation"]["key"] == space_operation:
+                            space_entity_id = space_perm["principal"]["id"]
+                            if space_entity_id in normalized_perms_dict:
+                                print(f"SPACED update id {space_entity_id} w delete")
+                                normalized_perms_dict[space_entity_id]["role"].add(space_operation)
+                            else:
+                                print(f"SPACED create id {space_entity_id} w delete")
+                                normalized_perms_dict[space_entity_id] = {
+                                    "type": space_perm["principal"]["type"],
+                                    "id": space_entity_id,
+                                    "email_address": None,
+                                    "role": set([space_operation]),
+                                }
+            
+            # turn sets into lists
+            for perm_data in normalized_perms_dict.values():
+                perm_data["role"] = list(perm_data["role"])
+            
+            return list(normalized_perms_dict.values())
+        
+        
+        with self.connection_config.get_client() as client:
+            try:
+                print("ENTERED TRY")
+                # space permissions
+                space_permissions = []
+                space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
+                space_permissions.extend(space_permissions_result["results"])
+                if space_permissions_result["_links"].get("next"): # pagination
+                    print("got a next")
+                    while space_permissions_result.get("next"):
+                        space_permissions_result = client.get(space_permissions_result["next"])
+                        space_permissions.extend(space_permissions_result["results"])
+                
+                print(f"GOT space_permissions for id {space_id} key {space_key}: ")
+                for space_perm in space_permissions:
+                    if space_perm["operation"]["targetType"] in ["page", "space"]:
+                        print("OSPACE PSPERM: ", space_perm)
+                # check for read or administer space -> page read
+                # check for administer space -> page write
+
+                doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+                print(f"GOT doc_permissions for doc {doc_id}: ", doc_permissions)
+
+                parsed_perms = parse_permissions(doc_permissions, space_permissions)
+                print("PARSED DOC PERMS: ", parsed_perms)
+
+
+            except HTTPError as e:
+                # skip writing any permission metadata
+                logger.debug(f"Could not retrieve permissions for doc {doc_id} in space {space_id}: {e}")
+                return None
+      
+        # TODO adjust permissions_data FileDataSourceMetadata type to match
+        return parsed_perms
+
 
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
-        space_ids = self._get_space_ids()
-        for space_id in space_ids:
-            doc_ids = self._get_docs_ids_within_one_space(space_id)
+        space_ids_and_keys = self._get_space_ids_and_keys()
+        # for space_id in space_ids:
+        # for space_id, space_id_real in zip(space_ids, space_ids_real):
+        for space_key, space_id in space_ids_and_keys:
+            doc_ids = self._get_docs_ids_within_one_space(space_key)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
+                # print(self._get_permissions_for_doc(space_id, doc_id), "runperms")
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
+                    permissions_data=self._get_permissions_for_doc(space_id, doc_id, space_key),
                     record_locator={
-                        "space_id": space_id,
+                        "space_id": space_key,
                         "document_id": doc_id,
                     },
                 )
                 additional_metadata = {
-                    "space_id": space_id,
+                    "space_id": space_key,
                     "document_id": doc_id,
                 }
 
                 # Construct relative path and filename
                 filename = f"{doc_id}.html"
-                relative_path = str(Path(space_id) / filename)
+                relative_path = str(Path(space_key) / filename)
 
                 source_identifiers = SourceIdentifiers(
                     filename=filename,
