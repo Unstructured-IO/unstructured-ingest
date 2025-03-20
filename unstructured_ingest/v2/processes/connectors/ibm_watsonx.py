@@ -173,9 +173,6 @@ class IbmWatsonxUploadStager(SQLUploadStager):
 class IbmWatsonxUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
-    max_retries: int = Field(
-        default=5, description="Maximum number of retries to upload data", ge=2, le=10
-    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="Searchable key to find entries for the same record on previous runs",
