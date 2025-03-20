@@ -18,5 +18,3 @@ cryptography
 fsspec
 vertexai
 pyiceberg
-httpx
-pyarrow
