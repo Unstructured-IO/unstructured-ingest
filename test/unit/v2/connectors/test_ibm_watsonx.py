@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 from pydantic import Secret
 from pyiceberg.exceptions import CommitFailedException
-from pyiceberg.expressions import EqualTo
 from pytest_mock import MockerFixture
 from tenacity import RetryError
 
