@@ -1,3 +1,7 @@
+## 0.5.17
+
+* **Add permission metadata to Confluence source connector**
+
 ## 0.5.16
 
 ### Fixes 
