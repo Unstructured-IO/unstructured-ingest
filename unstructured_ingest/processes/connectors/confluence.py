@@ -170,142 +170,78 @@ class ConfluenceIndexer(Indexer):
             # space: list of SpacePermissionAssignment
             # doc: ContentRestrictionArray
             
-            # get doc perms. if they exist, they will override space level, and only delete comes from space
-            # if they dont exist, use space perms for read and write
-            # if space perms dont exist, use default perms for read and write
+            # get doc perms. if they exist, they will override space level
+            # delete only comes from space
+            # if a read/write doc perm set dne, use space perms for read and write
 
             normalized_perms_dict = {}
-
-            # flag for if page restrictions are enabled
-            page_restrictions_found = any(
-                permissions.get("restrictions", {}).get("user", {}).get("results") or
-                permissions.get("restrictions", {}).get("group", {}).get("results")
-                for permissions in doc_permissions.values()
+            
+            # Separate flags to track if view or edit is restricted at the page level
+            page_view_restricted = bool(
+                doc_permissions.get("read", {}).get("restrictions", {}).get("user", {}).get("results") or
+                doc_permissions.get("read", {}).get("restrictions", {}).get("group", {}).get("results")
             )
 
-            if page_restrictions_found:
-                for action, permissions in doc_permissions.items():
-                    restrictions_dict = permissions.get("restrictions", {})
+            page_edit_restricted = bool(
+                doc_permissions.get("update", {}).get("restrictions", {}).get("user", {}).get("results") or
+                doc_permissions.get("update", {}).get("restrictions", {}).get("group", {}).get("results")
+            )
 
-                    for entity_type, entity_data in restrictions_dict.items():
-                        for entity in entity_data.get("results"):
-                            if entity_type == "user":
-                                entity_id = entity["accountId"]
-                            elif entity_type == "group":
-                                entity_id = entity["id"]
+            for action, permissions in doc_permissions.items():
+                restrictions_dict = permissions.get("restrictions", {})
 
-                            print(f"DOC id {entity_id} with action {action}")
-                            doc_perm_entry = normalized_perms_dict.setdefault(
-                                entity_id,
-                                {"type": entity_type, "id": entity_id, "email_address": entity.get("email", None), "role": set()},
-                            )
-                            doc_perm_entry["role"].add(action)
+                for entity_type, entity_data in restrictions_dict.items():
+                    for entity in entity_data.get("results"):
+                        if entity_type == "user":
+                            entity_id = entity["accountId"]
+                        elif entity_type == "group":
+                            entity_id = entity["id"]
+
+                        print(f"DOC id {entity_id} with action {action}")
+                        doc_perm_entry = normalized_perms_dict.setdefault(
+                            entity_id,
+                            {"type": entity_type, "id": entity_id, "email_address": entity.get("email", None), "role": set()},
+                        )
+                        doc_perm_entry["role"].add(action)
+                        # edit permission implies view permission
+                        if action == "update":
+                            doc_perm_entry["role"].add("read")
 
             
             for space_perm in space_permissions:
                 space_operation = space_perm["operation"]["key"]
                 space_target_type = space_perm["operation"]["targetType"]
+                space_entity_id = space_perm["principal"]["id"]
+                space_entity_type = space_perm["principal"]["type"]
 
                 if space_target_type == "space":
-                    space_entity_id = space_perm["principal"]["id"]
-                    if not page_restrictions_found:
-                        if space_operation in {"read", "administer"}:
-                            print("SPACE SPERM: ", space_perm)
-                            role = {"read"} if space_operation == "read" else {"read", "update"}
-                            print(f"SPACE id {space_entity_id} with action {role}")
-                            perm_entry = normalized_perms_dict.setdefault(
-                                space_entity_id, {"type": space_perm["principal"]["type"], "id": space_entity_id, "email_address": None, "role": set()}
-                            )
-                            perm_entry["role"].update(role)
+                    if space_operation == "read" and not page_view_restricted:
+                        # Apply space-level view permissions if no page restrictions exist
+                        print("SPACE SRPERM: ", space_perm)
+                        print(f"SPACESR id {space_entity_id} with read view. doc view {page_view_restricted}, edit {page_edit_restricted}")
+                        perm_entry = normalized_perms_dict.setdefault(
+                            space_entity_id, {"type": space_entity_type, "id": space_entity_id, "email_address": None, "role": set()}
+                        )
+                        perm_entry["role"].add("read")
+
+                    elif space_operation == "administer":
+                        # Administer permission includes view + edit
+                        print("SPACE SAPERM: ", space_perm)
+                        print(f"SPACESA id {space_entity_id} with admin. doc view {page_view_restricted}, edit {page_edit_restricted}")
+                        perm_entry = normalized_perms_dict.setdefault(
+                            space_entity_id, {"type": space_entity_type, "id": space_entity_id, "email_address": None, "role": set()}
+                        )
+                        if not page_view_restricted:
+                            perm_entry["role"].add("read") 
+                            if not page_edit_restricted:
+                                perm_entry["role"].add("update") 
                 
-                # always add "delete page" space permissions
+                # Add the "delete page" space permissions if there are other page permissions
                 elif space_target_type == "page" and space_operation == "delete":
                     print("SPACE PDPERM: ", space_perm)
-                    space_entity_id = space_perm["principal"]["id"]
                     print(f"SPACED id {space_entity_id} with delete")
-                    perm_entry = normalized_perms_dict.setdefault(
-                        space_entity_id, {"type": space_perm["principal"]["type"], "id": space_entity_id, "email_address": None, "role": set()}
-                    )
-                    perm_entry["role"].add("delete")
-
-                # if space_perm["operation"]["targetType"] == "space":
-                #     print("SPACE PSPERM: ", space_perm)
-                #     relevant_space_permissions = ["read", "administer"]
-                #     if (space_operation := space_perm["operation"]["key"]) in relevant_space_permissions:
-                #         space_entity_id = space_perm["principal"]["id"]
-                #         if space_entity_id in normalized_perms_dict:
-                #             print(f"SPACE update id {space_entity_id} with action {space_operation}")
-                #             normalized_perms_dict[space_entity_id]["role"].update(space_operation)
-                #         else:
-                #             # Create a new entry
-                #             print(f"SPACE create id {space_entity_id} with action {space_operation}")
-                #             normalized_perms_dict[space_entity_id] = {
-                #                 "type": space_perm["principal"]["type"],
-                #                 "id": space_entity_id,
-                #                 "email_address": None,
-                #                 "role": space_operation,
-                #             }
-                
-            # # merge in "delete page" space permissions
-            # for space_perm in space_permissions:
-            #     space_operation = "delete"
-            #     if space_perm["operation"]["key"] == space_operation:
-            #         space_entity_id = space_perm["principal"]["id"]
-            #         if space_entity_id in normalized_perms_dict:
-            #             print(f"SPACED update id {space_entity_id} w delete")
-            #             normalized_perms_dict[space_entity_id]["role"].add(space_operation)
-            #         else:
-            #             print(f"SPACED create id {space_entity_id} w delete")
-            #             normalized_perms_dict[space_entity_id] = {
-            #                 "type": space_perm["principal"]["type"],
-            #                 "id": space_entity_id,
-            #                 "email_address": None,
-            #                 "role": set([space_operation]),
-            #             }
-
-
-
-            
-            
-            # for space_perm in space_permissions:
-            #     if space_perm["operation"]["targetType"] in ["page", "space"]:
-            #         print("SPACE PSPERM: ", space_perm)
-            #         # if page restrictions are not enabled, use all space permissions
-            #         if not page_restrictions_found:
-            #             relevant_space_permissions = ["read", "administer", "delete"]
-            #             if (space_operation := space_perm["operation"]["key"]) in relevant_space_permissions:
-            #                 space_entity_id = space_perm["principal"]["id"]
-            #                 space_operation = {space_operation}
-            #                 if space_operation == {"administer"}:
-            #                     space_operation = {"read", "update"}
-            #                 if space_entity_id in normalized_perms_dict:
-            #                     print(f"SPACE update id {space_entity_id} with action {space_operation}")
-            #                     normalized_perms_dict[space_entity_id]["role"].update(space_operation)
-            #                 else:
-            #                     # Create a new entry
-            #                     print(f"SPACE create id {space_entity_id} with action {space_operation}")
-            #                     normalized_perms_dict[space_entity_id] = {
-            #                         "type": space_perm["principal"]["type"],
-            #                         "id": space_entity_id,
-            #                         "email_address": None,
-            #                         "role": space_operation,
-            #                     }
-            #         # add space level delete info
-            #         else: 
-            #             space_operation = "delete"
-            #             if space_perm["operation"]["key"] == space_operation:
-            #                 space_entity_id = space_perm["principal"]["id"]
-            #                 if space_entity_id in normalized_perms_dict:
-            #                     print(f"SPACED update id {space_entity_id} w delete")
-            #                     normalized_perms_dict[space_entity_id]["role"].add(space_operation)
-            #                 else:
-            #                     print(f"SPACED create id {space_entity_id} w delete")
-            #                     normalized_perms_dict[space_entity_id] = {
-            #                         "type": space_perm["principal"]["type"],
-            #                         "id": space_entity_id,
-            #                         "email_address": None,
-            #                         "role": set([space_operation]),
-            #                     }
+                    if space_entity_id in normalized_perms_dict:
+                        perm_entry["role"].add("delete")
             
             # turn sets into sorted lists for consistency and json serialization
             for perm_data in normalized_perms_dict.values():
