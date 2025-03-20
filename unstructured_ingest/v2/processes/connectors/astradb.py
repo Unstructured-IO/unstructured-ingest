@@ -112,7 +112,6 @@ def get_astra_collection(
     collection_name: str,
     keyspace: str,
 ) -> "AstraDBCollection":
-
     astra_db = get_astra_db(connection_config=connection_config, keyspace=keyspace)
 
     # astradb will return a collection object in all cases (even if it doesn't exist)
@@ -315,6 +314,7 @@ class AstraDBUploadStager(UploadStager):
                     text_as_html, MAX_CONTENT_PARAM_BYTE_SIZE
                 )
             metadata["original_elements"] = format_and_truncate_orig_elements(element_dict)
+            metadata.pop("orig_elements", None)
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         self.truncate_dict_elements(element_dict)

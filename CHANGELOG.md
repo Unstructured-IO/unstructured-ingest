@@ -2,6 +2,7 @@
 
 ### Fixes 
 
+* **Do not output `orig_elements` for astradb** `original_elements` has the correctly truncated field
 * **Fix databricks volumes table uploader precheck**
 * **Zendesk fix for debug**
 
