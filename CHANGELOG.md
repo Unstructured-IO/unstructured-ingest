@@ -1,3 +1,7 @@
+## 0.5.16
+
+Zendesk fix for debug
+
 ## 0.5.15
 
 ### Fixes 
