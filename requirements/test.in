@@ -18,3 +18,4 @@ cryptography
 fsspec
 vertexai
 pyiceberg
+pyarrow
