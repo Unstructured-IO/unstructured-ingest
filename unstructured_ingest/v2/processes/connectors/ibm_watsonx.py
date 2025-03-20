@@ -1,12 +1,14 @@
+import logging
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Generator, Tuple, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 
+import pandas as pd
 from pydantic import Field, Secret
+from tenacity import before_log, retry, retry_if_exception_type, stop_after_attempt, wait_random
 
-from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -15,7 +17,6 @@ from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
     FileData,
-    Uploader,
     UploaderConfig,
 )
 from unstructured_ingest.v2.logger import logger
@@ -23,13 +24,15 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.sql.sql import (
+    SQLUploader,
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
 
 if TYPE_CHECKING:
+    from pyarrow import Table as ArrowTable
     from pyiceberg.catalog.rest import RestCatalog
-    from pyiceberg.table import Table, Transaction
+    from pyiceberg.table import Table
 
 CONNECTOR_TYPE = "ibm_watsonx"
 
@@ -38,42 +41,8 @@ DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 
 
-@requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
-def _transaction_wrapper(table: "Table", fn: Callable, max_retries: int, **kwargs: Any) -> None:
-    """
-    Executes a function within a table transaction, with automatic retries on failure.
-
-    Args:
-        table (Table): The table object on which the transaction is performed.
-        fn (Callable): The function to execute within the transaction.
-        max_retries (int): The maximum number of retries allowed for the transaction.
-        **kwargs (Any): Additional keyword arguments to pass to the function `fn`.
-
-    Raises:
-        DestinationConnectionError: If the transaction fails after the maximum number of retries.
-    """
-    from pyiceberg.exceptions import CommitFailedException
-
-    current_retry = 0
-    # Automatic retries are not available in pyiceberg
-    # So, we are manually retrying failed transactions
-    while current_retry < max_retries:
-        try:
-            with table.transaction() as transaction:
-                fn(transaction, **kwargs)
-            break
-        except CommitFailedException:
-            current_retry += 1
-            table.refresh()
-            logger.debug(
-                f"Failed to commit transaction. Retrying! ({current_retry} / {max_retries})"
-            )
-        except Exception as e:
-            raise DestinationConnectionError(f"Failed to append data to table: {e}")
-    if current_retry >= max_retries:
-        raise DestinationConnectionError(
-            f"Failed to commit transaction after {max_retries} retries"
-        )
+class IcebergCommitFailedException(Exception):
+    """Failed to commit changes to the iceberg table."""
 
 
 class IbmWatsonxAccessConfig(AccessConfig):
@@ -89,7 +58,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
 
-    _bearer_token: Union[dict[str, Any], None] = None
+    _bearer_token: Optional[dict[str, Any]] = None
 
     @property
     def iceberg_url(self) -> str:
@@ -184,7 +153,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             )
         except Exception as e:
             logger.error(f"Failed to connect to catalog '{self.catalog}': {e}", exc_info=True)
-            raise DestinationConnectionError(f"Failed to connect to catalog '{self.catalog}': {e}")
+            raise ProviderError(f"Failed to connect to catalog '{self.catalog}': {e}")
 
         yield catalog
 
@@ -218,7 +187,7 @@ class IbmWatsonxUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class IbmWatsonxUploader(Uploader):
+class IbmWatsonxUploader(SQLUploader):
     connection_config: IbmWatsonxConnectionConfig
     upload_config: IbmWatsonxUploaderConfig
     connector_type: str = CONNECTOR_TYPE
@@ -226,11 +195,9 @@ class IbmWatsonxUploader(Uploader):
     def precheck(self) -> None:
         with self.connection_config.get_catalog() as catalog:
             if not catalog.namespace_exists(self.upload_config.namespace):
-                raise DestinationConnectionError(
-                    f"Namespace '{self.upload_config.namespace}' does not exist"
-                )
+                raise UserError(f"Namespace '{self.upload_config.namespace}' does not exist")
             if not catalog.table_exists(self.upload_config.table_identifier):
-                raise DestinationConnectionError(
+                raise UserError(
                     f"Table '{self.upload_config.table}' does not exist in namespace '{self.upload_config.namespace}'"  # noqa: E501
                 )
 
@@ -240,53 +207,71 @@ class IbmWatsonxUploader(Uploader):
             table = catalog.load_table(self.upload_config.table_identifier)
             yield table
 
+    def get_table_columns(self) -> list[str]:
+        if self._columns is None:
+            with self.get_table() as table:
+                self._columns = table.schema().column_names
+        return self._columns
+
+    def can_delete(self) -> bool:
+        return self.upload_config.record_id_key in self.get_table_columns()
+
     @requires_dependencies(["pyarrow"], extras="ibm-watsonx")
-    def _get_data_table(self, table: "Table", path: Path) -> Any:
+    def _df_to_arrow_table(self, df: pd.DataFrame) -> "ArrowTable":
         import pyarrow as pa
 
-        df = get_data_df(path)
-        table_column_names = table.schema().column_names
-        df_column_names = list(df.columns.values)
-        # Only upload columns that are common between the table and the dataframe
-        common_columns = list(set(table_column_names).intersection(df_column_names))
-        if not common_columns:
-            raise ValueError(
-                "Iceberg table schema doesn't contain proper columns"
-                f"Expected columns: {df_column_names}"
-                f"Found columns: {table_column_names}"
-            )
-        return pa.Table.from_pandas(df[common_columns])
+        # For some reason Iceberg doesn't accept null filled columns
+        # it will automatically fill missing columns with nulls
+        return pa.Table.from_pandas(self._fit_to_schema(df, add_missing_columns=False))
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
-    def upload_data(self, table: "Table", data_table: Any, file_data: FileData) -> None:
-        """
-        Uploads data to a specified table.
-
-        This method handles the process of uploading data to a table, including
-        deleting existing records if necessary and appending new data. It uses
-        a transaction wrapper to ensure the operation is retried if it fails.
-        """
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_random(),
+        retry=retry_if_exception_type(IcebergCommitFailedException),
+        before=before_log(logger, logging.DEBUG),
+    )
+    def _upload_data_table(
+        self, table: "Table", data_table: "ArrowTable", file_data: FileData
+    ) -> None:
+        from pyiceberg.exceptions import CommitFailedException
         from pyiceberg.expressions import EqualTo
 
-        def _upload_data(transaction: "Transaction", data_table: Any, file_data: FileData) -> None:
-            if self.upload_config.record_id_key in transaction._table.schema().column_names:
-                transaction.delete(
-                    delete_filter=EqualTo(self.upload_config.record_id_key, file_data.identifier)
-                )
-            transaction.append(data_table)
+        try:
+            with table.transaction() as transaction:
+                if self.can_delete():
+                    transaction.delete(
+                        delete_filter=EqualTo(
+                            self.upload_config.record_id_key, file_data.identifier
+                        )
+                    )
+                else:
+                    logger.warning(
+                        f"Table doesn't contain expected "
+                        f"record id column "
+                        f"{self.upload_config.record_id_key}, skipping delete"
+                    )
+                transaction.append(data_table)
+        except CommitFailedException as e:
+            table.refresh()
+            logger.debug(e)
+            raise IcebergCommitFailedException(e)
+        except Exception as e:
+            raise ProviderError(f"Failed to upload data to table: {e}")
 
-        _transaction_wrapper(
-            table=table,
-            fn=_upload_data,
-            max_retries=self.upload_config.max_retries,
-            file_data=file_data,
-            data_table=data_table,
-        )
+    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+        data_table = self._df_to_arrow_table(df)
+
+        with self.get_table() as table:
+            self._upload_data_table(table, data_table, file_data)
+
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        df = pd.DataFrame(data)
+        self.upload_dataframe(df=df, file_data=file_data)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with self.get_table() as table:
-            data_table = self._get_data_table(table, path)
-            self.upload_data(table, data_table, file_data)
+        df = get_data_df(path=path)
+        self.upload_dataframe(df=df, file_data=file_data)
 
 
 ibm_watsonx_destination_entry = DestinationRegistryEntry(

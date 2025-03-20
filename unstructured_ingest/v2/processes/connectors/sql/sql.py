@@ -323,7 +323,7 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
-    def _fit_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _fit_to_schema(self, df: pd.DataFrame, add_missing_columns: bool = True) -> pd.DataFrame:
         table_columns = self.get_table_columns()
         columns = set(df.columns)
         schema_fields = set(table_columns)
@@ -335,7 +335,7 @@ class SQLUploader(Uploader):
                 "Following columns will be dropped to match the table's schema: "
                 f"{', '.join(columns_to_drop)}"
             )
-        if missing_columns:
+        if missing_columns and add_missing_columns:
             logger.info(
                 "Following null filled columns will be added to match the table's schema:"
                 f" {', '.join(missing_columns)} "
@@ -343,8 +343,9 @@ class SQLUploader(Uploader):
 
         df = df.drop(columns=columns_to_drop)
 
-        for column in missing_columns:
-            df[column] = pd.Series()
+        if add_missing_columns:
+            for column in missing_columns:
+                df[column] = pd.Series()
         return df
 
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
