@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator, List, Optional
+from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
 from pydantic import Field, Secret
 
@@ -125,7 +125,6 @@ class ConfluenceIndexer(Indexer):
 
     def precheck(self) -> bool:
         try:
-
             # Attempt to retrieve a list of spaces with limit=1.
             # This should only succeed if all creds are valid
             with self.connection_config.get_client() as client:
@@ -136,9 +135,10 @@ class ConfluenceIndexer(Indexer):
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to connect to Confluence: {e}")
 
-    def _get_space_ids_and_keys(self):  # -> List[(str, int)]:
+    def _get_space_ids_and_keys(self) -> List[Tuple[str, int]]:
         """
         Get a list of space IDs and keys from Confluence.
+
         Example space ID (int): 98503
         Example space key (str): "SD"
         """
@@ -168,13 +168,18 @@ class ConfluenceIndexer(Indexer):
         from requests.exceptions import HTTPError
 
         def parse_permissions(doc_permissions: dict, space_permissions: list):
-            # space result: list of SpacePermissionAssignment
-            # doc result: ContentRestrictionArray
+            """
+            Parses document and space permissions to determine final user/group roles.
 
-            # Get document permissions. If they exist, they will override space level permissions.
-            # Otherwise, apply relevant space permissions (read, administer, delete)
+            :param doc_permissions: dict containing document-level restrictions
+            - doc_permissions type in Confluence: ContentRestrictionArray
+            :param space_permissions: list of space-level permission assignments
+            - space_permissions type in Confluence: list of SpacePermissionAssignment
+            :return: list of dictionaries with user/group permissions
 
-            normalized_perms_dict = {}
+            Get document permissions. If they exist, they will override space level permissions.
+            Otherwise, apply relevant space permissions (read, administer, delete)
+            """
 
             # Separate flags to track if view or edit is restricted at the page level
             page_view_restricted = bool(
@@ -198,6 +203,8 @@ class ConfluenceIndexer(Indexer):
                 .get("group", {})
                 .get("results")
             )
+
+            normalized_perms_dict = {}
 
             for action, permissions in doc_permissions.items():
                 restrictions_dict = permissions.get("restrictions", {})
@@ -260,13 +267,16 @@ class ConfluenceIndexer(Indexer):
                                 perm_entry["roles"].add("update")
 
                 # Add the "delete page" space permissions if there are other page permissions
-                elif space_target_type == "page" and space_operation == "delete":
-                    if space_entity_id in normalized_perms_dict:
-                        normalized_perms_dict[space_entity_id]["roles"].add("delete")
+                elif (
+                    space_target_type == "page"
+                    and space_operation == "delete"
+                    and space_entity_id in normalized_perms_dict
+                ):
+                    normalized_perms_dict[space_entity_id]["roles"].add("delete")
 
             # turn sets into sorted lists for consistency and json serialization
             for perm_data in normalized_perms_dict.values():
-                perm_data["roles"] = sorted(list(perm_data["roles"]))
+                perm_data["roles"] = sorted(perm_data["roles"])
 
             return list(normalized_perms_dict.values())
 
@@ -291,15 +301,13 @@ class ConfluenceIndexer(Indexer):
                 )
                 return None
 
-        # TODO adjust permissions_data FileDataSourceMetadata type to match
+        # TODO adjust permissions_data FileDataSourceMetadata interface type to enforce format
         return parsed_permissions
 
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
         space_ids_and_keys = self._get_space_ids_and_keys()
-        # for space_id in space_ids:
-        # for space_id, space_id_real in zip(space_ids, space_ids_real):
         for space_key, space_id in space_ids_and_keys:
             doc_ids = self._get_docs_ids_within_one_space(space_key)
             for doc in doc_ids:
