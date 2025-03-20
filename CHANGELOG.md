@@ -1,3 +1,9 @@
+## 0.5.17
+
+### Fixes 
+
+* **Do not output `orig_elements` for astradb** `original_elements` has the correctly truncated field
+
 ## 0.5.16
 
 ### Fixes 
