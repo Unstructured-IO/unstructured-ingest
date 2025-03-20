@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from time import time
 from typing import Any, AsyncGenerator, Literal, Union
 
 from pydantic import BaseModel, Field, Secret
@@ -16,6 +17,7 @@ from unstructured_ingest.v2.interfaces import (
     DownloaderConfig,
     DownloadResponse,
     FileData,
+    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -92,6 +94,12 @@ class ZendeskIndexer(Indexer):
                     additional_metadata=ZendeskAdditionalMetadata(
                         item_type="ticket", content=ticket
                     ),
+                    metadata=FileDataSourceMetadata(
+                        url=str(ticket.url) if ticket.url else None,
+                        date_created=ticket.created_at.isoformat() if ticket.created_at else None,
+                        date_modified=ticket.updated_at.isoformat() if ticket.updated_at else None,
+                        date_processed=str(time()),
+                    ),
                 )
 
     async def get_articles(self) -> AsyncGenerator[ZendeskFileData, None]:
@@ -105,6 +113,14 @@ class ZendeskIndexer(Indexer):
                     ),
                     additional_metadata=ZendeskAdditionalMetadata(
                         item_type="article", content=article
+                    ),
+                    metadata=FileDataSourceMetadata(
+                        url=str(article.url) if article.url else None,
+                        date_created=article.created_at.isoformat() if article.created_at else None,
+                        date_modified=(
+                            article.updated_at.isoformat() if article.updated_at else None
+                        ),
+                        date_processed=str(time()),
                     ),
                 )
 
