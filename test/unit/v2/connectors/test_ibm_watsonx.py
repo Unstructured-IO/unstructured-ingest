@@ -117,6 +117,16 @@ def mock_data_table(mocker: MockerFixture):
 
 
 @pytest.fixture
+def mock_delete(mocker: MockerFixture):
+    return mocker.patch.object(IbmWatsonxUploader, "_delete")
+
+
+@pytest.fixture
+def mock_append(mocker: MockerFixture):
+    return mocker.patch.object(IbmWatsonxUploader, "_append")
+
+
+@pytest.fixture
 def test_df():
     return pd.DataFrame(
         {
@@ -304,56 +314,30 @@ def test_ibm_watsonx_uploader_precheck_table_does_not_exist(
 
 
 def test_ibm_watsonx_uploader_upload_data_table_success(
-    mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    mock_append: MagicMock,
     file_data: FileData,
 ):
-    mocker.patch("tenacity.retry", return_value=lambda x: x)
-    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
-
     uploader._upload_data_table(mock_table, mock_data_table, file_data)
 
-    mock_transaction.delete.assert_called_once_with(
-        delete_filter=EqualTo("test_record_id_key", "test_identifier")
-    )
-    mock_transaction.append.assert_called_once_with(mock_data_table)
-
-
-def test_ibm_watsonx_uploader_upload_data_table_success_no_delete(
-    caplog: pytest.LogCaptureFixture,
-    mocker: MockerFixture,
-    uploader: IbmWatsonxUploader,
-    mock_table: MagicMock,
-    mock_transaction: MagicMock,
-    mock_data_table: MagicMock,
-    file_data: FileData,
-):
-    mocker.patch("tenacity.retry", return_value=lambda x: x)
-    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=False)
-
-    uploader._upload_data_table(mock_table, mock_data_table, file_data)
-
-    mock_transaction.delete.assert_not_called()
-    mock_transaction.append.assert_called_once_with(mock_data_table)
-    assert (
-        "Table doesn't contain expected record id column test_record_id_key, skipping delete"
-        in caplog.text
-    )
+    mock_delete.assert_called_once_with(mock_transaction, "test_identifier")
+    mock_append.assert_called_once_with(mock_transaction, mock_data_table)
 
 
 def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
-    mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    mock_append: MagicMock,
     file_data: FileData,
 ):
-    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
-    mock_transaction.append.side_effect = CommitFailedException()
+    mock_append.side_effect = CommitFailedException()
 
     with pytest.raises(RetryError):
         uploader._upload_data_table(mock_table, mock_data_table, file_data)
@@ -361,15 +345,15 @@ def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
 
 
 def test_ibm_watsonx_uploader_upload_data_table_exception(
-    mocker: MockerFixture,
     uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    mock_append: MagicMock,
     file_data: FileData,
 ):
-    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
-    mock_transaction.append.side_effect = Exception()
+    mock_append.side_effect = Exception()
 
     with pytest.raises(ProviderError):
         uploader._upload_data_table(mock_table, mock_data_table, file_data)
@@ -455,3 +439,42 @@ def test_ibm_watsonx_uploader_upload_dataframe_success(
 
     mock_get_table.assert_called_once()
     mock_upload_data_table.assert_called_once_with(mock_table, mock_data_table, file_data)
+
+
+def test_ibm_watsonx_uploader_append_success(
+    uploader: IbmWatsonxUploader,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+):
+    uploader._append(mock_transaction, mock_data_table)
+    mock_transaction.append.assert_called_once_with(mock_data_table)
+
+
+def test_ibm_watsonx_uploader_delete_can_delete(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    mock_transaction: MagicMock,
+):
+    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=True)
+    mock_equal_to = mocker.patch("pyiceberg.expressions.EqualTo")
+
+    uploader._delete(mock_transaction, "test_identifier")
+
+    mock_equal_to.assert_called_once_with("test_record_id_key", "test_identifier")
+    mock_transaction.delete.assert_called_once_with(delete_filter=mock_equal_to.return_value)
+
+
+def test_ibm_watsonx_uploader_delete_cannot_delete(
+    caplog: pytest.LogCaptureFixture,
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    mock_transaction: MagicMock,
+):
+    mocker.patch.object(IbmWatsonxUploader, "can_delete", return_value=False)
+
+    uploader._delete(mock_transaction, "test_identifier")
+    mock_transaction.delete.assert_not_called()
+    assert (
+        "Table doesn't contain expected record id column test_record_id_key, skipping delete"
+        in caplog.text
+    )

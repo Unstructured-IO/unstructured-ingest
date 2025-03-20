@@ -32,7 +32,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 if TYPE_CHECKING:
     from pyarrow import Table as ArrowTable
     from pyiceberg.catalog.rest import RestCatalog
-    from pyiceberg.table import Table
+    from pyiceberg.table import Table, Transaction
 
 CONNECTOR_TYPE = "ibm_watsonx"
 
@@ -223,6 +223,22 @@ class IbmWatsonxUploader(SQLUploader):
         return pa.Table.from_pandas(self._fit_to_schema(df, add_missing_columns=False))
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
+    def _delete(self, transaction: "Transaction", identifier: str) -> None:
+        from pyiceberg.expressions import EqualTo
+
+        if self.can_delete():
+            transaction.delete(delete_filter=EqualTo(self.upload_config.record_id_key, identifier))
+        else:
+            logger.warning(
+                f"Table doesn't contain expected "
+                f"record id column "
+                f"{self.upload_config.record_id_key}, skipping delete"
+            )
+
+    def _append(self, transaction: "Transaction", data_table: "ArrowTable") -> None:
+        transaction.append(data_table)
+
+    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_random(),
@@ -233,23 +249,11 @@ class IbmWatsonxUploader(SQLUploader):
         self, table: "Table", data_table: "ArrowTable", file_data: FileData
     ) -> None:
         from pyiceberg.exceptions import CommitFailedException
-        from pyiceberg.expressions import EqualTo
 
         try:
             with table.transaction() as transaction:
-                if self.can_delete():
-                    transaction.delete(
-                        delete_filter=EqualTo(
-                            self.upload_config.record_id_key, file_data.identifier
-                        )
-                    )
-                else:
-                    logger.warning(
-                        f"Table doesn't contain expected "
-                        f"record id column "
-                        f"{self.upload_config.record_id_key}, skipping delete"
-                    )
-                transaction.append(data_table)
+                self._delete(transaction, file_data.identifier)
+                self._append(transaction, data_table)
         except CommitFailedException as e:
             table.refresh()
             logger.debug(e)
