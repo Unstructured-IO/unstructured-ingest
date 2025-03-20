@@ -321,7 +321,7 @@ def test_ibm_watsonx_uploader_upload_data_table_success(
     mock_append: MagicMock,
     file_data: FileData,
 ):
-    uploader._upload_data_table(mock_table, mock_data_table, file_data)
+    uploader.upload_data_table(mock_table, mock_data_table, file_data)
 
     mock_delete.assert_called_once_with(mock_transaction, "test_identifier")
     mock_append.assert_called_once_with(mock_transaction, mock_data_table)
@@ -339,7 +339,7 @@ def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
     mock_append.side_effect = CommitFailedException()
 
     with pytest.raises(RetryError):
-        uploader._upload_data_table(mock_table, mock_data_table, file_data)
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
     assert mock_table.refresh.call_count == 5
 
 
@@ -355,7 +355,7 @@ def test_ibm_watsonx_uploader_upload_data_table_exception(
     mock_append.side_effect = Exception()
 
     with pytest.raises(ProviderError):
-        uploader._upload_data_table(mock_table, mock_data_table, file_data)
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
     assert mock_table.refresh.call_count == 0
 
 
@@ -432,7 +432,7 @@ def test_ibm_watsonx_uploader_upload_dataframe_success(
     file_data: FileData,
 ):
     mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
-    mock_upload_data_table = mocker.patch.object(IbmWatsonxUploader, "_upload_data_table")
+    mock_upload_data_table = mocker.patch.object(IbmWatsonxUploader, "upload_data_table")
 
     uploader.upload_dataframe(test_df, file_data)
 

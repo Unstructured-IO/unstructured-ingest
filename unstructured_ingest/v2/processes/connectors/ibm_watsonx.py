@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 
 import pandas as pd
 from pydantic import Field, Secret
-from tenacity import before_log, retry, retry_if_exception_type, stop_after_attempt, wait_random
 
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -173,6 +172,9 @@ class IbmWatsonxUploadStager(SQLUploadStager):
 class IbmWatsonxUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
+    max_retries: int = Field(
+        default=5, description="Maximum number of retries to upload data", ge=2, le=10
+    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="Searchable key to find entries for the same record on previous runs",
@@ -238,34 +240,44 @@ class IbmWatsonxUploader(SQLUploader):
     def _append(self, transaction: "Transaction", data_table: "ArrowTable") -> None:
         transaction.append(data_table)
 
-    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
-    @retry(
-        stop=stop_after_attempt(5),
-        wait=wait_random(),
-        retry=retry_if_exception_type(IcebergCommitFailedException),
-        before=before_log(logger, logging.DEBUG),
-    )
-    def _upload_data_table(
+    @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx")
+    def upload_data_table(
         self, table: "Table", data_table: "ArrowTable", file_data: FileData
     ) -> None:
         from pyiceberg.exceptions import CommitFailedException
+        from tenacity import (
+            before_log,
+            retry,
+            retry_if_exception_type,
+            stop_after_attempt,
+            wait_random,
+        )
 
-        try:
-            with table.transaction() as transaction:
-                self._delete(transaction, file_data.identifier)
-                self._append(transaction, data_table)
-        except CommitFailedException as e:
-            table.refresh()
-            logger.debug(e)
-            raise IcebergCommitFailedException(e)
-        except Exception as e:
-            raise ProviderError(f"Failed to upload data to table: {e}")
+        @retry(
+            stop=stop_after_attempt(self.upload_config.max_retries),
+            wait=wait_random(),
+            retry=retry_if_exception_type(IcebergCommitFailedException),
+            before=before_log(logger, logging.DEBUG),
+        )
+        def _upload_data_table(table: "Table", data_table: "ArrowTable", file_data: FileData):
+            try:
+                with table.transaction() as transaction:
+                    self._delete(transaction, file_data.identifier)
+                    self._append(transaction, data_table)
+            except CommitFailedException as e:
+                table.refresh()
+                logger.debug(e)
+                raise IcebergCommitFailedException(e)
+            except Exception as e:
+                raise ProviderError(f"Failed to upload data to table: {e}")
+
+        return _upload_data_table(table, data_table, file_data)
 
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
         data_table = self._df_to_arrow_table(df)
 
         with self.get_table() as table:
-            self._upload_data_table(table, data_table, file_data)
+            self.upload_data_table(table, data_table, file_data)
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         df = pd.DataFrame(data)
