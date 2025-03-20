@@ -16,13 +16,11 @@ cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.1
     # via requests
-click==8.1.8
-    # via pyiceberg
-coverage[toml]==7.7.0
+coverage[toml]==7.6.12
     # via pytest-cov
 cryptography==44.0.2
     # via -r ./test.in
-deepdiff==8.4.2
+deepdiff==8.3.0
     # via -r ./test.in
 docker==7.1.0
     # via -r ./test.in
@@ -61,11 +59,11 @@ google-cloud-core==2.4.3
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-google-cloud-resource-manager==1.14.2
+google-cloud-resource-manager==1.14.1
     # via google-cloud-aiplatform
 google-cloud-storage==2.19.0
     # via google-cloud-aiplatform
-google-crc32c==1.7.0
+google-crc32c==1.6.0
     # via
     #   google-cloud-storage
     #   google-resumable-media
@@ -73,12 +71,12 @@ google-resumable-media==2.7.2
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos[grpc]==1.69.2
+googleapis-common-protos[grpc]==1.69.1
     # via
     #   google-api-core
     #   grpc-google-iam-v1
     #   grpcio-status
-grpc-google-iam-v1==0.14.2
+grpc-google-iam-v1==0.14.1
     # via google-cloud-resource-manager
 grpcio==1.71.0
     # via

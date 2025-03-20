@@ -20,7 +20,7 @@ regex==2024.11.6
     # via parsimonious
 requests==2.32.3
     # via singlestoredb
-setuptools==76.1.0
+setuptools==76.0.0
     # via singlestoredb
 singlestoredb==1.12.1
     # via -r ./connectors/singlestore.in

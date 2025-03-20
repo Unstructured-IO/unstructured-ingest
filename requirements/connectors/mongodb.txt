@@ -2,5 +2,5 @@
 #    uv pip compile ./connectors/mongodb.in --output-file ./connectors/mongodb.txt --no-strip-extras --python-version 3.9
 dnspython==2.7.0
     # via pymongo
-pymongo==4.11.3
+pymongo==4.11.2
     # via -r ./connectors/mongodb.in

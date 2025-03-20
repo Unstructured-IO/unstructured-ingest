@@ -18,7 +18,7 @@ cryptography==44.0.2
     # via
     #   pyopenssl
     #   snowflake-connector-python
-filelock==3.18.0
+filelock==3.17.0
     # via snowflake-connector-python
 idna==3.10
     # via

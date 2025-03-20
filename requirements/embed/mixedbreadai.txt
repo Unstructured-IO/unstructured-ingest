@@ -2,7 +2,7 @@
 #    uv pip compile ./embed/mixedbreadai.in --output-file ./embed/mixedbreadai.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-anyio==4.9.0
+anyio==4.8.0
     # via httpx
 certifi==2025.1.31
     # via

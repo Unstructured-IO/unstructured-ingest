@@ -4,7 +4,7 @@ aiobotocore==2.13.3
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.14
+aiohttp==3.11.13
     # via
     #   aiobotocore
     #   s3fs
@@ -33,7 +33,7 @@ idna==3.10
     # via yarl
 jmespath==1.0.1
     # via botocore
-multidict==6.2.0
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl

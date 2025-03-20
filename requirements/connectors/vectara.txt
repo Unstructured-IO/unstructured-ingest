@@ -2,7 +2,7 @@
 #    uv pip compile ./connectors/vectara.in --output-file ./connectors/vectara.txt --no-strip-extras --python-version 3.9
 aiofiles==24.1.0
     # via -r ./connectors/vectara.in
-anyio==4.9.0
+anyio==4.8.0
     # via httpx
 certifi==2025.1.31
     # via

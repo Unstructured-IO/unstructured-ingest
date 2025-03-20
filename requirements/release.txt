@@ -40,7 +40,7 @@ rfc3986==2.0.0
     # via twine
 secretstorage==3.3.3
     # via keyring
-setuptools==76.1.0
+setuptools==76.0.0
     # via twine
 tqdm==4.67.1
     # via twine
