@@ -11,14 +11,14 @@ from pytest_mock import MockerFixture
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.ibm_watsonx_data import (
-    CONNECTOR_TYPE as IBM_WATSONX_DATA_CONNECTOR_TYPE,
+from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
+    CONNECTOR_TYPE as IBM_WATSONX_CONNECTOR_TYPE,
 )
-from unstructured_ingest.v2.processes.connectors.ibm_watsonx_data import (
-    IbmWatsonxDataAccessConfig,
-    IbmWatsonxDataConnectionConfig,
-    IbmWatsonxDataUploader,
-    IbmWatsonxDataUploaderConfig,
+from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
+    IbmWatsonxAccessConfig,
+    IbmWatsonxConnectionConfig,
+    IbmWatsonxUploader,
+    IbmWatsonxUploaderConfig,
     _transaction_wrapper,
 )
 
@@ -27,7 +27,7 @@ from unstructured_ingest.v2.processes.connectors.ibm_watsonx_data import (
 def file_data():
     return FileData(
         identifier="test_identifier",
-        connector_type=IBM_WATSONX_DATA_CONNECTOR_TYPE,
+        connector_type=IBM_WATSONX_CONNECTOR_TYPE,
         source_identifiers=SourceIdentifiers(
             filename="test_file.pdf", fullpath="/tmp/test_file.pdf"
         ),
@@ -36,7 +36,7 @@ def file_data():
 
 @pytest.fixture
 def access_config():
-    return IbmWatsonxDataAccessConfig(
+    return IbmWatsonxAccessConfig(
         iam_api_key="test_iam_api_key",
         access_key_id="test_access_key_id",
         secret_access_key="test_secret_access_key",
@@ -44,8 +44,8 @@ def access_config():
 
 
 @pytest.fixture
-def connection_config(access_config: IbmWatsonxDataAccessConfig):
-    return IbmWatsonxDataConnectionConfig(
+def connection_config(access_config: IbmWatsonxAccessConfig):
+    return IbmWatsonxConnectionConfig(
         access_config=Secret(access_config),
         iceberg_endpoint="test_iceberg_endpoint/",
         object_storage_endpoint="test_object_storage_endpoint/",
@@ -56,7 +56,7 @@ def connection_config(access_config: IbmWatsonxDataAccessConfig):
 
 @pytest.fixture
 def uploader_config():
-    return IbmWatsonxDataUploaderConfig(
+    return IbmWatsonxUploaderConfig(
         namespace="test_namespace",
         table="test_table",
         max_retries=3,
@@ -66,9 +66,9 @@ def uploader_config():
 
 @pytest.fixture
 def uploader(
-    connection_config: IbmWatsonxDataConnectionConfig, uploader_config: IbmWatsonxDataUploaderConfig
+    connection_config: IbmWatsonxConnectionConfig, uploader_config: IbmWatsonxUploaderConfig
 ):
-    return IbmWatsonxDataUploader(
+    return IbmWatsonxUploader(
         connection_config=connection_config,
         upload_config=uploader_config,
     )
@@ -85,7 +85,7 @@ def mock_catalog(mocker: MockerFixture):
 @pytest.fixture
 def mock_get_catalog(mocker: MockerFixture, mock_catalog: MagicMock):
     mock_get_catalog = mocker.patch.context_manager(
-        IbmWatsonxDataConnectionConfig, "get_catalog", autospec=True
+        IbmWatsonxConnectionConfig, "get_catalog", autospec=True
     )
     mock_get_catalog.return_value.__enter__.return_value = mock_catalog
     return mock_get_catalog
@@ -100,7 +100,7 @@ def mock_table(mocker: MockerFixture):
 @pytest.fixture
 def mock_get_table(mocker: MockerFixture, mock_table: MagicMock):
     mock_get_table = mocker.patch.context_manager(
-        IbmWatsonxDataUploader, "get_table", autospec=True
+        IbmWatsonxUploader, "get_table", autospec=True
     )
     mock_get_table.return_value.__enter__.return_value = mock_table
     return mock_get_table
@@ -123,7 +123,7 @@ def mock_data_table(mocker: MockerFixture):
 @pytest.fixture
 def mock_transaction_wrapper(mocker: MockerFixture, mock_transaction: MagicMock):
     return mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data._transaction_wrapper",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx._transaction_wrapper",
         side_effect=lambda table, fn, max_retries, **kwargs: fn(mock_transaction, **kwargs),
     )
 
@@ -133,30 +133,30 @@ def timestamp_now():
     return int(time.time())
 
 
-def test_ibm_watsonx_data_connection_config_iceberg_url(
+def test_ibm_watsonx_connection_config_iceberg_url(
     mocker: MockerFixture,
-    connection_config: IbmWatsonxDataConnectionConfig,
+    connection_config: IbmWatsonxConnectionConfig,
 ):
     mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data.DEFAULT_ICEBERG_URI_PATH",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.DEFAULT_ICEBERG_URI_PATH",
         new="/mds/iceberg",
     )
     expected_url = "https://test_iceberg_endpoint/mds/iceberg"
     assert connection_config.iceberg_url == expected_url
 
 
-def test_ibm_watsonx_data_connection_config_object_storage_url(
-    connection_config: IbmWatsonxDataConnectionConfig,
+def test_ibm_watsonx_connection_config_object_storage_url(
+    connection_config: IbmWatsonxConnectionConfig,
 ):
     expected_url = "https://test_object_storage_endpoint"
     assert connection_config.object_storage_url == expected_url
 
 
-def test_ibm_watsonx_data_connection_config_bearer_token_new_token(
-    mocker: MockerFixture, connection_config: IbmWatsonxDataConnectionConfig, timestamp_now: int
+def test_ibm_watsonx_connection_config_bearer_token_new_token(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig, timestamp_now: int
 ):
     mock_generate_bearer_token = mocker.patch.object(
-        IbmWatsonxDataConnectionConfig,
+        IbmWatsonxConnectionConfig,
         "generate_bearer_token",
         return_value={"access_token": "new_token", "expiration": timestamp_now + 3600},
     )
@@ -165,30 +165,30 @@ def test_ibm_watsonx_data_connection_config_bearer_token_new_token(
     mock_generate_bearer_token.assert_called_once()
 
 
-def test_ibm_watsonx_data_connection_config_bearer_token_existing_token(
-    mocker: MockerFixture, connection_config: IbmWatsonxDataConnectionConfig, timestamp_now: int
+def test_ibm_watsonx_connection_config_bearer_token_existing_token(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig, timestamp_now: int
 ):
     connection_config._bearer_token = {
         "access_token": "existing_token",
         "expiration": timestamp_now + 3600,
     }
     mock_generate_bearer_token = mocker.patch.object(
-        IbmWatsonxDataConnectionConfig, "generate_bearer_token"
+        IbmWatsonxConnectionConfig, "generate_bearer_token"
     )
     token = connection_config.bearer_token
     assert token == "existing_token"
     mock_generate_bearer_token.assert_not_called()
 
 
-def test_ibm_watsonx_data_connection_config_bearer_token_expired_token(
-    mocker: MockerFixture, connection_config: IbmWatsonxDataConnectionConfig, timestamp_now: int
+def test_ibm_watsonx_connection_config_bearer_token_expired_token(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig, timestamp_now: int
 ):
     connection_config._bearer_token = {
         "access_token": "expired_token",
         "expiration": timestamp_now - 3600,
     }
     mock_generate_bearer_token = mocker.patch.object(
-        IbmWatsonxDataConnectionConfig,
+        IbmWatsonxConnectionConfig,
         "generate_bearer_token",
         return_value={"access_token": "new_token", "expiration": timestamp_now + 3600},
     )
@@ -197,15 +197,15 @@ def test_ibm_watsonx_data_connection_config_bearer_token_expired_token(
     mock_generate_bearer_token.assert_called_once()
 
 
-def test_ibm_watsonx_data_connection_config_bearer_token_soon_to_expire_token(
-    mocker: MockerFixture, connection_config: IbmWatsonxDataConnectionConfig, timestamp_now: int
+def test_ibm_watsonx_connection_config_bearer_token_soon_to_expire_token(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig, timestamp_now: int
 ):
     connection_config._bearer_token = {
         "access_token": "soon_to_expire_token",
         "expiration": timestamp_now + 60,
     }
     mock_generate_bearer_token = mocker.patch.object(
-        IbmWatsonxDataConnectionConfig,
+        IbmWatsonxConnectionConfig,
         "generate_bearer_token",
         return_value={"access_token": "new_token", "expiration": timestamp_now + 3600},
     )
@@ -214,15 +214,15 @@ def test_ibm_watsonx_data_connection_config_bearer_token_soon_to_expire_token(
     mock_generate_bearer_token.assert_called_once()
 
 
-def test_ibm_watsonx_data_connection_config_get_catalog_success(
-    mocker: MockerFixture, connection_config: IbmWatsonxDataConnectionConfig
+def test_ibm_watsonx_connection_config_get_catalog_success(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
 ):
     mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data.DEFAULT_ICEBERG_URI_PATH",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.DEFAULT_ICEBERG_URI_PATH",
         new="/mds/iceberg",
     )
     mocker.patch.object(
-        IbmWatsonxDataConnectionConfig,
+        IbmWatsonxConnectionConfig,
         "bearer_token",
         new="test_bearer_token",
     )
@@ -245,15 +245,15 @@ def test_ibm_watsonx_data_connection_config_get_catalog_success(
     )
 
 
-def test_ibm_watsonx_data_connection_config_get_catalog_failure(
-    mocker: MockerFixture, connection_config: IbmWatsonxDataConnectionConfig
+def test_ibm_watsonx_connection_config_get_catalog_failure(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
 ):
     mocker.patch(
         "pyiceberg.catalog.load_catalog",
         side_effect=Exception("Connection error"),
     )
     mocker.patch.object(
-        IbmWatsonxDataConnectionConfig,
+        IbmWatsonxConnectionConfig,
         "bearer_token",
         new="test_bearer_token",
     )
@@ -265,7 +265,7 @@ def test_ibm_watsonx_data_connection_config_get_catalog_failure(
 def test_precheck_namespace_exists_table_exists(
     mock_get_catalog: MagicMock,
     mock_catalog: MagicMock,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
 ):
     uploader.precheck()
 
@@ -276,7 +276,7 @@ def test_precheck_namespace_exists_table_exists(
 def test_precheck_namespace_does_not_exist(
     mock_get_catalog: MagicMock,
     mock_catalog: MagicMock,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
 ):
     mock_catalog.namespace_exists.return_value = False
 
@@ -292,7 +292,7 @@ def test_precheck_namespace_does_not_exist(
 def test_precheck_table_does_not_exist(
     mock_get_catalog: MagicMock,
     mock_catalog: MagicMock,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
 ):
     mock_catalog.table_exists.return_value = False
 
@@ -375,7 +375,7 @@ def test_transaction_wrapper_max_retries_exceeded(
 
 def test_upload_data_success(
     mocker: MockerFixture,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
     mock_get_table: MagicMock,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
@@ -404,7 +404,7 @@ def test_upload_data_success(
 
 def test_upload_data_success_no_delete(
     mocker: MockerFixture,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
     mock_get_table: MagicMock,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
@@ -431,7 +431,7 @@ def test_upload_data_success_no_delete(
 
 def test_get_data_table_success(
     mocker: MockerFixture,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
 ):
     mock_df = pd.DataFrame(
@@ -447,7 +447,7 @@ def test_get_data_table_success(
         "test_column_3",
     ]
     mock_get_data_df = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data.get_data_df",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.get_data_df",
         return_value=mock_df,
     )
 
@@ -462,7 +462,7 @@ def test_get_data_table_success(
 
 def test_get_data_table_no_common_columns(
     mocker: MockerFixture,
-    uploader: IbmWatsonxDataUploader,
+    uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
 ):
     mock_df = pd.DataFrame({"test_column_4": [1, 2, 3], "test_column_5": ["a", "b", "c"]})
@@ -472,7 +472,7 @@ def test_get_data_table_no_common_columns(
         "test_column_3",
     ]
     mock_get_data_df = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx_data.get_data_df",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.get_data_df",
         return_value=mock_df,
     )
 

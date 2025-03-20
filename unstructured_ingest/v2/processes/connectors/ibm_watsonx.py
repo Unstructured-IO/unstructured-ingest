@@ -31,14 +31,14 @@ if TYPE_CHECKING:
     from pyiceberg.catalog.rest import RestCatalog
     from pyiceberg.table import Table, Transaction
 
-CONNECTOR_TYPE = "ibm_watsonx_data"
+CONNECTOR_TYPE = "ibm_watsonx"
 
 DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
 
 
-@requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
+@requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
 def _transaction_wrapper(table: "Table", fn: Callable, max_retries: int, **kwargs: Any) -> None:
     """
     Executes a function within a table transaction, with automatic retries on failure.
@@ -76,14 +76,14 @@ def _transaction_wrapper(table: "Table", fn: Callable, max_retries: int, **kwarg
         )
 
 
-class IbmWatsonxDataAccessConfig(AccessConfig):
+class IbmWatsonxAccessConfig(AccessConfig):
     iam_api_key: str = Field(description="IBM IAM API Key")
     access_key_id: str = Field(description="Cloud Object Storage HMAC Access Key ID")
     secret_access_key: str = Field(description="Cloud Object Storage HMAC Secret Access Key")
 
 
-class IbmWatsonxDataConnectionConfig(ConnectionConfig):
-    access_config: Secret[IbmWatsonxDataAccessConfig]
+class IbmWatsonxConnectionConfig(ConnectionConfig):
+    access_config: Secret[IbmWatsonxAccessConfig]
     iceberg_endpoint: str = Field(description="Iceberg REST endpoint")
     object_storage_endpoint: str = Field(description="Cloud Object Storage public endpoint")
     object_storage_region: str = Field(description="Cloud Object Storage region")
@@ -107,7 +107,7 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
             self._bearer_token = self.generate_bearer_token()
         return self._bearer_token["access_token"]
 
-    @requires_dependencies(["httpx"], extras="ibm-watsonx-data")
+    @requires_dependencies(["httpx"], extras="ibm-watsonx")
     def wrap_error(self, e: Exception) -> Exception:
         import httpx
 
@@ -141,7 +141,7 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
         logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
         return e
 
-    @requires_dependencies(["httpx"], extras="ibm-watsonx-data")
+    @requires_dependencies(["httpx"], extras="ibm-watsonx")
     def generate_bearer_token(self) -> dict[str, Any]:
         import httpx
 
@@ -162,7 +162,7 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
             raise self.wrap_error(e)
         return response.json()
 
-    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
+    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
     @contextmanager
     def get_catalog(self) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
@@ -190,18 +190,18 @@ class IbmWatsonxDataConnectionConfig(ConnectionConfig):
 
 
 @dataclass
-class IbmWatsonxDataUploadStagerConfig(SQLUploadStagerConfig):
+class IbmWatsonxUploadStagerConfig(SQLUploadStagerConfig):
     pass
 
 
 @dataclass
-class IbmWatsonxDataUploadStager(SQLUploadStager):
-    upload_stager_config: IbmWatsonxDataUploadStagerConfig = field(
-        default_factory=IbmWatsonxDataUploadStagerConfig
+class IbmWatsonxUploadStager(SQLUploadStager):
+    upload_stager_config: IbmWatsonxUploadStagerConfig = field(
+        default_factory=IbmWatsonxUploadStagerConfig
     )
 
 
-class IbmWatsonxDataUploaderConfig(UploaderConfig):
+class IbmWatsonxUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
     max_retries: int = Field(
@@ -218,9 +218,9 @@ class IbmWatsonxDataUploaderConfig(UploaderConfig):
 
 
 @dataclass
-class IbmWatsonxDataUploader(Uploader):
-    connection_config: IbmWatsonxDataConnectionConfig
-    upload_config: IbmWatsonxDataUploaderConfig
+class IbmWatsonxUploader(Uploader):
+    connection_config: IbmWatsonxConnectionConfig
+    upload_config: IbmWatsonxUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
@@ -240,7 +240,7 @@ class IbmWatsonxDataUploader(Uploader):
             table = catalog.load_table(self.upload_config.table_identifier)
             yield table
 
-    @requires_dependencies(["pyarrow"], extras="ibm-watsonx-data")
+    @requires_dependencies(["pyarrow"], extras="ibm-watsonx")
     def _get_data_table(self, table: "Table", path: Path) -> Any:
         import pyarrow as pa
 
@@ -257,7 +257,7 @@ class IbmWatsonxDataUploader(Uploader):
             )
         return pa.Table.from_pandas(df[common_columns])
 
-    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-data")
+    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
     def upload_data(self, table: "Table", data_table: Any, file_data: FileData) -> None:
         """
         Uploads data to a specified table.
@@ -289,10 +289,10 @@ class IbmWatsonxDataUploader(Uploader):
             self.upload_data(table, data_table, file_data)
 
 
-ibm_watsonx_data_destination_entry = DestinationRegistryEntry(
-    connection_config=IbmWatsonxDataConnectionConfig,
-    uploader=IbmWatsonxDataUploader,
-    uploader_config=IbmWatsonxDataUploaderConfig,
-    upload_stager=IbmWatsonxDataUploadStager,
-    upload_stager_config=IbmWatsonxDataUploadStagerConfig,
+ibm_watsonx_destination_entry = DestinationRegistryEntry(
+    connection_config=IbmWatsonxConnectionConfig,
+    uploader=IbmWatsonxUploader,
+    uploader_config=IbmWatsonxUploaderConfig,
+    upload_stager=IbmWatsonxUploadStager,
+    upload_stager_config=IbmWatsonxUploadStagerConfig,
 )
