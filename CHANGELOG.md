@@ -1,3 +1,9 @@
+## 1.0.3
+
+### Features
+
+**Add permission metadata to Confluence source connector**
+
 ## 1.0.2
 
 ### Features
@@ -9,7 +15,6 @@
 ### Features
 
 * **Migrate project to use pyproject.toml and uv**
-
 
 ## 0.7.2
 
