@@ -32,7 +32,6 @@ fsspec==2024.5.0
     # via
     #   -c ././common/constraints.txt
     #   -r ./test.in
-    #   pyiceberg
     #   universal-pathlib
 google-api-core[grpc]==2.24.1
     # via
@@ -89,12 +88,6 @@ idna==3.10
     # via requests
 iniconfig==2.0.0
     # via pytest
-markdown-it-py==3.0.0
-    # via rich
-mdurl==0.1.2
-    # via markdown-it-py
-mmh3==5.1.0
-    # via pyiceberg
 numpy==1.26.4
     # via
     #   -c ././common/constraints.txt
@@ -132,9 +125,7 @@ pyasn1-modules==0.4.1
 pycparser==2.22
     # via cffi
 pydantic==2.10.6
-    # via
-    #   google-cloud-aiplatform
-    #   pyiceberg
+    # via google-cloud-aiplatform
 pydantic-core==2.27.2
     # via pydantic
 pytest==8.3.4
@@ -162,32 +153,21 @@ pytest-mock==3.14.0
 pytest-tagging==1.6.0
     # via -r ./test.in
 python-dateutil==2.9.0.post0
-    # via
-    #   google-cloud-bigquery
-    #   strictyaml
+    # via google-cloud-bigquery
 requests==2.32.3
     # via
     #   docker
     #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-storage
-    #   pyiceberg
-rich==13.9.4
-    # via pyiceberg
 rsa==4.9
     # via google-auth
 shapely==2.0.7
     # via google-cloud-aiplatform
 six==1.17.0
     # via python-dateutil
-sortedcontainers==2.4.0
-    # via pyiceberg
 soupsieve==2.6
     # via beautifulsoup4
-strictyaml==1.7.3
-    # via pyiceberg
-tenacity==9.0.0
-    # via pyiceberg
 tomli==2.2.1
     # via
     #   coverage
