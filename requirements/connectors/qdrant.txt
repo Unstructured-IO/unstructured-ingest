@@ -10,7 +10,7 @@ certifi==2025.1.31
     #   httpx
 exceptiongroup==1.2.2
     # via anyio
-grpcio==1.71.0
+grpcio==1.70.0
     # via
     #   -c ./connectors/../common/constraints.txt
     #   grpcio-tools
@@ -47,9 +47,9 @@ pydantic==2.10.6
     # via qdrant-client
 pydantic-core==2.27.2
     # via pydantic
-qdrant-client==1.13.3
+qdrant-client==1.13.2
     # via -r ./connectors/qdrant.in
-setuptools==76.0.0
+setuptools==75.8.0
     # via grpcio-tools
 sniffio==1.3.1
     # via anyio

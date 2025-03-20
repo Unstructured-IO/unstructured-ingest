@@ -2,7 +2,7 @@
 #    uv pip compile ./embed/vertexai.in --output-file ./embed/vertexai.txt --no-strip-extras --python-version 3.9
 annotated-types==0.7.0
     # via pydantic
-cachetools==5.5.2
+cachetools==5.5.1
     # via google-auth
 certifi==2025.1.31
     # via requests
@@ -10,7 +10,7 @@ charset-normalizer==3.4.1
     # via requests
 docstring-parser==0.16
     # via google-cloud-aiplatform
-google-api-core[grpc]==2.24.2
+google-api-core[grpc]==2.24.1
     # via
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
@@ -27,13 +27,13 @@ google-auth==2.38.0
     #   google-cloud-storage
 google-cloud-aiplatform[all]==1.71.1
     # via vertexai
-google-cloud-bigquery==3.30.0
+google-cloud-bigquery==3.29.0
     # via google-cloud-aiplatform
-google-cloud-core==2.4.3
+google-cloud-core==2.4.1
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-google-cloud-resource-manager==1.14.1
+google-cloud-resource-manager==1.14.0
     # via google-cloud-aiplatform
 google-cloud-storage==2.19.0
     # via google-cloud-aiplatform
@@ -45,14 +45,14 @@ google-resumable-media==2.7.2
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos[grpc]==1.69.1
+googleapis-common-protos[grpc]==1.66.0
     # via
     #   google-api-core
     #   grpc-google-iam-v1
     #   grpcio-status
-grpc-google-iam-v1==0.14.1
+grpc-google-iam-v1==0.14.0
     # via google-cloud-resource-manager
-grpcio==1.71.0
+grpcio==1.70.0
     # via
     #   -c ./embed/../common/constraints.txt
     #   google-api-core
@@ -71,7 +71,7 @@ packaging==24.2
     # via
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
-proto-plus==1.26.1
+proto-plus==1.26.0
     # via
     #   google-api-core
     #   google-cloud-aiplatform

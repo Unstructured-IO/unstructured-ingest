@@ -36,7 +36,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.1
     # via pandas
-setuptools==76.0.0
+setuptools==75.8.0
     # via
     #   opentelemetry-api
     #   opentelemetry-sdk

@@ -10,7 +10,7 @@ idna==3.10
     # via requests
 inflection==0.5.1
     # via pyairtable
-pyairtable==3.0.2
+pyairtable==3.0.1
     # via -r ./connectors/airtable.in
 pydantic==2.10.6
     # via pyairtable

@@ -14,7 +14,7 @@ charset-normalizer==3.4.1
     # via
     #   requests
     #   snowflake-connector-python
-cryptography==44.0.2
+cryptography==44.0.1
     # via
     #   pyopenssl
     #   snowflake-connector-python
@@ -34,22 +34,20 @@ pycparser==2.22
     # via cffi
 pyjwt==2.10.1
     # via snowflake-connector-python
-pyopenssl==25.0.0
+pyopenssl==24.3.0
     # via snowflake-connector-python
 pytz==2025.1
     # via snowflake-connector-python
 requests==2.32.3
     # via snowflake-connector-python
-snowflake-connector-python==3.14.0
+snowflake-connector-python==3.13.2
     # via -r ./connectors/snowflake.in
 sortedcontainers==2.4.0
     # via snowflake-connector-python
 tomlkit==0.13.2
     # via snowflake-connector-python
 typing-extensions==4.12.2
-    # via
-    #   pyopenssl
-    #   snowflake-connector-python
+    # via snowflake-connector-python
 urllib3==1.26.20
     # via
     #   -c ./connectors/../common/constraints.txt

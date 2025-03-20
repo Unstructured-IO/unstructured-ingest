@@ -6,10 +6,8 @@ beautifulsoup4==4.13.3
     # via bs4
 bs4==0.0.2
     # via -r ./test.in
-cachetools==5.5.2
-    # via
-    #   google-auth
-    #   pyiceberg
+cachetools==5.5.1
+    # via google-auth
 certifi==2025.1.31
     # via requests
 cffi==1.17.1
@@ -18,9 +16,9 @@ charset-normalizer==3.4.1
     # via requests
 coverage[toml]==7.6.12
     # via pytest-cov
-cryptography==44.0.2
+cryptography==44.0.1
     # via -r ./test.in
-deepdiff==8.3.0
+deepdiff==8.2.0
     # via -r ./test.in
 docker==7.1.0
     # via -r ./test.in
@@ -28,7 +26,7 @@ docstring-parser==0.16
     # via google-cloud-aiplatform
 exceptiongroup==1.2.2
     # via pytest
-faker==37.0.1
+faker==36.1.0
     # via -r ./test.in
 fsspec==2024.5.0
     # via
@@ -36,7 +34,7 @@ fsspec==2024.5.0
     #   -r ./test.in
     #   pyiceberg
     #   universal-pathlib
-google-api-core[grpc]==2.24.2
+google-api-core[grpc]==2.24.1
     # via
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
@@ -53,13 +51,13 @@ google-auth==2.38.0
     #   google-cloud-storage
 google-cloud-aiplatform[all]==1.71.1
     # via vertexai
-google-cloud-bigquery==3.30.0
+google-cloud-bigquery==3.29.0
     # via google-cloud-aiplatform
-google-cloud-core==2.4.3
+google-cloud-core==2.4.1
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-google-cloud-resource-manager==1.14.1
+google-cloud-resource-manager==1.14.0
     # via google-cloud-aiplatform
 google-cloud-storage==2.19.0
     # via google-cloud-aiplatform
@@ -71,14 +69,14 @@ google-resumable-media==2.7.2
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos[grpc]==1.69.1
+googleapis-common-protos[grpc]==1.66.0
     # via
     #   google-api-core
     #   grpc-google-iam-v1
     #   grpcio-status
-grpc-google-iam-v1==0.14.1
+grpc-google-iam-v1==0.14.0
     # via google-cloud-resource-manager
-grpcio==1.71.0
+grpcio==1.70.0
     # via
     #   -c ././common/constraints.txt
     #   google-api-core
@@ -110,7 +108,7 @@ packaging==24.2
     #   pytest
 pluggy==1.5.0
     # via pytest
-proto-plus==1.26.1
+proto-plus==1.26.0
     # via
     #   google-api-core
     #   google-cloud-aiplatform
@@ -139,13 +137,7 @@ pydantic==2.10.6
     #   pyiceberg
 pydantic-core==2.27.2
     # via pydantic
-pygments==2.19.1
-    # via rich
-pyiceberg==0.9.0
-    # via -r ./test.in
-pyparsing==3.2.1
-    # via pyiceberg
-pytest==8.3.5
+pytest==8.3.4
     # via
     #   -r ./test.in
     #   pytest-asyncio
@@ -157,7 +149,7 @@ pytest==8.3.5
     #   pytest-tagging
 pytest-asyncio==0.25.3
     # via -r ./test.in
-pytest-check==2.5.1
+pytest-check==2.4.2
     # via -r ./test.in
 pytest-cov==6.0.0
     # via -r ./test.in
@@ -205,8 +197,6 @@ typing-extensions==4.12.2
     #   beautifulsoup4
     #   pydantic
     #   pydantic-core
-    #   pytest-check
-    #   rich
 tzdata==2025.1
     # via faker
 universal-pathlib==0.2.6
