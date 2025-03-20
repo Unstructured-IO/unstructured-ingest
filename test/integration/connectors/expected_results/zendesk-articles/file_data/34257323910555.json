@@ -1,0 +1,52 @@
+{
+  "identifier": "34257323910555",
+  "connector_type": "zendesk",
+  "source_identifiers": {
+    "filename": "34257323910555.html",
+    "fullpath": "articles/34257323910555.html",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": null,
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "item_type": "article",
+    "content": {
+      "author_id": 33639722684443,
+      "body": "<p>All <strong>Stellar Skyonomy</strong> merchandise purchases are backed by our 30-day satisfaction guarantee, no questions asked. We even pay to have it shipped back to us. Additionally, you can cancel your <strong>Stellar Skyonomy</strong> subscription at any time. Before you cancel, review our refund policies in this article.</p><br><p><strong>Refund policy</strong></p><p>We automatically issue a full refund when you <a>initiate a return</a> within 30 days of delivery.<br><br>To <a>cancel an annual website subscription</a> you can do so at any time and your refund will be prorated based on the cancellation date.</p><br><p><strong>Request a refund</strong></p><p>If you believe you’re eligible for a refund but haven’t received one, contact us by completing a <a>refund request form.</a> We review every refund and aim to respond within two business days.<br><br>If you haven't received a refund you're expecting, note that it can take up to 10 business days to appear on your card statement.</p>",
+      "comments_disabled": false,
+      "content_tag_ids": [],
+      "created_at": "2025-02-21T16:20:22Z",
+      "draft": true,
+      "edited_at": "2025-02-21T16:20:22Z",
+      "html_url": "https://unstructuredhelp.zendesk.com/hc/en-us/articles/34257323910555-Sample-article-Stellar-Skyonomy-refund-policies",
+      "id": 34257323910555,
+      "label_names": [],
+      "locale": "en-us",
+      "outdated": false,
+      "outdated_locales": [],
+      "permission_group_id": 34257293127707,
+      "position": 0,
+      "promoted": false,
+      "section_id": 34257323893019,
+      "source_locale": "en-us",
+      "title": "Sample article: Stellar Skyonomy refund policies",
+      "updated_at": "2025-02-21T16:20:22Z",
+      "url": "https://unstructuredhelp.zendesk.com/api/v2/help_center/en-us/articles/34257323910555.json",
+      "user_segment_id": null,
+      "user_segment_ids": [],
+      "vote_count": 0,
+      "vote_sum": 0
+    }
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpku598vpw/articles/34257323910555.html",
+  "display_name": null
+}

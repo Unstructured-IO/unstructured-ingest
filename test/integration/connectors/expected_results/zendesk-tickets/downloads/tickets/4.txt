@@ -1,0 +1,32 @@
+ticket
+created_at: 2025-02-04 19:50:56+00:00
+description: Hi there, I'm the new Accounts Payable manager... I just started last month. As I delve into my role and familiarize myself with our various service providers, I have a few questions regarding our billing statement.
+
+I've been reviewing the latest invoice and would like to confirm the cycle. When are the invoices issued each month and what's the standard due date for payments?
+
+Regarding the currency, I noticed the invoice, yet our headquarters are in Europe (we just happen to have significant business interactions in the U.S.), so would it be possible to have our invoices issued in Euros to ease our accounting process?
+
+Also, as I'm still understanding the nuances of tax details, could you simplify the tax/VAT information on the invoice for me?
+
+Looking forward to your assistance to ensure a smooth transition and continued flawless operations.
+
+Best,
+Jiwon Bora
+id: 4
+subject: SAMPLE TICKET: Invoice questions
+comment
+author_id: 33640803748379
+body: Hi there, I'm the new Accounts Payable manager... I just started last month. As I delve into my role and familiarize myself with our various service providers, I have a few questions regarding our billing statement.
+
+I've been reviewing the latest invoice and would like to confirm the cycle. When are the invoices issued each month and what's the standard due date for payments?
+
+Regarding the currency, I noticed the invoice, yet our headquarters are in Europe (we just happen to have significant business interactions in the U.S.), so would it be possible to have our invoices issued in Euros to ease our accounting process?
+
+Also, as I'm still understanding the nuances of tax details, could you simplify the tax/VAT information on the invoice for me?
+
+Looking forward to your assistance to ensure a smooth transition and continued flawless operations.
+
+Best,
+Jiwon Bora
+created_at: 2025-02-04 19:50:56+00:00
+id: 33640803760923

@@ -1,0 +1,52 @@
+{
+  "identifier": "34257441305499",
+  "connector_type": "zendesk",
+  "source_identifiers": {
+    "filename": "34257441305499.html",
+    "fullpath": "articles/34257441305499.html",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": null,
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "item_type": "article",
+    "content": {
+      "author_id": 33639722684443,
+      "body": "<p>This is my first article, </p>\n<p> </p>\n<p>in this article I will talk about absolutely nothing. </p>\n<p> </p>\n<p>Nothing is an interesting word. </p>\n<p> </p>\n<p>Here is some code around nothing:<br><br></p>\n<p> </p>\n<pre># python code<br>nothing = None<br>print(nothing)<br><br></pre>\n<p> </p>\n<p><img src=\"https://unstructuredhelp.zendesk.com/hc/article_attachments/34257441302043\" alt=\"Screenshot from 2024-12-16 09-26-57.png\"></p>\n<p>Here is a picture of our platform. </p>\n<p>Do what you want with it. </p>\n<p> </p>",
+      "comments_disabled": false,
+      "content_tag_ids": [],
+      "created_at": "2025-02-21T16:23:18Z",
+      "draft": false,
+      "edited_at": "2025-02-21T16:23:23Z",
+      "html_url": "https://unstructuredhelp.zendesk.com/hc/en-us/articles/34257441305499-First-Article",
+      "id": 34257441305499,
+      "label_names": [],
+      "locale": "en-us",
+      "outdated": false,
+      "outdated_locales": [],
+      "permission_group_id": 34257293127707,
+      "position": 0,
+      "promoted": false,
+      "section_id": 34257293177243,
+      "source_locale": "en-us",
+      "title": "First Article",
+      "updated_at": "2025-02-21T16:44:55Z",
+      "url": "https://unstructuredhelp.zendesk.com/api/v2/help_center/en-us/articles/34257441305499.json",
+      "user_segment_id": null,
+      "user_segment_ids": [],
+      "vote_count": 0,
+      "vote_sum": 0
+    }
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpku598vpw/articles/34257441305499.html",
+  "display_name": null
+}

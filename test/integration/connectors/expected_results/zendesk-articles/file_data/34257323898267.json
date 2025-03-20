@@ -1,0 +1,52 @@
+{
+  "identifier": "34257323898267",
+  "connector_type": "zendesk",
+  "source_identifiers": {
+    "filename": "34257323898267.html",
+    "fullpath": "articles/34257323898267.html",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": null,
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "item_type": "article",
+    "content": {
+      "author_id": 33639722684443,
+      "body": "<p>You're looking at your new <a href=\"https://www.zendesk.com/self-service\" target=\"_blank\">Help Center</a>. We populated it with placeholder content to help you get started. Feel free to edit or delete this content.</p>\n\n<p>The Help Center is designed to provide a complete self-service support option for your customers. The Help Center contains: a knowledge base and, on Guide Professional and Enterprise, a Customer Portal for support requests. You can also add a community to your Help Center if you have Zendesk Gather.</p>\n\n<p>Your customers can search for knowledge base articles to learn a task or search the community, if available, to ask fellow users questions. If your customers can't find an answer, they can submit a support request.</p>\n\n<p>For more information, see <a href=\"https://support.zendesk.com/hc/en-us/articles/203664386\" target=\"_blank\">Help Center guide for end users</a>.</p><p>Each user has a Help Center profile (Guide Professional and Enterprise), so your Help Center users can get to know one another better. Profiles contain relevant information about the user, along with their activities and contributions.</p>",
+      "comments_disabled": false,
+      "content_tag_ids": [],
+      "created_at": "2025-02-21T16:20:22Z",
+      "draft": false,
+      "edited_at": "2025-02-21T16:20:22Z",
+      "html_url": "https://unstructuredhelp.zendesk.com/hc/en-us/articles/34257323898267-Welcome-to-your-Help-Center",
+      "id": 34257323898267,
+      "label_names": [],
+      "locale": "en-us",
+      "outdated": false,
+      "outdated_locales": [],
+      "permission_group_id": 34257293127707,
+      "position": 0,
+      "promoted": false,
+      "section_id": 34257323893019,
+      "source_locale": "en-us",
+      "title": "Welcome to your Help Center!",
+      "updated_at": "2025-02-21T16:20:22Z",
+      "url": "https://unstructuredhelp.zendesk.com/api/v2/help_center/en-us/articles/34257323898267.json",
+      "user_segment_id": null,
+      "user_segment_ids": [],
+      "vote_count": 0,
+      "vote_sum": 0
+    }
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpku598vpw/articles/34257323898267.html",
+  "display_name": null
+}

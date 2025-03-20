@@ -1,0 +1,24 @@
+ticket
+created_at: 2025-02-04 19:50:55+00:00
+description: My small business is growing and I’m ready to take marketing to the next level. A friend recommended your platform, but I’m having trouble identifying which one would be the best fit for my business.
+
+Given my size and scope, I’m looking for a plan that provides a good range of marketing tools, allows for some active campaigns, and offers a decent level of customer support. However, I’m flexible and open to recommendations.
+
+Could you provide some guidance in choosing the right plan for my business needs
+
+Thank you in advance for your help,
+August Lee
+id: 2
+subject: SAMPLE TICKET: Which plan is best for me?
+comment
+author_id: 33640791899419
+body: My small business is growing and I’m ready to take marketing to the next level. A friend recommended your platform, but I’m having trouble identifying which one would be the best fit for my business.
+
+Given my size and scope, I’m looking for a plan that provides a good range of marketing tools, allows for some active campaigns, and offers a decent level of customer support. However, I’m flexible and open to recommendations.
+
+Could you provide some guidance in choosing the right plan for my business needs
+
+Thank you in advance for your help,
+August Lee
+created_at: 2025-02-04 19:50:55+00:00
+id: 33640812670491

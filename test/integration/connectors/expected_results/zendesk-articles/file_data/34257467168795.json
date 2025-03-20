@@ -1,0 +1,52 @@
+{
+  "identifier": "34257467168795",
+  "connector_type": "zendesk",
+  "source_identifiers": {
+    "filename": "34257467168795.html",
+    "fullpath": "articles/34257467168795.html",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": null,
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "item_type": "article",
+    "content": {
+      "author_id": 33639722684443,
+      "body": "<p>In this other article </p>\n<p> </p>\n<p>I will talk about apples</p>\n<p> </p>\n<p>Apples are pretty cool.</p>\n<p> </p>\n<p>Here is a picture of an apple: </p>\n<p> </p>\n<p> </p>\n<p><img src=\"https://unstructuredhelp.zendesk.com/hc/article_attachments/34257475679131\" alt=\"Apple | Fruits' Information Wiki | Fandom\"></p>\n<p> </p>\n<p>Does this apple look healthy? </p>\n<p>Here is a table of some apples. </p>\n<table style=\"border-collapse: collapse; width: 100%; height: 44px;\" border=\"1\">\n<tbody>\n<tr style=\"height: 22px;\">\n<td style=\"width: 25%; height: 22px;\">Apple</td>\n<td style=\"width: 25%; height: 22px;\">Weight</td>\n<td style=\"width: 25%; height: 22px;\">Color</td>\n<td style=\"width: 25%; height: 22px;\">Name</td>\n</tr>\n<tr style=\"height: 22px;\">\n<td style=\"width: 25%; height: 22px;\">103241</td>\n<td style=\"width: 25%; height: 22px;\">1lbs</td>\n<td style=\"width: 25%; height: 22px;\">Red</td>\n<td style=\"width: 25%; height: 22px;\">\n<p>Royal Red</p>\n</td>\n</tr>\n<tr>\n<td style=\"width: 25%;\">045450</td>\n<td style=\"width: 25%;\">2lbs</td>\n<td style=\"width: 25%;\">Green</td>\n<td style=\"width: 25%;\">\n<p>Granny Smith</p>\n</td>\n</tr>\n</tbody>\n</table>",
+      "comments_disabled": false,
+      "content_tag_ids": [],
+      "created_at": "2025-02-21T16:24:22Z",
+      "draft": false,
+      "edited_at": "2025-02-21T16:25:51Z",
+      "html_url": "https://unstructuredhelp.zendesk.com/hc/en-us/articles/34257467168795-Another-Article",
+      "id": 34257467168795,
+      "label_names": [],
+      "locale": "en-us",
+      "outdated": false,
+      "outdated_locales": [],
+      "permission_group_id": 34257293127707,
+      "position": 0,
+      "promoted": false,
+      "section_id": 34257293177243,
+      "source_locale": "en-us",
+      "title": "Another Article",
+      "updated_at": "2025-02-21T16:44:56Z",
+      "url": "https://unstructuredhelp.zendesk.com/api/v2/help_center/en-us/articles/34257467168795.json",
+      "user_segment_id": null,
+      "user_segment_ids": [],
+      "vote_count": 0,
+      "vote_sum": 0
+    }
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpku598vpw/articles/34257467168795.html",
+  "display_name": null
+}
