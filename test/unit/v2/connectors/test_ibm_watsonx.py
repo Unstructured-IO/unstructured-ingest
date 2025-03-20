@@ -99,9 +99,7 @@ def mock_table(mocker: MockerFixture):
 
 @pytest.fixture
 def mock_get_table(mocker: MockerFixture, mock_table: MagicMock):
-    mock_get_table = mocker.patch.context_manager(
-        IbmWatsonxUploader, "get_table", autospec=True
-    )
+    mock_get_table = mocker.patch.context_manager(IbmWatsonxUploader, "get_table", autospec=True)
     mock_get_table.return_value.__enter__.return_value = mock_table
     return mock_get_table
 
