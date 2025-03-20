@@ -1,0 +1,16 @@
+ticket
+created_at: 2025-02-04 19:50:55+00:00
+description: Hello and I hope you’re doing well. I run a medium-scale business and I’m considering using your software. However, I’m a bit torn between the monthly and annual billing options. Can you provide me with some guidance to help decide which billing cycle would be the ideal choice for a business of my size and structure?
+
+Warm regards,
+Hikari Ito
+id: 3
+subject: SAMPLE TICKET: Which payment is right for me?
+comment
+author_id: 33640826494747
+body: Hello and I hope you’re doing well. I run a medium-scale business and I’m considering using your software. However, I’m a bit torn between the monthly and annual billing options. Can you provide me with some guidance to help decide which billing cycle would be the ideal choice for a business of my size and structure?
+
+Warm regards,
+Hikari Ito
+created_at: 2025-02-04 19:50:55+00:00
+id: 33640794354843

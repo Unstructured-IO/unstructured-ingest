@@ -1,63 +1,209 @@
-import base64
-from dataclasses import dataclass
-from typing import Dict, List
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Literal, Optional, Union
+
+from pydantic import BaseModel, Field, HttpUrl
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicode
 from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
 from unstructured_ingest.v2.logger import logger
 
+if TYPE_CHECKING:
+    from httpx import AsyncClient, Client
 
-@dataclass
-class Comment:
+
+class Attachment(BaseModel):
+    # https://developer.zendesk.com/api-reference/ticketing/tickets/ticket-attachments/#json-format
+    content_type: Optional[str] = None
+
+
+class Via(BaseModel):
+    # https://developer.zendesk.com/documentation/ticketing/reference-guides/via-object-reference/
+    channel: Union[int, str]
+    source: dict = Field(default_factory=dict)
+
+
+class ZendeskComment(BaseModel):
+    # https://developer.zendesk.com/api-reference/ticketing/tickets/ticket_comments/#json-format
+    attachments: list[Attachment] = Field(default_factory=list)
+    audit_id: Optional[int] = None
+    author_id: Optional[int] = None
+    body: Optional[str] = None
+    created_at: Optional[datetime] = None
+    html_body: Optional[str] = None
+    id: Optional[int] = None
+    metadata: Optional[dict] = None
+    plain_body: Optional[str] = None
+    public: Optional[bool] = None
+    comment_type: Literal["Comment", "VoiceComment"] = Field(alias="type")
+    uploads: list[str] = Field(default_factory=list)
+    via: Optional[Via] = None
+
+    def as_text(self) -> str:
+        all_data = self.model_dump()
+        filtered_data = {
+            k: v
+            for k, v in all_data.items()
+            if k in ["id", "author_id", "body", "created_at"] and v is not None
+        }
+        return "".join(
+            [f"{v}\n" for v in ["comment"] + [f"{k}: {v}" for k, v in filtered_data.items()]]
+        )
+
+
+class ZendeskTicket(BaseModel):
+    # https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/#json-format
+    allow_attachments: bool = True
+    allow_channelback: bool = True
+    assignee_email: Optional[str] = None
+    assignee_id: Optional[int] = None
+    attribute_value_ids: list[int] = Field(default_factory=list)
+    brand_id: Optional[int] = None
+    collaborator_ids: list[int] = Field(default_factory=list)
+    collaborators: list[Union[int, str, dict[str, str]]] = Field(default_factory=list)
+    comment: Optional[ZendeskComment] = None
+    created_at: Optional[datetime] = None
+    custom_fields: list[dict[str, Any]] = Field(default_factory=list)
+    custom_status_id: Optional[int] = None
+    description: Optional[str] = None
+    due_at: Optional[datetime] = None
+    email_cc_ids: list[int] = Field(default_factory=list)
+    email_ccs: list[dict[str, str]] = Field(default_factory=list)
+    external_id: Optional[str] = None
+    follower_ids: list[int] = Field(default_factory=list)
+    followers: list[dict[str, str]] = Field(default_factory=list)
+    followup_ids: list[int] = Field(default_factory=list)
+    forum_topic_id: Optional[int] = None
+    from_messaging_channel: bool
+    generated_timestamp: Optional[datetime] = None
+    group_id: Optional[int] = None
+    has_incidents: bool = False
+    id: Optional[int] = None
+    is_public: bool = False
+    macro_id: Optional[int] = None
+    macro_ids: list[int] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    organization_id: Optional[int] = None
+    priority: Optional[Literal["urgent", "high", "normal", "low"]] = None
+    problem_id: Optional[int] = None
+    raw_subject: Optional[str] = None
+    recipient: Optional[str] = None
+    requester: dict[str, str] = Field(default_factory=dict)
+    requester_id: int
+    safe_update: Optional[bool] = None
+    satisfaction_rating: Optional[Union[str, dict[str, Any]]] = None
+    sharing_agreement_ids: list[int] = Field(default_factory=list)
+    status: Optional[Literal["new", "open", "pending", "hold", "solved", "closed"]] = None
+    subject: Optional[str] = None
+    submitter_id: Optional[int] = None
+    tags: list[str] = Field(default_factory=list)
+    ticket_form_id: Optional[int] = None
+    ticket_type: Optional[Literal["problem", "incident", "question", "task"]] = Field(
+        default=None, alias="type"
+    )
+    updated_at: Optional[datetime] = None
+    updated_stamp: Optional[str] = None
+    url: Optional[HttpUrl] = None
+    via: Optional[Via] = None
+    via_followup_source_id: Optional[int] = None
+    via_id: Optional[int] = None
+    voice_comment: Optional[dict] = None
+
+    def as_text(self) -> str:
+        all_data = self.model_dump()
+        filtered_data = {
+            k: v
+            for k, v in all_data.items()
+            if k in ["id", "subject", "description", "created_at"] and v is not None
+        }
+        return "".join(
+            [f"{v}\n" for v in ["ticket"] + [f"{k}: {v}" for k, v in filtered_data.items()]]
+        )
+
+
+class ZendeskArticle(BaseModel):
+    # https://developer.zendesk.com/api-reference/help_center/help-center-api/articles/#json-format
+    author_id: Optional[int] = None
+    body: Optional[str] = None
+    comments_disabled: bool = False
+    content_tag_ids: list[str] = Field(default_factory=list)
+    created_at: Optional[datetime] = None
+    draft: bool = False
+    edited_at: Optional[datetime] = None
+    html_url: Optional[HttpUrl] = None
     id: int
-    author_id: str
-    body: str
-    parent_ticket_id: str
-    metadata: dict
-
-
-@dataclass
-class ZendeskTicket:
-    id: int
-    subject: str
-    description: str
-    generated_ts: int
-    metadata: dict
-
-    def __lt__(self, other):
-        return int(self.id) < int(other.id)
-
-
-@dataclass
-class ZendeskArticle:
-    id: int
-    author_id: str
+    label_names: list[str] = Field(default_factory=list)
+    locale: str
+    outdated: bool = False
+    outdated_locales: list[str] = Field(default_factory=list)
+    permission_group_id: int
+    position: Optional[int] = None
+    promoted: bool = False
+    section_id: Optional[int] = None
+    source_locale: Optional[str] = None
     title: str
-    content: str
+    updated_at: Optional[datetime] = None
+    url: Optional[HttpUrl] = None
+    user_segment_id: Optional[int] = None
+    user_segment_ids: list[int] = Field(default_factory=list)
+    vote_count: Optional[int] = None
+    vote_sum: Optional[int] = None
 
-    def __lt__(self, other):
-        return int(self.id) < int(other.id)
+    def as_html(self) -> str:
+        html = self.body
+        if title := self.title:
+            html = f"<h1>{title}</h1>{html}"
+        return fix_unescaped_unicode(f"<body class='Document' >{html}</body>")
 
 
+class ZendeskArticleAttachment(BaseModel):
+    # https://developer.zendesk.com/api-reference/help_center/help-center-api/article_attachments/#json-format
+    article_id: Optional[int] = None
+    content_type: Optional[str] = None
+    content_url: Optional[HttpUrl] = None
+    created_at: Optional[datetime] = None
+    guide_media_id: Optional[str] = None
+    id: Optional[int] = None
+    inline: bool = False
+    locale: Optional[str] = None
+    size: Optional[int] = None
+    updated_at: Optional[datetime] = None
+    url: Optional[HttpUrl] = None
+
+
+@dataclass
 class ZendeskClient:
+    token: str
+    subdomain: str
+    email: str
+    max_page_size: int = 100
+    _async_client: "AsyncClient" = field(init=False, default=None)
+    _client: "Client" = field(init=False, default=None)
+    _base_url: str = field(init=False, default=None)
+
+    async def __aenter__(self) -> "ZendeskClient":
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._async_client.aclose()
 
     @requires_dependencies(["httpx"], extras="zendesk")
-    def __init__(self, token: str, subdomain: str, email: str):
+    def __post_init__(self):
         import httpx
 
-        # should be okay to be blocking.
-        url_to_check = f"https://{subdomain}.zendesk.com/api/v2/groups.json"
-        auth = f"{email}/token", token
+        auth = f"{self.email}/token", self.token
+        self._client = httpx.Client(auth=auth)
+        self._async_client = httpx.AsyncClient(auth=auth)
+        self._base_url = f"https://{self.subdomain}.zendesk.com/api/v2"
 
+        # Run check
         try:
-            _ = httpx.get(url_to_check, auth=auth)
+            url_to_check = f"{self._base_url}/groups.json"
+            resp = self._client.head(url_to_check)
+            resp.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e=e)
-
-        self._token = token
-        self._subdomain = subdomain
-        self._email = email
-        self._auth = auth
 
     @requires_dependencies(["httpx"], extras="zendesk")
     def wrap_error(self, e: Exception) -> Exception:
@@ -93,151 +239,70 @@ class ZendeskClient:
         logger.error(f"unhandled http status error from Zendesk client: {e}", exc_info=True)
         return e
 
-    @requires_dependencies(["httpx"], extras="zendesk")
-    async def get_articles_async(self) -> List[ZendeskArticle]:
+    async def fetch_content(self, url: str, content_key: str) -> AsyncGenerator[dict, None]:
+        url = f"{url}?page[size]={self.max_page_size}"
+        while True:
+            try:
+                response = await self._async_client.get(url)
+                response.raise_for_status()
+            except Exception as e:
+                raise self.wrap_error(e=e)
+
+            data = response.json()
+            for content in data[content_key]:
+                yield content
+
+            has_more = data.get("meta", {}).get("has_more", False)
+            if not has_more:
+                break
+
+            url = data["links"]["next"]
+
+    async def get_articles(self) -> AsyncGenerator[ZendeskArticle, None]:
         """
         Retrieves article content from Zendesk asynchronously.
         """
-        import httpx
-
-        articles: List[ZendeskArticle] = []
-
-        article_url = f"https://{self._subdomain}.zendesk.com/api/v2/help_center/articles.json"
+        article_url = f"https://{self.subdomain}.zendesk.com/api/v2/help_center/articles.json"
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(article_url, auth=self._auth)
-                response.raise_for_status()
+            async for article_dict in self.fetch_content(url=article_url, content_key="articles"):
+                yield ZendeskArticle.model_validate(article_dict)
         except Exception as e:
             raise self.wrap_error(e=e)
 
-        articles_in_response: List[dict] = response.json()["articles"]
-
-        articles = [
-            ZendeskArticle(
-                id=int(entry["id"]),
-                author_id=str(entry["author_id"]),
-                title=str(entry["title"]),
-                content=entry["body"],
-            )
-            for entry in articles_in_response
-        ]
-        return articles
-
-    @requires_dependencies(["httpx"], extras="zendesk")
-    async def get_comments_async(self, ticket_id: int) -> List["Comment"]:
-        import httpx
-
-        comments_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets/{ticket_id}/comments"
+    async def get_comments(self, ticket_id: int) -> AsyncGenerator[ZendeskComment, None]:
+        comments_url = f"https://{self.subdomain}.zendesk.com/api/v2/tickets/{ticket_id}/comments"
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(comments_url, auth=self._auth)
-                response.raise_for_status()
+            async for comment_dict in self.fetch_content(url=comments_url, content_key="comments"):
+                yield ZendeskComment.model_validate(comment_dict)
         except Exception as e:
             raise self.wrap_error(e=e)
 
-        return [
-            Comment(
-                id=int(entry["id"]),
-                author_id=entry["author_id"],
-                body=entry["body"],
-                metadata=entry,
-                parent_ticket_id=ticket_id,
-            )
-            for entry in response.json()["comments"]
-        ]
+    async def get_tickets(self) -> AsyncGenerator[ZendeskTicket, None]:
+        tickets_url = f"https://{self.subdomain}.zendesk.com/api/v2/tickets"
 
-    @requires_dependencies(["httpx"], extras="zendesk")
-    def get_users(self) -> List[dict]:
-        import httpx
-
-        users: List[dict] = []
-
-        users_url = f"https://{self._subdomain}.zendesk.com/api/v2/users"
         try:
-            response = httpx.get(users_url, auth=self._auth)
-            response.raise_for_status()
+            async for ticket_dict in self.fetch_content(url=tickets_url, content_key="tickets"):
+                yield ZendeskTicket.model_validate(ticket_dict)
         except Exception as e:
             raise self.wrap_error(e=e)
 
-        users_in_response: List[dict] = response.json()["users"]
-        users = users_in_response
-
-        return users
-
-    @requires_dependencies(["httpx"], extras="zendesk")
-    async def get_tickets_async(self) -> List["ZendeskTicket"]:
-        import httpx
-
-        tickets: List["ZendeskTicket"] = []
-        tickets_url = f"https://{self._subdomain}.zendesk.com/api/v2/tickets"
-
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(tickets_url, auth=self._auth)
-                response.raise_for_status()
-        except Exception as e:
-            raise self.wrap_error(e=e)
-
-        tickets_in_response: List[dict] = response.json()["tickets"]
-
-        for entry in tickets_in_response:
-            ticket = ZendeskTicket(
-                id=int(entry["id"]),
-                subject=entry["subject"],
-                description=entry["description"],
-                generated_ts=entry["generated_timestamp"],
-                metadata=entry,
-            )
-            tickets.append(ticket)
-
-        return tickets
-
-    @requires_dependencies(["httpx"], extras="zendesk")
-    async def get_article_attachments_async(self, article_id: str):
+    async def get_article_attachments(
+        self, article_id: int
+    ) -> AsyncGenerator[ZendeskArticleAttachment, None]:
         """
         Handles article attachments such as images and stores them as UTF-8 encoded bytes.
         """
-        import httpx
-
         article_attachment_url = (
-            f"https://{self._subdomain}.zendesk.com/api/v2/help_center/"
+            f"https://{self.subdomain}.zendesk.com/api/v2/help_center/"
             f"articles/{article_id}/attachments"
         )
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(article_attachment_url, auth=self._auth)
-                response.raise_for_status()
+            async for attachment_dict in self.fetch_content(
+                url=article_attachment_url, content_key="article_attachments"
+            ):
+                yield ZendeskArticleAttachment.model_validate(attachment_dict)
         except Exception as e:
             raise self.wrap_error(e=e)
-
-        attachments_in_response: List[Dict] = response.json().get("article_attachments", [])
-        attachments = []
-
-        for attachment in attachments_in_response:
-            attachment_data = {
-                "id": attachment["id"],
-                "file_name": attachment["file_name"],
-                "content_type": attachment["content_type"],
-                "size": attachment["size"],
-                "url": attachment["url"],
-                "content_url": attachment["content_url"],
-            }
-
-            try:
-                async with httpx.AsyncClient() as client:
-                    download_response = await client.get(attachment["content_url"], auth=self._auth)
-                    download_response.raise_for_status()
-            except Exception as e:
-                raise self.wrap_error(e=e)
-
-            encoded_content = base64.b64encode(download_response.content).decode("utf-8")
-            attachment_data["encoded_content"] = (
-                f"data:{attachment_data['content_type']};base64,{encoded_content}"
-            )
-
-            attachments.append(attachment_data)
-
-        return attachments

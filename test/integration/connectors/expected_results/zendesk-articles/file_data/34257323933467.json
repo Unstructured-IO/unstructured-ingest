@@ -1,0 +1,52 @@
+{
+  "identifier": "34257323933467",
+  "connector_type": "zendesk",
+  "source_identifiers": {
+    "filename": "34257323933467.html",
+    "fullpath": "articles/34257323933467.html",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": "https://unstructuredhelp.zendesk.com/api/v2/help_center/en-us/articles/34257323933467.json",
+    "version": null,
+    "record_locator": null,
+    "date_created": "2025-02-21T16:20:22+00:00",
+    "date_modified": "2025-02-21T16:20:22+00:00",
+    "date_processed": "1742490385.867753",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "item_type": "article",
+    "content": {
+      "author_id": 33639722684443,
+      "body": "<p>This FAQ is a section in the General category of your help center knowledge base. We created this category and a few common sections to help you get started with your Help Center.</p>\n\n<p>The knowledge base in the Help Center consists of three main page types: category pages, section pages, and articles. Here's the structure:</p>\n\n<p><img src=\"//static.zdassets.com/hc/assets/sample-articles/article0_image.png\" alt=\"Comments are part of the articles. The articles pages are part of Sections page. The Sections pages are part of the Category pages.\"></p>\n\n<p>You can create your own categories, sections, and articles and modify or completely delete ours. See the <a href=\"https://support.zendesk.com/hc/en-us/articles/218222877\" target=\"_blank\">Organizing knowledge base content</a> and <a href=\"https://support.zendesk.com/hc/en-us/articles/203664366\" target=\"_blank\">Creating articles in the Help Center</a> to learn how.</p>",
+      "comments_disabled": false,
+      "content_tag_ids": [],
+      "created_at": "2025-02-21T16:20:22Z",
+      "draft": false,
+      "edited_at": "2025-02-21T16:20:22Z",
+      "html_url": "https://unstructuredhelp.zendesk.com/hc/en-us/articles/34257323933467-What-are-these-sections-and-articles-doing-here",
+      "id": 34257323933467,
+      "label_names": [],
+      "locale": "en-us",
+      "outdated": false,
+      "outdated_locales": [],
+      "permission_group_id": 34257293127707,
+      "position": 0,
+      "promoted": false,
+      "section_id": 34257293177243,
+      "source_locale": "en-us",
+      "title": "What are these sections and articles doing here?",
+      "updated_at": "2025-02-21T16:20:22Z",
+      "url": "https://unstructuredhelp.zendesk.com/api/v2/help_center/en-us/articles/34257323933467.json",
+      "user_segment_id": null,
+      "user_segment_ids": [],
+      "vote_count": 0,
+      "vote_sum": 0
+    }
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpzy2_b98i/articles/34257323933467.html",
+  "display_name": null
+}

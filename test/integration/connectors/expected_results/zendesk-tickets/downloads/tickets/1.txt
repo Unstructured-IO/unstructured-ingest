@@ -1,0 +1,27 @@
+ticket
+created_at: 2025-02-04 19:31:32+00:00
+description: Hi there,
+
+I’m sending an email because I’m having a problem setting up your new product. Can you help me troubleshoot?
+
+Thanks,
+ The Customer
+
+
+id: 1
+subject: SAMPLE TICKET: Meet the ticket
+comment
+author_id: 33639712775067
+body: Hi there,
+
+I’m sending an email because I’m having a problem setting up your new product. Can you help me troubleshoot?
+
+Thanks,
+ The Customer
+created_at: 2025-02-04 19:31:32+00:00
+id: 33639724418843
+comment
+author_id: 33639722684443
+body: No i cannot, help yourself.
+created_at: 2025-02-17 14:21:30+00:00
+id: 34107618755867
