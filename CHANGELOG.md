@@ -1,8 +1,13 @@
-## 0.5.16-dev0
+## 0.5.16-dev1
 
 ### Features 
 
 * **Add IBM watson.data Destination connector**
+
+### Fixes 
+
+* **Fix databricks volumes table uploader precheck**
+* **Zendesk fix for debug**
 
 ## 0.5.15
 
