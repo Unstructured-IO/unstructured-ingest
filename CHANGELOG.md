@@ -1,3 +1,9 @@
+## 0.5.18
+
+### Fixes
+
+* **Fix missing support for NDJSON in stagers**
+
 ## 0.5.17
 
 ### Fixes 
