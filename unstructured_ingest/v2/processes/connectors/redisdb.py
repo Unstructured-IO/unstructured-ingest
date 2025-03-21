@@ -110,6 +110,7 @@ class RedisConnectionConfig(ConnectionConfig):
 
 class RedisUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
+    key_prefix: str = Field(default="", description="Prefix for Redis keys")
 
 
 @dataclass
@@ -145,11 +146,11 @@ class RedisUploader(Uploader):
         async with self.connection_config.create_async_client() as async_client:
             async with async_client.pipeline(transaction=True) as pipe:
                 for element in batch:
-                    element_id = element["element_id"]
+                    key_with_prefix = f"{self.upload_config.key_prefix}{element['element_id']}"
                     if redis_stack:
-                        pipe.json().set(element_id, "$", element)
+                        pipe.json().set(key_with_prefix, "$", element)
                     else:
-                        pipe.set(element_id, json.dumps(element))
+                        pipe.set(key_with_prefix, json.dumps(element))
                 await pipe.execute()
 
     @requires_dependencies(["redis"], extras="redis")
@@ -159,16 +160,16 @@ class RedisUploader(Uploader):
         redis_stack = True
         async with self.connection_config.create_async_client() as async_client:
             async with async_client.pipeline(transaction=True) as pipe:
-                element_id = element["element_id"]
+                key_with_prefix = f"{self.upload_config.key_prefix}{element['element_id']}"
                 try:
                     # Redis with stack extension supports JSON type
-                    await pipe.json().set(element_id, "$", element).execute()
+                    await pipe.json().set(key_with_prefix, "$", element).execute()
                 except redis_exceptions.ResponseError as e:
                     message = str(e)
                     if "unknown command `JSON.SET`" in message:
                         # if this error occurs, Redis server doesn't support JSON type,
                         # so save as string type instead
-                        await pipe.set(element_id, json.dumps(element)).execute()
+                        await pipe.set(key_with_prefix, json.dumps(element)).execute()
                         redis_stack = False
                     else:
                         raise e

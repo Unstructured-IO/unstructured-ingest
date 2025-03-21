@@ -1,3 +1,9 @@
+## 0.5.18-dev0
+
+### Features 
+
+* **Add `key_prefix` field to Redis Uploader** - Allow users to input custom prefix for keys saved inside Redis connector
+
 ## 0.5.17
 
 ### Fixes 
