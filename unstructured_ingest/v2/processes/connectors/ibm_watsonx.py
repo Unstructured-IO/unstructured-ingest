@@ -251,6 +251,7 @@ class IbmWatsonxUploader(SQLUploader):
             retry_if_exception_type,
             stop_after_attempt,
             wait_random,
+            reraise=True
         )
 
         @retry(
