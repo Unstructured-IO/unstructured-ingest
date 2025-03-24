@@ -23,20 +23,22 @@ from unstructured_ingest.v2.processes.connectors.redisdb import (
 )
 
 
-async def delete_record(client: Redis, element_id: str) -> None:
-    await client.delete(element_id)
+async def delete_record(client: Redis, element_id: str, key_prefix: str) -> None:
+    key_with_prefix = f"{key_prefix}{element_id}"
+    await client.delete(key_with_prefix)
 
 
-async def validate_upload(client: Redis, first_element: dict):
+async def validate_upload(client: Redis, first_element: dict, key_prefix: str) -> None:
     element_id = first_element["element_id"]
+    key_with_prefix = f"{key_prefix}{element_id}"
     expected_text = first_element["text"]
     expected_embeddings = first_element["embeddings"]
     async with client.pipeline(transaction=True) as pipe:
         try:
-            response = await pipe.json().get(element_id, "$").execute()
+            response = await pipe.json().get(key_with_prefix, "$").execute()
             response = response[0][0]
         except redis_exceptions.ResponseError:
-            response = await pipe.get(element_id).execute()
+            response = await pipe.get(key_with_prefix).execute()
             response = json.loads(response[0])
 
     embedding_similarity = np.linalg.norm(
@@ -53,6 +55,7 @@ async def redis_destination_test(
     upload_file: Path,
     tmp_path: Path,
     connection_kwargs: dict,
+    uploader_config: dict,
     uri: Optional[str] = None,
     password: Optional[str] = None,
 ):
@@ -60,8 +63,9 @@ async def redis_destination_test(
         connection_config=RedisConnectionConfig(
             **connection_kwargs, access_config=RedisAccessConfig(uri=uri, password=password)
         ),
-        upload_config=RedisUploaderConfig(batch_size=10),
+        upload_config=RedisUploaderConfig(batch_size=10, **uploader_config),
     )
+    key_prefix = uploader.upload_config.key_prefix
 
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
@@ -78,20 +82,32 @@ async def redis_destination_test(
 
         if uri:
             async with from_url(uri) as client:
-                await validate_upload(client=client, first_element=first_element)
+                await validate_upload(
+                    client=client,
+                    first_element=first_element,
+                    key_prefix=key_prefix,
+                )
         else:
             async with Redis(**connection_kwargs, password=password) as client:
-                await validate_upload(client=client, first_element=first_element)
+                await validate_upload(
+                    client=client,
+                    first_element=first_element,
+                    key_prefix=key_prefix,
+                )
     except Exception as e:
         raise e
     finally:
         if uri:
             async with from_url(uri) as client:
-                tasks = [delete_record(client, element["element_id"]) for element in elements]
+                tasks = [
+                    delete_record(client, element["element_id"], key_prefix) for element in elements
+                ]
                 await asyncio.gather(*tasks)
         else:
             async with Redis(**connection_kwargs, password=password) as client:
-                tasks = [delete_record(client, element["element_id"]) for element in elements]
+                tasks = [
+                    delete_record(client, element["element_id"], key_prefix) for element in elements
+                ]
                 await asyncio.gather(*tasks)
 
 
@@ -105,8 +121,13 @@ async def test_redis_destination_azure_with_password(upload_file: Path, tmp_path
         "db": 0,
         "ssl": True,
     }
+    uploader_config = {
+        "key_prefix": "test_ingest:",
+    }
     redis_pw = os.environ["AZURE_REDIS_INGEST_TEST_PASSWORD"]
-    await redis_destination_test(upload_file, tmp_path, connection_kwargs, password=redis_pw)
+    await redis_destination_test(
+        upload_file, tmp_path, connection_kwargs, uploader_config, password=redis_pw
+    )
 
 
 @pytest.mark.asyncio
@@ -114,6 +135,9 @@ async def test_redis_destination_azure_with_password(upload_file: Path, tmp_path
 @requires_env("AZURE_REDIS_INGEST_TEST_PASSWORD")
 async def test_redis_destination_azure_with_uri(upload_file: Path, tmp_path: Path):
     connection_kwargs = {}
+    uploader_config = {
+        "key_prefix": "test_ingest:",
+    }
     redis_pw = os.environ["AZURE_REDIS_INGEST_TEST_PASSWORD"]
     uri = f"rediss://:{redis_pw}@utic-dashboard-dev.redis.cache.windows.net:6380/0"
-    await redis_destination_test(upload_file, tmp_path, connection_kwargs, uri=uri)
+    await redis_destination_test(upload_file, tmp_path, connection_kwargs, uploader_config, uri=uri)
