@@ -35,6 +35,10 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
+from unstructured_ingest.v2.processes.utils.blob_storage import (
+    BlobStoreUploadStager,
+    BlobStoreUploadStagerConfig,
+)
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient
@@ -428,4 +432,6 @@ onedrive_destination_entry = DestinationRegistryEntry(
     connection_config=OnedriveConnectionConfig,
     uploader=OnedriveUploader,
     uploader_config=OnedriveUploaderConfig,
+    upload_stager_config=BlobStoreUploadStagerConfig,
+    upload_stager=BlobStoreUploadStager,
 )

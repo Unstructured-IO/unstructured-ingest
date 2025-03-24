@@ -1,8 +1,14 @@
-## 0.5.18-dev0
+## 0.5.19
 
-### Features 
+### Features
 
 * **Add `key_prefix` field to Redis Uploader** - Allow users to input custom prefix for keys saved inside Redis connector
+
+## 0.5.18
+
+### Fixes
+
+* **Fix missing support for NDJSON in stagers**
 
 ## 0.5.17
 
