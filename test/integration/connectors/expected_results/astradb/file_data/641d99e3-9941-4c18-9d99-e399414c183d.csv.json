@@ -14,7 +14,7 @@
     },
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734616909.788801",
+    "date_processed": "1742508009.284161",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -23,6 +23,6 @@
     "keyspace": null
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/pytest-of-romanisecke/pytest-0/test_astra_search_source0/641d99e3-9941-4c18-9d99-e399414c183d.csv",
+  "local_download_path": "/private/var/folders/7s/nsbls8k12qngtdvkhhkpf1n00000gn/T/pytest-of-nathan/pytest-325/test_astra_search_source0/641d99e3-9941-4c18-9d99-e399414c183d.csv",
   "display_name": null
 }

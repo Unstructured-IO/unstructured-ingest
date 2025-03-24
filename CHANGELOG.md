@@ -1,8 +1,22 @@
-## 0.5.16-dev1
+## 0.5.19-dev0
 
 ### Features 
 
 * **Add IBM watson.data Destination connector**
+
+## 0.5.18
+
+### Fixes
+
+* **Fix missing support for NDJSON in stagers**
+
+## 0.5.17
+
+### Fixes 
+
+* **Do not output `orig_elements` for astradb** `original_elements` has the correctly truncated field
+
+## 0.5.16
 
 ### Fixes 
 

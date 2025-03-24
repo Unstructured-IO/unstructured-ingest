@@ -192,6 +192,16 @@ def get_data(path: Union[Path, str]) -> list[dict]:
             logger.warning(f"failed to read {path} as parquet: {e}")
 
 
+def get_json_data(path: Path) -> list[dict]:
+    with path.open() as f:
+        if path.suffix == ".json":
+            return json.load(f)
+        elif path.suffix == ".ndjson":
+            return ndjson.load(f)
+        else:
+            raise ValueError(f"Unsupported file type: {path}")
+
+
 def get_data_df(path: Path) -> pd.DataFrame:
     with path.open() as f:
         if path.suffix == ".json":

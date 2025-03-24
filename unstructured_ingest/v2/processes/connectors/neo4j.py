@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import uuid
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -14,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, Secret, field_validator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.data_prep import batch_generator, get_json_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -97,8 +96,7 @@ class Neo4jUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        with elements_filepath.open() as file:
-            elements = json.load(file)
+        elements = get_json_data(elements_filepath)
 
         nx_graph = self._create_lexical_graph(
             elements, self._create_document_node(file_data=file_data)
@@ -294,8 +292,7 @@ class Neo4jUploader(Uploader):
         return True
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
-        with path.open() as file:
-            staged_data = json.load(file)
+        staged_data = get_json_data(path)
 
         graph_data = _GraphData.model_validate(staged_data)
         async with self.connection_config.get_client() as client:

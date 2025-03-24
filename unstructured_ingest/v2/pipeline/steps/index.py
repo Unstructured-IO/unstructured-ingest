@@ -37,14 +37,14 @@ class IndexStep(PipelineStep):
     @instrument(span_name=STEP_ID)
     def run(self) -> Generator[str, None, None]:
         for file_data in self.process.run():
-            logger.debug(f"generated file data: {file_data.model_dump()}")
+            logger.debug(f"generated file data: {file_data.model_dump_json()}")
             try:
                 record_hash = self.get_hash(extras=[file_data.identifier])
                 filename = f"{record_hash}.json"
                 filepath = (self.cache_dir / filename).resolve()
                 filepath.parent.mkdir(parents=True, exist_ok=True)
                 with open(str(filepath), "w") as f:
-                    json.dump(file_data.model_dump(), f, indent=2)
+                    f.write(file_data.model_dump_json(indent=2))
                 yield str(filepath)
             except Exception as e:
                 logger.error(f"failed to create index for file data: {file_data}", exc_info=True)
@@ -54,14 +54,14 @@ class IndexStep(PipelineStep):
 
     async def run_async(self) -> AsyncGenerator[str, None]:
         async for file_data in self.process.run_async():
-            logger.debug(f"generated file data: {file_data.model_dump()}")
+            logger.debug(f"generated file data: {file_data.model_dump_json()}")
             try:
                 record_hash = self.get_hash(extras=[file_data.identifier])
                 filename = f"{record_hash}.json"
                 filepath = (self.cache_dir / filename).resolve()
                 filepath.parent.mkdir(parents=True, exist_ok=True)
                 with open(str(filepath), "w") as f:
-                    json.dump(file_data.model_dump(), f, indent=2)
+                    f.write(file_data.model_dump_json(indent=2))
                 yield str(filepath)
             except Exception as e:
                 logger.error(f"failed to create index for file data: {file_data}", exc_info=True)

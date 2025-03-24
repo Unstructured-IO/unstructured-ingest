@@ -1,0 +1,24 @@
+ticket
+created_at: 2025-02-04 19:50:57+00:00
+description: Hello, I’m the Chief of Staff to our new CFO and as part of my role, I’m in charge of understanding and aligning our accounts payable process, which includes handling invoices from our service providers.
+
+I noticed that our invoice reflects tax deductions, but I’m uncertain how these have been calculated. We are registered in the U.S., and I understand that sales tax may vary from state to state. Could you clarify how these figures are formulated for invoices in USD?
+
+Any assistance you can provide as I navigate through these initial stages of my role would be deeply appreciated.
+
+Kind Regards,
+Berlin Torres
+id: 5
+subject: SAMPLE TICKET: Tax question
+comment
+author_id: 33640792176411
+body: Hello, I’m the Chief of Staff to our new CFO and as part of my role, I’m in charge of understanding and aligning our accounts payable process, which includes handling invoices from our service providers.
+
+I noticed that our invoice reflects tax deductions, but I’m uncertain how these have been calculated. We are registered in the U.S., and I understand that sales tax may vary from state to state. Could you clarify how these figures are formulated for invoices in USD?
+
+Any assistance you can provide as I navigate through these initial stages of my role would be deeply appreciated.
+
+Kind Regards,
+Berlin Torres
+created_at: 2025-02-04 19:50:57+00:00
+id: 33640792192923

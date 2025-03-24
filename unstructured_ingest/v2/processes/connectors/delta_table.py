@@ -1,4 +1,3 @@
-import json
 import os
 import traceback
 from dataclasses import dataclass, field
@@ -11,7 +10,7 @@ import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import get_data_df
+from unstructured_ingest.utils.data_prep import get_data_df, get_json_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.table import convert_to_pandas_dataframe
 from unstructured_ingest.v2.interfaces import (
@@ -86,9 +85,7 @@ class DeltaTableUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        with open(elements_filepath) as elements_file:
-            elements_contents = json.load(elements_file)
-
+        elements_contents = get_json_data(elements_filepath)
         output_path = Path(output_dir) / Path(f"{output_filename}.parquet")
 
         df = convert_to_pandas_dataframe(elements_dict=elements_contents)
