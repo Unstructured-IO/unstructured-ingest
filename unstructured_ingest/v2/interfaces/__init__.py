@@ -1,6 +1,6 @@
 from .connector import AccessConfig, BaseConnector, ConnectionConfig
 from .downloader import Downloader, DownloaderConfig, DownloadResponse, download_responses
-from .file_data import BatchFileData, BatchItem, FileData, FileDataSourceMetadata, SourceIdentifiers
+from unstructured_ingest.v2.types.file_data import BatchFileData, BatchItem, FileData, FileDataSourceMetadata, SourceIdentifiers
 from .indexer import Indexer, IndexerConfig
 from .process import BaseProcess
 from .processor import ProcessorConfig

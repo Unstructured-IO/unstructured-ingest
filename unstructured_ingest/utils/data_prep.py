@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
 
-from pandas import DataFrame, read_csv, read_parquet
+import pandas as pd
 
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.v2.logger import logger
@@ -15,7 +15,7 @@ T = TypeVar("T")
 IterableT = Iterable[T]
 
 
-def split_dataframe(df: DataFrame, chunk_size: int = 100) -> Generator[DataFrame, None, None]:
+def split_dataframe(df: pd.DataFrame, chunk_size: int = 100) -> Generator[pd.DataFrame, None, None]:
     num_chunks = len(df) // chunk_size + 1
     for i in range(num_chunks):
         yield df[i * chunk_size : (i + 1) * chunk_size]
@@ -144,10 +144,10 @@ def get_data_by_suffix(path: Path) -> list[dict]:
         elif path.suffix == ".ndjson":
             return ndjson.load(f)
         elif path.suffix == ".csv":
-            df = read_csv(path)
+            df = pd.read_csv(path)
             return df.to_dict(orient="records")
         elif path.suffix == ".parquet":
-            df = read_parquet(path)
+            df = pd.read_parquet(path)
             return df.to_dict(orient="records")
         else:
             raise ValueError(f"Unsupported file type: {path}")
@@ -181,12 +181,12 @@ def get_data(path: Union[Path, str]) -> list[dict]:
         except Exception as e:
             logger.warning(f"failed to read {path} as ndjson: {e}")
         try:
-            df = read_csv(path)
+            df = pd.read_csv(path)
             return df.to_dict(orient="records")
         except Exception as e:
             logger.warning(f"failed to read {path} as csv: {e}")
         try:
-            df = read_parquet(path)
+            df = pd.read_parquet(path)
             return df.to_dict(orient="records")
         except Exception as e:
             logger.warning(f"failed to read {path} as parquet: {e}")
@@ -202,19 +202,19 @@ def get_json_data(path: Path) -> list[dict]:
             raise ValueError(f"Unsupported file type: {path}")
 
 
-def get_data_df(path: Path) -> DataFrame:
+def get_data_df(path: Path) -> pd.DataFrame:
     with path.open() as f:
         if path.suffix == ".json":
             data = json.load(f)
-            return DataFrame(data=data)
+            return pd.DataFrame(data=data)
         elif path.suffix == ".ndjson":
             data = ndjson.load(f)
-            return DataFrame(data=data)
+            return pd.DataFrame(data=data)
         elif path.suffix == ".csv":
-            df = read_csv(path)
+            df = pd.read_csv(path)
             return df
         elif path.suffix == ".parquet":
-            df = read_parquet(path)
+            df = pd.read_parquet(path)
             return df
         else:
             raise ValueError(f"Unsupported file type: {path}")
