@@ -1,8 +1,14 @@
-## 0.5.19-dev0
+## 0.5.20-dev0
 
 ### Features 
 
 * **Add IBM watson.data Destination connector**
+
+## 0.5.19
+
+### Features
+
+* **Add `key_prefix` field to Redis Uploader** - Allow users to input custom prefix for keys saved inside Redis connector
 
 ## 0.5.18
 
