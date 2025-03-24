@@ -299,7 +299,7 @@ class ConfluenceIndexer(Indexer):
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
-                    permissions_data=self._parse_permissions_for_doc(space_id, doc_id, space_perm),
+                    permissions_data=self._parse_permissions_for_doc(doc_id, space_perm),
                     record_locator={
                         "space_id": space_key,
                         "document_id": doc_id,
