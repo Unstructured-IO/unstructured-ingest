@@ -57,7 +57,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
 
-    _bearer_token: Optional[dict[str, Any]] = None
+    _bearer_token: Optional[dict[str, Any]] = Field(init=False, default=None)
 
     @property
     def iceberg_url(self) -> str:
