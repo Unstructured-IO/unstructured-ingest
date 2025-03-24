@@ -57,7 +57,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
 
-    _bearer_token: Optional[dict[str, Any]] = Field(init=False, default=None)
+    _bearer_token: Optional[dict[str, Any]] = None
 
     @property
     def iceberg_url(self) -> str:
@@ -237,9 +237,6 @@ class IbmWatsonxUploader(SQLUploader):
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
 
-    def _append(self, transaction: "Transaction", data_table: "ArrowTable") -> None:
-        transaction.append(data_table)
-
     @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx")
     def upload_data_table(
         self, table: "Table", data_table: "ArrowTable", file_data: FileData
@@ -251,7 +248,6 @@ class IbmWatsonxUploader(SQLUploader):
             retry_if_exception_type,
             stop_after_attempt,
             wait_random,
-            reraise=True
         )
 
         @retry(
@@ -259,12 +255,13 @@ class IbmWatsonxUploader(SQLUploader):
             wait=wait_random(),
             retry=retry_if_exception_type(IcebergCommitFailedException),
             before=before_log(logger, logging.DEBUG),
+            reraise=True,
         )
         def _upload_data_table(table: "Table", data_table: "ArrowTable", file_data: FileData):
             try:
                 with table.transaction() as transaction:
                     self._delete(transaction, file_data.identifier)
-                    self._append(transaction, data_table)
+                    transaction.append(data_table)
             except CommitFailedException as e:
                 table.refresh()
                 logger.debug(e)
@@ -272,7 +269,12 @@ class IbmWatsonxUploader(SQLUploader):
             except Exception as e:
                 raise ProviderError(f"Failed to upload data to table: {e}")
 
-        return _upload_data_table(table, data_table, file_data)
+        try:
+            return _upload_data_table(table, data_table, file_data)
+        except ProviderError:
+            raise
+        except Exception as e:
+            raise ProviderError(f"Failed to upload data to table: {e}")
 
     def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
         data_table = self._df_to_arrow_table(df)

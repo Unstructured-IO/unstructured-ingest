@@ -6,7 +6,6 @@ import pytest
 from pydantic import Secret
 from pyiceberg.exceptions import CommitFailedException
 from pytest_mock import MockerFixture
-from tenacity import RetryError
 
 from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
@@ -118,11 +117,6 @@ def mock_data_table(mocker: MockerFixture):
 @pytest.fixture
 def mock_delete(mocker: MockerFixture):
     return mocker.patch.object(IbmWatsonxUploader, "_delete")
-
-
-@pytest.fixture
-def mock_append(mocker: MockerFixture):
-    return mocker.patch.object(IbmWatsonxUploader, "_append")
 
 
 @pytest.fixture
@@ -318,13 +312,12 @@ def test_ibm_watsonx_uploader_upload_data_table_success(
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
     mock_delete: MagicMock,
-    mock_append: MagicMock,
     file_data: FileData,
 ):
     uploader.upload_data_table(mock_table, mock_data_table, file_data)
 
     mock_delete.assert_called_once_with(mock_transaction, "test_identifier")
-    mock_append.assert_called_once_with(mock_transaction, mock_data_table)
+    mock_transaction.append.assert_called_once_with(mock_data_table)
 
 
 def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
@@ -333,12 +326,11 @@ def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
     mock_delete: MagicMock,
-    mock_append: MagicMock,
     file_data: FileData,
 ):
-    mock_append.side_effect = CommitFailedException()
+    mock_transaction.append.side_effect = CommitFailedException()
 
-    with pytest.raises(RetryError):
+    with pytest.raises(ProviderError):
         uploader.upload_data_table(mock_table, mock_data_table, file_data)
     assert mock_table.refresh.call_count == 5
 
@@ -349,10 +341,9 @@ def test_ibm_watsonx_uploader_upload_data_table_exception(
     mock_transaction: MagicMock,
     mock_data_table: MagicMock,
     mock_delete: MagicMock,
-    mock_append: MagicMock,
     file_data: FileData,
 ):
-    mock_append.side_effect = Exception()
+    mock_transaction.append.side_effect = Exception()
 
     with pytest.raises(ProviderError):
         uploader.upload_data_table(mock_table, mock_data_table, file_data)
@@ -438,15 +429,6 @@ def test_ibm_watsonx_uploader_upload_dataframe_success(
 
     mock_get_table.assert_called_once()
     mock_upload_data_table.assert_called_once_with(mock_table, mock_data_table, file_data)
-
-
-def test_ibm_watsonx_uploader_append_success(
-    uploader: IbmWatsonxUploader,
-    mock_transaction: MagicMock,
-    mock_data_table: MagicMock,
-):
-    uploader._append(mock_transaction, mock_data_table)
-    mock_transaction.append.assert_called_once_with(mock_data_table)
 
 
 def test_ibm_watsonx_uploader_delete_can_delete(
