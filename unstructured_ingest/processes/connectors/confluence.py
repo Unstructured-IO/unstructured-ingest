@@ -169,102 +169,7 @@ class ConfluenceIndexer(Indexer):
         doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
-    def _get_permissions_for_doc(self, space_id: int, doc_id: str) -> Optional[dict]:
-        from requests.exceptions import HTTPError
-
-        def parse_permissions(doc_permissions: dict, space_permissions: list):
-            """
-            Parses document and space permissions to determine final user/group roles.
-
-            :param doc_permissions: dict containing document-level restrictions
-            - doc_permissions type in Confluence: ContentRestrictionArray
-            :param space_permissions: list of space-level permission assignments
-            - space_permissions type in Confluence: list of SpacePermissionAssignment
-            :return: dict with operation as keys and each maps to dict with "users" and "groups"
-
-            Get document permissions. If they exist, they will override space level permissions.
-            Otherwise, apply relevant space permissions (read, administer, delete)
-            """
-
-            # Separate flags to track if view or edit is restricted at the page level
-            page_view_restricted = bool(
-                doc_permissions.get("read", {})
-                .get("restrictions", {})
-                .get("user", {})
-                .get("results")
-                or doc_permissions.get("read", {})
-                .get("restrictions", {})
-                .get("group", {})
-                .get("results")
-            )
-
-            page_edit_restricted = bool(
-                doc_permissions.get("update", {})
-                .get("restrictions", {})
-                .get("user", {})
-                .get("results")
-                or doc_permissions.get("update", {})
-                .get("restrictions", {})
-                .get("group", {})
-                .get("results")
-            )
-
-            # normalized_perms_dict = {}
-            permissions_by_role = {
-                "read": {"users": set(), "groups": set()},
-                "update": {"users": set(), "groups": set()},
-                "delete": {"users": set(), "groups": set()},
-            }
-
-            for action, permissions in doc_permissions.items():
-                restrictions_dict = permissions.get("restrictions", {})
-
-                for entity_type, entity_data in restrictions_dict.items():
-                    for entity in entity_data.get("results"):
-                        entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
-                        permissions_by_role[action][f"{entity_type}s"].add(entity_id)
-                        # edit permission implies view permission
-                        if action == "update":
-                            permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
-
-            for space_perm in space_permissions:
-                space_operation = space_perm["operation"]["key"]
-                space_target_type = space_perm["operation"]["targetType"]
-                space_entity_id = space_perm["principal"]["id"]
-                space_entity_type = space_perm["principal"]["type"]
-
-                # Apply space-level view permissions if no page restrictions exist
-                if (
-                    space_target_type == "space"
-                    and space_operation == "read"
-                    and not page_view_restricted
-                ):
-                    permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
-
-                # Administer permission includes view + edit. Apply if not page restricted
-                elif space_target_type == "space" and space_operation == "administer":
-                    if not page_view_restricted:
-                        permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
-                        if not page_edit_restricted:
-                            permissions_by_role["update"][f"{space_entity_type}s"].add(
-                                space_entity_id
-                            )
-
-                # Add the "delete page" space permissions if there are other page permissions
-                elif (
-                    space_target_type == "page"
-                    and space_operation == "delete"
-                    and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
-                ):
-                    permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
-
-            # turn sets into sorted lists for consistency and json serialization
-            for role_dict in permissions_by_role.values():
-                for key in role_dict:
-                    role_dict[key] = sorted(role_dict[key])
-
-            return permissions_by_role
-
+    def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
         with self.connection_config.get_client() as client:
             try:
                 # space permissions
@@ -275,15 +180,107 @@ class ConfluenceIndexer(Indexer):
                     while space_permissions_result.get("next"):
                         space_permissions_result = client.get(space_permissions_result["next"])
                         space_permissions.extend(space_permissions_result["results"])
+                return space_permissions
+            except Exception as e:
+                logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
+                return None
 
+    @staticmethod
+    def parse_permissions(doc_permissions: dict, space_permissions: list):
+        """
+        Parses document and space permissions to determine final user/group roles.
+
+        :param doc_permissions: dict containing document-level restrictions
+        - doc_permissions type in Confluence: ContentRestrictionArray
+        :param space_permissions: list of space-level permission assignments
+        - space_permissions type in Confluence: list of SpacePermissionAssignment
+        :return: dict with operation as keys and each maps to dict with "users" and "groups"
+
+        Get document permissions. If they exist, they will override space level permissions.
+        Otherwise, apply relevant space permissions (read, administer, delete)
+        """
+
+        # Separate flags to track if view or edit is restricted at the page level
+        page_view_restricted = bool(
+            doc_permissions.get("read", {}).get("restrictions", {}).get("user", {}).get("results")
+            or doc_permissions.get("read", {})
+            .get("restrictions", {})
+            .get("group", {})
+            .get("results")
+        )
+
+        page_edit_restricted = bool(
+            doc_permissions.get("update", {}).get("restrictions", {}).get("user", {}).get("results")
+            or doc_permissions.get("update", {})
+            .get("restrictions", {})
+            .get("group", {})
+            .get("results")
+        )
+
+        permissions_by_role = {
+            "read": {"users": set(), "groups": set()},
+            "update": {"users": set(), "groups": set()},
+            "delete": {"users": set(), "groups": set()},
+        }
+
+        for action, permissions in doc_permissions.items():
+            restrictions_dict = permissions.get("restrictions", {})
+
+            for entity_type, entity_data in restrictions_dict.items():
+                for entity in entity_data.get("results"):
+                    entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
+                    permissions_by_role[action][f"{entity_type}s"].add(entity_id)
+                    # edit permission implies view permission
+                    if action == "update":
+                        permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
+
+        for space_perm in space_permissions:
+            space_operation = space_perm["operation"]["key"]
+            space_target_type = space_perm["operation"]["targetType"]
+            space_entity_id = space_perm["principal"]["id"]
+            space_entity_type = space_perm["principal"]["type"]
+
+            # Apply space-level view permissions if no page restrictions exist
+            if (
+                space_target_type == "space"
+                and space_operation == "read"
+                and not page_view_restricted
+            ):
+                permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+
+            # Administer permission includes view + edit. Apply if not page restricted
+            elif space_target_type == "space" and space_operation == "administer":
+                if not page_view_restricted:
+                    permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+                    if not page_edit_restricted:
+                        permissions_by_role["update"][f"{space_entity_type}s"].add(space_entity_id)
+
+            # Add the "delete page" space permissions if there are other page permissions
+            elif (
+                space_target_type == "page"
+                and space_operation == "delete"
+                and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
+            ):
+                permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
+
+        # turn sets into sorted lists for consistency and json serialization
+        for role_dict in permissions_by_role.values():
+            for key in role_dict:
+                role_dict[key] = sorted(role_dict[key])
+
+        return permissions_by_role
+
+    def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
+        from requests.exceptions import HTTPError
+
+        with self.connection_config.get_client() as client:
+            try:
                 doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
-                parsed_permissions_dict = parse_permissions(doc_permissions, space_permissions)
+                parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
 
             except HTTPError as e:
                 # skip writing any permission metadata
-                logger.debug(
-                    f"Could not retrieve permissions for doc {doc_id} in space {space_id}: {e}"
-                )
+                logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
                 return None
 
         # TODO adjust permissions_data FileDataSourceMetadata interface type to match/enforce format
@@ -295,13 +292,14 @@ class ConfluenceIndexer(Indexer):
         space_ids_and_keys = self._get_space_ids_and_keys()
         for space_key, space_id in space_ids_and_keys:
             doc_ids = self._get_docs_ids_within_one_space(space_key)
+            space_perm = self._get_permissions_for_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
-                    permissions_data=self._get_permissions_for_doc(space_id, doc_id),
+                    permissions_data=self._parse_permissions_for_doc(space_id, doc_id, space_perm),
                     record_locator={
                         "space_id": space_key,
                         "document_id": doc_id,
