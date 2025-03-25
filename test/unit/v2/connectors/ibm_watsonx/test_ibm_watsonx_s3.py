@@ -231,8 +231,8 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
     with connection_config.get_catalog() as catalog:
         assert catalog is not None
     mock_load_catalog.assert_called_once_with(
-        "test_catalog",
         **{
+            "name": "test_catalog",
             "type": "rest",
             "uri": "https://test_iceberg_endpoint/mds/iceberg",
             "token": "test_bearer_token",
