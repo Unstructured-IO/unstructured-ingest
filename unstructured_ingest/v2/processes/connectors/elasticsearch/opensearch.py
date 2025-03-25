@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel, Field, Secret
+from pydantic import BaseModel, Field, Secret, field_validator
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -77,6 +77,12 @@ class OpenSearchConnectionConfig(ConnectionConfig):
     )
 
     access_config: Secret[OpenSearchAccessConfig]
+
+    @field_validator("hosts", mode="before")
+    def to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
     def get_client_kwargs(self) -> dict:
         # Update auth related fields to conform to what the SDK expects based on the
