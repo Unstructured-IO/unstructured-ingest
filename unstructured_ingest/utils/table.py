@@ -1,11 +1,16 @@
-from typing import Any
-
-import pandas as pd
+from typing import TYPE_CHECKING, Any
 
 from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
+@requires_dependencies(["pandas"])
 def get_default_pandas_dtypes() -> dict[str, Any]:
+    import pandas as pd
+
     return {
         "text": pd.StringDtype(),  # type: ignore
         "type": pd.StringDtype(),  # type: ignore
@@ -57,7 +62,9 @@ def get_default_pandas_dtypes() -> dict[str, Any]:
 def convert_to_pandas_dataframe(
     elements_dict: list[dict[str, Any]],
     drop_empty_cols: bool = False,
-) -> pd.DataFrame:
+) -> "DataFrame":
+    import pandas as pd
+
     # Flatten metadata if it hasn't already been flattened
     for d in elements_dict:
         if metadata := d.pop("metadata", None):

@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -23,6 +22,7 @@ from unstructured_ingest.v2.processes.connectors.duckdb.base import BaseDuckDBUp
 
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection as DuckDBConnection
+    from pandas import DataFrame
 
 CONNECTOR_TYPE = "duckdb"
 
@@ -101,7 +101,7 @@ class DuckDBUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def upload_dataframe(self, df: pd.DataFrame) -> None:
+    def upload_dataframe(self, df: "DataFrame") -> None:
         logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")
 
         with self.connection_config.get_client() as conn:
@@ -109,7 +109,10 @@ class DuckDBUploader(Uploader):
                 f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df"  # noqa: E501
             )
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        import pandas as pd
+
         df = pd.DataFrame(data=data)
         self.upload_dataframe(df=df)
 

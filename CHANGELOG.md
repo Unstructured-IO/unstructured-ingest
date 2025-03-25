@@ -1,8 +1,26 @@
-## 0.5.20
+## 0.5.23
 
 ### Enhancements
 FileData and a few other types can now be imported from a narrower v2.types module. 
 This avoids some of the adjacent implicit imports that were picked up with v2.interfaces.__init__.py 
+
+## 0.5.22
+
+### Features
+
+* **Add elasticsearch config enforcement that hosts are a list type**
+
+## 0.5.21
+
+### Fixes
+
+* **Lazy load pandas and numpy** to improve startup performance
+
+## 0.5.20
+
+### Features 
+
+* **Add IBM watson.data Destination connector**
 
 ## 0.5.19
 
@@ -37,7 +55,7 @@ This avoids some of the adjacent implicit imports that were picked up with v2.in
 
 ### Features 
 
-* Support NDJSON for data between pipeline steps for data streaming**
+* **Support NDJSON for data between pipeline steps for data streaming**
 
 ## 0.5.14
 

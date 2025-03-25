@@ -25,6 +25,8 @@ from setuptools import find_packages, setup
 
 from unstructured_ingest.__version__ import __version__
 
+_extra_reqs_filepath = "requirements/common/extras.in"
+
 
 def load_requirements(file: Union[str, Path]) -> List[str]:
     path = file if isinstance(file, Path) else Path(file)
@@ -42,8 +44,13 @@ def load_requirements(file: Union[str, Path]) -> List[str]:
         file_spec = recursive_req.split()[-1]
         file_path = Path(file_dir) / file_spec
         requirements.extend(load_requirements(file=file_path.resolve()))
+
     # Remove duplicates and any blank entries
-    return list({r for r in requirements if r})
+    result = list({r for r in requirements if r})
+
+    if file != _extra_reqs_filepath:
+        result.extend(load_requirements(_extra_reqs_filepath))
+    return result
 
 
 csv_reqs = load_requirements("requirements/local_partition/tsv.in")
@@ -102,6 +109,7 @@ connectors_reqs = {
     "gitlab": load_requirements("requirements/connectors/gitlab.in"),
     "google-drive": load_requirements("requirements/connectors/google-drive.in"),
     "hubspot": load_requirements("requirements/connectors/hubspot.in"),
+    "ibm-watsonx-s3": load_requirements("requirements/connectors/ibm-watsonx-s3.in"),
     "jira": load_requirements("requirements/connectors/jira.in"),
     "kafka": load_requirements("requirements/connectors/kafka.in"),
     "kdbai": load_requirements("requirements/connectors/kdbai.in"),

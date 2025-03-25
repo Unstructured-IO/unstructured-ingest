@@ -1,0 +1,5 @@
+# Requirements file that is only used by extras
+# These requirements will not be installed by default(`unstructured-ingest`)
+# but will be installed when `unstructured-ingest[<any extra>]` is used
+pandas
+numpy
