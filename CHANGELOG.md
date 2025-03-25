@@ -1,3 +1,9 @@
+## 0.5.25
+
+### Features
+
+* **Support dynamic schema management for Databricks Delta Table uploader**
+
 ## 0.5.24
 
 ### Features

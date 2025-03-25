@@ -251,8 +251,9 @@ class SQLUploadStager(UploadStager):
             df[column] = df[column].apply(str)
         return df
 
-    def write_output(self, output_path: Path, data: list[dict]) -> None:
+    def write_output(self, output_path: Path, data: list[dict]) -> Path:
         write_data(path=output_path, data=data)
+        return output_path
 
     def run(
         self,
@@ -278,8 +279,10 @@ class SQLUploadStager(UploadStager):
         output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
-        self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
-        return output_path
+        final_output_path = self.write_output(
+            output_path=output_path, data=df.to_dict(orient="records")
+        )
+        return final_output_path
 
 
 class SQLUploaderConfig(UploaderConfig):

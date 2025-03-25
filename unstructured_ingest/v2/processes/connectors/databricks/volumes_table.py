@@ -1,13 +1,14 @@
 import json
 import os
+import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field
 
-from unstructured_ingest.utils.data_prep import write_data
+from unstructured_ingest.utils.data_prep import get_data_df, write_data
 from unstructured_ingest.v2.interfaces import FileData, Uploader, UploaderConfig
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
@@ -22,6 +23,9 @@ from unstructured_ingest.v2.processes.connectors.sql.databricks_delta_tables imp
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
 
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
 
 class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMixin):
     database: str = Field(description="Database name", default="default")
@@ -30,10 +34,12 @@ class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMix
 
 @dataclass
 class DatabricksVolumeDeltaTableStager(DatabricksDeltaTablesUploadStager):
-    def write_output(self, output_path: Path, data: list[dict]) -> None:
+    def write_output(self, output_path: Path, data: list[dict]) -> Path:
         # To avoid new line issues when migrating from volumes into delta tables, omit indenting
         # and always write it as a json file
-        write_data(path=output_path.with_suffix(".json"), data=data, indent=None)
+        final_output_path = output_path.with_suffix(".json")
+        write_data(path=final_output_path, data=data, indent=None)
+        return final_output_path
 
 
 @dataclass
@@ -41,6 +47,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     connection_config: DatabricksDeltaTablesConnectionConfig
     upload_config: DatabricksVolumeDeltaTableUploaderConfig
     connector_type: str = CONNECTOR_TYPE
+    _columns: Optional[dict[str, str]] = None
 
     def precheck(self) -> None:
         with self.connection_config.get_cursor() as cursor:
@@ -84,20 +91,60 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             cursor.execute(f"USE DATABASE {self.upload_config.database}")
             yield cursor
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        with self.get_cursor(staging_allowed_local_path=str(path.parent)) as cursor:
-            catalog_path = self.get_output_path(file_data=file_data)
-            logger.debug(f"uploading {path.as_posix()} to {catalog_path}")
-            cursor.execute(f"PUT '{path.as_posix()}' INTO '{catalog_path}' OVERWRITE")
-            logger.debug(
-                f"migrating content from {catalog_path} to table {self.upload_config.table_name}"
+    def get_table_columns(self) -> dict[str, str]:
+        if self._columns is None:
+            with self.get_cursor() as cursor:
+                cursor.execute(f"SELECT * from {self.upload_config.table_name} LIMIT 1")
+                self._columns = {desc[0]: desc[1] for desc in cursor.description}
+        return self._columns
+
+    def _fit_to_schema(self, df: "DataFrame", add_missing_columns: bool = True) -> "DataFrame":
+        import pandas as pd
+
+        table_columns = self.get_table_columns()
+        columns = set(df.columns)
+        schema_fields = set(table_columns.keys())
+        columns_to_drop = columns - schema_fields
+        missing_columns = schema_fields - columns
+
+        if columns_to_drop:
+            logger.info(
+                "Following columns will be dropped to match the table's schema: "
+                f"{', '.join(columns_to_drop)}"
             )
-            with path.open() as f:
-                data = json.load(f)
-                columns = data[0].keys()
-            column_str = ", ".join(columns)
-            sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {column_str} FROM json.`{catalog_path}`"  # noqa: E501
-            cursor.execute(sql_statment)
+        if missing_columns and add_missing_columns:
+            logger.info(
+                "Following null filled columns will be added to match the table's schema:"
+                f" {', '.join(missing_columns)} "
+            )
+
+        df = df.drop(columns=columns_to_drop)
+
+        if add_missing_columns:
+            for column in missing_columns:
+                df[column] = pd.Series()
+        return df
+
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            df = get_data_df()
+            df = self._fit_to_schema(df=df)
+            temp_path = Path(temp_dir) / path.name
+            df.to_json(temp_path, orient="records", lines=False)
+            with self.get_cursor(staging_allowed_local_path=temp_dir) as cursor:
+                catalog_path = self.get_output_path(file_data=file_data)
+                logger.debug(f"uploading {path.as_posix()} to {catalog_path}")
+                cursor.execute(f"PUT '{temp_path.as_posix()}' INTO '{catalog_path}' OVERWRITE")
+                logger.debug(
+                    f"migrating content from {catalog_path} to "
+                    f"table {self.upload_config.table_name}"
+                )
+                with path.open() as f:
+                    data = json.load(f)
+                    columns = data[0].keys()
+                column_str = ", ".join(columns)
+                sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {column_str} FROM json.`{catalog_path}`"  # noqa: E501
+                cursor.execute(sql_statment)
 
 
 databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
