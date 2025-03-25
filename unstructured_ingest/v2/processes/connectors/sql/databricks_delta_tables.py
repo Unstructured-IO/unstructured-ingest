@@ -179,6 +179,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
         )
         return statement
 
+    @requires_dependencies(["pandas"], extras="databricks-delta-tables")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
 
