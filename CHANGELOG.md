@@ -1,3 +1,9 @@
+## 0.5.22
+
+### Features
+
+* **Add elasticsearch config enforcement that hosts are a list type**
+
 ## 0.5.21
 
 ### Fixes
