@@ -242,7 +242,7 @@ class ConfluenceIndexer(Indexer):
                         permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
                         # total_permissions += 1
                         # ^ omitting to not double count an entity.
-                        # will result in a higher total count than max_num_metadata_permissions
+                        # may result in a higher total count than max_num_metadata_permissions
 
         for space_perm in space_permissions:
             if total_permissions < self.index_config.max_num_metadata_permissions:
@@ -271,7 +271,7 @@ class ConfluenceIndexer(Indexer):
                             )
                             # total_permissions += 1
                             # ^ omitting to not double count an entity.
-                            # will result in a higher total count than max_num_metadata_permissions
+                            # may result in a higher total count than max_num_metadata_permissions
 
                 # Add the "delete page" space permissions if there are other page permissions
                 elif (
@@ -303,7 +303,7 @@ class ConfluenceIndexer(Indexer):
                 return None
 
         # TODO adjust permissions_data FileDataSourceMetadata interface type to match/enforce format
-        return [parsed_permissions_dict]  # wrapping in list for now TODO shreya
+        return [parsed_permissions_dict]
 
     def run(self) -> Generator[FileData, None, None]:
         from time import time
