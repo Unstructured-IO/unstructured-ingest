@@ -1,4 +1,3 @@
-import json
 import os
 import tempfile
 from contextlib import contextmanager
@@ -139,9 +138,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                     f"migrating content from {catalog_path} to "
                     f"table {self.upload_config.table_name}"
                 )
-                with path.open() as f:
-                    data = json.load(f)
-                    columns = data[0].keys()
+                columns = list(df.columns)
                 column_str = ", ".join(columns)
                 sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {column_str} FROM json.`{catalog_path}`"  # noqa: E501
                 cursor.execute(sql_statment)
