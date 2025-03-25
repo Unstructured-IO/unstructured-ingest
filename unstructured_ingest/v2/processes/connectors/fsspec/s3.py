@@ -33,6 +33,9 @@ from unstructured_ingest.v2.processes.utils.blob_storage import (
 
 CONNECTOR_TYPE = "s3"
 
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html#object-key-guidelines-avoid-characters
+CHARACTERS_TO_AVOID = ["\\", "{", "^", "}", "%", "`", "]", '"', ">", "[", "~", "<", "#", "|"]
+
 if TYPE_CHECKING:
     from s3fs import S3FileSystem
 
@@ -91,7 +94,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         if isinstance(e, PermissionError):
             return UserAuthError(e)
         if isinstance(e, FileNotFoundError):
-            return UserError(e)
+            return UserError(f"File not found: {e}")
         if cause := getattr(e, "__cause__", None):
             error_response = cause.response
             error_meta = error_response["ResponseMetadata"]
@@ -140,6 +143,11 @@ class S3Indexer(FsspecIndexer):
         }
         if metadata:
             record_locator["metadata"] = metadata
+        issue_characters = [char for char in CHARACTERS_TO_AVOID if char in path]
+        if issue_characters:
+            logger.warning(
+                f"File path {path} contains characters that can cause issues with S3: {issue_characters}"
+            )
         return FileDataSourceMetadata(
             date_created=date_created,
             date_modified=date_modified,
