@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generator, Union
 
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
@@ -115,7 +115,8 @@ class SQLIndexer(Indexer, ABC):
         id_batches: list[frozenset[str]] = [
             frozenset(
                 ids[
-                    i * self.index_config.batch_size : (i + 1)  # noqa
+                    i
+                    * self.index_config.batch_size : (i + 1)  # noqa
                     * self.index_config.batch_size
                 ]
             )
@@ -329,13 +330,9 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
-<<<<<<< Updated upstream
-    def _fit_to_schema(self, df: pd.DataFrame, add_missing_columns: bool = True) -> pd.DataFrame:
-=======
-    def _fit_to_schema(self, df: "DataFrame") -> "DataFrame":
+    def _fit_to_schema(self, df: "DataFrame", add_missing_columns: bool = True) -> "DataFrame":
         import pandas as pd
 
->>>>>>> Stashed changes
         table_columns = self.get_table_columns()
         columns = set(df.columns)
         schema_fields = set(table_columns)

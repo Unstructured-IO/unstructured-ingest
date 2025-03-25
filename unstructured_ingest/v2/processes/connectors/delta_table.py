@@ -3,7 +3,7 @@ import traceback
 from dataclasses import dataclass, field
 from multiprocessing import Process, Queue
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import urlparse
 
 from pydantic import Field, Secret

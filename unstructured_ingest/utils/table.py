@@ -1,5 +1,4 @@
-from typing import Any, TYPE_CHECKING
-
+from typing import TYPE_CHECKING, Any
 
 from unstructured_ingest.utils.data_prep import flatten_dict
 

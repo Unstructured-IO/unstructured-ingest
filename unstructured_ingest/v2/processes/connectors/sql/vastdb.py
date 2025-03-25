@@ -32,10 +32,10 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
     from vastdb import connect as VastdbConnect
     from vastdb import transaction as VastdbTransaction
     from vastdb.table import Table as VastdbTable
-    from pandas import DataFrame
 
 CONNECTOR_TYPE = "vastdb"
 
@@ -193,8 +193,8 @@ class VastdbUploader(SQLUploader):
 
     @requires_dependencies(["pyarrow"], extras="vastdb")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
-        import pyarrow as pa
         import numpy as np
+        import pyarrow as pa
 
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)

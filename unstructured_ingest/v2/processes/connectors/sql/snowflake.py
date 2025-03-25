@@ -30,9 +30,9 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 )
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
     from snowflake.connector import SnowflakeConnection
     from snowflake.connector.cursor import SnowflakeCursor
-    from pandas import DataFrame
 
 CONNECTOR_TYPE = "snowflake"
 

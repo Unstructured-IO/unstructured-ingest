@@ -30,7 +30,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 if TYPE_CHECKING:
     from sqlite3 import Connection as SqliteConnection
     from sqlite3 import Cursor as SqliteCursor
-    from pandas import DataFrame
+
 
 CONNECTOR_TYPE = "sqlite"
 
