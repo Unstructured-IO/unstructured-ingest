@@ -1,3 +1,9 @@
+## 0.5.23
+
+### Enhancements
+FileData and a few other types can now be imported from a narrower v2.types module. 
+This avoids some of the adjacent implicit imports that were picked up with v2.interfaces.__init__.py 
+
 ## 0.5.22
 
 ### Features
