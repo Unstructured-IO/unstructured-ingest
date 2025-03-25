@@ -2,8 +2,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
-import numpy as np
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -37,6 +35,7 @@ if TYPE_CHECKING:
     from vastdb import connect as VastdbConnect
     from vastdb import transaction as VastdbTransaction
     from vastdb.table import Table as VastdbTable
+    from pandas import DataFrame
 
 CONNECTOR_TYPE = "vastdb"
 
@@ -128,7 +127,6 @@ class VastdbDownloader(SQLDownloader):
         ids = tuple([item.identifier for item in file_data.batch_items])
 
         with self.connection_config.get_table(table_name) as table:
-
             predicate = _[id_column].isin(ids)
 
             if self.download_config.fields:
@@ -168,7 +166,7 @@ class VastdbUploadStager(SQLUploadStager):
         data[RECORD_ID_LABEL] = file_data.identifier
         return data
 
-    def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def conform_dataframe(self, df: "DataFrame") -> "DataFrame":
         df = super().conform_dataframe(df=df)
         if self.upload_stager_config.rename_columns_map:
             df.rename(columns=self.upload_stager_config.rename_columns_map, inplace=True)
@@ -194,8 +192,9 @@ class VastdbUploader(SQLUploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["pyarrow"], extras="vastdb")
-    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+    def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import pyarrow as pa
+        import numpy as np
 
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
@@ -216,7 +215,6 @@ class VastdbUploader(SQLUploader):
         )
 
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
-
             with self.connection_config.get_table(self.upload_config.table_name) as table:
                 pa_table = pa.Table.from_pandas(rows)
                 table.insert(pa_table)

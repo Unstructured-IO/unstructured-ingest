@@ -2,7 +2,6 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Optional
 
-import numpy as np
 from pydantic import BaseModel, Field
 
 from unstructured_ingest.utils.data_prep import batch_generator
@@ -32,7 +31,6 @@ class BaseEncoder(ABC):
 
 @dataclass
 class BaseEmbeddingEncoder(BaseEncoder, ABC):
-
     def initialize(self):
         """Initializes the embedding encoder class. Should also validate the instance
         is properly configured: e.g., embed a single a element"""
@@ -48,6 +46,8 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
     @property
     def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
+        import numpy as np
+
         exemplary_embedding = self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0, rtol=1e-03)
 
@@ -86,7 +86,6 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
 
 @dataclass
 class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
-
     async def initialize(self):
         """Initializes the embedding encoder class. Should also validate the instance
         is properly configured: e.g., embed a single a element"""
@@ -102,6 +101,8 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
     @property
     async def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
+        import numpy as np
+
         exemplary_embedding = await self.get_exemplary_embedding()
         return np.isclose(np.linalg.norm(exemplary_embedding), 1.0, rtol=1e-03)
 

@@ -3,8 +3,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import numpy as np
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.data_prep import split_dataframe
@@ -34,6 +32,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 if TYPE_CHECKING:
     from snowflake.connector import SnowflakeConnection
     from snowflake.connector.cursor import SnowflakeCursor
+    from pandas import DataFrame
 
 CONNECTOR_TYPE = "snowflake"
 
@@ -177,6 +176,8 @@ class SnowflakeUploader(SQLUploader):
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
+        import pandas as pd
+
         output = []
         for row in data:
             parsed = []
@@ -210,7 +211,9 @@ class SnowflakeUploader(SQLUploader):
             ]
         )
 
-    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+    def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
+        import numpy as np
+
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
         else:

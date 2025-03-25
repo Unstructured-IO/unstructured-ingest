@@ -1,3 +1,9 @@
+## 0.5.21
+
+### Fixes
+
+* **Lazy load pandas and numpy** to improve startup performance
+
 ## 0.5.20
 
 ### Features 

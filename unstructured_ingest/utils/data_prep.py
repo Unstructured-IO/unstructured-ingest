@@ -2,12 +2,13 @@ import itertools
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
-
-import pandas as pd
+from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
 
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.v2.logger import logger
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 DATE_FORMATS = ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d+%H:%M:%S", "%Y-%m-%dT%H:%M:%S%z")
 
@@ -15,7 +16,7 @@ T = TypeVar("T")
 IterableT = Iterable[T]
 
 
-def split_dataframe(df: pd.DataFrame, chunk_size: int = 100) -> Generator[pd.DataFrame, None, None]:
+def split_dataframe(df: "DataFrame", chunk_size: int = 100) -> Generator["DataFrame", None, None]:
     num_chunks = len(df) // chunk_size + 1
     for i in range(num_chunks):
         yield df[i * chunk_size : (i + 1) * chunk_size]
@@ -144,9 +145,13 @@ def get_data_by_suffix(path: Path) -> list[dict]:
         elif path.suffix == ".ndjson":
             return ndjson.load(f)
         elif path.suffix == ".csv":
+            import pandas as pd
+
             df = pd.read_csv(path)
             return df.to_dict(orient="records")
         elif path.suffix == ".parquet":
+            import pandas as pd
+
             df = pd.read_parquet(path)
             return df.to_dict(orient="records")
         else:
@@ -180,6 +185,9 @@ def get_data(path: Union[Path, str]) -> list[dict]:
             return ndjson.load(f)
         except Exception as e:
             logger.warning(f"failed to read {path} as ndjson: {e}")
+
+        import pandas as pd
+
         try:
             df = pd.read_csv(path)
             return df.to_dict(orient="records")
@@ -202,7 +210,9 @@ def get_json_data(path: Path) -> list[dict]:
             raise ValueError(f"Unsupported file type: {path}")
 
 
-def get_data_df(path: Path) -> pd.DataFrame:
+def get_data_df(path: Path) -> "DataFrame":
+    import pandas as pd
+
     with path.open() as f:
         if path.suffix == ".json":
             data = json.load(f)

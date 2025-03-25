@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 
-import pandas as pd
 from pydantic import Field
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -26,6 +25,7 @@ CONNECTOR_TYPE = "lancedb"
 if TYPE_CHECKING:
     from lancedb import AsyncConnection
     from lancedb.table import AsyncTable
+    from pandas import DataFrame
 
 
 class LanceDBConnectionConfig(ConnectionConfig, ABC):
@@ -77,6 +77,8 @@ class LanceDBUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
+        import pandas as pd
+
         with open(elements_filepath) as elements_file:
             elements_contents: list[dict] = json.load(elements_file)
 
@@ -144,7 +146,9 @@ class LanceDBUploader(Uploader):
                 await table.delete(f'{RECORD_ID_LABEL} = "{file_data.identifier}"')
             await table.add(data=df)
 
-    def _fit_to_schema(self, df: pd.DataFrame, schema) -> pd.DataFrame:
+    def _fit_to_schema(self, df: "DataFrame", schema) -> "DataFrame":
+        import pandas as pd
+
         columns = set(df.columns)
         schema_fields = set(schema.names)
         columns_to_drop = columns - schema_fields

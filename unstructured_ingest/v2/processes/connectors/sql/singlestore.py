@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.v2.logger import logger
@@ -133,6 +132,8 @@ class SingleStoreUploader(SQLUploader):
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
+        import pandas as pd
+
         output = []
         for row in data:
             parsed = []
