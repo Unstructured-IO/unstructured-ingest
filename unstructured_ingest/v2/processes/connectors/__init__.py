@@ -4,6 +4,7 @@ import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.duckdb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.elasticsearch  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.ibm_watsonx  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.lancedb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
@@ -121,4 +122,5 @@ add_source_entry(source_type=DISCORD_CONNECTOR_TYPE, entry=discord_source_entry)
 add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destination_entry)
 
 add_source_entry(source_type=JIRA_CONNECTOR_TYPE, entry=jira_source_entry)
+
 add_source_entry(source_type=ZENDESK_CONNECTOR_TYPE, entry=zendesk_source_entry)

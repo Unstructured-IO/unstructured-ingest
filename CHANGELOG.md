@@ -1,3 +1,9 @@
+## 0.5.20
+
+### Features 
+
+* **Add IBM watson.data Destination connector**
+
 ## 0.5.19
 
 ### Features
@@ -31,7 +37,7 @@
 
 ### Features 
 
-* Support NDJSON for data between pipeline steps for data streaming**
+* **Support NDJSON for data between pipeline steps for data streaming**
 
 ## 0.5.14
 
