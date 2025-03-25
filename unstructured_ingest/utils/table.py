@@ -7,6 +7,8 @@ if TYPE_CHECKING:
 
 
 def get_default_pandas_dtypes() -> dict[str, Any]:
+    import pandas as pd
+
     return {
         "text": pd.StringDtype(),  # type: ignore
         "type": pd.StringDtype(),  # type: ignore
