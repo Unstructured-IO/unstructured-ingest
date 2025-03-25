@@ -4,6 +4,7 @@ import unstructured_ingest.v2.processes.connectors.databricks  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.duckdb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.elasticsearch  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.fsspec  # noqa: F401
+import unstructured_ingest.v2.processes.connectors.ibm_watsonx  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.kafka  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.lancedb  # noqa: F401
 import unstructured_ingest.v2.processes.connectors.qdrant  # noqa: F401
@@ -34,8 +35,6 @@ from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
 from .google_drive import google_drive_source_entry
-from .ibm_watsonx import CONNECTOR_TYPE as IBM_WATSONX_CONNECTOR_TYPE
-from .ibm_watsonx import ibm_watsonx_destination_entry
 from .jira import CONNECTOR_TYPE as JIRA_CONNECTOR_TYPE
 from .jira import jira_source_entry
 from .kdbai import CONNECTOR_TYPE as KDBAI_CONNECTOR_TYPE
@@ -125,7 +124,3 @@ add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destina
 add_source_entry(source_type=JIRA_CONNECTOR_TYPE, entry=jira_source_entry)
 
 add_source_entry(source_type=ZENDESK_CONNECTOR_TYPE, entry=zendesk_source_entry)
-
-add_destination_entry(
-    destination_type=IBM_WATSONX_CONNECTOR_TYPE, entry=ibm_watsonx_destination_entry
-)

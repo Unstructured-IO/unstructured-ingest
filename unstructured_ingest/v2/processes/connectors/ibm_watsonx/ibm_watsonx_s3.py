@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from pyiceberg.catalog.rest import RestCatalog
     from pyiceberg.table import Table, Transaction
 
-CONNECTOR_TYPE = "ibm_watsonx"
+CONNECTOR_TYPE = "ibm_watsonx_s3"
 
 DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
@@ -75,7 +75,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             self._bearer_token = self.generate_bearer_token()
         return self._bearer_token["access_token"]
 
-    @requires_dependencies(["httpx"], extras="ibm-watsonx")
+    @requires_dependencies(["httpx"], extras="ibm-watsonx-s3")
     def wrap_error(self, e: Exception) -> Exception:
         import httpx
 
@@ -109,7 +109,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
         logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
         return e
 
-    @requires_dependencies(["httpx"], extras="ibm-watsonx")
+    @requires_dependencies(["httpx"], extras="ibm-watsonx-s3")
     def generate_bearer_token(self) -> dict[str, Any]:
         import httpx
 
@@ -130,26 +130,27 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             raise self.wrap_error(e)
         return response.json()
 
-    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
+    def get_catalog_config(self) -> dict[str, Any]:
+        return {
+            "name": self.catalog,
+            "type": DEFAULT_ICEBERG_CATALOG_TYPE,
+            "uri": self.iceberg_url,
+            "token": self.bearer_token,
+            "warehouse": self.catalog,
+            "s3.endpoint": self.object_storage_url,
+            "s3.access-key-id": self.access_config.get_secret_value().access_key_id,
+            "s3.secret-access-key": self.access_config.get_secret_value().secret_access_key,
+            "s3.region": self.object_storage_region,
+        }
+
+    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     @contextmanager
     def get_catalog(self) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
 
-        bearer_token = self.bearer_token
         try:
-            catalog = load_catalog(
-                self.catalog,
-                **{
-                    "type": DEFAULT_ICEBERG_CATALOG_TYPE,
-                    "uri": self.iceberg_url,
-                    "token": bearer_token,
-                    "warehouse": self.catalog,
-                    "s3.endpoint": self.object_storage_url,
-                    "s3.access-key-id": self.access_config.get_secret_value().access_key_id,
-                    "s3.secret-access-key": self.access_config.get_secret_value().secret_access_key,
-                    "s3.region": self.object_storage_region,
-                },
-            )
+            catalog_config = self.get_catalog_config()
+            catalog = load_catalog(**catalog_config)
         except Exception as e:
             logger.error(f"Failed to connect to catalog '{self.catalog}': {e}", exc_info=True)
             raise ProviderError(f"Failed to connect to catalog '{self.catalog}': {e}")
@@ -215,7 +216,7 @@ class IbmWatsonxUploader(SQLUploader):
     def can_delete(self) -> bool:
         return self.upload_config.record_id_key in self.get_table_columns()
 
-    @requires_dependencies(["pyarrow"], extras="ibm-watsonx")
+    @requires_dependencies(["pyarrow"], extras="ibm-watsonx-s3")
     def _df_to_arrow_table(self, df: pd.DataFrame) -> "ArrowTable":
         import pyarrow as pa
 
@@ -224,7 +225,7 @@ class IbmWatsonxUploader(SQLUploader):
         # because it can't infer the type of the column and match it with the table schema
         return pa.Table.from_pandas(self._fit_to_schema(df, add_missing_columns=False))
 
-    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx")
+    @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     def _delete(self, transaction: "Transaction", identifier: str) -> None:
         from pyiceberg.expressions import EqualTo
 
@@ -237,7 +238,7 @@ class IbmWatsonxUploader(SQLUploader):
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
 
-    @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx")
+    @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx-s3")
     def upload_data_table(
         self, table: "Table", data_table: "ArrowTable", file_data: FileData
     ) -> None:
@@ -291,7 +292,7 @@ class IbmWatsonxUploader(SQLUploader):
         self.upload_dataframe(df=df, file_data=file_data)
 
 
-ibm_watsonx_destination_entry = DestinationRegistryEntry(
+ibm_watsonx_s3_destination_entry = DestinationRegistryEntry(
     connection_config=IbmWatsonxConnectionConfig,
     uploader=IbmWatsonxUploader,
     uploader_config=IbmWatsonxUploaderConfig,

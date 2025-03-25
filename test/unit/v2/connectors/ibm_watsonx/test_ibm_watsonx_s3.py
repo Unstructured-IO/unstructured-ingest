@@ -9,10 +9,8 @@ from pytest_mock import MockerFixture
 
 from unstructured_ingest.v2.errors import ProviderError, UserError
 from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
-    CONNECTOR_TYPE as IBM_WATSONX_CONNECTOR_TYPE,
-)
-from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
+from unstructured_ingest.v2.processes.connectors.ibm_watsonx import IBM_WATSONX_S3_CONNECTOR_TYPE
+from unstructured_ingest.v2.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import (
     IbmWatsonxAccessConfig,
     IbmWatsonxConnectionConfig,
     IbmWatsonxUploader,
@@ -24,7 +22,7 @@ from unstructured_ingest.v2.processes.connectors.ibm_watsonx import (
 def file_data():
     return FileData(
         identifier="test_identifier",
-        connector_type=IBM_WATSONX_CONNECTOR_TYPE,
+        connector_type=IBM_WATSONX_S3_CONNECTOR_TYPE,
         source_identifiers=SourceIdentifiers(
             filename="test_file.pdf", fullpath="/tmp/test_file.pdf"
         ),
@@ -140,7 +138,7 @@ def test_ibm_watsonx_connection_config_iceberg_url(
     connection_config: IbmWatsonxConnectionConfig,
 ):
     mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.DEFAULT_ICEBERG_URI_PATH",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.ibm_watsonx_s3.DEFAULT_ICEBERG_URI_PATH",
         new="/mds/iceberg",
     )
     expected_url = "https://test_iceberg_endpoint/mds/iceberg"
@@ -220,7 +218,7 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
     mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
 ):
     mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.DEFAULT_ICEBERG_URI_PATH",
+        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.ibm_watsonx_s3.DEFAULT_ICEBERG_URI_PATH",
         new="/mds/iceberg",
     )
     mocker.patch.object(
