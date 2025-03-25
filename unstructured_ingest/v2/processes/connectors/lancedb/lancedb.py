@@ -132,6 +132,8 @@ class LanceDBUploader(Uploader):
                 table.close()
 
     async def run_async(self, path, file_data, **kwargs):
+        import pandas as pd
+
         df = pd.read_feather(path)
         async with self.get_table() as table:
             schema = await table.schema()
