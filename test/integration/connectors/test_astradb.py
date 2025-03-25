@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 from dataclasses import dataclass
@@ -234,11 +235,9 @@ def test_astra_create_destination():
 
     client = AstraDBClient()
     db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
-    try:
+    with contextlib.suppress(Exception):
         # drop collection before trying to create it
         db.drop_collection(formatted_collection_name)
-    except Exception:
-        pass
 
     created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
     assert created
