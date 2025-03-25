@@ -114,6 +114,9 @@ class ConfluenceIndexerConfig(IndexerConfig):
     max_num_of_docs_from_each_space: int = Field(
         100, description="Maximum number of documents to fetch from each space"
     )
+    max_num_metadata_permissions: int = Field(
+        250, description="Approximate maximum number of permissions included in metadata"
+    )
     spaces: Optional[List[str]] = Field(None, description="List of specific space keys to index")
 
 
@@ -172,7 +175,9 @@ class ConfluenceIndexer(Indexer):
     def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
         with self.connection_config.get_client() as client:
             try:
-                # space permissions
+                # TODO limit the total number of results being called.
+                # not yet implemented because this client call doesn't allow for filtering for
+                # certain operations
                 space_permissions = []
                 space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
                 space_permissions.extend(space_permissions_result["results"])
@@ -185,8 +190,7 @@ class ConfluenceIndexer(Indexer):
                 logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
                 return None
 
-    @staticmethod
-    def parse_permissions(doc_permissions: dict, space_permissions: list):
+    def parse_permissions(self, doc_permissions: dict, space_permissions: list):
         """
         Parses document and space permissions to determine final user/group roles.
 
@@ -223,6 +227,8 @@ class ConfluenceIndexer(Indexer):
             "delete": {"users": set(), "groups": set()},
         }
 
+        total_permissions = 0
+
         for action, permissions in doc_permissions.items():
             restrictions_dict = permissions.get("restrictions", {})
 
@@ -230,38 +236,51 @@ class ConfluenceIndexer(Indexer):
                 for entity in entity_data.get("results"):
                     entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
                     permissions_by_role[action][f"{entity_type}s"].add(entity_id)
+                    total_permissions += 1
                     # edit permission implies view permission
                     if action == "update":
                         permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
+                        # total_permissions += 1
+                        # ^ omitting to not double count an entity.
+                        # will result in a higher total count than max_num_metadata_permissions
 
         for space_perm in space_permissions:
-            space_operation = space_perm["operation"]["key"]
-            space_target_type = space_perm["operation"]["targetType"]
-            space_entity_id = space_perm["principal"]["id"]
-            space_entity_type = space_perm["principal"]["type"]
+            if total_permissions < self.index_config.max_num_metadata_permissions:
+                space_operation = space_perm["operation"]["key"]
+                space_target_type = space_perm["operation"]["targetType"]
+                space_entity_id = space_perm["principal"]["id"]
+                space_entity_type = space_perm["principal"]["type"]
 
-            # Apply space-level view permissions if no page restrictions exist
-            if (
-                space_target_type == "space"
-                and space_operation == "read"
-                and not page_view_restricted
-            ):
-                permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
-
-            # Administer permission includes view + edit. Apply if not page restricted
-            elif space_target_type == "space" and space_operation == "administer":
-                if not page_view_restricted:
+                # Apply space-level view permissions if no page restrictions exist
+                if (
+                    space_target_type == "space"
+                    and space_operation == "read"
+                    and not page_view_restricted
+                ):
                     permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
-                    if not page_edit_restricted:
-                        permissions_by_role["update"][f"{space_entity_type}s"].add(space_entity_id)
+                    total_permissions += 1
 
-            # Add the "delete page" space permissions if there are other page permissions
-            elif (
-                space_target_type == "page"
-                and space_operation == "delete"
-                and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
-            ):
-                permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
+                # Administer permission includes view + edit. Apply if not page restricted
+                elif space_target_type == "space" and space_operation == "administer":
+                    if not page_view_restricted:
+                        permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+                        total_permissions += 1
+                        if not page_edit_restricted:
+                            permissions_by_role["update"][f"{space_entity_type}s"].add(
+                                space_entity_id
+                            )
+                            # total_permissions += 1
+                            # ^ omitting to not double count an entity.
+                            # will result in a higher total count than max_num_metadata_permissions
+
+                # Add the "delete page" space permissions if there are other page permissions
+                elif (
+                    space_target_type == "page"
+                    and space_operation == "delete"
+                    and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
+                ):
+                    permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
+                    total_permissions += 1
 
         # turn sets into sorted lists for consistency and json serialization
         for role_dict in permissions_by_role.values():
