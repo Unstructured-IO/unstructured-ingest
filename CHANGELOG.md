@@ -1,3 +1,9 @@
+## 0.5.24
+
+### Features
+
+* **Add warning to s3 if characters to avoid are present in path**
+
 ## 0.5.23
 
 ### Enhancements
