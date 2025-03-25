@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -45,6 +46,7 @@ class SingleStoreConnectionConfig(SQLConnectionConfig):
     database: Optional[str] = Field(default=None, description="SingleStore database")
 
     @contextmanager
+    @requires_dependencies(["singlestoredb"], extras="singlestore")
     def get_connection(self) -> Generator["SingleStoreConnection", None, None]:
         import singlestoredb as s2
 
@@ -129,6 +131,7 @@ class SingleStoreUploader(SQLUploader):
     values_delimiter: str = "%s"
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["pandas"], extras="singlestore")
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:

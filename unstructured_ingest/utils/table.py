@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING, Any
 
 from unstructured_ingest.utils.data_prep import flatten_dict
+from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from pandas import DataFrame
 
 
+@requires_dependencies(["pandas"])
 def get_default_pandas_dtypes() -> dict[str, Any]:
     import pandas as pd
 

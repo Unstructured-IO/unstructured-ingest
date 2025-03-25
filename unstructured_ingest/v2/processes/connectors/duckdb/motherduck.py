@@ -109,6 +109,7 @@ class MotherDuckUploader(Uploader):
         with self.connection_config.get_client() as conn:
             conn.query(f'INSERT INTO "{database}"."{db_schema}"."{table}" BY NAME SELECT * FROM df')
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 

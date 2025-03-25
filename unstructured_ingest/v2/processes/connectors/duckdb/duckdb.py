@@ -109,6 +109,7 @@ class DuckDBUploader(Uploader):
                 f"INSERT INTO {self.connection_config.db_schema}.{self.connection_config.table} BY NAME SELECT * FROM df"  # noqa: E501
             )
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 

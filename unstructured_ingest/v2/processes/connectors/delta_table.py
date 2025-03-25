@@ -174,6 +174,7 @@ class DeltaTableUploader(Uploader):
             logger.error(f"Exception occurred in write_deltalake: {error_message}")
             raise RuntimeError(f"Error in write_deltalake: {error_message}")
 
+    @requires_dependencies(["pandas"], extras="delta-table")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 

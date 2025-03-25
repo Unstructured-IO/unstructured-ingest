@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from unstructured_ingest.utils.data_prep import get_data, write_data
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import FileData, UploadStager
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
@@ -69,6 +70,7 @@ class BaseDuckDBUploadStager(UploadStager):
         data = {k: v for k, v in data.items() if k in _COLUMNS}
         return data
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run(
         self,
         elements_filepath: Path,

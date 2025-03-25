@@ -69,6 +69,7 @@ class LanceDBUploadStager(UploadStager):
         default_factory=LanceDBUploadStagerConfig
     )
 
+    @requires_dependencies(["pandas"], extras="lancedb")
     def run(
         self,
         elements_filepath: Path,
@@ -131,6 +132,7 @@ class LanceDBUploader(Uploader):
             finally:
                 table.close()
 
+    @requires_dependencies(["pandas"], extras="lancedb")
     async def run_async(self, path, file_data, **kwargs):
         import pandas as pd
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
 
 from unstructured_ingest.utils import ndjson
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
@@ -210,6 +211,7 @@ def get_json_data(path: Path) -> list[dict]:
             raise ValueError(f"Unsupported file type: {path}")
 
 
+@requires_dependencies(["pandas"])
 def get_data_df(path: Path) -> "DataFrame":
     import pandas as pd
 

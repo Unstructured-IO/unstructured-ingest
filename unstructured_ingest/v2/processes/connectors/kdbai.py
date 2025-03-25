@@ -130,6 +130,7 @@ class KdbaiUploader(Uploader):
         for batch_df in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
 
+    @requires_dependencies(["pandas"], extras="kdbai")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 

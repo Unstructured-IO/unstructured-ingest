@@ -5,6 +5,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from unstructured_ingest.utils.data_prep import batch_generator
+from unstructured_ingest.utils.dep_check import requires_dependencies
 
 EMBEDDINGS_KEY = "embeddings"
 
@@ -44,6 +45,7 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
         return self.embed_query(query="Q")
 
     @property
+    @requires_dependencies(["numpy"])
     def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
         import numpy as np
@@ -99,6 +101,7 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
         return await self.embed_query(query="Q")
 
     @property
+    @requires_dependencies(["numpy"])
     async def is_unit_vector(self) -> bool:
         """Denotes if the embedding vector is a unit vector."""
         import numpy as np
