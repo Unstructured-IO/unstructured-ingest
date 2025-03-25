@@ -146,7 +146,8 @@ class S3Indexer(FsspecIndexer):
         issue_characters = [char for char in CHARACTERS_TO_AVOID if char in path]
         if issue_characters:
             logger.warning(
-                f"File path {path} contains characters that can cause issues with S3: {issue_characters}"
+                f"File path {path} contains characters "
+                f"that can cause issues with S3: {issue_characters}"
             )
         return FileDataSourceMetadata(
             date_created=date_created,
