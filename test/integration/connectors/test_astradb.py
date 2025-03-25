@@ -231,6 +231,15 @@ def test_astra_create_destination():
     )
     collection_name = "system_created-123"
     formatted_collection_name = "system_created_123"
+
+    client = AstraDBClient()
+    db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
+    try:
+        # drop collection before trying to create it
+        db.drop_collection(formatted_collection_name)
+    except Exception:
+        pass
+
     created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
     assert created
     assert uploader.upload_config.collection_name == formatted_collection_name
@@ -239,8 +248,6 @@ def test_astra_create_destination():
     assert not created
 
     # cleanup
-    client = AstraDBClient()
-    db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
     db.drop_collection(formatted_collection_name)
 
 
