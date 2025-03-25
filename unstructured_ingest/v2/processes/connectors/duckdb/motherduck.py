@@ -100,7 +100,7 @@ class MotherDuckUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def upload_dataframe(self, df: DataFrame) -> None:
+    def upload_dataframe(self, df: "DataFrame") -> None:
         logger.debug(f"uploading {len(df)} entries to {self.connection_config.database} ")
         database = self.connection_config.database
         db_schema = self.connection_config.db_schema

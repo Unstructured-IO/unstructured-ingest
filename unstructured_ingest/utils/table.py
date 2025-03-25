@@ -4,8 +4,6 @@ from unstructured_ingest.utils.data_prep import flatten_dict
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-else:
-    DataFrame = None
 
 
 def get_default_pandas_dtypes() -> dict[str, Any]:
@@ -60,7 +58,7 @@ def get_default_pandas_dtypes() -> dict[str, Any]:
 def convert_to_pandas_dataframe(
     elements_dict: list[dict[str, Any]],
     drop_empty_cols: bool = False,
-) -> DataFrame:
+) -> "DataFrame":
     import pandas as pd
 
     # Flatten metadata if it hasn't already been flattened
