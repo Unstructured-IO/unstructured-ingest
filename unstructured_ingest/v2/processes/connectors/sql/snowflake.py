@@ -7,7 +7,6 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces.file_data import FileData
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -28,6 +27,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploadStagerConfig,
     parse_date_string,
 )
+from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from pandas import DataFrame

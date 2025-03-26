@@ -16,12 +16,15 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
     Indexer,
     IndexerConfig,
 )
-from unstructured_ingest.v2.interfaces.file_data import FileDataSourceMetadata, SourceIdentifiers
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.v2.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 
 MAX_EMAILS_PER_FOLDER = 1_000_000  # Maximum number of emails per folder
 

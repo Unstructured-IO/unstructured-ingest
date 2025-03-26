@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import FileData, FileDataSourceMetadata
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -30,6 +29,7 @@ from unstructured_ingest.v2.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, FileDataSourceMetadata
 
 if TYPE_CHECKING:
     from fsspec.implementations.sftp import SFTPFileSystem

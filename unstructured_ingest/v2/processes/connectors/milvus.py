@@ -13,7 +13,6 @@ from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -23,6 +22,7 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from pymilvus import MilvusClient

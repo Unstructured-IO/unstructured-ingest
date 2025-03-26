@@ -15,7 +15,6 @@ from unstructured_ingest.utils.table import convert_to_pandas_dataframe
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -23,6 +22,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.types.file_data import FileData
 
 CONNECTOR_TYPE = "delta_table"
 

@@ -15,16 +15,18 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
+)
+from unstructured_ingest.v2.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
 )
 
 if TYPE_CHECKING:

@@ -1,3 +1,9 @@
+## 0.6.0
+
+### Features
+
+* **Isolate FileData to limit dependencies**
+
 ## 0.5.25
 
 ### Features

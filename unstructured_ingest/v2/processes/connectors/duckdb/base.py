@@ -4,7 +4,8 @@ from typing import Any
 
 from unstructured_ingest.utils.data_prep import get_data, write_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import FileData, UploadStager
+from unstructured_ingest.v2.interfaces import UploadStager
+from unstructured_ingest.v2.types.file_data import FileData
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 _COLUMNS = (

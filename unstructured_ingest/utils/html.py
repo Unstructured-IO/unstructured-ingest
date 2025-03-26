@@ -7,8 +7,9 @@ from uuid import NAMESPACE_DNS, uuid5
 from pydantic import BaseModel, Field
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.interfaces import DownloadResponse, FileData, SourceIdentifiers
+from unstructured_ingest.v2.interfaces import DownloadResponse
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 if TYPE_CHECKING:
     from bs4.element import Tag

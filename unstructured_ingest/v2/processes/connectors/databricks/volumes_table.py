@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field
 
 from unstructured_ingest.utils.data_prep import get_data_df, write_data
-from unstructured_ingest.v2.interfaces import FileData, Uploader, UploaderConfig
+from unstructured_ingest.v2.interfaces import Uploader, UploaderConfig
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -19,6 +19,7 @@ from unstructured_ingest.v2.processes.connectors.sql.databricks_delta_tables imp
     DatabricksDeltaTablesUploadStager,
     DatabricksDeltaTablesUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
 

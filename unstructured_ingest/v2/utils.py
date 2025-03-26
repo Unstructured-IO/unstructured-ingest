@@ -8,7 +8,7 @@ from uuid import NAMESPACE_DNS, uuid5
 from pydantic import BaseModel
 from pydantic.types import _SecretBase
 
-from unstructured_ingest.v2.interfaces import FileData
+from unstructured_ingest.v2.types.file_data import FileData
 
 
 def is_secret(value: Any) -> bool:

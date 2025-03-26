@@ -5,9 +5,9 @@ from typing import Any, Callable, Optional
 
 from pydantic import BaseModel, Field
 
-from unstructured_ingest.v2.interfaces import FileData
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.types.file_data import FileData
 
 
 class FiltererConfig(BaseModel):

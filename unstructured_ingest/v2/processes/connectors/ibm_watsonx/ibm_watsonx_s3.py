@@ -15,7 +15,6 @@ from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserErro
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     UploaderConfig,
 )
 from unstructured_ingest.v2.logger import logger
@@ -27,6 +26,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from pyarrow import Table as ArrowTable

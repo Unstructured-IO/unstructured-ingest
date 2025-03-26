@@ -5,11 +5,10 @@ from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
 from unstructured_ingest.utils.data_prep import write_data
-from unstructured_ingest.v2.interfaces import FileData
-from unstructured_ingest.v2.interfaces.file_data import file_data_from_file
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.processes.embedder import Embedder
+from unstructured_ingest.v2.types.file_data import FileData, file_data_from_file
 from unstructured_ingest.v2.utils import serialize_base_model_json
 
 STEP_ID = "embed"

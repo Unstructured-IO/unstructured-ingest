@@ -14,11 +14,8 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     Uploader,
     UploaderConfig,
 )
@@ -30,6 +27,11 @@ from unstructured_ingest.v2.processes.connector_registry import (
 from unstructured_ingest.v2.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
+)
+from unstructured_ingest.v2.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
 )
 
 CONNECTOR_TYPE = "local"
