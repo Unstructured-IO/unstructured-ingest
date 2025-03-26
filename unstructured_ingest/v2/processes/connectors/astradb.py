@@ -21,14 +21,10 @@ from unstructured_ingest.utils.string_and_date_utils import truncate_string_byte
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
-    BatchFileData,
-    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -44,6 +40,12 @@ from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import format_and_truncate_orig_elements
+from unstructured_ingest.v2.types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+)
 
 if TYPE_CHECKING:
     from astrapy import AsyncCollection as AstraDBAsyncCollection

@@ -1,11 +1,3 @@
-from unstructured_ingest.v2.types.file_data import (
-    BatchFileData,
-    BatchItem,
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
-
 from .connector import AccessConfig, BaseConnector, ConnectionConfig
 from .downloader import Downloader, DownloaderConfig, DownloadResponse, download_responses
 from .indexer import Indexer, IndexerConfig
@@ -19,7 +11,6 @@ __all__ = [
     "download_responses",
     "Downloader",
     "DownloaderConfig",
-    "FileData",
     "Indexer",
     "IndexerConfig",
     "BaseProcess",
@@ -28,13 +19,9 @@ __all__ = [
     "UploadStagerConfig",
     "Uploader",
     "UploaderConfig",
-    "SourceIdentifiers",
     "UploadContent",
     "AccessConfig",
     "ConnectionConfig",
     "BaseConnector",
-    "FileDataSourceMetadata",
-    "BatchFileData",
-    "BatchItem",
     "VectorDBUploader",
 ]

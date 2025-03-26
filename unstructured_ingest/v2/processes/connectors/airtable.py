@@ -13,7 +13,6 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -21,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
+from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from pyairtable import Api

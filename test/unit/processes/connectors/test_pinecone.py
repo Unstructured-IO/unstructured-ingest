@@ -1,11 +1,11 @@
 import pytest
 
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.pinecone import (
     CONNECTOR_TYPE,
     PineconeUploadStager,
     PineconeUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

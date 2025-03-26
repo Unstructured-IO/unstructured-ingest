@@ -20,8 +20,6 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -29,6 +27,7 @@ from unstructured_ingest.v2.interfaces import (
     UploaderConfig,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.types.file_data import FileData, FileDataSourceMetadata
 
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient

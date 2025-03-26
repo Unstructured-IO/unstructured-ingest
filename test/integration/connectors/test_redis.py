@@ -11,7 +11,6 @@ from redis.asyncio import Redis, from_url
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.redisdb import (
     CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE,
 )
@@ -21,6 +20,7 @@ from unstructured_ingest.v2.processes.connectors.redisdb import (
     RedisUploader,
     RedisUploaderConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 
 async def delete_record(client: Redis, element_id: str, key_prefix: str) -> None:

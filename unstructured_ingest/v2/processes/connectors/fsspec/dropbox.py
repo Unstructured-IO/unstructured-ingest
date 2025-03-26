@@ -15,7 +15,6 @@ from unstructured_ingest.v2.errors import (
 from unstructured_ingest.v2.errors import (
     RateLimitError as CustomRateLimitError,
 )
-from unstructured_ingest.v2.interfaces import FileDataSourceMetadata
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -35,6 +34,7 @@ from unstructured_ingest.v2.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileDataSourceMetadata
 
 if TYPE_CHECKING:
     pass

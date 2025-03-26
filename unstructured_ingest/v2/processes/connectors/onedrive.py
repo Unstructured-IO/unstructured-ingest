@@ -22,8 +22,6 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -39,6 +37,7 @@ from unstructured_ingest.v2.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, FileDataSourceMetadata
 
 if TYPE_CHECKING:
     from office365.graph_client import GraphClient

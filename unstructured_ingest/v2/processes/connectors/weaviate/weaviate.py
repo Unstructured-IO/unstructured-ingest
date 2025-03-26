@@ -16,13 +16,13 @@ from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
     VectorDBUploader,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from weaviate.classes.init import Timeout

@@ -21,8 +21,6 @@ from unstructured_ingest.v2.interfaces import (
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
     SourceIdentifiers,
@@ -30,6 +28,7 @@ from unstructured_ingest.v2.interfaces import (
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
+from unstructured_ingest.v2.types.file_data import FileData, FileDataSourceMetadata
 
 CONNECTOR_TYPE = "google_drive"
 

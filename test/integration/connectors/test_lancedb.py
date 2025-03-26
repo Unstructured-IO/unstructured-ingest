@@ -13,7 +13,6 @@ from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
     LanceDBAwsAccessConfig,
     LanceDBAwsConnectionConfig,
@@ -39,6 +38,7 @@ from unstructured_ingest.v2.processes.connectors.lancedb.local import (
     LanceDBLocalConnectionConfig,
     LanceDBLocalUploader,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 DATABASE_NAME = "database"
 TABLE_NAME = "elements"

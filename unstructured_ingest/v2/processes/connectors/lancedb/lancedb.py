@@ -15,10 +15,14 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
-from unstructured_ingest.v2.interfaces.connector import ConnectionConfig
-from unstructured_ingest.v2.interfaces.file_data import FileData
-from unstructured_ingest.v2.interfaces.upload_stager import UploadStager, UploadStagerConfig
-from unstructured_ingest.v2.interfaces.uploader import Uploader, UploaderConfig
+from unstructured_ingest.v2.interfaces import (
+    ConnectionConfig,
+    Uploader,
+    UploaderConfig,
+    UploadStager,
+    UploadStagerConfig,
+)
+from unstructured_ingest.v2.types.file_data import FileData
 
 CONNECTOR_TYPE = "lancedb"
 

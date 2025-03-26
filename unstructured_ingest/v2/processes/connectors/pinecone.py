@@ -13,7 +13,6 @@ from unstructured_ingest.v2.errors import UserError
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     UploaderConfig,
     UploadStager,
     UploadStagerConfig,
@@ -21,6 +20,7 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.types.file_data import FileData
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:

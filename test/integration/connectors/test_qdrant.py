@@ -16,7 +16,6 @@ from test.integration.connectors.utils.validation.destination import (
     stager_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.qdrant.cloud import (
     CloudQdrantAccessConfig,
     CloudQdrantConnectionConfig,
@@ -45,6 +44,7 @@ from unstructured_ingest.v2.processes.connectors.qdrant.server import (
     ServerQdrantUploadStager,
     ServerQdrantUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 COLLECTION_NAME = f"test-coll-{uuid.uuid4().hex[:12]}"
 VECTORS_CONFIG = {"size": 384, "distance": "Cosine"}

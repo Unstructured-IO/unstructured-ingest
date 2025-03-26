@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.data_prep import get_data, write_data
-from unstructured_ingest.v2.interfaces.file_data import FileData
-from unstructured_ingest.v2.interfaces.process import BaseProcess
+from unstructured_ingest.v2.interfaces import BaseProcess
+from unstructured_ingest.v2.types.file_data import FileData
 
 
 class UploadStagerConfig(BaseModel):
