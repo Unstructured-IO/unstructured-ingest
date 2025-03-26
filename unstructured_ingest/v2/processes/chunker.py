@@ -6,6 +6,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.utils.chunking import assign_and_map_hash_ids
+from unstructured_ingest.utils.data_prep import get_json_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.logger import logger
@@ -92,9 +93,11 @@ class Chunker(BaseProcess, ABC):
     @requires_dependencies(dependencies=["unstructured"])
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         from unstructured.chunking import dispatch
-        from unstructured.staging.base import elements_from_json
+        from unstructured.staging.base import elements_from_dicts
 
-        elements = elements_from_json(filename=str(elements_filepath))
+        element_dicts = get_json_data(elements_filepath)
+
+        elements = elements_from_dicts(element_dicts=element_dicts)
         if not elements:
             return [e.to_dict() for e in elements]
         local_chunking_strategies = ("basic", "by_title")
