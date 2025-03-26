@@ -1,3 +1,9 @@
+## 0.6.1
+
+### Fixes
+
+* **Handle NDJSON when using local chunker**
+
 ## 0.6.0
 
 ### Features
