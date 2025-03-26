@@ -1,5 +1,5 @@
-from unstructured_ingest.v2.interfaces import SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.google_drive import GoogleDriveIndexer
+from unstructured_ingest.v2.types.file_data import SourceIdentifiers
 
 
 def test_map_file_data():
