@@ -19,7 +19,6 @@ from unstructured_ingest.v2.interfaces import (
     DownloadResponse,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     download_responses,
@@ -34,6 +33,7 @@ from unstructured_ingest.v2.types.file_data import (
     BatchItem,
     FileData,
     FileDataSourceMetadata,
+    SourceIdentifiers,
 )
 
 if TYPE_CHECKING:

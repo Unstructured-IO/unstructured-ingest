@@ -5,7 +5,8 @@ from typing import Any, Optional, TypedDict, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
-from unstructured_ingest.v2.interfaces import BaseConnector, BaseProcess
+from unstructured_ingest.v2.interfaces.connector import BaseConnector
+from unstructured_ingest.v2.interfaces.process import BaseProcess
 from unstructured_ingest.v2.types.file_data import FileData
 
 

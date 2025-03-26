@@ -18,11 +18,14 @@ from unstructured_ingest.v2.interfaces import (
     DownloadResponse,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-from unstructured_ingest.v2.types.file_data import FileData, FileDataSourceMetadata
+from unstructured_ingest.v2.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 
 from .client import ZendeskArticle, ZendeskClient, ZendeskTicket
 

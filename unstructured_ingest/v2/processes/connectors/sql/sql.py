@@ -22,7 +22,6 @@ from unstructured_ingest.v2.interfaces import (
     DownloadResponse,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -35,6 +34,7 @@ from unstructured_ingest.v2.types.file_data import (
     BatchItem,
     FileData,
     FileDataSourceMetadata,
+    SourceIdentifiers,
 )
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
