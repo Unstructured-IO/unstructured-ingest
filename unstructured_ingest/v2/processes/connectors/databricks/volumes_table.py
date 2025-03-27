@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMixin):
     database: str = Field(description="Database name", default="default")
-    table_name: str = Field(description="Table name")
+    table_name: Optional[str] = Field(description="Table name", default=None)
 
 
 @dataclass
@@ -49,6 +49,28 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
     _columns: Optional[dict[str, str]] = None
 
+    def init(self, **kwargs: Any) -> None:
+        self.create_destination(**kwargs)
+
+    def create_destination(
+        self, destination_name: str = "unstructuredautocreated", **kwargs: Any
+    ) -> bool:
+        table_name = self.upload_config.table_name or destination_name
+        connectors_dir = Path(__file__).parents[1]
+        collection_config_file = connectors_dir / "assets" / "databricks_delta_table_schema.sql"
+        with self.get_cursor() as cursor:
+            cursor.execute("SHOW TABLES")
+            table_names = [r[1] for r in cursor.fetchall()]
+            if table_name in table_names:
+                return False
+            with collection_config_file.open() as schema_file:
+                data_lines = schema_file.readlines()
+            data_lines[0] = data_lines[0].replace("elements", table_name)
+            destination_schema = "".join([line.strip() for line in data_lines])
+            logger.info(f"creating table {table_name} for user")
+            cursor.execute(destination_schema)
+            return True
+
     def precheck(self) -> None:
         with self.connection_config.get_cursor() as cursor:
             cursor.execute("SHOW CATALOGS")
@@ -66,14 +88,6 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                 raise ValueError(
                     "Database {} not found in {}".format(
                         self.upload_config.database, ", ".join(databases)
-                    )
-                )
-            cursor.execute(f"SHOW TABLES IN {self.upload_config.database}")
-            table_names = [r[1] for r in cursor.fetchall()]
-            if self.upload_config.table_name not in table_names:
-                raise ValueError(
-                    "Table {} not found in {}".format(
-                        self.upload_config.table_name, ", ".join(table_names)
                     )
                 )
 
