@@ -140,7 +140,7 @@ class ConfluenceIndexer(Indexer):
         """
         Get a list of space IDs and keys from Confluence.
 
-        Example space ID (int): 98503
+        Example space ID (numerical): 98503
         Example space key (str): "SD"
         """
         spaces = self.index_config.spaces
@@ -214,7 +214,6 @@ class ConfluenceIndexer(Indexer):
 
 
 class ConfluenceDownloaderConfig(DownloaderConfig, HtmlMixin):
-    # pass
     max_num_metadata_permissions: int = Field(
         250, description="Approximate maximum number of permissions included in metadata"
     )
@@ -424,14 +423,10 @@ class ConfluenceDownloader(Downloader):
         # Get document permissions and update metadata
         space_id = file_data.additional_metadata["space_id"]
         space_perm = self._get_permissions_for_space(space_id)  # must be the id, NOT the space key
-        if not space_perm:
-            logger.warning(f"Could not retrieve permissions for space {space_id}.")
-            combined_doc_permissions = None
-        else:
+        if space_perm:
             combined_doc_permissions = self._parse_permissions_for_doc(doc_id, space_perm)
-        if combined_doc_permissions:
-            print("CDP", combined_doc_permissions)
-            file_data.metadata.permissions_data = combined_doc_permissions
+            if combined_doc_permissions:
+                file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
         file_data.metadata.date_created = page["history"]["createdDate"]
