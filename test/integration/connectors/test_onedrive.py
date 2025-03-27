@@ -15,7 +15,8 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.processes.connectors.onedrive import (
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.processes.connectors.onedrive import (
     CONNECTOR_TYPE,
     OnedriveAccessConfig,
     OnedriveConnectionConfig,
@@ -26,7 +27,6 @@ from unstructured_ingest.v2.processes.connectors.onedrive import (
     OnedriveUploader,
     OnedriveUploaderConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

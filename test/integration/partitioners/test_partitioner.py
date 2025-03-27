@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.errors import UserError
-from unstructured_ingest.v2.processes.partitioner import Partitioner, PartitionerConfig
+from unstructured_ingest.errors_v2 import UserError
+from unstructured_ingest.processes.partitioner import Partitioner, PartitionerConfig
 
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"

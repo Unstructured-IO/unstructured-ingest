@@ -8,12 +8,12 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.logger import logger
-from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import ProviderError, UserAuthError, UserError, is_internal_error
-from unstructured_ingest.v2.errors import (
+from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError, is_internal_error
+from unstructured_ingest.errors_v2 import (
     RateLimitError as CustomRateLimitError,
 )
+from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from voyageai import AsyncClient as AsyncVoyageAIClient

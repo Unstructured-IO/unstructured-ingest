@@ -45,7 +45,6 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --partition-by-api \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
-  --output-dir "$OUTPUT_DIR" \
   --strategy fast \
   --verbose \
   --reprocess \

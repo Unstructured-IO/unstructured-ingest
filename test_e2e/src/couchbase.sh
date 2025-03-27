@@ -63,7 +63,6 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --metadata-exclude file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.date_created,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
   --num-processes "$max_processes" \
   --download-dir "$DOWNLOAD_DIR" \
-  --output-dir "$OUTPUT_DIR" \
   --connection-string "$CB_CONN_STR" \
   --bucket "$CB_BUCKET" \
   --username "$CB_USERNAME" \
@@ -75,6 +74,8 @@ PYTHONPATH=. ./unstructured_ingest/main.py \
   --preserve-downloads \
   --reprocess \
   --batch-size 2 \
-  --verbose
+  --verbose \
+  local \
+  --output-dir "$OUTPUT_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

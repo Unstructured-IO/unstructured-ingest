@@ -20,7 +20,8 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.processes.connectors.astradb import (
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.processes.connectors.astradb import (
     CONNECTOR_TYPE,
     AstraDBAccessConfig,
     AstraDBConnectionConfig,
@@ -35,7 +36,6 @@ from unstructured_ingest.v2.processes.connectors.astradb import (
     DestinationConnectionError,
     SourceConnectionError,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 EXISTENT_COLLECTION_NAME = "ingest_test_src"
 NONEXISTENT_COLLECTION_NAME = "nonexistant"

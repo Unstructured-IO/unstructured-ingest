@@ -42,7 +42,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --partition-by-api \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --num-processes "$max_processes" \
-  --output-dir "$OUTPUT_DIR" \
   --strategy fast \
   --verbose \
   --reprocess \

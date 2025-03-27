@@ -4,7 +4,7 @@ from typing import Generator
 
 import pytest
 
-from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.logger import logger
 
 FILENAME = Path("DA-1p-with-duplicate-pages.pdf.json")
 

@@ -16,7 +16,8 @@ from test.integration.connectors.utils.validation.destination import (
     stager_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.processes.connectors.qdrant.cloud import (
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.processes.connectors.qdrant.cloud import (
     CloudQdrantAccessConfig,
     CloudQdrantConnectionConfig,
     CloudQdrantUploader,
@@ -24,27 +25,26 @@ from unstructured_ingest.v2.processes.connectors.qdrant.cloud import (
     CloudQdrantUploadStager,
     CloudQdrantUploadStagerConfig,
 )
-from unstructured_ingest.v2.processes.connectors.qdrant.local import (
+from unstructured_ingest.processes.connectors.qdrant.local import (
     CONNECTOR_TYPE as LOCAL_CONNECTOR_TYPE,
 )
-from unstructured_ingest.v2.processes.connectors.qdrant.local import (
+from unstructured_ingest.processes.connectors.qdrant.local import (
     LocalQdrantConnectionConfig,
     LocalQdrantUploader,
     LocalQdrantUploaderConfig,
     LocalQdrantUploadStager,
     LocalQdrantUploadStagerConfig,
 )
-from unstructured_ingest.v2.processes.connectors.qdrant.server import (
+from unstructured_ingest.processes.connectors.qdrant.server import (
     CONNECTOR_TYPE as SERVER_CONNECTOR_TYPE,
 )
-from unstructured_ingest.v2.processes.connectors.qdrant.server import (
+from unstructured_ingest.processes.connectors.qdrant.server import (
     ServerQdrantConnectionConfig,
     ServerQdrantUploader,
     ServerQdrantUploaderConfig,
     ServerQdrantUploadStager,
     ServerQdrantUploadStagerConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 COLLECTION_NAME = f"test-coll-{uuid.uuid4().hex[:12]}"
 VECTORS_CONFIG = {"size": 384, "distance": "Cosine"}

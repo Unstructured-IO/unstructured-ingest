@@ -4,6 +4,22 @@
 
 * **Add `username password` authentication to Onedrive and Sharepoint**
 
+## 0.7.0
+
+### Features
+
+* **Drop V1**
+
+## 0.6.4
+
+### Features
+
+* **Support env var for user agent settings**
+
+### Fixes
+
+* **Expose Github connector**
+
 ## 0.6.3
 
 ### Features

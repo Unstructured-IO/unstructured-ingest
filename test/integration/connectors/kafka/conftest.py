@@ -4,7 +4,7 @@ import time
 from confluent_kafka import Consumer, KafkaError, KafkaException
 from confluent_kafka.admin import AdminClient
 
-from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.logger import logger
 
 TOPIC = "fake-topic"
 

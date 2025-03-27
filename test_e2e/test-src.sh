@@ -20,8 +20,6 @@ all_tests=(
   's3.sh'
   's3-filter.sh'
   'azure.sh'
-  'biomed-api.sh'
-  'biomed-path.sh'
   # NOTE(yuming): The pdf-fast-reprocess test should be put after any tests that save downloaded files
   'pdf-fast-reprocess.sh'
   #  's3-compression.sh'
@@ -29,7 +27,6 @@ all_tests=(
   'box.sh'
   'gitlab.sh'
   'google-drive.sh'
-  'wikipedia.sh'
   'slack.sh'
   #  'against-api.sh'
   'gcs.sh'
@@ -38,8 +35,6 @@ all_tests=(
   'airtable-diff.sh'
   # # NOTE(ryan): This test is disabled because it is triggering too many requests to the API
   # 'airtable-large.sh'
-  'delta-table.sh'
-  'hubspot.sh'
   'sftp.sh'
 )
 
@@ -83,7 +78,7 @@ for test in "${all_tests[@]}"; do
     continue
   fi
   echo "--------- RUNNING SCRIPT $test ---------"
-  echo "Running ./test_e2e/$test"
+  echo "Running ./test_e2e/src/$test"
   ./test_e2e/src/"$test"
   rc=$?
   if [[ $rc -eq 8 ]]; then
