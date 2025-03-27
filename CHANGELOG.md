@@ -1,4 +1,12 @@
+## 0.6.3
+
+### Features
+
+* **Migrate Github connector to v2**
+
 ## 0.6.2
+
+### Features
 
 * **Support opinionated writes in databricks delta table connector**
 * **Update databricks volume connector to emit user agent**
