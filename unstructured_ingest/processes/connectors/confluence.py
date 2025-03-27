@@ -183,13 +183,13 @@ class ConfluenceIndexer(Indexer):
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
                     record_locator={
-                        "space_key": space_key,  # TODO user impact?
+                        "space_id": space_key,
                         "document_id": doc_id,
                     },
                 )
                 additional_metadata = {
                     "space_key": space_key,
-                    "space_id": space_id,
+                    "space_id": space_id,  # diff from record_locator space_id (which is space_key)
                     "document_id": doc_id,
                 }
 
