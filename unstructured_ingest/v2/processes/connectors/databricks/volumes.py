@@ -68,9 +68,6 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
         "Databricks workspace endpoint or the "
         "Databricks accounts endpoint.",
     )
-    user_agent: str = Field(
-        default_factory=lambda: os.getenv("UNSTRUCTURED_USER_AGENT", "unstructuredio_oss")
-    )
 
     def wrap_error(self, e: Exception) -> Exception:
         from databricks.sdk.errors.base import DatabricksError
@@ -103,7 +100,9 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
         config = Config(
             host=self.host,
             **self.access_config.get_secret_value().model_dump(),
-        ).with_user_agent_extra("PyDatabricksSdk", self.user_agent)
+        ).with_user_agent_extra(
+            "PyDatabricksSdk", os.getenv("UNSTRUCTURED_USER_AGENT", "unstructuredio_oss")
+        )
 
         return WorkspaceClient(config=config)
 
