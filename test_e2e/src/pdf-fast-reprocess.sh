@@ -38,11 +38,12 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --num-processes "$max_processes" \
   --strategy fast \
   --reprocess \
-  --output-dir "$OUTPUT_DIR" \
   --verbose \
   --file-glob "*.pdf" \
   --input-path "$INPUT_PATH" \
   --recursive \
-  --work-dir "$WORK_DIR"
+  --work-dir "$WORK_DIR" \
+  local \
+  --output-dir "$OUTPUT_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

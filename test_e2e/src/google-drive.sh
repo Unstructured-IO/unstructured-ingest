@@ -47,12 +47,13 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --strategy hi_res \
   --preserve-downloads \
   --reprocess \
-  --output-dir "$OUTPUT_DIR" \
   --verbose \
   --drive-id 1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr \
   --service-account-key-path "$GCP_INGEST_SERVICE_KEY_FILE" \
   --recursive \
   --extensions "pdf,docx" \
-  --work-dir "$WORK_DIR"
+  --work-dir "$WORK_DIR" \
+  local \
+  --output-dir "$OUTPUT_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME
