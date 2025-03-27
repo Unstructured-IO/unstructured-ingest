@@ -1,4 +1,3 @@
-import fnmatch
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
@@ -106,11 +105,6 @@ class GithubIndexerConfig(IndexerConfig):
     recursive: bool = Field(
         description="Recursively index all files in the repository", default=True
     )
-    file_glob: Optional[list[str]] = Field(
-        default=None,
-        description="file globs to limit which types of " "files are accepted",
-        examples=["*.pdf", "*.html"],
-    )
 
 
 @dataclass
@@ -137,18 +131,7 @@ class GithubIndexer(Indexer):
         file_elements = [
             element for element in git_tree.tree if element.size is not None and element.size > 0
         ]
-        if self.index_config.file_glob:
-            file_elements = self.filter_files(files=file_elements)
         return file_elements
-
-    def filter_files(self, files: list["GitTreeElement"]) -> list["GitTreeElement"]:
-        filtered_files = []
-        for file in files:
-            path = file.path
-            for pattern in self.index_config.file_glob:
-                if fnmatch.filter([path], pattern):
-                    filtered_files.append(file)
-        return filtered_files
 
     def convert_element(self, element: "GitTreeElement") -> FileData:
         full_path = (
