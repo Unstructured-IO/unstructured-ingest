@@ -1,3 +1,9 @@
+## 0.6.2
+
+### Features
+
+* **Add `username password` authentication to Onedrive and Sharepoint**
+
 ## 0.6.1
 
 ### Fixes
@@ -45,12 +51,6 @@ This avoids some of the adjacent implicit imports that were picked up with v2.in
 ### Features 
 
 * **Add IBM watson.data Destination connector**
-
-## 0.5.20
-
-### Features
-
-* **Add `username password` authentication to Onedrive and Sharepoint**
 
 ## 0.5.19
 
