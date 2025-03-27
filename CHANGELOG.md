@@ -1,3 +1,9 @@
+## 0.5.20
+
+### Features
+
+* **Add `username password` authentication to Onedrive and Sharepoint**
+
 ## 0.5.19
 
 ### Features
