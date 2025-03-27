@@ -383,6 +383,7 @@ class GoogleDriveIndexer(Indexer):
     ) -> list[FileData]:
         root_info = self.get_root_info(files_client=files_client, object_id=object_id)
         if not self.is_dir(root_info):
+            root_info["permissions"] = self.extract_permissions(root_info.get("permissions"))
             data = [self.map_file_data(root_info)]
         else:
 
@@ -393,10 +394,40 @@ class GoogleDriveIndexer(Indexer):
                 recursive=recursive,
                 previous_path=root_info["name"],
             )
-            data = [self.map_file_data(f=f) for f in file_contents]
+            data = []
+            for f in file_contents:
+                f["permissions"] = self.extract_permissions(f.get("permissions"))
+                data.append(self.map_file_data(f=f))
         for d in data:
             d.metadata.record_locator["drive_id"]: object_id
         return data
+
+    def extract_permissions(self, permissions: list[dict]) -> list[dict]:
+        if not permissions:
+            return []
+
+        # https://developers.google.com/workspace/drive/api/guides/ref-roles
+        role_mapping = {
+            "owner": ["read", "update", "delete"],
+            "organizer": ["read", "update", "delete"],
+            "fileOrganizer": ["read", "update"],
+            "writer": ["read", "update"],
+            "commenter": ["read"],
+            "reader": ["read"],
+        }
+
+        normalized_permissions = {
+            "read": {"users": set(), "groups": set()},
+            "update": {"users": set(), "groups": set()},
+            "delete": {"users": set(), "groups": set()},
+        }  # TODO define elsewhere
+
+        for item in permissions:
+            type_key = item["type"] + "s"
+            for operation in role_mapping[item["role"]]:
+                normalized_permissions[operation][type_key].add(item["id"])
+
+        return [normalized_permissions]
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:
