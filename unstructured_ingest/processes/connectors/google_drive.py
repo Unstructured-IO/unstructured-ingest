@@ -413,15 +413,28 @@ class GoogleDriveIndexer(Indexer):
         if not permissions:
             return []
 
-        return [
-            {
-                "type": item.get("type", ""),
-                "id": item["id"],
-                "email": item.get("emailAddress", ""),
-                "role": item["role"],
-            }
-            for item in permissions
-        ]
+        # https://developers.google.com/workspace/drive/api/guides/ref-roles
+        role_mapping = {
+            "owner": ["read", "update", "delete"],
+            "organizer": ["read", "update", "delete"],
+            "fileOrganizer": ["read", "update"],
+            "writer": ["read", "update"],
+            "commenter": ["read"],
+            "reader": ["read"],
+        }
+
+        normalized_permissions = {
+            "read": {"users": set(), "groups": set()},
+            "update": {"users": set(), "groups": set()},
+            "delete": {"users": set(), "groups": set()},
+        }  # TODO define elsewhere
+
+        for item in permissions:
+            type_key = item["type"] + "s"
+            for operation in role_mapping[item["role"]]:
+                normalized_permissions[operation][type_key].add(item["id"])
+
+        return [normalized_permissions]
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:
