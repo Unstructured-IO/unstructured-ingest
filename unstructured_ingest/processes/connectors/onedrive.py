@@ -53,11 +53,14 @@ MAX_BYTES_SIZE = 512_000_000
 
 class OnedriveAccessConfig(AccessConfig):
     client_cred: str = Field(description="Microsoft App client secret")
+    password: Optional[str] = Field(description="Service account password", default=None)
 
 
 class OnedriveConnectionConfig(ConnectionConfig):
     client_id: str = Field(description="Microsoft app client ID")
-    user_pname: str = Field(description="User principal name, usually is your Azure AD email.")
+    user_pname: str = Field(
+        description="User principal name or service account, usually your Azure AD email."
+    )
     tenant: str = Field(
         repr=False, description="ID or domain name associated with your Azure AD instance"
     )
@@ -74,25 +77,50 @@ class OnedriveConnectionConfig(ConnectionConfig):
         drive = client.users[self.user_pname].drive
         return drive
 
-    @requires_dependencies(["msal"], extras="onedrive")
+    @requires_dependencies(["msal", "requests"], extras="onedrive")
     def get_token(self):
         from msal import ConfidentialClientApplication
+        from requests import post
 
-        try:
-            app = ConfidentialClientApplication(
-                authority=f"{self.authority_url}/{self.tenant}",
-                client_id=self.client_id,
-                client_credential=self.access_config.get_secret_value().client_cred,
-            )
-            token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
-        except ValueError as exc:
-            logger.error("Couldn't set up credentials for OneDrive")
-            raise exc
-        if "error" in token:
-            raise SourceConnectionNetworkError(
-                "failed to fetch token, {}: {}".format(token["error"], token["error_description"])
-            )
-        return token
+        if self.access_config.get_secret_value().password:
+            url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
+            headers = {"Content-Type": "application/x-www-form-urlencoded"}
+            data = {
+                "grant_type": "password",
+                "username": self.user_pname,
+                "password": self.access_config.get_secret_value().password,
+                "client_id": self.client_id,
+                "client_secret": self.access_config.get_secret_value().client_cred,
+                "scope": "https://graph.microsoft.com/.default",
+            }
+            response = post(url, headers=headers, data=data)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise SourceConnectionError(
+                    f"Oauth2 authentication failed with {response.status_code}: {response.text}"
+                )
+
+        else:
+            try:
+                app = ConfidentialClientApplication(
+                    authority=f"{self.authority_url}/{self.tenant}",
+                    client_id=self.client_id,
+                    client_credential=self.access_config.get_secret_value().client_cred,
+                )
+                token = app.acquire_token_for_client(
+                    scopes=["https://graph.microsoft.com/.default"]
+                )
+            except ValueError as exc:
+                logger.error("Couldn't set up credentials.")
+                raise exc
+            if "error" in token:
+                raise SourceConnectionNetworkError(
+                    "failed to fetch token, {}: {}".format(
+                        token["error"], token["error_description"]
+                    )
+                )
+            return token
 
     @requires_dependencies(["office365"], extras="onedrive")
     def get_client(self) -> "GraphClient":
