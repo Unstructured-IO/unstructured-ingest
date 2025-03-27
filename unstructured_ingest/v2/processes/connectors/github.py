@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 from uuid import NAMESPACE_DNS, uuid5
 
-import requests
 from pydantic import Field, Secret, field_validator
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -33,6 +32,7 @@ if TYPE_CHECKING:
     from github import ContentFile, GitTreeElement, Repository
     from github import Github as GithubClient
     from github.GithubException import GithubException
+    from requests import HTTPError
 
 CONNECTOR_TYPE = "github"
 
@@ -76,7 +76,7 @@ class GithubConnectionConfig(ConnectionConfig):
         logger.debug(f"unhandled github error: {e}")
         return e
 
-    def wrap_http_error(self, e: requests.HTTPError) -> Exception:
+    def wrap_http_error(self, e: "HTTPError") -> Exception:
         status_code = e.response.status_code
         if status_code == 401:
             return UserAuthError(f"Unauthorized access to Github: {e.response.text}")
@@ -87,12 +87,14 @@ class GithubConnectionConfig(ConnectionConfig):
         logger.debug(f"unhandled http error: {e}")
         return e
 
+    @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
         from github.GithubException import GithubException
+        from requests import HTTPError
 
         if isinstance(e, GithubException):
             return self.wrap_github_exception(e=e)
-        if isinstance(e, requests.HTTPError):
+        if isinstance(e, HTTPError):
             return self.wrap_http_error(e=e)
         logger.debug(f"unhandled error: {e}")
         return e
@@ -187,7 +189,10 @@ class GithubDownloader(Downloader):
             raise UserError(f"File not found: {path}")
         return content_file
 
+    @requires_dependencies(["requests"], extras="github")
     def get_contents(self, content_file: "ContentFile") -> bytes:
+        import requests
+
         if content_file.decoded_content:
             return content_file.decoded_content
         download_url = content_file.download_url
