@@ -27,7 +27,7 @@ from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
 )
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.chroma import (
     CONNECTOR_TYPE,
     ChromaConnectionConfig,

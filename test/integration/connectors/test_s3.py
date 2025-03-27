@@ -18,7 +18,6 @@ from test.integration.connectors.utils.validation.source import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.v2.errors import UserAuthError, UserError
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     CONNECTOR_TYPE,
     S3AccessConfig,
@@ -30,6 +29,7 @@ from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3Uploader,
     S3UploaderConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 
 def validate_predownload_file_data(file_data: FileData):

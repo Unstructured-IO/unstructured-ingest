@@ -3,10 +3,9 @@ import traceback
 from dataclasses import dataclass, field
 from multiprocessing import Process, Queue
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import urlparse
 
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -16,7 +15,6 @@ from unstructured_ingest.utils.table import convert_to_pandas_dataframe
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -24,8 +22,12 @@ from unstructured_ingest.v2.interfaces import (
 )
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.v2.types.file_data import FileData
 
 CONNECTOR_TYPE = "delta_table"
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
 @requires_dependencies(["deltalake"], extras="delta-table")
@@ -136,7 +138,7 @@ class DeltaTableUploader(Uploader):
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+    def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         updated_upload_path = os.path.join(
             self.connection_config.table_uri, file_data.source_identifiers.relative_path
         )
@@ -172,7 +174,10 @@ class DeltaTableUploader(Uploader):
             logger.error(f"Exception occurred in write_deltalake: {error_message}")
             raise RuntimeError(f"Error in write_deltalake: {error_message}")
 
+    @requires_dependencies(["pandas"], extras="delta-table")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        import pandas as pd
+
         df = pd.DataFrame(data=data)
         self.upload_dataframe(df=df, file_data=file_data)
 

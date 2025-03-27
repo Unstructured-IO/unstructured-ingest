@@ -6,7 +6,7 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 
-from pydantic import BaseModel, Field, Secret, SecretStr
+from pydantic import BaseModel, Field, Secret, SecretStr, field_validator
 
 from unstructured_ingest.error import (
     DestinationConnectionError,
@@ -23,17 +23,12 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
-    BatchFileData,
-    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -44,6 +39,13 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
+)
+from unstructured_ingest.v2.types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
 )
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
@@ -97,6 +99,12 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
     )
     ca_certs: Optional[Path] = None
     access_config: Secret[ElasticsearchAccessConfig]
+
+    @field_validator("hosts", mode="before")
+    def to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
     def get_client_kwargs(self) -> dict:
         # Update auth related fields to conform to what the SDK expects based on the

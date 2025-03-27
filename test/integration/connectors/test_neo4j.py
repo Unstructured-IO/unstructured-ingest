@@ -13,11 +13,6 @@ from test.integration.connectors.utils.constants import DESTINATION_TAG, GRAPH_D
 from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
-from unstructured_ingest.v2.interfaces.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
 from unstructured_ingest.v2.processes.connectors.neo4j import (
     CONNECTOR_TYPE,
     Label,
@@ -27,6 +22,11 @@ from unstructured_ingest.v2.processes.connectors.neo4j import (
     Neo4jUploaderConfig,
     Neo4jUploadStager,
     Relationship,
+)
+from unstructured_ingest.v2.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
 )
 
 USERNAME = "neo4j"

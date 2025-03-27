@@ -1,3 +1,51 @@
+## 0.6.1
+
+### Fixes
+
+* **Handle NDJSON when using local chunker**
+
+## 0.6.0
+
+### Features
+
+* **Isolate FileData to limit dependencies**
+
+## 0.5.25
+
+### Features
+
+* **Support dynamic schema management for Databricks Delta Table uploader**
+
+## 0.5.24
+
+### Features
+
+* **Add warning to s3 if characters to avoid are present in path**
+
+## 0.5.23
+
+### Enhancements
+FileData and a few other types can now be imported from a narrower v2.types module. 
+This avoids some of the adjacent implicit imports that were picked up with v2.interfaces.__init__.py 
+
+## 0.5.22
+
+### Features
+
+* **Add elasticsearch config enforcement that hosts are a list type**
+
+## 0.5.21
+
+### Fixes
+
+* **Lazy load pandas and numpy** to improve startup performance
+
+## 0.5.20
+
+### Features 
+
+* **Add IBM watson.data Destination connector**
+
 ## 0.5.20
 
 ### Features
@@ -37,7 +85,7 @@
 
 ### Features 
 
-* Support NDJSON for data between pipeline steps for data streaming**
+* **Support NDJSON for data between pipeline steps for data streaming**
 
 ## 0.5.14
 

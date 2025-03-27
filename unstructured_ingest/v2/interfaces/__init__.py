@@ -1,6 +1,5 @@
 from .connector import AccessConfig, BaseConnector, ConnectionConfig
 from .downloader import Downloader, DownloaderConfig, DownloadResponse, download_responses
-from .file_data import BatchFileData, BatchItem, FileData, FileDataSourceMetadata, SourceIdentifiers
 from .indexer import Indexer, IndexerConfig
 from .process import BaseProcess
 from .processor import ProcessorConfig
@@ -12,7 +11,6 @@ __all__ = [
     "download_responses",
     "Downloader",
     "DownloaderConfig",
-    "FileData",
     "Indexer",
     "IndexerConfig",
     "BaseProcess",
@@ -21,13 +19,9 @@ __all__ = [
     "UploadStagerConfig",
     "Uploader",
     "UploaderConfig",
-    "SourceIdentifiers",
     "UploadContent",
     "AccessConfig",
     "ConnectionConfig",
     "BaseConnector",
-    "FileDataSourceMetadata",
-    "BatchFileData",
-    "BatchItem",
     "VectorDBUploader",
 ]

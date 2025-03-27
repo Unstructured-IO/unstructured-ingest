@@ -29,7 +29,6 @@ from test.integration.connectors.utils.validation.destination import (
     stager_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.azure_ai_search import (
     CONNECTOR_TYPE,
     RECORD_ID_LABEL,
@@ -40,6 +39,7 @@ from unstructured_ingest.v2.processes.connectors.azure_ai_search import (
     AzureAISearchUploadStager,
     AzureAISearchUploadStagerConfig,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 repo_path = Path(__file__).parent.resolve()
 

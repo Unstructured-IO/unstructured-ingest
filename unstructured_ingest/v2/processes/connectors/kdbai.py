@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
@@ -12,7 +11,6 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -22,10 +20,12 @@ from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
+from unstructured_ingest.v2.types.file_data import FileData
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from kdbai_client import Database, Session, Table
+    from pandas import DataFrame
 
 CONNECTOR_TYPE = "kdbai"
 
@@ -118,11 +118,11 @@ class KdbaiUploader(Uploader):
             table = db.table(self.upload_config.table_name)
             yield table
 
-    def upsert_batch(self, batch: pd.DataFrame):
+    def upsert_batch(self, batch: "DataFrame"):
         with self.get_table() as table:
             table.insert(batch)
 
-    def process_dataframe(self, df: pd.DataFrame):
+    def process_dataframe(self, df: "DataFrame"):
         logger.debug(
             f"uploading {len(df)} entries to {self.connection_config.endpoint} "
             f"db {self.upload_config.database_name} in table {self.upload_config.table_name}"
@@ -130,7 +130,10 @@ class KdbaiUploader(Uploader):
         for batch_df in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             self.upsert_batch(batch=batch_df)
 
+    @requires_dependencies(["pandas"], extras="kdbai")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        import pandas as pd
+
         df = pd.DataFrame(data=data)
         self.process_dataframe(df=df)
 

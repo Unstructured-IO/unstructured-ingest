@@ -1,0 +1,6 @@
+-c ../common/constraints.txt
+
+pyiceberg
+httpx
+pyarrow
+tenacity

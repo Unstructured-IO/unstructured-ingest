@@ -6,10 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import Any, Generator, Union
+from typing import TYPE_CHECKING, Any, Generator, Union
 
-import numpy as np
-import pandas as pd
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
@@ -18,17 +16,12 @@ from unstructured_ingest.utils.data_prep import get_data, get_data_df, split_dat
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
-    BatchFileData,
-    BatchItem,
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
     DownloadResponse,
-    FileData,
-    FileDataSourceMetadata,
     Indexer,
     IndexerConfig,
-    SourceIdentifiers,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -36,7 +29,17 @@ from unstructured_ingest.v2.interfaces import (
     download_responses,
 )
 from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.v2.types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.v2.utils import get_enhanced_element_id
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 _DATE_COLUMNS = ("date_created", "date_modified", "date_processed", "last_modified")
 
@@ -154,13 +157,15 @@ class SQLDownloader(Downloader, ABC):
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         pass
 
-    def sql_to_df(self, rows: list[tuple], columns: list[str]) -> list[pd.DataFrame]:
+    def sql_to_df(self, rows: list[tuple], columns: list[str]) -> list["DataFrame"]:
+        import pandas as pd
+
         data = [dict(zip(columns, row)) for row in rows]
         df = pd.DataFrame(data)
         dfs = [pd.DataFrame([row.values], columns=df.columns) for index, row in df.iterrows()]
         return dfs
 
-    def get_data(self, file_data: SqlBatchFileData) -> list[pd.DataFrame]:
+    def get_data(self, file_data: SqlBatchFileData) -> list["DataFrame"]:
         rows, columns = self.query_db(file_data=file_data)
         return self.sql_to_df(rows=rows, columns=columns)
 
@@ -174,7 +179,7 @@ class SQLDownloader(Downloader, ABC):
         return f
 
     def generate_download_response(
-        self, result: pd.DataFrame, file_data: SqlBatchFileData
+        self, result: "DataFrame", file_data: SqlBatchFileData
     ) -> DownloadResponse:
         id_column = file_data.additional_metadata.id_column
         table_name = file_data.additional_metadata.table_name
@@ -231,7 +236,7 @@ class SQLUploadStager(UploadStager):
         data[RECORD_ID_LABEL] = file_data.identifier
         return data
 
-    def conform_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def conform_dataframe(self, df: "DataFrame") -> "DataFrame":
         for column in filter(lambda x: x in df.columns, _DATE_COLUMNS):
             df[column] = df[column].apply(parse_date_string).apply(lambda date: date.timestamp())
         for column in filter(
@@ -248,8 +253,9 @@ class SQLUploadStager(UploadStager):
             df[column] = df[column].apply(str)
         return df
 
-    def write_output(self, output_path: Path, data: list[dict]) -> None:
+    def write_output(self, output_path: Path, data: list[dict]) -> Path:
         write_data(path=output_path, data=data)
+        return output_path
 
     def run(
         self,
@@ -259,6 +265,8 @@ class SQLUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
+        import pandas as pd
+
         elements_contents = get_data(path=elements_filepath)
 
         df = pd.DataFrame(
@@ -273,8 +281,10 @@ class SQLUploadStager(UploadStager):
         output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
 
-        self.write_output(output_path=output_path, data=df.to_dict(orient="records"))
-        return output_path
+        final_output_path = self.write_output(
+            output_path=output_path, data=df.to_dict(orient="records")
+        )
+        return final_output_path
 
 
 class SQLUploaderConfig(UploaderConfig):
@@ -309,6 +319,8 @@ class SQLUploader(Uploader):
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
+        import pandas as pd
+
         output = []
         for row in data:
             parsed = []
@@ -323,7 +335,9 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
-    def _fit_to_schema(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _fit_to_schema(self, df: "DataFrame", add_missing_columns: bool = True) -> "DataFrame":
+        import pandas as pd
+
         table_columns = self.get_table_columns()
         columns = set(df.columns)
         schema_fields = set(table_columns)
@@ -335,7 +349,7 @@ class SQLUploader(Uploader):
                 "Following columns will be dropped to match the table's schema: "
                 f"{', '.join(columns_to_drop)}"
             )
-        if missing_columns:
+        if missing_columns and add_missing_columns:
             logger.info(
                 "Following null filled columns will be added to match the table's schema:"
                 f" {', '.join(missing_columns)} "
@@ -343,11 +357,14 @@ class SQLUploader(Uploader):
 
         df = df.drop(columns=columns_to_drop)
 
-        for column in missing_columns:
-            df[column] = pd.Series()
+        if add_missing_columns:
+            for column in missing_columns:
+                df[column] = pd.Series()
         return df
 
-    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+    def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
+        import numpy as np
+
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
         else:
@@ -408,6 +425,8 @@ class SQLUploader(Uploader):
                 logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        import pandas as pd
+
         df = pd.DataFrame(data)
         self.upload_dataframe(df=df, file_data=file_data)
 

@@ -12,7 +12,6 @@ from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
-    FileData,
     Uploader,
     UploaderConfig,
     UploadStager,
@@ -23,6 +22,7 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import parse_datetime
+from unstructured_ingest.v2.types.file_data import FileData
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:

@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 from dataclasses import dataclass
@@ -19,7 +20,6 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.interfaces import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.astradb import (
     CONNECTOR_TYPE,
     AstraDBAccessConfig,
@@ -35,6 +35,7 @@ from unstructured_ingest.v2.processes.connectors.astradb import (
     DestinationConnectionError,
     SourceConnectionError,
 )
+from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 EXISTENT_COLLECTION_NAME = "ingest_test_src"
 NONEXISTENT_COLLECTION_NAME = "nonexistant"
@@ -231,6 +232,13 @@ def test_astra_create_destination():
     )
     collection_name = "system_created-123"
     formatted_collection_name = "system_created_123"
+
+    client = AstraDBClient()
+    db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
+    with contextlib.suppress(Exception):
+        # drop collection before trying to create it
+        db.drop_collection(formatted_collection_name)
+
     created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
     assert created
     assert uploader.upload_config.collection_name == formatted_collection_name
@@ -239,8 +247,6 @@ def test_astra_create_destination():
     assert not created
 
     # cleanup
-    client = AstraDBClient()
-    db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
     db.drop_collection(formatted_collection_name)
 
 

@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
-
 from unstructured_ingest.utils.data_prep import get_data, write_data
-from unstructured_ingest.v2.interfaces import FileData, UploadStager
+from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.v2.interfaces import UploadStager
+from unstructured_ingest.v2.types.file_data import FileData
 from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 _COLUMNS = (
@@ -55,7 +55,6 @@ _COLUMNS = (
 
 @dataclass
 class BaseDuckDBUploadStager(UploadStager):
-
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         data = element_dict.copy()
         metadata: dict[str, Any] = data.pop("metadata", {})
@@ -72,6 +71,7 @@ class BaseDuckDBUploadStager(UploadStager):
         data = {k: v for k, v in data.items() if k in _COLUMNS}
         return data
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run(
         self,
         elements_filepath: Path,
@@ -80,6 +80,8 @@ class BaseDuckDBUploadStager(UploadStager):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
+        import pandas as pd
+
         elements_contents = get_data(path=elements_filepath)
         output_filename_suffix = Path(elements_filepath).suffix
         output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"

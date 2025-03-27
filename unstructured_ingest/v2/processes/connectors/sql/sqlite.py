@@ -4,9 +4,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator
 
-import pandas as pd
 from pydantic import Field, Secret, model_validator
 
+from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -31,6 +31,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
 if TYPE_CHECKING:
     from sqlite3 import Connection as SqliteConnection
     from sqlite3 import Cursor as SqliteCursor
+
 
 CONNECTOR_TYPE = "sqlite"
 
@@ -132,9 +133,12 @@ class SQLiteUploader(SQLUploader):
     connection_config: SQLiteConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["pandas"])
     def prepare_data(
         self, columns: list[str], data: tuple[tuple[Any, ...], ...]
     ) -> list[tuple[Any, ...]]:
+        import pandas as pd
+
         output = []
         for row in data:
             parsed = []

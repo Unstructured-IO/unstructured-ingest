@@ -17,3 +17,5 @@ bs4
 cryptography
 fsspec
 vertexai
+pyiceberg
+pyarrow
