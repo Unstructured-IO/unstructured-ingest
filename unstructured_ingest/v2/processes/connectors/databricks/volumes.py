@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from uuid import NAMESPACE_DNS, uuid5
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import (
@@ -61,12 +61,14 @@ class DatabricksVolumesAccessConfig(AccessConfig):
 
 
 class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
+    access_config: Secret[DatabricksVolumesAccessConfig]
     host: Optional[str] = Field(
         default=None,
         description="The Databricks host URL for either the "
         "Databricks workspace endpoint or the "
         "Databricks accounts endpoint.",
     )
+    user_agent: str = "unstructuredio_oss"
 
     def wrap_error(self, e: Exception) -> Exception:
         from databricks.sdk.errors.base import DatabricksError
@@ -94,11 +96,14 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
     @requires_dependencies(dependencies=["databricks.sdk"], extras="databricks-volumes")
     def get_client(self) -> "WorkspaceClient":
         from databricks.sdk import WorkspaceClient
+        from databricks.sdk.core import Config
 
-        return WorkspaceClient(
+        config = Config(
             host=self.host,
             **self.access_config.get_secret_value().model_dump(),
-        )
+        ).with_user_agent_extra("PyDatabricksSdk", self.user_agent)
+
+        return WorkspaceClient(config=config)
 
 
 class DatabricksVolumesIndexerConfig(IndexerConfig, DatabricksPathMixin):
