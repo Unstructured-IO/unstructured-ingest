@@ -8,7 +8,8 @@ from fsspec import get_filesystem_class
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.processes.connectors.delta_table import (
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.processes.connectors.delta_table import (
     CONNECTOR_TYPE,
     DeltaTableAccessConfig,
     DeltaTableConnectionConfig,
@@ -17,7 +18,6 @@ from unstructured_ingest.v2.processes.connectors.delta_table import (
     DeltaTableUploadStager,
     DeltaTableUploadStagerConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 multiprocessing.set_start_method("spawn")
 

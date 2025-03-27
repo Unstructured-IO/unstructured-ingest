@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.processes.chunker import Chunker, ChunkerConfig
+from unstructured_ingest.processes.chunker import Chunker, ChunkerConfig
 
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"

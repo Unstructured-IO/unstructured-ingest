@@ -5,7 +5,7 @@ from datetime import datetime
 
 from dateutil import parser
 
-from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.logger import logger
 
 
 def json_to_dict(json_string: str) -> t.Union[str, t.Dict[str, t.Any]]:

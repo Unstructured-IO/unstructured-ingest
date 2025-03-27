@@ -90,7 +90,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --strategy hi_res \
   --preserve-downloads \
   --reprocess \
-  --output-dir "$OUTPUT_DIR" \
   --verbose \
   --client-cred "$SHAREPOINT_CRED" \
   --client-id "$SHAREPOINT_CLIENT_ID" \

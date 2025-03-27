@@ -33,12 +33,13 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --strategy fast \
   --preserve-downloads \
   --reprocess \
-  --output-dir "$OUTPUT_DIR" \
   --verbose \
   --remote-url s3://utic-dev-tech-fixtures/small-pdf-set/ \
   --anonymous \
   --work-dir "$WORK_DIR" \
-  --max-file-size 900000
+  --max-file-size 900000 \
+  local \
+  --output-dir "$OUTPUT_DIR"
 
 NUM_FILES=$(find "$OUTPUT_DIR" -type f | wc -l)
 EXPECTED_NUM_FILES=2

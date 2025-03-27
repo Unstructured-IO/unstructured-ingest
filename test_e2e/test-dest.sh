@@ -17,7 +17,6 @@ export OMP_THREAD_LIMIT=1
 all_tests=(
   'azure.sh'
   'box.sh'
-  #  'clarifai.sh'
   'couchbase.sh'
   'gcs.sh'
   's3.sh'
@@ -58,7 +57,7 @@ for test in "${all_tests[@]}"; do
     continue
   fi
   echo "--------- RUNNING SCRIPT $test ---------"
-  echo "Running ./test_e2e/$test"
+  echo "Running ./test_e2e/dest/$test"
   ./test_e2e/dest/"$test"
   rc=$?
   if [[ $rc -eq 8 ]]; then

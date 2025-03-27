@@ -13,7 +13,7 @@ from test.integration.connectors.utils.validation.source import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.error import SourceConnectionError
-from unstructured_ingest.v2.processes.connectors.discord import (
+from unstructured_ingest.processes.connectors.discord import (
     CONNECTOR_TYPE,
     DiscordAccessConfig,
     DiscordConnectionConfig,

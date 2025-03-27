@@ -9,7 +9,7 @@ from unstructured_ingest.embed.azure_openai import (
     AzureOpenAIEmbeddingConfig,
     AzureOpenAIEmbeddingEncoder,
 )
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "AZURE_OPENAI_API_KEY"
 ENDPOINT = "AZURE_OPENAI_ENDPOINT"

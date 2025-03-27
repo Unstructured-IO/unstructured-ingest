@@ -1,19 +1,10 @@
-import copy
 import os
 import sys
 import tarfile
 import zipfile
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
-from unstructured_ingest.connector.local import LocalSourceConnector, SimpleLocalConfig
-from unstructured_ingest.interfaces import (
-    BaseConnectorConfig,
-    BaseSingleIngestDoc,
-    ProcessorConfig,
-    ReadConfig,
-)
 from unstructured_ingest.logger import logger
 
 ZIP_FILE_EXT = [".zip"]
@@ -78,41 +69,3 @@ def uncompress_tar_file(tar_filename: str, path: Optional[str] = None) -> str:
             )
         tfile.extractall(path=path)
     return path
-
-
-@dataclass
-class CompressionSourceConnectorMixin:
-    processor_config: ProcessorConfig
-    read_config: ReadConfig
-    connector_config: BaseConnectorConfig
-
-    def process_compressed_doc(self, doc: BaseSingleIngestDoc) -> List[BaseSingleIngestDoc]:
-        """
-        Utility function which helps process compressed files. Extracts the contents and returns
-        generated ingest docs via local source connector
-        """
-        # Download the raw file to local
-        doc.get_file()
-        path = uncompress_file(filename=str(doc.filename))
-        new_read_configs = copy.copy(self.read_config)
-        new_process_configs = copy.copy(self.processor_config)
-        relative_path = path.replace(self.read_config.download_dir, "")
-
-        if self.processor_config.output_dir.endswith(os.sep):
-            new_process_configs.output_dir = f"{self.processor_config.output_dir}{relative_path}"
-        else:
-            new_process_configs.output_dir = (
-                f"{self.processor_config.output_dir}{os.sep}{relative_path}"
-            )
-
-        local_connector = LocalSourceConnector(
-            connector_config=SimpleLocalConfig(
-                input_path=path,
-                recursive=True,
-            ),
-            read_config=new_read_configs,
-            processor_config=new_process_configs,
-        )
-        logger.info(f"created local source connector: {local_connector.to_json()}")
-        local_connector.initialize()
-        return local_connector.get_ingest_docs()

@@ -8,7 +8,7 @@ from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
 )
-from unstructured_ingest.v2.processes.connectors.sql.vastdb import (
+from unstructured_ingest.processes.connectors.sql.vastdb import (
     CONNECTOR_TYPE,
     VastdbUploadStager,
     VastdbUploadStagerConfig,

@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
-from unstructured_ingest.v2.processes.connectors.weaviate.cloud import (
+from unstructured_ingest.processes.connectors.weaviate.cloud import (
     CONNECTOR_TYPE,
     CloudWeaviateAccessConfig,
     CloudWeaviateConnectionConfig,
