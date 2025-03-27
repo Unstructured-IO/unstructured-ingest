@@ -1,10 +1,18 @@
-## 0.6.3
+## 0.6.4
 
 ### Features
 
 * **Add `username password` authentication to Onedrive and Sharepoint**
 
+## 0.6.3
+
+### Features
+
+* **Migrate Github connector to v2**
+
 ## 0.6.2
+
+### Features
 
 * **Support opinionated writes in databricks delta table connector**
 * **Update databricks volume connector to emit user agent**
