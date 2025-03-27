@@ -31,6 +31,8 @@ from .delta_table import CONNECTOR_TYPE as DELTA_TABLE_CONNECTOR_TYPE
 from .delta_table import delta_table_destination_entry
 from .discord import CONNECTOR_TYPE as DISCORD_CONNECTOR_TYPE
 from .discord import discord_source_entry
+from .github import CONNECTOR_TYPE as GITHUB_CONNECTOR_TYPE
+from .github import github_source_entry
 from .gitlab import CONNECTOR_TYPE as GITLAB_CONNECTOR_TYPE
 from .gitlab import gitlab_source_entry
 from .google_drive import CONNECTOR_TYPE as GOOGLE_DRIVE_CONNECTOR_TYPE
@@ -124,3 +126,4 @@ add_destination_entry(destination_type=REDIS_CONNECTOR_TYPE, entry=redis_destina
 add_source_entry(source_type=JIRA_CONNECTOR_TYPE, entry=jira_source_entry)
 
 add_source_entry(source_type=ZENDESK_CONNECTOR_TYPE, entry=zendesk_source_entry)
+add_source_entry(source_type=GITHUB_CONNECTOR_TYPE, entry=github_source_entry)
