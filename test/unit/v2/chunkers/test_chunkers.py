@@ -3,7 +3,7 @@ import random
 import faker
 import pytest
 
-from unstructured_ingest.v2.processes.chunker import Chunker, ChunkerConfig
+from unstructured_ingest.processes.chunker import Chunker, ChunkerConfig
 
 fake = faker.Faker()
 

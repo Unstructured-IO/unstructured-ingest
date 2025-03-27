@@ -15,7 +15,7 @@ from unstructured_ingest.embed.voyageai import (
     VoyageAIEmbeddingConfig,
     VoyageAIEmbeddingEncoder,
 )
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "VOYAGEAI_API_KEY"
 

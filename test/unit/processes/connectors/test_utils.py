@@ -2,7 +2,7 @@ import base64
 import json
 import zlib
 
-from unstructured_ingest.v2.processes.connectors.utils import format_and_truncate_orig_elements
+from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
 
 
 def test_format_and_truncate_orig_elements():

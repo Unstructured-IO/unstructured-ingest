@@ -10,11 +10,11 @@ from pydantic import BaseModel
 from unstructured_ingest.cli.base.importer import import_from_string
 from unstructured_ingest.cli.utils.click import extract_config
 from unstructured_ingest.cli.utils.model_conversion import options_from_base_model, post_check
+from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.logger import logger
-from unstructured_ingest.v2.interfaces import ProcessorConfig
-from unstructured_ingest.v2.pipeline.pipeline import Pipeline
-from unstructured_ingest.v2.processes.chunker import Chunker, ChunkerConfig
-from unstructured_ingest.v2.processes.connector_registry import (
+from unstructured_ingest.pipeline.pipeline import Pipeline
+from unstructured_ingest.processes.chunker import Chunker, ChunkerConfig
+from unstructured_ingest.processes.connector_registry import (
     DownloaderT,
     IndexerT,
     RegistryEntry,
@@ -25,10 +25,10 @@ from unstructured_ingest.v2.processes.connector_registry import (
     destination_registry,
     source_registry,
 )
-from unstructured_ingest.v2.processes.connectors.local import LocalUploader, LocalUploaderConfig
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
-from unstructured_ingest.v2.processes.filter import Filterer, FiltererConfig
-from unstructured_ingest.v2.processes.partitioner import Partitioner, PartitionerConfig
+from unstructured_ingest.processes.connectors.local import LocalUploader, LocalUploaderConfig
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.processes.filter import Filterer, FiltererConfig
+from unstructured_ingest.processes.partitioner import Partitioner, PartitionerConfig
 
 CommandT = TypeVar("CommandT", bound=click.Command)
 

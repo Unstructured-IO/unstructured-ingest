@@ -11,12 +11,10 @@ import requests
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG
 from test.integration.utils import requires_env
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connectors.vectara import (
+from unstructured_ingest.processes.connectors.vectara import (
     CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE,
 )
-from unstructured_ingest.v2.processes.connectors.vectara import (
+from unstructured_ingest.processes.connectors.vectara import (
     VectaraAccessConfig,
     VectaraConnectionConfig,
     VectaraUploader,
@@ -24,6 +22,8 @@ from unstructured_ingest.v2.processes.connectors.vectara import (
     VectaraUploadStager,
     VectaraUploadStagerConfig,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.v2.logger import logger
 
 
 def validate_upload(document: dict, expected_data: dict):

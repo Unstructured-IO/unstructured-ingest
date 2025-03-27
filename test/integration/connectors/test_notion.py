@@ -9,8 +9,8 @@ from test.integration.connectors.utils.validation.source import (
     run_all_validations,
     update_fixtures,
 )
-from unstructured_ingest.v2.interfaces import Downloader, Indexer
-from unstructured_ingest.v2.processes.connectors.notion.connector import (
+from unstructured_ingest.interfaces import Downloader, Indexer
+from unstructured_ingest.processes.connectors.notion.connector import (
     CONNECTOR_TYPE,
     NotionAccessConfig,
     NotionConnectionConfig,

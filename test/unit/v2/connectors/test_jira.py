@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from unstructured_ingest.v2.processes.connectors.jira import (
+from unstructured_ingest.processes.connectors.jira import (
     FieldGetter,
     JiraAccessConfig,
     JiraConnectionConfig,

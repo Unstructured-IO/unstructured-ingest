@@ -9,8 +9,8 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.errors import UserAuthError
-from unstructured_ingest.v2.processes.connectors.zendesk.zendesk import (
+from unstructured_ingest.errors_v2 import UserAuthError
+from unstructured_ingest.processes.connectors.zendesk.zendesk import (
     CONNECTOR_TYPE,
     ZendeskAccessConfig,
     ZendeskConnectionConfig,

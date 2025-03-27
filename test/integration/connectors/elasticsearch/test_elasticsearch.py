@@ -23,7 +23,7 @@ from test.integration.connectors.utils.validation.source import (
 )
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.elasticsearch.elasticsearch import (
+from unstructured_ingest.processes.connectors.elasticsearch.elasticsearch import (
     CONNECTOR_TYPE,
     ElasticsearchAccessConfig,
     ElasticsearchConnectionConfig,

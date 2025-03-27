@@ -20,8 +20,8 @@ from unstructured_ingest.enhanced_dataclass import EnhancedDataClassJsonMixin, e
 from unstructured_ingest.enhanced_dataclass.core import _asdict
 from unstructured_ingest.error import PartitionError, SourceConnectionError
 from unstructured_ingest.logger import logger
+from unstructured_ingest.unstructured_api import call_api
 from unstructured_ingest.utils.data_prep import flatten_dict
-from unstructured_ingest.v2.unstructured_api import call_api
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element

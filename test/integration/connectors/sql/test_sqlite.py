@@ -20,8 +20,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
+from unstructured_ingest.processes.connectors.sql.sqlite import (
     CONNECTOR_TYPE,
     SQLiteConnectionConfig,
     SQLiteDownloader,
@@ -31,6 +30,7 @@ from unstructured_ingest.v2.processes.connectors.sql.sqlite import (
     SQLiteUploader,
     SQLiteUploadStager,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 
 SEED_DATA_ROWS = 10
 

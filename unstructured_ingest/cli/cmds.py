@@ -1,7 +1,7 @@
 import click
 
 from unstructured_ingest.cli.base import DestCmd, SrcCmd
-from unstructured_ingest.v2.processes.connector_registry import (
+from unstructured_ingest.processes.connector_registry import (
     destination_registry,
     source_registry,
 )

@@ -1,22 +1,22 @@
 import os
 from pathlib import Path
 
+from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.logger import logger
-from unstructured_ingest.v2.interfaces import ProcessorConfig
-from unstructured_ingest.v2.pipeline.pipeline import Pipeline
-from unstructured_ingest.v2.processes.chunker import ChunkerConfig
-from unstructured_ingest.v2.processes.connectors.local import (
+from unstructured_ingest.pipeline.pipeline import Pipeline
+from unstructured_ingest.processes.chunker import ChunkerConfig
+from unstructured_ingest.processes.connectors.local import (
     LocalUploaderConfig,
 )
-from unstructured_ingest.v2.processes.connectors.salesforce import (
+from unstructured_ingest.processes.connectors.salesforce import (
     CONNECTOR_TYPE,
     SalesforceAccessConfig,
     SalesforceConnectionConfig,
     SalesforceDownloaderConfig,
     SalesforceIndexerConfig,
 )
-from unstructured_ingest.v2.processes.embedder import EmbedderConfig
-from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
+from unstructured_ingest.processes.embedder import EmbedderConfig
+from unstructured_ingest.processes.partitioner import PartitionerConfig
 
 base_path = Path(__file__).parent.parent.parent.parent
 docs_path = base_path / "example-docs"

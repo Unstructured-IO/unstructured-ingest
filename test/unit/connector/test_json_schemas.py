@@ -1,5 +1,5 @@
-import unstructured_ingest.v2.processes.connectors  # noqa
-from unstructured_ingest.v2.processes.connector_registry import (
+import unstructured_ingest.processes.connectors  # noqa
+from unstructured_ingest.processes.connector_registry import (
     destination_registry,
     source_registry,
 )

@@ -18,8 +18,8 @@ from test.integration.utils import requires_env
 from unstructured_ingest.error import (
     SourceConnectionError,
 )
-from unstructured_ingest.v2.interfaces import Downloader, Indexer
-from unstructured_ingest.v2.processes.connectors.google_drive import (
+from unstructured_ingest.interfaces import Downloader, Indexer
+from unstructured_ingest.processes.connectors.google_drive import (
     CONNECTOR_TYPE,
     GoogleDriveAccessConfig,
     GoogleDriveConnectionConfig,

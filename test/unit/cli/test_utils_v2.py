@@ -5,7 +5,7 @@ import pytest
 from pydantic import Secret, ValidationError
 
 from unstructured_ingest.cli.utils.click import extract_config
-from unstructured_ingest.v2.interfaces import AccessConfig, ConnectionConfig
+from unstructured_ingest.interfaces import AccessConfig, ConnectionConfig
 
 
 def test_extract_config_optional_access_config():

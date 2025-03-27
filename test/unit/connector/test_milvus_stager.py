@@ -1,11 +1,11 @@
 import pytest
 
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.milvus import (
+from unstructured_ingest.processes.connectors.milvus import (
     CONNECTOR_TYPE,
     MilvusUploadStager,
     MilvusUploadStagerConfig,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 
 FILE_DATA = FileData(
     source_identifiers=SourceIdentifiers(fullpath="fake-memo.pdf", filename="fake-memo.pdf"),

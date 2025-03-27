@@ -15,8 +15,8 @@ from unstructured_ingest.embed.openai import (
     OpenAIEmbeddingConfig,
     OpenAIEmbeddingEncoder,
 )
-from unstructured_ingest.v2.errors import UserAuthError
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.errors_v2 import UserAuthError
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "OPENAI_API_KEY"
 

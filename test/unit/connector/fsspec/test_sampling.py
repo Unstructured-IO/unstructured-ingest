@@ -1,4 +1,4 @@
-from unstructured_ingest.v2.processes.connectors.fsspec.fsspec import (
+from unstructured_ingest.processes.connectors.fsspec.fsspec import (
     FsspecIndexer,
 )
 

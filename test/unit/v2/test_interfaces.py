@@ -1,7 +1,7 @@
 import pytest
 from pydantic import Secret, ValidationError
 
-from unstructured_ingest.v2.interfaces import AccessConfig, ConnectionConfig
+from unstructured_ingest.interfaces import AccessConfig, ConnectionConfig
 
 
 def test_failing_connection_config():

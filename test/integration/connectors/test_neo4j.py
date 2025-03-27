@@ -12,13 +12,7 @@ from pytest_check import check
 from test.integration.connectors.utils.constants import DESTINATION_TAG, GRAPH_DB_TAG
 from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.types import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
-from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
-from unstructured_ingest.v2.processes.connectors.neo4j import (
+from unstructured_ingest.processes.connectors.neo4j import (
     CONNECTOR_TYPE,
     Label,
     Neo4jAccessConfig,
@@ -28,6 +22,12 @@ from unstructured_ingest.v2.processes.connectors.neo4j import (
     Neo4jUploadStager,
     Relationship,
 )
+from unstructured_ingest.types import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
+from unstructured_ingest.utils.chunking import elements_from_base64_gzipped_json
 
 USERNAME = "neo4j"
 PASSWORD = "password"

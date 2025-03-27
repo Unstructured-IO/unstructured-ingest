@@ -19,9 +19,7 @@ from test.integration.connectors.utils.validation.destination import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connectors.pinecone import (
+from unstructured_ingest.processes.connectors.pinecone import (
     CONNECTOR_TYPE,
     MAX_QUERY_RESULTS,
     PineconeAccessConfig,
@@ -31,6 +29,8 @@ from unstructured_ingest.v2.processes.connectors.pinecone import (
     PineconeUploadStager,
     PineconeUploadStagerConfig,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.v2.logger import logger
 
 METADATA_BYTES_LIMIT = (
     40960  # 40KB https://docs.pinecone.io/reference/quotas-and-limits#hard-limits

@@ -7,7 +7,7 @@ from unstructured_ingest.cli.base.cmd import BaseCmd
 from unstructured_ingest.cli.utils.click import Dict, conform_click_options
 from unstructured_ingest.cli.utils.model_conversion import options_from_base_model
 from unstructured_ingest.logger import logger
-from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
 
 
 @dataclass

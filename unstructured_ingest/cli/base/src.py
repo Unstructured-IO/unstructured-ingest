@@ -8,15 +8,15 @@ from pydantic import BaseModel
 from unstructured_ingest.cli.base.cmd import BaseCmd
 from unstructured_ingest.cli.utils.click import Group, conform_click_options
 from unstructured_ingest.cli.utils.model_conversion import options_from_base_model
+from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.logger import logger
-from unstructured_ingest.v2.interfaces import ProcessorConfig
-from unstructured_ingest.v2.processes import (
+from unstructured_ingest.processes import (
     ChunkerConfig,
     EmbedderConfig,
     FiltererConfig,
     PartitionerConfig,
 )
-from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
 
 
 @dataclass

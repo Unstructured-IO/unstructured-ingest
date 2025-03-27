@@ -13,8 +13,8 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
+from unstructured_ingest.errors_v2 import UserAuthError, is_internal_error
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.errors import UserAuthError, is_internal_error
 
 if TYPE_CHECKING:
     from vertexai.language_models import TextEmbeddingModel

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from unstructured_ingest.v2.processes.connectors.confluence import (
+from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,
 )

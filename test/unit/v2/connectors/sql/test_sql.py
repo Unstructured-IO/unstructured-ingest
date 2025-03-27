@@ -4,13 +4,13 @@ import pandas as pd
 import pytest
 from pytest_mock import MockerFixture
 
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.sql.sql import (
+from unstructured_ingest.processes.connectors.sql.sql import (
     SQLConnectionConfig,
     SQLUploader,
     SQLUploaderConfig,
     SQLUploadStager,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 
 
 @pytest.fixture

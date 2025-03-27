@@ -6,7 +6,7 @@ from unstructured_ingest.embed.huggingface import (
     HuggingFaceEmbeddingConfig,
     HuggingFaceEmbeddingEncoder,
 )
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 
 def test_huggingface_embedder(embedder_file: Path):

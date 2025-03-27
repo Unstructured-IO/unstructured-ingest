@@ -15,7 +15,7 @@ from unstructured_ingest.embed.mixedbreadai import (
     MixedbreadAIEmbeddingConfig,
     MixedbreadAIEmbeddingEncoder,
 )
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "MXBAI_API_KEY"
 

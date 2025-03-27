@@ -15,8 +15,8 @@ from unstructured_ingest.embed.bedrock import (
     BedrockEmbeddingConfig,
     BedrockEmbeddingEncoder,
 )
-from unstructured_ingest.v2.errors import UserAuthError, UserError
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.errors_v2 import UserAuthError, UserError
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 
 def get_aws_credentials() -> dict:

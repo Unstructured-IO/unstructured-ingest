@@ -12,33 +12,33 @@ from lancedb import AsyncConnection
 from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.constants import RECORD_ID_LABEL
-from unstructured_ingest.v2.processes.connectors.lancedb.aws import (
+from unstructured_ingest.processes.connectors.lancedb.aws import (
     LanceDBAwsAccessConfig,
     LanceDBAwsConnectionConfig,
     LanceDBAwsUploader,
 )
-from unstructured_ingest.v2.processes.connectors.lancedb.azure import (
+from unstructured_ingest.processes.connectors.lancedb.azure import (
     LanceDBAzureAccessConfig,
     LanceDBAzureConnectionConfig,
     LanceDBAzureUploader,
 )
-from unstructured_ingest.v2.processes.connectors.lancedb.gcp import (
+from unstructured_ingest.processes.connectors.lancedb.gcp import (
     LanceDBGCSAccessConfig,
     LanceDBGCSConnectionConfig,
     LanceDBGSPUploader,
 )
-from unstructured_ingest.v2.processes.connectors.lancedb.lancedb import (
+from unstructured_ingest.processes.connectors.lancedb.lancedb import (
     CONNECTOR_TYPE,
     LanceDBUploaderConfig,
     LanceDBUploadStager,
 )
-from unstructured_ingest.v2.processes.connectors.lancedb.local import (
+from unstructured_ingest.processes.connectors.lancedb.local import (
     LanceDBLocalAccessConfig,
     LanceDBLocalConnectionConfig,
     LanceDBLocalUploader,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 
 DATABASE_NAME = "database"
 TABLE_NAME = "elements"

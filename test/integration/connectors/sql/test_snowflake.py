@@ -22,8 +22,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.sql.snowflake import (
+from unstructured_ingest.processes.connectors.sql.snowflake import (
     CONNECTOR_TYPE,
     SnowflakeAccessConfig,
     SnowflakeConnectionConfig,
@@ -34,6 +33,7 @@ from unstructured_ingest.v2.processes.connectors.sql.snowflake import (
     SnowflakeUploader,
     SnowflakeUploadStager,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 
 SEED_DATA_ROWS = 20
 

@@ -25,14 +25,14 @@ from test.integration.connectors.utils.validation.destination import (
     stager_validation,
 )
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.milvus import (
+from unstructured_ingest.processes.connectors.milvus import (
     CONNECTOR_TYPE,
     MilvusConnectionConfig,
     MilvusUploader,
     MilvusUploaderConfig,
     MilvusUploadStager,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 
 DB_NAME = "test_database"
 EXISTENT_COLLECTION_NAME = "test_collection"

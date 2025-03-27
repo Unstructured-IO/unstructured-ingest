@@ -9,14 +9,14 @@ from weaviate.client import WeaviateClient
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.docker import container_context
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.processes.connectors.weaviate.local import (
+from unstructured_ingest.processes.connectors.weaviate.local import (
     CONNECTOR_TYPE,
     LocalWeaviateConnectionConfig,
     LocalWeaviateUploader,
     LocalWeaviateUploaderConfig,
     LocalWeaviateUploadStager,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 
 COLLECTION_NAME = "elements"
 

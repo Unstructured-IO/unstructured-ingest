@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 
-from unstructured_ingest.v2.processes.connectors.sql.sql import SQLUploadStager
+from unstructured_ingest.processes.connectors.sql.sql import SQLUploadStager
 
 test_element = {
     "type": "Text",

@@ -15,7 +15,7 @@ from unstructured_ingest.embed.vertexai import (
     VertexAIEmbeddingConfig,
     VertexAIEmbeddingEncoder,
 )
-from unstructured_ingest.v2.processes.embedder import Embedder, EmbedderConfig
+from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "VERTEXAI_API_KEY"
 

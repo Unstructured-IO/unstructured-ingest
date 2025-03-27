@@ -5,7 +5,7 @@ import faker
 import pytest
 
 from test.unit.v2.utils.data_generator import generate_random_dictionary
-from unstructured_ingest.v2.processes.partitioner import Partitioner, PartitionerConfig
+from unstructured_ingest.processes.partitioner import Partitioner, PartitionerConfig
 
 fake = faker.Faker()
 

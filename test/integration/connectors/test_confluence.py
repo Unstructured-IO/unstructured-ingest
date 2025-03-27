@@ -8,7 +8,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.v2.processes.connectors.confluence import (
+from unstructured_ingest.processes.connectors.confluence import (
     CONNECTOR_TYPE,
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,

@@ -24,9 +24,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
-from unstructured_ingest.types import FileData, SourceIdentifiers
-from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.processes.connectors.kafka.local import (
+from unstructured_ingest.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,
     LocalKafkaConnectionConfig,
     LocalKafkaDownloader,
@@ -36,6 +34,8 @@ from unstructured_ingest.v2.processes.connectors.kafka.local import (
     LocalKafkaUploader,
     LocalKafkaUploaderConfig,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.v2.logger import logger
 
 SEED_MESSAGES = 10
 
