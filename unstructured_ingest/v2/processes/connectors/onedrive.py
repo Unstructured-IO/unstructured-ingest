@@ -93,8 +93,9 @@ class OnedriveConnectionConfig(ConnectionConfig):
             if response.status_code == 200:
                 return response.json()
             else:
-                logger.error(f"request failed with status code {response.status_code}:")
-                logger.error(response.text)
+                raise SourceConnectionError(
+                    f"Oauth2 authentication failed with {response.status_code}: {response.text}"
+                )
 
         else:
             try:
