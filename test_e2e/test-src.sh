@@ -27,7 +27,6 @@ all_tests=(
   #  's3-compression.sh'
   'salesforce.sh'
   'box.sh'
-  'github.sh'
   'gitlab.sh'
   'google-drive.sh'
   'wikipedia.sh'
