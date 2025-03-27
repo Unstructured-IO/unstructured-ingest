@@ -78,8 +78,8 @@ class OnedriveConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["msal, requests"], extras="onedrive")
     def get_token(self):
-        from msal import ConfidentialClientApplication
         import requests
+        from msal import ConfidentialClientApplication
 
         if self.access_config.get_secret_value().password:
             url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
@@ -152,7 +152,6 @@ class OnedriveIndexer(Indexer):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
     def list_objects_sync(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
-        logger.info(f"Listing objects in {folder.name}")
         drive_items = folder.children.get().execute_query()
         files = [d for d in drive_items if d.is_file]
         if not recursive:
@@ -168,7 +167,6 @@ class OnedriveIndexer(Indexer):
 
     def get_root_sync(self, client: "GraphClient") -> "DriveItem":
         root = client.users[self.connection_config.user_pname].drive.get().execute_query().root
-        logger.info("Getting root folder")
         if fpath := self.index_config.path:
             root = root.get_by_path(fpath).get().execute_query()
             if root is None or not root.is_folder:
