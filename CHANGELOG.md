@@ -4,6 +4,10 @@
 
 * **Support env var for user agent settings**
 
+### Fixes
+
+* **Expose Github connector**
+
 ## 0.6.3
 
 ### Features
