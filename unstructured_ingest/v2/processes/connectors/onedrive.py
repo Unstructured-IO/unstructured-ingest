@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
-import requests
 
+import requests
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -76,41 +76,25 @@ class OnedriveConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["msal"], extras="onedrive")
     def get_token(self):
-        from msal import ConfidentialClientApplication, PublicClientApplication
+        from msal import ConfidentialClientApplication
 
         if self.access_config.get_secret_value().password:
-            
-            # URL for token request
-            url = f'https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token'
-            
-            # Headers
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-            
-            # Data for the request
+            url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
+            headers = {"Content-Type": "application/x-www-form-urlencoded"}
             data = {
-                'grant_type': 'password',
-                'username': self.user_pname,
-                'password': self.access_config.get_secret_value().password,
-                'client_id': self.client_id,
-                'client_secret': self.access_config.get_secret_value().client_cred,
-                'scope': 'https://graph.microsoft.com/.default'
+                "grant_type": "password",
+                "username": self.user_pname,
+                "password": self.access_config.get_secret_value().password,
+                "client_id": self.client_id,
+                "client_secret": self.access_config.get_secret_value().client_cred,
+                "scope": "https://graph.microsoft.com/.default",
             }
-            
-            # Make the request
             response = requests.post(url, headers=headers, data=data)
-            print(response.json())
-            
-            # Check if the request was successful
             if response.status_code == 200:
-                # Print the access token from the response
-                print("Access Token:", response.json()['access_token'])
-                logger.info("USING PASSWORD")
                 return response.json()
             else:
-                # Print error response
-                print("Error:", response.json())
+                logger.error(f"request failed with status code {response.status_code}:")
+                logger.error(response.text)
 
         else:
             try:
@@ -123,7 +107,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
                     scopes=["https://graph.microsoft.com/.default"]
                 )
             except ValueError as exc:
-                logger.error("Couldn't set up credentials for OneDrive")
+                logger.error("Couldn't set up credentials.")
                 raise exc
             if "error" in token:
                 raise SourceConnectionNetworkError(
@@ -131,9 +115,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
                         token["error"], token["error_description"]
                     )
                 )
-            logger.info("USING CLIENT CREDENTIALS")
             return token
-
 
     @requires_dependencies(["office365"], extras="onedrive")
     def get_client(self) -> "GraphClient":
