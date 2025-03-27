@@ -7,7 +7,6 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
-import requests
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -80,6 +79,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
     @requires_dependencies(["msal, requests"], extras="onedrive")
     def get_token(self):
         from msal import ConfidentialClientApplication
+        import requests
 
         if self.access_config.get_secret_value().password:
             url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
