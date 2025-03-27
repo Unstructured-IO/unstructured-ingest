@@ -1,0 +1,27 @@
+{
+  "identifier": "7311a514-9924-571d-827e-db955b96320a",
+  "connector_type": "github",
+  "source_identifiers": {
+    "filename": "LICENSE.txt",
+    "fullpath": "master/LICENSE.txt",
+    "rel_path": "LICENSE.txt"
+  },
+  "metadata": {
+    "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/2c4f1ab8689a6dfef4ee7d13d4d935cb6663a7e4",
+    "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
+    "record_locator": {},
+    "date_created": null,
+    "date_modified": "1739548161.0",
+    "date_processed": "1743085024.178408",
+    "permissions_data": [
+      {
+        "mode": "100644"
+      }
+    ],
+    "filesize_bytes": 1127
+  },
+  "additional_metadata": {},
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpd1myoq5u/LICENSE.txt",
+  "display_name": "https://github.com/dcneiner/Downloadify/blob/master/LICENSE.txt"
+}

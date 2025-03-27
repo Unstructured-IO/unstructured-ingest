@@ -1,0 +1,27 @@
+{
+  "identifier": "7630c7f7-4d81-5ec0-b041-c94abc25e1ee",
+  "connector_type": "github",
+  "source_identifiers": {
+    "filename": "test.html",
+    "fullpath": "master/test.html",
+    "rel_path": "test.html"
+  },
+  "metadata": {
+    "url": "https://api.github.com/repos/dcneiner/Downloadify/git/blobs/c63c8fc21d46d44de85a14a3ed4baec0348ce344",
+    "version": "W/\"a75db90ed53f327faf43999f4719f8d200fb19cf1db08fe6ace57e88426ec4f4\"",
+    "record_locator": {},
+    "date_created": null,
+    "date_modified": "1739548161.0",
+    "date_processed": "1743085025.2201269",
+    "permissions_data": [
+      {
+        "mode": "100644"
+      }
+    ],
+    "filesize_bytes": 3001
+  },
+  "additional_metadata": {},
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpd1myoq5u/test.html",
+  "display_name": "https://github.com/dcneiner/Downloadify/blob/master/test.html"
+}
