@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
@@ -114,9 +115,6 @@ class ConfluenceIndexerConfig(IndexerConfig):
     max_num_of_docs_from_each_space: int = Field(
         100, description="Maximum number of documents to fetch from each space"
     )
-    max_num_metadata_permissions: int = Field(
-        250, description="Approximate maximum number of permissions included in metadata"
-    )
     spaces: Optional[List[str]] = Field(None, description="List of specific space keys to index")
 
 
@@ -172,23 +170,84 @@ class ConfluenceIndexer(Indexer):
         doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
-    def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
-        with self.connection_config.get_client() as client:
-            try:
-                # TODO limit the total number of results being called.
-                # not yet implemented because this client call doesn't allow for filtering for
-                # certain operations
-                space_permissions = []
-                space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
-                space_permissions.extend(space_permissions_result["results"])
-                if space_permissions_result["_links"].get("next"):  # pagination
-                    while space_permissions_result.get("next"):
-                        space_permissions_result = client.get(space_permissions_result["next"])
-                        space_permissions.extend(space_permissions_result["results"])
-                return space_permissions
-            except Exception as e:
-                logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
-                return None
+    def run(self) -> Generator[FileData, None, None]:
+        from time import time
+
+        space_ids_and_keys = self._get_space_ids_and_keys()
+        for space_key, space_id in space_ids_and_keys:
+            doc_ids = self._get_docs_ids_within_one_space(space_key)
+            for doc in doc_ids:
+                doc_id = doc["doc_id"]
+                # Build metadata
+                metadata = FileDataSourceMetadata(
+                    date_processed=str(time()),
+                    url=f"{self.connection_config.url}/pages/{doc_id}",
+                    record_locator={
+                        "space_key": space_key,  # TODO user impact?
+                        "document_id": doc_id,
+                    },
+                )
+                additional_metadata = {
+                    "space_key": space_key,
+                    "space_id": space_id,
+                    "document_id": doc_id,
+                }
+
+                # Construct relative path and filename
+                filename = f"{doc_id}.html"
+                relative_path = str(Path(space_key) / filename)
+
+                source_identifiers = SourceIdentifiers(
+                    filename=filename,
+                    fullpath=relative_path,
+                    rel_path=relative_path,
+                )
+
+                file_data = FileData(
+                    identifier=doc_id,
+                    connector_type=self.connector_type,
+                    metadata=metadata,
+                    additional_metadata=additional_metadata,
+                    source_identifiers=source_identifiers,
+                )
+                yield file_data
+
+
+class ConfluenceDownloaderConfig(DownloaderConfig, HtmlMixin):
+    # pass
+    max_num_metadata_permissions: int = Field(
+        250, description="Approximate maximum number of permissions included in metadata"
+    )
+
+
+@dataclass
+class ConfluenceDownloader(Downloader):
+    connection_config: ConfluenceConnectionConfig
+    download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
+    connector_type: str = CONNECTOR_TYPE
+
+    def download_embedded_files(
+        self, session, html: str, current_file_data: FileData
+    ) -> list[DownloadResponse]:
+        if not self.download_config.extract_files:
+            return []
+        url = current_file_data.metadata.url
+        if url is None:
+            logger.warning(
+                f"""Missing URL for file: {current_file_data.source_identifiers.filename}.
+                Skipping file extraction."""
+            )
+            return []
+        filepath = current_file_data.source_identifiers.relative_path
+        download_path = Path(self.download_dir) / filepath
+        download_dir = download_path.with_suffix("")
+        return self.download_config.extract_embedded_files(
+            url=url,
+            download_dir=download_dir,
+            original_filedata=current_file_data,
+            html=html,
+            session=session,
+        )
 
     def parse_permissions(self, doc_permissions: dict, space_permissions: list):
         """
@@ -245,7 +304,7 @@ class ConfluenceIndexer(Indexer):
                         # may result in a higher total count than max_num_metadata_permissions
 
         for space_perm in space_permissions:
-            if total_permissions < self.index_config.max_num_metadata_permissions:
+            if total_permissions < self.download_config.max_num_metadata_permissions:
                 space_operation = space_perm["operation"]["key"]
                 space_target_type = space_perm["operation"]["targetType"]
                 space_entity_id = space_perm["principal"]["id"]
@@ -289,6 +348,28 @@ class ConfluenceIndexer(Indexer):
 
         return permissions_by_role
 
+    def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
+        @lru_cache(maxsize=128)
+        def cached(_space_id: int):
+            with self.connection_config.get_client() as client:
+                try:
+                    # TODO limit the total number of results being called.
+                    # not yet implemented because this client call doesn't allow for filtering for
+                    # certain operations, so adding a limit here would result in too little data.
+                    space_permissions = []
+                    space_permissions_result = client.get(f"/api/v2/spaces/{_space_id}/permissions")
+                    space_permissions.extend(space_permissions_result["results"])
+                    if space_permissions_result["_links"].get("next"):  # pagination
+                        while space_permissions_result.get("next"):
+                            space_permissions_result = client.get(space_permissions_result["next"])
+                            space_permissions.extend(space_permissions_result["results"])
+                    return space_permissions
+                except Exception as e:
+                    logger.debug(f"Could not retrieve permissions for space {_space_id}: {e}")
+                    return None
+
+        return cached(space_id)
+
     def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
         from requests.exceptions import HTTPError
 
@@ -304,83 +385,6 @@ class ConfluenceIndexer(Indexer):
 
         # TODO adjust permissions_data FileDataSourceMetadata interface type to match/enforce format
         return [parsed_permissions_dict]
-
-    def run(self) -> Generator[FileData, None, None]:
-        from time import time
-
-        space_ids_and_keys = self._get_space_ids_and_keys()
-        for space_key, space_id in space_ids_and_keys:
-            doc_ids = self._get_docs_ids_within_one_space(space_key)
-            space_perm = self._get_permissions_for_space(space_id)
-            for doc in doc_ids:
-                doc_id = doc["doc_id"]
-                # Build metadata
-                metadata = FileDataSourceMetadata(
-                    date_processed=str(time()),
-                    url=f"{self.connection_config.url}/pages/{doc_id}",
-                    permissions_data=self._parse_permissions_for_doc(doc_id, space_perm),
-                    record_locator={
-                        "space_id": space_key,
-                        "document_id": doc_id,
-                    },
-                )
-                additional_metadata = {
-                    "space_id": space_key,
-                    "document_id": doc_id,
-                }
-
-                # Construct relative path and filename
-                filename = f"{doc_id}.html"
-                relative_path = str(Path(space_key) / filename)
-
-                source_identifiers = SourceIdentifiers(
-                    filename=filename,
-                    fullpath=relative_path,
-                    rel_path=relative_path,
-                )
-
-                file_data = FileData(
-                    identifier=doc_id,
-                    connector_type=self.connector_type,
-                    metadata=metadata,
-                    additional_metadata=additional_metadata,
-                    source_identifiers=source_identifiers,
-                )
-                yield file_data
-
-
-class ConfluenceDownloaderConfig(DownloaderConfig, HtmlMixin):
-    pass
-
-
-@dataclass
-class ConfluenceDownloader(Downloader):
-    connection_config: ConfluenceConnectionConfig
-    download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
-    connector_type: str = CONNECTOR_TYPE
-
-    def download_embedded_files(
-        self, session, html: str, current_file_data: FileData
-    ) -> list[DownloadResponse]:
-        if not self.download_config.extract_files:
-            return []
-        url = current_file_data.metadata.url
-        if url is None:
-            logger.warning(
-                f"""Missing URL for file: {current_file_data.source_identifiers.filename}.
-                Skipping file extraction."""
-            )
-            return []
-        filepath = current_file_data.source_identifiers.relative_path
-        download_path = Path(self.download_dir) / filepath
-        download_dir = download_path.with_suffix("")
-        return self.download_config.extract_embedded_files(
-            url=url,
-            download_dir=download_dir,
-            original_filedata=current_file_data,
-            html=html,
-            session=session,
-        )
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
@@ -416,6 +420,18 @@ class ConfluenceDownloader(Downloader):
         with open(download_path, "w", encoding="utf8") as f:
             soup = BeautifulSoup(content, "html.parser")
             f.write(soup.prettify())
+
+        # Get document permissions and update metadata
+        space_id = file_data.additional_metadata["space_id"]
+        space_perm = self._get_permissions_for_space(space_id)  # must be the id, NOT the space key
+        if not space_perm:
+            logger.warning(f"Could not retrieve permissions for space {space_id}.")
+            combined_doc_permissions = None
+        else:
+            combined_doc_permissions = self._parse_permissions_for_doc(doc_id, space_perm)
+        if combined_doc_permissions:
+            print("CDP", combined_doc_permissions)
+            file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
         file_data.metadata.date_created = page["history"]["createdDate"]
