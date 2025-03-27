@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
+import requests
 
 from dateutil import parser
 from pydantic import Field, Secret
@@ -50,7 +51,8 @@ MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
-    client_cred: str = Field(description="Microsoft App client secret")
+    client_cred: Optional[str] = Field(description="Microsoft App client secret", default=None)
+    password: Optional[str] = Field(description="user's password", default=None)
 
 
 class OnedriveConnectionConfig(ConnectionConfig):
@@ -74,23 +76,64 @@ class OnedriveConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["msal"], extras="onedrive")
     def get_token(self):
-        from msal import ConfidentialClientApplication
+        from msal import ConfidentialClientApplication, PublicClientApplication
 
-        try:
-            app = ConfidentialClientApplication(
-                authority=f"{self.authority_url}/{self.tenant}",
-                client_id=self.client_id,
-                client_credential=self.access_config.get_secret_value().client_cred,
-            )
-            token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
-        except ValueError as exc:
-            logger.error("Couldn't set up credentials for OneDrive")
-            raise exc
-        if "error" in token:
-            raise SourceConnectionNetworkError(
-                "failed to fetch token, {}: {}".format(token["error"], token["error_description"])
-            )
-        return token
+        if self.access_config.get_secret_value().password:
+            
+            # URL for token request
+            url = f'https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token'
+            
+            # Headers
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            
+            # Data for the request
+            data = {
+                'grant_type': 'password',
+                'username': self.user_pname,
+                'password': self.access_config.get_secret_value().password,
+                'client_id': self.client_id,
+                'client_secret': self.access_config.get_secret_value().client_cred,
+                'scope': 'https://graph.microsoft.com/.default'
+            }
+            
+            # Make the request
+            response = requests.post(url, headers=headers, data=data)
+            print(response.json())
+            
+            # Check if the request was successful
+            if response.status_code == 200:
+                # Print the access token from the response
+                print("Access Token:", response.json()['access_token'])
+                logger.info("USING PASSWORD")
+                return response.json()
+            else:
+                # Print error response
+                print("Error:", response.json())
+
+        else:
+            try:
+                app = ConfidentialClientApplication(
+                    authority=f"{self.authority_url}/{self.tenant}",
+                    client_id=self.client_id,
+                    client_credential=self.access_config.get_secret_value().client_cred,
+                )
+                token = app.acquire_token_for_client(
+                    scopes=["https://graph.microsoft.com/.default"]
+                )
+            except ValueError as exc:
+                logger.error("Couldn't set up credentials for OneDrive")
+                raise exc
+            if "error" in token:
+                raise SourceConnectionNetworkError(
+                    "failed to fetch token, {}: {}".format(
+                        token["error"], token["error_description"]
+                    )
+                )
+            logger.info("USING CLIENT CREDENTIALS")
+            return token
+
 
     @requires_dependencies(["office365"], extras="onedrive")
     def get_client(self) -> "GraphClient":
@@ -123,6 +166,7 @@ class OnedriveIndexer(Indexer):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
     def list_objects_sync(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
+        logger.info(f"Listing objects in {folder.name}")
         drive_items = folder.children.get().execute_query()
         files = [d for d in drive_items if d.is_file]
         if not recursive:
@@ -138,6 +182,7 @@ class OnedriveIndexer(Indexer):
 
     def get_root_sync(self, client: "GraphClient") -> "DriveItem":
         root = client.users[self.connection_config.user_pname].drive.get().execute_query().root
+        logger.info("Getting root folder")
         if fpath := self.index_config.path:
             root = root.get_by_path(fpath).get().execute_query()
             if root is None or not root.is_folder:
