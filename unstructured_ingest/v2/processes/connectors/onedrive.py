@@ -52,8 +52,7 @@ MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
-    # should not be optional
-    client_cred: Optional[str] = Field(description="Microsoft App client secret", default=None)
+    client_cred: str = Field(description="Microsoft App client secret")
     password: Optional[str] = Field(description="user's password", default=None)
 
 
