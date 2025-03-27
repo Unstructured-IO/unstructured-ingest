@@ -1,3 +1,9 @@
+## 0.6.34
+
+### Features
+
+* **Support env var for user agent settings**
+
 ## 0.6.3
 
 ### Features

@@ -1,4 +1,5 @@
 import json
+import os
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -42,7 +43,9 @@ class DatabricksDeltaTablesConnectionConfig(SQLConnectionConfig):
     access_config: Secret[DatabricksDeltaTablesAccessConfig]
     server_hostname: str = Field(description="server hostname connection config value")
     http_path: str = Field(description="http path connection config value")
-    user_agent: str = "unstructuredio_oss"
+    user_agent: str = Field(
+        default_factory=lambda: os.getenv("UNSTRUCTURED_USER_AGENT", "unstructuredio_oss")
+    )
 
     @requires_dependencies(["databricks"], extras="databricks-delta-tables")
     def get_credentials_provider(self) -> "oauth_service_principal":
