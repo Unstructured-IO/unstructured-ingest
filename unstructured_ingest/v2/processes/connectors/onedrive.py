@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
-
+import requests
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -75,9 +75,9 @@ class OnedriveConnectionConfig(ConnectionConfig):
         drive = client.users[self.user_pname].drive
         return drive
 
-    @requires_dependencies(["msal, requests"], extras="onedrive")
+    @requires_dependencies(["msal"], extras="onedrive")
     def get_token(self):
-        import requests
+        
         from msal import ConfidentialClientApplication
 
         if self.access_config.get_secret_value().password:
