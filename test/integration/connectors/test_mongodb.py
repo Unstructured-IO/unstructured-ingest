@@ -20,6 +20,7 @@ from test.integration.connectors.utils.validation.source import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.types import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.mongodb import (
     CONNECTOR_TYPE,
     MongoDBAccessConfig,
@@ -31,7 +32,6 @@ from unstructured_ingest.v2.processes.connectors.mongodb import (
     MongoDBUploader,
     MongoDBUploaderConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 SOURCE_COLLECTION = "sample-mongodb-data"
 

@@ -4,8 +4,8 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from pytest_mock import MockerFixture
 
+from unstructured_ingest.types import FileData, SourceIdentifiers
 from unstructured_ingest.utils.html import HtmlMixin
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 
 def test_extract_images(mocker: MockerFixture):

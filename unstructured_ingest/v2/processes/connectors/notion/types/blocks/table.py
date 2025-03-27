@@ -4,11 +4,8 @@ from typing import List, Optional
 
 from htmlBuilder.tags import HtmlTag, Td, Th, Tr
 
-from unstructured_ingest.connector.notion.interfaces import (
-    BlockBase,
-    FromJSONMixin,
-)
-from unstructured_ingest.connector.notion.types.rich_text import RichText
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import BlockBase, FromJSONMixin
+from unstructured_ingest.v2.processes.connectors.notion.types.rich_text import RichText
 
 
 @dataclass

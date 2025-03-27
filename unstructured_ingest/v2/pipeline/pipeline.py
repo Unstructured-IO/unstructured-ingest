@@ -8,8 +8,8 @@ from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from unstructured_ingest.logger import logger, make_default_logger
 from unstructured_ingest.v2.interfaces import ProcessorConfig, Uploader
-from unstructured_ingest.v2.logger import logger, make_default_logger
 from unstructured_ingest.v2.otel import OtelHandler
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.pipeline.steps.chunk import Chunker, ChunkStep

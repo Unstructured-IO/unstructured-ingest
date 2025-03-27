@@ -20,6 +20,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     CONNECTOR_TYPE,
     PostgresAccessConfig,
@@ -31,7 +32,6 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploader,
     PostgresUploadStager,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 SEED_DATA_ROWS = 10
 

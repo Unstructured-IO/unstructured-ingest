@@ -5,11 +5,11 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.errors import UserError
 from unstructured_ingest.v2.interfaces.process import BaseProcess
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.unstructured_api import call_api_async
 
 

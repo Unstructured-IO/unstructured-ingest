@@ -8,6 +8,12 @@ from typing import Any, AsyncGenerator, Literal, Union
 
 from pydantic import BaseModel, Field, Secret
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
 from unstructured_ingest.v2.interfaces import (
@@ -19,13 +25,7 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
-from unstructured_ingest.v2.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
 
 from .client import ZendeskArticle, ZendeskClient, ZendeskTicket
 

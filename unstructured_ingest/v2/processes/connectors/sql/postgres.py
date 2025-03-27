@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,

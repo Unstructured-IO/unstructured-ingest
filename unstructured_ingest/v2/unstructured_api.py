@@ -2,8 +2,8 @@ from dataclasses import fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from unstructured_ingest.logger import logger
 from unstructured_ingest.v2.errors import ProviderError, QuotaError, UserAuthError, UserError
-from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
     from unstructured_client.models.operations import PartitionRequest

@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, Secret, field_validator
 
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import batch_generator, get_json_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -27,7 +28,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
 from unstructured_ingest.v2.processes.connectors.utils import format_and_truncate_orig_elements
-from unstructured_ingest.v2.types.file_data import FileData
 
 SimilarityFunction = Literal["cosine"]
 

@@ -8,6 +8,12 @@ from typing import Any, Generator
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -19,7 +25,6 @@ from unstructured_ingest.v2.interfaces import (
     Uploader,
     UploaderConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -27,11 +32,6 @@ from unstructured_ingest.v2.processes.connector_registry import (
 from unstructured_ingest.v2.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
-)
-from unstructured_ingest.v2.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
 )
 
 CONNECTOR_TYPE = "local"

@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -17,7 +19,6 @@ from unstructured_ingest.v2.interfaces import (
     ConnectionConfig,
     UploaderConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
@@ -26,7 +27,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from pyarrow import Table as ArrowTable

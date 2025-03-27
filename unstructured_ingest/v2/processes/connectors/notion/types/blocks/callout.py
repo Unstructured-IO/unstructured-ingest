@@ -5,12 +5,12 @@ from typing import List, Optional, Union
 from htmlBuilder.attributes import Href, Style
 from htmlBuilder.tags import A, Div, HtmlTag, P
 
-from unstructured_ingest.connector.notion.interfaces import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
     BlockBase,
     FromJSONMixin,
     GetHTMLMixin,
 )
-from unstructured_ingest.connector.notion.types.rich_text import RichText
+from unstructured_ingest.v2.processes.connectors.notion.types.rich_text import RichText
 
 
 @dataclass

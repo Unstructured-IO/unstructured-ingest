@@ -7,7 +7,13 @@ from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
+from unstructured_ingest.utils.data_prep import (
+    batch_generator,
+    flatten_dict,
+    get_enhanced_element_id,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
@@ -17,10 +23,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-from unstructured_ingest.v2.types.file_data import FileData
-from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 from .utils import conform_string_to_dict
 

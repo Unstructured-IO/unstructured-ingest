@@ -8,6 +8,14 @@ from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_version
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -23,17 +31,9 @@ from unstructured_ingest.v2.interfaces import (
     UploaderConfig,
     download_responses,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
-)
-from unstructured_ingest.v2.types.file_data import (
-    BatchFileData,
-    BatchItem,
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
 )
 
 if TYPE_CHECKING:

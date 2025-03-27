@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret, model_validator
 
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,

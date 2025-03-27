@@ -12,6 +12,12 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field, Secret
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -23,13 +29,7 @@ from unstructured_ingest.v2.interfaces import (
     Uploader,
     UploaderConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connectors.fsspec.utils import sterilize_dict
-from unstructured_ingest.v2.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem

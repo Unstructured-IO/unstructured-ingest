@@ -4,14 +4,14 @@ from typing import Optional
 
 from htmlBuilder.tags import Div, HtmlTag, Span
 
-from unstructured_ingest.connector.notion.interfaces import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
     DBCellBase,
     DBPropertyBase,
     FromJSONMixin,
     GetHTMLMixin,
 )
-from unstructured_ingest.connector.notion.types.date import Date
-from unstructured_ingest.connector.notion.types.user import People
+from unstructured_ingest.v2.processes.connectors.notion.types.date import Date
+from unstructured_ingest.v2.processes.connectors.notion.types.user import People
 
 
 @dataclass

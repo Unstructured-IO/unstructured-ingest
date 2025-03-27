@@ -13,7 +13,7 @@ from opentelemetry.sdk.trace.export import (
     SpanExportResult,
 )
 
-from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.logger import logger
 
 
 class AddTraceCallable(Protocol):

@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.utils.data_prep import flatten_dict, generator_batching_wbytes
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
+from unstructured_ingest.utils.data_prep import (
+    flatten_dict,
+    generator_batching_wbytes,
+    get_enhanced_element_id,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
 from unstructured_ingest.v2.errors import UserError
@@ -18,10 +24,7 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
     VectorDBUploader,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import DestinationRegistryEntry
-from unstructured_ingest.v2.types.file_data import FileData
-from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from pinecone import Index as PineconeIndex

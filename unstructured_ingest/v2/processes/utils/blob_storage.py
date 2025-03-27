@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import get_data, write_data
 from unstructured_ingest.v2.interfaces import UploadStager, UploadStagerConfig
-from unstructured_ingest.v2.types.file_data import FileData
 
 
 class BlobStoreUploadStagerConfig(UploadStagerConfig):

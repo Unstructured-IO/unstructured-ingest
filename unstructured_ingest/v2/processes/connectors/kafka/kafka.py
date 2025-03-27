@@ -13,6 +13,12 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
@@ -25,12 +31,6 @@ from unstructured_ingest.v2.interfaces import (
     IndexerConfig,
     Uploader,
     UploaderConfig,
-)
-from unstructured_ingest.v2.logger import logger
-from unstructured_ingest.v2.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
 )
 
 if TYPE_CHECKING:

@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from htmlBuilder.tags import Div, HtmlTag, Span
 
-from unstructured_ingest.connector.notion.interfaces import DBCellBase, DBPropertyBase
-from unstructured_ingest.connector.notion.types.rich_text import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import DBCellBase, DBPropertyBase
+from unstructured_ingest.v2.processes.connectors.notion.types.rich_text import (
     RichText as RichTextType,
 )
 

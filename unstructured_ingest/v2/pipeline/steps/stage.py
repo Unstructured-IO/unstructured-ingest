@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import file_data_from_file
+from unstructured_ingest.utils.pydantic_models import serialize_base_model_json
 from unstructured_ingest.v2.interfaces import UploadStager
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
-from unstructured_ingest.v2.types.file_data import file_data_from_file
-from unstructured_ingest.v2.utils import serialize_base_model_json
 
 STEP_ID = "upload_stage"
 

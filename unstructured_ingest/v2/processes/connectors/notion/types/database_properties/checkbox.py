@@ -5,7 +5,7 @@ from typing import Optional
 from htmlBuilder.attributes import Checked, Type
 from htmlBuilder.tags import Div, HtmlTag, Input
 
-from unstructured_ingest.connector.notion.interfaces import DBCellBase, DBPropertyBase
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import DBCellBase, DBPropertyBase
 
 
 @dataclass

@@ -14,10 +14,19 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
     WriteError,
 )
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.utils.data_prep import (
     batch_generator,
     flatten_dict,
     generator_batching_wbytes,
+    get_enhanced_element_id,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -35,19 +44,10 @@ from unstructured_ingest.v2.interfaces import (
     UploadStagerConfig,
     download_responses,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
 )
-from unstructured_ingest.v2.types.file_data import (
-    BatchFileData,
-    BatchItem,
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
-from unstructured_ingest.v2.utils import get_enhanced_element_id
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch as ElasticsearchClient

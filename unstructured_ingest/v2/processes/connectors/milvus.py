@@ -7,6 +7,8 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.error import DestinationConnectionError, WriteError
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.constants import RECORD_ID_LABEL
@@ -18,11 +20,9 @@ from unstructured_ingest.v2.interfaces import (
     UploadStager,
     UploadStagerConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
-from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from pymilvus import MilvusClient

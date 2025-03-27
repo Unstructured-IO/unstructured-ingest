@@ -4,7 +4,7 @@ from typing import Optional
 import pytest
 from pydantic import Secret, ValidationError
 
-from unstructured_ingest.v2.cli.utils.click import extract_config
+from unstructured_ingest.cli.utils.click import extract_config
 from unstructured_ingest.v2.interfaces import AccessConfig, ConnectionConfig
 
 

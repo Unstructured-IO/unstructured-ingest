@@ -24,6 +24,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
 )
+from unstructured_ingest.types import FileData, SourceIdentifiers
 from unstructured_ingest.v2.processes.connectors.elasticsearch.opensearch import (
     CONNECTOR_TYPE,
     OpenSearchAccessConfig,
@@ -37,7 +38,6 @@ from unstructured_ingest.v2.processes.connectors.elasticsearch.opensearch import
     OpenSearchUploadStager,
     OpenSearchUploadStagerConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData, SourceIdentifiers
 
 SOURCE_INDEX_NAME = "movies"
 DESTINATION_INDEX_NAME = "elements"

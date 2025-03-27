@@ -3,11 +3,11 @@ import json
 from dataclasses import dataclass
 from typing import AsyncGenerator, Generator, Optional, TypeVar
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.pydantic_models import serialize_base_model_json
 from unstructured_ingest.v2.interfaces.indexer import Indexer
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.pipeline.interfaces import PipelineStep
 from unstructured_ingest.v2.pipeline.otel import instrument
-from unstructured_ingest.v2.utils import serialize_base_model_json
 
 IndexerT = TypeVar("IndexerT", bound=Indexer)
 

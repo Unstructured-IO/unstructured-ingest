@@ -3,10 +3,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
+from uuid import NAMESPACE_DNS, uuid5
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -230,3 +232,9 @@ def get_data_df(path: Path) -> "DataFrame":
             return df
         else:
             raise ValueError(f"Unsupported file type: {path}")
+
+
+def get_enhanced_element_id(element_dict: dict, file_data: FileData) -> str:
+    element_id = element_dict.get("element_id")
+    new_data = f"{element_id}{file_data.identifier}"
+    return str(uuid5(NAMESPACE_DNS, new_data))

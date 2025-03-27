@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field, Secret, SecretStr
 
-from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,

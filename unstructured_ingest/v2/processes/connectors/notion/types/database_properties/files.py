@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from htmlBuilder.tags import Div, HtmlTag
 
-from unstructured_ingest.connector.notion.interfaces import DBCellBase, DBPropertyBase
-from unstructured_ingest.connector.notion.types.file import FileObject
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import DBCellBase, DBPropertyBase
+from unstructured_ingest.v2.processes.connectors.notion.types.file import FileObject
 
 
 @dataclass

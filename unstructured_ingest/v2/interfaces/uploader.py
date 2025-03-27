@@ -5,9 +5,9 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import get_data
 from unstructured_ingest.v2.interfaces import BaseConnector, BaseProcess
-from unstructured_ingest.v2.types.file_data import FileData
 
 
 class UploaderConfig(BaseModel):

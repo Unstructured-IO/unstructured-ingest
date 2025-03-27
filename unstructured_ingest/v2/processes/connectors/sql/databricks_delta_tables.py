@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
 )
@@ -20,7 +21,6 @@ from unstructured_ingest.v2.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileData
 
 if TYPE_CHECKING:
     from databricks.sdk.core import oauth_service_principal

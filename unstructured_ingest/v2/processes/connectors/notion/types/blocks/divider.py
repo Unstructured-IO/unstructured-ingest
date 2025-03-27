@@ -5,7 +5,7 @@ from typing import Optional
 from htmlBuilder.attributes import Style
 from htmlBuilder.tags import Hr, HtmlTag
 
-from unstructured_ingest.connector.notion.interfaces import BlockBase
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import BlockBase
 
 
 @dataclass

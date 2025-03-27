@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Callable, Optional
 
-from unstructured_ingest.v2.logger import logger
+from unstructured_ingest.logger import logger
 from unstructured_ingest.v2.otel import OtelHandler
 
 

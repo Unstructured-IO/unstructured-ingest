@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicode
 from unstructured_ingest.v2.errors import ProviderError, RateLimitError, UserAuthError, UserError
-from unstructured_ingest.v2.logger import logger
 
 if TYPE_CHECKING:
     from httpx import AsyncClient, Client

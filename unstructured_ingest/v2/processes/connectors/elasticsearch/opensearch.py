@@ -7,12 +7,12 @@ from pydantic import BaseModel, Field, Secret, field_validator
 from unstructured_ingest.error import (
     DestinationConnectionError,
 )
+from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,

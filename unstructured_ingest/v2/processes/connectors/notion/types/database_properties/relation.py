@@ -5,7 +5,7 @@ from urllib.parse import unquote
 
 from htmlBuilder.tags import Div, HtmlTag
 
-from unstructured_ingest.connector.notion.interfaces import (
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import (
     DBCellBase,
     DBPropertyBase,
     FromJSONMixin,

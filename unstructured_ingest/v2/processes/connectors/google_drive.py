@@ -13,8 +13,13 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.utils.google_filetype import GOOGLE_DRIVE_EXPORT_TYPES
 from unstructured_ingest.v2.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -24,20 +29,24 @@ from unstructured_ingest.v2.interfaces import (
     Indexer,
     IndexerConfig,
 )
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import SourceRegistryEntry
 from unstructured_ingest.v2.processes.connectors.utils import conform_string_to_dict
-from unstructured_ingest.v2.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
-
-CONNECTOR_TYPE = "google_drive"
 
 if TYPE_CHECKING:
     from googleapiclient.discovery import Resource as GoogleAPIResource
     from googleapiclient.http import MediaIoBaseDownload
+
+CONNECTOR_TYPE = "google_drive"
+
+GOOGLE_DRIVE_EXPORT_TYPES = {
+    "application/vnd.google-apps.document": "application/"
+    "vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.spreadsheet": "application/"
+    "vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.google-apps.presentation": "application/"
+    "vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.google-apps.photo": "image/jpeg",
+}
 
 
 class GoogleDriveAccessConfig(AccessConfig):

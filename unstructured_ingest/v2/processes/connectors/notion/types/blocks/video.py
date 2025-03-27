@@ -5,8 +5,8 @@ from htmlBuilder.attributes import Src
 from htmlBuilder.tags import HtmlTag, Source
 from htmlBuilder.tags import Video as VideoHtml
 
-from unstructured_ingest.connector.notion.interfaces import BlockBase
-from unstructured_ingest.connector.notion.types.file import FileObject
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.v2.processes.connectors.notion.types.file import FileObject
 
 
 class Video(BlockBase, FileObject):

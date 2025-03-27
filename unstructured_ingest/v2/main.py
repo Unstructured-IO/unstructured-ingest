@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from unstructured_ingest.v2.cli.cli import get_cmd
+from unstructured_ingest.cli.cli import get_cmd
 
 
 def main():

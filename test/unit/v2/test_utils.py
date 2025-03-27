@@ -4,7 +4,10 @@ from typing import Any
 from pydantic import BaseModel, Field, Secret, SecretStr
 from pydantic.types import _SecretBase
 
-from unstructured_ingest.v2.utils import serialize_base_model, serialize_base_model_json
+from unstructured_ingest.utils.pydantic_models import (
+    serialize_base_model,
+    serialize_base_model_json,
+)
 
 
 class MockChildBaseModel(BaseModel):

@@ -13,8 +13,8 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar
 from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_asyncio
 
+from unstructured_ingest.logger import logger, make_default_logger
 from unstructured_ingest.v2.interfaces import BaseProcess, ProcessorConfig, Uploader
-from unstructured_ingest.v2.logger import logger, make_default_logger
 from unstructured_ingest.v2.otel import OtelHandler
 from unstructured_ingest.v2.pipeline.otel import instrument
 

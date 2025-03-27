@@ -10,8 +10,11 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import (
+    FileData,
+)
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     SourceRegistryEntry,
 )
@@ -22,9 +25,6 @@ from unstructured_ingest.v2.processes.connectors.onedrive import (
     OnedriveDownloaderConfig,
     OnedriveIndexer,
     OnedriveIndexerConfig,
-)
-from unstructured_ingest.v2.types.file_data import (
-    FileData,
 )
 
 if TYPE_CHECKING:

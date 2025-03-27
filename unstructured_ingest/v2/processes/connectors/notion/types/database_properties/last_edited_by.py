@@ -4,8 +4,8 @@ from typing import Optional
 
 from htmlBuilder.tags import HtmlTag
 
-from unstructured_ingest.connector.notion.interfaces import DBCellBase, DBPropertyBase
-from unstructured_ingest.connector.notion.types.user import People
+from unstructured_ingest.v2.processes.connectors.notion.interfaces import DBCellBase, DBPropertyBase
+from unstructured_ingest.v2.processes.connectors.notion.types.user import People
 
 
 @dataclass

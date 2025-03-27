@@ -9,10 +9,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 from dateutil import parser
 from pydantic import Field, Secret
 
+from unstructured_ingest.logger import logger
+from unstructured_ingest.types.file_data import FileDataSourceMetadata
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 from unstructured_ingest.v2.errors import ProviderError, UserError
-from unstructured_ingest.v2.logger import logger
 from unstructured_ingest.v2.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -31,7 +32,6 @@ from unstructured_ingest.v2.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
-from unstructured_ingest.v2.types.file_data import FileDataSourceMetadata
 
 if TYPE_CHECKING:
     from gcsfs import GCSFileSystem
