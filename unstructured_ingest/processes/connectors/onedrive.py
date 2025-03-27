@@ -53,12 +53,14 @@ MAX_BYTES_SIZE = 512_000_000
 
 class OnedriveAccessConfig(AccessConfig):
     client_cred: str = Field(description="Microsoft App client secret")
-    password: Optional[str] = Field(description="user's password", default=None)
+    password: Optional[str] = Field(description="Service account password", default=None)
 
 
 class OnedriveConnectionConfig(ConnectionConfig):
     client_id: str = Field(description="Microsoft app client ID")
-    user_pname: str = Field(description="User principal name, usually is your Azure AD email.")
+    user_pname: str = Field(
+        description="User principal name or service account, usually your Azure AD email."
+    )
     tenant: str = Field(
         repr=False, description="ID or domain name associated with your Azure AD instance"
     )
