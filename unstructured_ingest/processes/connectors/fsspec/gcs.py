@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 from dateutil import parser
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
 from unstructured_ingest.errors_v2 import ProviderError, UserError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -29,7 +30,6 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
-from unstructured_ingest.types.file_data import FileDataSourceMetadata
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import json_to_dict
 

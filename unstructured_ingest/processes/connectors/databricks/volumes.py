@@ -7,6 +7,11 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field, Secret
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.errors_v2 import (
     ProviderError,
     RateLimitError,
@@ -25,11 +30,6 @@ from unstructured_ingest.interfaces import (
     UploaderConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:

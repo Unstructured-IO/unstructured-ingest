@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 import pandas as pd
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -23,7 +24,6 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies

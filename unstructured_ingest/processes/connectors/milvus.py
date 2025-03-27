@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Union
 from dateutil import parser
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError, WriteError
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -19,7 +20,6 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
 )
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies

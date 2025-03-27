@@ -20,6 +20,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.processes.connectors.sql.singlestore import (
     CONNECTOR_TYPE,
     SingleStoreAccessConfig,
@@ -32,7 +33,6 @@ from unstructured_ingest.processes.connectors.sql.singlestore import (
     SingleStoreUploaderConfig,
     SingleStoreUploadStager,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 SEED_DATA_ROWS = 10
 

@@ -69,7 +69,7 @@ def setup_cluster(cluster_config: ClusterConfig):
                 "index_dynamic": True,
                 "store_dynamic": True,
                 "type_field": "_type",
-                "types": {
+                "data_types": {
                     f"{config.scope_name}.{config.collection_name}": {
                         "dynamic": False,
                         "enabled": True,

@@ -12,6 +12,7 @@ from lancedb import AsyncConnection
 from upath import UPath
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.processes.connectors.lancedb.aws import (
     LanceDBAwsAccessConfig,
     LanceDBAwsConnectionConfig,
@@ -37,7 +38,6 @@ from unstructured_ingest.processes.connectors.lancedb.local import (
     LanceDBLocalConnectionConfig,
     LanceDBLocalUploader,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 
 DATABASE_NAME = "database"

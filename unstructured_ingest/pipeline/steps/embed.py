@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
+from unstructured_ingest.data_types.file_data import FileData, file_data_from_file
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import PipelineStep
 from unstructured_ingest.processes.embedder import Embedder
-from unstructured_ingest.types.file_data import FileData, file_data_from_file
 from unstructured_ingest.utils.data_prep import write_data
 from unstructured_ingest.utils.pydantic_models import serialize_base_model_json
 

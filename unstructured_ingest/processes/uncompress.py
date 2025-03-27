@@ -7,9 +7,9 @@ from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel
 
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces.process import BaseProcess
 from unstructured_ingest.logger import logger
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.utils.compression import TAR_FILE_EXT, ZIP_FILE_EXT, uncompress_file
 
 

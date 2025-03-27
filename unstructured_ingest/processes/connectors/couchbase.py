@@ -8,6 +8,13 @@ from typing import TYPE_CHECKING, Any, Generator, List
 
 from pydantic import BaseModel, Field, Secret
 
+from unstructured_ingest.data_types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
@@ -31,13 +38,6 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
-)
-from unstructured_ingest.types.file_data import (
-    BatchFileData,
-    BatchItem,
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
 )
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies

@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Any, AsyncIterator
 
 from pydantic import Field
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+)
 from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
@@ -21,9 +24,6 @@ from unstructured_ingest.processes.connectors.onedrive import (
     OnedriveDownloaderConfig,
     OnedriveIndexer,
     OnedriveIndexerConfig,
-)
-from unstructured_ingest.types.file_data import (
-    FileData,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 

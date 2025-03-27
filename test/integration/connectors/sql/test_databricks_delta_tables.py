@@ -14,6 +14,7 @@ from pytest_mock import MockerFixture
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG, env_setup_path
 from test.integration.utils import requires_env
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
     CONNECTOR_TYPE,
@@ -23,7 +24,6 @@ from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import
     DatabricksDeltaTablesUploaderConfig,
     DatabricksDeltaTablesUploadStager,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 CATALOG = "utic-dev-tech-fixtures"
 

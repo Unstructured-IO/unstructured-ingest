@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict
 
+from unstructured_ingest.data_types.file_data import file_data_from_file
 from unstructured_ingest.interfaces import UploadContent
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import BatchPipelineStep
 from unstructured_ingest.pipeline.otel import instrument
-from unstructured_ingest.types.file_data import file_data_from_file
 
 STEP_ID = "upload"
 

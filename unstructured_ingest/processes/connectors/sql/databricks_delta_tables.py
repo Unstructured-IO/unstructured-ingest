@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -18,7 +19,6 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -203,7 +203,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
             f" table named {self.upload_config.table_name}"
             # f" with batch size {self.upload_config.batch_size}"
         )
-        # TODO: currently variable binding not supporting for list types,
+        # TODO: currently variable binding not supporting for list data_types,
         #  update once that gets resolved in SDK
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.get_cursor() as cursor:

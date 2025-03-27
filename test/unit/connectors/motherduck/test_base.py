@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import UploadStagerConfig
 from unstructured_ingest.processes.connectors.duckdb.base import BaseDuckDBUploadStager
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

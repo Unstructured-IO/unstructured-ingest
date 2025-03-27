@@ -10,6 +10,11 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 from dateutil import parser
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
@@ -34,11 +39,6 @@ from unstructured_ingest.processes.connector_registry import (
 from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
-)
-from unstructured_ingest.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 

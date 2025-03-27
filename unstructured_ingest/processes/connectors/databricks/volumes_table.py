@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import (
     Uploader,
     UploaderConfig,
@@ -22,7 +23,6 @@ from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import
     DatabricksDeltaTablesConnectionConfig,
     DatabricksDeltaTablesUploadStagerConfig,
 )
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, get_json_data, write_data
 

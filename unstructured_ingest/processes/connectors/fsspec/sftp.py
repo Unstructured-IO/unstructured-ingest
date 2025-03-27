@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -28,7 +29,6 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
-from unstructured_ingest.types.file_data import FileData, FileDataSourceMetadata
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:

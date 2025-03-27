@@ -9,6 +9,7 @@ import pytest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.utils import requires_env
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.processes.connectors.duckdb.motherduck import (
     CONNECTOR_TYPE,
     MotherDuckAccessConfig,
@@ -17,7 +18,6 @@ from unstructured_ingest.processes.connectors.duckdb.motherduck import (
     MotherDuckUploaderConfig,
     MotherDuckUploadStager,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

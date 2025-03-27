@@ -10,6 +10,7 @@ from test.integration.connectors.utils.validation.destination import (
     StagerValidationConfigs,
     stager_validation,
 )
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.processes.connectors.duckdb.duckdb import (
     CONNECTOR_TYPE,
     DuckDBConnectionConfig,
@@ -17,7 +18,6 @@ from unstructured_ingest.processes.connectors.duckdb.duckdb import (
     DuckDBUploaderConfig,
     DuckDBUploadStager,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

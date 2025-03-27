@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
 from uuid import NAMESPACE_DNS, uuid5
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.dep_check import requires_dependencies
 

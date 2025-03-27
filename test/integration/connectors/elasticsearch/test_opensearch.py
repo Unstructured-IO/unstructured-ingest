@@ -20,6 +20,7 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
 )
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
@@ -37,7 +38,6 @@ from unstructured_ingest.processes.connectors.elasticsearch.opensearch import (
     OpenSearchUploadStager,
     OpenSearchUploadStagerConfig,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 SOURCE_INDEX_NAME = "movies"
 DESTINATION_INDEX_NAME = "elements"

@@ -106,7 +106,7 @@ def get_numerical_type(field: FieldInfo) -> click.ParamType:
         if range_args:
             return click.IntRange(**range_args)  # type: ignore[arg-type]
         return click.INT
-    # Non-integer numerical types default to float
+    # Non-integer numerical data_types default to float
     if range_args:
         return click.FloatRange(**range_args)  # type: ignore[arg-type]
     return click.FLOAT

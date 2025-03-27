@@ -20,6 +20,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.errors_v2 import UserAuthError, UserError
 from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     CONNECTOR_TYPE,
@@ -32,7 +33,6 @@ from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesUploader,
     DatabricksNativeVolumesUploaderConfig,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @dataclass

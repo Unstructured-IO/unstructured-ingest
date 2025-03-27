@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_io_ingest_version
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -17,7 +18,6 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
 from unstructured_ingest.processes.connectors.duckdb.base import BaseDuckDBUploadStager
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 

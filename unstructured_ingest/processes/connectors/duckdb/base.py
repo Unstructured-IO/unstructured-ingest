@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import UploadStager
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import get_data, get_enhanced_element_id, write_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 

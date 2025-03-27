@@ -10,6 +10,13 @@ from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest import __name__ as integration_name
 from unstructured_ingest.__version__ import __version__ as integration_version
+from unstructured_ingest.data_types.file_data import (
+    BatchFileData,
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
@@ -35,13 +42,6 @@ from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
-from unstructured_ingest.types.file_data import (
-    BatchFileData,
-    BatchItem,
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import batch_generator, get_data
 from unstructured_ingest.utils.dep_check import requires_dependencies

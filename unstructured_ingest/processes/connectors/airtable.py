@@ -6,6 +6,7 @@ from uuid import NAMESPACE_DNS, uuid5
 import pandas
 from pydantic import BaseModel, Field, Secret, field_validator
 
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -18,7 +19,6 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:

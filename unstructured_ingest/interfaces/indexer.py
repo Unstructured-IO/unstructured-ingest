@@ -3,9 +3,9 @@ from typing import Any, AsyncGenerator, Generator, Optional, TypeVar
 
 from pydantic import BaseModel
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.connector import BaseConnector
 from unstructured_ingest.interfaces.process import BaseProcess
-from unstructured_ingest.types.file_data import FileData
 
 
 class IndexerConfig(BaseModel):

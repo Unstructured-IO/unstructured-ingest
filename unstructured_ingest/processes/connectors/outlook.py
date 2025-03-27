@@ -7,6 +7,11 @@ from typing import TYPE_CHECKING, Any, Coroutine, Generator
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -19,11 +24,6 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
-from unstructured_ingest.types.file_data import (
-    FileData,
-    FileDataSourceMetadata,
-    SourceIdentifiers,
-)
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 MAX_EMAILS_PER_FOLDER = 1_000_000  # Maximum number of emails per folder

@@ -5,15 +5,15 @@ from typing import Any, Callable, Optional
 
 from pydantic import BaseModel, Field
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.process import BaseProcess
 from unstructured_ingest.logger import logger
-from unstructured_ingest.types.file_data import FileData
 
 
 class FiltererConfig(BaseModel):
     file_glob: Optional[list[str]] = Field(
         default=None,
-        description="file globs to limit which types of " "files are accepted",
+        description="file globs to limit which data_types of " "files are accepted",
         examples=["*.pdf", "*.html"],
     )
     max_file_size: Optional[int] = Field(

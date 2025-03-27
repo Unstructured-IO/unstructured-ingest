@@ -19,6 +19,7 @@ from test.integration.connectors.utils.validation.source import (
     source_connector_validation,
 )
 from test.integration.utils import requires_env
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.kafka.cloud import (
     CloudKafkaAccessConfig,
@@ -31,7 +32,6 @@ from unstructured_ingest.processes.connectors.kafka.cloud import (
     CloudKafkaUploaderConfig,
 )
 from unstructured_ingest.processes.connectors.kafka.local import CONNECTOR_TYPE
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

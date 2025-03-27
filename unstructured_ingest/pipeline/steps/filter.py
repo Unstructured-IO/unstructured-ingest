@@ -2,10 +2,10 @@ import asyncio
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from unstructured_ingest.data_types.file_data import file_data_from_file
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import PipelineStep
 from unstructured_ingest.processes.filter import Filterer
-from unstructured_ingest.types.file_data import file_data_from_file
 
 STEP_ID = "filter"
 

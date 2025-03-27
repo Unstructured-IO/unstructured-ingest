@@ -5,8 +5,8 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseConnector, BaseProcess
-from unstructured_ingest.types.file_data import FileData
 from unstructured_ingest.utils.data_prep import get_data
 
 

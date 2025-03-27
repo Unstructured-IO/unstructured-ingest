@@ -34,7 +34,7 @@ class PartitionerConfig(BaseModel):
         default=None, description="Additional values to pass through to partition()"
     )
     skip_infer_table_types: Optional[list[str]] = Field(
-        default=None, description="Optional list of document types to skip table extraction on"
+        default=None, description="Optional list of document data_types to skip table extraction on"
     )
     fields_include: list[str] = Field(
         default_factory=lambda: ["element_id", "text", "type", "metadata", "embeddings"],
@@ -52,7 +52,7 @@ class PartitionerConfig(BaseModel):
     )
     element_exclude: list[str] = Field(
         default_factory=list,
-        description="If set, drop the specified element types, if they exist.",
+        description="If set, drop the specified element data_types, if they exist.",
     )
     metadata_include: list[str] = Field(
         default_factory=list,

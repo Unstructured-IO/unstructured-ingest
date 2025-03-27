@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, TypedDict, TypeVar
 
+from unstructured_ingest.data_types.file_data import FileData, file_data_from_file
 from unstructured_ingest.interfaces import Downloader, download_responses
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import PipelineStep
-from unstructured_ingest.types.file_data import FileData, file_data_from_file
 from unstructured_ingest.utils.pydantic_models import serialize_base_model_json
 
 DownloaderT = TypeVar("DownloaderT", bound=Downloader)

@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, TypedDict
 
+from unstructured_ingest.data_types.file_data import file_data_from_file
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.interfaces import PipelineStep
 from unstructured_ingest.processes.uncompress import Uncompressor
-from unstructured_ingest.types.file_data import file_data_from_file
 
 STEP_ID = "uncompress"
 

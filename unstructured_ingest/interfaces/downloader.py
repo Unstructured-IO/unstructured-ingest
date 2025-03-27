@@ -5,9 +5,9 @@ from typing import Any, Optional, TypedDict, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.connector import BaseConnector
 from unstructured_ingest.interfaces.process import BaseProcess
-from unstructured_ingest.types.file_data import FileData
 
 
 class DownloaderConfig(BaseModel):

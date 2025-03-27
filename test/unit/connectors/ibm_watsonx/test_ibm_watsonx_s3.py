@@ -7,6 +7,7 @@ from pydantic import Secret
 from pyiceberg.exceptions import CommitFailedException
 from pytest_mock import MockerFixture
 
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.errors_v2 import ProviderError, UserError
 from unstructured_ingest.processes.connectors.ibm_watsonx import IBM_WATSONX_S3_CONNECTOR_TYPE
 from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import (
@@ -15,7 +16,6 @@ from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import 
     IbmWatsonxUploader,
     IbmWatsonxUploaderConfig,
 )
-from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

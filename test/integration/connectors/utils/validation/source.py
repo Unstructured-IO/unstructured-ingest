@@ -8,8 +8,8 @@ from deepdiff import DeepDiff
 from pydantic import Field
 
 from test.integration.connectors.utils.validation.utils import ValidationConfig
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import Downloader, Indexer
-from unstructured_ingest.types.file_data import FileData
 
 NONSTANDARD_METADATA_FIELDS = {
     "additional_metadata.@microsoft.graph.downloadUrl": [

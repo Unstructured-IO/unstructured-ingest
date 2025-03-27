@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+)
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -22,9 +25,6 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
-)
-from unstructured_ingest.types.file_data import (
-    FileData,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, split_dataframe
