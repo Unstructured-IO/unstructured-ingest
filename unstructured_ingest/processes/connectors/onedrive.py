@@ -7,7 +7,6 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
-import requests
 from dateutil import parser
 from pydantic import Field, Secret
 
@@ -76,10 +75,10 @@ class OnedriveConnectionConfig(ConnectionConfig):
         drive = client.users[self.user_pname].drive
         return drive
 
-    @requires_dependencies(["msal"], extras="onedrive")
+    @requires_dependencies(["msal", "requests"], extras="onedrive")
     def get_token(self):
-
         from msal import ConfidentialClientApplication
+        from requests import post
 
         if self.access_config.get_secret_value().password:
             url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
@@ -92,7 +91,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
                 "client_secret": self.access_config.get_secret_value().client_cred,
                 "scope": "https://graph.microsoft.com/.default",
             }
-            response = requests.post(url, headers=headers, data=data)
+            response = post(url, headers=headers, data=data)
             if response.status_code == 200:
                 return response.json()
             else:
