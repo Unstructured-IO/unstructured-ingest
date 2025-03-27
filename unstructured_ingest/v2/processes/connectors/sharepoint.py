@@ -100,7 +100,7 @@ class SharepointDownloader(OnedriveDownloader):
     connector_type: str = CONNECTOR_TYPE
 
     @SourceConnectionNetworkError.wrap
-    @requires_dependencies(["office365"], extras="onedrive")
+    @requires_dependencies(["office365"], extras="sharepoint")
     def _fetch_file(self, file_data: FileData) -> DriveItem:
         from office365.runtime.client_request_exception import ClientRequestException
 

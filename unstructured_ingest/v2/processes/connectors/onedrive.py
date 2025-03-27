@@ -53,6 +53,7 @@ MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
+    # should not be optional
     client_cred: Optional[str] = Field(description="Microsoft App client secret", default=None)
     password: Optional[str] = Field(description="user's password", default=None)
 
@@ -76,7 +77,7 @@ class OnedriveConnectionConfig(ConnectionConfig):
         drive = client.users[self.user_pname].drive
         return drive
 
-    @requires_dependencies(["msal"], extras="onedrive")
+    @requires_dependencies(["msal, requests"], extras="onedrive")
     def get_token(self):
         from msal import ConfidentialClientApplication
 

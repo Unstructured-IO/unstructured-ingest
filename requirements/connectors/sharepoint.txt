@@ -26,6 +26,7 @@ pytz==2025.1
     # via office365-rest-python-client
 requests==2.32.3
     # via
+    #   -r ./connectors/sharepoint.in
     #   msal
     #   office365-rest-python-client
 typing-extensions==4.12.2
