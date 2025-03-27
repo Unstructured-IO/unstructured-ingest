@@ -33,6 +33,7 @@ from unstructured_ingest.v2.types.file_data import (
 if TYPE_CHECKING:
     from github import ContentFile, GitTreeElement, Repository
     from github import Github as GithubClient
+    from github.GithubException import GithubException
 
 CONNECTOR_TYPE = "github"
 
@@ -63,6 +64,40 @@ class GithubConnectionConfig(ConnectionConfig):
         client = self.get_client()
         return client.get_repo(self.url)
 
+    def wrap_github_exception(self, e: "GithubException") -> Exception:
+        data = e.data
+        status_code = e.status
+        message = data.get("message")
+        if status_code == 401:
+            return UserAuthError(f"Unauthorized access to Github: {message}")
+        if 400 <= status_code < 500:
+            return UserError(message)
+        if status_code > 500:
+            return ProviderError(message)
+        logger.debug(f"unhandled github error: {e}")
+        return e
+
+    def wrap_http_error(self, e: requests.HTTPError) -> Exception:
+        status_code = e.response.status_code
+        if status_code == 401:
+            return UserAuthError(f"Unauthorized access to Github: {e.response.text}")
+        if 400 <= status_code < 500:
+            return UserError(e.response.text)
+        if status_code > 500:
+            return ProviderError(e.response.text)
+        logger.debug(f"unhandled http error: {e}")
+        return e
+
+    def wrap_error(self, e: Exception) -> Exception:
+        from github.GithubException import GithubException
+
+        if isinstance(e, GithubException):
+            return self.wrap_github_exception(e=e)
+        if isinstance(e, requests.HTTPError):
+            return self.wrap_http_error(e=e)
+        logger.debug(f"unhandled error: {e}")
+        return e
+
 
 class GithubIndexerConfig(IndexerConfig):
     branch: Optional[str] = Field(
@@ -83,6 +118,12 @@ class GithubIndexer(Indexer):
     connection_config: GithubConnectionConfig
     index_config: GithubIndexerConfig = field(default_factory=GithubIndexerConfig)
     connector_type: str = CONNECTOR_TYPE
+
+    def precheck(self) -> None:
+        try:
+            self.connection_config.get_repo()
+        except Exception as e:
+            raise self.connection_config.wrap_error(e=e)
 
     def get_branch(self) -> str:
         repo = self.connection_config.get_repo()
@@ -145,7 +186,7 @@ class GithubDownloaderConfig(DownloaderConfig):
 
 @dataclass
 class GithubDownloader(Downloader):
-    downloader_config: GithubDownloaderConfig
+    download_config: GithubDownloaderConfig
     connection_config: GithubConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
@@ -163,17 +204,6 @@ class GithubDownloader(Downloader):
             raise UserError(f"File not found: {path}")
         return content_file
 
-    def wrap_error(self, e: requests.HTTPError) -> Exception:
-        status_code = e.response.status_code
-        if status_code == 401:
-            return UserAuthError(f"Unauthorized access to Github: {e.response.text}")
-        if 400 <= status_code < 500:
-            return UserError(f"Client error: {e.response.text}")
-        if status_code > 500:
-            return ProviderError(f"Server error: {e.response.text}")
-        logger.debug(f"unhandled http error: {e}")
-        return e
-
     def get_contents(self, content_file: "ContentFile") -> bytes:
         if content_file.decoded_content:
             return content_file.decoded_content
@@ -182,21 +212,16 @@ class GithubDownloader(Downloader):
         try:
             resp.raise_for_status()
         except requests.HTTPError as e:
-            raise self.wrap_error(e=e)
+            raise self.connection_config.wrap_error(e=e)
         return resp.content
-
-    def get_output_path(self, file_data: FileData) -> Path:
-        download_dir = self.downloader_config.download_dir
-        output_path = download_dir / file_data.source_identifiers.fullpath
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        return output_path
 
     def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         content_file = self.get_file(file_data)
         contents = self.get_contents(content_file)
-        output_path = self.get_output_path(file_data)
-        with output_path.open("wb") as f:
+        download_path = self.get_download_path(file_data)
+        with download_path.open("wb") as f:
             f.write(contents)
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 github_source_entry = SourceRegistryEntry(
