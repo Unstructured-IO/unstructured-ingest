@@ -17,7 +17,6 @@ export OMP_THREAD_LIMIT=1
 all_tests=(
   'azure.sh'
   'box.sh'
-  #  'clarifai.sh'
   'couchbase.sh'
   'gcs.sh'
   's3.sh'

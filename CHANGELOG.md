@@ -1,3 +1,9 @@
+## 0.7.0
+
+### Features
+
+* **Drop V1**
+
 ## 0.6.4
 
 ### Features
