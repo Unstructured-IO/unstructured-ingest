@@ -1,7 +1,8 @@
 ## 0.6.2
 
 * **Support opinionated writes in databricks delta table connector**
-* **Update databricks volume connector to emit user agent
+* **Update databricks volume connector to emit user agent**
+* **Delete previous content from databricks delta tables**
 
 ## 0.6.1
 

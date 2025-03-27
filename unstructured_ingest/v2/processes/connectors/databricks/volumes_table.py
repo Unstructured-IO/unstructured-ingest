@@ -134,7 +134,34 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             cursor.execute(f"USE DATABASE {self.upload_config.database}")
             yield cursor
 
+    def get_table_columns(self) -> dict[str, str]:
+        if self._columns is None:
+            with self.get_cursor() as cursor:
+                cursor.execute(f"SELECT * from {self.upload_config.table_name} LIMIT 1")
+                self._columns = {desc[0]: desc[1] for desc in cursor.description}
+        return self._columns
+
+    def can_delete(self) -> bool:
+        existing_columns = self.get_table_columns()
+        return RECORD_ID_LABEL in existing_columns
+
+    def delete_previous_content(self, file_data: FileData) -> None:
+        logger.debug(
+            f"deleting any content with metadata "
+            f"{RECORD_ID_LABEL}={file_data.identifier} "
+            f"from delta table: {self.upload_config.table_name}"
+        )
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                f"DELETE FROM {self.upload_config.table_name} WHERE {RECORD_ID_LABEL} = '{file_data.identifier}'"  # noqa: E501
+            )
+            results = cursor.fetchall()
+            deleted_rows = results[0][0]
+            logger.debug(f"deleted {deleted_rows} rows from table {self.upload_config.table_name}")
+
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        if self.can_delete():
+            self.delete_previous_content(file_data=file_data)
         with self.get_cursor(staging_allowed_local_path=path.parent.as_posix()) as cursor:
             catalog_path = self.get_output_path(file_data=file_data)
             logger.debug(f"uploading {path.as_posix()} to {catalog_path}")
@@ -149,7 +176,6 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             column_str = ", ".join(columns)
             select_column_str = ", ".join(select_columns)
             sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {select_column_str} FROM json.`{catalog_path}`"  # noqa: E501
-            logger.info(sql_statment)
             cursor.execute(sql_statment)
 
 
