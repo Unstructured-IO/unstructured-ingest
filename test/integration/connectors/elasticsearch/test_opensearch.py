@@ -37,7 +37,7 @@ from unstructured_ingest.processes.connectors.elasticsearch.opensearch import (
     OpenSearchUploadStager,
     OpenSearchUploadStagerConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 SOURCE_INDEX_NAME = "movies"
 DESTINATION_INDEX_NAME = "elements"

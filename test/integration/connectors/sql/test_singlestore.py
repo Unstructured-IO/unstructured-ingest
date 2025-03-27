@@ -32,7 +32,7 @@ from unstructured_ingest.processes.connectors.sql.singlestore import (
     SingleStoreUploaderConfig,
     SingleStoreUploadStager,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 SEED_DATA_ROWS = 10
 

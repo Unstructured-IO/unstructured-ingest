@@ -4,7 +4,7 @@ from pathlib import Path
 
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.interfaces import UploadStager
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.utils.data_prep import get_data
 
 

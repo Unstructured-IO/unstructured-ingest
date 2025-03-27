@@ -44,7 +44,7 @@ from unstructured_ingest.processes.connectors.qdrant.server import (
     ServerQdrantUploadStager,
     ServerQdrantUploadStagerConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 COLLECTION_NAME = f"test-coll-{uuid.uuid4().hex[:12]}"
 VECTORS_CONFIG = {"size": 384, "distance": "Cosine"}

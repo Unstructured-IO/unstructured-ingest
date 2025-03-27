@@ -32,7 +32,7 @@ from unstructured_ingest.processes.connectors.milvus import (
     MilvusUploaderConfig,
     MilvusUploadStager,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 DB_NAME = "test_database"
 EXISTENT_COLLECTION_NAME = "test_collection"

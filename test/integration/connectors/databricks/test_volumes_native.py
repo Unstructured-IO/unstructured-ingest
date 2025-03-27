@@ -32,7 +32,7 @@ from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     DatabricksNativeVolumesUploader,
     DatabricksNativeVolumesUploaderConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @dataclass

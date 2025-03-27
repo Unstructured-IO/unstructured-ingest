@@ -26,7 +26,7 @@ from unstructured_ingest.processes.connectors.onedrive import (
     OnedriveUploader,
     OnedriveUploaderConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

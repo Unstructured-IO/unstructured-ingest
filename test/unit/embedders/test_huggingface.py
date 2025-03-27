@@ -4,7 +4,7 @@ from typing import Any
 import faker
 import pytest
 
-from test.unit.v2.utils.data_generator import generate_random_dictionary
+from test.unit.utils.data_generator import generate_random_dictionary
 from unstructured_ingest.embed.huggingface import (
     HuggingFaceEmbeddingConfig,
     HuggingFaceEmbeddingEncoder,

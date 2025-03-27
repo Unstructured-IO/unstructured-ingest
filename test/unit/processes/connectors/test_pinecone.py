@@ -5,7 +5,7 @@ from unstructured_ingest.processes.connectors.pinecone import (
     PineconeUploadStager,
     PineconeUploadStagerConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

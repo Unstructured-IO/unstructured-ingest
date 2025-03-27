@@ -1,13 +1,19 @@
+import base64
 import json
-import typing as t
-from dataclasses import dataclass, field
+import zlib
 from datetime import datetime
+from typing import Any
 
 import pytest
 import pytz
+from pydantic import BaseModel, Field, Secret, SecretStr
+from pydantic.types import _SecretBase
 
-from unstructured_ingest.cli.utils import extract_config
-from unstructured_ingest.interfaces import BaseConfig
+from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
+from unstructured_ingest.utils.pydantic_models import (
+    serialize_base_model,
+    serialize_base_model_json,
+)
 from unstructured_ingest.utils.string_and_date_utils import (
     ensure_isoformat_datetime,
     fix_unescaped_unicode,
@@ -15,100 +21,7 @@ from unstructured_ingest.utils.string_and_date_utils import (
     truncate_string_bytes,
 )
 
-
-@dataclass
-class A(BaseConfig):
-    a: str
-
-
-@dataclass
-class B(BaseConfig):
-    a: A
-    b: int
-
-
 flat_data = {"a": "test", "b": 4, "c": True}
-
-
-def test_extract_config_concrete():
-    @dataclass
-    class C(BaseConfig):
-        b: B
-        c: bool
-
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"b": {"a": {"a": "test"}, "b": 4}, "c": True}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
-
-
-def test_extract_config_optional():
-    @dataclass
-    class C(BaseConfig):
-        c: bool
-        b: t.Optional[B] = None
-
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"b": {"a": {"a": "test"}, "b": 4}, "c": True}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
-
-
-def test_extract_config_union():
-    @dataclass
-    class C(BaseConfig):
-        c: bool
-        b: t.Optional[t.Union[B, int]] = None
-
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"b": 4, "c": True}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
-
-
-def test_extract_config_list():
-    @dataclass
-    class C(BaseConfig):
-        c: t.List[int]
-        b: B
-
-    flat_data = {"a": "test", "b": 4, "c": [1, 2, 3]}
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"b": {"a": {"a": "test"}, "b": 4}, "c": [1, 2, 3]}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
-
-
-def test_extract_config_optional_list():
-    @dataclass
-    class C(BaseConfig):
-        b: B
-        c: t.Optional[t.List[int]] = None
-
-    flat_data = {"a": "test", "b": 4, "c": [1, 2, 3]}
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"b": {"a": {"a": "test"}, "b": 4}, "c": [1, 2, 3]}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
-
-
-def test_extract_config_dataclass_list():
-    @dataclass
-    class C(BaseConfig):
-        c: bool
-        b: t.List[B] = field(default_factory=list)
-
-    flat_data = {"a": "test", "c": True}
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"b": [], "c": True}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
-
-
-def test_extract_config_dict():
-    @dataclass
-    class C(BaseConfig):
-        c: bool
-        b: t.Dict[str, B] = field(default_factory=dict)
-
-    flat_data = {"c": True}
-    c = extract_config(flat_data=flat_data, config=C)
-    expected_result = {"c": True, "b": {}}
-    assert c.to_json(sort_keys=True) == json.dumps(expected_result, sort_keys=True)
 
 
 def test_json_to_dict_valid_json():
@@ -209,3 +122,99 @@ def test_fix_unescaped_unicode_encoding_error(caplog: pytest.LogCaptureFixture):
     with caplog.at_level("WARNING"):
         fix_unescaped_unicode(text)
         assert "Failed to fix unescaped Unicode sequences" in caplog.text
+
+
+class MockChildBaseModel(BaseModel):
+    child_secret_str: SecretStr
+    child_secret_float: Secret[float]
+    child_not_secret_dict: dict[str, Any] = Field(default_factory=dict)
+
+
+class MockBaseModel(BaseModel):
+    secret_str: SecretStr
+    not_secret_bool: bool
+    secret_child_base: Secret[MockChildBaseModel]
+    not_secret_list: list[int] = Field(default_factory=list)
+
+
+model = MockBaseModel(
+    secret_str="secret string",
+    not_secret_bool=False,
+    secret_child_base=MockChildBaseModel(
+        child_secret_str="child secret string",
+        child_secret_float=3.14,
+        child_not_secret_dict={"key": "value"},
+    ),
+    not_secret_list=[1, 2, 3],
+)
+
+
+def test_serialize_base_model():
+
+    serialized_dict = model.model_dump()
+    assert isinstance(serialized_dict["secret_str"], _SecretBase)
+    assert isinstance(serialized_dict["secret_child_base"], _SecretBase)
+
+    serialized_dict_w_secrets = serialize_base_model(model=model)
+    assert not isinstance(serialized_dict_w_secrets["secret_str"], _SecretBase)
+    assert not isinstance(serialized_dict_w_secrets["secret_child_base"], _SecretBase)
+
+    expected_dict = {
+        "secret_str": "secret string",
+        "not_secret_bool": False,
+        "secret_child_base": {
+            "child_secret_str": "child secret string",
+            "child_secret_float": 3.14,
+            "child_not_secret_dict": {"key": "value"},
+        },
+        "not_secret_list": [1, 2, 3],
+    }
+
+    assert serialized_dict_w_secrets == expected_dict
+
+
+def test_serialize_base_model_json():
+    serialized_json = model.model_dump_json()
+    serialized_dict = json.loads(serialized_json)
+    expected_dict = {
+        "secret_str": "**********",
+        "not_secret_bool": False,
+        "secret_child_base": "**********",
+        "not_secret_list": [1, 2, 3],
+    }
+    assert expected_dict == serialized_dict
+
+    serialized_json_w_secrets = serialize_base_model_json(model=model)
+    serialized_dict_w_secrets = json.loads(serialized_json_w_secrets)
+    expected_dict_w_secrets = {
+        "secret_str": "secret string",
+        "not_secret_bool": False,
+        "secret_child_base": {
+            "child_secret_str": "child secret string",
+            "child_secret_float": 3.14,
+            "child_not_secret_dict": {"key": "value"},
+        },
+        "not_secret_list": [1, 2, 3],
+    }
+    assert expected_dict_w_secrets == serialized_dict_w_secrets
+
+
+def test_format_and_truncate_orig_elements():
+    original_elements = [
+        {
+            "text": "Hello, world!",
+            "metadata": {
+                "image_base64": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABwUlEQVR42mNk",
+                "text_as_html": "<p>Hello, world!</p>",
+                "page": 1,
+            },
+        }
+    ]
+    json_bytes = json.dumps(original_elements, sort_keys=True).encode("utf-8")
+    deflated_bytes = zlib.compress(json_bytes)
+    b64_deflated_bytes = base64.b64encode(deflated_bytes)
+    b64_deflated_bytes.decode("utf-8")
+
+    assert format_and_truncate_orig_elements(
+        {"text": "Hello, world!", "metadata": {"orig_elements": b64_deflated_bytes.decode("utf-8")}}
+    ) == [{"metadata": {"page": 1}}]

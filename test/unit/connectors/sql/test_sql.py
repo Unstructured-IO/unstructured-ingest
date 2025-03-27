@@ -10,7 +10,7 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ def test_run_output_filename_suffix(
 
     # Mocks
     mock_get_data = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.sql.sql.get_data",
+        "unstructured_ingest.processes.connectors.sql.sql.get_data",
         return_value=[{"key": "value"}, {"key": "value2"}],
     )
     mock_conform_dict = mocker.patch.object(
@@ -65,7 +65,7 @@ def test_run_output_filename_suffix(
         SQLUploadStager, "get_output_path", return_value=output_dir / expected
     )
     mock_write_output = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.sql.sql.write_data", return_value=None
+        "unstructured_ingest.processes.connectors.sql.sql.write_data", return_value=None
     )
 
     # Act

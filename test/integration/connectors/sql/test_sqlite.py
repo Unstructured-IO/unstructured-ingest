@@ -30,7 +30,7 @@ from unstructured_ingest.processes.connectors.sql.sqlite import (
     SQLiteUploader,
     SQLiteUploadStager,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 SEED_DATA_ROWS = 10
 

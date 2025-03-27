@@ -37,7 +37,7 @@ from unstructured_ingest.processes.connectors.lancedb.local import (
     LanceDBLocalConnectionConfig,
     LanceDBLocalUploader,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 
 DATABASE_NAME = "database"

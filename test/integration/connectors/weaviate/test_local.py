@@ -16,7 +16,7 @@ from unstructured_ingest.processes.connectors.weaviate.local import (
     LocalWeaviateUploaderConfig,
     LocalWeaviateUploadStager,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 COLLECTION_NAME = "elements"
 

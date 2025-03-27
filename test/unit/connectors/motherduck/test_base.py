@@ -5,7 +5,7 @@ from pytest_mock import MockerFixture
 
 from unstructured_ingest.interfaces import UploadStagerConfig
 from unstructured_ingest.processes.connectors.duckdb.base import BaseDuckDBUploadStager
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def test_run_output_filename_suffix(
 
     # Mocks
     mock_get_data = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.duckdb.base.get_data",
+        "unstructured_ingest.processes.connectors.duckdb.base.get_data",
         return_value=[{"key": "value"}, {"key": "value2"}],
     )
     mock_conform_dict = mocker.patch.object(
@@ -48,7 +48,7 @@ def test_run_output_filename_suffix(
         BaseDuckDBUploadStager, "get_output_path", return_value=output_dir / expected
     )
     mock_write_output = mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.duckdb.base.write_data", return_value=None
+        "unstructured_ingest.processes.connectors.duckdb.base.write_data", return_value=None
     )
 
     # Act

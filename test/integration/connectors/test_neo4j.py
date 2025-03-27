@@ -22,7 +22,7 @@ from unstructured_ingest.processes.connectors.neo4j import (
     Neo4jUploadStager,
     Relationship,
 )
-from unstructured_ingest.types import (
+from unstructured_ingest.types.file_data import (
     FileData,
     FileDataSourceMetadata,
     SourceIdentifiers,

@@ -29,7 +29,7 @@ from unstructured_ingest.processes.connectors.fsspec.s3 import (
     S3Uploader,
     S3UploaderConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 def validate_predownload_file_data(file_data: FileData):

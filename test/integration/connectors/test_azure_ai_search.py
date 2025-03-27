@@ -39,7 +39,7 @@ from unstructured_ingest.processes.connectors.azure_ai_search import (
     AzureAISearchUploadStager,
     AzureAISearchUploadStagerConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 repo_path = Path(__file__).parent.resolve()
 

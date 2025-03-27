@@ -17,7 +17,7 @@ from unstructured_ingest.processes.connectors.duckdb.duckdb import (
     DuckDBUploaderConfig,
     DuckDBUploadStager,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture

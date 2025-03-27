@@ -15,7 +15,7 @@ from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import 
     IbmWatsonxUploader,
     IbmWatsonxUploaderConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 @pytest.fixture
@@ -138,7 +138,7 @@ def test_ibm_watsonx_connection_config_iceberg_url(
     connection_config: IbmWatsonxConnectionConfig,
 ):
     mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.ibm_watsonx_s3.DEFAULT_ICEBERG_URI_PATH",  # noqa: E501
+        "unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3.DEFAULT_ICEBERG_URI_PATH",  # noqa: E501
         new="/mds/iceberg",
     )
     expected_url = "https://test_iceberg_endpoint/mds/iceberg"
@@ -218,7 +218,7 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
     mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
 ):
     mocker.patch(
-        "unstructured_ingest.v2.processes.connectors.ibm_watsonx.ibm_watsonx_s3.DEFAULT_ICEBERG_URI_PATH",  # noqa: E501
+        "unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3.DEFAULT_ICEBERG_URI_PATH",  # noqa: E501
         new="/mds/iceberg",
     )
     mocker.patch.object(

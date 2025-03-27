@@ -17,7 +17,7 @@ from unstructured_ingest.processes.connectors.delta_table import (
     DeltaTableUploadStager,
     DeltaTableUploadStagerConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 multiprocessing.set_start_method("spawn")
 

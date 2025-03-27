@@ -31,7 +31,7 @@ from unstructured_ingest.processes.connectors.mongodb import (
     MongoDBUploader,
     MongoDBUploaderConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 SOURCE_COLLECTION = "sample-mongodb-data"
 

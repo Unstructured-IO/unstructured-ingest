@@ -20,7 +20,7 @@ from unstructured_ingest.processes.connectors.redisdb import (
     RedisUploader,
     RedisUploaderConfig,
 )
-from unstructured_ingest.types import FileData, SourceIdentifiers
+from unstructured_ingest.types.file_data import FileData, SourceIdentifiers
 
 
 async def delete_record(client: Redis, element_id: str, key_prefix: str) -> None:
