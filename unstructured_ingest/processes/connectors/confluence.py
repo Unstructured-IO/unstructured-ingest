@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
 from pydantic import Field, Secret
+from requests.exceptions import HTTPError
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -351,6 +352,7 @@ class ConfluenceDownloader(Downloader):
 
     def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
         if space_id in self._permissions_cache:
+            self._permissions_cache.move_to_end(space_id)  # mark recent use
             return self._permissions_cache[space_id]
         else:
             with self.connection_config.get_client() as client:
@@ -367,7 +369,7 @@ class ConfluenceDownloader(Downloader):
                             space_permissions.extend(space_permissions_result["results"])
 
                     if len(self._permissions_cache) >= self._permissions_cache_max_size:
-                        self._permissions_cache.popitem(last=False)  # FIFO eviction
+                        self._permissions_cache.popitem(last=False)  # LRU/FIFO eviction
                     self._permissions_cache[space_id] = space_permissions
 
                     return space_permissions
@@ -376,8 +378,6 @@ class ConfluenceDownloader(Downloader):
                     return None
 
     def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
-        from requests.exceptions import HTTPError
-
         with self.connection_config.get_client() as client:
             try:
                 doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
