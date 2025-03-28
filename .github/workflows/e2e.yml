@@ -113,7 +113,6 @@ jobs:
         SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
         SHAREPOINT_CRED: ${{ secrets.SHAREPOINT_CRED }}
       run : |
-        make install-test
         make integration-test-connectors-blob-storage
         make parse-skipped-tests
 
@@ -151,7 +150,6 @@ jobs:
         DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
         DATABRICKS_ACCESS_TOKEN: ${{ secrets.DATABRICKS_ACCESS_TOKEN }}
       run : |
-        make install-test
         make integration-test-connectors-sql
         make parse-skipped-tests
 
