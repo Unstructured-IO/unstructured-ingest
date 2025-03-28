@@ -28,7 +28,7 @@ tidy-ruff:
 
 .PHONY: tidy-shell
 tidy-shell:
-	shfmt -l -w ${SHELL_FILES}
+	shfmt -i 2 -l -w ${SHELL_FILES}
 
 ###########
 #  CHECK  #
@@ -43,7 +43,7 @@ check-ruff:
 
 .PHONY: check-shell
 check-shell:
-	shfmt -d ${SHELL_FILES}
+	shfmt shfmt -i 2 -d ${SHELL_FILES}
 
 .PHONY: check-version
 check-version:

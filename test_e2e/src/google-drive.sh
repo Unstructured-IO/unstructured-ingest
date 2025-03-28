@@ -17,18 +17,18 @@ CI=${CI:-"false"}
 source "$SCRIPT_DIR"/cleanup.sh
 # shellcheck disable=SC2317
 function cleanup() {
-	cleanup_dir "$OUTPUT_DIR"
-	cleanup_dir "$WORK_DIR"
-	if [ "$CI" == "true" ]; then
-		cleanup_dir "$DOWNLOAD_DIR"
-	fi
+  cleanup_dir "$OUTPUT_DIR"
+  cleanup_dir "$WORK_DIR"
+  if [ "$CI" == "true" ]; then
+    cleanup_dir "$DOWNLOAD_DIR"
+  fi
 }
 trap cleanup EXIT
 
 if [ -z "$GCP_INGEST_SERVICE_KEY" ]; then
-	echo "Skipping Google Drive ingest test because the GCP_INGEST_SERVICE_KEY env var is not set."
-	echo "The Google Drive test content can be found at https://drive.google.com/drive/folders/1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr"
-	exit 8
+  echo "Skipping Google Drive ingest test because the GCP_INGEST_SERVICE_KEY env var is not set."
+  echo "The Google Drive test content can be found at https://drive.google.com/drive/folders/1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr"
+  exit 8
 fi
 
 # Create temporary service key file
@@ -37,23 +37,23 @@ echo "$GCP_INGEST_SERVICE_KEY" >"$GCP_INGEST_SERVICE_KEY_FILE"
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-	google-drive \
-	--api-key "$UNS_PAID_API_KEY" \
-	--partition-by-api \
-	--partition-endpoint "https://api.unstructuredapp.io" \
-	--download-dir "$DOWNLOAD_DIR" \
-	--metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.version \
-	--num-processes "$max_processes" \
-	--strategy hi_res \
-	--preserve-downloads \
-	--reprocess \
-	--verbose \
-	--drive-id 1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr \
-	--service-account-key-path "$GCP_INGEST_SERVICE_KEY_FILE" \
-	--recursive \
-	--extensions "pdf,docx" \
-	--work-dir "$WORK_DIR" \
-	local \
-	--output-dir "$OUTPUT_DIR"
+  google-drive \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
+  --download-dir "$DOWNLOAD_DIR" \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.version \
+  --num-processes "$max_processes" \
+  --strategy hi_res \
+  --preserve-downloads \
+  --reprocess \
+  --verbose \
+  --drive-id 1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr \
+  --service-account-key-path "$GCP_INGEST_SERVICE_KEY_FILE" \
+  --recursive \
+  --extensions "pdf,docx" \
+  --work-dir "$WORK_DIR" \
+  local \
+  --output-dir "$OUTPUT_DIR"
 
 "$SCRIPT_DIR"/check-diff-expected-output.py --output-folder-name $OUTPUT_FOLDER_NAME

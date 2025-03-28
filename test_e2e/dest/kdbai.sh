@@ -13,20 +13,20 @@ CI=${CI:-"false"}
 max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 
 if [ -z "$KDBAI_CIPHER_KEY" ] || [ -z "$KDBAI_USERNAME" ] || [ -z "$KDBAI_BEARER_TOKEN" ]; then
-	echo "Skipping KDBAI ingest test because KDBAI_CIPHER_KEY, KDBAI_USERNAME or KDBAI_BEARER_TOKEN env vars is not set."
-	exit 8
+  echo "Skipping KDBAI ingest test because KDBAI_CIPHER_KEY, KDBAI_USERNAME or KDBAI_BEARER_TOKEN env vars is not set."
+  exit 8
 fi
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup {
 
-	echo "Stopping KDBAI Docker container"
-	docker compose -f "$SCRIPT_DIR"/env_setup/kdbai/docker-compose.yml down --remove-orphans -v
+  echo "Stopping KDBAI Docker container"
+  docker compose -f "$SCRIPT_DIR"/env_setup/kdbai/docker-compose.yml down --remove-orphans -v
 
-	# Local file cleanup
-	cleanup_dir "$WORK_DIR"
-	cleanup_dir "$OUTPUT_DIR"
+  # Local file cleanup
+  cleanup_dir "$WORK_DIR"
+  cleanup_dir "$OUTPUT_DIR"
 
 }
 
@@ -40,19 +40,19 @@ docker logout
 "$SCRIPT_DIR"/env_setup/kdbai/provision.sh
 
 PYTHONPATH=. ./unstructured_ingest/main.py \
-	local \
-	--api-key "$UNS_PAID_API_KEY" \
-	--partition-by-api \
-	--partition-endpoint "https://api.unstructuredapp.io" \
-	--num-processes "$max_processes" \
-	--strategy fast \
-	--verbose \
-	--reprocess \
-	--input-path example-docs/pdf/fake-memo.pdf \
-	--work-dir "$WORK_DIR" \
-	--embedding-provider "huggingface" \
-	kdbai \
-	--table-name "unstructured_test" \
-	--batch-size 100
+  local \
+  --api-key "$UNS_PAID_API_KEY" \
+  --partition-by-api \
+  --partition-endpoint "https://api.unstructuredapp.io" \
+  --num-processes "$max_processes" \
+  --strategy fast \
+  --verbose \
+  --reprocess \
+  --input-path example-docs/pdf/fake-memo.pdf \
+  --work-dir "$WORK_DIR" \
+  --embedding-provider "huggingface" \
+  kdbai \
+  --table-name "unstructured_test" \
+  --batch-size 100
 
 python "$SCRIPT_DIR"/env_setup/kdbai/test_output.py
