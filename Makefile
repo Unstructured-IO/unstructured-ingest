@@ -56,7 +56,7 @@ check-version:
 ###########
 .PHONY: unit-test
 unit-test:
-	uv run --frozen pytest -sv --cov unstructured_ingest/ test/unit
+	uv run --frozen pytest -sv --cov unstructured_ingest/ test/unit --ignore test/unit/unstructured
 
 .PHONY: unit-test-unstructured
 unit-test-unstructured:
