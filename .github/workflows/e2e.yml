@@ -30,20 +30,16 @@ jobs:
     steps:
       - uses: 'actions/checkout@v4'
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: ./.github/actions/setup-environment
         with:
-          python-version: 3.10
-
-      - name: Set up Python
-        run: uv python install
+          python-version: "3.10"
 
       - name: Run ${{ matrix.test }} integration test
         env:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
-          uv pip install . --extra remote --extra test
           make integration-test-${{ matrix.test }}
           make parse-skipped-tests
 
