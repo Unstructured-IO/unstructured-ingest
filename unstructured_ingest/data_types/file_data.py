@@ -29,7 +29,7 @@ class FileDataSourceMetadata(BaseModel):
     date_created: Optional[str] = None
     date_modified: Optional[str] = None
     date_processed: Optional[str] = None
-    permissions_data: Optional[list[dict[str, Any]]] = None
+    permissions_data: list[dict[str, Any]] | dict[str, Any] | None = None
     filesize_bytes: Optional[int] = None
 
 

@@ -250,7 +250,7 @@ class ConfluenceDownloader(Downloader):
             session=session,
         )
 
-    def parse_permissions(self, doc_permissions: dict, space_permissions: list):
+    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> dict[str, Any]:
         """
         Parses document and space permissions to determine final user/group roles.
 
@@ -388,8 +388,7 @@ class ConfluenceDownloader(Downloader):
                 logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
                 return None
 
-        # TODO adjust permissions_data FileDataSourceMetadata interface type to match/enforce format
-        return [parsed_permissions_dict]
+        return parsed_permissions_dict
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
