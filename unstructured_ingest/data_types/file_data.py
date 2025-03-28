@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
@@ -29,7 +29,7 @@ class FileDataSourceMetadata(BaseModel):
     date_created: Optional[str] = None
     date_modified: Optional[str] = None
     date_processed: Optional[str] = None
-    permissions_data: list[dict[str, Any]] | dict[str, Any] | None = None
+    permissions_data: Union[list[dict[str, Any]], dict[str, Any], None] = None
     filesize_bytes: Optional[int] = None
 
 
