@@ -1,6 +1,6 @@
+from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
@@ -224,6 +224,8 @@ class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
+    _permissions_cache: dict = field(default_factory=OrderedDict)
+    _permissions_cache_max_size: int = 5
 
     def download_embedded_files(
         self, session, html: str, current_file_data: FileData
@@ -348,26 +350,30 @@ class ConfluenceDownloader(Downloader):
         return permissions_by_role
 
     def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
-        @lru_cache(maxsize=128)
-        def cached(_space_id: int):
+        if space_id in self._permissions_cache:
+            return self._permissions_cache[space_id]
+        else:
             with self.connection_config.get_client() as client:
                 try:
                     # TODO limit the total number of results being called.
                     # not yet implemented because this client call doesn't allow for filtering for
                     # certain operations, so adding a limit here would result in too little data.
                     space_permissions = []
-                    space_permissions_result = client.get(f"/api/v2/spaces/{_space_id}/permissions")
+                    space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
                     space_permissions.extend(space_permissions_result["results"])
                     if space_permissions_result["_links"].get("next"):  # pagination
                         while space_permissions_result.get("next"):
                             space_permissions_result = client.get(space_permissions_result["next"])
                             space_permissions.extend(space_permissions_result["results"])
+
+                    if len(self._permissions_cache) >= self._permissions_cache_max_size:
+                        self._permissions_cache.popitem(last=False)  # FIFO eviction
+                    self._permissions_cache[space_id] = space_permissions
+
                     return space_permissions
                 except Exception as e:
-                    logger.debug(f"Could not retrieve permissions for space {_space_id}: {e}")
+                    logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
                     return None
-
-        return cached(space_id)
 
     def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
         from requests.exceptions import HTTPError
