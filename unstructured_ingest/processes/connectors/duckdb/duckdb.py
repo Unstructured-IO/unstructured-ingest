@@ -67,9 +67,8 @@ class DuckDBConnectionConfig(ConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> Generator["DuckDBConnection", None, None]:
-        with self.get_client() as client:
-            with client.cursor() as cursor:
-                yield cursor
+        with self.get_client() as client, client.cursor() as cursor:
+            yield cursor
 
 
 class DuckDBUploadStagerConfig(UploadStagerConfig):

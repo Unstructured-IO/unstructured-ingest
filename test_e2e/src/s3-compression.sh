@@ -15,30 +15,30 @@ max_processes=${MAX_PROCESSES:=$(python3 -c "import os; print(os.cpu_count())")}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
 }
 trap cleanup EXIT
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-  s3 \
-  --api-key "$UNS_PAID_API_KEY" \
-  --partition-by-api \
-  --partition-endpoint "https://api.unstructuredapp.io" \
-  --num-processes "$max_processes" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
-  --strategy fast \
-  --preserve-downloads \
-  --reprocess \
-  --verbose \
-  --remote-url s3://utic-dev-tech-fixtures/small-pdf-set-w-compression/ \
-  --anonymous \
-  --work-dir "$WORK_DIR" \
-  --uncompress \
-  --file-glob "*.pdf,*.zip,*.tgz" \
-  local \
-  --output-dir "$OUTPUT_DIR"
+	s3 \
+	--api-key "$UNS_PAID_API_KEY" \
+	--partition-by-api \
+	--partition-endpoint "https://api.unstructuredapp.io" \
+	--num-processes "$max_processes" \
+	--download-dir "$DOWNLOAD_DIR" \
+	--metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+	--strategy fast \
+	--preserve-downloads \
+	--reprocess \
+	--verbose \
+	--remote-url s3://utic-dev-tech-fixtures/small-pdf-set-w-compression/ \
+	--anonymous \
+	--work-dir "$WORK_DIR" \
+	--uncompress \
+	--file-glob "*.pdf,*.zip,*.tgz" \
+	local \
+	--output-dir "$OUTPUT_DIR"
 
 "$SCRIPT_DIR"/check-num-files-output.sh 18 $OUTPUT_FOLDER_NAME

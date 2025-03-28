@@ -150,7 +150,6 @@ model = MockBaseModel(
 
 
 def test_serialize_base_model():
-
     serialized_dict = model.model_dump()
     assert isinstance(serialized_dict["secret_str"], _SecretBase)
     assert isinstance(serialized_dict["secret_child_base"], _SecretBase)

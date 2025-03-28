@@ -1,7 +1,0 @@
--c ./common/constraints.txt
-black
-flake8
-mypy
-ruff
-autoflake
-flake8-print

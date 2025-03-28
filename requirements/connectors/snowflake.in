@@ -1,4 +1,0 @@
--c ../common/constraints.txt
-
-snowflake-connector-python
-psycopg2-binary

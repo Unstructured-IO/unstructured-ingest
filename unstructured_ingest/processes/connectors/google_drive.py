@@ -334,7 +334,6 @@ class GoogleDriveIndexer(Indexer):
         recursive: bool = False,
         previous_path: Optional[str] = None,
     ) -> list[dict]:
-
         fields_input = "nextPageToken, files({})".format(",".join(self.fields))
         q = f"'{object_id}' in parents"
         # Filter by extension but still include any directories
@@ -394,7 +393,6 @@ class GoogleDriveIndexer(Indexer):
         if not self.is_dir(root_info):
             data = [self.map_file_data(root_info)]
         else:
-
             file_contents = self.get_paginated_results(
                 files_client=files_client,
                 object_id=object_id,

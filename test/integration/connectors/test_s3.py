@@ -114,31 +114,31 @@ def test_s3_source_no_bucket(anon_connection_config: S3ConnectionConfig):
 async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
     anon_connection_config.endpoint_url = "http://localhost:9000"
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/")
-    with docker_compose_context(docker_compose_path=env_setup_path / "minio" / "source"):
-        with tempfile.TemporaryDirectory() as tempdir:
-            tempdir_path = Path(tempdir)
-            download_config = S3DownloaderConfig(download_dir=tempdir_path)
-            indexer = S3Indexer(
-                connection_config=anon_connection_config, index_config=indexer_config
-            )
-            downloader = S3Downloader(
-                connection_config=anon_connection_config, download_config=download_config
-            )
-            await source_connector_validation(
-                indexer=indexer,
-                downloader=downloader,
-                configs=SourceValidationConfigs(
-                    test_id="s3-minio",
-                    predownload_file_data_check=validate_predownload_file_data,
-                    postdownload_file_data_check=validate_postdownload_file_data,
-                    expected_num_files=1,
-                    exclude_fields_extend=[
-                        "metadata.date_modified",
-                        "metadata.date_created",
-                        "additional_metadata.LastModified",
-                    ],
-                ),
-            )
+    with (
+        docker_compose_context(docker_compose_path=env_setup_path / "minio" / "source"),
+        tempfile.TemporaryDirectory() as tempdir,
+    ):
+        tempdir_path = Path(tempdir)
+        download_config = S3DownloaderConfig(download_dir=tempdir_path)
+        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
+        downloader = S3Downloader(
+            connection_config=anon_connection_config, download_config=download_config
+        )
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id="s3-minio",
+                predownload_file_data_check=validate_predownload_file_data,
+                postdownload_file_data_check=validate_postdownload_file_data,
+                expected_num_files=1,
+                exclude_fields_extend=[
+                    "metadata.date_modified",
+                    "metadata.date_created",
+                    "additional_metadata.LastModified",
+                ],
+            ),
+        )
 
 
 def get_aws_credentials() -> dict:

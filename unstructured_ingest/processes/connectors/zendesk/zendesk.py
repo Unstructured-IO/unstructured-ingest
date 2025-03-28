@@ -53,7 +53,6 @@ class ZendeskConnectionConfig(ConnectionConfig):
     access_config: Secret[ZendeskAccessConfig]
 
     def get_client(self) -> ZendeskClient:
-
         access_config = self.access_config.get_secret_value()
 
         return ZendeskClient(
@@ -206,7 +205,6 @@ class ZendeskDownloader(Downloader):
                     await f.write(comment.as_text())
 
     async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
-
         zendesk_filedata = ZendeskFileData.cast(file_data=file_data)
 
         item_type = zendesk_filedata.additional_metadata.item_type

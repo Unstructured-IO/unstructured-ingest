@@ -20,17 +20,17 @@ CI=${CI:-"false"}
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR"/cleanup.sh
 function cleanup() {
-  cleanup_dir "$OUTPUT_DIR"
-  cleanup_dir "$WORK_DIR"
-  if [ "$CI" == "true" ]; then
-    cleanup_dir "$DOWNLOAD_DIR"
-  fi
+	cleanup_dir "$OUTPUT_DIR"
+	cleanup_dir "$WORK_DIR"
+	if [ "$CI" == "true" ]; then
+		cleanup_dir "$DOWNLOAD_DIR"
+	fi
 }
 trap cleanup EXIT
 
 if [ -z "$AIRTABLE_PERSONAL_ACCESS_TOKEN" ]; then
-  echo "Skipping Airtable ingest test because the AIRTABLE_PERSONAL_ACCESS_TOKEN is not set."
-  exit 8
+	echo "Skipping Airtable ingest test because the AIRTABLE_PERSONAL_ACCESS_TOKEN is not set."
+	exit 8
 fi
 
 # Provides component IDs such as LARGE_TEST_LIST_OF_PATHS,
@@ -40,20 +40,20 @@ source "$SCRIPT_DIR"/env_setup/airtable/component_ids.sh
 
 RUN_SCRIPT=${RUN_SCRIPT:-./unstructured_ingest/main.py}
 PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
-  airtable \
-  --api-key "$UNS_PAID_API_KEY" \
-  --partition-by-api \
-  --partition-endpoint "https://api.unstructuredapp.io" \
-  --download-dir "$DOWNLOAD_DIR" \
-  --personal-access-token "$AIRTABLE_PERSONAL_ACCESS_TOKEN" \
-  --list-of-paths "$LARGE_TEST_LIST_OF_PATHS" \
-  --metadata-exclude filename,file_directory,metadata.data_source.date_processed,metadata.date,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
-  --num-processes "$max_processes" \
-  --preserve-downloads \
-  --reprocess \
-  --work-dir "$WORK_DIR" \
-  local \
-  --output-dir "$OUTPUT_DIR"
+	airtable \
+	--api-key "$UNS_PAID_API_KEY" \
+	--partition-by-api \
+	--partition-endpoint "https://api.unstructuredapp.io" \
+	--download-dir "$DOWNLOAD_DIR" \
+	--personal-access-token "$AIRTABLE_PERSONAL_ACCESS_TOKEN" \
+	--list-of-paths "$LARGE_TEST_LIST_OF_PATHS" \
+	--metadata-exclude filename,file_directory,metadata.data_source.date_processed,metadata.date,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth \
+	--num-processes "$max_processes" \
+	--preserve-downloads \
+	--reprocess \
+	--work-dir "$WORK_DIR" \
+	local \
+	--output-dir "$OUTPUT_DIR"
 
 # We are expecting fifteen directories: fourteen bases and the parent directory
 "$SCRIPT_DIR"/check-num-dirs-output.sh 15 "$OUTPUT_FOLDER_NAME"
@@ -63,8 +63,8 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
 
 # Test on ingesting a large number of bases
 for i in {1..12}; do
-  var="LARGE_WORKSPACE_BASE_ID_$i"
-  "$SCRIPT_DIR"/check-num-files-output.sh 12 "$OUTPUT_FOLDER_NAME"/"${!var}"
+	var="LARGE_WORKSPACE_BASE_ID_$i"
+	"$SCRIPT_DIR"/check-num-files-output.sh 12 "$OUTPUT_FOLDER_NAME"/"${!var}"
 done
 
 # Test on ingesting a table with lots of rows

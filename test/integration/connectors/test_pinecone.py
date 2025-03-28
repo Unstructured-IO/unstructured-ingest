@@ -137,7 +137,6 @@ def validate_pinecone_index(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp_dir: Path):
-
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,

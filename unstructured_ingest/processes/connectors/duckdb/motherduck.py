@@ -66,9 +66,8 @@ class MotherDuckConnectionConfig(ConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> Generator["MotherDuckConnection", None, None]:
-        with self.get_client() as client:
-            with client.cursor() as cursor:
-                yield cursor
+        with self.get_client() as client, client.cursor() as cursor:
+            yield cursor
 
 
 class MotherDuckUploadStagerConfig(UploadStagerConfig):

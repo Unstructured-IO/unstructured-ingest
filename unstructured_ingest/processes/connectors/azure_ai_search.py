@@ -212,7 +212,7 @@ class AzureAISearchUploader(Uploader):
             raise WriteError(
                 ", ".join(
                     [
-                        f"{error.key}: " f"[{error.status_code}] {error.error_message}"
+                        f"{error.key}: [{error.status_code}] {error.error_message}"
                         for error in errors
                     ],
                 ),

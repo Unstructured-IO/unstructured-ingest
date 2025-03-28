@@ -16,17 +16,17 @@ echo "Cluster is live."
 
 echo "Initializing Couchbase cluster"
 docker exec -i couchbase-db couchbase-cli cluster-init -c "$CB_CONN_STR" \
-  --cluster-username "$CB_USERNAME" --cluster-password "$CB_PASSWORD" --cluster-ramsize 512 \
-  --cluster-index-ramsize 512 --cluster-fts-ramsize 512 --services data,index,query,fts &&
-  docker exec -i couchbase-db couchbase-cli bucket-create -c "$CB_CONN_STR" \
-    --username "$CB_USERNAME" --password "$CB_PASSWORD" \
-    --bucket "$CB_BUCKET" --bucket-type couchbase --bucket-ramsize 200
+	--cluster-username "$CB_USERNAME" --cluster-password "$CB_PASSWORD" --cluster-ramsize 512 \
+	--cluster-index-ramsize 512 --cluster-fts-ramsize 512 --services data,index,query,fts &&
+	docker exec -i couchbase-db couchbase-cli bucket-create -c "$CB_CONN_STR" \
+		--username "$CB_USERNAME" --password "$CB_PASSWORD" \
+		--bucket "$CB_BUCKET" --bucket-type couchbase --bucket-ramsize 200
 
 echo "Couchbase cluster initialized"
 
 python "$SCRIPT_DIR"/check_cluster_health.py \
-  --username "$CB_USERNAME" \
-  --password "$CB_PASSWORD" \
-  --connection_string "$CB_CONN_STR" \
-  --bucket_name "$CB_BUCKET"
+	--username "$CB_USERNAME" \
+	--password "$CB_PASSWORD" \
+	--connection_string "$CB_CONN_STR" \
+	--bucket_name "$CB_BUCKET"
 wait

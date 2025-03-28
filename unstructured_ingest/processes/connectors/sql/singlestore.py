@@ -65,12 +65,11 @@ class SingleStoreConnectionConfig(SQLConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> Generator["SingleStoreCursor", None, None]:
-        with self.get_connection() as connection:
-            with connection.cursor() as cursor:
-                try:
-                    yield cursor
-                finally:
-                    cursor.close()
+        with self.get_connection() as connection, connection.cursor() as cursor:
+            try:
+                yield cursor
+            finally:
+                cursor.close()
 
 
 class SingleStoreIndexerConfig(SQLIndexerConfig):

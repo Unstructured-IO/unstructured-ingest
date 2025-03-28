@@ -122,8 +122,7 @@ class SQLIndexer(Indexer, ABC):
         id_batches: list[frozenset[str]] = [
             frozenset(
                 ids[
-                    i
-                    * self.index_config.batch_size : (i + 1)  # noqa
+                    i * self.index_config.batch_size : (i + 1)  # noqa
                     * self.index_config.batch_size
                 ]
             )

@@ -166,8 +166,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             logger.debug(f"uploading {path.as_posix()} to {catalog_path}")
             cursor.execute(f"PUT '{path.as_posix()}' INTO '{catalog_path}' OVERWRITE")
             logger.debug(
-                f"migrating content from {catalog_path} to "
-                f"table {self.upload_config.table_name}"
+                f"migrating content from {catalog_path} to table {self.upload_config.table_name}"
             )
             data = get_json_data(path=path)
             columns = data[0].keys()

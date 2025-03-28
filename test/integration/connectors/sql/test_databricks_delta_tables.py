@@ -64,10 +64,9 @@ def get_connection() -> DeltaTableConnection:
 
 @contextmanager
 def get_cursor() -> DeltaTableCursor:
-    with get_connection() as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(f"USE CATALOG '{CATALOG}'")
-            yield cursor
+    with get_connection() as connection, connection.cursor() as cursor:
+        cursor.execute(f"USE CATALOG '{CATALOG}'")
+        yield cursor
 
 
 @pytest.fixture
@@ -95,9 +94,9 @@ def validate_destination(expected_num_elements: int, table_name: str, retries=30
                 break
             logger.info(f"retry attempt {i}: expected {expected_num_elements} != count {count}")
             time.sleep(interval)
-        assert (
-            count == expected_num_elements
-        ), f"dest check failed: got {count}, expected {expected_num_elements}"
+        assert count == expected_num_elements, (
+            f"dest check failed: got {count}, expected {expected_num_elements}"
+        )
 
 
 @pytest.mark.asyncio

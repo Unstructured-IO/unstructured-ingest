@@ -68,9 +68,8 @@ class VastdbConnectionConfig(SQLConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> "VastdbTransaction":
-        with self.get_connection() as connection:
-            with connection.transaction() as transaction:
-                yield transaction
+        with self.get_connection() as connection, connection.transaction() as transaction:
+            yield transaction
 
     @contextmanager
     def get_table(self, table_name: str) -> "VastdbTable":

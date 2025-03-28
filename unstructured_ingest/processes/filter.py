@@ -13,7 +13,7 @@ from unstructured_ingest.logger import logger
 class FiltererConfig(BaseModel):
     file_glob: Optional[list[str]] = Field(
         default=None,
-        description="file globs to limit which data_types of " "files are accepted",
+        description="file globs to limit which data_types of files are accepted",
         examples=["*.pdf", "*.html"],
     )
     max_file_size: Optional[int] = Field(
