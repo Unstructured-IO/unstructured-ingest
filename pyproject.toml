@@ -170,7 +170,7 @@ ci = [
     # TODO: investigate breaking changed introduced in lancedb>0.15.0
     "lancedb<=0.15.0",
     # TODO: versions higher than this are missing the macos wheel
-    "pykx<=2.5.3"
+    "pykx==2.5.3"
 ]
 
 [project.scripts]
