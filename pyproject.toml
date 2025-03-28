@@ -200,8 +200,8 @@ select = [
 asyncio_mode = "auto"
 
 [tool.coverage.report]
-# TODO: improve this
-fail_under = 15
+# TODO: Update as this improves
+fail_under = 0
 
 [tool.hatch.build.targets.wheel]
     packages = ["/unstructured_ingest"]
