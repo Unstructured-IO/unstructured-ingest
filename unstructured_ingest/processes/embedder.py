@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from pydantic import BaseModel, Field, SecretStr
 
 from unstructured_ingest.interfaces.process import BaseProcess
-from unstructured_ingest.utils.data_prep import get_data
+from unstructured_ingest.utils.data_prep import get_json_data
 
 if TYPE_CHECKING:
     from unstructured_ingest.embed.interfaces import BaseEmbeddingEncoder
@@ -192,7 +192,7 @@ class Embedder(BaseProcess, ABC):
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         # TODO update base embedder classes to support async
         embedder = self.config.get_embedder()
-        elements = get_data(path=elements_filepath)
+        elements = get_json_data(path=elements_filepath)
         if not elements:
             return []
         embedded_elements = embedder.embed_documents(elements=elements)

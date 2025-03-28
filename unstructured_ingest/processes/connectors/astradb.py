@@ -43,7 +43,7 @@ from unstructured_ingest.processes.connector_registry import (
 )
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
-from unstructured_ingest.utils.data_prep import batch_generator, get_data
+from unstructured_ingest.utils.data_prep import batch_generator, get_json_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import truncate_string_bytes
 
@@ -465,7 +465,7 @@ class AstraDBUploader(Uploader):
             collection.insert_many(chunk)
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data = get_data(path=path)
+        data = get_json_data(path=path)
         self.run_data(data=data, file_data=file_data, **kwargs)
 
 

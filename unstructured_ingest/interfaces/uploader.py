@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseConnector, BaseProcess
-from unstructured_ingest.utils.data_prep import get_data
+from unstructured_ingest.utils.data_prep import get_json_data
 
 
 class UploaderConfig(BaseModel):
@@ -45,11 +45,11 @@ class Uploader(BaseProcess, BaseConnector, ABC):
         return False
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data = get_data(path=path)
+        data = get_json_data(path=path)
         self.run_data(data=data, file_data=file_data, **kwargs)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data = get_data(path=path)
+        data = get_json_data(path=path)
         await self.run_data_async(data=data, file_data=file_data, **kwargs)
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:

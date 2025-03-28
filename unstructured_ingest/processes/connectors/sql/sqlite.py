@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import Field, Secret, model_validator
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -132,6 +133,10 @@ class SQLiteUploader(SQLUploader):
     upload_config: SQLiteUploaderConfig = field(default_factory=SQLiteUploaderConfig)
     connection_config: SQLiteConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+
+    @requires_dependencies(["pandas"])
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super().run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["pandas"])
     def prepare_data(

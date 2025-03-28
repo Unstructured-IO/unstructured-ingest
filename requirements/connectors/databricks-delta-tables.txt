@@ -1,1 +1,2 @@
+pandas
 databricks-sql-connector

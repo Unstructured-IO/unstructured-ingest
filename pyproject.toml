@@ -135,6 +135,7 @@ test = [
     "universal_pathlib",
     "deepdiff",
     "bs4",
+    "pandas",
 
     # Connector specific deps
     "cryptography",

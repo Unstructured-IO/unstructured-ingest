@@ -115,6 +115,7 @@ class MotherDuckUploader(Uploader):
         df = pd.DataFrame(data=data)
         self.upload_dataframe(df=df)
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         df = get_data_df(path)
         self.upload_dataframe(df=df)
