@@ -1,3 +1,9 @@
+## 0.7.3
+
+### Features
+
+**Add permission metadata to Confluence source connector**
+
 ## 0.7.2
 
 ### Features
