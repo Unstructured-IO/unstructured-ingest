@@ -74,7 +74,7 @@ jobs:
 
   blob_storage_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -115,7 +115,7 @@ jobs:
 
   sql_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -149,7 +149,7 @@ jobs:
 
   nosql_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
@@ -180,7 +180,7 @@ jobs:
 
   vector_db_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
     - name: Set up Python ${{ matrix.python-version }}
