@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from _pytest.fixtures import TopRequest
 from pinecone import Pinecone, ServerlessSpec
-from pinecone.core.openapi.shared.exceptions import NotFoundException
+from pinecone.exceptions import NotFoundException
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
