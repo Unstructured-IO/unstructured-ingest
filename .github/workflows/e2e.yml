@@ -270,9 +270,6 @@ jobs:
         make parse-skipped-tests
 
   src_e2e_test:
-    strategy:
-      matrix:
-        python-version: ["3.9","3.10"]
     runs-on: ubuntu-latest-m
     steps:
     # actions/checkout MUST come before auth
@@ -281,7 +278,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
 
     - name: Get full Python version
       id: full-python-version
@@ -360,9 +357,6 @@ jobs:
 
   dest_e2e_test:
     environment: ci
-    strategy:
-      matrix:
-        python-version: [ "3.9","3.10" ]
     runs-on: ubuntu-latest-m
     steps:
     # actions/checkout MUST come before auth
@@ -371,7 +365,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
 
     - name: Get full Python version
       id: full-python-version
