@@ -84,8 +84,7 @@ class AstraDBConnectionConfig(ConnectionConfig):
         # Create a client object to interact with the Astra DB
         # caller_name/version for Astra DB tracking
         return AstraDBClient(
-            caller_name=integration_name,
-            caller_version=integration_version,
+            callers=[(integration_name, integration_version)],
         )
 
 
