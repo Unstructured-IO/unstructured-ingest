@@ -155,6 +155,6 @@ jobs:
       - name: Test Ingest (unit)
         run: |
           uv sync --group test --frozen
-          pip install unstructured
-          python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
+          uv pip install unstructured
+          uv run python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
           make unit-test-unstructured
