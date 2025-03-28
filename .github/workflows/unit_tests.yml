@@ -32,7 +32,7 @@ jobs:
       - name: Lint
         run: |
           uv sync --frozen --only-group lint
-          make check-python
+          make check-ruff
 
   shellcheck:
     runs-on: ubuntu-latest
