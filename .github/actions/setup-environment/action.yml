@@ -51,7 +51,7 @@ runs:
         --no-extra rst \
         --no-extra rtf \
         --no-extra tsv \
-        --no-extra xlsx \
+        --no-extra xlsx
 
     - name: Cache Virtual Environment (Final)
       uses: actions/cache@v4

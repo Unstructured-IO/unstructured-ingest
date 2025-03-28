@@ -4377,8 +4377,8 @@ wheels = [
 ]
 
 [[package]]
-name = "pinecone-client"
-version = "6.0.0"
+name = "pinecone"
+version = "6.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -4387,9 +4387,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6c/ab/3ab3b81e8ad82fbfcaa4f446c7f962b18968d61543c8c9e2c38bd777c056/pinecone_client-6.0.0.tar.gz", hash = "sha256:f224fc999205e4858c4737c40922bdf42d178b361c8859bc486ec00d45b359a9", size = 7004 }
+sdist = { url = "https://files.pythonhosted.org/packages/40/e0/3584dcde7f2cb299b4deb5cc0491f2c9c130c7a72c1d4691fe2c9c3a3613/pinecone-6.0.2.tar.gz", hash = "sha256:9c2e74be8b3abe76909da9b4dae61bced49aade51f6fc39b87edb97a1f8df0e4", size = 175104 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/e4/7780cd631dc6dad0172a245e958b41b28a70779594c0790fa08b952aa97f/pinecone_client-6.0.0-py3-none-any.whl", hash = "sha256:d81a9e73cae441e4ab6dfc9c1d8b51c9895dae2488cda64f3e21b9dfc10c8d94", size = 6654 },
+    { url = "https://files.pythonhosted.org/packages/5b/c7/2bc1210aa51528b9ba75aede1f169998f50942cc47cdd82dd2dbcba4faa5/pinecone-6.0.2-py3-none-any.whl", hash = "sha256:a85fa36d7d1451e7b7563ccfc7e3e2dadd39b33e5d53b2882468db8514ab8847", size = 421874 },
 ]
 
 [[package]]
@@ -7372,7 +7372,7 @@ pdf = [
     { name = "unstructured", extra = ["pdf"] },
 ]
 pinecone = [
-    { name = "pinecone-client" },
+    { name = "pinecone" },
 ]
 postgres = [
     { name = "pandas" },
@@ -7587,7 +7587,7 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'snowflake'" },
     { name = "pandas", marker = "extra == 'vastdb'" },
     { name = "paramiko", marker = "extra == 'sftp'" },
-    { name = "pinecone-client", marker = "extra == 'pinecone'", specifier = ">=3.7.1" },
+    { name = "pinecone", marker = "extra == 'pinecone'" },
     { name = "praw", marker = "extra == 'reddit'" },
     { name = "psycopg2-binary", marker = "extra == 'postgres'" },
     { name = "psycopg2-binary", marker = "extra == 'snowflake'" },
