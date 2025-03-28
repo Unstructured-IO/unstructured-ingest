@@ -15,7 +15,7 @@
     },
     "date_created": "2023-07-13T14:28:06.310Z",
     "date_modified": "2023-07-14T22:16:58.907Z",
-    "date_processed": "1743014515.590354",
+    "date_processed": "1743126110.903983",
     "permissions_data": [
       {
         "read": {
@@ -44,10 +44,11 @@
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "space_id": "testteamsp",
+    "space_key": "testteamsp",
+    "space_id": 1605649,
     "document_id": "2589704"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmp49s55cyo/testteamsp/2589704.html",
+  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmpkbxdjihe/testteamsp/2589704.html",
   "display_name": "Testdoc5"
 }
