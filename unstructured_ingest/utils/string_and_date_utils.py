@@ -1,14 +1,14 @@
 import json
 import re
-import typing as t
 from datetime import datetime
+from typing import Any, Union
 
 from dateutil import parser
 
 from unstructured_ingest.logger import logger
 
 
-def json_to_dict(json_string: str) -> t.Union[str, t.Dict[str, t.Any]]:
+def json_to_dict(json_string: str) -> Union[str, dict[str, Any]]:
     """Helper function attempts to deserialize json string to a dictionary."""
     try:
         return json.loads(json_string)
@@ -24,7 +24,7 @@ def json_to_dict(json_string: str) -> t.Union[str, t.Dict[str, t.Any]]:
     return json_string
 
 
-def ensure_isoformat_datetime(timestamp: t.Union[datetime, str]) -> str:
+def ensure_isoformat_datetime(timestamp: Union[datetime, str]) -> str:
     """
     Ensures that the input value is converted to an ISO format datetime string.
     Handles both datetime objects and strings.
