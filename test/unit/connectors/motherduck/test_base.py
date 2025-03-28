@@ -36,7 +36,7 @@ def test_run_output_filename_suffix(
 
     # Mocks
     mock_get_data = mocker.patch(
-        "unstructured_ingest.processes.connectors.duckdb.base.get_data",
+        "unstructured_ingest.processes.connectors.duckdb.base.get_json_data",
         return_value=[{"key": "value"}, {"key": "value2"}],
     )
     mock_conform_dict = mocker.patch.object(

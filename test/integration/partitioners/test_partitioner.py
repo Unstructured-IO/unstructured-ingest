@@ -10,7 +10,13 @@ from unstructured_ingest.processes.partitioner import Partitioner, PartitionerCo
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"
 
-all_partition_files = [path for path in assets_dir.iterdir() if path.is_file()]
+# TODO: api currently does not support gz files anymore, add back in when that gets fixed
+all_partition_files = [
+    path
+    for path in assets_dir.iterdir()
+    if path.is_file()
+    if path.name != "layout-parser-paper.pdf.gz"
+]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
 ]
@@ -31,7 +37,11 @@ async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
-        strategy="hi_res", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
+        strategy="hi_res",
+        partition_by_api=True,
+        api_key=api_key,
+        partition_endpoint=api_url,
+        api_timeout_ms=10000,
     )
     partitioner = Partitioner(config=partitioner_config)
     results = await partitioner.run_async(filename=partition_file)
@@ -49,7 +59,11 @@ async def test_partitioner_api_fast(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
     partitioner_config = PartitionerConfig(
-        strategy="fast", partition_by_api=True, api_key=api_key, partition_endpoint=api_url
+        strategy="fast",
+        partition_by_api=True,
+        api_key=api_key,
+        partition_endpoint=api_url,
+        api_timeout_ms=1000,
     )
     partitioner = Partitioner(config=partitioner_config)
     results = await partitioner.run_async(filename=partition_file)

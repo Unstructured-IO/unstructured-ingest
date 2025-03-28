@@ -2,6 +2,7 @@ import json
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
@@ -127,6 +128,10 @@ class DatabricksDeltaTablesUploader(SQLUploader):
     upload_config: DatabricksDeltaTablesUploaderConfig
     connection_config: DatabricksDeltaTablesConnectionConfig
     connector_type: str = CONNECTOR_TYPE
+
+    @requires_dependencies(["pandas"], extras="databricks-delta-tables")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super().run(path=path, file_data=file_data, **kwargs)
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:

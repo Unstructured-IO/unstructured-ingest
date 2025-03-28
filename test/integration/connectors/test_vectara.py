@@ -72,7 +72,6 @@ def _get_jwt_token():
 
 
 def list_documents(corpus_key: str) -> list[str]:
-
     url = f"https://api.vectara.io/v2/corpora/{corpus_key}/documents"
 
     # the query below requires the corpus to have filter attributes for element_id

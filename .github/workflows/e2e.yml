@@ -14,18 +14,6 @@ concurrency:
 
 
 jobs:
-  setup:
-    strategy:
-      matrix:
-        python-version: [ "3.9","3.10" ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/base-cache
-        with:
-          python-version: ${{ matrix.python-version }}
-          check-only: 'true'
-
   check_untagged_tests:
     runs-on: ubuntu-latest
     steps:
@@ -41,18 +29,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: 'actions/checkout@v4'
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: ./.github/actions/setup-environment
         with:
           python-version: "3.10"
+
       - name: Run ${{ matrix.test }} integration test
         env:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
-          make install-base
-          make install-client
-          make install-test
           make integration-test-${{ matrix.test }}
           make parse-skipped-tests
 
@@ -60,10 +47,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: 'actions/checkout@v4'
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: ./.github/actions/setup-environment
         with:
           python-version: "3.10"
+
       - name: Run ${{ matrix.test }} integration test
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -76,32 +65,29 @@ jobs:
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
         run: |
-          make install-base
-          make install-all-embedders
-          make install-test
           make integration-test-embedders
           make parse-skipped-tests
 
   blob_storage_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
         python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: "3.10"
+
     - name: Setup up docker
       run: |
         sudo make install-docker-compose
         docker compose version
+
     - name: Run Integration Tests
       env:
         # Databricks
@@ -123,31 +109,29 @@ jobs:
         SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
         SHAREPOINT_CRED: ${{ secrets.SHAREPOINT_CRED }}
       run : |
-        source .venv/bin/activate
-        make install-test
         make integration-test-connectors-blob-storage
         make parse-skipped-tests
 
   sql_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
         python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: "3.10"
+
     - name: Setup up docker
       run: |
         sudo make install-docker-compose
         docker compose version
+
     - name: Run Integration Tests
       env:
         # Motherduck
@@ -162,31 +146,29 @@ jobs:
         DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
         DATABRICKS_ACCESS_TOKEN: ${{ secrets.DATABRICKS_ACCESS_TOKEN }}
       run : |
-        source .venv/bin/activate
-        make install-test
         make integration-test-connectors-sql
         make parse-skipped-tests
 
   nosql_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
         python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: "3.10"
+
     - name: Setup up docker
       run: |
         sudo make install-docker-compose
         docker compose version
+
     - name: Run Integration Tests
       env:
         # MongoDB
@@ -199,31 +181,29 @@ jobs:
         VECTARA_OAUTH_SECRET: ${{secrets.VECTARA_OAUTH_SECRET}}
         VECTARA_CUSTOMER_ID: ${{secrets.VECTARA_CUSTOMER_ID}}
       run : |
-        source .venv/bin/activate
-        make install-test
         make integration-test-connectors-nosql
         make parse-skipped-tests
 
   vector_db_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
         python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: "3.10"
+
     - name: Setup up docker
       run: |
         sudo make install-docker-compose
         docker compose version
+
     - name: Run Integration Tests
       env:
         # AstraDB
@@ -239,31 +219,29 @@ jobs:
         # Pinecone
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
       run : |
-        source .venv/bin/activate
-        make install-test
         make integration-test-connectors-vector-db
         make parse-skipped-tests
 
   uncategorized_connectors_int_test:
     runs-on: ubuntu-latest-m
-    needs: [ setup, check_untagged_tests ]
+    needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
         python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: "3.10"
+
     - name: Setup up docker
       run: |
         sudo make install-docker-compose
         docker compose version
+
     - name: Run Integration Tests
       env:
         # Discord
@@ -284,31 +262,24 @@ jobs:
         # Zendesk 
         ZENDESK_TOKEN: ${{ secrets.ZENDESK_TOKEN }}
       run : |
-        source .venv/bin/activate
-        make install-test
         make integration-test-connectors-uncategorized
         make parse-skipped-tests
 
   src_e2e_test:
-    strategy:
-      matrix:
-        python-version: ["3.9","3.10"]
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: ${{ matrix.python-version }}
+
     - name: Test (end-to-end)
       env:
         AIRTABLE_PERSONAL_ACCESS_TOKEN: ${{ secrets.AIRTABLE_PERSONAL_ACCESS_TOKEN }}
@@ -354,8 +325,6 @@ jobs:
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"
       run: |
-        source .venv/bin/activate
-        make install-test
         sudo make install-docker-compose
         docker compose version
         pip freeze
@@ -363,21 +332,19 @@ jobs:
 
   src_api_test:
     runs-on: ubuntu-latest
-    needs: [ setup ]
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: ./.github/actions/setup-environment
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install limited dependencies
       run: |
-        make install-client
-        make install-base
+        uv sync --frozen --extra remote
     - name: Run test against remote API
       env:
         UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
@@ -386,25 +353,20 @@ jobs:
 
   dest_e2e_test:
     environment: ci
-    strategy:
-      matrix:
-        python-version: [ "3.9","3.10" ]
     runs-on: ubuntu-latest-m
-    needs: [ setup ]
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
+
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: ./.github/actions/setup-environment
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
+
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-    - name: Setup virtual environment
-      uses: ./.github/actions/base-cache
-      with:
-        python-version: ${{ matrix.python-version }}
+
     - name: Test (end-to-end)
       env:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -438,7 +400,6 @@ jobs:
         OCR_AGENT: "unstructured.partition.utils.ocr_models.tesseract_ocr.OCRAgentTesseract"
         CI: "true"
       run: |
-        source .venv/bin/activate
         sudo make install-docker-compose
         docker compose version
         pip freeze

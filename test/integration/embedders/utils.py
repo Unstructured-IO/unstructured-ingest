@@ -32,9 +32,9 @@ def validate_raw_embedder(
     single_text = all_text[0]
     dimension = embedder.dimension
     if expected_dimension:
-        assert (
-            dimension == expected_dimension
-        ), f"dimensions {dimension} didn't match expected: {expected_dimension}"
+        assert dimension == expected_dimension, (
+            f"dimensions {dimension} didn't match expected: {expected_dimension}"
+        )
     is_unit_vector = embedder.is_unit_vector
     assert is_unit_vector == expected_is_unit_vector
     single_embedding = embedder.embed_query(query=single_text)
@@ -55,9 +55,9 @@ async def validate_raw_embedder_async(
     single_text = all_text[0]
     dimension = await embedder.dimension
     if expected_dimension:
-        assert (
-            dimension == expected_dimension
-        ), f"dimension {dimension} didn't match expected: {expected_dimension}"
+        assert dimension == expected_dimension, (
+            f"dimension {dimension} didn't match expected: {expected_dimension}"
+        )
     is_unit_vector = await embedder.is_unit_vector
     assert is_unit_vector == expected_is_unit_vector
     single_embedding = await embedder.embed_query(query=single_text)

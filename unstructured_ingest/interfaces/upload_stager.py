@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseProcess
 from unstructured_ingest.utils import ndjson
-from unstructured_ingest.utils.data_prep import get_data, write_data
+from unstructured_ingest.utils.data_prep import get_json_data, write_data
 
 
 class UploadStagerConfig(BaseModel):
@@ -43,7 +43,7 @@ class UploadStager(BaseProcess, ABC):
                     writer.f.flush()
 
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
-        elements_contents = get_data(path=input_file)
+        elements_contents = get_json_data(path=input_file)
 
         conformed_elements = [
             self.conform_dict(element_dict=element, file_data=file_data)

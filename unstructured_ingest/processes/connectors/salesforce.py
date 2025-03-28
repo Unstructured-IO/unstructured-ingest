@@ -81,7 +81,7 @@ class SalesforceAccessConfig(AccessConfig):
     consumer_key: str
     private_key_path: Optional[Path] = Field(
         default=None,
-        description="Path to the private key file. " "Key file is usually named server.key.",
+        description="Path to the private key file. Key file is usually named server.key.",
     )
     private_key: Optional[str] = Field(default=None, description="Contents of the private key")
 

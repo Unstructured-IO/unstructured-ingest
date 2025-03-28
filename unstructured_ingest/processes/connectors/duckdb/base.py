@@ -4,7 +4,7 @@ from typing import Any
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import UploadStager
-from unstructured_ingest.utils.data_prep import get_data, get_enhanced_element_id, write_data
+from unstructured_ingest.utils.data_prep import get_enhanced_element_id, get_json_data, write_data
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 _COLUMNS = (
@@ -81,7 +81,7 @@ class BaseDuckDBUploadStager(UploadStager):
     ) -> Path:
         import pandas as pd
 
-        elements_contents = get_data(path=elements_filepath)
+        elements_contents = get_json_data(path=elements_filepath)
         output_filename_suffix = Path(elements_filepath).suffix
         output_filename = f"{Path(output_filename).stem}{output_filename_suffix}"
         output_path = self.get_output_path(output_filename=output_filename, output_dir=output_dir)

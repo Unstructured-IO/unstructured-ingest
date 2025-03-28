@@ -114,7 +114,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
 
 @dataclass
 class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
-
     config: MixedbreadAIEmbeddingConfig
 
     async def get_exemplary_embedding(self) -> list[float]:

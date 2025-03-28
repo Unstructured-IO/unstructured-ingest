@@ -119,7 +119,7 @@ class PipelineStep(ABC):
         iterable = iterable or []
         if iterable:
             logger.info(
-                f"calling {self.__class__.__name__} " f"with {len(iterable)} docs",  # type: ignore
+                f"calling {self.__class__.__name__} with {len(iterable)} docs",  # type: ignore
             )
         else:
             logger.info(f"calling {self.__class__.__name__} with no inputs")

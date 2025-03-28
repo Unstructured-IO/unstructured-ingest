@@ -66,9 +66,8 @@ class MotherDuckConnectionConfig(ConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> Generator["MotherDuckConnection", None, None]:
-        with self.get_client() as client:
-            with client.cursor() as cursor:
-                yield cursor
+        with self.get_client() as client, client.cursor() as cursor:
+            yield cursor
 
 
 class MotherDuckUploadStagerConfig(UploadStagerConfig):
@@ -116,6 +115,7 @@ class MotherDuckUploader(Uploader):
         df = pd.DataFrame(data=data)
         self.upload_dataframe(df=df)
 
+    @requires_dependencies(["pandas"], extras="duckdb")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         df = get_data_df(path)
         self.upload_dataframe(df=df)

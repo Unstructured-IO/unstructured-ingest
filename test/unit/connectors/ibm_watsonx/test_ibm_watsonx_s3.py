@@ -257,9 +257,8 @@ def test_ibm_watsonx_connection_config_get_catalog_failure(
         "bearer_token",
         new="test_bearer_token",
     )
-    with pytest.raises(ProviderError):
-        with connection_config.get_catalog():
-            pass
+    with pytest.raises(ProviderError), connection_config.get_catalog():
+        pass
 
 
 def test_ibm_watsonx_uploader_precheck_namespace_exists_table_exists(

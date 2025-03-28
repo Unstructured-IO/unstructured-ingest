@@ -143,36 +143,40 @@ class RedisUploader(Uploader):
         await asyncio.gather(*[self._write_batch(batch, redis_stack) for batch in batches])
 
     async def _write_batch(self, batch: list[dict], redis_stack: bool) -> None:
-        async with self.connection_config.create_async_client() as async_client:
-            async with async_client.pipeline(transaction=True) as pipe:
-                for element in batch:
-                    key_with_prefix = f"{self.upload_config.key_prefix}{element['element_id']}"
-                    if redis_stack:
-                        pipe.json().set(key_with_prefix, "$", element)
-                    else:
-                        pipe.set(key_with_prefix, json.dumps(element))
-                await pipe.execute()
+        async with (
+            self.connection_config.create_async_client() as async_client,
+            async_client.pipeline(transaction=True) as pipe,
+        ):
+            for element in batch:
+                key_with_prefix = f"{self.upload_config.key_prefix}{element['element_id']}"
+                if redis_stack:
+                    pipe.json().set(key_with_prefix, "$", element)
+                else:
+                    pipe.set(key_with_prefix, json.dumps(element))
+            await pipe.execute()
 
     @requires_dependencies(["redis"], extras="redis")
     async def _check_redis_stack(self, element: dict) -> bool:
         from redis import exceptions as redis_exceptions
 
         redis_stack = True
-        async with self.connection_config.create_async_client() as async_client:
-            async with async_client.pipeline(transaction=True) as pipe:
-                key_with_prefix = f"{self.upload_config.key_prefix}{element['element_id']}"
-                try:
-                    # Redis with stack extension supports JSON type
-                    await pipe.json().set(key_with_prefix, "$", element).execute()
-                except redis_exceptions.ResponseError as e:
-                    message = str(e)
-                    if "unknown command `JSON.SET`" in message:
-                        # if this error occurs, Redis server doesn't support JSON type,
-                        # so save as string type instead
-                        await pipe.set(key_with_prefix, json.dumps(element)).execute()
-                        redis_stack = False
-                    else:
-                        raise e
+        async with (
+            self.connection_config.create_async_client() as async_client,
+            async_client.pipeline(transaction=True) as pipe,
+        ):
+            key_with_prefix = f"{self.upload_config.key_prefix}{element['element_id']}"
+            try:
+                # Redis with stack extension supports JSON type
+                await pipe.json().set(key_with_prefix, "$", element).execute()
+            except redis_exceptions.ResponseError as e:
+                message = str(e)
+                if "unknown command `JSON.SET`" in message:
+                    # if this error occurs, Redis server doesn't support JSON type,
+                    # so save as string type instead
+                    await pipe.set(key_with_prefix, json.dumps(element)).execute()
+                    redis_stack = False
+                else:
+                    raise e
         return redis_stack
 
 

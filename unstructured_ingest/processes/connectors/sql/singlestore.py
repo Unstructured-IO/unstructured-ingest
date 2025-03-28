@@ -1,10 +1,12 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -65,12 +67,11 @@ class SingleStoreConnectionConfig(SQLConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> Generator["SingleStoreCursor", None, None]:
-        with self.get_connection() as connection:
-            with connection.cursor() as cursor:
-                try:
-                    yield cursor
-                finally:
-                    cursor.close()
+        with self.get_connection() as connection, connection.cursor() as cursor:
+            try:
+                yield cursor
+            finally:
+                cursor.close()
 
 
 class SingleStoreIndexerConfig(SQLIndexerConfig):
@@ -130,6 +131,10 @@ class SingleStoreUploader(SQLUploader):
     connection_config: SingleStoreConnectionConfig
     values_delimiter: str = "%s"
     connector_type: str = CONNECTOR_TYPE
+
+    @requires_dependencies(["pandas"], extras="singlestore")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super().run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["pandas"], extras="singlestore")
     def prepare_data(

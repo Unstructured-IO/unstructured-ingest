@@ -166,8 +166,7 @@ class SlackDownloader(Downloader):
         download_path = self.get_download_path(file_data)
         if download_path is None:
             logger.error(
-                "Generated download path is None, source_identifiers might be missing"
-                "from FileData."
+                "Generated download path is None, source_identifiers might be missingfrom FileData."
             )
             raise ValueError("Generated invalid download path.")
 

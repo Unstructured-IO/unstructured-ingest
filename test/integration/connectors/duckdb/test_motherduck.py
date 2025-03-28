@@ -52,9 +52,9 @@ def validate_motherduck_destination(database: str, expected_num_elements: int, m
         conn.execute(f"USE {database}")
         _results = conn.sql("select count(*) from elements").fetchall()
         _count = _results[0][0]
-        assert (
-            _count == expected_num_elements
-        ), f"dest check failed: got {_count}, expected {expected_num_elements}"
+        assert _count == expected_num_elements, (
+            f"dest check failed: got {_count}, expected {expected_num_elements}"
+        )
         conn.close()
     finally:
         if conn:

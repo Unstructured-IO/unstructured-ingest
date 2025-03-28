@@ -140,9 +140,9 @@ def validate_collection_count(
         print(f"attempt {attempt} to get count of collection {count} to match {expected_records}")
         time.sleep(interval)
         count = collection.count_documents(filter={})
-    assert (
-        count == expected_records
-    ), f"expected count ({expected_records}) does not match how many records were found: {count}"
+    assert count == expected_records, (
+        f"expected count ({expected_records}) does not match how many records were found: {count}"
+    )
 
 
 def validate_collection_vector(

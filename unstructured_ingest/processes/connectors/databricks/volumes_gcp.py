@@ -28,7 +28,7 @@ CONNECTOR_TYPE = "databricks_volumes_gcp"
 class DatabricksGoogleVolumesAccessConfig(DatabricksVolumesAccessConfig):
     account_id: Optional[str] = Field(
         default=None,
-        description="The Databricks account ID for the Databricks " "accounts endpoint.",
+        description="The Databricks account ID for the Databricks accounts endpoint.",
     )
     profile: Optional[str] = None
     google_credentials: Optional[str] = None

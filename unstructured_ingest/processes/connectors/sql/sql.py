@@ -36,9 +36,9 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import (
-    get_data,
     get_data_df,
     get_enhanced_element_id,
+    get_json_data,
     split_dataframe,
     write_data,
 )
@@ -122,8 +122,7 @@ class SQLIndexer(Indexer, ABC):
         id_batches: list[frozenset[str]] = [
             frozenset(
                 ids[
-                    i
-                    * self.index_config.batch_size : (i + 1)  # noqa
+                    i * self.index_config.batch_size : (i + 1)  # noqa
                     * self.index_config.batch_size
                 ]
             )
@@ -272,7 +271,7 @@ class SQLUploadStager(UploadStager):
     ) -> Path:
         import pandas as pd
 
-        elements_contents = get_data(path=elements_filepath)
+        elements_contents = get_json_data(path=elements_filepath)
 
         df = pd.DataFrame(
             data=[

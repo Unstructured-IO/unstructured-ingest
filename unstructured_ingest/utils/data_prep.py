@@ -2,7 +2,7 @@ import itertools
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
 from uuid import NAMESPACE_DNS, uuid5
 
 from unstructured_ingest.data_types.file_data import FileData
@@ -171,15 +171,13 @@ def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
             raise IOError("Unsupported file type: {path}")
 
 
-def get_data(path: Union[Path, str]) -> list[dict]:
-    if isinstance(path, str):
-        path = Path(path)
-    try:
-        return get_data_by_suffix(path=path)
-    except Exception as e:
-        logger.warning(f"failed to read {path} by extension: {e}")
-    # Fall back
+def get_json_data(path: Path) -> list[dict]:
     with path.open() as f:
+        # Attempt by prefix
+        if path.suffix == ".json":
+            return json.load(f)
+        elif path.suffix == ".ndjson":
+            return ndjson.load(f)
         try:
             return json.load(f)
         except Exception as e:
@@ -188,29 +186,7 @@ def get_data(path: Union[Path, str]) -> list[dict]:
             return ndjson.load(f)
         except Exception as e:
             logger.warning(f"failed to read {path} as ndjson: {e}")
-
-        import pandas as pd
-
-        try:
-            df = pd.read_csv(path)
-            return df.to_dict(orient="records")
-        except Exception as e:
-            logger.warning(f"failed to read {path} as csv: {e}")
-        try:
-            df = pd.read_parquet(path)
-            return df.to_dict(orient="records")
-        except Exception as e:
-            logger.warning(f"failed to read {path} as parquet: {e}")
-
-
-def get_json_data(path: Path) -> list[dict]:
-    with path.open() as f:
-        if path.suffix == ".json":
-            return json.load(f)
-        elif path.suffix == ".ndjson":
-            return ndjson.load(f)
-        else:
-            raise ValueError(f"Unsupported file type: {path}")
+    raise ValueError(f"Unsupported json file: {path}")
 
 
 @requires_dependencies(["pandas"])

@@ -56,7 +56,7 @@ def seed_data() -> dict:
     cur = conn.cursor()
     cur.execute(sql)
     for i in range(SEED_DATA_ROWS):
-        sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
+        sql_statment = f"INSERT INTO cars (brand, price) VALUES ('brand_{i}', {i})"
         cur.execute(sql_statment)
 
     cur.close()
@@ -159,9 +159,9 @@ def validate_destination(
         query = "select count(*) from elements;"
         cursor.execute(query)
         count = cursor.fetchone()[0]
-        assert (
-            count == expected_num_elements
-        ), f"dest check failed: got {count}, expected {expected_num_elements}"
+        assert count == expected_num_elements, (
+            f"dest check failed: got {count}, expected {expected_num_elements}"
+        )
     finally:
         cursor.close()
         conn.close()

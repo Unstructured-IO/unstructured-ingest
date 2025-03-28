@@ -213,13 +213,13 @@ def run_all_validations(
     test_output_dir: Path,
 ):
     if expected_number_indexed_file_data := configs.expected_number_indexed_file_data:
-        assert (
-            len(predownload_file_data) == expected_number_indexed_file_data
-        ), f"expected {expected_number_indexed_file_data} but got {len(predownload_file_data)}"
+        assert len(predownload_file_data) == expected_number_indexed_file_data, (
+            f"expected {expected_number_indexed_file_data} but got {len(predownload_file_data)}"
+        )
     if expected_num_files := configs.expected_num_files:
-        assert (
-            len(postdownload_file_data) == expected_num_files
-        ), f"expected {expected_num_files} but got {len(postdownload_file_data)}"
+        assert len(postdownload_file_data) == expected_num_files, (
+            f"expected {expected_num_files} but got {len(postdownload_file_data)}"
+        )
 
     for pre_data, post_data in zip(predownload_file_data, postdownload_file_data):
         configs.run_file_data_validation(

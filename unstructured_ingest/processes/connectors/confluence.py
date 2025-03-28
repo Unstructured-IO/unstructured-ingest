@@ -125,7 +125,6 @@ class ConfluenceIndexer(Indexer):
 
     def precheck(self) -> bool:
         try:
-
             # Attempt to retrieve a list of spaces with limit=1.
             # This should only succeed if all creds are valid
             with self.connection_config.get_client() as client:

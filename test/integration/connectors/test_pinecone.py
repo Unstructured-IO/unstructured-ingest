@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from _pytest.fixtures import TopRequest
 from pinecone import Pinecone, ServerlessSpec
-from pinecone.core.openapi.shared.exceptions import NotFoundException
+from pinecone.exceptions import NotFoundException
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
@@ -137,7 +137,6 @@ def validate_pinecone_index(
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 async def test_pinecone_destination(pinecone_index: str, upload_file: Path, temp_dir: Path):
-
     file_data = FileData(
         source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,

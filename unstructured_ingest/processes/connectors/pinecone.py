@@ -227,7 +227,6 @@ class PineconeUploader(VectorDBUploader):
         self.connection_config.index_name = index_name
 
         if not self.index_exists(index_name):
-
             logger.info(f"creating pinecone index {index_name}")
 
             pc = self.connection_config.get_client()

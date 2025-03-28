@@ -220,7 +220,7 @@ class Pipeline:
 
     def _run(self):
         logger.info(
-            f"running local pipeline: {self} with configs: " f"{self.context.model_dump_json()}"
+            f"running local pipeline: {self} with configs: {self.context.model_dump_json()}"
         )
         if self.context.mp_supported:
             manager = mp.Manager()

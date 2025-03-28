@@ -1,6 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
@@ -172,6 +173,10 @@ class SnowflakeUploader(SQLUploader):
     connection_config: SnowflakeConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+
+    @requires_dependencies(["pandas"], extras="snowflake")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super().run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["pandas"], extras="snowflake")
     def prepare_data(

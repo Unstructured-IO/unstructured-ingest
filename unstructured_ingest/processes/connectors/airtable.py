@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from uuid import NAMESPACE_DNS, uuid5
 
-import pandas
 from pydantic import BaseModel, Field, Secret, field_validator
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -213,10 +212,13 @@ class AirtableDownloader(Downloader):
         row_dict.update(table_row["fields"])
         return row_dict
 
+    @requires_dependencies(["pandas"], extras="airtable")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        import pandas as pd
+
         table_meta = AirtableTableMeta.model_validate(file_data.additional_metadata)
         table_contents = self.get_table_contents(table_meta=table_meta)
-        df = pandas.DataFrame.from_dict(
+        df = pd.DataFrame.from_dict(
             data=[self._table_row_to_dict(table_row=row) for row in table_contents]
         ).sort_index(axis=1)
         download_path = self.get_download_path(file_data=file_data)

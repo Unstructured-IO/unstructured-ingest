@@ -1,4 +1,0 @@
--c ../common/constraints.txt
-
-hubspot-api-client
-urllib3

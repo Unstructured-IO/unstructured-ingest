@@ -13,9 +13,9 @@ def run_tests(endpoint: str):
     documents = db.table("unstructured_test")
     retrieved_len = len(documents.query())
     expected_len = 5
-    assert (
-        retrieved_len == expected_len
-    ), f"length of documents in table {retrieved_len} didn't match expected {expected_len}"
+    assert retrieved_len == expected_len, (
+        f"length of documents in table {retrieved_len} didn't match expected {expected_len}"
+    )
     print("Finished running document length check")
 
 

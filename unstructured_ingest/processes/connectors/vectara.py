@@ -108,7 +108,6 @@ class VectaraUploaderConfig(UploaderConfig):
 
 @dataclass
 class VectaraUploader(Uploader):
-
     connector_type: str = CONNECTOR_TYPE
     upload_config: VectaraUploaderConfig
     connection_config: VectaraConnectionConfig
@@ -336,7 +335,6 @@ class VectaraUploader(Uploader):
         file_data: FileData,
         **kwargs: Any,
     ) -> None:
-
         logger.info(f"inserting / updating {len(data)} documents to Vectara ")
         await asyncio.gather(*(self._index_document(vdoc) for vdoc in data))
 

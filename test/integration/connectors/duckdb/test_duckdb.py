@@ -37,9 +37,9 @@ def validate_duckdb_destination(db_path: Path, expected_num_elements: int):
         conn = duckdb.connect(db_path)
         _results = conn.sql("select count(*) from elements").fetchall()
         _count = _results[0][0]
-        assert (
-            _count == expected_num_elements
-        ), f"dest check failed: got {_count}, expected {expected_num_elements}"
+        assert _count == expected_num_elements, (
+            f"dest check failed: got {_count}, expected {expected_num_elements}"
+        )
         conn.close()
     finally:
         if conn:

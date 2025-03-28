@@ -58,12 +58,12 @@ async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
 
     EXPECTED_COLUMNS = 10
     EXPECTED_ROWS = 22
-    assert (
-        len(df) == EXPECTED_ROWS
-    ), f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
-    assert (
-        len(df.columns) == EXPECTED_COLUMNS
-    ), f"Number of columns in table vs expected: {len(df.columns)}/{EXPECTED_COLUMNS}"
+    assert len(df) == EXPECTED_ROWS, (
+        f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
+    )
+    assert len(df.columns) == EXPECTED_COLUMNS, (
+        f"Number of columns in table vs expected: {len(df.columns)}/{EXPECTED_COLUMNS}"
+    )
 
 
 def get_aws_credentials() -> dict:
@@ -123,12 +123,12 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
 
         EXPECTED_COLUMNS = 10
         EXPECTED_ROWS = 22
-        assert (
-            len(df) == EXPECTED_ROWS
-        ), f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
-        assert (
-            len(df.columns) == EXPECTED_COLUMNS
-        ), f"Number of columns in table vs expected: {len(df.columns)}/{EXPECTED_COLUMNS}"
+        assert len(df) == EXPECTED_ROWS, (
+            f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
+        )
+        assert len(df.columns) == EXPECTED_COLUMNS, (
+            f"Number of columns in table vs expected: {len(df.columns)}/{EXPECTED_COLUMNS}"
+        )
     finally:
         s3fs = get_filesystem_class("s3")(
             key=aws_credentials["AWS_ACCESS_KEY_ID"],

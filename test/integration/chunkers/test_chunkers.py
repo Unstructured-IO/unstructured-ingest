@@ -25,6 +25,7 @@ async def test_chunker_api(chunker_file: Path, strategy: str):
         chunk_by_api=True,
         chunk_api_key=api_key,
         chunking_endpoint=api_url,
+        chunk_api_timeout_ms=5000,
     )
     chunker = Chunker(config=chunker_config)
     results = await chunker.run_async(elements_filepath=chunker_file)

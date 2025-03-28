@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 
-import pandas as pd
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
@@ -29,6 +28,7 @@ from unstructured_ingest.utils.data_prep import get_data_df
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
     from pyarrow import Table as ArrowTable
     from pyiceberg.catalog.rest import RestCatalog
     from pyiceberg.table import Table, Transaction
@@ -96,14 +96,12 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             return UserAuthError(e)
         if 400 <= response_code < 500:
             logger.error(
-                f"Request to {url} failed"
-                f"in IBM watsonx.data connector, status code {response_code}"
+                f"Request to {url} failedin IBM watsonx.data connector, status code {response_code}"
             )
             return UserError(e)
         if response_code > 500:
             logger.error(
-                f"Request to {url} failed"
-                f"in IBM watsonx.data connector, status code {response_code}"
+                f"Request to {url} failedin IBM watsonx.data connector, status code {response_code}"
             )
             return ProviderError(e)
         logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
@@ -217,7 +215,7 @@ class IbmWatsonxUploader(SQLUploader):
         return self.upload_config.record_id_key in self.get_table_columns()
 
     @requires_dependencies(["pyarrow"], extras="ibm-watsonx-s3")
-    def _df_to_arrow_table(self, df: pd.DataFrame) -> "ArrowTable":
+    def _df_to_arrow_table(self, df: "DataFrame") -> "ArrowTable":
         import pyarrow as pa
 
         # Iceberg will automatically fill missing columns with nulls
@@ -277,16 +275,20 @@ class IbmWatsonxUploader(SQLUploader):
         except Exception as e:
             raise ProviderError(f"Failed to upload data to table: {e}")
 
-    def upload_dataframe(self, df: pd.DataFrame, file_data: FileData) -> None:
+    def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         data_table = self._df_to_arrow_table(df)
 
         with self.get_table() as table:
             self.upload_data_table(table, data_table, file_data)
 
+    @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        import pandas as pd
+
         df = pd.DataFrame(data)
         self.upload_dataframe(df=df, file_data=file_data)
 
+    @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         df = get_data_df(path=path)
         self.upload_dataframe(df=df, file_data=file_data)
