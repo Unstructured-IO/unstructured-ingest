@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
 from pydantic import Field, Secret
-from requests import HTTPError
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -33,6 +32,7 @@ from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicod
 
 if TYPE_CHECKING:
     from atlassian import Confluence
+    from requests import HTTPError
 
 CONNECTOR_TYPE = "confluence"
 
