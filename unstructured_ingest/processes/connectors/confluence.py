@@ -377,6 +377,7 @@ class ConfluenceDownloader(Downloader):
                     logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
                     return None
 
+    @requires_dependencies(["requests"], extras="confluence")
     def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
         with self.connection_config.get_client() as client:
             try:
