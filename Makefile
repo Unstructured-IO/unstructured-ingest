@@ -14,6 +14,10 @@ install-dependencies:
 upgrade-dependencies:
 	@uv sync --all-groups --all-extras --upgrade
 
+.PHONY: install-docker-compose
+install-docker-compose:
+	ARCH=${ARCH} ./scripts/install-docker-compose.sh
+
 ###########
 #  TIDY   #
 ###########

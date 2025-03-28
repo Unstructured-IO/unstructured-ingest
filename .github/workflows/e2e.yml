@@ -353,7 +353,7 @@ jobs:
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
     - name: Install limited dependencies
       run: |
-        uv sync --frozen --extras remote
+        uv sync --frozen --extra remote
     - name: Run test against remote API
       env:
         UNS_PAID_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}

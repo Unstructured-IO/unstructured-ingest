@@ -32,9 +32,26 @@ runs:
         python-version: ${{ inputs.python-version }}
 
 
+    # Don't install all the local partitioning deps
     - name: Install dependencies
       shell: bash
-      run: uv sync --frozen --all-extras --all-groups
+      run: |
+        uv sync --frozen --all-extras --all-groups  \
+        --no-extra doc \
+        --no-extra docx \
+        --no-extra epub \
+        --no-extra image \
+        --no-extra md \
+        --no-extra msg \
+        --no-extra odt \
+        --no-extra org \
+        --no-extra pdf \
+        --no-extra ppt \
+        --no-extra pptx \
+        --no-extra rst \
+        --no-extra rtf \
+        --no-extra tsv \
+        --no-extra xlsx \
 
     - name: Cache Virtual Environment (Final)
       uses: actions/cache@v4
