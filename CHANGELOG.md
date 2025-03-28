@@ -1,3 +1,9 @@
+## 1.0.0
+
+### Features
+
+* **Migrate project to use pyproject.toml and uv**
+
 ## 0.7.2
 
 ### Features
