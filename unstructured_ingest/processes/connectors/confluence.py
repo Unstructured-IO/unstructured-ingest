@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
+import requests
 from pydantic import Field, Secret
-from requests.exceptions import HTTPError
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -383,7 +383,7 @@ class ConfluenceDownloader(Downloader):
                 doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
                 parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
 
-            except HTTPError as e:
+            except requests.HTTPError as e:
                 # skip writing any permission metadata
                 logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
                 return None
