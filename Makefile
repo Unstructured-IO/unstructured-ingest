@@ -8,11 +8,11 @@ SHELL_FILES := $(shell find . -name '*.sh' -type f | grep -v venv)
 
 .PHONY: install-dependencies
 install-dependencies:
-	@uv sync --all-groups
+	@uv sync --all-groups --all-extras
 
 .PHONY: upgrade-dependencies
 upgrade-dependencies:
-	@uv sync --all-groups --upgrade
+	@uv sync --all-groups --all-extras --upgrade
 
 ###########
 #  TIDY   #
@@ -56,51 +56,51 @@ check-version:
 ###########
 .PHONY: unit-test
 unit-test:
-	PYTHONPATH=. pytest -sv --cov unstructured_ingest/ test/unit
+	uv run --frozen pytest -sv --cov unstructured_ingest/ test/unit
 
 .PHONY: unit-test-unstructured
 unit-test-unstructured:
-	PYTHONPATH=. pytest -sv --cov unstructured_ingest/ test/unit/unstructured
+	uv run --frozen pytest -sv --cov unstructured_ingest/ test/unit/unstructured
 
 .PHONY: integration-test
 integration-test:
-	PYTHONPATH=. pytest -sv test/integration
+	uv run --frozen pytest -sv test/integration
 
 .PHONY: integration-test-partitioners
 integration-test-partitioners:
-	PYTHONPATH=. pytest -sv test/integration/partitioners --json-report
+	uv run --frozen pytest -sv test/integration/partitioners --json-report
 
 .PHONY: integration-test-chunkers
 integration-test-chunkers:
-	PYTHONPATH=. pytest -sv test/integration/chunkers --json-report
+	uv run --frozen pytest -sv test/integration/chunkers --json-report
 
 .PHONY: integration-test-embedders
 integration-test-embedders:
-	PYTHONPATH=. pytest -sv test/integration/embedders --json-report
+	uv run --frozen pytest -sv test/integration/embedders --json-report
 
 .PHONY: integration-test-connectors-blob-storage
 integration-test-connectors-blob-storage:
-	PYTHONPATH=. pytest --tags blob_storage -sv test/integration/connectors --json-report
+	uv run --frozen pytest --tags blob_storage -sv test/integration/connectors --json-report
 
 .PHONY: integration-test-connectors-sql
 integration-test-connectors-sql:
-	PYTHONPATH=. pytest --tags sql -sv test/integration/connectors --json-report
+	uv run --frozen pytest --tags sql -sv test/integration/connectors --json-report
 
 .PHONY: integration-test-connectors-nosql
 integration-test-connectors-nosql:
-	PYTHONPATH=. pytest --tags nosql -sv test/integration/connectors --json-report
+	uv run --frozen pytest --tags nosql -sv test/integration/connectors --json-report
 
 .PHONY: integration-test-connectors-vector-db
 integration-test-connectors-vector-db:
-	PYTHONPATH=. pytest --tags vector_db -sv test/integration/connectors --json-report
+	uv run --frozen pytest --tags vector_db -sv test/integration/connectors --json-report
 
 .PHONY: integration-test-connectors-graph-db
 integration-test-connectors-graph-db:
-	PYTHONPATH=. pytest --tags graph_db -sv test/integration/connectors --json-report
+	uv run --frozen pytest --tags graph_db -sv test/integration/connectors --json-report
 
 .PHONY: integration-test-connectors-uncategorized
 integration-test-connectors-uncategorized:
-	PYTHONPATH=. pytest --tags uncategorized -sv test/integration/connectors --json-report
+	uv run --frozen pytest --tags uncategorized -sv test/integration/connectors --json-report
 
 .PHONY: parse-skipped-tests
 parse-skipped-tests:

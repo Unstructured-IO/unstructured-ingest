@@ -11,35 +11,39 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Compute cache key
+      id: compute-key
+      shell: bash
+      working-directory: ${{ inputs.work-dir }}
+      run: |
+        lockfile_hash=$(sha256sum uv.lock | cut -d ' ' -f 1)
+        cache_key="venv-uv-${{ runner.os }}-${{ inputs.python-version }}-${lockfile_hash}"
+        echo "key=${cache_key}" >> "$GITHUB_OUTPUT"
+
     - name: Check for/restore base cache
       uses: actions/cache/restore@v4
       id: virtualenv-cache-restore
       with:
         path: |
           .venv
-        key: unstructured-${{ runner.os }}-${{ inputs.python-version }}-${{ hashFiles('requirements/**/*.txt') }}
+        key: ${{ steps.compute-key.outputs.key }}
         lookup-only: ${{ inputs.check-only }}
-    - name: Set up Python ${{ inputs.python-version }}
-      if: steps.virtualenv-cache-restore.outputs.cache-hit != 'true'
-      uses: actions/setup-python@v5
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
       with:
         python-version: ${{ inputs.python-version }}
+
+    - name: Set up Python
+      shell: bash
+      run: uv python install
+
     - name: Setup virtual environment (no cache hit)
       if: steps.virtualenv-cache-restore.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        python${{ inputs.python-version }} -m pip install --upgrade virtualenv
-        if [ ! -d ".venv" ]; then
-          python${{ inputs.python-version }} -m venv .venv
-        fi
-        source .venv/bin/activate
-        if [ "${{ inputs.python-version == '3.12' }}" == "true" ]; then
-          python -m ensurepip --upgrade
-          python -m pip install --upgrade setuptools
-        fi
-        make install-base
-        make install-ci
-        make install-client
+        uv venv
+        make install-dependencies
     - name: Save Cache
       if: steps.virtualenv-cache-restore.outputs.cache-hit != 'true'
       id: virtualenv-cache-save

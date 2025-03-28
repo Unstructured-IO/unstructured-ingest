@@ -72,10 +72,12 @@ jobs:
     needs: [ lint ]
     steps:
       - uses: 'actions/checkout@v4'
+        
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Validate --help
         run: |
           pip install .
@@ -111,14 +113,18 @@ jobs:
     steps:
       # actions/checkout MUST come before auth
       - uses: 'actions/checkout@v4'
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python
+        run: uv python install
+
       - name: Test Ingest (unit)
         run: |
-          make install-base
-          make install-test
+          uv sync --group test --frozen
           make unit-test
 
   test_ingest_unit_unstructured:
@@ -133,14 +139,18 @@ jobs:
     steps:
       # actions/checkout MUST come before auth
       - uses: 'actions/checkout@v4'
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python
+        run: uv python install
+
       - name: Test Ingest (unit)
         run: |
-          make install-base
-          make install-test
+          uv sync --group test --frozen
           pip install unstructured
           python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
           make unit-test-unstructured

@@ -1,0 +1,21 @@
+name: "Generate Cache Key"
+description: "Generates a cache key based on use-uv setting"
+inputs:
+  python-version:
+    description: "Python version"
+    required: false
+    default: "3.12.6"
+outputs:
+  cache-key:
+    description: "Computed cache key"
+    value: ${{ steps.compute-key.outputs.key }}
+runs:
+  using: "composite"
+  steps:
+    - name: Compute cache key
+      id: compute-key
+      shell: bash
+      run: |
+        lockfile_hash=$(sha256sum uv.lock | cut -d ' ' -f 1)
+        cache_key="venv-uv-${{ runner.os }}-${{ inputs.python-version }}-${lockfile_hash}"
+        echo "key=${cache_key}" >> "$GITHUB_OUTPUT"
