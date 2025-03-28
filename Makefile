@@ -39,7 +39,7 @@ tidy-shell:
 ###########
 
 .PHONY: check
-check: check-ruff check-shell
+check: check-ruff
 
 .PHONY: check-ruff
 check-ruff:

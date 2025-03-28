@@ -10,7 +10,13 @@ from unstructured_ingest.processes.partitioner import Partitioner, PartitionerCo
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"
 
-all_partition_files = [path for path in assets_dir.iterdir() if path.is_file()]
+# TODO: api currently does not support gz files anymore, add back in when that gets fixed
+all_partition_files = [
+    path
+    for path in assets_dir.iterdir()
+    if path.is_file()
+    if path.name != "layout-parser-paper.pdf.gz"
+]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
 ]
