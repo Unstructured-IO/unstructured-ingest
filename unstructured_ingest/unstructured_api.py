@@ -80,7 +80,11 @@ def wrap_error(e: Exception) -> Exception:
 
 
 async def call_api_async(
-    server_url: Optional[str], api_key: Optional[str], filename: Path, api_parameters: dict
+    server_url: Optional[str],
+    api_key: Optional[str],
+    filename: Path,
+    api_parameters: dict,
+    timeout_ms: Optional[int] = None,
 ) -> list[dict]:
     """Call the Unstructured API using unstructured-client.
 
@@ -94,10 +98,13 @@ async def call_api_async(
     """
     from unstructured_client import UnstructuredClient
 
-    client = UnstructuredClient(
-        server_url=server_url,
-        api_key_auth=api_key,
-    )
+    client_kwargs = {
+        "server_url": server_url,
+        "api_key_auth": api_key,
+    }
+    if timeout_ms:
+        client_kwargs["timeout_ms"] = timeout_ms
+    client = UnstructuredClient(**client_kwargs)
     partition_request = create_partition_request(filename=filename, parameters_dict=api_parameters)
     try:
         res = await client.general.partition_async(request=partition_request)

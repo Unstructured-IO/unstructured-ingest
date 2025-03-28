@@ -24,6 +24,9 @@ class ChunkerConfig(BaseModel):
         default="https://api.unstructuredapp.io/general/v0/general",
         description="If chunking via api, use the following host.",
     )
+    chunk_api_timeout_ms: Optional[int] = Field(
+        default=None, description="Timeout in milliseconds for all api call during chunking."
+    )
     chunk_by_api: bool = Field(default=False, description="Flag to use api for chunking")
     chunk_api_key: Optional[SecretStr] = Field(
         default=None, description="API Key for chunking endpoint."
@@ -120,6 +123,7 @@ class Chunker(BaseProcess, ABC):
             api_key=self.config.chunk_api_key.get_secret_value(),
             filename=elements_filepath,
             api_parameters=self.config.to_chunking_kwargs(),
+            timeout_ms=self.config.chunk_api_timeout_ms,
         )
 
         elements = assign_and_map_hash_ids(elements=elements)
