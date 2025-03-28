@@ -15,34 +15,32 @@
     },
     "date_created": "2023-07-09T12:54:45.162Z",
     "date_modified": "2023-07-09T12:54:45.162Z",
-    "date_processed": "1743126112.83448",
-    "permissions_data": [
-      {
-        "read": {
-          "users": [
-            "64083457896d10ebd4738661"
-          ],
-          "groups": [
-            "01540484-667b-4329-8ffc-961cc2e4435f",
-            "5d476b78-504f-47d2-bddb-aa45ebf77753",
-            "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
-          ]
-        },
-        "update": {
-          "users": [
-            "64083457896d10ebd4738661"
-          ],
-          "groups": [
-            "5d476b78-504f-47d2-bddb-aa45ebf77753",
-            "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
-          ]
-        },
-        "delete": {
-          "users": [],
-          "groups": []
-        }
+    "date_processed": "1743193264.298244",
+    "permissions_data": {
+      "read": {
+        "users": [
+          "64083457896d10ebd4738661"
+        ],
+        "groups": [
+          "01540484-667b-4329-8ffc-961cc2e4435f",
+          "5d476b78-504f-47d2-bddb-aa45ebf77753",
+          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
+        ]
+      },
+      "update": {
+        "users": [
+          "64083457896d10ebd4738661"
+        ],
+        "groups": [
+          "5d476b78-504f-47d2-bddb-aa45ebf77753",
+          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
+        ]
+      },
+      "delete": {
+        "users": [],
+        "groups": []
       }
-    ],
+    },
     "filesize_bytes": null
   },
   "additional_metadata": {
@@ -51,6 +49,6 @@
     "document_id": "1605928"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmpkbxdjihe/MFS/1605928.html",
+  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmpqsi3rjqn/MFS/1605928.html",
   "display_name": "Template - Meeting notes"
 }

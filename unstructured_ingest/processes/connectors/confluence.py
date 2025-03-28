@@ -250,7 +250,7 @@ class ConfluenceDownloader(Downloader):
             session=session,
         )
 
-    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> dict[str, Any]:
+    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> dict[str, dict]:
         """
         Parses document and space permissions to determine final user/group roles.
 
