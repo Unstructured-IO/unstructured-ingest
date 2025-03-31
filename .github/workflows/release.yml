@@ -13,15 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --frozen --group release
+
       - name: Build artifact
         run: |
-          make install-release
-          python setup.py sdist
-          python setup.py bdist_wheel
+          uv build
+
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
