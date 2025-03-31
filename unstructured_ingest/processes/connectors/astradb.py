@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import BaseModel, Field, Secret
 
-from unstructured_ingest import __name__ as integration_name
 from unstructured_ingest.__version__ import __version__ as integration_version
 from unstructured_ingest.data_types.file_data import (
     BatchFileData,
@@ -83,10 +83,8 @@ class AstraDBConnectionConfig(ConnectionConfig):
 
         # Create a client object to interact with the Astra DB
         # caller_name/version for Astra DB tracking
-        return AstraDBClient(
-            caller_name=integration_name,
-            caller_version=integration_version,
-        )
+        user_agent = os.getenv("UNSTRUCTURED_USER_AGENT", "unstructuredio_oss")
+        return AstraDBClient(callers=[(user_agent, integration_version)])
 
 
 def get_astra_db(

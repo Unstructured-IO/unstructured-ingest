@@ -172,7 +172,6 @@ ci = [
     "lancedb<=0.15.0",
     # TODO: versions higher than this are missing the macos wheel
     "pykx==2.5.3",
-    "astrapy<2.0.0"
 ]
 
 [project.scripts]
