@@ -22,7 +22,7 @@ jobs:
         run: uv python install
 
       - name: Install dependencies
-        run: uv sync --frozen --extra release
+        run: uv sync --frozen --group release
 
       - name: Build artifact
         run: |
