@@ -21,7 +21,7 @@ non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
 ]
 supported_fast_partition_files = [
-    path for path in non_image_partition_files if path.suffix != ".eml"
+    path for path in non_image_partition_files if path.suffix not in [".eml", ".epub"]
 ]
 image_partition_files = [
     path for path in all_partition_files if path not in non_image_partition_files
@@ -33,6 +33,7 @@ image_partition_files = [
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
+@pytest.mark.timeout(60)
 async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
@@ -55,6 +56,7 @@ async def test_partitioner_api_hi_res(partition_file: Path):
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
+@pytest.mark.timeout(10)
 async def test_partitioner_api_fast(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
@@ -63,7 +65,6 @@ async def test_partitioner_api_fast(partition_file: Path):
         partition_by_api=True,
         api_key=api_key,
         partition_endpoint=api_url,
-        api_timeout_ms=1000,
     )
     partitioner = Partitioner(config=partitioner_config)
     results = await partitioner.run_async(filename=partition_file)

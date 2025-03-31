@@ -129,6 +129,7 @@ test = [
     "pytest-asyncio",
     "pytest_tagging",
     "pytest-json-report",
+    "pytest-timeout",
     "faker",
     "docker",
     "universal_pathlib",
