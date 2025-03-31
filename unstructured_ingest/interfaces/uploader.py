@@ -29,7 +29,7 @@ class Uploader(BaseProcess, BaseConnector, ABC):
     connector_type: str
 
     def is_async(self) -> bool:
-        return False
+        return True
 
     def is_batch(self) -> bool:
         return False
@@ -43,10 +43,6 @@ class Uploader(BaseProcess, BaseConnector, ABC):
         # Update the uploader config if needed with a new destination that gets created.
         # Return a flag on if anything was created or not.
         return False
-
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data = get_json_data(path=path)
-        self.run_data(data=data, file_data=file_data, **kwargs)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_json_data(path=path)

@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import hashlib
 import os
@@ -139,7 +140,7 @@ async def get_async_astra_collection(
     )
 
     # Get async collection from AsyncDatabase
-    async_astra_db_collection = await async_astra_db.get_collection(name=collection_name)
+    async_astra_db_collection = async_astra_db.get_collection(name=collection_name)
     return async_astra_db_collection
 
 
@@ -358,13 +359,22 @@ class AstraDBUploader(Uploader):
     upload_config: AstraDBUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def is_async(self) -> bool:
+        return True
+
     def init(self, **kwargs: Any) -> None:
         self.create_destination(**kwargs)
 
+    @requires_dependencies(["astrapy"], extras="astradb")
     def precheck(self) -> None:
         try:
             if self.upload_config.collection_name:
-                self.get_collection(collection_name=self.upload_config.collection_name).options()
+                collection = get_astra_collection(
+                    connection_config=self.connection_config,
+                    collection_name=self.upload_config.collection_name,
+                    keyspace=self.upload_config.keyspace,
+                )
+                collection.options()
             else:
                 # check for db connection only if collection name is not provided
                 get_astra_db(
@@ -374,14 +384,6 @@ class AstraDBUploader(Uploader):
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    @requires_dependencies(["astrapy"], extras="astradb")
-    def get_collection(self, collection_name: Optional[str] = None) -> "AstraDBCollection":
-        return get_astra_collection(
-            connection_config=self.connection_config,
-            collection_name=collection_name or self.upload_config.collection_name,
-            keyspace=self.upload_config.keyspace,
-        )
 
     def _collection_exists(self, collection_name: str):
         collection = get_astra_collection(
@@ -394,7 +396,7 @@ class AstraDBUploader(Uploader):
             collection.options()
             return True
         except RuntimeError as e:
-            if "collection not found" in str(e):
+            if "not found" in str(e):
                 return False
             raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
         except Exception as e:
@@ -420,6 +422,8 @@ class AstraDBUploader(Uploader):
         self.upload_config.collection_name = collection_name
 
         if not self._collection_exists(collection_name):
+            from astrapy.info import CollectionDefinition
+
             astra_db = get_astra_db(
                 connection_config=self.connection_config, keyspace=self.upload_config.keyspace
             )
@@ -427,44 +431,53 @@ class AstraDBUploader(Uploader):
                 f"creating default astra collection '{collection_name}' with dimension "
                 f"{vector_length} and metric {similarity_metric}"
             )
-            astra_db.create_collection(
-                collection_name,
-                dimension=vector_length,
-                metric=similarity_metric,
+            definition = (
+                CollectionDefinition.builder()
+                .set_vector_dimension(dimension=vector_length)
+                .set_vector_metric(similarity_metric)
+                .build()
             )
+            (astra_db.create_collection(collection_name, definition=definition),)
             return True
         logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
         return False
 
-    def delete_by_record_id(self, collection: "AstraDBCollection", file_data: FileData):
+    async def delete_by_record_id(self, collection: "AstraDBAsyncCollection", file_data: FileData):
         logger.debug(
             f"deleting records from collection {collection.name} "
             f"with {self.upload_config.record_id_key} "
             f"set to {file_data.identifier}"
         )
         delete_filter = {self.upload_config.record_id_key: {"$eq": file_data.identifier}}
-        delete_resp = collection.delete_many(filter=delete_filter)
+        delete_resp = await collection.delete_many(filter=delete_filter)
         logger.debug(
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
         )
 
         astra_db_batch_size = self.upload_config.batch_size
-        collection = self.get_collection()
+        async_astra_collection = await get_async_astra_collection(
+            connection_config=self.connection_config,
+            collection_name=self.upload_config.collection_name,
+            keyspace=self.upload_config.keyspace,
+        )
 
-        self.delete_by_record_id(collection=collection, file_data=file_data)
+        await self.delete_by_record_id(collection=async_astra_collection, file_data=file_data)
+        await asyncio.gather(
+            *[
+                async_astra_collection.insert_many(chunk)
+                for chunk in batch_generator(data, astra_db_batch_size)
+            ]
+        )
 
-        for chunk in batch_generator(data, astra_db_batch_size):
-            collection.insert_many(chunk)
-
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_json_data(path=path)
-        self.run_data(data=data, file_data=file_data, **kwargs)
+        await self.run_data(data=data, file_data=file_data)
 
 
 astra_db_source_entry = SourceRegistryEntry(
