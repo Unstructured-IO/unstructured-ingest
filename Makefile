@@ -27,8 +27,8 @@ tidy: tidy-ruff
 
 .PHONY: tidy-ruff
 tidy-ruff:
-	uv run ruff format .
-	uv run ruff check --fix-only --show-fixes .
+	uv run --frozen ruff format .
+	uv run --frozen ruff check --fix-only --show-fixes .
 
 .PHONY: tidy-shell
 tidy-shell:
@@ -108,7 +108,7 @@ integration-test-connectors-uncategorized:
 
 .PHONY: parse-skipped-tests
 parse-skipped-tests:
-	PYTHONPATH=. python ./scripts/parse_pytest_report.py
+	uv run python ./scripts/parse_pytest_report.py
 
 .PHONY: check-untagged-tests
 check-untagged-tests:

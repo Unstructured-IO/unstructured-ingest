@@ -9,7 +9,18 @@ from unstructured_ingest.processes.chunker import Chunker, ChunkerConfig
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"
 
-chunker_files = [path for path in assets_dir.iterdir() if path.is_file()]
+# Any files that the api currently does not support
+skip_files = {
+    "by_similarity": [
+        "layout-parser-paper.pdf.json",
+        "layout-parser-paper-fast.pdf.json",
+        "layout-parser-paper.pdf.gz.json",
+        "layout-parser-paper-fast.jpg.json",
+    ],
+}
+chunker_files = [
+    path for path in assets_dir.iterdir() if path.is_file() and "layout-parser" in path.name
+]
 
 
 @pytest.mark.parametrize("chunker_file", chunker_files, ids=[path.name for path in chunker_files])
@@ -17,6 +28,8 @@ chunker_files = [path for path in assets_dir.iterdir() if path.is_file()]
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
 async def test_chunker_api(chunker_file: Path, strategy: str):
+    if chunker_file.name in skip_files.get(strategy, []):
+        pytest.skip(f"File {chunker_file.name} not supported by api")
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
 

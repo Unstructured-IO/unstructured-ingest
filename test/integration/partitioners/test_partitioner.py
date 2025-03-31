@@ -15,7 +15,7 @@ all_partition_files = [
     path
     for path in assets_dir.iterdir()
     if path.is_file()
-    if path.name != "layout-parser-paper.pdf.gz"
+    if path.name == "layout-parser-paper.pdf.gz"
 ]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
