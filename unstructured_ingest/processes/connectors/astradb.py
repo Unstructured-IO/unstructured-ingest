@@ -479,6 +479,9 @@ class AstraDBUploader(Uploader):
         data = get_json_data(path=path)
         await self.run_data(data=data, file_data=file_data)
 
+    def run(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("Use astradb run_async instead")
+
 
 astra_db_source_entry = SourceRegistryEntry(
     indexer=AstraDBIndexer,

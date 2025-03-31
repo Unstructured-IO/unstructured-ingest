@@ -260,10 +260,7 @@ async def test_volumes_native_destination(upload_file: Path):
             ),
         )
         uploader.precheck()
-        if uploader.is_async():
-            await uploader.run_async(path=upload_file, file_data=file_data)
-        else:
-            uploader.run(path=upload_file, file_data=file_data)
+        uploader.run(path=upload_file, file_data=file_data)
 
         validate_upload(
             client=workspace_client,

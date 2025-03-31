@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,8 +14,9 @@ class BaseProcess(ABC):
     def precheck(self) -> None:
         pass
 
+    @abstractmethod
     def run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError()
+        pass
 
     async def run_async(self, **kwargs: Any) -> Any:
         return self.run(**kwargs)
