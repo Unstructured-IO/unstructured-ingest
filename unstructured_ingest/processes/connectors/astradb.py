@@ -384,8 +384,6 @@ class AstraDBUploader(Uploader):
         )
 
     def _collection_exists(self, collection_name: str):
-        from astrapy.exceptions import CollectionNotFoundException
-
         collection = get_astra_collection(
             connection_config=self.connection_config,
             collection_name=collection_name,
@@ -395,8 +393,10 @@ class AstraDBUploader(Uploader):
         try:
             collection.options()
             return True
-        except CollectionNotFoundException:
-            return False
+        except RuntimeError as e:
+            if "collection not found" in str(e):
+                return False
+            raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
         except Exception as e:
             logger.error(f"failed to check if astra collection exists : {e}")
             raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
