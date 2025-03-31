@@ -1,5 +1,0 @@
--c ../common/constraints.txt
-
-requests
-aiofiles
-httpx

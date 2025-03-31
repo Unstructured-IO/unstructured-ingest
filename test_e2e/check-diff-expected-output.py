@@ -132,7 +132,6 @@ def run_checks(expected_output_dir: Path, current_output_dir: Path):
 @click.option("--output-folder-name", required=True, type=str)
 @click.option("--overwrite-fixtures", type=bool, default=False, envvar="OVERWRITE_FIXTURES")
 def check_outputs(output_folder_name: str, overwrite_fixtures: bool):
-
     expected_output_dir = base_expected_output_dir / output_folder_name
     current_output_dir = base_current_output_dir / output_folder_name
     check_dir(dir_path=expected_output_dir)

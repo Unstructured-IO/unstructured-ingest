@@ -28,7 +28,7 @@ CONNECTOR_TYPE = "databricks_volumes_azure"
 class DatabricksAzureVolumesAccessConfig(DatabricksVolumesAccessConfig):
     account_id: Optional[str] = Field(
         default=None,
-        description="The Databricks account ID for the Databricks " "accounts endpoint.",
+        description="The Databricks account ID for the Databricks accounts endpoint.",
     )
     profile: Optional[str] = None
     azure_workspace_resource_id: Optional[str] = Field(
@@ -47,7 +47,7 @@ class DatabricksAzureVolumesAccessConfig(DatabricksVolumesAccessConfig):
     )
     azure_environment: Optional[str] = Field(
         default=None,
-        description="The Azure environment type for a " "specific set of API endpoints",
+        description="The Azure environment type for a specific set of API endpoints",
         examples=["Public", "UsGov", "China", "Germany"],
     )
 

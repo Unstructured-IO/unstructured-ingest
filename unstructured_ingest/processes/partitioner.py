@@ -68,6 +68,9 @@ class PartitionerConfig(BaseModel):
         description="Use a remote API to partition the files."
         " Otherwise, use the function from partition.auto",
     )
+    api_timeout_ms: Optional[int] = Field(
+        default=None, description="Timeout in milliseconds for all api call during partitioning."
+    )
     api_key: Optional[SecretStr] = Field(
         default=None, description="API Key for partition endpoint."
     )
@@ -188,6 +191,7 @@ class Partitioner(BaseProcess, ABC):
             api_key=self.config.api_key.get_secret_value(),
             filename=filename,
             api_parameters=self.config.to_partition_kwargs(),
+            timeout_ms=self.config.api_timeout_ms,
         )
 
         # Append the data source metadata the auto partition does for you

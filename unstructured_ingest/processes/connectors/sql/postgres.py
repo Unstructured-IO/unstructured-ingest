@@ -1,9 +1,11 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Generator, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -143,6 +145,10 @@ class PostgresUploader(SQLUploader):
     connection_config: PostgresConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "%s"
+
+    @requires_dependencies(["pandas"], extras="postgres")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super().run(path=path, file_data=file_data, **kwargs)
 
 
 postgres_source_entry = SourceRegistryEntry(

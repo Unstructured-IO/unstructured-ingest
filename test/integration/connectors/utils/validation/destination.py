@@ -5,7 +5,8 @@ from pathlib import Path
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import UploadStager
-from unstructured_ingest.utils.data_prep import get_data
+from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.data_prep import get_data_df, get_json_data
 
 
 class StagerValidationConfigs(ValidationConfig):
@@ -19,6 +20,18 @@ class StagerValidationConfigs(ValidationConfig):
 
     def stager_output_path(self, input_path: Path) -> Path:
         return self.stager_output_dir() / input_path.name
+
+
+def get_data(path: Path):
+    try:
+        return get_json_data(path)
+    except Exception as e:
+        logger.info(f"Failed to read {path} as json: {e}")
+    try:
+        return get_data_df(path)
+    except Exception as e:
+        logger.info(f"Failed to read {path} as DataFrame: {e}")
+    raise ValueError(f"Unsupported file type: {path}")
 
 
 def run_all_stager_validations(

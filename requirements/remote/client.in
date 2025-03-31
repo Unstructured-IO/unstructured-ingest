@@ -1,3 +1,0 @@
--c ../common/constraints.txt
-
-unstructured-client >= 0.30.0

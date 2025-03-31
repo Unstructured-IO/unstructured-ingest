@@ -49,7 +49,7 @@ def source_database_setup() -> str:
         )
         with connection.cursor() as cursor:
             for i in range(SEED_DATA_ROWS):
-                sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
+                sql_statment = f"INSERT INTO cars (brand, price) VALUES ('brand_{i}', {i})"
                 cursor.execute(sql_statment)
             connection.commit()
         yield db_name
@@ -106,9 +106,9 @@ def validate_destination(
         query = "select count(*) from elements;"
         cursor.execute(query)
         count = cursor.fetchone()[0]
-        assert (
-            count == expected_num_elements
-        ), f"dest check failed: got {count}, expected {expected_num_elements}"
+        assert count == expected_num_elements, (
+            f"dest check failed: got {count}, expected {expected_num_elements}"
+        )
 
         cursor.execute("SELECT embeddings FROM elements order by text limit 1")
         similarity_query = (

@@ -12,8 +12,9 @@ assets_dir = int_test_dir / "assets"
 chunker_files = [path for path in assets_dir.iterdir() if path.is_file()]
 
 
+# TODO: add back in by_similarity to strategies tested when api supports it
 @pytest.mark.parametrize("chunker_file", chunker_files, ids=[path.name for path in chunker_files])
-@pytest.mark.parametrize("strategy", ["basic", "by_title", "by_similarity", "by_page"])
+@pytest.mark.parametrize("strategy", ["basic", "by_title", "by_page"])
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
 async def test_chunker_api(chunker_file: Path, strategy: str):
@@ -25,6 +26,7 @@ async def test_chunker_api(chunker_file: Path, strategy: str):
         chunk_by_api=True,
         chunk_api_key=api_key,
         chunking_endpoint=api_url,
+        chunk_api_timeout_ms=5000,
     )
     chunker = Chunker(config=chunker_config)
     results = await chunker.run_async(elements_filepath=chunker_file)

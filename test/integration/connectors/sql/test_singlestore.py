@@ -49,19 +49,17 @@ def source_database_setup() -> dict:
     with docker_compose_context(
         docker_compose_path=env_setup_path / "sql" / "singlestore" / "source"
     ):
-        with s2.connect(**connect_params) as connection:
-            with connection.cursor() as cursor:
-                for i in range(SEED_DATA_ROWS):
-                    sql_statment = f"INSERT INTO cars (brand, price) VALUES " f"('brand_{i}', {i})"
-                    cursor.execute(sql_statment)
-                connection.commit()
+        with s2.connect(**connect_params) as connection, connection.cursor() as cursor:
+            for i in range(SEED_DATA_ROWS):
+                sql_statment = f"INSERT INTO cars (brand, price) VALUES ('brand_{i}', {i})"
+                cursor.execute(sql_statment)
+            connection.commit()
         yield connect_params
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, SQL_TAG)
 async def test_singlestore_source(temp_dir: Path, source_database_setup: dict):
-
     connection_config = SingleStoreConnectionConfig(
         host=source_database_setup["host"],
         port=source_database_setup["port"],
@@ -95,14 +93,13 @@ def validate_destination(
     connect_params: dict,
     expected_num_elements: int,
 ):
-    with s2.connect(**connect_params) as connection:
-        with connection.cursor() as cursor:
-            query = "select count(*) from elements;"
-            cursor.execute(query)
-            count = cursor.fetchone()[0]
-            assert (
-                count == expected_num_elements
-            ), f"dest check failed: got {count}, expected {expected_num_elements}"
+    with s2.connect(**connect_params) as connection, connection.cursor() as cursor:
+        query = "select count(*) from elements;"
+        cursor.execute(query)
+        count = cursor.fetchone()[0]
+        assert count == expected_num_elements, (
+            f"dest check failed: got {count}, expected {expected_num_elements}"
+        )
 
 
 @pytest.mark.asyncio

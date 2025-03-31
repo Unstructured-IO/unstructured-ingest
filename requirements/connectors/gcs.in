@@ -1,5 +1,0 @@
--c ../common/constraints.txt
-
-gcsfs
-fsspec
-bs4

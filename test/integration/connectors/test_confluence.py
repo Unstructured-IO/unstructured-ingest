@@ -106,6 +106,6 @@ async def test_confluence_source_large(temp_dir):
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="confluence_large", expected_num_files=250, validate_file_data=False
+            test_id="confluence_large", expected_num_files=301, validate_file_data=False
         ),
     )

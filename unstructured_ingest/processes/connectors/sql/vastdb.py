@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, Secret
@@ -68,9 +69,8 @@ class VastdbConnectionConfig(SQLConnectionConfig):
 
     @contextmanager
     def get_cursor(self) -> "VastdbTransaction":
-        with self.get_connection() as connection:
-            with connection.transaction() as transaction:
-                yield transaction
+        with self.get_connection() as connection, connection.transaction() as transaction:
+            yield transaction
 
     @contextmanager
     def get_table(self, table_name: str) -> "VastdbTable":
@@ -189,6 +189,10 @@ class VastdbUploader(SQLUploader):
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+    @requires_dependencies(["pandas"], extras="vastdb")
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super().run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["pyarrow", "pandas"], extras="vastdb")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
