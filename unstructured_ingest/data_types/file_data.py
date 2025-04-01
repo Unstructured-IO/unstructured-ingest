@@ -32,6 +32,13 @@ class FileDataSourceMetadata(BaseModel):
     permissions_data: Union[list[dict[str, Any]], dict[str, Any], None] = None
     filesize_bytes: Optional[int] = None
 
+    @field_validator("permissions_data", mode="before")
+    @classmethod
+    def normalize_permissions_data(cls, v: Any) -> Any:
+        if isinstance(v, dict):
+            return [v]
+        return v
+
 
 class FileData(BaseModel):
     identifier: str
