@@ -9,6 +9,7 @@ import pytest
 from _pytest.fixtures import TopRequest
 from astrapy import Collection
 from astrapy import DataAPIClient as AstraDBClient
+from astrapy.info import CollectionDefinition
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SOURCE_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.validation.destination import (
@@ -127,11 +128,16 @@ def collection(upload_file: Path) -> Collection:
         api_endpoint=env_data.api_endpoint,
         token=env_data.token,
     )
-    collection = astra_db.create_collection(collection_name, dimension=embedding_dimension)
+    collection = astra_db.create_collection(
+        collection_name,
+        definition=CollectionDefinition.builder()
+        .set_vector_dimension(dimension=embedding_dimension)
+        .build(),
+    )
     try:
         yield collection
     finally:
-        astra_db.drop_collection(collection)
+        astra_db.drop_collection(collection.name)
 
 
 @pytest.mark.asyncio
@@ -198,7 +204,7 @@ async def test_astra_search_destination(
         output_filename=upload_file.name,
     )
     uploader.precheck()
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
 
     # Run validation
     with staged_filepath.open() as f:
@@ -211,7 +217,7 @@ async def test_astra_search_destination(
     )
 
     # Rerun and make sure the same documents get updated
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
     current_count = collection.count_documents(filter={}, upper_bound=expected_count * 2)
     assert current_count == expected_count, (
         f"Expected count ({expected_count}) doesn't match how "

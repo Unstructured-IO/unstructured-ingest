@@ -1,3 +1,9 @@
+## 1.0.2
+
+### Features
+
+* **Update astra source connector to use new astrapy client**
+
 ## 1.0.1
 
 ### Features
