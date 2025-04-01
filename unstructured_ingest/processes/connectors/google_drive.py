@@ -437,6 +437,11 @@ class GoogleDriveIndexer(Indexer):
                 for operation in role_mapping[item["role"]]:
                     normalized_permissions[operation][type_key].add(item["id"])
 
+        # turn sets into sorted lists for consistency and json serialization
+        for role_dict in normalized_permissions.values():
+            for key in role_dict:
+                role_dict[key] = sorted(role_dict[key])
+
         return normalized_permissions
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
