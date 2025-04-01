@@ -409,8 +409,9 @@ class GoogleDriveIndexer(Indexer):
             d.metadata.record_locator["drive_id"]: object_id
         return data
 
-    def extract_permissions(self, permissions: list[dict]) -> dict:
+    def extract_permissions(self, permissions: Optional[list[dict]]) -> dict:
         if not permissions:
+            logger.debug("no permissions found")
             return {}
 
         # https://developers.google.com/workspace/drive/api/guides/ref-roles
@@ -442,6 +443,7 @@ class GoogleDriveIndexer(Indexer):
             for key in role_dict:
                 role_dict[key] = sorted(role_dict[key])
 
+        logger.debug(f"normalized permissions generated: {normalized_permissions}")
         return normalized_permissions
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:

@@ -352,6 +352,7 @@ class ConfluenceDownloader(Downloader):
     def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
         if space_id in self._permissions_cache:
             self._permissions_cache.move_to_end(space_id)  # mark recent use
+            logger.debug(f"Retrieved cached permissions for space {space_id}")
             return self._permissions_cache[space_id]
         else:
             with self.connection_config.get_client() as client:
@@ -371,6 +372,7 @@ class ConfluenceDownloader(Downloader):
                         self._permissions_cache.popitem(last=False)  # LRU/FIFO eviction
                     self._permissions_cache[space_id] = space_permissions
 
+                    logger.debug(f"Retrieved permissions for space {space_id}")
                     return space_permissions
                 except Exception as e:
                     logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
@@ -387,6 +389,7 @@ class ConfluenceDownloader(Downloader):
                 logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
                 return None
 
+        logger.debug(f"normalized permissions generated: {parsed_permissions_dict}")
         return parsed_permissions_dict
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
