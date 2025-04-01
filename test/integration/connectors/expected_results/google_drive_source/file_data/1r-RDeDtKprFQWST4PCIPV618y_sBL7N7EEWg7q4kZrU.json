@@ -17,35 +17,26 @@
     "date_processed": null,
     "permissions_data": [
       {
-        "id": "03252897642318370246k",
-        "displayName": "Unstructured AI",
-        "type": "domain",
-        "kind": "drive#permission",
-        "role": "writer",
-        "allowFileDiscovery": false,
-        "domain": "unstructured.io"
-      },
-      {
-        "id": "18298851591250030956",
-        "displayName": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-        "type": "user",
-        "kind": "drive#permission",
-        "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJok2KRwwYvrEDkeZVCYosHOMoa52GZa2qIIC1jScCRoFLHaQ=s64",
-        "emailAddress": "ingest@unstructured-ingest-test.iam.gserviceaccount.com",
-        "role": "writer",
-        "deleted": false,
-        "pendingOwner": false
-      },
-      {
-        "id": "03909661036819820693",
-        "displayName": "bryan.chen",
-        "type": "user",
-        "kind": "drive#permission",
-        "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjW_y8aRy0z-MgGdTg9ybw86182DzfQZCuS0P4b-1JkQNnHvzQ=s64",
-        "emailAddress": "bryan.chen@unstructured.io",
-        "role": "owner",
-        "deleted": false,
-        "pendingOwner": false
+        "read": {
+          "users": [
+            "03909661036819820693",
+            "18298851591250030956"
+          ],
+          "groups": []
+        },
+        "update": {
+          "users": [
+            "03909661036819820693",
+            "18298851591250030956"
+          ],
+          "groups": []
+        },
+        "delete": {
+          "users": [
+            "03909661036819820693"
+          ],
+          "groups": []
+        }
       }
     ],
     "filesize_bytes": null
@@ -84,7 +75,9 @@
       "canModifyLabels": false,
       "canModifyEditorContentRestriction": true,
       "canModifyOwnerContentRestriction": false,
-      "canRemoveContentRestriction": false
+      "canRemoveContentRestriction": false,
+      "canDisableInheritedPermissions": false,
+      "canEnableInheritedPermissions": true
     },
     "permissionIds": [
       "03252897642318370246k",
@@ -93,6 +86,6 @@
     ]
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/h7/n848df9s5yn7ml8rxb61vhyc0000gp/T/tmp9lg5f7kk/ingest_integration_test_do_not_change",
+  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmp3nd3d2yq/ingest_integration_test_do_not_change",
   "display_name": null
 }
