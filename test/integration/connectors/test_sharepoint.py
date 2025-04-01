@@ -162,7 +162,7 @@ async def test_sharepoint_root_with_path(temp_dir):
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="sharepoint3",
-            expected_num_files=1,
+            expected_num_files=2,
             validate_downloaded_files=True,
             exclude_fields_extend=[
                 "metadata.date_created",
