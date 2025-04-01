@@ -1,3 +1,9 @@
+## 1.0.4
+
+### Features
+
+* **Normalize user and group permissions in Google Drive source connector**
+
 ## 1.0.3
 
 ### Features
