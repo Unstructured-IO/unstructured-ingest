@@ -1,3 +1,9 @@
+## 1.0.5
+
+### Fixes
+
+* **Fix Pydantic validation for permissions_data field**
+
 ## 1.0.4
 
 ### Features
