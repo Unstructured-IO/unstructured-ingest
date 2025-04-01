@@ -173,9 +173,9 @@ class ConfluenceIndexer(Indexer):
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
-        space_ids = self._get_space_ids()
-        for space_id in space_ids:
-            doc_ids = self._get_docs_ids_within_one_space(space_id)
+        space_ids_and_keys = self._get_space_ids_and_keys()
+        for space_key, space_id in space_ids_and_keys:
+            doc_ids = self._get_docs_ids_within_one_space(space_key)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
