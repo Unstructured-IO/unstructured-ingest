@@ -47,13 +47,17 @@ class IcebergCommitFailedException(Exception):
 class IbmWatsonxAccessConfig(AccessConfig):
     iam_api_key: str = Field(description="IBM IAM API Key")
     access_key_id: str = Field(description="Cloud Object Storage HMAC Access Key ID")
-    secret_access_key: str = Field(description="Cloud Object Storage HMAC Secret Access Key")
+    secret_access_key: str = Field(
+        description="Cloud Object Storage HMAC Secret Access Key"
+    )
 
 
 class IbmWatsonxConnectionConfig(ConnectionConfig):
     access_config: Secret[IbmWatsonxAccessConfig]
     iceberg_endpoint: str = Field(description="Iceberg REST endpoint")
-    object_storage_endpoint: str = Field(description="Cloud Object Storage public endpoint")
+    object_storage_endpoint: str = Field(
+        description="Cloud Object Storage public endpoint"
+    )
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
 
@@ -71,7 +75,10 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     def bearer_token(self) -> str:
         # Add 60 seconds to deal with edge cases where the token expires before the request is made
         timestamp = int(time.time()) + 60
-        if self._bearer_token is None or self._bearer_token.get("expiration", 0) <= timestamp:
+        if (
+            self._bearer_token is None
+            or self._bearer_token.get("expiration", 0) <= timestamp
+        ):
             self._bearer_token = self.generate_bearer_token()
         return self._bearer_token["access_token"]
 
@@ -80,7 +87,10 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
         import httpx
 
         if not isinstance(e, httpx.HTTPStatusError):
-            logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
+            logger.error(
+                f"Unhandled exception from IBM watsonx.data connector: {e}",
+                exc_info=True,
+            )
             return e
         url = e.request.url
         response_code = e.response.status_code
@@ -104,7 +114,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
                 f"Request to {url} failedin IBM watsonx.data connector, status code {response_code}"
             )
             return ProviderError(e)
-        logger.error(f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True)
+        logger.error(
+            f"Unhandled exception from IBM watsonx.data connector: {e}", exc_info=True
+        )
         return e
 
     @requires_dependencies(["httpx"], extras="ibm-watsonx-s3")
@@ -122,7 +134,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
 
         logger.info("Generating IBM IAM Bearer Token")
         try:
-            response = httpx.post(DEFAULT_IBM_CLOUD_AUTH_URL, headers=headers, data=data)
+            response = httpx.post(
+                DEFAULT_IBM_CLOUD_AUTH_URL, headers=headers, data=data
+            )
             response.raise_for_status()
         except Exception as e:
             raise self.wrap_error(e)
@@ -144,15 +158,19 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     @contextmanager
     def get_catalog(self) -> Generator["RestCatalog", None, None]:
+        start = time.time()
         from pyiceberg.catalog import load_catalog
 
         try:
             catalog_config = self.get_catalog_config()
             catalog = load_catalog(**catalog_config)
         except Exception as e:
-            logger.error(f"Failed to connect to catalog '{self.catalog}': {e}", exc_info=True)
+            logger.error(
+                f"Failed to connect to catalog '{self.catalog}': {e}", exc_info=True
+            )
             raise ProviderError(f"Failed to connect to catalog '{self.catalog}': {e}")
-
+        end = time.time()
+        logger.debug(f"LOADING CATALOG TOOK: {end - start} seconds")
         yield catalog
 
 
@@ -193,7 +211,9 @@ class IbmWatsonxUploader(SQLUploader):
     def precheck(self) -> None:
         with self.connection_config.get_catalog() as catalog:
             if not catalog.namespace_exists(self.upload_config.namespace):
-                raise UserError(f"Namespace '{self.upload_config.namespace}' does not exist")
+                raise UserError(
+                    f"Namespace '{self.upload_config.namespace}' does not exist"
+                )
             if not catalog.table_exists(self.upload_config.table_identifier):
                 raise UserError(
                     f"Table '{self.upload_config.table}' does not exist in namespace '{self.upload_config.namespace}'"  # noqa: E501
@@ -201,8 +221,11 @@ class IbmWatsonxUploader(SQLUploader):
 
     @contextmanager
     def get_table(self) -> Generator["Table", None, None]:
+        start = time.time()
         with self.connection_config.get_catalog() as catalog:
             table = catalog.load_table(self.upload_config.table_identifier)
+            end = time.time()
+            logger.debug(f"LOADING TABLE TOOK: {end - start} seconds")
             yield table
 
     def get_table_columns(self) -> list[str]:
@@ -228,7 +251,9 @@ class IbmWatsonxUploader(SQLUploader):
         from pyiceberg.expressions import EqualTo
 
         if self.can_delete():
-            transaction.delete(delete_filter=EqualTo(self.upload_config.record_id_key, identifier))
+            transaction.delete(
+                delete_filter=EqualTo(self.upload_config.record_id_key, identifier)
+            )
         else:
             logger.warning(
                 f"Table doesn't contain expected "
@@ -241,6 +266,7 @@ class IbmWatsonxUploader(SQLUploader):
         self, table: "Table", data_table: "ArrowTable", file_data: FileData
     ) -> None:
         from pyiceberg.exceptions import CommitFailedException
+        from pyiceberg.expressions import EqualTo
         from tenacity import (
             before_log,
             retry,
@@ -256,11 +282,22 @@ class IbmWatsonxUploader(SQLUploader):
             before=before_log(logger, logging.DEBUG),
             reraise=True,
         )
-        def _upload_data_table(table: "Table", data_table: "ArrowTable", file_data: FileData):
+        def _upload_data_table(
+            table: "Table", data_table: "ArrowTable", file_data: FileData
+        ):
             try:
-                with table.transaction() as transaction:
-                    self._delete(transaction, file_data.identifier)
-                    transaction.append(data_table)
+                # with table.transaction() as transaction:
+                # self._delete(transaction, file_data.identifier)
+                # transaction.append(data_table)
+                start = time.time()
+                table.overwrite(
+                    data_table,
+                    overwrite_filter=EqualTo(
+                        self.upload_config.record_id_key, file_data.identifier
+                    ),
+                )
+                end = time.time()
+                logger.debug(f"SINGLE OVERWRITE TOOK: {end - start} seconds")
             except CommitFailedException as e:
                 table.refresh()
                 logger.debug(e)
