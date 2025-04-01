@@ -1,7 +1,8 @@
+from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator, List, Optional
+from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
 from pydantic import Field, Secret
 
@@ -135,35 +136,46 @@ class ConfluenceIndexer(Indexer):
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to connect to Confluence: {e}")
 
-    def _get_space_ids(self) -> List[str]:
+    def _get_space_ids_and_keys(self) -> List[Tuple[str, int]]:
+        """
+        Get a list of space IDs and keys from Confluence.
+
+        Example space ID (numerical): 98503
+        Example space key (str): "SD"
+        """
         spaces = self.index_config.spaces
         if spaces:
-            return spaces
+            with self.connection_config.get_client() as client:
+                space_ids_and_keys = []
+                for space_key in spaces:
+                    space = client.get_space(space_key)
+                    space_ids_and_keys.append((space_key, space["id"]))
+                return space_ids_and_keys
         else:
             with self.connection_config.get_client() as client:
                 all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
-            space_ids = [space["key"] for space in all_spaces["results"]]
-            return space_ids
+            space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces["results"]]
+            return space_ids_and_keys
 
-    def _get_docs_ids_within_one_space(self, space_id: str) -> List[dict]:
+    def _get_docs_ids_within_one_space(self, space_key: str) -> List[dict]:
         with self.connection_config.get_client() as client:
             pages = client.get_all_pages_from_space(
-                space=space_id,
+                space=space_key,
                 start=0,
                 limit=self.index_config.max_num_of_docs_from_each_space,
                 expand=None,
-                content_type="page",
+                content_type="page",  # blogpost and comment types not currently supported
                 status=None,
             )
-        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
+        doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
         from time import time
 
-        space_ids = self._get_space_ids()
-        for space_id in space_ids:
-            doc_ids = self._get_docs_ids_within_one_space(space_id)
+        space_ids_and_keys = self._get_space_ids_and_keys()
+        for space_key, space_id in space_ids_and_keys:
+            doc_ids = self._get_docs_ids_within_one_space(space_key)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
@@ -171,18 +183,19 @@ class ConfluenceIndexer(Indexer):
                     date_processed=str(time()),
                     url=f"{self.connection_config.url}/pages/{doc_id}",
                     record_locator={
-                        "space_id": space_id,
+                        "space_id": space_key,
                         "document_id": doc_id,
                     },
                 )
                 additional_metadata = {
-                    "space_id": space_id,
+                    "space_key": space_key,
+                    "space_id": space_id,  # diff from record_locator space_id (which is space_key)
                     "document_id": doc_id,
                 }
 
                 # Construct relative path and filename
                 filename = f"{doc_id}.html"
-                relative_path = str(Path(space_id) / filename)
+                relative_path = str(Path(space_key) / filename)
 
                 source_identifiers = SourceIdentifiers(
                     filename=filename,
@@ -201,7 +214,9 @@ class ConfluenceIndexer(Indexer):
 
 
 class ConfluenceDownloaderConfig(DownloaderConfig, HtmlMixin):
-    pass
+    max_num_metadata_permissions: int = Field(
+        250, description="Approximate maximum number of permissions included in metadata"
+    )
 
 
 @dataclass
@@ -209,6 +224,8 @@ class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
+    _permissions_cache: dict = field(default_factory=OrderedDict)
+    _permissions_cache_max_size: int = 5
 
     def download_embedded_files(
         self, session, html: str, current_file_data: FileData
@@ -232,6 +249,145 @@ class ConfluenceDownloader(Downloader):
             html=html,
             session=session,
         )
+
+    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> dict[str, dict]:
+        """
+        Parses document and space permissions to determine final user/group roles.
+
+        :param doc_permissions: dict containing document-level restrictions
+        - doc_permissions type in Confluence: ContentRestrictionArray
+        :param space_permissions: list of space-level permission assignments
+        - space_permissions type in Confluence: list of SpacePermissionAssignment
+        :return: dict with operation as keys and each maps to dict with "users" and "groups"
+
+        Get document permissions. If they exist, they will override space level permissions.
+        Otherwise, apply relevant space permissions (read, administer, delete)
+        """
+
+        # Separate flags to track if view or edit is restricted at the page level
+        page_view_restricted = bool(
+            doc_permissions.get("read", {}).get("restrictions", {}).get("user", {}).get("results")
+            or doc_permissions.get("read", {})
+            .get("restrictions", {})
+            .get("group", {})
+            .get("results")
+        )
+
+        page_edit_restricted = bool(
+            doc_permissions.get("update", {}).get("restrictions", {}).get("user", {}).get("results")
+            or doc_permissions.get("update", {})
+            .get("restrictions", {})
+            .get("group", {})
+            .get("results")
+        )
+
+        permissions_by_role = {
+            "read": {"users": set(), "groups": set()},
+            "update": {"users": set(), "groups": set()},
+            "delete": {"users": set(), "groups": set()},
+        }
+
+        total_permissions = 0
+
+        for action, permissions in doc_permissions.items():
+            restrictions_dict = permissions.get("restrictions", {})
+
+            for entity_type, entity_data in restrictions_dict.items():
+                for entity in entity_data.get("results"):
+                    entity_id = entity["accountId"] if entity_type == "user" else entity["id"]
+                    permissions_by_role[action][f"{entity_type}s"].add(entity_id)
+                    total_permissions += 1
+                    # edit permission implies view permission
+                    if action == "update":
+                        permissions_by_role["read"][f"{entity_type}s"].add(entity_id)
+                        # total_permissions += 1
+                        # ^ omitting to not double count an entity.
+                        # may result in a higher total count than max_num_metadata_permissions
+
+        for space_perm in space_permissions:
+            if total_permissions < self.download_config.max_num_metadata_permissions:
+                space_operation = space_perm["operation"]["key"]
+                space_target_type = space_perm["operation"]["targetType"]
+                space_entity_id = space_perm["principal"]["id"]
+                space_entity_type = space_perm["principal"]["type"]
+
+                # Apply space-level view permissions if no page restrictions exist
+                if (
+                    space_target_type == "space"
+                    and space_operation == "read"
+                    and not page_view_restricted
+                ):
+                    permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+                    total_permissions += 1
+
+                # Administer permission includes view + edit. Apply if not page restricted
+                elif space_target_type == "space" and space_operation == "administer":
+                    if not page_view_restricted:
+                        permissions_by_role["read"][f"{space_entity_type}s"].add(space_entity_id)
+                        total_permissions += 1
+                        if not page_edit_restricted:
+                            permissions_by_role["update"][f"{space_entity_type}s"].add(
+                                space_entity_id
+                            )
+                            # total_permissions += 1
+                            # ^ omitting to not double count an entity.
+                            # may result in a higher total count than max_num_metadata_permissions
+
+                # Add the "delete page" space permissions if there are other page permissions
+                elif (
+                    space_target_type == "page"
+                    and space_operation == "delete"
+                    and space_entity_id in permissions_by_role["read"][f"{space_entity_type}s"]
+                ):
+                    permissions_by_role["delete"][f"{space_entity_type}s"].add(space_entity_id)
+                    total_permissions += 1
+
+        # turn sets into sorted lists for consistency and json serialization
+        for role_dict in permissions_by_role.values():
+            for key in role_dict:
+                role_dict[key] = sorted(role_dict[key])
+
+        return permissions_by_role
+
+    def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
+        if space_id in self._permissions_cache:
+            self._permissions_cache.move_to_end(space_id)  # mark recent use
+            return self._permissions_cache[space_id]
+        else:
+            with self.connection_config.get_client() as client:
+                try:
+                    # TODO limit the total number of results being called.
+                    # not yet implemented because this client call doesn't allow for filtering for
+                    # certain operations, so adding a limit here would result in too little data.
+                    space_permissions = []
+                    space_permissions_result = client.get(f"/api/v2/spaces/{space_id}/permissions")
+                    space_permissions.extend(space_permissions_result["results"])
+                    if space_permissions_result["_links"].get("next"):  # pagination
+                        while space_permissions_result.get("next"):
+                            space_permissions_result = client.get(space_permissions_result["next"])
+                            space_permissions.extend(space_permissions_result["results"])
+
+                    if len(self._permissions_cache) >= self._permissions_cache_max_size:
+                        self._permissions_cache.popitem(last=False)  # LRU/FIFO eviction
+                    self._permissions_cache[space_id] = space_permissions
+
+                    return space_permissions
+                except Exception as e:
+                    logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
+                    return None
+
+    def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
+        with self.connection_config.get_client() as client:
+            try:
+                doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
+                parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
+
+            except Exception as e:
+                # skip writing any permission metadata
+                logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
+                return None
+
+        return parsed_permissions_dict
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
@@ -267,6 +423,14 @@ class ConfluenceDownloader(Downloader):
         with open(download_path, "w", encoding="utf8") as f:
             soup = BeautifulSoup(content, "html.parser")
             f.write(soup.prettify())
+
+        # Get document permissions and update metadata
+        space_id = file_data.additional_metadata["space_id"]
+        space_perm = self._get_permissions_for_space(space_id)  # must be the id, NOT the space key
+        if space_perm:
+            combined_doc_permissions = self._parse_permissions_for_doc(doc_id, space_perm)
+            if combined_doc_permissions:
+                file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
         file_data.metadata.date_created = page["history"]["createdDate"]

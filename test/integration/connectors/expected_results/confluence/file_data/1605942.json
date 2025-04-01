@@ -15,15 +15,40 @@
     },
     "date_created": "2023-07-09T12:54:45.226Z",
     "date_modified": "2023-07-09T12:54:45.226Z",
-    "date_processed": "1740750078.1100109",
-    "permissions_data": null,
+    "date_processed": "1743193264.85007",
+    "permissions_data": {
+      "read": {
+        "users": [
+          "64083457896d10ebd4738661"
+        ],
+        "groups": [
+          "01540484-667b-4329-8ffc-961cc2e4435f",
+          "5d476b78-504f-47d2-bddb-aa45ebf77753",
+          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
+        ]
+      },
+      "update": {
+        "users": [
+          "64083457896d10ebd4738661"
+        ],
+        "groups": [
+          "5d476b78-504f-47d2-bddb-aa45ebf77753",
+          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
+        ]
+      },
+      "delete": {
+        "users": [],
+        "groups": []
+      }
+    },
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "space_id": "MFS",
+    "space_key": "MFS",
+    "space_id": 229380,
     "document_id": "1605942"
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmpvyd4mao_/MFS/1605942.html",
+  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmpqsi3rjqn/MFS/1605942.html",
   "display_name": "Template - Weekly status report"
 }
