@@ -430,9 +430,12 @@ class GoogleDriveIndexer(Indexer):
         }  # TODO define elsewhere
 
         for item in permissions:
-            type_key = item["type"] + "s"
-            for operation in role_mapping[item["role"]]:
-                normalized_permissions[operation][type_key].add(item["id"])
+            # https://developers.google.com/workspace/drive/api/reference/rest/v3/permissions
+            # ignore permissions for "anyone" and "domain"
+            if item["type"] in ["user", "group"]:
+                type_key = item["type"] + "s"
+                for operation in role_mapping[item["role"]]:
+                    normalized_permissions[operation][type_key].add(item["id"])
 
         return [normalized_permissions]
 
