@@ -409,7 +409,7 @@ class GoogleDriveIndexer(Indexer):
             d.metadata.record_locator["drive_id"]: object_id
         return data
 
-    def extract_permissions(self, permissions: list[dict]) -> list[dict]:
+    def extract_permissions(self, permissions: list[dict]) -> dict:
         if not permissions:
             return []
 
@@ -427,7 +427,7 @@ class GoogleDriveIndexer(Indexer):
             "read": {"users": set(), "groups": set()},
             "update": {"users": set(), "groups": set()},
             "delete": {"users": set(), "groups": set()},
-        }  # TODO define elsewhere
+        }
 
         for item in permissions:
             # https://developers.google.com/workspace/drive/api/reference/rest/v3/permissions
@@ -437,7 +437,7 @@ class GoogleDriveIndexer(Indexer):
                 for operation in role_mapping[item["role"]]:
                     normalized_permissions[operation][type_key].add(item["id"])
 
-        return [normalized_permissions]
+        return normalized_permissions
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:
