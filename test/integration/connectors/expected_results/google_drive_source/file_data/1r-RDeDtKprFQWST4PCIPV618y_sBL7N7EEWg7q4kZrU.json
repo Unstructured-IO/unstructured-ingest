@@ -15,30 +15,28 @@
     "date_created": "1738365200.695",
     "date_modified": "1738601393.049",
     "date_processed": null,
-    "permissions_data": [
-      {
-        "read": {
-          "users": [
-            "03909661036819820693",
-            "18298851591250030956"
-          ],
-          "groups": []
-        },
-        "update": {
-          "users": [
-            "03909661036819820693",
-            "18298851591250030956"
-          ],
-          "groups": []
-        },
-        "delete": {
-          "users": [
-            "03909661036819820693"
-          ],
-          "groups": []
-        }
+    "permissions_data": {
+      "read": {
+        "users": [
+          "03909661036819820693",
+          "18298851591250030956"
+        ],
+        "groups": []
+      },
+      "update": {
+        "users": [
+          "03909661036819820693",
+          "18298851591250030956"
+        ],
+        "groups": []
+      },
+      "delete": {
+        "users": [
+          "03909661036819820693"
+        ],
+        "groups": []
       }
-    ],
+    },
     "filesize_bytes": null
   },
   "additional_metadata": {
@@ -86,6 +84,6 @@
     ]
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmp3nd3d2yq/ingest_integration_test_do_not_change",
+  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmpsb63xpdz/ingest_integration_test_do_not_change",
   "display_name": null
 }
