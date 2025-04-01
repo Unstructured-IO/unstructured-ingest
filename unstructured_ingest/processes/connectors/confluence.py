@@ -32,7 +32,6 @@ from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicod
 
 if TYPE_CHECKING:
     from atlassian import Confluence
-    from requests import HTTPError
 
 CONNECTOR_TYPE = "confluence"
 
@@ -384,7 +383,7 @@ class ConfluenceDownloader(Downloader):
                 doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
                 parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
 
-            except HTTPError as e:
+            except Exception as e:
                 # skip writing any permission metadata
                 logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
                 return None
