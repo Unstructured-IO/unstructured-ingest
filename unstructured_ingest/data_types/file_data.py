@@ -34,9 +34,20 @@ class FileDataSourceMetadata(BaseModel):
 
     @field_validator("permissions_data", mode="before")
     @classmethod
-    def normalize_permissions_data(cls, v: Any) -> Any:
+    def format_permissions_data(cls, v: Any) -> Any:
         if isinstance(v, dict):
+            # Temporarily convert dict to list for validation
+            v._original = v  # Save original inside itself for later unwrapping
             return [v]
+        return v
+
+    @field_validator("permissions_data", mode="after")
+    @classmethod
+    def restore_original_permissions_type(
+        cls, v: Optional[list[dict[str, Any]]]
+    ) -> Union[list[dict[str, Any]], dict[str, Any], None]:
+        if isinstance(v, list) and len(v) == 1 and hasattr(v[0], "_original"):
+            return v[0]._original  # Unwrap original value
         return v
 
 
