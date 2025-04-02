@@ -105,7 +105,6 @@ class LocalIndexer(Indexer):
             date_modified=date_modified,
             date_created=date_created,
             date_processed=str(time()),
-            permissions_data=permissions_data,
             record_locator={"path": str(path.resolve())},
             filesize_bytes=filesize_bytes,
         )
