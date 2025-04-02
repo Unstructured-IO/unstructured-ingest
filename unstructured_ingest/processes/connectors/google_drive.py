@@ -50,11 +50,12 @@ GOOGLE_DRIVE_EXPORT_TYPES = {
 
 
 class GoogleDriveAccessConfig(AccessConfig):
-    service_account_key: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
-        default=None, description="Credentials values to use for authentication"
-    )
+    service_account_key: Optional[
+        Annotated[dict, BeforeValidator(conform_string_to_dict)]
+    ] = Field(default=None, description="Credentials values to use for authentication")
     service_account_key_path: Optional[Path] = Field(
-        default=None, description="File path to credentials values to use for authentication"
+        default=None,
+        description="File path to credentials values to use for authentication",
     )
 
     def model_post_init(self, __context: Any) -> None:
@@ -111,10 +112,9 @@ class GoogleDriveIndexerConfig(IndexerConfig):
     extensions: Optional[list[str]] = None
     recursive: bool = False
 
-    def __post_init__(self):
-        # Strip leading period of extension
+    def model_post_init(self, __context: Any) -> None:
         if self.extensions is not None:
-            self.extensions = [e[1:] if e.startswith(".") else e for e in self.extensions]
+            self.extensions = [e.lstrip(".") for e in self.extensions]
 
 
 @dataclass
@@ -165,10 +165,14 @@ class GoogleDriveIndexer(Indexer):
                     Please enable it in the Google Cloud Console."
                 )
             else:
-                raise SourceConnectionError("Google drive API unreachable for an unknown reason!")
+                raise SourceConnectionError(
+                    "Google drive API unreachable for an unknown reason!"
+                )
 
     @staticmethod
-    def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
+    def count_files_recursively(
+        files_client, folder_id: str, extensions: list[str] = None
+    ) -> int:
         """
         Count non-folder files recursively under the given folder.
         If `extensions` is provided, only count files
@@ -247,7 +251,9 @@ class GoogleDriveIndexer(Indexer):
                         #     that the service account has proper permissions."
                         # )
                     else:
-                        logger.info(f"Found {file_count} files recursively in the folder.")
+                        logger.info(
+                            f"Found {file_count} files recursively in the folder."
+                        )
                 else:
                     # Non-recursive: check for at least one immediate non-folder child.
                     response = client.list(
@@ -275,7 +281,8 @@ class GoogleDriveIndexer(Indexer):
 
         except Exception as e:
             logger.error(
-                "Failed to validate Google Drive connection during precheck", exc_info=True
+                "Failed to validate Google Drive connection during precheck",
+                exc_info=True,
             )
             raise SourceConnectionError(f"Precheck failed: {e}")
 
@@ -295,7 +302,9 @@ class GoogleDriveIndexer(Indexer):
         date_modified_str = f.pop("modifiedTime", None)
         parent_path = f.pop("parent_path", None)
         parent_root_path = f.pop("parent_root_path", None)
-        date_modified_dt = parser.parse(date_modified_str) if date_modified_str else None
+        date_modified_dt = (
+            parser.parse(date_modified_str) if date_modified_str else None
+        )
         if (
             parent_path
             and isinstance(parent_path, str)
@@ -380,7 +389,9 @@ class GoogleDriveIndexer(Indexer):
         return files_response
 
     def get_root_info(self, files_client, object_id: str) -> dict:
-        return files_client.get(fileId=object_id, fields=",".join(self.fields)).execute()
+        return files_client.get(
+            fileId=object_id, fields=",".join(self.fields)
+        ).execute()
 
     def get_files(
         self,
@@ -391,7 +402,9 @@ class GoogleDriveIndexer(Indexer):
     ) -> list[FileData]:
         root_info = self.get_root_info(files_client=files_client, object_id=object_id)
         if not self.is_dir(root_info):
-            root_info["permissions"] = self.extract_permissions(root_info.get("permissions"))
+            root_info["permissions"] = self.extract_permissions(
+                root_info.get("permissions")
+            )
             data = [self.map_file_data(root_info)]
         else:
             file_contents = self.get_paginated_results(
@@ -476,13 +489,19 @@ class GoogleDriveDownloader(Downloader):
             _, downloaded = downloader.next_chunk()
         return downloaded
 
-    def _write_file(self, file_data: FileData, file_contents: io.BytesIO) -> DownloadResponse:
+    def _write_file(
+        self, file_data: FileData, file_contents: io.BytesIO
+    ) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"writing {file_data.source_identifiers.fullpath} to {download_path}")
+        logger.debug(
+            f"writing {file_data.source_identifiers.fullpath} to {download_path}"
+        )
         with open(download_path, "wb") as handler:
             handler.write(file_contents.getbuffer())
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        return self.generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:

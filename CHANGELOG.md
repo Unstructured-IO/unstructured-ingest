@@ -1,3 +1,9 @@
+## 1.0.6-dev0
+
+### Fixes
+
+* **Google Drive connector now strips the leading dot in extensions properly**
+
 ## 1.0.5
 
 ### Fixes
