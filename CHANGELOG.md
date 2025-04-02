@@ -1,3 +1,7 @@
+## 1.0.6
+
+* **Revert permission metadata changes**
+
 ## 1.0.2
 
 ### Features
