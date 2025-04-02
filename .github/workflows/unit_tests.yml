@@ -50,6 +50,13 @@ jobs:
       - name: Run shfmt
         run: shfmt -i 2 -d .
 
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run check-version
+        run: make check-version
+
   changelog:
     runs-on: ubuntu-latest
     steps:

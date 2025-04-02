@@ -1,3 +1,9 @@
+## 1.0.7
+
+### Fixes
+
+* **Fix release version**
+
 ## 1.0.6
 
 ### Fixes
