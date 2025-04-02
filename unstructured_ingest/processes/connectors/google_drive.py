@@ -12,6 +12,7 @@ from pydantic.functional_validators import BeforeValidator
 from unstructured_ingest.data_types.file_data import (
     FileData,
     FileDataSourceMetadata,
+    PermissionsContent,
     SourceIdentifiers,
 )
 from unstructured_ingest.error import (
@@ -319,7 +320,9 @@ class GoogleDriveIndexer(Indexer):
                 version=version,
                 date_created=str(date_created_dt.timestamp()),
                 date_modified=str(date_modified_dt.timestamp()),
-                permissions_data=permissions,
+                permissions_data=PermissionsContent.model_validate(permissions)
+                if permissions
+                else None,
                 record_locator={
                     "file_id": file_id,
                 },
@@ -410,7 +413,7 @@ class GoogleDriveIndexer(Indexer):
             d.metadata.record_locator["drive_id"]: object_id
         return data
 
-    def extract_permissions(self, permissions: Optional[list[dict]]) -> list[dict]:
+    def extract_permissions(self, permissions: Optional[list[dict]]) -> dict:
         if not permissions:
             logger.debug("no permissions found")
             return {}
@@ -445,7 +448,7 @@ class GoogleDriveIndexer(Indexer):
                 role_dict[key] = sorted(role_dict[key])
 
         logger.debug(f"normalized permissions generated: {normalized_permissions}")
-        return [{k: v} for k, v in normalized_permissions.items()]
+        return normalized_permissions
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:

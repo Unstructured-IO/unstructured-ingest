@@ -15,38 +15,8 @@
     },
     "date_created": "2023-07-09T12:54:45.226Z",
     "date_modified": "2023-07-09T12:54:45.226Z",
-    "date_processed": "1743600541.37999",
-    "permissions_data": [
-      {
-        "read": {
-          "users": [
-            "64083457896d10ebd4738661"
-          ],
-          "groups": [
-            "01540484-667b-4329-8ffc-961cc2e4435f",
-            "5d476b78-504f-47d2-bddb-aa45ebf77753",
-            "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
-          ]
-        }
-      },
-      {
-        "update": {
-          "users": [
-            "64083457896d10ebd4738661"
-          ],
-          "groups": [
-            "5d476b78-504f-47d2-bddb-aa45ebf77753",
-            "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
-          ]
-        }
-      },
-      {
-        "delete": {
-          "users": [],
-          "groups": []
-        }
-      }
-    ],
+    "date_processed": "1743615418.819304",
+    "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
@@ -55,6 +25,6 @@
     "document_id": "1605942"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp98098jy3/MFS/1605942.html",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpfabvfy9j/MFS/1605942.html",
   "display_name": "Template - Weekly status report"
 }

@@ -9,6 +9,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.data_types.file_data import (
     FileData,
     FileDataSourceMetadata,
+    PermissionsContent,
     SourceIdentifiers,
 )
 from unstructured_ingest.error import SourceConnectionError
@@ -224,7 +225,7 @@ class ConfluenceDownloader(Downloader):
     connection_config: ConfluenceConnectionConfig
     download_config: ConfluenceDownloaderConfig = field(default_factory=ConfluenceDownloaderConfig)
     connector_type: str = CONNECTOR_TYPE
-    _permissions_cache: dict = field(default_factory=OrderedDict)
+    _permissions_cache: OrderedDict = field(default_factory=OrderedDict)
     _permissions_cache_max_size: int = 5
 
     def download_embedded_files(
@@ -250,7 +251,9 @@ class ConfluenceDownloader(Downloader):
             session=session,
         )
 
-    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> dict[str, dict]:
+    def parse_permissions(
+        self, doc_permissions: dict, space_permissions: list
+    ) -> PermissionsContent:
         """
         Parses document and space permissions to determine final user/group roles.
 
@@ -347,7 +350,7 @@ class ConfluenceDownloader(Downloader):
             for key in role_dict:
                 role_dict[key] = sorted(role_dict[key])
 
-        return permissions_by_role
+        return PermissionsContent.model_validate(permissions_by_role)
 
     def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
         if space_id in self._permissions_cache:

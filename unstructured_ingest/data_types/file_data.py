@@ -22,6 +22,17 @@ class SourceIdentifiers(BaseModel):
         return self.rel_path or self.fullpath
 
 
+class PermissionsContent(BaseModel):
+    users: list[str] = Field(default_factory=list)
+    groups: list[str] = Field(default_factory=list)
+
+
+class PermissionsData(BaseModel):
+    read: PermissionsContent = Field(default_factory=PermissionsContent)
+    update: PermissionsContent = Field(default_factory=PermissionsContent)
+    delete: PermissionsContent = Field(default_factory=PermissionsContent)
+
+
 class FileDataSourceMetadata(BaseModel):
     url: Optional[str] = None
     version: Optional[str] = None
@@ -29,7 +40,7 @@ class FileDataSourceMetadata(BaseModel):
     date_created: Optional[str] = None
     date_modified: Optional[str] = None
     date_processed: Optional[str] = None
-    permissions_data: Optional[list[dict[str, Any]]] = None
+    permissions_data: Optional[PermissionsData] = None
     filesize_bytes: Optional[int] = None
 
 
