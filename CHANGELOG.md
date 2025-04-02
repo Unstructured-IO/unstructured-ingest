@@ -1,3 +1,7 @@
+## 1.1.0
+
+* **Create schema for permission data**
+
 ## 1.0.6
 
 ### Fixes
