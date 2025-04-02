@@ -15,8 +15,30 @@
     },
     "date_created": "2023-07-09T12:54:40.304Z",
     "date_modified": "2023-07-13T14:13:27.275Z",
-    "date_processed": "1743615412.52833",
-    "permissions_data": null,
+    "date_processed": "1743615983.520968",
+    "permissions_data": {
+      "read": {
+        "users": [
+          "712020:5368eedf-cecd-43e1-8b25-b2221316ee6f"
+        ],
+        "groups": [
+          "5d476b78-504f-47d2-bddb-aa45ebf77753",
+          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
+        ]
+      },
+      "update": {
+        "users": [
+          "712020:5368eedf-cecd-43e1-8b25-b2221316ee6f"
+        ],
+        "groups": [
+          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
+        ]
+      },
+      "delete": {
+        "users": [],
+        "groups": []
+      }
+    },
     "filesize_bytes": null
   },
   "additional_metadata": {
@@ -25,6 +47,6 @@
     "document_id": "1605859"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpfabvfy9j/testteamsp/1605859.html",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp6_a2kei5/testteamsp/1605859.html",
   "display_name": "test-teamspace"
 }

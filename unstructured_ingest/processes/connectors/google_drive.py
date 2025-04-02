@@ -12,7 +12,7 @@ from pydantic.functional_validators import BeforeValidator
 from unstructured_ingest.data_types.file_data import (
     FileData,
     FileDataSourceMetadata,
-    PermissionsContent,
+    PermissionsData,
     SourceIdentifiers,
 )
 from unstructured_ingest.error import (
@@ -320,7 +320,9 @@ class GoogleDriveIndexer(Indexer):
                 version=version,
                 date_created=str(date_created_dt.timestamp()),
                 date_modified=str(date_modified_dt.timestamp()),
-                permissions_data=PermissionsContent.model_validate(permissions)
+                permissions_data=PermissionsData.model_validate(permissions)
+                if permissions
+                else None
                 if permissions
                 else None,
                 record_locator={

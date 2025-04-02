@@ -9,7 +9,7 @@ from pydantic import Field, Secret
 from unstructured_ingest.data_types.file_data import (
     FileData,
     FileDataSourceMetadata,
-    PermissionsContent,
+    PermissionsData,
     SourceIdentifiers,
 )
 from unstructured_ingest.error import SourceConnectionError
@@ -251,9 +251,7 @@ class ConfluenceDownloader(Downloader):
             session=session,
         )
 
-    def parse_permissions(
-        self, doc_permissions: dict, space_permissions: list
-    ) -> PermissionsContent:
+    def parse_permissions(self, doc_permissions: dict, space_permissions: list) -> PermissionsData:
         """
         Parses document and space permissions to determine final user/group roles.
 
@@ -350,7 +348,7 @@ class ConfluenceDownloader(Downloader):
             for key in role_dict:
                 role_dict[key] = sorted(role_dict[key])
 
-        return PermissionsContent.model_validate(permissions_by_role)
+        return PermissionsData.model_validate(permissions_by_role)
 
     def _get_permissions_for_space(self, space_id: int) -> Optional[List[dict]]:
         if space_id in self._permissions_cache:
@@ -383,20 +381,17 @@ class ConfluenceDownloader(Downloader):
 
     def _parse_permissions_for_doc(
         self, doc_id: str, space_permissions: list
-    ) -> Optional[list[dict]]:
+    ) -> Optional[PermissionsData]:
         with self.connection_config.get_client() as client:
             try:
                 doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
-                parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
-                parsed_permissions_dict = [{k: v} for k, v in parsed_permissions_dict.items()]
+                parsed_permissions_data = self.parse_permissions(doc_permissions, space_permissions)
+                return parsed_permissions_data
 
             except Exception as e:
                 # skip writing any permission metadata
                 logger.debug(f"Could not retrieve permissions for doc {doc_id}: {e}")
                 return None
-
-        logger.debug(f"normalized permissions generated: {parsed_permissions_dict}")
-        return parsed_permissions_dict
 
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
