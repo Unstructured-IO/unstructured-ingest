@@ -391,7 +391,6 @@ class GoogleDriveIndexer(Indexer):
     ) -> list[FileData]:
         root_info = self.get_root_info(files_client=files_client, object_id=object_id)
         if not self.is_dir(root_info):
-            root_info["permissions"] = self.extract_permissions(root_info.get("permissions"))
             data = [self.map_file_data(root_info)]
         else:
             file_contents = self.get_paginated_results(
@@ -401,50 +400,10 @@ class GoogleDriveIndexer(Indexer):
                 recursive=recursive,
                 previous_path=root_info["name"],
             )
-            data = []
-            for f in file_contents:
-                f["permissions"] = self.extract_permissions(f.get("permissions"))
-                data.append(self.map_file_data(f=f))
+            data = [self.map_file_data(f=f) for f in file_contents]
         for d in data:
             d.metadata.record_locator["drive_id"]: object_id
         return data
-
-    def extract_permissions(self, permissions: Optional[list[dict]]) -> dict:
-        if not permissions:
-            logger.debug("no permissions found")
-            return {}
-
-        # https://developers.google.com/workspace/drive/api/guides/ref-roles
-        role_mapping = {
-            "owner": ["read", "update", "delete"],
-            "organizer": ["read", "update", "delete"],
-            "fileOrganizer": ["read", "update"],
-            "writer": ["read", "update"],
-            "commenter": ["read"],
-            "reader": ["read"],
-        }
-
-        normalized_permissions = {
-            "read": {"users": set(), "groups": set()},
-            "update": {"users": set(), "groups": set()},
-            "delete": {"users": set(), "groups": set()},
-        }
-
-        for item in permissions:
-            # https://developers.google.com/workspace/drive/api/reference/rest/v3/permissions
-            # ignore permissions for "anyone" and "domain"
-            if item["type"] in ["user", "group"]:
-                type_key = item["type"] + "s"
-                for operation in role_mapping[item["role"]]:
-                    normalized_permissions[operation][type_key].add(item["id"])
-
-        # turn sets into sorted lists for consistency and json serialization
-        for role_dict in normalized_permissions.values():
-            for key in role_dict:
-                role_dict[key] = sorted(role_dict[key])
-
-        logger.debug(f"normalized permissions generated: {normalized_permissions}")
-        return normalized_permissions
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:

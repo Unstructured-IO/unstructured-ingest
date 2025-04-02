@@ -1,21 +1,3 @@
-## 1.0.5
-
-### Fixes
-
-* **Fix Pydantic validation for permissions_data field**
-
-## 1.0.4
-
-### Features
-
-* **Normalize user and group permissions in Google Drive source connector**
-
-## 1.0.3
-
-### Features
-
-**Add permission metadata to Confluence source connector**
-
 ## 1.0.2
 
 ### Features
@@ -27,6 +9,7 @@
 ### Features
 
 * **Migrate project to use pyproject.toml and uv**
+
 
 ## 0.7.2
 

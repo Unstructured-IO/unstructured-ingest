@@ -15,38 +15,15 @@
     },
     "date_created": "2023-07-09T12:56:40.842Z",
     "date_modified": "2023-07-09T12:57:59.173Z",
-    "date_processed": "1743193259.970114",
-    "permissions_data": {
-      "read": {
-        "users": [
-          "712020:5368eedf-cecd-43e1-8b25-b2221316ee6f"
-        ],
-        "groups": [
-          "5d476b78-504f-47d2-bddb-aa45ebf77753",
-          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
-        ]
-      },
-      "update": {
-        "users": [
-          "712020:5368eedf-cecd-43e1-8b25-b2221316ee6f"
-        ],
-        "groups": [
-          "78cd6a04-9161-4cf9-9e96-1fd605961fc0"
-        ]
-      },
-      "delete": {
-        "users": [],
-        "groups": []
-      }
-    },
+    "date_processed": "1740750074.4171164",
+    "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "space_key": "testteamsp",
-    "space_id": 1605649,
+    "space_id": "testteamsp",
     "document_id": "1605989"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/xb/08zztz_j57vgp3pqjx1g4jh40000gn/T/tmpqsi3rjqn/testteamsp/1605989.html",
+  "local_download_path": "/tmp/tmpvyd4mao_/testteamsp/1605989.html",
   "display_name": "Testdoc3"
 }
