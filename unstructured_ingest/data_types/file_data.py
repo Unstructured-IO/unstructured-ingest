@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import NAMESPACE_DNS, uuid5
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
@@ -29,30 +29,8 @@ class FileDataSourceMetadata(BaseModel):
     date_created: Optional[str] = None
     date_modified: Optional[str] = None
     date_processed: Optional[str] = None
-    permissions_data: Union[list[dict[str, Any]], dict[str, Any], None] = None
+    permissions_data: Optional[list[dict[str, Any]]] = None
     filesize_bytes: Optional[int] = None
-
-    @field_validator("permissions_data", mode="before")
-    @classmethod
-    def coerce_permissions_data(cls, v: Any) -> Any:
-        if isinstance(v, dict):
-            # Temporarily convert dict to list for validation
-            return [v]
-        return v
-
-    @field_validator("permissions_data", mode="after")
-    @classmethod
-    def restore_dict_permissions_data(
-        cls, v: Optional[list[dict[str, Any]]]
-    ) -> Union[list[dict[str, Any]], dict[str, Any], None]:
-        if (
-            isinstance(v, list)
-            and len(v) == 1
-            and isinstance(v[0], dict)
-            and any(isinstance(val, dict) for val in v[0].values())
-        ):
-            return v[0]
-        return v
 
 
 class FileData(BaseModel):
