@@ -111,10 +111,9 @@ class GoogleDriveIndexerConfig(IndexerConfig):
     extensions: Optional[list[str]] = None
     recursive: bool = False
 
-    def __post_init__(self):
-        # Strip leading period of extension
+    def model_post_init(self, __context: Any) -> None:
         if self.extensions is not None:
-            self.extensions = [e[1:] if e.startswith(".") else e for e in self.extensions]
+            self.extensions = [e.lstrip(".") for e in self.extensions]
 
 
 @dataclass
