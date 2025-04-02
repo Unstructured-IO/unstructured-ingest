@@ -96,13 +96,6 @@ class LocalIndexer(Indexer):
             date_created = None
 
         try:
-            mode = stats.st_mode
-            permissions_data = [{"mode": mode}]
-        except Exception as e:
-            logger.warning(f"Couldn't detect file mode: {e}")
-            permissions_data = None
-
-        try:
             filesize_bytes = stats.st_size
         except Exception as e:
             logger.warning(f"Couldn't detect file size: {e}")
