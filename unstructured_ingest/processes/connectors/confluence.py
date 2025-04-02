@@ -378,11 +378,14 @@ class ConfluenceDownloader(Downloader):
                     logger.debug(f"Could not retrieve permissions for space {space_id}: {e}")
                     return None
 
-    def _parse_permissions_for_doc(self, doc_id: str, space_permissions: list) -> Optional[dict]:
+    def _parse_permissions_for_doc(
+        self, doc_id: str, space_permissions: list
+    ) -> Optional[list[dict]]:
         with self.connection_config.get_client() as client:
             try:
                 doc_permissions = client.get_all_restrictions_for_content(content_id=doc_id)
                 parsed_permissions_dict = self.parse_permissions(doc_permissions, space_permissions)
+                parsed_permissions_dict = [{k: v} for k, v in parsed_permissions_dict.items()]
 
             except Exception as e:
                 # skip writing any permission metadata

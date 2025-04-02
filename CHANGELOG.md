@@ -4,6 +4,7 @@
 
 * **Google Drive connector now strips the leading dot in extensions properly**
 * **Google Drive permissions conform to FileData schema**
+* **Confluence permissions conform to FileData schema**
 
 ## 1.0.5
 
