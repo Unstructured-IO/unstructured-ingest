@@ -98,8 +98,6 @@ class Neo4jUploadStager(UploadStager):
         **kwargs: Any,
     ) -> Path:
         elements = get_json_data(elements_filepath)
-        print("XXX I AM HERE")
-        logger.warning("XXX LOGGING HERE")
         nx_graph = self._create_lexical_graph(
             elements, self._create_document_node(file_data=file_data)
         )
