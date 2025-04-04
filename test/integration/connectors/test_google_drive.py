@@ -198,3 +198,56 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
     assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags("google-drive", "integration", "export")
+@requires_env("GOOGLE_DRIVE_NATIVE_TEST_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+async def test_google_drive_native_formats(temp_dir):
+    """
+    Tests that Google Docs, Sheets, and Slides files can be indexed and downloaded via export.
+    Expects:
+      - GOOGLE_DRIVE_NATIVE_TEST_ID to point to a folder containing 3 files:
+        - Google Doc (.gdoc)
+        - Google Sheet (.gsheet)
+        - Google Slides (.gslides)
+    """
+    from pathlib import Path
+
+    drive_id = os.environ["GOOGLE_DRIVE_NATIVE_TEST_ID"]
+    service_key = os.environ["GOOGLE_DRIVE_SERVICE_KEY"]
+
+    connection_config = GoogleDriveConnectionConfig(
+        drive_id=drive_id,
+        access_config=GoogleDriveAccessConfig(service_account_key=service_key),
+    )
+    index_config = GoogleDriveIndexerConfig(recursive=True)
+    download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
+
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    downloader = GoogleDriveDownloader(connection_config=connection_config, download_config=download_config)
+
+    found_formats = {"docx": False, "xlsx": False, "pptx": False}
+
+    file_datas = list(indexer.run())
+    assert len(file_datas) >= 3, "Expected at least 3 native Google files in the test folder"
+
+    for file_data in file_datas:
+        downloaded = downloader.run(file_data)
+        out_path = downloaded["path"]
+        assert out_path.exists(), f"{out_path} not found after download"
+        assert out_path.stat().st_size > 0, f"{out_path} is empty"
+
+        # Match by mimeType and update found_formats
+        mime_type = file_data.additional_metadata.get("mimeType", "")
+        if mime_type == "application/vnd.google-apps.document":
+            found_formats["docx"] = True
+        elif mime_type == "application/vnd.google-apps.spreadsheet":
+            found_formats["xlsx"] = True
+        elif mime_type == "application/vnd.google-apps.presentation":
+            found_formats["pptx"] = True
+
+
+    assert all(found_formats.values()), (
+        f"Expected all formats to be downloaded but got: {found_formats}"
+    )
