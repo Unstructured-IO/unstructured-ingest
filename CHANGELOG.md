@@ -1,3 +1,9 @@
+## 1.0.8
+
+### Enhancements
+
+* **Update Neo4J Entity Support** to support NER + RE(Relationship extraction)
+
 ## 1.0.7
 
 ### Fixes

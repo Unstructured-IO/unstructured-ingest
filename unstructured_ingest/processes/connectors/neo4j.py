@@ -9,8 +9,9 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, Secret, field_validator
+from pydantic import BaseModel, ConfigDict, Field, Secret, ValidationError, field_validator
 
+from unstructured_ingest.data_types.entities import EntitiesData, Entity, EntityRelationship
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.interfaces import (
@@ -97,7 +98,6 @@ class Neo4jUploadStager(UploadStager):
         **kwargs: Any,
     ) -> Path:
         elements = get_json_data(elements_filepath)
-
         nx_graph = self._create_lexical_graph(
             elements, self._create_document_node(file_data=file_data)
         )
@@ -109,27 +109,53 @@ class Neo4jUploadStager(UploadStager):
 
         return output_filepath
 
-    def _add_entities(self, element: dict, graph: "Graph", element_node: _Node) -> None:
-        entities = element.get("metadata", {}).get("entities", [])
-        if not entities:
-            return None
-        if not isinstance(entities, list):
-            return None
-
+    def _add_entities(self, entities: list[Entity], graph: "Graph", element_node: _Node) -> None:
         for entity in entities:
-            if not isinstance(entity, dict):
-                continue
-            if "entity" not in entity or "type" not in entity:
-                continue
             entity_node = _Node(
-                labels=[Label.ENTITY], properties={"id": entity["entity"]}, id_=entity["entity"]
+                labels=[Label.ENTITY], properties={"id": entity.entity}, id_=entity.entity
             )
             graph.add_edge(
                 entity_node,
-                _Node(labels=[Label.ENTITY], properties={"id": entity["type"]}, id_=entity["type"]),
+                _Node(labels=[Label.ENTITY], properties={"id": entity.type}, id_=entity.type),
                 relationship=Relationship.ENTITY_TYPE,
             )
             graph.add_edge(element_node, entity_node, relationship=Relationship.HAS_ENTITY)
+
+    def _add_entity_relationships(
+        self, relationships: list[EntityRelationship], graph: "Graph"
+    ) -> None:
+        for relationship in relationships:
+            from_node = _Node(
+                labels=[Label.ENTITY],
+                properties={"id": relationship.from_},
+                id_=relationship.from_,
+            )
+            to_node = _Node(
+                labels=[Label.ENTITY], properties={"id": relationship.to}, id_=relationship.to
+            )
+            graph.add_edge(from_node, to_node, relationship=relationship.relationship)
+
+    def _add_entity_data(self, element: dict, graph: "Graph", element_node: _Node) -> None:
+        entities = element.get("metadata", {}).get("entities", {})
+        if not entities:
+            return None
+        try:
+            if isinstance(entities, list):
+                self._add_entities(
+                    [Entity.model_validate(e) for e in entities if isinstance(e, dict)],
+                    graph,
+                    element_node,
+                )
+            elif isinstance(entities, dict):
+                entity_data = EntitiesData.model_validate(entities)
+                self._add_entities(entity_data.items, graph, element_node)
+                self._add_entity_relationships(entity_data.relationships, graph)
+        except ValidationError:
+            logger.warning(
+                "Failed to add entities to the graph. "
+                "Please check the format of the entities in the input data."
+            )
+        return None
 
     def _create_lexical_graph(self, elements: list[dict], document_node: _Node) -> "Graph":
         import networkx as nx
@@ -149,7 +175,7 @@ class Neo4jUploadStager(UploadStager):
             previous_node = element_node
             graph.add_edge(element_node, document_node, relationship=Relationship.PART_OF_DOCUMENT)
 
-            self._add_entities(element, graph, element_node)
+            self._add_entity_data(element, graph, element_node)
 
             if self._is_chunk(element):
                 for origin_element in format_and_truncate_orig_elements(element, include_text=True):
@@ -165,7 +191,7 @@ class Neo4jUploadStager(UploadStager):
                         document_node,
                         relationship=Relationship.PART_OF_DOCUMENT,
                     )
-                    self._add_entities(origin_element, graph, origin_element_node)
+                    self._add_entity_data(origin_element, graph, origin_element_node)
 
         return graph
 
@@ -208,7 +234,9 @@ class _GraphData(BaseModel):
             _Edge(
                 source=u,
                 destination=v,
-                relationship=Relationship(data_dict["relationship"]),
+                relationship=Relationship(data_dict["relationship"])
+                if data_dict["relationship"] in Relationship
+                else data_dict["relationship"],
             )
             for u, v, data_dict in nx_graph.edges(data=True)
         ]
@@ -242,7 +270,7 @@ class _Edge(BaseModel):
 
     source: _Node
     destination: _Node
-    relationship: Relationship
+    relationship: Relationship | str
 
 
 class Label(Enum):
@@ -380,7 +408,7 @@ class Neo4jUploader(Uploader):
         )
         logger.info(f"Finished merging {len(graph_data.nodes)} graph nodes.")
 
-        edges_by_relationship: defaultdict[tuple[Relationship, Label, Label], list[_Edge]] = (
+        edges_by_relationship: defaultdict[tuple[Relationship | str, Label, Label], list[_Edge]] = (
             defaultdict(list)
         )
         for edge in graph_data.edges:
@@ -463,16 +491,19 @@ class Neo4jUploader(Uploader):
     @staticmethod
     def _create_edges_query(
         edges: list[_Edge],
-        relationship: Relationship,
+        relationship: Relationship | str,
         source_label: Label,
         destination_label: Label,
     ) -> tuple[str, dict]:
         logger.info(f"Preparing MERGE query for {len(edges)} {relationship} relationships.")
+        relationship = (
+            relationship.value if isinstance(relationship, Relationship) else relationship
+        )
         query_string = f"""
             UNWIND $edges AS edge
             MATCH (u: `{source_label.value}` {{id: edge.source}})
             MATCH (v: `{destination_label.value}` {{id: edge.destination}})
-            MERGE (u)-[:`{relationship.value}`]->(v)
+            MERGE (u)-[:`{relationship}`]->(v)
             """
         parameters = {
             "edges": [
