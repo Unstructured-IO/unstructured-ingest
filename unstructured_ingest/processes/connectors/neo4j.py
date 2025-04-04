@@ -98,7 +98,8 @@ class Neo4jUploadStager(UploadStager):
         **kwargs: Any,
     ) -> Path:
         elements = get_json_data(elements_filepath)
-
+        print("XXX I AM HERE")
+        logger.warning("XXX LOGGING HERE")
         nx_graph = self._create_lexical_graph(
             elements, self._create_document_node(file_data=file_data)
         )
@@ -137,7 +138,7 @@ class Neo4jUploadStager(UploadStager):
             graph.add_edge(from_node, to_node, relationship=relationship.relationship)
 
     def _add_entity_data(self, element: dict, graph: "Graph", element_node: _Node) -> None:
-        entities = element.get("metadata", {}).get("entities", [])
+        entities = element.get("metadata", {}).get("entities", {})
         if not entities:
             return None
         try:
@@ -409,7 +410,7 @@ class Neo4jUploader(Uploader):
         )
         logger.info(f"Finished merging {len(graph_data.nodes)} graph nodes.")
 
-        edges_by_relationship: defaultdict[tuple[Relationship, Label, Label], list[_Edge]] = (
+        edges_by_relationship: defaultdict[tuple[Relationship | str, Label, Label], list[_Edge]] = (
             defaultdict(list)
         )
         for edge in graph_data.edges:
@@ -492,16 +493,19 @@ class Neo4jUploader(Uploader):
     @staticmethod
     def _create_edges_query(
         edges: list[_Edge],
-        relationship: Relationship,
+        relationship: Relationship | str,
         source_label: Label,
         destination_label: Label,
     ) -> tuple[str, dict]:
         logger.info(f"Preparing MERGE query for {len(edges)} {relationship} relationships.")
+        relationship = (
+            relationship.value if isinstance(relationship, Relationship) else relationship
+        )
         query_string = f"""
             UNWIND $edges AS edge
             MATCH (u: `{source_label.value}` {{id: edge.source}})
             MATCH (v: `{destination_label.value}` {{id: edge.destination}})
-            MERGE (u)-[:`{relationship.value}`]->(v)
+            MERGE (u)-[:`{relationship}`]->(v)
             """
         parameters = {
             "edges": [
