@@ -1,3 +1,9 @@
+## 1.0.8
+
+### Fixes
+
+* **Google Drive connector also include shared drive
+
 ## 1.0.7
 
 ### Fixes
