@@ -34,7 +34,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from googleapiclient.discovery import Resource as GoogleAPIResource
-    from googleapiclient.http import MediaIoBaseDownload
+    from googleapiclient.http import MediaIoBaseDownload, HttpError
 
 CONNECTOR_TYPE = "google_drive"
 
@@ -459,7 +459,10 @@ class GoogleDriveIndexer(Indexer):
 
 
 class GoogleDriveDownloaderConfig(DownloaderConfig):
-    pass
+    fallback_to_html: bool = Field(
+        default=True,
+        description="If true, fallback to HTML export for large Google-native files",
+    )
 
 
 @dataclass
@@ -470,12 +473,68 @@ class GoogleDriveDownloader(Downloader):
     )
     connector_type: str = CONNECTOR_TYPE
 
-    @SourceConnectionNetworkError.wrap
-    def _get_content(self, downloader: "MediaIoBaseDownload") -> bool:
-        downloaded = False
-        while downloaded is False:
-            _, downloaded = downloader.next_chunk()
-        return downloaded
+
+    GOOGLE_DRIVE_EXPORT_FALLBACK = {
+        "application/vnd.google-apps.document": "text/html",
+        "application/vnd.google-apps.spreadsheet": "text/html",
+        "application/vnd.google-apps.presentation": "application/pdf",
+    }
+
+
+    def _get_content(
+        self,
+        file_data: FileData,
+        record_id: str,
+        client: Any,
+        initial_mime: str,
+        request: Any,
+    ) -> tuple[io.BytesIO, bool]:
+        from googleapiclient.http import MediaIoBaseDownload
+        from googleapiclient.errors import HttpError
+
+        def is_export_too_large_error(error: HttpError) -> bool:
+            try:
+                error_details = json.loads(error.content.decode("utf-8"))
+                for e in error_details.get("error", {}).get("errors", []):
+                    if e.get("reason") == "exportSizeLimitExceeded":
+                        return True
+            except Exception:
+                pass
+            return False
+
+        file_contents = io.BytesIO()
+        downloader = MediaIoBaseDownload(file_contents, request)
+
+        try:
+            downloaded = False
+            while not downloaded:
+                _, downloaded = downloader.next_chunk()
+            return file_contents, False  # no fallback
+        except HttpError as e:
+            if (
+                is_export_too_large_error(e)
+                and getattr(self.download_config, "fallback_to_html", False)
+                and initial_mime in self.GOOGLE_DRIVE_EXPORT_FALLBACK
+            ):
+                fallback_mime = self.GOOGLE_DRIVE_EXPORT_FALLBACK[initial_mime]
+                logger.warning(
+                    f"Primary export failed for {record_id}, retrying with fallback MIME: {fallback_mime}"
+                )
+                file_data.additional_metadata.update({
+                    "export_fallback_used": True,
+                    "export_fallback_type": fallback_mime,
+                    "warning": "Export failed due to size. HTML fallback used.",
+                })
+                fallback_request = client.export_media(fileId=record_id, mimeType=fallback_mime)
+                file_contents = io.BytesIO()
+                downloader = MediaIoBaseDownload(file_contents, fallback_request)
+                downloaded = False
+                while not downloaded:
+                    _, downloaded = downloader.next_chunk()
+                return file_contents, True  # fallback used
+            else:
+                raise
+
 
     def _write_file(self, file_data: FileData, file_contents: io.BytesIO) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
@@ -488,37 +547,73 @@ class GoogleDriveDownloader(Downloader):
     @requires_dependencies(["googleapiclient"], extras="google-drive")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         from googleapiclient.http import MediaIoBaseDownload
+        from googleapiclient.errors import HttpError
 
-        logger.debug(f"fetching file: {file_data.source_identifiers.fullpath}")
+        def is_too_large_error(error: HttpError) -> bool:
+            try:
+                error_details = json.loads(error.content.decode("utf-8"))
+                for e in error_details.get("error", {}).get("errors", []):
+                    if e.get("reason") == "cannotDownloadFile":
+                        return True
+            except Exception:
+                pass
+            return False
+
+        mime_type = file_data.additional_metadata.get("mimeType", "")
         record_id = file_data.identifier
-        mime_type = file_data.additional_metadata["mimeType"]
-        if not mime_type:
-            raise TypeError(
-                f"File not supported. Name: {file_data.source_identifiers.filename} "
-                f"ID: {record_id} "
-                f"MimeType: {mime_type}"
-            )
+
+        logger.debug(f"fetching file: {file_data.source_identifiers.fullpath} with MIME {mime_type}")
+
+        export_mime = GOOGLE_DRIVE_EXPORT_TYPES.get(mime_type)
+        fallback_mime = self.GOOGLE_DRIVE_EXPORT_FALLBACK.get(mime_type)
+
         with self.connection_config.get_client() as client:
-            if (
-                mime_type.startswith("application/vnd.google-apps")
-                and mime_type in GOOGLE_DRIVE_EXPORT_TYPES
-            ):
-                export_mime = GOOGLE_DRIVE_EXPORT_TYPES.get(
-                    mime_type,  # type: ignore
-                )
-                request = client.export_media(
-                    fileId=record_id,
-                    mimeType=export_mime,
-                )
+            request = None
+            tried_fallback = False
+
+            if mime_type.startswith("application/vnd.google-apps") and export_mime:
+                try:
+                    request = client.export_media(fileId=record_id, mimeType=export_mime)
+                except HttpError as e:
+                    if fallback_mime and getattr(self.download_config, "fallback_to_html", False) and is_too_large_error(e):
+                        logger.warning(f"Primary export failed due to size, using fallback HTML export for {record_id}")
+                        request = client.export_media(fileId=record_id, mimeType=fallback_mime)
+                        file_data.additional_metadata.update({
+                            "export_fallback_used": True,
+                            "export_fallback_type": fallback_mime,
+                            "warning": "Original export failed due to size. Exported as HTML instead."
+                        })
+                        tried_fallback = True
+                    else:
+                        raise
             else:
                 request = client.get_media(fileId=record_id)
 
-        file_contents = io.BytesIO()
-        downloader = MediaIoBaseDownload(file_contents, request)
-        downloaded = self._get_content(downloader=downloader)
-        if not downloaded or not file_contents:
-            raise SourceConnectionError("nothing found to download")
-        return self._write_file(file_data=file_data, file_contents=file_contents)
+            if request is None:
+                raise SourceConnectionError(f"Cannot create export or media request for MIME type: {mime_type}")
+
+            file_contents, used_fallback = self._get_content(
+                file_data=file_data,
+                record_id=record_id,
+                client=client,
+                initial_mime=mime_type,
+                request=request,
+            )
+
+            download_path = self.get_download_path(file_data=file_data)
+            if used_fallback:
+                download_path = download_path.with_suffix(".html")
+            elif export_mime:
+                ext_map = {
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+                }
+                suffix = ext_map.get(export_mime)
+                if suffix:
+                    download_path = download_path.with_suffix(suffix)
+
+            return self._write_file(file_data=file_data, file_contents=file_contents)
 
 
 google_drive_source_entry = SourceRegistryEntry(
