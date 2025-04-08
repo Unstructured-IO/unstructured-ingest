@@ -467,6 +467,18 @@ class GoogleDriveDownloaderConfig(DownloaderConfig):
 
 @dataclass
 class GoogleDriveDownloader(Downloader):
+    """
+    Downloads files from Google Drive using authenticated direct HTTP requests
+    via `exportLinks` (for Google-native files) and `webContentLink` (for binary files).
+
+    These links emulate the behavior of Google Drive's "File > Download as..." options
+    in the UI and bypass the size limitations of `files.export()`.
+
+    Behavior:
+    - Google-native formats are downloaded using `exportLinks` in appropriate MIME formats.
+    - Binary files (non-Google-native) are downloaded using `webContentLink`.
+    - All downloads are performed via `requests.get()` using a valid bearer token.
+    """
     connection_config: GoogleDriveConnectionConfig
     download_config: GoogleDriveDownloaderConfig = field(
         default_factory=lambda: GoogleDriveDownloaderConfig()
@@ -474,6 +486,27 @@ class GoogleDriveDownloader(Downloader):
     connector_type: str = CONNECTOR_TYPE
 
     def _get_download_url_and_ext(self, file_id: str, mime_type: str) -> tuple[str, str]:
+        """
+        Resolves the appropriate download URL and expected file extension for a given Google Drive file.
+
+        Logic:
+        - For Google-native files (Docs, Sheets, Slides), retrieves the `exportLinks` field via
+          the Drive API and selects the appropriate MIME-based export URL (e.g., .docx, .xlsx).
+        - For all other file types, falls back to the `webContentLink`, which is a direct binary
+          download link for non-Google-native files like PDFs, images, and ZIPs.
+
+        Authentication:
+        - Constructs a service account credential with read-only Drive scope.
+        - Refreshes the token to obtain a valid bearer token for authenticated HTTP download.
+
+        Returns:
+            A tuple of (download_url, file_extension), where:
+            - `download_url` is a signed or export endpoint from Drive
+            - `file_extension` is the file format inferred from the export (e.g., ".docx")
+
+        Raises:
+            SourceConnectionError: If no appropriate export or download link is available.
+        """
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
 
@@ -515,6 +548,23 @@ class GoogleDriveDownloader(Downloader):
         return web_link, ""
 
     def _download_url(self, url: str) -> io.BytesIO:
+        """
+        Downloads file content from a pre-signed or export URL using authenticated HTTP request.
+
+        This method uses the `requests` library and a refreshed OAuth bearer token (via
+        `google-auth`) to fetch the file content. The method is used uniformly for both
+        `exportLinks` and `webContentLink` URLs.
+
+        Authentication:
+        - Loads and refreshes service account credentials with Drive read-only scope.
+        - Attaches the `Authorization: Bearer <token>` header to the request.
+
+        Returns:
+            An in-memory `BytesIO` buffer containing the downloaded file content.
+
+        Raises:
+            SourceConnectionError: If the HTTP request fails or returns a non-2xx response.
+        """
         import requests
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
