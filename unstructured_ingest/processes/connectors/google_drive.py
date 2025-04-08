@@ -36,14 +36,21 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "google_drive"
 
-GOOGLE_DRIVE_EXPORT_TYPES = {
-    "application/vnd.google-apps.document": "application/"
-    "vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.google-apps.spreadsheet": "application/"
-    "vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.google-apps.presentation": "application/"
-    "vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.google-apps.photo": "image/jpeg",
+
+# Maps Google-native Drive MIME types → export MIME types
+GOOGLE_EXPORT_MIME_MAP = {
+    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+
+# Maps export MIME types → file extensions
+EXPORT_EXTENSION_MAP = {
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+    "application/pdf": ".pdf",
+    "text/html": ".html",
 }
 
 
@@ -499,24 +506,15 @@ class GoogleDriveDownloader(Downloader):
         """
         Resolves the appropriate download URL and expected file extension for a Google Drive file.
 
-        Logic:
-        - For Google-native files (Docs, Sheets, Slides), retrieves the `exportLinks` dictionary via
-          the Drive API and selects the correct export MIME type (e.g., .docx, .xlsx, .pptx).
-        - For non-native files (e.g., uploaded PDFs, images), falls back to `webContentLink`,
-          which is a pre-authenticated direct download URL.
-
-        This function uses the authenticated Drive client provided by `get_client()` — it does
-        not manage authentication directly.
+        - Google-native files use export MIME types from exportLinks (e.g., .docx, .xlsx).
+        - Binary files use webContentLink (e.g., uploaded PDFs or ZIPs).
 
         Returns:
-            A tuple of (download_url, file_extension), where:
-            - `download_url` is a valid link to export or download the file
-            - `file_extension` is inferred from the MIME type
+            Tuple[str, str]: (download URL, file extension or "")
 
         Raises:
-            SourceConnectionError: If no valid export or content link is found for the file.
+            SourceConnectionError: If no valid export or download link is available.
         """
-
         with self.connection_config.get_client() as client:
             metadata = client.get(
                 fileId=file_id, fields="exportLinks,webContentLink"
@@ -525,33 +523,15 @@ class GoogleDriveDownloader(Downloader):
         export_links = metadata.get("exportLinks", {})
         web_link = metadata.get("webContentLink")
 
-        ext_map = {
-            "application/vnd.google-apps.document": (
-                export_links.get(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                ),
-                ".docx",
-            ),
-            "application/vnd.google-apps.spreadsheet": (
-                export_links.get(
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                ),
-                ".xlsx",
-            ),
-            "application/vnd.google-apps.presentation": (
-                export_links.get(
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                ),
-                ".pptx",
-            ),
-        }
+        export_mime = self.GOOGLE_EXPORT_MIME_MAP.get(mime_type)
 
-        if mime_type in ext_map:
-            url, ext = ext_map[mime_type]
+        if export_mime:
+            url = export_links.get(export_mime)
             if not url:
                 raise SourceConnectionError(
-                    f"No export link found for {file_id} with type {mime_type}"
+                    f"No export link found for {file_id} as {export_mime}"
                 )
+            ext = self.EXPORT_EXTENSION_MAP.get(export_mime, "")
             return url, ext
 
         if not web_link:
