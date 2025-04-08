@@ -1,3 +1,9 @@
+## 1.0.8-dev0
+
+### Fixes
+
+* **Replaced google drive connector's mechanism for file downloads.**
+
 ## 1.0.7
 
 ### Fixes
