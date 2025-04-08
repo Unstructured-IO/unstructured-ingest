@@ -523,7 +523,7 @@ class GoogleDriveDownloader(Downloader):
         export_links = metadata.get("exportLinks", {})
         web_link = metadata.get("webContentLink")
 
-        export_mime = self.GOOGLE_EXPORT_MIME_MAP.get(mime_type)
+        export_mime = GOOGLE_EXPORT_MIME_MAP.get(mime_type)
 
         if export_mime:
             url = export_links.get(export_mime)
@@ -531,7 +531,7 @@ class GoogleDriveDownloader(Downloader):
                 raise SourceConnectionError(
                     f"No export link found for {file_id} as {export_mime}"
                 )
-            ext = self.EXPORT_EXTENSION_MAP.get(export_mime, "")
+            ext = EXPORT_EXTENSION_MAP.get(export_mime, "")
             return url, ext
 
         if not web_link:
