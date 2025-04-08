@@ -53,7 +53,9 @@ def google_drive_empty_folder(google_drive_connection_config):
     from googleapiclient.discovery import build
 
     access_config = google_drive_connection_config.access_config.get_secret_value()
-    creds = service_account.Credentials.from_service_account_info(access_config.service_account_key)
+    creds = service_account.Credentials.from_service_account_info(
+        access_config.service_account_key
+    )
     service = build("drive", "v3", credentials=creds)
 
     # Create an empty folder.
@@ -118,16 +120,23 @@ def test_google_drive_precheck_invalid_parameter(google_drive_connection_config)
         access_config=google_drive_connection_config.access_config,
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+    assert (
+        "invalid" in str(excinfo.value).lower()
+        or "not found" in str(excinfo.value).lower()
+    )
 
 
 # Precheck fails due to lack of permission (simulate via monkeypatching).
 @pytest.mark.tags("google-drive", "precheck")
 @requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
-def test_google_drive_precheck_no_permission(google_drive_connection_config, monkeypatch):
+def test_google_drive_precheck_no_permission(
+    google_drive_connection_config, monkeypatch
+):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     indexer = GoogleDriveIndexer(
         connection_config=google_drive_connection_config,
@@ -144,7 +153,10 @@ def test_google_drive_precheck_no_permission(google_drive_connection_config, mon
     monkeypatch.setattr(indexer, "get_root_info", fake_get_root_info)
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "forbidden" in str(excinfo.value).lower() or "permission" in str(excinfo.value).lower()
+    assert (
+        "forbidden" in str(excinfo.value).lower()
+        or "permission" in str(excinfo.value).lower()
+    )
 
 
 # Precheck fails when the folder is empty.
@@ -194,10 +206,15 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
         access_config=google_drive_connection_config.access_config,
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+    assert (
+        "invalid" in str(excinfo.value).lower()
+        or "not found" in str(excinfo.value).lower()
+    )
 
 
 @pytest.mark.asyncio
@@ -220,8 +237,12 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
 
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
-    downloader = GoogleDriveDownloader(connection_config=connection_config, download_config=download_config)
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
+    downloader = GoogleDriveDownloader(
+        connection_config=connection_config, download_config=download_config
+    )
 
     expected_types = {
         "application/vnd.google-apps.document": False,
@@ -230,7 +251,9 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
     }
 
     file_datas = list(indexer.run())
-    assert len(file_datas) >= 3, f"Expected at least 3 files in test folder, got {len(file_datas)}"
+    assert (
+        len(file_datas) >= 3
+    ), f"Expected at least 3 files in test folder, got {len(file_datas)}"
 
     for file_data in file_datas:
         mime_type = file_data.additional_metadata.get("mimeType", "")
@@ -244,8 +267,13 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
         assert out_path.stat().st_size > 0, f"{out_path} is empty"
 
         method = file_data.additional_metadata.get("download_method", "")
-        assert method in {"export_link", "web_content_link"}, f"Unexpected download method: {method}"
+        assert method in {
+            "export_link",
+            "web_content_link",
+        }, f"Unexpected download method: {method}"
 
         expected_types[mime_type] = True
 
-    assert all(expected_types.values()), f"Did not successfully test all expected MIME types: {expected_types}"
+    assert all(
+        expected_types.values()
+    ), f"Did not successfully test all expected MIME types: {expected_types}"
