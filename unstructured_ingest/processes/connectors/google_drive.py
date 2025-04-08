@@ -16,7 +16,6 @@ from unstructured_ingest.data_types.file_data import (
 )
 from unstructured_ingest.error import (
     SourceConnectionError,
-    SourceConnectionNetworkError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -34,7 +33,6 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from googleapiclient.discovery import Resource as GoogleAPIResource
-    from googleapiclient.http import MediaIoBaseDownload, HttpError
 
 CONNECTOR_TYPE = "google_drive"
 
@@ -499,40 +497,25 @@ class GoogleDriveDownloader(Downloader):
         self, file_id: str, mime_type: str
     ) -> tuple[str, str]:
         """
-        Resolves the appropriate download URL and expected file extension for a given Google Drive file.
+        Resolves the appropriate download URL and expected file extension for a Google Drive file.
 
         Logic:
-        - For Google-native files (Docs, Sheets, Slides), retrieves the `exportLinks` field via
-          the Drive API and selects the appropriate MIME-based export URL (e.g., .docx, .xlsx).
-        - For all other file types, falls back to the `webContentLink`, which is a direct binary
-          download link for non-Google-native files like PDFs, images, and ZIPs.
+        - For Google-native files (Docs, Sheets, Slides), retrieves the `exportLinks` dictionary via
+          the Drive API and selects the correct export MIME type (e.g., .docx, .xlsx, .pptx).
+        - For non-native files (e.g., uploaded PDFs, images), falls back to `webContentLink`,
+          which is a pre-authenticated direct download URL.
 
-        Authentication:
-        - Constructs a service account credential with read-only Drive scope.
-        - Refreshes the token to obtain a valid bearer token for authenticated HTTP download.
+        This function uses the authenticated Drive client provided by `get_client()` — it does
+        not manage authentication directly.
 
         Returns:
             A tuple of (download_url, file_extension), where:
-            - `download_url` is a signed or export endpoint from Drive
-            - `file_extension` is the file format inferred from the export (e.g., ".docx")
+            - `download_url` is a valid link to export or download the file
+            - `file_extension` is inferred from the MIME type
 
         Raises:
-            SourceConnectionError: If no appropriate export or download link is available.
+            SourceConnectionError: If no valid export or content link is found for the file.
         """
-        from google.auth.transport.requests import Request
-        from google.oauth2 import service_account
-
-        access_config = self.connection_config.access_config.get_secret_value()
-        key_data = access_config.get_service_account_key()
-        creds = service_account.Credentials.from_service_account_info(
-            key_data,
-            scopes=["https://www.googleapis.com/auth/drive.readonly"],
-        )
-        creds.refresh(Request())
-
-        headers = {
-            "Authorization": f"Bearer {creds.token}",
-        }
 
         with self.connection_config.get_client() as client:
             metadata = client.get(

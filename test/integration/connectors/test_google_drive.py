@@ -225,7 +225,6 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
     Test that Google-native files and others are exported via exportLinks or webContentLink,
     bypassing size limits. All formats should be downloadable and leave behind valid local files.
     """
-    from pathlib import Path
 
     drive_id = os.environ["GOOGLE_DRIVE_NATIVE_TEST_ID"]
     service_key = os.environ["GOOGLE_DRIVE_SERVICE_KEY"]
