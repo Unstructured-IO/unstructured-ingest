@@ -203,8 +203,13 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
 @pytest.mark.asyncio
 @pytest.mark.tags("google-drive", "integration", "export")
 @requires_env("GOOGLE_DRIVE_NATIVE_TEST_ID", "GOOGLE_DRIVE_SERVICE_KEY")
-async def test_google_drive_native_formats_with_fallback(temp_dir):
-    
+async def test_google_drive_native_formats_with_export_links(temp_dir):
+    """
+    Test that Google-native files and others are exported via exportLinks or webContentLink,
+    bypassing size limits. All formats should be downloadable and leave behind valid local files.
+    """
+    from pathlib import Path
+
     drive_id = os.environ["GOOGLE_DRIVE_NATIVE_TEST_ID"]
     service_key = os.environ["GOOGLE_DRIVE_SERVICE_KEY"]
 
@@ -213,26 +218,23 @@ async def test_google_drive_native_formats_with_fallback(temp_dir):
         access_config=GoogleDriveAccessConfig(service_account_key=service_key),
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir, fallback_to_html=True)
+    download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
 
     indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
     downloader = GoogleDriveDownloader(connection_config=connection_config, download_config=download_config)
 
-    # These are the Google-native mime types we expect
-    expected_mime_types = {
-        "application/vnd.google-apps.document",
-        "application/vnd.google-apps.spreadsheet",
-        "application/vnd.google-apps.presentation",
+    expected_types = {
+        "application/vnd.google-apps.document": False,
+        "application/vnd.google-apps.spreadsheet": False,
+        "application/vnd.google-apps.presentation": False,
     }
-
-    found_mimes = {mime: False for mime in expected_mime_types}
 
     file_datas = list(indexer.run())
     assert len(file_datas) >= 3, f"Expected at least 3 files in test folder, got {len(file_datas)}"
 
     for file_data in file_datas:
         mime_type = file_data.additional_metadata.get("mimeType", "")
-        if mime_type not in expected_mime_types:
+        if mime_type not in expected_types:
             continue
 
         downloaded = downloader.run(file_data)
@@ -241,16 +243,9 @@ async def test_google_drive_native_formats_with_fallback(temp_dir):
         assert out_path.exists(), f"{out_path} not found after download"
         assert out_path.stat().st_size > 0, f"{out_path} is empty"
 
-        found_mimes[mime_type] = True
+        method = file_data.additional_metadata.get("download_method", "")
+        assert method in {"export_link", "web_content_link"}, f"Unexpected download method: {method}"
 
-        # If fallback was used, verify metadata
-        if file_data.additional_metadata.get("export_fallback_used"):
-            assert file_data.additional_metadata["export_fallback_type"] == "text/html"
-            assert "warning" in file_data.additional_metadata
-        else:
-            # Otherwise, we assume standard export worked — no assert on filename suffix
-            pass
+        expected_types[mime_type] = True
 
-    assert all(found_mimes.values()), (
-        f"Not all Google-native types were found and downloaded: {found_mimes}"
-    )
+    assert all(expected_types.values()), f"Did not successfully test all expected MIME types: {expected_types}"
