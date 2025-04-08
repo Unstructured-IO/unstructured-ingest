@@ -1,8 +1,20 @@
-## 1.0.8-dev0
+## 1.0.10-dev0
 
 ### Fixes
 
 * **Replaced google drive connector's mechanism for file downloads.**
+
+## 1.0.9
+
+### Fixes
+
+* **Google Drive connector also include shared drive**
+
+## 1.0.8
+
+### Enhancements
+
+* **Update Neo4J Entity Support** to support NER + RE(Relationship extraction)
 
 ## 1.0.7
 
