@@ -276,3 +276,50 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
     assert all(
         expected_types.values()
     ), f"Did not successfully test all expected MIME types: {expected_types}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@requires_env("GOOGLE_DRIVE_SERVICE_KEY")
+async def test_google_drive_e2e_source(temp_dir):
+    """
+    End-to-end integration test for the Google Drive connector, aligned with legacy shell test.
+    """
+    service_account_key = os.environ["GOOGLE_DRIVE_SERVICE_KEY"]
+
+    drive_id = "1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr"
+
+    connection_config = GoogleDriveConnectionConfig(
+        drive_id=drive_id,
+        access_config=GoogleDriveAccessConfig(service_account_key=service_account_key),
+    )
+
+    index_config = GoogleDriveIndexerConfig(
+        recursive=True,
+        extensions=["pdf", "docx"],
+    )
+    download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
+
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = GoogleDriveDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
+
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="google_drive_e2e",
+            expected_num_files=4,  # adjust if fixture differs
+            validate_downloaded_files=True,
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                "additional_metadata.permissions",
+            ],
+        ),
+    )
