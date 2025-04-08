@@ -459,10 +459,7 @@ class GoogleDriveIndexer(Indexer):
 
 
 class GoogleDriveDownloaderConfig(DownloaderConfig):
-    fallback_to_html: bool = Field(
-        default=True,
-        description="If true, fallback to HTML export for large Google-native files",
-    )
+    pass
 
 
 @dataclass
