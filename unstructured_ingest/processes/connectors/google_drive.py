@@ -267,9 +267,7 @@ class GoogleDriveIndexer(Indexer):
                         #     that the service account has proper permissions."
                         # )
                     else:
-                        logger.info(
-                            f"Found {file_count} files recursively in the folder."
-                        )
+                        logger.info(f"Found {file_count} files recursively in the folder.")
                 else:
                     # Non-recursive: check for at least one immediate non-folder child.
                     response = client.list(
@@ -555,6 +553,7 @@ class GoogleDriveDownloader(Downloader):
             )
         return web_link, ""
 
+    @requires_dependencies(["requests", "google-auth"], extras="google-drive")
     def _download_url(self, url: str) -> io.BytesIO:
         """
         Downloads file content from a pre-signed or export URL using authenticated HTTP request.
@@ -612,7 +611,6 @@ class GoogleDriveDownloader(Downloader):
             file_data=file_data, download_path=download_path
         )
 
-    @requires_dependencies(["googleapiclient", "requests"], extras="google-drive")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         mime_type = file_data.additional_metadata.get("mimeType", "")
         record_id = file_data.identifier
