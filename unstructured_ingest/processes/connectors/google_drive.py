@@ -553,7 +553,7 @@ class GoogleDriveDownloader(Downloader):
             )
         return web_link, ""
 
-    @requires_dependencies(["requests", "google-auth"], extras="google-drive")
+    @requires_dependencies(["requests", "google.auth"], extras="google-drive")
     def _download_url(self, url: str) -> io.BytesIO:
         """
         Downloads file content from a pre-signed or export URL using authenticated HTTP request.
