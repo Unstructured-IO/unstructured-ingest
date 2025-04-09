@@ -1,6 +1,7 @@
 import json
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import Field, Secret
@@ -18,11 +19,14 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import (
     flatten_dict,
     generator_batching_wbytes,
     get_enhanced_element_id,
+    get_json_data,
+    write_data,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -161,6 +165,28 @@ class PineconeUploadStager(UploadStager):
             "values": embeddings,
             "metadata": metadata,
         }
+
+    def stream_update(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
+        with input_file.open() as in_f:
+            reader = ndjson.reader(in_f)
+            with output_file.open("w") as out_f:
+                writer = ndjson.writer(out_f)
+                for element in reader:
+                    if "embeddings" not in element:
+                        continue
+                    conformed_element = self.conform_dict(element_dict=element, file_data=file_data)
+                    writer.write(row=conformed_element)
+                    writer.f.flush()
+
+    def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
+        elements_contents = get_json_data(path=input_file)
+
+        conformed_elements = [
+            self.conform_dict(element_dict=element, file_data=file_data)
+            for element in elements_contents
+            if "embeddings" in element
+        ]
+        write_data(path=output_file, data=conformed_elements)
 
 
 @dataclass
