@@ -1,3 +1,9 @@
+## 1.0.10
+
+### Fixes
+
+* **Fix Pinecone connector writing empty vector error**
+
 ## 1.0.9
 
 ### Fixes
