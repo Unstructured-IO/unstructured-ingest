@@ -217,13 +217,20 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
     )
 
 
+MIME_TYPES_TO_TEST = [
+    "application/vnd.google-apps.document",
+    "application/vnd.google-apps.spreadsheet",
+    "application/vnd.google-apps.presentation",
+]
+
 @pytest.mark.asyncio
-@pytest.mark.tags("google-drive", "integration", "export")
+@pytest.mark.parametrize("expected_mime", MIME_TYPES_TO_TEST)
+@pytest.mark.tags(CONNECTOR_TYPE, "integration", "export")
 @requires_env("GOOGLE_DRIVE_NATIVE_TEST_ID", "GOOGLE_DRIVE_SERVICE_KEY")
-async def test_google_drive_native_formats_with_export_links(temp_dir):
+async def test_google_drive_export_by_type(expected_mime, temp_dir):
     """
-    Test that Google-native files and others are exported via exportLinks or webContentLink,
-    bypassing size limits. All formats should be downloadable and leave behind valid local files.
+    Parametrized test for verifying export of each specific Google-native format
+    using exportLinks or webContentLink.
     """
 
     drive_id = os.environ["GOOGLE_DRIVE_NATIVE_TEST_ID"]
@@ -236,29 +243,16 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
 
-    indexer = GoogleDriveIndexer(
-        connection_config=connection_config, index_config=index_config
-    )
-    downloader = GoogleDriveDownloader(
-        connection_config=connection_config, download_config=download_config
-    )
-
-    expected_types = {
-        "application/vnd.google-apps.document": False,
-        "application/vnd.google-apps.spreadsheet": False,
-        "application/vnd.google-apps.presentation": False,
-    }
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    downloader = GoogleDriveDownloader(connection_config=connection_config, download_config=download_config)
 
     file_datas = list(indexer.run())
-    assert (
-        len(file_datas) >= 3
-    ), f"Expected at least 3 files in test folder, got {len(file_datas)}"
 
-    for file_data in file_datas:
-        mime_type = file_data.additional_metadata.get("mimeType", "")
-        if mime_type not in expected_types:
-            continue
+    # Filter only the target MIME type
+    target_files = [f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime]
+    assert target_files, f"No files found with MIME type: {expected_mime}"
 
+    for file_data in target_files:
         downloaded = downloader.run(file_data)
         out_path = downloaded["path"]
 
@@ -266,16 +260,7 @@ async def test_google_drive_native_formats_with_export_links(temp_dir):
         assert out_path.stat().st_size > 0, f"{out_path} is empty"
 
         method = file_data.additional_metadata.get("download_method", "")
-        assert method in {
-            "export_link",
-            "web_content_link",
-        }, f"Unexpected download method: {method}"
-
-        expected_types[mime_type] = True
-
-    assert all(
-        expected_types.values()
-    ), f"Did not successfully test all expected MIME types: {expected_types}"
+        assert method in {"export_link", "web_content_link"}, f"Unexpected download method: {method}"
 
 
 @pytest.mark.asyncio
