@@ -39,12 +39,9 @@ CONNECTOR_TYPE = "google_drive"
 
 # Maps Google-native Drive MIME types → export MIME types
 GOOGLE_EXPORT_MIME_MAP = {
-    "application/vnd.google-apps.document": \
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.google-apps.spreadsheet": \
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.google-apps.presentation": \
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 }
 
 # Maps export MIME types → file extensions
@@ -267,7 +264,9 @@ class GoogleDriveIndexer(Indexer):
                         #     that the service account has proper permissions."
                         # )
                     else:
-                        logger.info(f"Found {file_count} files recursively in the folder.")
+                        logger.info(
+                            f"Found {file_count} files recursively in the folder."
+                        )
                 else:
                     # Non-recursive: check for at least one immediate non-folder child.
                     response = client.list(
@@ -552,9 +551,7 @@ class GoogleDriveDownloader(Downloader):
         return web_link, ""
 
     @requires_dependencies(["httpx", "google.auth"], extras="google-drive")
-    def _download_url(
-        self, file_data: FileData, url: str, ext: str = ""
-    ) -> Path:
+    def _download_url(self, file_data: FileData, url: str, ext: str = "") -> Path:
         """
         Streams file content directly to disk using authenticated HTTP request.
 
@@ -613,13 +610,17 @@ class GoogleDriveDownloader(Downloader):
         download_url, ext = self._get_download_url_and_ext(record_id, mime_type)
         download_path = self._download_url(file_data, download_url, ext)
 
-        file_data.additional_metadata.update({
-            "download_method": "export_link" if ext else "web_content_link",
-            "download_url_used": download_url,
-        })
+        file_data.additional_metadata.update(
+            {
+                "download_method": "export_link" if ext else "web_content_link",
+                "download_url_used": download_url,
+            }
+        )
         file_data.local_download_path = str(download_path.resolve())
 
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        return self.generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
 
 
 google_drive_source_entry = SourceRegistryEntry(

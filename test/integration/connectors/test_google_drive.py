@@ -223,6 +223,7 @@ MIME_TYPES_TO_TEST = [
     "application/vnd.google-apps.presentation",
 ]
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("expected_mime", MIME_TYPES_TO_TEST)
 @pytest.mark.tags(CONNECTOR_TYPE, "integration", "export")
@@ -243,13 +244,19 @@ async def test_google_drive_export_by_type(expected_mime, temp_dir):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
 
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
-    downloader = GoogleDriveDownloader(connection_config=connection_config, download_config=download_config)
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
+    downloader = GoogleDriveDownloader(
+        connection_config=connection_config, download_config=download_config
+    )
 
     file_datas = list(indexer.run())
 
     # Filter only the target MIME type
-    target_files = [f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime]
+    target_files = [
+        f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime
+    ]
     assert target_files, f"No files found with MIME type: {expected_mime}"
 
     for file_data in target_files:
@@ -260,7 +267,10 @@ async def test_google_drive_export_by_type(expected_mime, temp_dir):
         assert out_path.stat().st_size > 0, f"{out_path} is empty"
 
         method = file_data.additional_metadata.get("download_method", "")
-        assert method in {"export_link", "web_content_link"}, f"Unexpected download method: {method}"
+        assert method in {
+            "export_link",
+            "web_content_link",
+        }, f"Unexpected download method: {method}"
 
 
 @pytest.mark.asyncio
