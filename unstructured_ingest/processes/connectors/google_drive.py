@@ -590,7 +590,7 @@ class GoogleDriveDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Streaming file to {download_path}")
 
-        with httpx.Client(timeout=None) as client:
+        with httpx.Client(timeout=None, follow_redirects=True) as client:
             with client.stream("GET", url, headers=headers) as response:
                 if response.status_code != 200:
                     raise SourceConnectionError(
@@ -619,7 +619,7 @@ class GoogleDriveDownloader(Downloader):
         })
         file_data.local_download_path = str(download_path.resolve())
 
-        return self.generate_download_response(file_data=file_data, path=download_path)
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 google_drive_source_entry = SourceRegistryEntry(
