@@ -1,4 +1,3 @@
-import io
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -587,15 +586,17 @@ class GoogleDriveDownloader(Downloader):
         download_path.parent.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Streaming file to {download_path}")
 
-        with httpx.Client(timeout=None, follow_redirects=True) as client:
-            with client.stream("GET", url, headers=headers) as response:
-                if response.status_code != 200:
-                    raise SourceConnectionError(
-                        f"Failed to stream download from {url}: {response.status_code}"
-                    )
-                with open(download_path, "wb") as f:
-                    for chunk in response.iter_bytes():
-                        f.write(chunk)
+        with (
+            httpx.Client(timeout=None, follow_redirects=True) as client,
+            client.stream("GET", url, headers=headers) as response,
+        ):
+            if response.status_code != 200:
+                raise SourceConnectionError(
+                    f"Failed to stream download from {url}: {response.status_code}"
+                )
+            with open(download_path, "wb") as f:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
 
         return download_path
 
