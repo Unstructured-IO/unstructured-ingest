@@ -536,9 +536,7 @@ class GoogleDriveDownloader(Downloader):
         export_links = metadata.get("exportLinks", {})
         web_link = metadata.get("webContentLink")
 
-        export_mime = GOOGLE_EXPORT_MIME_MAP.get(mime_type)
-
-        if export_mime:
+        if export_mime := GOOGLE_EXPORT_MIME_MAP.get(mime_type):
             url = export_links.get(export_mime)
             if not url:
                 raise SourceConnectionError(
@@ -553,26 +551,23 @@ class GoogleDriveDownloader(Downloader):
             )
         return web_link, ""
 
-    @requires_dependencies(["requests", "google.auth"], extras="google-drive")
-    def _download_url(self, url: str) -> io.BytesIO:
+    @requires_dependencies(["httpx", "google.auth"], extras="google-drive")
+    def _download_url(
+        self, file_data: FileData, url: str, ext: str = ""
+    ) -> Path:
         """
-        Downloads file content from a pre-signed or export URL using authenticated HTTP request.
+        Streams file content directly to disk using authenticated HTTP request.
 
-        This method uses the `requests` library and a refreshed OAuth bearer token (via
-        `google-auth`) to fetch the file content. The method is used uniformly for both
-        `exportLinks` and `webContentLink` URLs.
-
-        Authentication:
-        - Loads and refreshes service account credentials with Drive read-only scope.
-        - Attaches the `Authorization: Bearer <token>` header to the request.
+        Writes the file to the correct path in the download directory while downloading.
+        Avoids buffering large files in memory.
 
         Returns:
-            An in-memory `BytesIO` buffer containing the downloaded file content.
+            Path to the downloaded file.
 
         Raises:
-            SourceConnectionError: If the HTTP request fails or returns a non-2xx response.
+            SourceConnectionError: If the HTTP request fails.
         """
-        import requests
+        import httpx
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
 
@@ -588,28 +583,24 @@ class GoogleDriveDownloader(Downloader):
             "Authorization": f"Bearer {creds.token}",
         }
 
-        response = requests.get(url, headers=headers)
-        if not response.ok:
-            raise SourceConnectionError(
-                f"Failed to download file from {url}: {response.status_code}"
-            )
-        return io.BytesIO(response.content)
-
-    def _write_file(
-        self, file_data: FileData, file_contents: io.BytesIO, ext: str = ""
-    ) -> DownloadResponse:
-        download_path = self.get_download_path(file_data=file_data)
+        download_path = self.get_download_path(file_data)
         if ext:
             download_path = download_path.with_suffix(ext)
+
         download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(
-            f"writing {file_data.source_identifiers.fullpath} to {download_path}"
-        )
-        with open(download_path, "wb") as handler:
-            handler.write(file_contents.getbuffer())
-        return self.generate_download_response(
-            file_data=file_data, download_path=download_path
-        )
+        logger.debug(f"Streaming file to {download_path}")
+
+        with httpx.Client(timeout=None) as client:
+            with client.stream("GET", url, headers=headers) as response:
+                if response.status_code != 200:
+                    raise SourceConnectionError(
+                        f"Failed to stream download from {url}: {response.status_code}"
+                    )
+                with open(download_path, "wb") as f:
+                    for chunk in response.iter_bytes():
+                        f.write(chunk)
+
+        return download_path
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         mime_type = file_data.additional_metadata.get("mimeType", "")
@@ -620,18 +611,15 @@ class GoogleDriveDownloader(Downloader):
         )
 
         download_url, ext = self._get_download_url_and_ext(record_id, mime_type)
-        file_contents = self._download_url(download_url)
+        download_path = self._download_url(file_data, download_url, ext)
 
-        file_data.additional_metadata.update(
-            {
-                "download_method": "export_link" if ext else "web_content_link",
-                "download_url_used": download_url,
-            }
-        )
+        file_data.additional_metadata.update({
+            "download_method": "export_link" if ext else "web_content_link",
+            "download_url_used": download_url,
+        })
+        file_data.local_download_path = str(download_path.resolve())
 
-        return self._write_file(
-            file_data=file_data, file_contents=file_contents, ext=ext
-        )
+        return self.generate_download_response(file_data=file_data, path=download_path)
 
 
 google_drive_source_entry = SourceRegistryEntry(
