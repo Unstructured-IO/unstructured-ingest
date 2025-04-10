@@ -1,3 +1,9 @@
+## 1.0.11
+
+### Fixes
+
+* **Change IBM Watsonx Uploader `max_retries` upper limit to 500**
+
 ## 1.0.10
 
 ### Fixes
