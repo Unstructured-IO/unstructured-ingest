@@ -38,9 +38,12 @@ CONNECTOR_TYPE = "google_drive"
 
 # Maps Google-native Drive MIME types → export MIME types
 GOOGLE_EXPORT_MIME_MAP = {
-    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.google-apps.document": \
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.spreadsheet": \
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.google-apps.presentation": \
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 }
 
 # Maps export MIME types → file extensions
