@@ -69,8 +69,8 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
 
     @property
     def bearer_token(self) -> str:
-        # Add 60 seconds to deal with edge cases where the token expires before the request is made
-        timestamp = int(time.time()) + 60
+        # Add 5 minutes to deal with edge cases where the token expires before the request is made
+        timestamp = int(time.time()) + (60 * 5)
         if self._bearer_token is None or self._bearer_token.get("expiration", 0) <= timestamp:
             self._bearer_token = self.generate_bearer_token()
         return self._bearer_token["access_token"]
@@ -240,7 +240,7 @@ class IbmWatsonxUploader(SQLUploader):
     def upload_data_table(
         self, table: "Table", data_table: "ArrowTable", file_data: FileData
     ) -> None:
-        from pyiceberg.exceptions import CommitFailedException
+        from pyiceberg.exceptions import CommitFailedException, RESTError
         from tenacity import (
             before_log,
             retry,
@@ -265,21 +265,51 @@ class IbmWatsonxUploader(SQLUploader):
                 table.refresh()
                 logger.debug(e)
                 raise IcebergCommitFailedException(e)
+            except RESTError:
+                raise
             except Exception as e:
                 raise ProviderError(f"Failed to upload data to table: {e}")
 
         try:
             return _upload_data_table(table, data_table, file_data)
+        except RESTError:
+            raise
         except ProviderError:
             raise
         except Exception as e:
             raise ProviderError(f"Failed to upload data to table: {e}")
 
+    @requires_dependencies(["pyiceberg", "tenacity"], extras="ibm-watsonx-s3")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
+        from pyiceberg.exceptions import RESTError
+        from tenacity import (
+            before_log,
+            retry,
+            retry_if_exception_type,
+            stop_after_attempt,
+            wait_random,
+        )
+
         data_table = self._df_to_arrow_table(df)
 
-        with self.get_table() as table:
-            self.upload_data_table(table, data_table, file_data)
+        # Retry connection in case of connection error
+        @retry(
+            stop=stop_after_attempt(2),
+            wait=wait_random(),
+            retry=retry_if_exception_type(RESTError),
+            before=before_log(logger, logging.DEBUG),
+            reraise=True,
+        )
+        def _upload_dataframe(data_table: Any, file_data: FileData) -> None:
+            with self.get_table() as table:
+                self.upload_data_table(table, data_table, file_data)
+
+        try:
+            return _upload_dataframe(data_table, file_data)
+        except ProviderError:
+            raise
+        except Exception as e:
+            raise ProviderError(f"Failed to upload data to table: {e}")
 
     @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
