@@ -13,7 +13,7 @@ ProjectID_Key:JCTP2     Jira Connector Test Project 2
         Status:In Progress
         
 
-        Priority:{'self': 'https://unstructured-jira-connector-test.atlassian.net/rest/api/2/priority/3', 'iconUrl': 'https://unstructured-jira-connector-test.atlassian.net/images/icons/priorities/medium.svg', 'name': 'Medium', 'id': '3'}
+        Priority:{'self': 'https://unstructured-jira-connector-test.atlassian.net/rest/api/2/priority/3', 'iconUrl': 'https://unstructured-jira-connector-test.atlassian.net/images/icons/priorities/medium_new.svg', 'name': 'Medium', 'id': '3'}
         
 
         AssigneeID_Name:712020:7bc7fdcb-67e7-435d-b4a2-128aee12820c     Unstructured Devops
