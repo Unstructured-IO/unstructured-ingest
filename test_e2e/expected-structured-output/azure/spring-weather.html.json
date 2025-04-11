@@ -4,7 +4,6 @@
     "element_id": "0d591849d38087378b7e9f078ce2d40f",
     "text": "National Weather Service",
     "metadata": {
-      "image_url": "/css/images/header.png",
       "link_texts": [
         "National Weather Service"
       ],
@@ -34,7 +33,6 @@
     "element_id": "0656e79f949578c1381a24fca46105d0",
     "text": "United States Department of Commerce",
     "metadata": {
-      "image_url": "/css/images/header_doc.png",
       "link_texts": [
         "United States Department of Commerce"
       ],
@@ -2617,7 +2615,6 @@
     "element_id": "7ba56f7bdf3e5a1acab250c00aaebab9",
     "text": "",
     "metadata": {
-      "image_url": "/images/wrn/Infographics/2023/outside-of-heatwaves.png",
       "languages": [
         "eng"
       ],
@@ -2641,7 +2638,6 @@
     "element_id": "81a3e31aa4cb3f2745bf23bae6127d95",
     "text": "usa.gov",
     "metadata": {
-      "image_url": "/css/images/usa_gov.png",
       "link_texts": [
         "usa.gov"
       ],
