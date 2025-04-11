@@ -1,3 +1,9 @@
+## 1.0.12-dev0
+
+### Fixes
+
+* **Fix Notion connector database property missing 'description' attribute error**
+
 ## 1.0.12
 
 ### Fixes
@@ -10,17 +16,7 @@
 ### Fixes
 
 * **Change IBM Watsonx Uploader `max_retries` upper limit to 500**
-
-## 1.0.10
-
-### Fixes
-
 * **Fix Pinecone connector writing empty vector error**
-
-## 1.0.9
-
-### Fixes
-
 * **Google Drive connector also include shared drive**
 
 ## 1.0.8
