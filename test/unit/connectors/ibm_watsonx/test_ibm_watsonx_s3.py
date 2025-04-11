@@ -332,7 +332,7 @@ def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
     assert mock_table.refresh.call_count == 5
 
 
-def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
+def test_ibm_watsonx_uploader_upload_data_table_rest_error(
     uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
     mock_transaction: MagicMock,
