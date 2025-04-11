@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 from pydantic import Secret
-from pyiceberg.exceptions import CommitFailedException
+from pyiceberg.exceptions import CommitFailedException, RESTError
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -202,7 +202,7 @@ def test_ibm_watsonx_connection_config_bearer_token_soon_to_expire_token(
 ):
     connection_config._bearer_token = {
         "access_token": "soon_to_expire_token",
-        "expiration": timestamp_now + 60,
+        "expiration": timestamp_now + (60 * 5),
     }
     mock_generate_bearer_token = mocker.patch.object(
         IbmWatsonxConnectionConfig,
@@ -332,6 +332,21 @@ def test_ibm_watsonx_uploader_upload_data_table_commit_exception(
     assert mock_table.refresh.call_count == 5
 
 
+def test_ibm_watsonx_uploader_upload_data_table_rest_error(
+    uploader: IbmWatsonxUploader,
+    mock_table: MagicMock,
+    mock_transaction: MagicMock,
+    mock_data_table: MagicMock,
+    mock_delete: MagicMock,
+    file_data: FileData,
+):
+    mock_transaction.append.side_effect = RESTError()
+
+    with pytest.raises(RESTError):
+        uploader.upload_data_table(mock_table, mock_data_table, file_data)
+    assert mock_table.refresh.call_count == 0
+
+
 def test_ibm_watsonx_uploader_upload_data_table_exception(
     uploader: IbmWatsonxUploader,
     mock_table: MagicMock,
@@ -426,6 +441,63 @@ def test_ibm_watsonx_uploader_upload_dataframe_success(
 
     mock_get_table.assert_called_once()
     mock_upload_data_table.assert_called_once_with(mock_table, mock_data_table, file_data)
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_rest_error(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=RESTError()
+    )
+
+    with pytest.raises(ProviderError):
+        uploader.upload_dataframe(test_df, file_data)
+    assert mock_get_table.call_count == 2
+    assert mock_upload_data_table.call_count == 2
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_provider_error(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=ProviderError()
+    )
+
+    with pytest.raises(ProviderError):
+        uploader.upload_dataframe(test_df, file_data)
+    mock_get_table.assert_called_once()
+    mock_upload_data_table.assert_called_once()
+
+
+def test_ibm_watsonx_uploader_upload_dataframe_exception(
+    mocker: MockerFixture,
+    uploader: IbmWatsonxUploader,
+    test_df: pd.DataFrame,
+    mock_get_table: MagicMock,
+    mock_data_table: MagicMock,
+    file_data: FileData,
+):
+    mocker.patch.object(IbmWatsonxUploader, "_df_to_arrow_table", return_value=mock_data_table)
+    mock_upload_data_table = mocker.patch.object(
+        IbmWatsonxUploader, "upload_data_table", side_effect=Exception()
+    )
+
+    with pytest.raises(ProviderError):
+        uploader.upload_dataframe(test_df, file_data)
+    mock_get_table.assert_called_once()
+    mock_upload_data_table.assert_called_once()
 
 
 def test_ibm_watsonx_uploader_delete_can_delete(

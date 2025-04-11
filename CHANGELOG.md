@@ -1,8 +1,9 @@
-## 1.0.12-dev0
+## 1.0.12
 
 ### Fixes
 
 * **Replaced google drive connector's mechanism for file downloads.**
+* **Fix Token expiration error in IBM watsonx.data connector**
 
 ## 1.0.11
 
