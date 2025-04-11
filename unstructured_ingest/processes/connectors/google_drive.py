@@ -444,7 +444,7 @@ class GoogleDriveIndexer(Indexer):
     def extract_permissions(self, permissions: Optional[list[dict]]) -> list[dict]:
         if not permissions:
             logger.debug("no permissions found")
-            return {}
+            return [{}]
 
         # https://developers.google.com/workspace/drive/api/guides/ref-roles
         role_mapping = {
