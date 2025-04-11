@@ -1,0 +1,117 @@
+{
+  "identifier": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV",
+  "connector_type": "google_drive",
+  "source_identifiers": {
+    "filename": "recalibrating-risk-report.pdf",
+    "fullpath": "utic-test-ingest-fixtures/recalibrating-risk-report.pdf",
+    "rel_path": "recalibrating-risk-report.pdf"
+  },
+  "metadata": {
+    "url": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download",
+    "version": "10",
+    "record_locator": {
+      "file_id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV"
+    },
+    "date_created": "1718723636.34",
+    "date_modified": "1676196572.0",
+    "date_processed": null,
+    "permissions_data": [
+      {
+        "read": {
+          "users": [
+            "03887347926440898356",
+            "04774006893477068632",
+            "09147371668407854156",
+            "13662041828528429192",
+            "18298851591250030956"
+          ],
+          "groups": [
+            "10619079449796831495"
+          ]
+        }
+      },
+      {
+        "update": {
+          "users": [
+            "03887347926440898356",
+            "04774006893477068632",
+            "09147371668407854156",
+            "13662041828528429192",
+            "18298851591250030956"
+          ],
+          "groups": [
+            "10619079449796831495"
+          ]
+        }
+      },
+      {
+        "delete": {
+          "users": [
+            "09147371668407854156"
+          ],
+          "groups": []
+        }
+      }
+    ],
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "fileExtension": "pdf",
+    "md5Checksum": "e690f37ef36368a509d150f373a0bbe0",
+    "mimeType": "application/pdf",
+    "headRevisionId": "0B8fLPtk3k4KOdlRMRDkvM0JCQkdtTU1NdjdpK0ZlSTJadXNjPQ",
+    "webViewLink": "https://drive.google.com/file/d/1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV/view?usp=drivesdk",
+    "id": "1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV",
+    "originalFilename": "recalibrating-risk-report.pdf",
+    "capabilities": {
+      "canChangeViewersCanCopyContent": false,
+      "canEdit": true,
+      "canCopy": true,
+      "canComment": true,
+      "canAddChildren": false,
+      "canDelete": false,
+      "canDownload": true,
+      "canListChildren": false,
+      "canRemoveChildren": false,
+      "canRename": true,
+      "canTrash": false,
+      "canReadRevisions": true,
+      "canChangeCopyRequiresWriterPermission": false,
+      "canMoveItemIntoTeamDrive": false,
+      "canUntrash": false,
+      "canModifyContent": true,
+      "canMoveItemOutOfDrive": false,
+      "canAddMyDriveParent": false,
+      "canRemoveMyDriveParent": true,
+      "canMoveItemWithinDrive": true,
+      "canShare": true,
+      "canMoveChildrenWithinDrive": false,
+      "canModifyContentRestriction": true,
+      "canChangeSecurityUpdateEnabled": false,
+      "canAcceptOwnership": false,
+      "canReadLabels": false,
+      "canModifyLabels": false,
+      "canModifyEditorContentRestriction": true,
+      "canModifyOwnerContentRestriction": false,
+      "canRemoveContentRestriction": false,
+      "canDisableInheritedPermissions": false,
+      "canEnableInheritedPermissions": true
+    },
+    "permissionIds": [
+      "anyoneWithLink",
+      "10619079449796831495",
+      "03887347926440898356",
+      "13662041828528429192",
+      "18298851591250030956",
+      "04774006893477068632",
+      "09147371668407854156"
+    ],
+    "sha1Checksum": "57e64b7be1e099ecf9dcd9832bc09c81ffc5fc44",
+    "sha256Checksum": "076d8d243312e0b03a0fe2191e924c37fe159dd01d6b6ce3a3b2b7c642c36245",
+    "download_method": "web_content_link",
+    "download_url_used": "https://drive.google.com/uc?id=1m1TUgyLv0hHdlsuL7DOWBAKQtvrhWNiV&export=download"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmpd1hbhlea/recalibrating-risk-report.pdf",
+  "display_name": null
+}

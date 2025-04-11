@@ -53,7 +53,9 @@ def google_drive_empty_folder(google_drive_connection_config):
     from googleapiclient.discovery import build
 
     access_config = google_drive_connection_config.access_config.get_secret_value()
-    creds = service_account.Credentials.from_service_account_info(access_config.service_account_key)
+    creds = service_account.Credentials.from_service_account_info(
+        access_config.service_account_key
+    )
     service = build("drive", "v3", credentials=creds)
 
     # Create an empty folder.
@@ -118,16 +120,23 @@ def test_google_drive_precheck_invalid_parameter(google_drive_connection_config)
         access_config=google_drive_connection_config.access_config,
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+    assert (
+        "invalid" in str(excinfo.value).lower()
+        or "not found" in str(excinfo.value).lower()
+    )
 
 
 # Precheck fails due to lack of permission (simulate via monkeypatching).
 @pytest.mark.tags("google-drive", "precheck")
 @requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
-def test_google_drive_precheck_no_permission(google_drive_connection_config, monkeypatch):
+def test_google_drive_precheck_no_permission(
+    google_drive_connection_config, monkeypatch
+):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     indexer = GoogleDriveIndexer(
         connection_config=google_drive_connection_config,
@@ -144,7 +153,10 @@ def test_google_drive_precheck_no_permission(google_drive_connection_config, mon
     monkeypatch.setattr(indexer, "get_root_info", fake_get_root_info)
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "forbidden" in str(excinfo.value).lower() or "permission" in str(excinfo.value).lower()
+    assert (
+        "forbidden" in str(excinfo.value).lower()
+        or "permission" in str(excinfo.value).lower()
+    )
 
 
 # Precheck fails when the folder is empty.
@@ -194,7 +206,115 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
         access_config=google_drive_connection_config.access_config,
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
+    assert (
+        "invalid" in str(excinfo.value).lower()
+        or "not found" in str(excinfo.value).lower()
+    )
+
+
+MIME_TYPES_TO_TEST = [
+    "application/vnd.google-apps.document",
+    "application/vnd.google-apps.spreadsheet",
+    "application/vnd.google-apps.presentation",
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("expected_mime", MIME_TYPES_TO_TEST)
+@pytest.mark.tags(CONNECTOR_TYPE, "integration", "export")
+@requires_env("GOOGLE_DRIVE_NATIVE_TEST_ID", "GOOGLE_DRIVE_SERVICE_KEY")
+async def test_google_drive_export_by_type(expected_mime, temp_dir):
+    """
+    Parametrized test for verifying export of each specific Google-native format
+    using exportLinks or webContentLink.
+    """
+
+    drive_id = os.environ["GOOGLE_DRIVE_NATIVE_TEST_ID"]
+    service_key = os.environ["GOOGLE_DRIVE_SERVICE_KEY"]
+
+    connection_config = GoogleDriveConnectionConfig(
+        drive_id=drive_id,
+        access_config=GoogleDriveAccessConfig(service_account_key=service_key),
+    )
+    index_config = GoogleDriveIndexerConfig(recursive=True)
+    download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
+
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config, index_config=index_config
+    )
+    downloader = GoogleDriveDownloader(
+        connection_config=connection_config, download_config=download_config
+    )
+
+    file_datas = list(indexer.run())
+
+    # Filter only the target MIME type
+    target_files = [
+        f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime
+    ]
+    assert target_files, f"No files found with MIME type: {expected_mime}"
+
+    for file_data in target_files:
+        downloaded = downloader.run(file_data)
+        out_path = downloaded["path"]
+
+        assert out_path.exists(), f"{out_path} not found after download"
+        assert out_path.stat().st_size > 0, f"{out_path} is empty"
+
+        method = file_data.additional_metadata.get("download_method", "")
+        assert method in {
+            "export_link",
+            "web_content_link",
+        }, f"Unexpected download method: {method}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@requires_env("GOOGLE_DRIVE_SERVICE_KEY")
+async def test_google_drive_e2e_source(temp_dir):
+    """
+    End-to-end integration test for the Google Drive connector, aligned with legacy shell test.
+    """
+    service_account_key = os.environ["GOOGLE_DRIVE_SERVICE_KEY"]
+
+    drive_id = "1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr"
+
+    connection_config = GoogleDriveConnectionConfig(
+        drive_id=drive_id,
+        access_config=GoogleDriveAccessConfig(service_account_key=service_account_key),
+    )
+
+    index_config = GoogleDriveIndexerConfig(
+        recursive=True,
+        extensions=["pdf", "docx"],
+    )
+    download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
+
+    indexer = GoogleDriveIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = GoogleDriveDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
+
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="google_drive_e2e",
+            expected_num_files=4,  # adjust if fixture differs
+            validate_downloaded_files=True,
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                "additional_metadata.permissions",
+            ],
+        ),
+    )
