@@ -56,7 +56,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         return e
 
     @requires_dependencies(["openai"], extras="openai")
-    def get_models(self) -> list[str] | None:
+    def get_models(self) -> Optional[list[str]]:
         # In case the list model endpoint isn't exposed, don't break
         from openai import APIStatusError
 
