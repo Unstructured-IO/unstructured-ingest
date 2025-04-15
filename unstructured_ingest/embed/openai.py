@@ -55,13 +55,29 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         logger.error(f"unhandled exception from openai: {e}", exc_info=True)
         return e
 
-    def run_precheck(self) -> None:
+    @requires_dependencies(["openai"], extras="openai")
+    def get_models(self) -> list[str] | None:
+        # In case the list model endpoint isn't exposed, don't break
+        from openai import APIStatusError
+
         client = self.get_client()
         try:
             models = [m.id for m in list(client.models.list())]
+            return models
+        except APIStatusError as e:
+            if e.status_code == 404:
+                return None
+        except Exception as e:
+            raise self.wrap_error(e=e)
+
+    def run_precheck(self) -> None:
+        try:
+            models = self.get_models()
+            if models is None:
+                return
             if self.embedder_model_name not in models:
                 raise UserError(
-                    "model {} not found: {}".format(self.embedder_model_name, ", ".join(models))
+                    "model '{}' not found: {}".format(self.embedder_model_name, ", ".join(models))
                 )
         except Exception as e:
             raise self.wrap_error(e=e)

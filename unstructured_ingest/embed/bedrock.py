@@ -101,7 +101,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
 
             if self.embedder_model_name not in model_ids and self.embedder_model_name not in arns:
                 raise UserError(
-                    "model {} not found either : {} or {}".format(
+                    "model '{}' not found either : {} or {}".format(
                         self.embedder_model_name, ", ".join(model_ids), ", ".join(arns)
                     )
                 )

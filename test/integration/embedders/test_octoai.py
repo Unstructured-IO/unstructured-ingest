@@ -15,7 +15,7 @@ from unstructured_ingest.embed.octoai import (
     OctoAiEmbeddingConfig,
     OctoAIEmbeddingEncoder,
 )
-from unstructured_ingest.errors_v2 import UserAuthError
+from unstructured_ingest.errors_v2 import UserAuthError, UserError
 from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "OCTOAI_API_KEY"
@@ -32,6 +32,7 @@ def test_octoai_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder_config = EmbedderConfig(embedding_provider="octoai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
+    embedder.precheck()
     results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
@@ -47,6 +48,7 @@ def test_raw_octoai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
+    embedder.precheck()
     validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=1024)
 
 
@@ -58,7 +60,7 @@ def test_raw_octoai_embedder_invalid_credentials():
         )
     )
     with pytest.raises(UserAuthError):
-        embedder.get_exemplary_embedding()
+        embedder.precheck()
 
 
 @requires_env(API_KEY)
@@ -70,6 +72,17 @@ async def test_raw_async_octoai_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
+    embedder.precheck()
     await validate_raw_embedder_async(
         embedder=embedder, embedder_file=embedder_file, expected_dimension=1024
     )
+
+
+@requires_env(API_KEY)
+def test_octoai_wrong_model():
+    api_key = get_api_key()
+    embedder = OctoAIEmbeddingEncoder(
+        config=OctoAiEmbeddingConfig(api_key=api_key, model_name="fake_model_name")
+    )
+    with pytest.raises(UserError):
+        embedder.precheck()

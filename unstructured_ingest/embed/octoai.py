@@ -60,7 +60,7 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
             models = [m.id for m in list(client.models.list())]
             if self.embedder_model_name not in models:
                 raise UserError(
-                    "model {} not found: {}".format(self.embedder_model_name, ", ".join(models))
+                    "model '{}' not found: {}".format(self.embedder_model_name, ", ".join(models))
                 )
         except Exception as e:
             raise self.wrap_error(e=e)

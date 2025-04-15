@@ -20,6 +20,9 @@ class EmbeddingConfig(BaseModel):
 class BaseEncoder(ABC):
     config: EmbeddingConfig
 
+    def precheck(self):
+        pass
+
     def initialize(self):
         """Initializes the embedding encoder class. Should also validate the instance
         is properly configured: e.g., embed a single a element"""
@@ -32,9 +35,6 @@ class BaseEncoder(ABC):
 
 @dataclass
 class BaseEmbeddingEncoder(BaseEncoder, ABC):
-    def precheck(self):
-        pass
-
     def initialize(self):
         """Initializes the embedding encoder class. Should also validate the instance
         is properly configured: e.g., embed a single a element"""
