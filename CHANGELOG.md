@@ -1,3 +1,9 @@
+## 1.0.14
+
+### Enhancements
+
+* **Add precheck support for embedders that support listing models**
+
 ## 1.0.13
 
 ### Fixes

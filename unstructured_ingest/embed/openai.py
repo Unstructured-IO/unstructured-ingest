@@ -28,6 +28,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
     base_url: Optional[str] = None
 
+    @requires_dependencies(["openai"], extras="openai")
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):
             return e
@@ -54,6 +55,17 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         logger.error(f"unhandled exception from openai: {e}", exc_info=True)
         return e
 
+    def run_precheck(self) -> None:
+        client = self.get_client()
+        try:
+            models = [m.id for m in list(client.models.list())]
+            if self.embedder_model_name not in models:
+                raise UserError(
+                    "model {} not found: {}".format(self.embedder_model_name, ", ".join(models))
+                )
+        except Exception as e:
+            raise self.wrap_error(e=e)
+
     @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "OpenAI":
         from openai import OpenAI
@@ -71,6 +83,9 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
 
+    def precheck(self):
+        self.config.run_precheck()
+
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
@@ -85,6 +100,9 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
 @dataclass
 class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
+
+    def precheck(self):
+        self.config.run_precheck()
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)

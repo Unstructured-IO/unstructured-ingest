@@ -38,12 +38,9 @@ CONNECTOR_TYPE = "google_drive"
 
 # Maps Google-native Drive MIME types → export MIME types
 GOOGLE_EXPORT_MIME_MAP = {
-    "application/vnd.google-apps.document": \
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.google-apps.spreadsheet": \
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.google-apps.presentation": \
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
+    "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
+    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # noqa: E501
 }
 
 # Maps export MIME types → file extensions
@@ -57,9 +54,9 @@ EXPORT_EXTENSION_MAP = {
 
 
 class GoogleDriveAccessConfig(AccessConfig):
-    service_account_key: Optional[
-        Annotated[dict, BeforeValidator(conform_string_to_dict)]
-    ] = Field(default=None, description="Credentials values to use for authentication")
+    service_account_key: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
+        default=None, description="Credentials values to use for authentication"
+    )
     service_account_key_path: Optional[Path] = Field(
         default=None,
         description="File path to credentials values to use for authentication",
@@ -178,14 +175,10 @@ class GoogleDriveIndexer(Indexer):
                     Please enable it in the Google Cloud Console."
                 )
             else:
-                raise SourceConnectionError(
-                    "Google drive API unreachable for an unknown reason!"
-                )
+                raise SourceConnectionError("Google drive API unreachable for an unknown reason!")
 
     @staticmethod
-    def count_files_recursively(
-        files_client, folder_id: str, extensions: list[str] = None
-    ) -> int:
+    def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
         """
         Count non-folder files recursively under the given folder.
         If `extensions` is provided, only count files
@@ -266,9 +259,7 @@ class GoogleDriveIndexer(Indexer):
                         #     that the service account has proper permissions."
                         # )
                     else:
-                        logger.info(
-                            f"Found {file_count} files recursively in the folder."
-                        )
+                        logger.info(f"Found {file_count} files recursively in the folder.")
                 else:
                     # Non-recursive: check for at least one immediate non-folder child.
                     response = client.list(
@@ -319,9 +310,7 @@ class GoogleDriveIndexer(Indexer):
         date_modified_str = root_info.pop("modifiedTime", None)
         parent_path = root_info.pop("parent_path", None)
         parent_root_path = root_info.pop("parent_root_path", None)
-        date_modified_dt = (
-            parser.parse(date_modified_str) if date_modified_str else None
-        )
+        date_modified_dt = parser.parse(date_modified_str) if date_modified_str else None
         if (
             parent_path
             and isinstance(parent_path, str)
@@ -421,9 +410,7 @@ class GoogleDriveIndexer(Indexer):
     ) -> list[FileData]:
         root_info = self.get_root_info(files_client=files_client, object_id=object_id)
         if not self.is_dir(root_info):
-            root_info["permissions"] = self.extract_permissions(
-                root_info.get("permissions")
-            )
+            root_info["permissions"] = self.extract_permissions(root_info.get("permissions"))
             data = [self.map_file_data(root_info)]
         else:
             file_contents = self.get_paginated_results(
@@ -514,9 +501,7 @@ class GoogleDriveDownloader(Downloader):
     )
     connector_type: str = CONNECTOR_TYPE
 
-    def _get_download_url_and_ext(
-        self, file_id: str, mime_type: str
-    ) -> tuple[str, str]:
+    def _get_download_url_and_ext(self, file_id: str, mime_type: str) -> tuple[str, str]:
         """
         Resolves the appropriate download URL and expected file extension for a Google Drive file.
 
@@ -530,9 +515,7 @@ class GoogleDriveDownloader(Downloader):
             SourceConnectionError: If no valid export or download link is available.
         """
         with self.connection_config.get_client() as client:
-            metadata = client.get(
-                fileId=file_id, fields="exportLinks,webContentLink"
-            ).execute()
+            metadata = client.get(fileId=file_id, fields="exportLinks,webContentLink").execute()
 
         export_links = metadata.get("exportLinks", {})
         web_link = metadata.get("webContentLink")
@@ -540,16 +523,12 @@ class GoogleDriveDownloader(Downloader):
         if export_mime := GOOGLE_EXPORT_MIME_MAP.get(mime_type):
             url = export_links.get(export_mime)
             if not url:
-                raise SourceConnectionError(
-                    f"No export link found for {file_id} as {export_mime}"
-                )
+                raise SourceConnectionError(f"No export link found for {file_id} as {export_mime}")
             ext = EXPORT_EXTENSION_MAP.get(export_mime, "")
             return url, ext
 
         if not web_link:
-            raise SourceConnectionError(
-                f"No webContentLink available for file {file_id}"
-            )
+            raise SourceConnectionError(f"No webContentLink available for file {file_id}")
         return web_link, ""
 
     @requires_dependencies(["httpx", "google.auth"], extras="google-drive")
@@ -622,9 +601,7 @@ class GoogleDriveDownloader(Downloader):
         )
         file_data.local_download_path = str(download_path.resolve())
 
-        return self.generate_download_response(
-            file_data=file_data, download_path=download_path
-        )
+        return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
 google_drive_source_entry = SourceRegistryEntry(

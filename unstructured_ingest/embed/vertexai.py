@@ -55,7 +55,7 @@ class VertexAIEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(
         ["vertexai"],
-        extras="embed-vertexai",
+        extras="vertexai",
     )
     def get_client(self) -> "TextEmbeddingModel":
         """Creates a VertexAI python client to embed elements."""

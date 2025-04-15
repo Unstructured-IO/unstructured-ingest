@@ -189,6 +189,10 @@ class Embedder(BaseProcess, ABC):
     def init(self, **kwargs: Any) -> None:
         self.config.get_embedder().initialize()
 
+    def precheck(self) -> None:
+        embedder = self.config.get_embedder()
+        embedder.precheck()
+
     def run(self, elements_filepath: Path, **kwargs: Any) -> list[dict]:
         # TODO update base embedder classes to support async
         embedder = self.config.get_embedder()
