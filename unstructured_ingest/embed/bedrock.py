@@ -61,7 +61,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_access_key_id: SecretStr
     aws_secret_access_key: SecretStr
     region_name: str = "us-west-2"
-    embedder_model_name: str = Field(default="amazon.titan-embed-text-v2", alias="model_name")
+    embedder_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
 
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):

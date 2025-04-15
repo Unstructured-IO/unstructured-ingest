@@ -84,7 +84,7 @@ def test_raw_bedrock_embedder_invalid_model(embedder_file: Path):
         )
     )
     with pytest.raises(UserError):
-        embedder.get_exemplary_embedding()
+        embedder.precheck()
 
 
 @requires_env("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
