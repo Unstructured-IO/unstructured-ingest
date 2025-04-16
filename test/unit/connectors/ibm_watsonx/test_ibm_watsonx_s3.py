@@ -46,6 +46,7 @@ def connection_config(access_config: IbmWatsonxAccessConfig):
         object_storage_endpoint="test_object_storage_endpoint/",
         object_storage_region="test_region",
         catalog="test_catalog",
+        max_retries_connection=2,
     )
 
 
@@ -248,7 +249,7 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
 def test_ibm_watsonx_connection_config_get_catalog_failure(
     mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
 ):
-    mocker.patch(
+    mock_load_catalog = mocker.patch(
         "pyiceberg.catalog.load_catalog",
         side_effect=Exception("Connection error"),
     )
@@ -258,7 +259,23 @@ def test_ibm_watsonx_connection_config_get_catalog_failure(
         new="test_bearer_token",
     )
     with pytest.raises(ProviderError), connection_config.get_catalog():
-        pass
+        mock_load_catalog.assert_called_once()
+
+
+def test_ibm_watsonx_connection_config_get_catalog_failure_retries(
+    mocker: MockerFixture, connection_config: IbmWatsonxConnectionConfig
+):
+    mock_load_catalog = mocker.patch(
+        "pyiceberg.catalog.load_catalog",
+        side_effect=RESTError("Connection error"),
+    )
+    mocker.patch.object(
+        IbmWatsonxConnectionConfig,
+        "bearer_token",
+        new="test_bearer_token",
+    )
+    with pytest.raises(ProviderError), connection_config.get_catalog():
+        assert mock_load_catalog.call_count == 2
 
 
 def test_ibm_watsonx_uploader_precheck_namespace_exists_table_exists(

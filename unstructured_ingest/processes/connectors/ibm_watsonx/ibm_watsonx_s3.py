@@ -56,6 +56,12 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     object_storage_endpoint: str = Field(description="Cloud Object Storage public endpoint")
     object_storage_region: str = Field(description="Cloud Object Storage region")
     catalog: str = Field(description="Catalog name")
+    max_retries_connection: int = Field(
+        default=10,
+        description="Maximum number of retries in case of a connection error (RESTError)",
+        ge=2,
+        le=100,
+    )
 
     _bearer_token: Optional[dict[str, Any]] = None
 
@@ -145,10 +151,29 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
     @contextmanager
     def get_catalog(self) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
+        from pyiceberg.exceptions import RESTError
+        from tenacity import (
+            before_log,
+            retry,
+            retry_if_exception_type,
+            stop_after_attempt,
+            wait_exponential,
+        )
+
+        # Retry connection in case of a connection error
+        @retry(
+            stop=stop_after_attempt(self.max_retries_connection),
+            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
+            retry=retry_if_exception_type(RESTError),
+            before=before_log(logger, logging.DEBUG),
+            reraise=True,
+        )
+        def _get_catalog(catalog_config: dict[str, Any]) -> "RestCatalog":
+            return load_catalog(**catalog_config)
 
         try:
             catalog_config = self.get_catalog_config()
-            catalog = load_catalog(**catalog_config)
+            catalog = _get_catalog(catalog_config)
         except Exception as e:
             logger.error(f"Failed to connect to catalog '{self.catalog}': {e}", exc_info=True)
             raise ProviderError(f"Failed to connect to catalog '{self.catalog}': {e}")
@@ -172,7 +197,10 @@ class IbmWatsonxUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
     max_retries: int = Field(
-        default=5, description="Maximum number of retries to upload data", ge=2, le=500
+        default=5,
+        description="Maximum number of retries to upload data (CommitFailedException)",
+        ge=2,
+        le=500,
     )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
@@ -287,15 +315,15 @@ class IbmWatsonxUploader(SQLUploader):
             retry,
             retry_if_exception_type,
             stop_after_attempt,
-            wait_random,
+            wait_exponential,
         )
 
         data_table = self._df_to_arrow_table(df)
 
-        # Retry connection in case of connection error
+        # Retry connection in case of a connection error or token expiration
         @retry(
-            stop=stop_after_attempt(2),
-            wait=wait_random(),
+            stop=stop_after_attempt(self.connection_config.max_retries_connection),
+            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
             retry=retry_if_exception_type(RESTError),
             before=before_log(logger, logging.DEBUG),
             reraise=True,
