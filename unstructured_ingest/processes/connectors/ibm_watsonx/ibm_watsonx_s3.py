@@ -197,7 +197,7 @@ class IbmWatsonxUploaderConfig(UploaderConfig):
     namespace: str = Field(description="Namespace name")
     table: str = Field(description="Table name")
     max_retries: int = Field(
-        default=5,
+        default=50,
         description="Maximum number of retries to upload data (CommitFailedException)",
         ge=2,
         le=500,
