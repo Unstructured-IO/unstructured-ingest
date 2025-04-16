@@ -1,3 +1,9 @@
+## 1.0.15
+
+### Fixes
+
+* **Fix bedrock embedder precheck**
+
 ## 1.0.14
 
 ### Enhancements
