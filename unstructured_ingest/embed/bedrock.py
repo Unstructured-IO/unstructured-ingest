@@ -96,8 +96,8 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         try:
             model_info = client.list_foundation_models(byOutputModality="EMBEDDING")
             summaries = model_info.get("modelSummaries", [])
-            model_ids = [m["modelId"].split(":")[0] for m in summaries]
-            arns = [":".join(m["modelArn"].split(":")[0:-1]) for m in summaries]
+            model_ids = [m["modelId"] for m in summaries]
+            arns = [":".join(m["modelArn"]) for m in summaries]
 
             if self.embedder_model_name not in model_ids and self.embedder_model_name not in arns:
                 raise UserError(
