@@ -56,6 +56,7 @@ def uploader_config():
         namespace="test_namespace",
         table="test_table",
         record_id_key="test_record_id_key",
+        max_retries=5,
     )
 
 
