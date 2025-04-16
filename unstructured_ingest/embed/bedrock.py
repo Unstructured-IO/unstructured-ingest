@@ -26,14 +26,18 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 if TYPE_CHECKING:
     from botocore.client import BaseClient
 
-    class BedrockClient(BaseClient):
+    class BedrockRuntimeClient(BaseClient):
         def invoke_model(self, body: str, modelId: str, accept: str, contentType: str) -> dict:
             pass
 
-    class AsyncBedrockClient(BaseClient):
+    class AsyncBedrockRuntimeClient(BaseClient):
         async def invoke_model(
             self, body: str, modelId: str, accept: str, contentType: str
         ) -> dict:
+            pass
+
+    class BedrockClient(BaseClient):
+        def list_foundation_models(self, byOutputModality: str) -> dict:
             pass
 
 
@@ -87,19 +91,49 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         logger.error(f"unhandled exception from bedrock: {e}", exc_info=True)
         return e
 
+    def run_precheck(self) -> None:
+        client = self.get_bedrock_client()
+        try:
+            model_info = client.list_foundation_models(byOutputModality="EMBEDDING")
+            summaries = model_info.get("modelSummaries", [])
+            model_ids = [m["modelId"].split(":")[0] for m in summaries]
+            arns = [":".join(m["modelArn"].split(":")[0:-1]) for m in summaries]
+
+            if self.embedder_model_name not in model_ids and self.embedder_model_name not in arns:
+                raise UserError(
+                    "model '{}' not found either : {} or {}".format(
+                        self.embedder_model_name, ", ".join(model_ids), ", ".join(arns)
+                    )
+                )
+        except Exception as e:
+            raise self.wrap_error(e=e)
+
+    def get_client_kwargs(self) -> dict:
+        return {
+            "aws_access_key_id": self.aws_access_key_id.get_secret_value(),
+            "aws_secret_access_key": self.aws_secret_access_key.get_secret_value(),
+            "region_name": self.region_name,
+        }
+
+    @requires_dependencies(
+        ["boto3"],
+        extras="bedrock",
+    )
+    def get_bedrock_client(self) -> "BedrockClient":
+        import boto3
+
+        bedrock_client = boto3.client(service_name="bedrock", **self.get_client_kwargs())
+
+        return bedrock_client
+
     @requires_dependencies(
         ["boto3", "numpy", "botocore"],
         extras="bedrock",
     )
-    def get_client(self) -> "BedrockClient":
+    def get_client(self) -> "BedrockRuntimeClient":
         import boto3
 
-        bedrock_client = boto3.client(
-            service_name="bedrock-runtime",
-            aws_access_key_id=self.aws_access_key_id.get_secret_value(),
-            aws_secret_access_key=self.aws_secret_access_key.get_secret_value(),
-            region_name=self.region_name,
-        )
+        bedrock_client = boto3.client(service_name="bedrock-runtime", **self.get_client_kwargs())
 
         return bedrock_client
 
@@ -108,22 +142,20 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         extras="bedrock",
     )
     @asynccontextmanager
-    async def get_async_client(self) -> AsyncIterable["AsyncBedrockClient"]:
+    async def get_async_client(self) -> AsyncIterable["AsyncBedrockRuntimeClient"]:
         import aioboto3
 
         session = aioboto3.Session()
-        async with session.client(
-            "bedrock-runtime",
-            aws_access_key_id=self.aws_access_key_id.get_secret_value(),
-            aws_secret_access_key=self.aws_secret_access_key.get_secret_value(),
-            region_name=self.region_name,
-        ) as aws_bedrock:
+        async with session.client("bedrock-runtime", **self.get_client_kwargs()) as aws_bedrock:
             yield aws_bedrock
 
 
 @dataclass
 class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
     config: BedrockEmbeddingConfig
+
+    def precheck(self):
+        self.config.run_precheck()
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
@@ -167,6 +199,9 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
 @dataclass
 class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: BedrockEmbeddingConfig
+
+    def precheck(self):
+        self.config.run_precheck()
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)

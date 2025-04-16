@@ -12,6 +12,7 @@ from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 def test_huggingface_embedder(embedder_file: Path):
     embedder_config = EmbedderConfig(embedding_provider="huggingface")
     embedder = Embedder(config=embedder_config)
+    embedder.precheck()
     results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
@@ -21,4 +22,5 @@ def test_huggingface_embedder(embedder_file: Path):
 
 def test_raw_hugginface_embedder(embedder_file: Path):
     embedder = HuggingFaceEmbeddingEncoder(config=HuggingFaceEmbeddingConfig())
+    embedder.precheck()
     validate_raw_embedder(embedder=embedder, embedder_file=embedder_file, expected_dimension=384)

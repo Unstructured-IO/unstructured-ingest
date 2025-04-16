@@ -23,7 +23,7 @@ class HuggingFaceEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(
         ["sentence_transformers"],
-        extras="embed-huggingface",
+        extras="huggingface",
     )
     def get_client(self) -> "SentenceTransformer":
         from sentence_transformers import SentenceTransformer

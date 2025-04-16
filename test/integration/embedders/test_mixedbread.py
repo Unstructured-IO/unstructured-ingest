@@ -31,6 +31,7 @@ def test_mixedbread_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder_config = EmbedderConfig(embedding_provider="mixedbread-ai", embedding_api_key=api_key)
     embedder = Embedder(config=embedder_config)
+    embedder.precheck()
     results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
@@ -46,6 +47,7 @@ def test_raw_mixedbread_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
+    embedder.precheck()
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
@@ -63,6 +65,7 @@ async def test_raw_async_mixedbread_embedder(embedder_file: Path):
             api_key=api_key,
         )
     )
+    embedder.precheck()
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,

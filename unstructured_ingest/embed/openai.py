@@ -28,6 +28,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
     base_url: Optional[str] = None
 
+    @requires_dependencies(["openai"], extras="openai")
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):
             return e
@@ -55,6 +56,33 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         return e
 
     @requires_dependencies(["openai"], extras="openai")
+    def get_models(self) -> Optional[list[str]]:
+        # In case the list model endpoint isn't exposed, don't break
+        from openai import APIStatusError
+
+        client = self.get_client()
+        try:
+            models = [m.id for m in list(client.models.list())]
+            return models
+        except APIStatusError as e:
+            if e.status_code == 404:
+                return None
+        except Exception as e:
+            raise self.wrap_error(e=e)
+
+    def run_precheck(self) -> None:
+        try:
+            models = self.get_models()
+            if models is None:
+                return
+            if self.embedder_model_name not in models:
+                raise UserError(
+                    "model '{}' not found: {}".format(self.embedder_model_name, ", ".join(models))
+                )
+        except Exception as e:
+            raise self.wrap_error(e=e)
+
+    @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "OpenAI":
         from openai import OpenAI
 
@@ -71,6 +99,9 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
 
+    def precheck(self):
+        self.config.run_precheck()
+
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
@@ -85,6 +116,9 @@ class OpenAIEmbeddingEncoder(BaseEmbeddingEncoder):
 @dataclass
 class AsyncOpenAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: OpenAIEmbeddingConfig
+
+    def precheck(self):
+        self.config.run_precheck()
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)

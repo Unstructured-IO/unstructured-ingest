@@ -41,6 +41,17 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
             return CustomRateLimitError(message)
         return UserError(message)
 
+    def run_precheck(self) -> None:
+        client = self.get_client()
+        try:
+            models = [m.id for m in list(client.models.list())]
+            if self.embedder_model_name not in models:
+                raise UserError(
+                    "model '{}' not found: {}".format(self.embedder_model_name, ", ".join(models))
+                )
+        except Exception as e:
+            raise self.wrap_error(e=e)
+
     @requires_dependencies(["together"], extras="togetherai")
     def get_client(self) -> "Together":
         from together import Together
@@ -58,6 +69,9 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
 class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
 
+    def precheck(self):
+        self.config.run_precheck()
+
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)
 
@@ -72,6 +86,9 @@ class TogetherAIEmbeddingEncoder(BaseEmbeddingEncoder):
 @dataclass
 class AsyncTogetherAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
     config: TogetherAIEmbeddingConfig
+
+    def precheck(self):
+        self.config.run_precheck()
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.config.wrap_error(e=e)

@@ -42,7 +42,7 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(
         ["mixedbread_ai"],
-        extras="embed-mixedbreadai",
+        extras="mixedbreadai",
     )
     def get_client(self) -> "MixedbreadAI":
         """
@@ -59,7 +59,7 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(
         ["mixedbread_ai"],
-        extras="embed-mixedbreadai",
+        extras="mixedbreadai",
     )
     def get_async_client(self) -> "AsyncMixedbreadAI":
         from mixedbread_ai.client import AsyncMixedbreadAI

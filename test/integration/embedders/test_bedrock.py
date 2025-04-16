@@ -36,6 +36,7 @@ def test_bedrock_embedder(embedder_file: Path):
         embedding_aws_secret_access_key=aws_credentials["aws_secret_access_key"],
     )
     embedder = Embedder(config=embedder_config)
+    embedder.precheck()
     results = embedder.run(elements_filepath=embedder_file)
     assert results
     with embedder_file.open("r") as f:
@@ -52,6 +53,7 @@ def test_raw_bedrock_embedder(embedder_file: Path):
             aws_secret_access_key=aws_credentials["aws_secret_access_key"],
         )
     )
+    embedder.precheck()
     validate_raw_embedder(
         embedder=embedder,
         embedder_file=embedder_file,
@@ -82,7 +84,7 @@ def test_raw_bedrock_embedder_invalid_model(embedder_file: Path):
         )
     )
     with pytest.raises(UserError):
-        embedder.get_exemplary_embedding()
+        embedder.precheck()
 
 
 @requires_env("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
@@ -95,6 +97,7 @@ async def test_raw_async_bedrock_embedder(embedder_file: Path):
             aws_secret_access_key=aws_credentials["aws_secret_access_key"],
         )
     )
+    embedder.precheck()
     await validate_raw_embedder_async(
         embedder=embedder,
         embedder_file=embedder_file,

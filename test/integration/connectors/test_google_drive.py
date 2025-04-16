@@ -53,9 +53,7 @@ def google_drive_empty_folder(google_drive_connection_config):
     from googleapiclient.discovery import build
 
     access_config = google_drive_connection_config.access_config.get_secret_value()
-    creds = service_account.Credentials.from_service_account_info(
-        access_config.service_account_key
-    )
+    creds = service_account.Credentials.from_service_account_info(access_config.service_account_key)
     service = build("drive", "v3", credentials=creds)
 
     # Create an empty folder.
@@ -120,23 +118,16 @@ def test_google_drive_precheck_invalid_parameter(google_drive_connection_config)
         access_config=google_drive_connection_config.access_config,
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(
-        connection_config=connection_config, index_config=index_config
-    )
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert (
-        "invalid" in str(excinfo.value).lower()
-        or "not found" in str(excinfo.value).lower()
-    )
+    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
 
 
 # Precheck fails due to lack of permission (simulate via monkeypatching).
 @pytest.mark.tags("google-drive", "precheck")
 @requires_env("GOOGLE_DRIVE_ID", "GOOGLE_DRIVE_SERVICE_KEY")
-def test_google_drive_precheck_no_permission(
-    google_drive_connection_config, monkeypatch
-):
+def test_google_drive_precheck_no_permission(google_drive_connection_config, monkeypatch):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     indexer = GoogleDriveIndexer(
         connection_config=google_drive_connection_config,
@@ -153,10 +144,7 @@ def test_google_drive_precheck_no_permission(
     monkeypatch.setattr(indexer, "get_root_info", fake_get_root_info)
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert (
-        "forbidden" in str(excinfo.value).lower()
-        or "permission" in str(excinfo.value).lower()
-    )
+    assert "forbidden" in str(excinfo.value).lower() or "permission" in str(excinfo.value).lower()
 
 
 # Precheck fails when the folder is empty.
@@ -206,15 +194,10 @@ def test_google_drive_precheck_invalid_drive_id(google_drive_connection_config):
         access_config=google_drive_connection_config.access_config,
     )
     index_config = GoogleDriveIndexerConfig(recursive=True)
-    indexer = GoogleDriveIndexer(
-        connection_config=connection_config, index_config=index_config
-    )
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
     with pytest.raises(SourceConnectionError) as excinfo:
         indexer.precheck()
-    assert (
-        "invalid" in str(excinfo.value).lower()
-        or "not found" in str(excinfo.value).lower()
-    )
+    assert "invalid" in str(excinfo.value).lower() or "not found" in str(excinfo.value).lower()
 
 
 MIME_TYPES_TO_TEST = [
@@ -244,9 +227,7 @@ async def test_google_drive_export_by_type(expected_mime, temp_dir):
     index_config = GoogleDriveIndexerConfig(recursive=True)
     download_config = GoogleDriveDownloaderConfig(download_dir=temp_dir)
 
-    indexer = GoogleDriveIndexer(
-        connection_config=connection_config, index_config=index_config
-    )
+    indexer = GoogleDriveIndexer(connection_config=connection_config, index_config=index_config)
     downloader = GoogleDriveDownloader(
         connection_config=connection_config, download_config=download_config
     )
@@ -254,9 +235,7 @@ async def test_google_drive_export_by_type(expected_mime, temp_dir):
     file_datas = list(indexer.run())
 
     # Filter only the target MIME type
-    target_files = [
-        f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime
-    ]
+    target_files = [f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime]
     assert target_files, f"No files found with MIME type: {expected_mime}"
 
     for file_data in target_files:
