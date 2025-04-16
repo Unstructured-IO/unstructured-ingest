@@ -1,8 +1,9 @@
-## 1.0.12-dev0
+## 1.0.13
 
 ### Fixes
 
 * **Fix Notion connector database property missing 'description' attribute error**
+* **Retry IBM watsonx S3 upload on connection error**
 
 ## 1.0.12
 
