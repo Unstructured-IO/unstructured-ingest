@@ -1,3 +1,10 @@
+## 1.0.16-dev0
+
+### Fixes
+
+* **Pin elasticsearch to below 9.0.0**
+* **Pin chromadb to below 1.0.0**
+
 ## 1.0.15
 
 ### Fixes
