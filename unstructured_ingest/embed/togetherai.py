@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import Field, Optional, SecretStr
+from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
     AsyncBaseEmbeddingEncoder,
