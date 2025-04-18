@@ -1476,16 +1476,16 @@ wheels = [
 
 [[package]]
 name = "elasticsearch"
-version = "9.0.0"
+version = "8.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "elastic-transport" },
     { name = "python-dateutil" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/ad/d76e88811e68d7bdd976c0ff6027e7c3b544a949c8d3de052adc5765e1a6/elasticsearch-9.0.0.tar.gz", hash = "sha256:c075ccdc7d5697e2a842a88418efdb6cf6732d7a62c77a25d60184db23fd1464", size = 823636 }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/28/f5da7dccaa5e2ac3c7432fa702640a4dc0c9b301ec49db72794ba90cd15f/elasticsearch-8.18.0.tar.gz", hash = "sha256:4fb28cfe82d480c72fc049e659afe4cad450b318c210e43493ca402e900793eb", size = 746773 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/b7/e85bdb8bed719dbf92780264d6c381186ced8eb7acc88bbe37a996f87b03/elasticsearch-9.0.0-py3-none-any.whl", hash = "sha256:295425172043e5db723d55cb3a5e28622696ca7739b466b812ab12ac938b6249", size = 895793 },
+    { url = "https://files.pythonhosted.org/packages/4a/50/375924224aa98bbe5fbd5eecc2040824121f5c852bb3b4c59b4bf8708ab0/elasticsearch-8.18.0-py3-none-any.whl", hash = "sha256:b26a6e67958b7bd04711a31f3400197aabf4a6f03873eadce1a0aeb446653886", size = 895164 },
 ]
 
 [package.optional-dependencies]
@@ -7785,7 +7785,7 @@ requires-dist = [
     { name = "discord-py", marker = "extra == 'discord'" },
     { name = "dropboxdrivefs", marker = "extra == 'dropbox'" },
     { name = "duckdb", marker = "extra == 'duckdb'" },
-    { name = "elasticsearch", extras = ["async"], marker = "extra == 'elasticsearch'" },
+    { name = "elasticsearch", extras = ["async"], marker = "extra == 'elasticsearch'", specifier = "<9.0.0" },
     { name = "fsspec", marker = "extra == 'azure'" },
     { name = "fsspec", marker = "extra == 'box'" },
     { name = "fsspec", marker = "extra == 'dropbox'" },
