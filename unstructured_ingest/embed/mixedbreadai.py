@@ -34,10 +34,13 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
 
     api_key: SecretStr = Field(
         default_factory=lambda: SecretStr(os.environ.get("MXBAI_API_KEY")),
+        description="API key for Mixedbread AI",
     )
 
     embedder_model_name: str = Field(
-        default="mixedbread-ai/mxbai-embed-large-v1", alias="model_name"
+        default="mixedbread-ai/mxbai-embed-large-v1",
+        alias="model_name",
+        description="Mixedbread AI model name",
     )
 
     @requires_dependencies(

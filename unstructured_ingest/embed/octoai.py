@@ -25,8 +25,12 @@ if TYPE_CHECKING:
 
 class OctoAiEmbeddingConfig(EmbeddingConfig):
     api_key: SecretStr
-    embedder_model_name: str = Field(default="thenlper/gte-large", alias="model_name")
-    base_url: str = Field(default="https://text.octoai.run/v1")
+    embedder_model_name: str = Field(
+        default="thenlper/gte-large", alias="model_name", description="octoai model name"
+    )
+    base_url: str = Field(
+        default="https://text.octoai.run/v1", description="optional override for the base url"
+    )
 
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):
