@@ -15,11 +15,18 @@ if TYPE_CHECKING:
 
 
 class HuggingFaceEmbeddingConfig(EmbeddingConfig):
-    embedder_model_name: Optional[str] = Field(default="all-MiniLM-L6-v2", alias="model_name")
-    embedder_model_kwargs: Optional[dict] = Field(
-        default_factory=lambda: {"device": "cpu"}, alias="model_kwargs"
+    embedder_model_name: Optional[str] = Field(
+        default="all-MiniLM-L6-v2", alias="model_name", description="HuggingFace model name"
     )
-    encode_kwargs: Optional[dict] = Field(default_factory=lambda: {"normalize_embeddings": False})
+    embedder_model_kwargs: Optional[dict] = Field(
+        default_factory=lambda: {"device": "cpu"},
+        alias="model_kwargs",
+        description="additional model parameters",
+    )
+    encode_kwargs: Optional[dict] = Field(
+        default_factory=lambda: {"normalize_embeddings": False},
+        description="additional embedding parameters",
+    )
 
     @requires_dependencies(
         ["sentence_transformers"],

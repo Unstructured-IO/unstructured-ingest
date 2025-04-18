@@ -24,9 +24,11 @@ if TYPE_CHECKING:
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr
-    embedder_model_name: str = Field(default="text-embedding-ada-002", alias="model_name")
-    base_url: Optional[str] = None
+    api_key: SecretStr = Field(description="API key for OpenAI")
+    embedder_model_name: str = Field(
+        default="text-embedding-ada-002", alias="model_name", description="OpenAI model name"
+    )
+    base_url: Optional[str] = Field(default=None, description="optional override for the base url")
 
     @requires_dependencies(["openai"], extras="openai")
     def wrap_error(self, e: Exception) -> Exception:

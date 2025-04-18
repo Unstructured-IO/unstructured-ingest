@@ -26,11 +26,14 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
         le=128,
         description="Batch size for embedding requests. VoyageAI has a limit of 128.",
     )
-    api_key: SecretStr
-    embedder_model_name: str = Field(default="voyage-3", alias="model_name")
-    truncation: Optional[bool] = Field(default=None)
-    max_retries: int = 0
-    timeout_in_seconds: Optional[int] = None
+    api_key: SecretStr = Field(description="API key for VoyageAI")
+    embedder_model_name: str = Field(
+        default="voyage-3", alias="model_name", description="VoyageAI model name"
+    )
+    max_retries: int = Field(default=0, description="Max retries for embedding requests.")
+    timeout_in_seconds: Optional[int] = Field(
+        default=None, description="Optional timeout in seconds for embedding requests."
+    )
 
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):

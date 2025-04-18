@@ -58,10 +58,14 @@ def conform_query(query: str, provider: str) -> dict:
 
 
 class BedrockEmbeddingConfig(EmbeddingConfig):
-    aws_access_key_id: SecretStr
-    aws_secret_access_key: SecretStr
-    region_name: str = "us-west-2"
-    embedder_model_name: str = Field(default="amazon.titan-embed-text-v1", alias="model_name")
+    aws_access_key_id: SecretStr = Field(description="aws access key id")
+    aws_secret_access_key: SecretStr = Field(description="aws secret access key")
+    region_name: str = Field(description="aws region name", default="us-west-2")
+    embedder_model_name: str = Field(
+        default="amazon.titan-embed-text-v1",
+        alias="model_name",
+        description="AWS Bedrock model name",
+    )
 
     def wrap_error(self, e: Exception) -> Exception:
         if is_internal_error(e=e):

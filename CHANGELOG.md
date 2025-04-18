@@ -1,3 +1,7 @@
+## 1.0.16
+
+* **Add embedder config field descriptions**
+
 ## 1.0.15
 
 ### Fixes

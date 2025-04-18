@@ -20,9 +20,11 @@ if TYPE_CHECKING:
 
 
 class TogetherAIEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr
+    api_key: SecretStr = Field(description="API key for Together AI")
     embedder_model_name: str = Field(
-        default="togethercomputer/m2-bert-80M-8k-retrieval", alias="model_name"
+        default="togethercomputer/m2-bert-80M-8k-retrieval",
+        alias="model_name",
+        description="Together AI model name",
     )
 
     def wrap_error(self, e: Exception) -> Exception:

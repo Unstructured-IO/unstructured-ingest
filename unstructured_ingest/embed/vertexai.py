@@ -32,9 +32,9 @@ ApiKeyType = Secret[Annotated[dict, BeforeValidator(conform_string_to_dict)]]
 
 
 class VertexAIEmbeddingConfig(EmbeddingConfig):
-    api_key: ApiKeyType
+    api_key: ApiKeyType = Field(description="API key for Vertex AI")
     embedder_model_name: Optional[str] = Field(
-        default="textembedding-gecko@001", alias="model_name"
+        default="textembedding-gecko@001", alias="model_name", description="Vertex AI model name"
     )
 
     def wrap_error(self, e: Exception) -> Exception:
