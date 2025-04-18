@@ -1,3 +1,7 @@
+## 1.0.17
+
+* **Support optional API keys for embedders**
+
 ## 1.0.16
 
 * **Add embedder config field descriptions**

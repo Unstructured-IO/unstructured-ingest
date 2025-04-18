@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr = Field(description="API key for OpenAI")
+    api_key: Optional[SecretStr] = Field(description="API key for OpenAI", default=None)
     embedder_model_name: str = Field(
         default="text-embedding-ada-002", alias="model_name", description="OpenAI model name"
     )
@@ -88,13 +88,15 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     def get_client(self) -> "OpenAI":
         from openai import OpenAI
 
-        return OpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
+        api_key = self.api_key.get_secret_value() if self.api_key else None
+        return OpenAI(api_key=api_key, base_url=self.base_url)
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncOpenAI":
         from openai import AsyncOpenAI
 
-        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
+        api_key = self.api_key.get_secret_value() if self.api_key else None
+        return AsyncOpenAI(api_key=api_key, base_url=self.base_url)
 
 
 @dataclass

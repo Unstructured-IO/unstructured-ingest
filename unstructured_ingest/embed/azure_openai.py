@@ -25,8 +25,9 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     def get_client(self) -> "AzureOpenAI":
         from openai import AzureOpenAI
 
+        api_key = self.api_key.get_secret_value() if self.api_key else None
         return AzureOpenAI(
-            api_key=self.api_key.get_secret_value(),
+            api_key=api_key,
             api_version=self.api_version,
             azure_endpoint=self.azure_endpoint,
         )
@@ -35,8 +36,9 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     def get_async_client(self) -> "AsyncAzureOpenAI":
         from openai import AsyncAzureOpenAI
 
+        api_key = self.api_key.get_secret_value() if self.api_key else None
         return AsyncAzureOpenAI(
-            api_key=self.api_key.get_secret_value(),
+            api_key=api_key,
             api_version=self.api_version,
             azure_endpoint=self.azure_endpoint,
         )

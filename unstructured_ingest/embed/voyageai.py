@@ -26,7 +26,7 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
         le=128,
         description="Batch size for embedding requests. VoyageAI has a limit of 128.",
     )
-    api_key: SecretStr = Field(description="API key for VoyageAI")
+    api_key: Optional[SecretStr] = Field(description="API key for VoyageAI", default=None)
     embedder_model_name: str = Field(
         default="voyage-3", alias="model_name", description="VoyageAI model name"
     )
@@ -65,8 +65,9 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
         """Creates a VoyageAI python client to embed elements."""
         from voyageai import Client as VoyageAIClient
 
+        api_key = self.api_key.get_secret_value() if self.api_key else None
         client = VoyageAIClient(
-            api_key=self.api_key.get_secret_value(),
+            api_key=api_key,
             max_retries=self.max_retries,
             timeout=self.timeout_in_seconds,
         )
@@ -80,8 +81,9 @@ class VoyageAIEmbeddingConfig(EmbeddingConfig):
         """Creates a VoyageAI python client to embed elements."""
         from voyageai import AsyncClient as AsyncVoyageAIClient
 
+        api_key = self.api_key.get_secret_value() if self.api_key else None
         client = AsyncVoyageAIClient(
-            api_key=self.api_key.get_secret_value(),
+            api_key=api_key,
             max_retries=self.max_retries,
             timeout=self.timeout_in_seconds,
         )
