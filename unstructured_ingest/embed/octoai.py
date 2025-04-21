@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class OctoAiEmbeddingConfig(EmbeddingConfig):
-    api_key: Optional[SecretStr] = Field(description="API key for OctoAI", default=None)
+    api_key: SecretStr = Field(description="API key for OctoAI")
     embedder_model_name: str = Field(
         default="thenlper/gte-large", alias="model_name", description="octoai model name"
     )
@@ -77,8 +77,7 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
         """Creates an OpenAI python client to embed elements. Uses the OpenAI SDK."""
         from openai import OpenAI
 
-        api_key = self.api_key.get_secret_value() if self.api_key else None
-        return OpenAI(api_key=api_key, base_url=self.base_url)
+        return OpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
 
     @requires_dependencies(
         ["openai", "tiktoken"],
@@ -88,8 +87,7 @@ class OctoAiEmbeddingConfig(EmbeddingConfig):
         """Creates an OpenAI python client to embed elements. Uses the OpenAI SDK."""
         from openai import AsyncOpenAI
 
-        api_key = self.api_key.get_secret_value() if self.api_key else None
-        return AsyncOpenAI(api_key=api_key, base_url=self.base_url)
+        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
 
 
 @dataclass

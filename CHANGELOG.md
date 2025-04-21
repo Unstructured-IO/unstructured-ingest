@@ -1,3 +1,7 @@
+## 1.0.18
+
+* **Enforce api key if SDK defaults to os env var**
+
 ## 1.0.17
 
 * **Support optional API keys for embedders**

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field, SecretStr
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class TogetherAIEmbeddingConfig(EmbeddingConfig):
-    api_key: Optional[SecretStr] = Field(description="API key for Together AI", default=None)
+    api_key: SecretStr = Field(description="API key for Together AI")
     embedder_model_name: str = Field(
         default="togethercomputer/m2-bert-80M-8k-retrieval",
         alias="model_name",
@@ -58,15 +58,13 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
     def get_client(self) -> "Together":
         from together import Together
 
-        api_key = self.api_key.get_secret_value() if self.api_key else None
-        return Together(api_key=api_key)
+        return Together(api_key=self.api_key.get_secret_value())
 
     @requires_dependencies(["together"], extras="togetherai")
     def get_async_client(self) -> "AsyncTogether":
         from together import AsyncTogether
 
-        api_key = self.api_key.get_secret_value() if self.api_key else None
-        return AsyncTogether(api_key=api_key)
+        return AsyncTogether(api_key=self.api_key.get_secret_value())
 
 
 @dataclass
