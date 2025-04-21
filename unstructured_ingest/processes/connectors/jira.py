@@ -55,6 +55,7 @@ class JiraIssueMetadata:
             "project_id": self.project_id,
         }
 
+
 class FieldGetter(dict):
     def __getitem__(self, key):
         value = super().__getitem__(key) if key in self else None
@@ -167,6 +168,7 @@ class JiraConnectionConfig(ConnectionConfig):
     @contextmanager
     def get_client(self) -> Generator["Jira", None, None]:
         from atlassian import Jira
+
         class CustomJira(Jira):
             """
             Custom Jira class to fix the issue with the get_project_issues_count method.
@@ -174,14 +176,13 @@ class JiraConnectionConfig(ConnectionConfig):
             handle the response correctly.
             Once the issue is fixed in the original library, this class can be removed.
             """
+
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
             def get_project_issues_count(self, project: str) -> int:
                 jql = f'project = "{project}" '
                 response = self.jql(jql, fields="*none")
-                if self.advanced_mode:
-                    return cast("Response", response)
                 response = cast("dict", response)
                 if "total" in response:
                     return response["total"]
