@@ -39,6 +39,7 @@ async def test_jira_source(temp_dir):
         url=jira_url,
         username=user_email,
         access_config=access_config,
+        cloud=True,
     )
     index_config = JiraIndexerConfig(projects=projects, boards=boards, issues=issues)
 

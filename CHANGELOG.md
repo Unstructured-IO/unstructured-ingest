@@ -1,3 +1,7 @@
+## 1.0.18-dev1
+
+* **Fix Jira connector cloud option not working issue**
+
 ## 1.0.18
 
 * **Enforce api key if SDK defaults to os env var**
