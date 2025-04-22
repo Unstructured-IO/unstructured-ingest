@@ -108,6 +108,8 @@ jobs:
         # Sharepoint
         SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
         SHAREPOINT_CRED: ${{ secrets.SHAREPOINT_CRED }}
+        # Box
+        BOX_APP_CONFIG: ${{ secrets.BOX_APP_CONFIG }}
       run : |
         make integration-test-connectors-blob-storage
         make parse-skipped-tests
