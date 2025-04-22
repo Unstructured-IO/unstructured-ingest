@@ -1,4 +1,4 @@
-CREATE TABLE elements (
+CREATE TABLE IF NOT EXISTS `elements` (
     id STRING NOT NULL PRIMARY KEY,
     record_id STRING NOT NULL,
     element_id STRING NOT NULL,
@@ -7,4 +7,3 @@ CREATE TABLE elements (
     type STRING,
     metadata VARIANT
 );
-

@@ -1,3 +1,7 @@
+## 1.0.19
+
+* **Fix databricks delta table name edge cases**
+
 ## 1.0.18
 
 * **Enforce api key if SDK defaults to os env var**
