@@ -141,8 +141,8 @@ def test_weaviate_local_create_destination(weaviate_instance):
         upload_config=LocalWeaviateUploaderConfig(),
         connection_config=LocalWeaviateConnectionConfig(),
     )
-    collection_name = "system_created-123"
-    formatted_collection_name = "System_created_123"
+    collection_name = "system_CREATED-123"
+    formatted_collection_name = "System_CREATED_123"
     created = uploader.create_destination(destination_name=collection_name)
     assert created
     with uploader.connection_config.get_client() as weaviate_client:
