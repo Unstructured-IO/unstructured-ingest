@@ -1,3 +1,7 @@
+## 1.0.20
+
+* **Fix Weaviate connector issue with names being wrongly transformed to match collections naming conventions**
+
 ## 1.0.19
 
 * **Fix databricks delta table name edge cases**
