@@ -14,6 +14,7 @@ from unstructured_ingest.processes.connectors.notion.types.rich_text import (
 class RichText(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "rich_text"
     rich_text: dict = field(default_factory=dict)
 
