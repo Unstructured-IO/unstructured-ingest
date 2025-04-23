@@ -1,4 +1,4 @@
-## 1.0.20-dev1
+## 1.0.21
 
 * **Fix Jira connector cloud option not working issue**
 
