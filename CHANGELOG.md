@@ -1,3 +1,7 @@
+## 1.0.21
+
+* **Fix Jira connector cloud option not working issue**
+
 ## 1.0.20
 
 * **Fix Weaviate connector issue with names being wrongly transformed to match collections naming conventions**
