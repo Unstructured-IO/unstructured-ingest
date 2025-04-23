@@ -37,6 +37,7 @@ class MultiSelect(DBPropertyBase):
     id: str
     name: str
     multi_select: MultiSelectProp
+    description: Optional[str] = None
     type: str = "multi_select"
 
     @classmethod

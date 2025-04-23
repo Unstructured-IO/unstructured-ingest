@@ -44,6 +44,7 @@ class Relation(DBPropertyBase):
     id: str
     name: str
     relation: RelationProp
+    description: Optional[str] = None
     type: str = "relation"
 
     @classmethod

@@ -12,6 +12,7 @@ from unstructured_ingest.processes.connectors.notion.types.user import People
 class CreatedBy(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "created_by"
     created_by: dict = field(default_factory=dict)
 

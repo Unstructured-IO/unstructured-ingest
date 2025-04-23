@@ -10,6 +10,11 @@ from unstructured_ingest.processes.connectors.notion.types.user import People
 
 @dataclass
 class LastEditedBy(DBPropertyBase):
+    id: str
+    name: str
+    description: Optional[str] = None
+    type: str = "last_edited_by"
+
     @classmethod
     def from_dict(cls, data: dict):
         return cls()

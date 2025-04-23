@@ -11,6 +11,7 @@ from unstructured_ingest.processes.connectors.notion.interfaces import DBCellBas
 class CreatedTime(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "created_time"
     created_time: dict = field(default_factory=dict)
 

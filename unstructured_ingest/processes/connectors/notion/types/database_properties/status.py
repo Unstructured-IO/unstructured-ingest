@@ -54,6 +54,7 @@ class Status(DBPropertyBase):
     id: str
     name: str
     status: StatusProp
+    description: Optional[str] = None
     type: str = "status"
 
     @classmethod

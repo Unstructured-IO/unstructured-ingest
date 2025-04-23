@@ -29,6 +29,7 @@ class Rollup(DBPropertyBase):
     id: str
     name: str
     rollup: RollupProp
+    description: Optional[str] = None
     type: str = "rollup"
 
     @classmethod

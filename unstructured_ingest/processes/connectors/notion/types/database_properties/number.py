@@ -25,6 +25,7 @@ class Number(DBPropertyBase):
     id: str
     name: str
     number: NumberProp
+    description: Optional[str] = None
     type: str = "number"
 
     @classmethod

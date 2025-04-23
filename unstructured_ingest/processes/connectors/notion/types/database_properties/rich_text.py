@@ -14,6 +14,7 @@ from unstructured_ingest.processes.connectors.notion.types.rich_text import (
 class RichText(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "rich_text"
     rich_text: dict = field(default_factory=dict)
 
@@ -27,6 +28,7 @@ class RichTextCell(DBCellBase):
     id: str
     rich_text: List[RichTextType]
     name: Optional[str] = None
+    description: Optional[str] = None
     type: str = "rich_text"
 
     @classmethod

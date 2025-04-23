@@ -18,6 +18,7 @@ from unstructured_ingest.processes.connectors.notion.types.user import People
 class Verification(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "verification"
     verification: dict = field(default_factory=dict)
 

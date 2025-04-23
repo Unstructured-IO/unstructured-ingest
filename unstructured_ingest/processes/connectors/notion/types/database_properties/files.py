@@ -12,6 +12,7 @@ from unstructured_ingest.processes.connectors.notion.types.file import FileObjec
 class Files(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "files"
     files: dict = field(default_factory=dict)
 

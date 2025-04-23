@@ -11,6 +11,7 @@ from unstructured_ingest.processes.connectors.notion.interfaces import DBCellBas
 class LastEditedTime(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "last_edited_time"
     last_edited_time: dict = field(default_factory=dict)
 

@@ -12,6 +12,7 @@ from unstructured_ingest.processes.connectors.notion.types.rich_text import Rich
 class Title(DBPropertyBase):
     id: str
     name: str
+    description: Optional[str] = None
     type: str = "title"
     title: dict = field(default_factory=dict)
 
