@@ -1,6 +1,14 @@
-## 1.0.18-dev1
+## 1.0.20-dev1
 
 * **Fix Jira connector cloud option not working issue**
+
+## 1.0.20
+
+* **Fix Weaviate connector issue with names being wrongly transformed to match collections naming conventions**
+
+## 1.0.19
+
+* **Fix databricks delta table name edge cases**
 
 ## 1.0.18
 

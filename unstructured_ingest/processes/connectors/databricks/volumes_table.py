@@ -136,7 +136,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     def get_table_columns(self) -> dict[str, str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
-                cursor.execute(f"SELECT * from {self.upload_config.table_name} LIMIT 1")
+                cursor.execute(f"SELECT * from `{self.upload_config.table_name}` LIMIT 1")
                 self._columns = {desc[0]: desc[1] for desc in cursor.description}
         return self._columns
 
@@ -152,7 +152,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
         )
         with self.get_cursor() as cursor:
             cursor.execute(
-                f"DELETE FROM {self.upload_config.table_name} WHERE {RECORD_ID_LABEL} = '{file_data.identifier}'"  # noqa: E501
+                f"DELETE FROM `{self.upload_config.table_name}` WHERE {RECORD_ID_LABEL} = '{file_data.identifier}'"  # noqa: E501
             )
             results = cursor.fetchall()
             deleted_rows = results[0][0]

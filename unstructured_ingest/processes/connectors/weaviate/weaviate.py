@@ -234,15 +234,32 @@ class WeaviateUploader(VectorDBUploader, ABC):
         self.create_destination(**kwargs)
 
     def format_destination_name(self, destination_name: str) -> str:
-        # Weaviate naming requirements:
-        # must be alphanumeric and underscores only
+        """
+        Weaviate Collection naming conventions:
+            1. must begin with an uppercase letter
+            2. must be alphanumeric and underscores only
+        """
+
+        # Check if the first character is an uppercase letter
+        if not re.match(r"^[a-zA-Z]", destination_name):
+            raise ValueError("Collection name must start with an uppercase letter")
+        # Replace all non-alphanumeric characters with underscores
         formatted = re.sub(r"[^a-zA-Z0-9]", "_", destination_name)
-        # must begin with capital letter
-        return formatted.capitalize()
+        # Make the first character uppercase and leave the rest as is
+        if len(formatted) == 1:
+            formatted = formatted.capitalize()
+        else:
+            formatted = formatted[0].capitalize() + formatted[1:]
+        if formatted != destination_name:
+            logger.warning(
+                f"Given Collection name '{destination_name}' doesn't follow naming conventions. "
+                f"Renaming to '{formatted}'"
+            )
+        return formatted
 
     def create_destination(
         self,
-        destination_name: str = "unstructuredautocreated",
+        destination_name: str = "Unstructuredautocreated",
         vector_length: Optional[int] = None,
         **kwargs: Any,
     ) -> bool:
@@ -250,18 +267,18 @@ class WeaviateUploader(VectorDBUploader, ABC):
         collection_name = self.format_destination_name(collection_name)
         self.upload_config.collection = collection_name
 
-        connectors_dir = Path(__file__).parents[1]
-        collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
-        with collection_config_file.open() as f:
-            collection_config = json.load(f)
-        collection_config["class"] = collection_name
-
         if not self._collection_exists():
-            logger.info(f"creating weaviate collection '{collection_name}' with default configs")
+            connectors_dir = Path(__file__).parents[1]
+            collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
+            with collection_config_file.open() as f:
+                collection_config = json.load(f)
+            collection_config["class"] = collection_name
+
+            logger.info(f"Creating weaviate collection '{collection_name}' with default configs")
             with self.connection_config.get_client() as weaviate_client:
                 weaviate_client.collections.create_from_dict(config=collection_config)
                 return True
-        logger.debug(f"collection with name '{collection_name}' already exists, skipping creation")
+        logger.debug(f"Collection with name '{collection_name}' already exists, skipping creation")
         return False
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
