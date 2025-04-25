@@ -12,6 +12,7 @@ class CreatedTime(DBPropertyBase):
     id: str
     name: str
     type: str = "created_time"
+    description: Optional[str] = None
     created_time: dict = field(default_factory=dict)
 
     @classmethod

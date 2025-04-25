@@ -136,14 +136,14 @@ test = [
     "deepdiff",
     "bs4",
     "pandas",
-
     # Connector specific deps
     "cryptography",
     "fsspec",
     "vertexai",
     "pyiceberg",
     "pyarrow",
-    "networkx"
+    "networkx",
+    "htmlbuilder",
 ]
 # Add constraints needed for CI
 ci = [

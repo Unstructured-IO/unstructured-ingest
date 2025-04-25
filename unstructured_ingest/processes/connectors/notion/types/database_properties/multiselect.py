@@ -38,6 +38,7 @@ class MultiSelect(DBPropertyBase):
     name: str
     multi_select: MultiSelectProp
     type: str = "multi_select"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

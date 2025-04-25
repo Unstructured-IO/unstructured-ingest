@@ -13,6 +13,7 @@ class CreatedBy(DBPropertyBase):
     id: str
     name: str
     type: str = "created_by"
+    description: Optional[str] = None
     created_by: dict = field(default_factory=dict)
 
     @classmethod

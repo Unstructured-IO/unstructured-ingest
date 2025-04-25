@@ -38,8 +38,8 @@ class Select(DBPropertyBase):
     id: str
     name: str
     select: SelectProp
-    description: Optional[str] = None
     type: str = "select"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

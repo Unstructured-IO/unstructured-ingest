@@ -55,6 +55,7 @@ class Status(DBPropertyBase):
     name: str
     status: StatusProp
     type: str = "status"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):
