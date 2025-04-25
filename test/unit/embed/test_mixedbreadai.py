@@ -7,23 +7,22 @@ from unstructured_ingest.embed.mixedbreadai import (
 def test_embed_documents_does_not_break_element_to_dict(mocker):
     mock_client = mocker.MagicMock()
 
-    def mock_embeddings(
+    def mock_embed(
         model,
+        input,
         normalized,
         encoding_format,
-        truncation_strategy,
-        request_options,
-        input,
+        extra_headers,
+        timeout,
     ):
         mock_response = mocker.MagicMock()
         mock_response.data = [mocker.MagicMock(embedding=[i, i + 1]) for i in range(len(input))]
         return mock_response
 
-    mock_client.embeddings.side_effect = mock_embeddings
+    mock_client.embed.side_effect = mock_embed
 
     # Mock get_client to return our mock_client
     mocker.patch.object(MixedbreadAIEmbeddingConfig, "get_client", return_value=mock_client)
-    mocker.patch.object(MixedbreadAIEmbeddingEncoder, "get_request_options", return_value={})
 
     encoder = MixedbreadAIEmbeddingEncoder(
         config=MixedbreadAIEmbeddingConfig(

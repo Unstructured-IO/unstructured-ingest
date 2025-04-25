@@ -1,7 +1,10 @@
+## 1.0.22-dev1
+
+* **Migrate to new Mixedbread Python SDK**
+
 ## 1.0.22
 
 * **Fix Notion connector missing database properties fields**
-* **Migrate to new Mixedbread Python SDK**
 
 ## 1.0.21
 
