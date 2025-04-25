@@ -143,7 +143,8 @@ test = [
     "vertexai",
     "pyiceberg",
     "pyarrow",
-    "networkx"
+    "networkx",
+    "htmlBuilder"
 ]
 # Add constraints needed for CI
 ci = [
