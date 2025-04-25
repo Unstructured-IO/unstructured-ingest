@@ -19,7 +19,7 @@ TRUNCATION_STRATEGY = "end"
 
 
 if TYPE_CHECKING:
-    from mixedbread import Mixedbread, AsyncMixedbread, RequestOptions
+    from mixedbread import AsyncMixedbread, Mixedbread
 
 
 class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
@@ -92,7 +92,6 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         ["mixedbread"],
         extras="embed-mixedbreadai",
     )
-
     def get_client(self) -> "Mixedbread":
         return self.config.get_client()
 
@@ -103,7 +102,7 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
             normalized=True,
             encoding_format=ENCODING_FORMAT,
             extra_headers={"User-Agent": USER_AGENT},
-            timeout=TIMEOUT
+            timeout=TIMEOUT,
         )
         return [datum.embedding for datum in response.data]
 
@@ -120,7 +119,6 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         ["mixedbread"],
         extras="embed-mixedbreadai",
     )
-
     def get_client(self) -> "AsyncMixedbread":
         return self.config.get_async_client()
 
@@ -131,6 +129,6 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             normalized=True,
             encoding_format=ENCODING_FORMAT,
             extra_headers={"User-Agent": USER_AGENT},
-            timeout=TIMEOUT
+            timeout=TIMEOUT,
         )
         return [datum.embedding for datum in response.data]
