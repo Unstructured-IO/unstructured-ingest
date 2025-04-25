@@ -27,7 +27,6 @@ def get_api_key() -> str:
 
 
 @requires_env(API_KEY)
-@pytest.mark.skip(reason="need to migrate to new mixedbread sdk.")
 def test_mixedbread_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder_config = EmbedderConfig(embedding_provider="mixedbread-ai", embedding_api_key=api_key)
@@ -41,7 +40,6 @@ def test_mixedbread_embedder(embedder_file: Path):
 
 
 @requires_env(API_KEY)
-@pytest.mark.skip(reason="need to migrate to new mixedbread sdk.")
 def test_raw_mixedbread_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = MixedbreadAIEmbeddingEncoder(
@@ -60,7 +58,6 @@ def test_raw_mixedbread_embedder(embedder_file: Path):
 
 @requires_env(API_KEY)
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="need to migrate to new mixedbread sdk.")
 async def test_raw_async_mixedbread_embedder(embedder_file: Path):
     api_key = get_api_key()
     embedder = AsyncMixedbreadAIEmbeddingEncoder(
