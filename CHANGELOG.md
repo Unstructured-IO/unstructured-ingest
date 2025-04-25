@@ -1,13 +1,11 @@
 ## 1.0.22
 
 * **Fix Notion connector missing database properties fields**
+* **Migrate to new Mixedbread Python SDK**
 
 ## 1.0.21
 
 * **Fix Jira connector cloud option not working issue**
-
-## 1.0.20
-
 * **Fix Weaviate connector issue with names being wrongly transformed to match collections naming conventions**
 
 ## 1.0.19
