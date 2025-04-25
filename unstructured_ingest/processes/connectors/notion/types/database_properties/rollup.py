@@ -30,6 +30,7 @@ class Rollup(DBPropertyBase):
     name: str
     rollup: RollupProp
     type: str = "rollup"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

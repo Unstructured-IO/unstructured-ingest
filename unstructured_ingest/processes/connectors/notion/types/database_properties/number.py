@@ -26,6 +26,7 @@ class Number(DBPropertyBase):
     name: str
     number: NumberProp
     type: str = "number"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

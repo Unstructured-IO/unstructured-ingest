@@ -23,7 +23,7 @@ class LastEditedByCell(DBCellBase):
     id: str
     last_edited_by: People
     type: str = "last_edited_by"
-
+    description: Optional[str] = None
     name: Optional[str] = None
 
     @classmethod

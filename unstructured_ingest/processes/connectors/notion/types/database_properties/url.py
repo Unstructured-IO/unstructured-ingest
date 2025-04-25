@@ -14,6 +14,7 @@ class URL(DBPropertyBase):
     name: str
     type: str = "url"
     url: dict = field(default_factory=dict)
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

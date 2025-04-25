@@ -17,6 +17,7 @@ class UniqueID(DBPropertyBase):
     name: str
     type: str = "unique_id"
     unique_id: dict = field(default_factory=dict)
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

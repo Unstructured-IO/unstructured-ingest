@@ -15,6 +15,7 @@ class RichText(DBPropertyBase):
     id: str
     name: str
     type: str = "rich_text"
+    description: Optional[str] = None
     rich_text: dict = field(default_factory=dict)
 
     @classmethod
