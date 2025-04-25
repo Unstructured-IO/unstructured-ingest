@@ -12,6 +12,7 @@ class Email(DBPropertyBase):
     id: str
     name: str
     type: str = "email"
+    description: Optional[str] = None
     email: dict = field(default_factory=dict)
 
     @classmethod

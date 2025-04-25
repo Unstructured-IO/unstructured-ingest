@@ -1,3 +1,7 @@
+## 1.0.22
+
+* **Fix Notion connector missing database properties fields**
+
 ## 1.0.21
 
 * **Fix Jira connector cloud option not working issue**

@@ -12,6 +12,7 @@ class LastEditedTime(DBPropertyBase):
     id: str
     name: str
     type: str = "last_edited_time"
+    description: Optional[str] = None
     last_edited_time: dict = field(default_factory=dict)
 
     @classmethod

@@ -14,6 +14,7 @@ class Title(DBPropertyBase):
     name: str
     type: str = "title"
     title: dict = field(default_factory=dict)
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

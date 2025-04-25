@@ -13,6 +13,7 @@ class Date(DBPropertyBase):
     id: str
     name: str
     type: str = "date"
+    description: Optional[str] = None
     date: dict = field(default_factory=dict)
 
     @classmethod
