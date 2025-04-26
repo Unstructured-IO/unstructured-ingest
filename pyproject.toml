@@ -144,7 +144,6 @@ test = [
     "pyarrow",
     "networkx",
     "htmlbuilder",
-    "mixedbread",
 ]
 # Add constraints needed for CI
 ci = [
