@@ -43,7 +43,7 @@ async def test_jira_source(temp_dir):
     )
     index_config = JiraIndexerConfig(projects=projects, boards=boards, issues=issues)
 
-    download_config = JiraDownloaderConfig(download_dir=temp_dir)
+    download_config = JiraDownloaderConfig(download_dir=temp_dir, download_attachments=True)
 
     # Instantiate indexer and downloader
     indexer = JiraIndexer(
@@ -61,7 +61,7 @@ async def test_jira_source(temp_dir):
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="jira",
-            expected_num_files=8,
+            expected_num_files=9,
             validate_file_data=True,
             validate_downloaded_files=True,
         ),
