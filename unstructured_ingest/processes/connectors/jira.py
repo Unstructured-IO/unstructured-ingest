@@ -21,6 +21,7 @@ from unstructured_ingest.interfaces import (
     DownloadResponse,
     Indexer,
     IndexerConfig,
+    download_responses,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -276,15 +277,22 @@ class JiraIndexer(Indexer):
         )
         return file_data
 
+    def get_generators(self) -> List[Callable]:
+        generators = []
+        if self.index_config.boards:
+            generators.append(self._get_issues_within_boards)
+        if self.index_config.issues:
+            generators.append(self._get_issues_by_keys)
+        if self.index_config.projects:
+            generators.append(self._get_issues_within_projects)
+        return generators
+
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        generators = [
-            self._get_issues_by_keys,
-            self._get_issues_within_boards,
-            self._get_issues_within_projects,
-        ]
         seen_keys = []
-        for gen in generators:
+        for gen in self.get_generators():
             for issue in gen():
+                if not issue:
+                    continue
                 if issue.key in seen_keys:
                     continue
                 seen_keys.append(issue.key)
@@ -292,7 +300,9 @@ class JiraIndexer(Indexer):
 
 
 class JiraDownloaderConfig(DownloaderConfig):
-    pass
+    download_attachments: bool = Field(
+        default=False, description="If True, will download any attachments and process as well"
+    )
 
 
 @dataclass
@@ -397,7 +407,49 @@ class JiraDownloader(Downloader):
             logger.error(f"Failed to fetch issue with key: {issue_key}: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to fetch issue with key: {issue_key}: {e}")
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def generate_attachment_file_data(
+        self, attachment_dict: dict, parent_filedata: FileData
+    ) -> FileData:
+        new_filedata = parent_filedata.copy(deep=True)
+        if new_filedata.metadata.record_locator is None:
+            new_filedata.metadata.record_locator = {}
+        new_filedata.metadata.record_locator["parent_issue"] = (
+            parent_filedata.metadata.record_locator["id"]
+        )
+        new_filedata.identifier = attachment_dict["attachment_id"]
+        filename = attachment_dict["filename"]
+        new_filedata.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
+        return new_filedata
+
+    def process_attachments(self, file_data: FileData, issue_key: str) -> list[DownloadResponse]:
+        with self.connection_config.get_client() as client:
+            attachments = client.get_attachments_ids_from_issue(issue=issue_key)
+            if not attachments:
+                return []
+            download_path = self.get_download_path(file_data)
+            attachment_download_dir = download_path.parent / "attachments"
+            attachment_download_dir.mkdir(parents=True, exist_ok=True)
+            download_responses = []
+            for attachment in attachments:
+                attachment_filename = Path(attachment["filename"])
+                attachment_id = attachment["attachment_id"]
+                attachment_download_path = attachment_download_dir / Path(
+                    attachment_id
+                ).with_suffix(attachment_filename.suffix)
+                resp = client.get_attachment_content(attachment_id=attachment_id)
+                with open(attachment_download_path, "wb") as f:
+                    f.write(resp)
+                attachment_filedata = self.generate_attachment_file_data(
+                    attachment_dict=attachment, parent_filedata=file_data
+                )
+                download_responses.append(
+                    self.generate_download_response(
+                        file_data=attachment_filedata, download_path=attachment_download_path
+                    )
+                )
+        return download_responses
+
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         issue_key = file_data.additional_metadata.get("key")
         if not issue_key:
             raise ValueError("Issue key not found in metadata.")
@@ -412,7 +464,16 @@ class JiraDownloader(Downloader):
         with open(download_path, "w") as f:
             f.write(issue_str)
         self.update_file_data(file_data, issue)
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        download_response = self.generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
+        if self.download_config.download_attachments and (
+            attachment_responses := self.process_attachments(
+                file_data=file_data, issue_key=issue_key
+            )
+        ):
+            download_response = [download_response] + attachment_responses
+        return download_response
 
 
 jira_source_entry = SourceRegistryEntry(
