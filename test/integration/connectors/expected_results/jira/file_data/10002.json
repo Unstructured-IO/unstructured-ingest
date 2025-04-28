@@ -15,7 +15,7 @@
     },
     "date_created": "2023-08-22T11:29:46.189+0000",
     "date_modified": "2023-08-23T14:36:31.252+0000",
-    "date_processed": "1745870178.916849",
+    "date_processed": "1745871782.004291",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -24,6 +24,6 @@
     "key": "JCTP1-3"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpc7mu5xj9/JCTP1/10002.txt",
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmp5cnq2gw7/JCTP1/10002.txt",
   "display_name": "Jira Connector Test Project 1"
 }
