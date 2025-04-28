@@ -1,6 +1,7 @@
-## 1.0.22-dev1
+## 1.0.23
 
 * **Migrate to new Mixedbread Python SDK**
+* **Support better filtering in jira connector and downloading attachments**
 
 ## 1.0.22
 
