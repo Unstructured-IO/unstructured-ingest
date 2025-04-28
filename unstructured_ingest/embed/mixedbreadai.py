@@ -19,8 +19,7 @@ TRUNCATION_STRATEGY = "end"
 
 
 if TYPE_CHECKING:
-    from mixedbread_ai.client import AsyncMixedbreadAI, MixedbreadAI
-    from mixedbread_ai.core import RequestOptions
+    from mixedbread import AsyncMixedbread, Mixedbread
 
 
 class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
@@ -44,31 +43,33 @@ class MixedbreadAIEmbeddingConfig(EmbeddingConfig):
     )
 
     @requires_dependencies(
-        ["mixedbread_ai"],
-        extras="mixedbreadai",
+        ["mixedbread"],
+        extras="embed-mixedbreadai",
     )
-    def get_client(self) -> "MixedbreadAI":
+    def get_client(self) -> "Mixedbread":
         """
         Create the Mixedbread AI client.
 
         Returns:
-            MixedbreadAI: Initialized client.
+            Mixedbread: Initialized client.
         """
-        from mixedbread_ai.client import MixedbreadAI
+        from mixedbread import Mixedbread
 
-        return MixedbreadAI(
+        return Mixedbread(
             api_key=self.api_key.get_secret_value(),
+            max_retries=MAX_RETRIES,
         )
 
     @requires_dependencies(
-        ["mixedbread_ai"],
-        extras="mixedbreadai",
+        ["mixedbread"],
+        extras="embed-mixedbreadai",
     )
-    def get_async_client(self) -> "AsyncMixedbreadAI":
-        from mixedbread_ai.client import AsyncMixedbreadAI
+    def get_async_client(self) -> "AsyncMixedbread":
+        from mixedbread import AsyncMixedbread
 
-        return AsyncMixedbreadAI(
+        return AsyncMixedbread(
             api_key=self.api_key.get_secret_value(),
+            max_retries=MAX_RETRIES,
         )
 
 
@@ -88,29 +89,20 @@ class MixedbreadAIEmbeddingEncoder(BaseEmbeddingEncoder):
         return self.embed_query(query="Q")
 
     @requires_dependencies(
-        ["mixedbread_ai"],
+        ["mixedbread"],
         extras="embed-mixedbreadai",
     )
-    def get_request_options(self) -> "RequestOptions":
-        from mixedbread_ai.core import RequestOptions
-
-        return RequestOptions(
-            max_retries=MAX_RETRIES,
-            timeout_in_seconds=TIMEOUT,
-            additional_headers={"User-Agent": USER_AGENT},
-        )
-
-    def get_client(self) -> "MixedbreadAI":
+    def get_client(self) -> "Mixedbread":
         return self.config.get_client()
 
-    def embed_batch(self, client: "MixedbreadAI", batch: list[str]) -> list[list[float]]:
-        response = client.embeddings(
+    def embed_batch(self, client: "Mixedbread", batch: list[str]) -> list[list[float]]:
+        response = client.embed(
             model=self.config.embedder_model_name,
+            input=batch,
             normalized=True,
             encoding_format=ENCODING_FORMAT,
-            truncation_strategy=TRUNCATION_STRATEGY,
-            request_options=self.get_request_options(),
-            input=batch,
+            extra_headers={"User-Agent": USER_AGENT},
+            timeout=TIMEOUT,
         )
         return [datum.embedding for datum in response.data]
 
@@ -124,28 +116,19 @@ class AsyncMixedbreadAIEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
         return await self.embed_query(query="Q")
 
     @requires_dependencies(
-        ["mixedbread_ai"],
+        ["mixedbread"],
         extras="embed-mixedbreadai",
     )
-    def get_request_options(self) -> "RequestOptions":
-        from mixedbread_ai.core import RequestOptions
-
-        return RequestOptions(
-            max_retries=MAX_RETRIES,
-            timeout_in_seconds=TIMEOUT,
-            additional_headers={"User-Agent": USER_AGENT},
-        )
-
-    def get_client(self) -> "AsyncMixedbreadAI":
+    def get_client(self) -> "AsyncMixedbread":
         return self.config.get_async_client()
 
-    async def embed_batch(self, client: "AsyncMixedbreadAI", batch: list[str]) -> list[list[float]]:
-        response = await client.embeddings(
+    async def embed_batch(self, client: "AsyncMixedbread", batch: list[str]) -> list[list[float]]:
+        response = await client.embed(
             model=self.config.embedder_model_name,
+            input=batch,
             normalized=True,
             encoding_format=ENCODING_FORMAT,
-            truncation_strategy=TRUNCATION_STRATEGY,
-            request_options=self.get_request_options(),
-            input=batch,
+            extra_headers={"User-Agent": USER_AGENT},
+            timeout=TIMEOUT,
         )
         return [datum.embedding for datum in response.data]
