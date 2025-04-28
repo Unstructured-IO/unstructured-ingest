@@ -410,15 +410,23 @@ class JiraDownloader(Downloader):
     def generate_attachment_file_data(
         self, attachment_dict: dict, parent_filedata: FileData
     ) -> FileData:
-        new_filedata = parent_filedata.copy(deep=True)
+        new_filedata = parent_filedata.model_copy(deep=True)
         if new_filedata.metadata.record_locator is None:
             new_filedata.metadata.record_locator = {}
         new_filedata.metadata.record_locator["parent_issue"] = (
             parent_filedata.metadata.record_locator["id"]
         )
-        new_filedata.identifier = attachment_dict["attachment_id"]
+        # Append an identifier for attachment to not conflict with issue ids
+        new_filedata.identifier = "{}a".format(attachment_dict["id"])
         filename = attachment_dict["filename"]
-        new_filedata.source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
+        new_filedata.metadata.filesize_bytes = attachment_dict.pop("size", None)
+        new_filedata.metadata.date_created = attachment_dict.pop("created", None)
+        new_filedata.metadata.url = attachment_dict.pop("self", None)
+        new_filedata.metadata.record_locator = attachment_dict
+        new_filedata.source_identifiers = SourceIdentifiers(
+            filename=filename,
+            fullpath=(Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
+        )
         return new_filedata
 
     def process_attachments(self, file_data: FileData, issue_key: str) -> list[DownloadResponse]:
@@ -431,6 +439,7 @@ class JiraDownloader(Downloader):
             attachment_download_dir.mkdir(parents=True, exist_ok=True)
             download_responses = []
             for attachment in attachments:
+                attachment_meta = client.get_attachment(attachment_id=attachment["attachment_id"])
                 attachment_filename = Path(attachment["filename"])
                 attachment_id = attachment["attachment_id"]
                 attachment_download_path = attachment_download_dir / Path(
@@ -440,7 +449,7 @@ class JiraDownloader(Downloader):
                 with open(attachment_download_path, "wb") as f:
                     f.write(resp)
                 attachment_filedata = self.generate_attachment_file_data(
-                    attachment_dict=attachment, parent_filedata=file_data
+                    attachment_dict=attachment_meta, parent_filedata=file_data
                 )
                 download_responses.append(
                     self.generate_download_response(
