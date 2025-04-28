@@ -5,7 +5,7 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Callable, Generator, List, Optional, Union, cast
 
-from pydantic import BaseModel, Field, Secret, ValidationError
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -120,17 +120,17 @@ class JiraConnectionConfig(ConnectionConfig):
         basic_auth = self.username and access_configs.password
         pat_auth = access_configs.token
         if self.cloud and not basic_auth:
-            raise ValidationError(
+            raise ValueError(
                 "cloud authentication requires username and API token (--password), "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
         if basic_auth and pat_auth:
-            raise ValidationError(
+            raise ValueError(
                 "both password and token provided, only one allowed, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
         if not (basic_auth or pat_auth):
-            raise ValidationError(
+            raise ValueError(
                 "no form of auth provided, see: https://atlassian-python-api.readthedocs.io/"
             )
 
@@ -181,7 +181,7 @@ class JiraIndexerConfig(IndexerConfig):
 
     def model_post_init(self, context: Any, /) -> None:
         if not self.projects and not self.boards and not self.issues:
-            raise ValidationError("At least one of projects, boards, or issues must be provided.")
+            raise ValueError("At least one of projects, boards, or issues must be provided.")
 
 
 @dataclass

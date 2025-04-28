@@ -11,7 +11,6 @@ from unstructured_ingest.processes.connectors.jira import (
     JiraIndexer,
     JiraIndexerConfig,
     JiraIssueMetadata,
-    issues_fetcher_wrapper,
     nested_object_to_field_getter,
 )
 
@@ -87,7 +86,7 @@ def test_jira_indexer_get_issues_within_single_project(
         {"id": "2", "key": "TEST-2"},
     ]
 
-    issues = jira_indexer._get_issues_within_single_project("TEST1")
+    issues = list(jira_indexer._get_issues_within_projects())
     assert len(issues) == expected_issues_count
 
     if issues:
@@ -118,61 +117,6 @@ def test_jira_indexer_get_issues_within_projects_with_projects(
     ]
 
     issues = jira_indexer._get_issues_within_projects()
-    assert len(issues) == 2
-    assert issues[0].id == "1"
-    assert issues[0].key == "TEST-1"
-    assert issues[1].id == "2"
-    assert issues[1].key == "TEST-2"
-
-
-def test_jira_indexer_get_issues_within_projects_no_projects_with_boards_or_issues(
-    mocker: MockerFixture,
-    jira_indexer: JiraIndexer,
-):
-    jira_indexer.index_config.projects = None
-    jira_indexer.index_config.boards = ["2"]
-    mocker.patch.object(JiraConnectionConfig, "get_client", autospec=True)
-
-    issues = jira_indexer._get_issues_within_projects()
-    assert issues == []
-
-
-def test_jira_indexer_get_issues_within_projects_no_projects_no_boards_no_issues(
-    jira_indexer: JiraIndexer,
-    mock_jira: MagicMock,
-):
-    jira_indexer.index_config.projects = None
-    jira_indexer.index_config.boards = None
-    jira_indexer.index_config.issues = None
-    mock_jira.projects.return_value = [{"key": "TEST1"}, {"key": "TEST2"}]
-    mock_jira.get_project_issues_count.return_value = 2
-    mock_jira.get_all_project_issues.return_value = [
-        {"id": "1", "key": "TEST-1"},
-        {"id": "2", "key": "TEST-2"},
-    ]
-
-    issues = jira_indexer._get_issues_within_projects()
-    assert len(issues) == 4
-    assert issues[0].id == "1"
-    assert issues[0].key == "TEST-1"
-    assert issues[1].id == "2"
-    assert issues[1].key == "TEST-2"
-    assert issues[2].id == "1"
-    assert issues[2].key == "TEST-1"
-    assert issues[3].id == "2"
-    assert issues[3].key == "TEST-2"
-
-
-def test_jira_indexer_get_issues_within_boards(
-    jira_indexer: JiraIndexer,
-    mock_jira: MagicMock,
-):
-    mock_jira.get_issues_for_board.return_value = [
-        {"id": "1", "key": "TEST-1"},
-        {"id": "2", "key": "TEST-2"},
-    ]
-
-    issues = jira_indexer._get_issues_within_boards()
     assert len(issues) == 2
     assert issues[0].id == "1"
     assert issues[0].key == "TEST-1"
@@ -219,7 +163,7 @@ def test_jira_indexer_get_issues(
         "key": "ISSUE_KEY",
     }
 
-    issues = jira_indexer._get_issues()
+    issues = list(jira_indexer._get_issues_by_keys())
     assert len(issues) == 2
     assert issues[0].id == "ISSUE_ID"
     assert issues[0].key == "ISSUE_KEY"
@@ -244,7 +188,7 @@ def test_jira_indexer_get_issues_unique_issues(mocker: MockerFixture, jira_index
     )
     mocker.patch.object(
         JiraIndexer,
-        "_get_issues",
+        "_get_issues_by_keys",
         return_value=[
             JiraIssueMetadata(id="4", key="TEST-4"),
             JiraIssueMetadata(id="2", key="TEST-2"),
@@ -282,17 +226,18 @@ def test_jira_indexer_get_issues_no_duplicates(mocker: MockerFixture, jira_index
     )
     mocker.patch.object(
         JiraIndexer,
-        "_get_issues",
+        "_get_issues_by_keys",
         return_value=[
             JiraIssueMetadata(id="3", key="TEST-3"),
         ],
     )
 
-    issues = jira_indexer.get_issues()
+    all_file_data = list(jira_indexer.run())
+    issues = [JiraIssueMetadata.model_validate(fd.metadata.record_locator) for fd in all_file_data]
+    issues = sorted(issues, key=lambda x: x.id)
     assert len(issues) == 3
     assert issues[0].id == "1"
     assert issues[0].key == "TEST-1"
-    assert issues[0].board_id == "1"
     assert issues[1].id == "2"
     assert issues[1].key == "TEST-2"
     assert issues[2].id == "3"
@@ -302,9 +247,9 @@ def test_jira_indexer_get_issues_no_duplicates(mocker: MockerFixture, jira_index
 def test_jira_indexer_get_issues_empty(mocker: MockerFixture, jira_indexer: JiraIndexer):
     mocker.patch.object(JiraIndexer, "_get_issues_within_boards", return_value=[])
     mocker.patch.object(JiraIndexer, "_get_issues_within_projects", return_value=[])
-    mocker.patch.object(JiraIndexer, "_get_issues", return_value=[])
+    mocker.patch.object(JiraIndexer, "_get_issues_by_keys", return_value=[])
 
-    issues = jira_indexer.get_issues()
+    issues = list(jira_indexer.run())
     assert len(issues) == 0
 
 
@@ -341,9 +286,9 @@ def test_connection_config_pat_auth():
 
 
 def test_jira_issue_metadata_object():
-    expected = {"id": "10000", "key": "TEST-1", "board_id": "1", "project_id": "TEST"}
-    metadata = JiraIssueMetadata(id="10000", key="TEST-1", board_id="1")
-    assert expected == metadata.to_dict()
+    expected = {"id": "10000", "key": "TEST-1"}
+    metadata = JiraIssueMetadata(id="10000", key="TEST-1")
+    assert expected == metadata.model_dump()
 
 
 def test_nested_object_to_field_getter():
@@ -355,47 +300,3 @@ def test_nested_object_to_field_getter():
     assert fg["b"]["c"] == 2
     assert isinstance(fg["b"]["d"], FieldGetter)
     assert fg["b"]["d"]["e"] == {}
-
-
-def test_issues_fetcher_wrapper():
-    test_issues_to_fetch = 250
-    test_issues = [{"id": i} for i in range(0, test_issues_to_fetch)]
-
-    def mock_func(limit, start):
-        return {"results": test_issues[start : start + limit]}
-
-    wrapped_func = issues_fetcher_wrapper(mock_func, number_of_issues_to_fetch=test_issues_to_fetch)
-    results = wrapped_func()
-    assert len(results) == 250
-    assert results[0]["id"] == 0
-    assert results[-1]["id"] == 249
-
-    test_issues_to_fetch = 150
-    test_issues = [{"id": i} for i in range(0, test_issues_to_fetch)]
-
-    def mock_func_list(limit, start):
-        return test_issues[start : start + limit]
-
-    wrapped_func_list = issues_fetcher_wrapper(
-        mock_func_list, number_of_issues_to_fetch=test_issues_to_fetch
-    )
-    results_list = wrapped_func_list()
-    assert len(results_list) == 150
-    assert results_list[0]["id"] == 0
-    assert results_list[-1]["id"] == 149
-
-    def mock_func_invalid(limit, start):
-        return "invalid"
-
-    wrapped_func_invalid = issues_fetcher_wrapper(mock_func_invalid, number_of_issues_to_fetch=50)
-    with pytest.raises(TypeError):
-        wrapped_func_invalid()
-
-    def mock_func_key_error(limit, start):
-        return {"wrong_key": []}
-
-    wrapped_func_key_error = issues_fetcher_wrapper(
-        mock_func_key_error, number_of_issues_to_fetch=50
-    )
-    with pytest.raises(KeyError):
-        wrapped_func_key_error()
