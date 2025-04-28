@@ -429,19 +429,17 @@ class JiraDownloader(Downloader):
         )
         return new_filedata
 
-    def process_attachments(self, file_data: FileData, issue_key: str) -> list[DownloadResponse]:
+    def process_attachments(
+        self, file_data: FileData, attachments: list[dict]
+    ) -> list[DownloadResponse]:
         with self.connection_config.get_client() as client:
-            attachments = client.get_attachments_ids_from_issue(issue=issue_key)
-            if not attachments:
-                return []
             download_path = self.get_download_path(file_data)
             attachment_download_dir = download_path.parent / "attachments"
             attachment_download_dir.mkdir(parents=True, exist_ok=True)
             download_responses = []
             for attachment in attachments:
-                attachment_meta = client.get_attachment(attachment_id=attachment["attachment_id"])
                 attachment_filename = Path(attachment["filename"])
-                attachment_id = attachment["attachment_id"]
+                attachment_id = attachment["id"]
                 attachment_download_path = attachment_download_dir / Path(
                     attachment_id
                 ).with_suffix(attachment_filename.suffix)
@@ -449,7 +447,7 @@ class JiraDownloader(Downloader):
                 with open(attachment_download_path, "wb") as f:
                     f.write(resp)
                 attachment_filedata = self.generate_attachment_file_data(
-                    attachment_dict=attachment_meta, parent_filedata=file_data
+                    attachment_dict=attachment, parent_filedata=file_data
                 )
                 download_responses.append(
                     self.generate_download_response(
@@ -477,10 +475,11 @@ class JiraDownloader(Downloader):
             file_data=file_data, download_path=download_path
         )
         if self.download_config.download_attachments and (
-            attachment_responses := self.process_attachments(
-                file_data=file_data, issue_key=issue_key
-            )
+            attachments := issue.get("fields", {}).get("attachment")
         ):
+            attachment_responses = self.process_attachments(
+                file_data=file_data, attachments=attachments
+            )
             download_response = [download_response] + attachment_responses
         return download_response
 
