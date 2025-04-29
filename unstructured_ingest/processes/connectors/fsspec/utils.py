@@ -23,8 +23,8 @@ def get_size(file_path: str) -> int:
 
 
 def add_suffix(filename: str, number: int) -> str:
-    if '.' in filename:
-        name, ext = filename.rsplit('.', 1)
+    if "." in filename:
+        name, ext = filename.rsplit(".", 1)
         return f"{name}({number}).{ext}"
     else:
         return f"{filename}({number})"
