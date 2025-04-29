@@ -361,7 +361,7 @@ class FsspecUploader(Uploader):
 
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
             candidate_upload_path = updated_upload_path
-            suffix_number = 0
+            suffix_number = 1
             while client.exists(candidate_upload_path.as_posix()):
                 if client.size(candidate_upload_path.as_posix()) == get_size(path_str):
                     break
