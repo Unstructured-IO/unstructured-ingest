@@ -40,10 +40,12 @@ class User(FromJSONMixin, GetHTMLMixin):
         return text
 
     def get_html(self) -> Optional[HtmlTag]:
-        if self.avatar_url:
+        if self.avatar_url and self.name:
             return A([Href(self.avatar_url)], self.name)
-        else:
+        elif self.name:
             return Div([], self.name)
+        else:
+            return Div([], "")
 
 
 @dataclass
