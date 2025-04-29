@@ -22,9 +22,5 @@ def get_size(file_path: str) -> int:
     return path.stat().st_size
 
 
-def add_suffix(filename: str, number: int) -> str:
-    if "." in filename:
-        name, ext = filename.rsplit(".", 1)
-        return f"{name}({number}).{ext}"
-    else:
-        return f"{filename}({number})"
+def add_suffix(path: Path, number: int) -> Path:
+    return path.with_name(f"{path.stem}({number}){path.suffix}")

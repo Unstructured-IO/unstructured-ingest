@@ -360,14 +360,14 @@ class FsspecUploader(Uploader):
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
 
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
-            current_upload_path = updated_upload_path
+            candidate_upload_path = updated_upload_path
             suffix_number = 0
-            while client.exists(current_upload_path):
-                if client.size(current_upload_path) == get_size(path_str):
+            while client.exists(candidate_upload_path.as_posix()):
+                if client.size(candidate_upload_path.as_posix()) == get_size(path_str):
                     break
-                current_upload_path = add_suffix(updated_upload_path, suffix_number)
+                candidate_upload_path = add_suffix(updated_upload_path, suffix_number)
                 suffix_number += 1
-        return current_upload_path
+        return candidate_upload_path
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
