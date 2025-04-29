@@ -29,7 +29,7 @@ from unstructured_ingest.interfaces import (
     UploaderConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
+from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict, get_size, add_suffix
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -342,23 +342,39 @@ class FsspecUploader(Uploader):
         except Exception as e:
             raise self.wrap_error(e=e)
 
-    def get_upload_path(self, file_data: FileData) -> Path:
+    def get_upload_path(self, path_str: str, file_data: FileData) -> Path:
+        """
+        Examine whether the proposed upload path already exists. 
+        If so, compare the size between local file and remote file.
+        If they are the same, overwrite remote file. Otherwise,
+        append a suffix number to the filename and upload to the new path.
+        """
         upload_path = (
             Path(self.upload_config.path_without_protocol)
             / file_data.source_identifiers.relative_path
         )
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
-        return updated_upload_path
+
+        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+            current_upload_path = updated_upload_path
+            suffix_number = 0
+            while fs.exists(current_upload_path):
+                if fs.size(current_upload_path) == get_size(path_str):
+                    break
+                current_upload_path = add_suffix(updated_upload_path, suffix_number)
+                suffix_number += 1
+        return current_upload_path
+
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
-        upload_path = self.get_upload_path(file_data=file_data)
+        upload_path = self.get_upload_path(path_sttr=path_str, file_data=file_data)
         logger.debug(f"writing local file {path_str} to {upload_path}")
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
             client.upload(lpath=path_str, rpath=upload_path.as_posix())
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        upload_path = self.get_upload_path(file_data=file_data)
+        upload_path = self.get_upload_path(path_sttr=path_str, file_data=file_data)
         path_str = str(path.resolve())
         # Odd that fsspec doesn't run exists() as async even when client support async
         logger.debug(f"writing local file {path_str} to {upload_path}")
