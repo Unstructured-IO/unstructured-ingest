@@ -16,11 +16,3 @@ def sterilize_dict(data: dict, default: Callable = json_serial) -> dict:
     data_s = json.dumps(data, default=default)
     return json.loads(data_s)
 
-
-def get_size(file_path: str) -> int:
-    path = Path(file_path)
-    return path.stat().st_size
-
-
-def add_suffix(path: Path, number: int) -> Path:
-    return path.with_name(f"{path.stem}({number}){path.suffix}")

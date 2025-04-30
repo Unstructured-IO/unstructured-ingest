@@ -213,6 +213,7 @@ class FsspecIndexer(Indexer):
 
             additional_metadata = self.sterilize_info(file_data=file_info)
             additional_metadata["original_file_path"] = file_path
+
             yield FileData(
                 identifier=str(uuid5(NAMESPACE_DNS, file_path)),
                 connector_type=self.connector_type,
@@ -355,19 +356,10 @@ class FsspecUploader(Uploader):
         """
         upload_path = (
             Path(self.upload_config.path_without_protocol)
-            / file_data.source_identifiers.relative_path
+            / file_data.source_identifiers.fullpath
         )
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
-
-        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
-            candidate_upload_path = updated_upload_path
-            suffix_number = 1
-            while client.exists(candidate_upload_path.as_posix()):
-                if client.size(candidate_upload_path.as_posix()) == get_size(path_str):
-                    break
-                candidate_upload_path = add_suffix(updated_upload_path, suffix_number)
-                suffix_number += 1
-        return candidate_upload_path
+        return updated_upload_path
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
