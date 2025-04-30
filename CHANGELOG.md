@@ -1,3 +1,7 @@
+## 1.0.24
+
+* **Handle both cloud and non-cloud jira instances**
+
 ## 1.0.23
 
 * **Migrate to new Mixedbread Python SDK**

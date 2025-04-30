@@ -208,7 +208,7 @@ class JiraIndexer(Indexer):
 
     def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
-            fields = ["key", "id"]
+            fields = ["key", "id", "status"]
             jql = "project in ({})".format(", ".join(self.index_config.projects))
             jql = self._update_jql(jql)
             for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
@@ -248,8 +248,12 @@ class JiraIndexer(Indexer):
             fields = ["key", "id"]
             jql = "key in ({})".format(", ".join(self.index_config.issues))
             jql = self._update_jql(jql)
-            for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
-                yield JiraIssueMetadata.model_validate(issue)
+            if client.cloud:
+                for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
+                    yield JiraIssueMetadata.model_validate(issue)
+            else:
+                for issue in api_page_based_generator(client.jql, jql=jql, fields=fields):
+                    yield JiraIssueMetadata.model_validate(issue)
 
     def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
         # Build metadata
