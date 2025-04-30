@@ -30,8 +30,6 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.fsspec.utils import (
-    add_suffix,
-    get_size,
     sterilize_dict,
 )
 
@@ -355,8 +353,7 @@ class FsspecUploader(Uploader):
         append a suffix number to the filename and upload to the new path.
         """
         upload_path = (
-            Path(self.upload_config.path_without_protocol)
-            / file_data.source_identifiers.fullpath
+            Path(self.upload_config.path_without_protocol) / file_data.source_identifiers.fullpath
         )
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
         return updated_upload_path

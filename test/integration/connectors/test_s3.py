@@ -183,6 +183,7 @@ async def test_s3_destination(upload_file: Path):
     finally:
         s3fs.rm(path=destination_path, recursive=True)
 
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
@@ -200,12 +201,16 @@ async def test_s3_destination_same_filename_different_folders(upload_file: Path)
     uploader = S3Uploader(connection_config=connection_config, upload_config=upload_config)
     s3fs = uploader.fs
     file_data_1 = FileData(
-        source_identifiers=SourceIdentifiers(fullpath='folder1/' + upload_file.name, filename=upload_file.name),
+        source_identifiers=SourceIdentifiers(
+            fullpath="folder1/" + upload_file.name, filename=upload_file.name
+        ),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
     file_data_2 = FileData(
-        source_identifiers=SourceIdentifiers(fullpath='folder2/' + upload_file.name, filename=upload_file.name),
+        source_identifiers=SourceIdentifiers(
+            fullpath="folder2/" + upload_file.name, filename=upload_file.name
+        ),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )

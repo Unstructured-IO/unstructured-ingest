@@ -15,4 +15,3 @@ def json_serial(obj):
 def sterilize_dict(data: dict, default: Callable = json_serial) -> dict:
     data_s = json.dumps(data, default=default)
     return json.loads(data_s)
-
