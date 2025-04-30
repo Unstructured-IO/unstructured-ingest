@@ -186,7 +186,7 @@ class JiraIndexer(Indexer):
             )
         logger.info("Connection to Jira successful.")
 
-    def run_jql(self, jql: str, **kwargs):
+    def run_jql(self, jql: str, **kwargs) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
             if client.cloud:
                 for issue in api_token_based_generator(client.enhanced_jql, jql=jql, **kwargs):
