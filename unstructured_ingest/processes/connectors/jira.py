@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, Callable, Generator, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Generator, List, Optional, Union
 
 from pydantic import BaseModel, Field, Secret
 
@@ -139,28 +139,8 @@ class JiraConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["Jira", None, None]:
         from atlassian import Jira
 
-        class CustomJira(Jira):
-            """
-            Custom Jira class to fix the issue with the get_project_issues_count method.
-            This class inherits from the original Jira class and overrides the method to
-            handle the response correctly.
-            Once the issue is fixed in the original library, this class can be removed.
-            """
-
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-            def get_project_issues_count(self, project: str) -> int:
-                jql = f'project = "{project}" '
-                response = self.jql(jql, fields="*none")
-                response = cast("dict", response)
-                if "total" in response:
-                    return response["total"]
-                else:
-                    return len(response["issues"])
-
         access_configs = self.access_config.get_secret_value()
-        with CustomJira(
+        with Jira(
             url=self.url,
             username=self.username,
             password=access_configs.password,
@@ -206,14 +186,21 @@ class JiraIndexer(Indexer):
             )
         logger.info("Connection to Jira successful.")
 
-    def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
+    def run_jql(self, jql: str, **kwargs):
         with self.connection_config.get_client() as client:
-            fields = ["key", "id", "status"]
-            jql = "project in ({})".format(", ".join(self.index_config.projects))
-            jql = self._update_jql(jql)
-            logger.debug(f"running jql: {jql}")
-            for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
-                yield JiraIssueMetadata.model_validate(issue)
+            if client.cloud:
+                for issue in api_token_based_generator(client.enhanced_jql, jql=jql, **kwargs):
+                    yield JiraIssueMetadata.model_validate(issue)
+            else:
+                for issue in api_page_based_generator(client.jql, jql=jql, **kwargs):
+                    yield JiraIssueMetadata.model_validate(issue)
+
+    def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
+        fields = ["key", "id", "status"]
+        jql = "project in ({})".format(", ".join(self.index_config.projects))
+        jql = self._update_jql(jql)
+        logger.debug(f"running jql: {jql}")
+        return self.run_jql(jql=jql, fields=fields)
 
     def _get_issues_within_single_board(self, board_id: str) -> List[JiraIssueMetadata]:
         with self.connection_config.get_client() as client:
@@ -246,17 +233,11 @@ class JiraIndexer(Indexer):
         return jql
 
     def _get_issues_by_keys(self) -> Generator[JiraIssueMetadata, None, None]:
-        with self.connection_config.get_client() as client:
-            fields = ["key", "id"]
-            jql = "key in ({})".format(", ".join(self.index_config.issues))
-            jql = self._update_jql(jql)
-            logger.debug(f"running jql: {jql}")
-            if client.cloud:
-                for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
-                    yield JiraIssueMetadata.model_validate(issue)
-            else:
-                for issue in api_page_based_generator(client.jql, jql=jql, fields=fields):
-                    yield JiraIssueMetadata.model_validate(issue)
+        fields = ["key", "id"]
+        jql = "key in ({})".format(", ".join(self.index_config.issues))
+        jql = self._update_jql(jql)
+        logger.debug(f"running jql: {jql}")
+        return self.run_jql(jql=jql, fields=fields)
 
     def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
         # Build metadata
