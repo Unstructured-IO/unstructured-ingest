@@ -1,6 +1,10 @@
-## 1.0.23-dev1
+## 1.0.24-dev1
 
 * **Fixed issue in the fsspec destination connector where files with the same name were overwriting each other**
+
+## 1.0.24
+
+* **Handle both cloud and non-cloud jira instances**
 
 ## 1.0.23
 
