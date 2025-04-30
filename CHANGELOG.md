@@ -1,3 +1,7 @@
+## 1.0.24
+
+* **Fix Notion user text and html getters**
+
 ## 1.0.23
 
 * **Migrate to new Mixedbread Python SDK**
