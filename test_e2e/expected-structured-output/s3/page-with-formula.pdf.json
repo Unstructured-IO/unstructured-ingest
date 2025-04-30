@@ -56,8 +56,8 @@
   },
   {
     "type": "Formula",
-    "element_id": "2f5b0b2ffa8872dde498f34cd4af6bd9",
-    "text": "MultiHead(Q, K, V ) = Concat(head1, ..., headh)W O where headi = Attention(QW Q i , KW K i , V W V i )",
+    "element_id": "b4561c3d31862971004457a7e196318f",
+    "text": "MultiHead(Q,K,V ) = Concat(head1,...,headh)W O where headi = Attention(QW Q i ,KW K i ,V W V i )",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -80,8 +80,8 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "703f1d4e9204c8b7ea94191f87138425",
-    "text": "Where the projections are parameter matrices W Q and W O ∈ Rhdv×dmodel. i ∈ Rdmodel×dk , W K i ∈ Rdmodel×dk , W V i ∈ Rdmodel×dv",
+    "element_id": "517578835297fb539f461ebd5ec084ee",
+    "text": "Where the projections are parameter matrices W Q and W O ∈ Rhdv×dmodel. i ∈ Rdmodel×dk, W K i ∈ Rdmodel×dk, W V i ∈ Rdmodel×dv",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -320,8 +320,8 @@
   },
   {
     "type": "Formula",
-    "element_id": "eba702ac258c00ce8a4e2150e3b0b5dc",
-    "text": "FFN(x) = max(0, xW1 + b1)W2 + b2",
+    "element_id": "690c2a5d101f3eecbd0235a537c850f8",
+    "text": "FFN(x) = max(0,xW1 + b1)W2 + b2",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -344,8 +344,8 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "43c1741dc91b5b67a03a726873df3be5",
-    "text": "While the linear transformations are the same across different positions, they use different parameters from layer to layer. Another way of describing this is as two convolutions with kernel size 1. The dimensionality of input and output is dmodel = 512, and the inner-layer has dimensionality df f = 2048.",
+    "element_id": "9204046140823ea1c51ecc8093ec3ccd",
+    "text": "While the linear transformations are the same across different positions, they use different parameters from layer to layer. Another way of describing this is as two convolutions with kernel size 1. The dimensionality of input and output is dmodel = 512, and the inner-layer has dimensionality dff = 2048.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [

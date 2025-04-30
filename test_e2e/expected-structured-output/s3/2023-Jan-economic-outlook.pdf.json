@@ -432,36 +432,9 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "1384ccab6d7fdcd800cff2041c1bfa44",
-    "text": "Nov.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 3,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "4005a084d79d3ae3bca725c47c3f96fd",
-    "text": "Nov.",
+    "type": "UncategorizedText",
+    "element_id": "0f4dd540bc5e33a99049a38d8a834079",
+    "text": "Nov. 22",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -487,89 +460,8 @@
   },
   {
     "type": "UncategorizedText",
-    "element_id": "bac9e7454ba064b98b6160d83c34f28d",
-    "text": "22",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 3,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "33ea49785d54e1e18f49b9c7a033b999",
-    "text": "Nov.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 3,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "888ea7243bd16100dff385c9c2327e1c",
-    "text": "Nov.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 3,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
-    "type": "UncategorizedText",
-    "element_id": "375b70b7a1f3d206f431fd08fcd8e272",
-    "text": "22",
+    "element_id": "be84567648f5c96caed2d68d3777da45",
+    "text": "Nov. 2",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -595,7 +487,7 @@
   },
   {
     "type": "PageNumber",
-    "element_id": "d132dd77e50c826acac5d13a6d6551bd",
+    "element_id": "68642399507837ccbaf552a15c0fcc4a",
     "text": "2",
     "metadata": {
       "filetype": "application/pdf",
@@ -622,7 +514,7 @@
   },
   {
     "type": "Footer",
-    "element_id": "6dd6a4e45c5501078dc340382e54e9fc",
+    "element_id": "6ba448692126ae7b30e9f5d962227d22",
     "text": "International Monetary Fund | January 2023",
     "metadata": {
       "filetype": "application/pdf",
@@ -3241,36 +3133,9 @@
     }
   },
   {
-    "type": "Title",
-    "element_id": "0f6dad9466a492cad781740882f18a4e",
-    "text": "Sources: Bloomberg Finance L.P.; and IMF staff calculations.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 11,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
-    "type": "Title",
-    "element_id": "6bd175286ea3880aabd695211cc23cb8",
-    "text": "Note: GFSR = Global Financial Stability Report.",
+    "type": "NarrativeText",
+    "element_id": "15dcde97a4e679fc97c82ab6850372a0",
+    "text": "Given the tension between rising recession risks and monetary policy uncertainty, markets have seen significant volatility. While many central banks in advanced economies have stepped down the size of hikes, they have also explicitly stated they will need to keep rates higher, for a longer period of time, to tamp down inflation. Risk assets could face significant declines if earnings retrench further or if investors reassess their outlook for monetary policy given central bank communications. Globally, the partial reversal of the dollar rally has contributed to recent easing due to improved risk appetite, and some emerging market central banks have paused tightening amid tentative signs that inflation may have peaked.",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -3296,34 +3161,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "0fdc0fb6e09801d84645414597503e64",
-    "text": "Given the tension between rising recession risks and monetary policy uncertainty, markets have seen significant volatility. While many central banks in advanced economies have stepped Sources: Bloomberg Finance L.P.; and IMF staff calculations. Note: GFSR = Global Financial Stability Report. down the size of hikes, they have also explicitly stated they will need to keep rates higher, for a longer period of time, to tamp down inflation. Risk assets could face significant declines if earnings retrench further or if investors reassess their outlook for monetary policy given central bank communications. Globally, the partial reversal of the dollar rally has contributed to recent easing due to improved risk appetite, and some emerging market central banks have paused tightening amid tentative signs that inflation may have peaked.",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 11,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "6f96d00b137c05565f4a5234b57de209",
+    "element_id": "9a8e7cb9e911dd5f2c03994e9841f0c1",
     "text": "Financial market volatility is expected to remain elevated and could be exacerbated by poor market liquidity. For some asset classes (such as US Treasuries), liquidity has deteriorated to the March 2020 lows of the COVID-19 pandemic. With the process of central bank balance sheet reduction (quantitative tightening) underway, market liquidity is expected to remain challenging.",
     "metadata": {
       "filetype": "application/pdf",
@@ -3350,7 +3188,7 @@
   },
   {
     "type": "PageNumber",
-    "element_id": "212f5157ecd4d588f5219cb42c698c1b",
+    "element_id": "e2ba3df8f1495d010ac681b7e3edca45",
     "text": "10",
     "metadata": {
       "filetype": "application/pdf",
@@ -3377,7 +3215,7 @@
   },
   {
     "type": "Footer",
-    "element_id": "9439e764521ea3ed0b7aaeeaca662645",
+    "element_id": "72fd96d27badaa1dedbf6b7c50497e26",
     "text": "International Monetary Fund | January 2023",
     "metadata": {
       "filetype": "application/pdf",
@@ -3404,7 +3242,7 @@
   },
   {
     "type": "Footer",
-    "element_id": "66921f38d7525151f33aaac16264d3d1",
+    "element_id": "d55ecd0e0c2d0e2c86e692a14483c37b",
     "text": "WEO Update © 2023 • ISBN: 979-8-40023-224-4",
     "metadata": {
       "filetype": "application/pdf",
