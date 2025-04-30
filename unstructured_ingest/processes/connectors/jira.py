@@ -211,6 +211,7 @@ class JiraIndexer(Indexer):
             fields = ["key", "id", "status"]
             jql = "project in ({})".format(", ".join(self.index_config.projects))
             jql = self._update_jql(jql)
+            logger.debug(f"running jql: {jql}")
             for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
                 yield JiraIssueMetadata.model_validate(issue)
 
@@ -223,6 +224,7 @@ class JiraIndexer(Indexer):
                 )
             else:
                 jql = "ORDER BY id"
+            logger.debug(f"running jql for board {board_id}: {jql}")
             for issue in api_page_based_generator(
                 fn=client.get_issues_for_board, board_id=board_id, fields=fields, jql=jql
             ):
@@ -248,6 +250,7 @@ class JiraIndexer(Indexer):
             fields = ["key", "id"]
             jql = "key in ({})".format(", ".join(self.index_config.issues))
             jql = self._update_jql(jql)
+            logger.debug(f"running jql: {jql}")
             if client.cloud:
                 for issue in api_token_based_generator(client.enhanced_jql, jql=jql, fields=fields):
                     yield JiraIssueMetadata.model_validate(issue)
