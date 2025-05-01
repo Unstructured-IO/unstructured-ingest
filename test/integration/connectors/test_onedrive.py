@@ -113,7 +113,7 @@ async def test_onedrive_source(temp_dir):
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
 @requires_env("MS_CLIENT_CRED", "MS_CLIENT_ID", "MS_TENANT_ID", "MS_USER_PNAME")
-def xtest_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
+def test_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
     """
     Integration test for the OneDrive destination connector.
 
@@ -137,7 +137,7 @@ def xtest_onedrive_destination(upload_file: Path, onedrive_test_folder: str):
 
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=destination_fullpath,
+            fullpath=upload_file.name,
             filename=upload_file.name,
         ),
         connector_type=CONNECTOR_TYPE,
