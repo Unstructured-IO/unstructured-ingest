@@ -370,14 +370,14 @@ class OnedriveUploader(Uploader):
         # Use the remote_url from upload_config as the base destination folder
         base_destination_folder = self.upload_config.url
 
-        # Use the file's relative path to maintain directory structure, if needed
-        if file_data.source_identifiers and file_data.source_identifiers.rel_path:
-            # Combine the base destination folder with the file's relative path
+        # Use the file's full path to maintain directory structure, if needed
+        if file_data.source_identifiers and file_data.source_identifiers.fullpath:
+            # Combine the base destination folder with the file's full path
             destination_path = Path(base_destination_folder) / Path(
-                f"{file_data.source_identifiers.rel_path}.json"
+                f"{file_data.source_identifiers.fullpath}.json"
             )
         else:
-            # If no relative path is provided, upload directly to the base destination folder
+            # If no full path is provided, upload directly to the base destination folder
             destination_path = Path(base_destination_folder) / f"{path.name}.json"
 
         destination_folder = destination_path.parent
