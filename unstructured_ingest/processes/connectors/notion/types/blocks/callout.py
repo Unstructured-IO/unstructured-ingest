@@ -76,9 +76,11 @@ class Callout(BlockBase):
     @classmethod
     def from_dict(cls, data: dict):
         rich_text = data.pop("rich_text", [])
+        icon_data = data.pop("icon", None)
+        icon = Icon.from_dict(icon_data) if icon_data else None
         return cls(
             color=data["color"],
-            icon=Icon.from_dict(data.pop("icon")),
+            icon=icon,
             rich_text=[RichText.from_dict(rt) for rt in rich_text],
         )
 
