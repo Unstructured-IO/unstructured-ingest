@@ -1,11 +1,11 @@
-import math
 from collections import abc
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union, cast
+from time import time
+from typing import TYPE_CHECKING, Any, Callable, Generator, List, Optional, Union
 
-from pydantic import Field, Secret
+from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -21,6 +21,7 @@ from unstructured_ingest.interfaces import (
     DownloadResponse,
     Indexer,
     IndexerConfig,
+    download_responses,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -37,23 +38,12 @@ DEFAULT_C_SEP = " " * 5
 DEFAULT_R_SEP = "\n"
 
 
-@dataclass
-class JiraIssueMetadata:
+class JiraIssueMetadata(BaseModel):
     id: str
     key: str
-    board_id: Optional[str] = None
 
-    @property
-    def project_id(self) -> str:
+    def get_project_id(self) -> str:
         return self.key.split("-")[0]
-
-    def to_dict(self) -> Dict[str, Union[str, None]]:
-        return {
-            "id": self.id,
-            "key": self.key,
-            "board_id": self.board_id,
-            "project_id": self.project_id,
-        }
 
 
 class FieldGetter(dict):
@@ -77,52 +67,32 @@ def nested_object_to_field_getter(obj: dict) -> Union[FieldGetter, dict]:
         return obj
 
 
-def issues_fetcher_wrapper(func, results_key="results", number_of_issues_to_fetch: int = 100):
-    """
-    A decorator function that wraps around a function to fetch issues from Jira API in a paginated
-    manner. This is required because the Jira API has a limit of 100 issues per request.
+def api_token_based_generator(
+    fn: Callable, key: str = "issues", **kwargs
+) -> Generator[dict, None, None]:
+    nextPageToken = kwargs.pop("nextPageToken", None)
+    while True:
+        resp = fn(nextPageToken=nextPageToken, **kwargs)
+        issues = resp.get(key, [])
+        for issue in issues:
+            yield issue
+        nextPageToken = resp.get("nextPageToken")
+        if not nextPageToken:
+            break
 
-    Args:
-        func (callable): The function to be wrapped. This function should accept `limit` and `start`
-        as keyword arguments.
-        results_key (str, optional): The key in the response dictionary that contains the list of
-        results. Defaults to "results".
-        number_of_issues_to_fetch (int, optional): The total number of issues to fetch. Defaults to
-        100.
 
-    Returns:
-        list: A list of all fetched issues.
-
-    Raises:
-        KeyError: If the response dictionary does not contain the specified `results_key`.
-        TypeError: If the response type from the Jira API is neither list nor dict.
-    """
-
-    def wrapper(*args, **kwargs) -> list:
-        kwargs["limit"] = min(100, number_of_issues_to_fetch)
-        kwargs["start"] = kwargs.get("start", 0)
-
-        all_results = []
-        num_iterations = math.ceil(number_of_issues_to_fetch / kwargs["limit"])
-
-        for _ in range(num_iterations):
-            response = func(*args, **kwargs)
-            if isinstance(response, list):
-                all_results += response
-            elif isinstance(response, dict):
-                if results_key not in response:
-                    raise KeyError(f'Response object is missing "{results_key}" key.')
-                all_results += response[results_key]
-            else:
-                raise TypeError(
-                    f"""Unexpected response type from Jira API.
-                    Response type has to be either list or dict, got: {type(response).__name__}."""
-                )
-            kwargs["start"] += kwargs["limit"]
-
-        return all_results
-
-    return wrapper
+def api_page_based_generator(
+    fn: Callable, key: str = "issues", **kwargs
+) -> Generator[dict, None, None]:
+    start = kwargs.pop("start", 0)
+    while True:
+        resp = fn(start=start, **kwargs)
+        issues = resp.get(key, [])
+        if not issues:
+            break
+        for issue in issues:
+            yield issue
+        start += len(issues)
 
 
 class JiraAccessConfig(AccessConfig):
@@ -169,28 +139,8 @@ class JiraConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["Jira", None, None]:
         from atlassian import Jira
 
-        class CustomJira(Jira):
-            """
-            Custom Jira class to fix the issue with the get_project_issues_count method.
-            This class inherits from the original Jira class and overrides the method to
-            handle the response correctly.
-            Once the issue is fixed in the original library, this class can be removed.
-            """
-
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-            def get_project_issues_count(self, project: str) -> int:
-                jql = f'project = "{project}" '
-                response = self.jql(jql, fields="*none")
-                response = cast("dict", response)
-                if "total" in response:
-                    return response["total"]
-                else:
-                    return len(response["issues"])
-
         access_configs = self.access_config.get_secret_value()
-        with CustomJira(
+        with Jira(
             url=self.url,
             username=self.username,
             password=access_configs.password,
@@ -201,9 +151,17 @@ class JiraConnectionConfig(ConnectionConfig):
 
 
 class JiraIndexerConfig(IndexerConfig):
-    projects: Optional[List[str]] = Field(None, description="List of project keys")
-    boards: Optional[List[str]] = Field(None, description="List of board IDs")
-    issues: Optional[List[str]] = Field(None, description="List of issue keys or IDs")
+    projects: Optional[list[str]] = Field(None, description="List of project keys")
+    boards: Optional[list[str]] = Field(None, description="List of board IDs")
+    issues: Optional[list[str]] = Field(None, description="List of issue keys or IDs")
+    status_filters: Optional[list[str]] = Field(
+        default=None,
+        description="List of status filters, if provided will only return issues that have these statuses",  # noqa: E501
+    )
+
+    def model_post_init(self, context: Any, /) -> None:
+        if not self.projects and not self.boards and not self.issues:
+            raise ValueError("At least one of projects, boards, or issues must be provided.")
 
 
 @dataclass
@@ -228,122 +186,111 @@ class JiraIndexer(Indexer):
             )
         logger.info("Connection to Jira successful.")
 
-    def _get_issues_within_single_project(self, project_key: str) -> List[JiraIssueMetadata]:
+    def run_jql(self, jql: str, **kwargs) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
-            number_of_issues_to_fetch = client.get_project_issues_count(project=project_key)
-            if isinstance(number_of_issues_to_fetch, dict):
-                if "total" not in number_of_issues_to_fetch:
-                    raise KeyError('Response object is missing "total" key.')
-                number_of_issues_to_fetch = number_of_issues_to_fetch["total"]
-            if not number_of_issues_to_fetch:
-                logger.warning(f"No issues found in project: {project_key}. Skipping!")
-                return []
-            get_project_issues = issues_fetcher_wrapper(
-                client.get_all_project_issues,
-                results_key="issues",
-                number_of_issues_to_fetch=number_of_issues_to_fetch,
-            )
-            issues = get_project_issues(project=project_key, fields=["key", "id"])
-            logger.debug(f"Found {len(issues)} issues in project: {project_key}")
-            return [JiraIssueMetadata(id=issue["id"], key=issue["key"]) for issue in issues]
-
-    def _get_issues_within_projects(self) -> List[JiraIssueMetadata]:
-        project_keys = self.index_config.projects
-        if not project_keys:
-            # for when a component list is provided, without any projects
-            if self.index_config.boards or self.index_config.issues:
-                return []
-            # for when no components are provided. all projects will be ingested
+            if client.cloud:
+                for issue in api_token_based_generator(client.enhanced_jql, jql=jql, **kwargs):
+                    yield JiraIssueMetadata.model_validate(issue)
             else:
-                with self.connection_config.get_client() as client:
-                    project_keys = [project["key"] for project in client.projects()]
-        return [
-            issue
-            for project_key in project_keys
-            for issue in self._get_issues_within_single_project(project_key)
-        ]
+                for issue in api_page_based_generator(client.jql, jql=jql, **kwargs):
+                    yield JiraIssueMetadata.model_validate(issue)
+
+    def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
+        fields = ["key", "id", "status"]
+        jql = "project in ({})".format(", ".join(self.index_config.projects))
+        jql = self._update_jql(jql)
+        logger.debug(f"running jql: {jql}")
+        return self.run_jql(jql=jql, fields=fields)
 
     def _get_issues_within_single_board(self, board_id: str) -> List[JiraIssueMetadata]:
         with self.connection_config.get_client() as client:
-            get_board_issues = issues_fetcher_wrapper(
-                client.get_issues_for_board,
-                results_key="issues",
-            )
-            issues = get_board_issues(board_id=board_id, fields=["key", "id"], jql=None)
-            logger.debug(f"Found {len(issues)} issues in board: {board_id}")
-            return [
-                JiraIssueMetadata(id=issue["id"], key=issue["key"], board_id=board_id)
-                for issue in issues
-            ]
+            fields = ["key", "id"]
+            if self.index_config.status_filters:
+                jql = "status in ({}) ORDER BY id".format(
+                    ", ".join([f'"{s}"' for s in self.index_config.status_filters])
+                )
+            else:
+                jql = "ORDER BY id"
+            logger.debug(f"running jql for board {board_id}: {jql}")
+            for issue in api_page_based_generator(
+                fn=client.get_issues_for_board, board_id=board_id, fields=fields, jql=jql
+            ):
+                yield JiraIssueMetadata.model_validate(issue)
 
-    def _get_issues_within_boards(self) -> List[JiraIssueMetadata]:
+    def _get_issues_within_boards(self) -> Generator[JiraIssueMetadata, None, None]:
         if not self.index_config.boards:
-            return []
-        return [
-            issue
-            for board_id in self.index_config.boards
-            for issue in self._get_issues_within_single_board(board_id)
-        ]
+            yield
+        for board_id in self.index_config.boards:
+            for issue in self._get_issues_within_single_board(board_id=board_id):
+                yield issue
 
-    def _get_issues(self) -> List[JiraIssueMetadata]:
-        with self.connection_config.get_client() as client:
-            issues = [
-                client.get_issue(issue_id_or_key=issue_key, fields=["key", "id"])
-                for issue_key in self.index_config.issues or []
-            ]
-        return [JiraIssueMetadata(id=issue["id"], key=issue["key"]) for issue in issues]
+    def _update_jql(self, jql: str) -> str:
+        if self.index_config.status_filters:
+            jql += " and status in ({})".format(
+                ", ".join([f'"{s}"' for s in self.index_config.status_filters])
+            )
+        jql = jql + " ORDER BY id"
+        return jql
 
-    def get_issues(self) -> List[JiraIssueMetadata]:
-        issues = [
-            *self._get_issues_within_boards(),
-            *self._get_issues_within_projects(),
-            *self._get_issues(),
-        ]
-        # Select unique issues by issue 'id'.
-        # Since boards issues are fetched first,
-        # if there are duplicates, the board issues will be kept,
-        # in order to keep issue 'board_id' information.
-        seen = set()
-        unique_issues: List[JiraIssueMetadata] = []
-        for issue in issues:
-            if issue.id not in seen:
-                unique_issues.append(issue)
-            seen.add(issue.id)
-        return unique_issues
+    def _get_issues_by_keys(self) -> Generator[JiraIssueMetadata, None, None]:
+        fields = ["key", "id"]
+        jql = "key in ({})".format(", ".join(self.index_config.issues))
+        jql = self._update_jql(jql)
+        logger.debug(f"running jql: {jql}")
+        return self.run_jql(jql=jql, fields=fields)
+
+    def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
+        # Build metadata
+        metadata = FileDataSourceMetadata(
+            date_processed=str(time()),
+            record_locator=issue.model_dump(),
+        )
+
+        # Construct relative path and filename
+        filename = f"{issue.id}.txt"
+        relative_path = str(Path(issue.get_project_id()) / filename)
+
+        source_identifiers = SourceIdentifiers(
+            filename=filename,
+            fullpath=relative_path,
+            rel_path=relative_path,
+        )
+
+        file_data = FileData(
+            identifier=issue.id,
+            connector_type=self.connector_type,
+            metadata=metadata,
+            additional_metadata=issue.model_dump(),
+            source_identifiers=source_identifiers,
+        )
+        return file_data
+
+    def get_generators(self) -> List[Callable]:
+        generators = []
+        if self.index_config.boards:
+            generators.append(self._get_issues_within_boards)
+        if self.index_config.issues:
+            generators.append(self._get_issues_by_keys)
+        if self.index_config.projects:
+            generators.append(self._get_issues_within_projects)
+        return generators
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        from time import time
-
-        issues = self.get_issues()
-        for issue in issues:
-            # Build metadata
-            metadata = FileDataSourceMetadata(
-                date_processed=str(time()),
-                record_locator=issue.to_dict(),
-            )
-
-            # Construct relative path and filename
-            filename = f"{issue.id}.txt"
-            relative_path = str(Path(issue.project_id) / filename)
-
-            source_identifiers = SourceIdentifiers(
-                filename=filename,
-                fullpath=relative_path,
-                rel_path=relative_path,
-            )
-
-            file_data = FileData(
-                identifier=issue.id,
-                connector_type=self.connector_type,
-                metadata=metadata,
-                additional_metadata=issue.to_dict(),
-                source_identifiers=source_identifiers,
-            )
-            yield file_data
+        seen_keys = []
+        for gen in self.get_generators():
+            for issue in gen():
+                if not issue:
+                    continue
+                if issue.key in seen_keys:
+                    continue
+                seen_keys.append(issue.key)
+                yield self._create_file_data_from_issue(issue=issue)
 
 
 class JiraDownloaderConfig(DownloaderConfig):
-    pass
+    download_attachments: bool = Field(
+        default=False, description="If True, will download any attachments and process as well"
+    )
 
 
 @dataclass
@@ -448,7 +395,56 @@ class JiraDownloader(Downloader):
             logger.error(f"Failed to fetch issue with key: {issue_key}: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to fetch issue with key: {issue_key}: {e}")
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def generate_attachment_file_data(
+        self, attachment_dict: dict, parent_filedata: FileData
+    ) -> FileData:
+        new_filedata = parent_filedata.model_copy(deep=True)
+        if new_filedata.metadata.record_locator is None:
+            new_filedata.metadata.record_locator = {}
+        new_filedata.metadata.record_locator["parent_issue"] = (
+            parent_filedata.metadata.record_locator["id"]
+        )
+        # Append an identifier for attachment to not conflict with issue ids
+        new_filedata.identifier = "{}a".format(attachment_dict["id"])
+        filename = attachment_dict["filename"]
+        new_filedata.metadata.filesize_bytes = attachment_dict.pop("size", None)
+        new_filedata.metadata.date_created = attachment_dict.pop("created", None)
+        new_filedata.metadata.url = attachment_dict.pop("self", None)
+        new_filedata.metadata.record_locator = attachment_dict
+        new_filedata.source_identifiers = SourceIdentifiers(
+            filename=filename,
+            fullpath=(Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
+        )
+        return new_filedata
+
+    def process_attachments(
+        self, file_data: FileData, attachments: list[dict]
+    ) -> list[DownloadResponse]:
+        with self.connection_config.get_client() as client:
+            download_path = self.get_download_path(file_data)
+            attachment_download_dir = download_path.parent / "attachments"
+            attachment_download_dir.mkdir(parents=True, exist_ok=True)
+            download_responses = []
+            for attachment in attachments:
+                attachment_filename = Path(attachment["filename"])
+                attachment_id = attachment["id"]
+                attachment_download_path = attachment_download_dir / Path(
+                    attachment_id
+                ).with_suffix(attachment_filename.suffix)
+                resp = client.get_attachment_content(attachment_id=attachment_id)
+                with open(attachment_download_path, "wb") as f:
+                    f.write(resp)
+                attachment_filedata = self.generate_attachment_file_data(
+                    attachment_dict=attachment, parent_filedata=file_data
+                )
+                download_responses.append(
+                    self.generate_download_response(
+                        file_data=attachment_filedata, download_path=attachment_download_path
+                    )
+                )
+        return download_responses
+
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         issue_key = file_data.additional_metadata.get("key")
         if not issue_key:
             raise ValueError("Issue key not found in metadata.")
@@ -463,7 +459,17 @@ class JiraDownloader(Downloader):
         with open(download_path, "w") as f:
             f.write(issue_str)
         self.update_file_data(file_data, issue)
-        return self.generate_download_response(file_data=file_data, download_path=download_path)
+        download_response = self.generate_download_response(
+            file_data=file_data, download_path=download_path
+        )
+        if self.download_config.download_attachments and (
+            attachments := issue.get("fields", {}).get("attachment")
+        ):
+            attachment_responses = self.process_attachments(
+                file_data=file_data, attachments=attachments
+            )
+            download_response = [download_response] + attachment_responses
+        return download_response
 
 
 jira_source_entry = SourceRegistryEntry(

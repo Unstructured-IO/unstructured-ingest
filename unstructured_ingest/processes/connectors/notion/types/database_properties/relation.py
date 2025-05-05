@@ -45,6 +45,7 @@ class Relation(DBPropertyBase):
     name: str
     relation: RelationProp
     type: str = "relation"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

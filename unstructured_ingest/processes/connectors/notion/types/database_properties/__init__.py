@@ -1,5 +1,6 @@
 from typing import Dict
 
+from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.notion.interfaces import DBCellBase, DBPropertyBase
 
 from .checkbox import Checkbox, CheckboxCell
@@ -24,6 +25,13 @@ from .title import Title, TitleCell
 from .unique_id import UniqueID, UniqueIDCell
 from .url import URL, URLCell
 from .verification import Verification, VerificationCell
+
+# It's possible to add 'button' property to Notion database.
+# However, current Notion API documentation doesn't mention it.
+# Buttons are only functional inside Notion UI. We can simply
+# ignore them so that the we don't throw an error when trying
+# to map 'button' properties.
+unsupported_db_prop_types = ["button"]
 
 db_prop_type_mapping = {
     "checkbox": Checkbox,
@@ -55,7 +63,13 @@ def map_properties(props: Dict[str, dict]) -> Dict[str, DBPropertyBase]:
     mapped_dict = {}
     for k, v in props.items():
         try:
-            mapped_dict[k] = db_prop_type_mapping[v["type"]].from_dict(v)  # type: ignore
+            property_type = v["type"]
+            if property_type in unsupported_db_prop_types:
+                logger.warning(
+                    f"Unsupported property type '{property_type}' for property '{k}'. Skipping."
+                )
+                continue
+            mapped_dict[k] = db_prop_type_mapping[property_type].from_dict(v)  # type: ignore
         except KeyError as ke:
             raise KeyError(f"failed to map to associated database property -> {k}: {v}") from ke
 
@@ -92,8 +106,13 @@ def map_cells(props: Dict[str, dict]) -> Dict[str, DBCellBase]:
     mapped_dict = {}
     for k, v in props.items():
         try:
-            t = v["type"]
-            mapped_dict[k] = db_cell_type_mapping[t].from_dict(v)  # type: ignore
+            property_type = v["type"]
+            if property_type in unsupported_db_prop_types:
+                logger.warning(
+                    f"Unsupported property type '{property_type}' for property '{k}'. Skipping."
+                )
+                continue
+            mapped_dict[k] = db_cell_type_mapping[property_type].from_dict(v)  # type: ignore
         except KeyError as ke:
             raise KeyError(f"failed to map to associated database property -> {k}: {v}") from ke
 

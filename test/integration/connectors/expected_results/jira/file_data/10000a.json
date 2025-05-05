@@ -1,0 +1,47 @@
+{
+  "identifier": "10000a",
+  "connector_type": "jira",
+  "source_identifiers": {
+    "filename": "image-20230823-143650.png",
+    "fullpath": "10000/image-20230823-143650.png",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/10000",
+    "version": null,
+    "record_locator": {
+      "id": "10000",
+      "filename": "image-20230823-143650.png",
+      "author": {
+        "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/user?accountId=712020%3A7bc7fdcb-67e7-435d-b4a2-128aee12820c",
+        "accountId": "712020:7bc7fdcb-67e7-435d-b4a2-128aee12820c",
+        "emailAddress": "devops+jira-connector@unstructured.io",
+        "avatarUrls": {
+          "48x48": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
+          "24x24": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
+          "16x16": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
+          "32x32": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png"
+        },
+        "displayName": "Unstructured Devops",
+        "active": true,
+        "timeZone": "Etc/GMT",
+        "accountType": "atlassian"
+      },
+      "mimeType": "image/png",
+      "content": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/content/10000",
+      "thumbnail": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/thumbnail/10000"
+    },
+    "date_created": "2023-08-23T14:37:07.577+0000",
+    "date_modified": "2025-02-21T13:25:46.017+0000",
+    "date_processed": "1745877948.008202",
+    "permissions_data": null,
+    "filesize_bytes": 516618
+  },
+  "additional_metadata": {
+    "id": "10000",
+    "key": "JCTP1-1"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmphmteub8f/JCTP1/attachments/10000.png",
+  "display_name": "Jira Connector Test Project 1"
+}

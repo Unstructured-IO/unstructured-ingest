@@ -26,6 +26,7 @@ class Formula(DBPropertyBase):
     name: str
     formula: FormulaProp
     type: str = "formula"
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

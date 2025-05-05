@@ -12,6 +12,7 @@ class PhoneNumber(DBPropertyBase):
     id: str
     name: str
     type: str = "phone_number"
+    description: Optional[str] = None
     phone_number: dict = field(default_factory=dict)
 
     @classmethod

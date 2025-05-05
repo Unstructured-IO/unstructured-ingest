@@ -20,6 +20,7 @@ class Verification(DBPropertyBase):
     name: str
     type: str = "verification"
     verification: dict = field(default_factory=dict)
+    description: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):

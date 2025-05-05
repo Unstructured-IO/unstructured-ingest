@@ -14,6 +14,7 @@ class People(DBPropertyBase):
     name: str
     description: Optional[str] = None
     type: str = "people"
+    description: Optional[str] = None
     people: dict = field(default_factory=dict)
 
     @classmethod

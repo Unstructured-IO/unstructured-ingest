@@ -13,6 +13,7 @@ class Checkbox(DBPropertyBase):
     id: str
     name: str
     type: str = "checkbox"
+    description: Optional[str] = None
     checkbox: dict = field(default_factory=dict)
 
     @classmethod

@@ -13,6 +13,7 @@ class Files(DBPropertyBase):
     id: str
     name: str
     type: str = "files"
+    description: Optional[str] = None
     files: dict = field(default_factory=dict)
 
     @classmethod
