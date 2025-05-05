@@ -1,3 +1,7 @@
+## 1.0.25
+
+* **Fix Notion user text and html getters**
+
 ## 1.0.24
 
 * **Handle both cloud and non-cloud jira instances**
