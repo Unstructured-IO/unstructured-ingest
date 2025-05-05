@@ -339,12 +339,16 @@ class SQLUploader(Uploader):
             output.append(tuple(parsed))
         return output
 
-    def _fit_to_schema(self, df: "DataFrame", add_missing_columns: bool = True) -> "DataFrame":
+    def _fit_to_schema(
+        self, df: "DataFrame", add_missing_columns: bool = True, case_sensitive: bool = True
+    ) -> "DataFrame":
         import pandas as pd
 
         table_columns = self.get_table_columns()
-        columns = set(df.columns)
-        schema_fields = set(table_columns)
+        columns = set(df.columns if case_sensitive else df.columns.str.lower())
+        schema_fields = set(
+            table_columns if case_sensitive else {col.lower() for col in table_columns}
+        )
         columns_to_drop = columns - schema_fields
         missing_columns = schema_fields - columns
 
