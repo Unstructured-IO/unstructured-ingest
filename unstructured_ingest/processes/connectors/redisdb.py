@@ -41,20 +41,31 @@ class RedisConnectionConfig(ConnectionConfig):
         default=RedisAccessConfig(), validate_default=True
     )
     host: Optional[str] = Field(
-        default=None, description="Hostname or IP address of a Redis instance to connect to."
+        default=None,
+        description="Hostname or IP address of a Redis instance to connect to if uri is not specified.",
     )
     database: int = Field(default=0, description="Database index to connect to.")
-    port: int = Field(default=6379, description="port used to connect to database.")
-    username: Optional[str] = Field(
-        default=None, description="Username used to connect to database."
+    port: Optional[int] = Field(
+        default=6379, description="Port used to connect to database if uri is not specified."
     )
-    ssl: bool = Field(default=True, description="Whether the connection should use SSL encryption.")
+    username: Optional[str] = Field(
+        default=None, description="Username used to connect to database if uri is not specified."
+    )
+    ssl: Optional[bool] = Field(
+        default=True,
+        description="Whether the connection should use SSL encryption if uri is not specified.",
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @model_validator(mode="after")
     def validate_host_or_url(self) -> "RedisConnectionConfig":
-        if not self.access_config.get_secret_value().uri and not self.host:
-            raise ValueError("Please pass a hostname either directly or through uri")
+        if not self.access_config.get_secret_value().uri:
+            if not self.host:
+                raise ValueError("Please pass a hostname either directly or through uri")
+            if self.port is None:
+                raise ValueError("URI not specified - port cannot be None")
+            if self.ssl is None:
+                raise ValueError("URI not specified - ssl cannot be None")
         return self
 
     @requires_dependencies(["redis"], extras="redis")
@@ -64,21 +75,20 @@ class RedisConnectionConfig(ConnectionConfig):
 
         access_config = self.access_config.get_secret_value()
 
-        options = {
-            "host": self.host,
-            "port": self.port,
-            "db": self.database,
-            "ssl": self.ssl,
-            "username": self.username,
-        }
-
-        if access_config.password:
-            options["password"] = access_config.password
-
         if access_config.uri:
             async with from_url(access_config.uri) as client:
                 yield client
         else:
+            options = {
+                "host": self.host,
+                "port": self.port,
+                "db": self.database,
+                "ssl": self.ssl,
+                "username": self.username,
+            }
+
+            if access_config.password:
+                options["password"] = access_config.password
             async with Redis(**options) as client:
                 yield client
 
