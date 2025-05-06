@@ -150,3 +150,39 @@ def test_fit_to_schema_no_add_missing_columns(mocker: MockerFixture, mock_upload
 
     assert "col2" not in result.columns
     assert "col1" in result.columns
+
+
+def test_fit_to_schema_case_sensitive(mocker: MockerFixture, mock_uploader: SQLUploader):
+    df = pd.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": [3, 4],
+            "col3": [5, 6],
+        }
+    )
+    mocker.patch.object(mock_uploader, "get_table_columns", return_value=["COL1", "COL2", "col3"])
+
+    result = mock_uploader._fit_to_schema(df)
+
+    assert "col1" not in result.columns
+    assert "col2" not in result.columns
+    assert "col3" in result.columns
+    assert "COL1" in result.columns
+    assert "COL2" in result.columns
+
+
+def test_fit_to_schema_not_case_sensitive(mocker: MockerFixture, mock_uploader: SQLUploader):
+    df = pd.DataFrame(
+        {
+            "col1": [1, 2],
+            "col2": [3, 4],
+            "col3": [5, 6],
+        }
+    )
+    mocker.patch.object(mock_uploader, "get_table_columns", return_value=["COL1", "COL2"])
+
+    result = mock_uploader._fit_to_schema(df, add_missing_columns=False, case_sensitive=False)
+
+    assert "col3" not in result.columns
+    assert "col1" in result.columns
+    assert "col2" in result.columns
