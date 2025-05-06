@@ -1,3 +1,7 @@
+## 1.0.26
+
+* **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
+
 ## 1.0.25
 
 * **Fix Notion user text and html getters**

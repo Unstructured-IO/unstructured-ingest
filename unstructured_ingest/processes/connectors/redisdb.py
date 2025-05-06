@@ -42,7 +42,8 @@ class RedisConnectionConfig(ConnectionConfig):
     )
     host: Optional[str] = Field(
         default=None,
-        description="Hostname or IP address of a Redis instance to connect to if uri is not specified.",
+        description="Hostname or IP address of a Redis instance to connect to "
+                    "if uri is not specified.",
     )
     database: int = Field(default=0, description="Database index to connect to.")
     port: Optional[int] = Field(
