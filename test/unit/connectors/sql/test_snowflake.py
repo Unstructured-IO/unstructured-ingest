@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pytest_mock import MockerFixture
 from pydantic import Secret
+from pytest_mock import MockerFixture
 
 from unstructured_ingest.processes.connectors.sql.snowflake import (
     SnowflakeAccessConfig,
@@ -134,7 +134,9 @@ def test_parse_values_with_vector_columns_embedding_dimension_none(
 ):
     mock_embeddings_dimension = mocker.PropertyMock
     mock_embeddings_dimension.return_value = None
-    mocker.patch.object(SnowflakeUploader, "embeddings_dimension", new_callable=mock_embeddings_dimension)
+    mocker.patch.object(
+        SnowflakeUploader, "embeddings_dimension", new_callable=mock_embeddings_dimension
+    )
     columns = ["embeddings", "languages", "other_column"]
 
     result = snowflake_uploader._parse_values(columns)
