@@ -178,7 +178,7 @@ class GoogleDriveIndexer(Indexer):
                 raise SourceConnectionError("Google drive API unreachable for an unknown reason!")
 
     @staticmethod
-    def count_files_recursively(files_client, folder_id: str, extensions: list[str] = None) -> int:
+    def count_files_recursively(files_client: "GoogleAPIResource", folder_id: str, extensions: list[str] = None) -> int:
         """
         Count non-folder files recursively under the given folder.
         If `extensions` is provided, only count files
@@ -480,6 +480,27 @@ class GoogleDriveDownloaderConfig(DownloaderConfig):
     pass
 
 
+def validate_mime_types(file_data: FileData, response: "httpx.Response") -> None:
+    """Check if the downloaded file's MIME type matches the expected MIME type.
+
+    Args:
+        file_data (FileData): The metadata of the file being downloaded.
+        response (httpx.Response): The HTTP response from the download request.
+
+    Raises:
+        SourceConnectionError: If the MIME types do not match.
+    """
+    resource_mime_type = file_data.additional_metadata.get("mimeType")
+    export_mime_type = file_data.additional_metadata.get("export_mime_type")
+    expected_mime_type = export_mime_type or resource_mime_type
+    response_mime_type = response.headers.get("Content-Type").split(";")[0].strip()
+    if response_mime_type != expected_mime_type:
+        raise SourceConnectionError(
+            f"Content-Type mismatch: expected {expected_mime_type}, "
+            f"got {response_mime_type}"
+        )
+
+
 @dataclass
 class GoogleDriveDownloader(Downloader):
     """
@@ -501,35 +522,45 @@ class GoogleDriveDownloader(Downloader):
     )
     connector_type: str = CONNECTOR_TYPE
 
-    def _get_download_url_and_ext(self, file_id: str, mime_type: str) -> tuple[str, str]:
+    def _get_download_url_and_ext(self, file_data: FileData) -> tuple[str, str]:
         """
         Resolves the appropriate download URL and expected file extension for a Google Drive file.
 
-        - Google-native files use export MIME types from exportLinks (e.g., .docx, .xlsx).
-        - Binary files use webContentLink (e.g., uploaded PDFs or ZIPs).
+        - Google-native files use export MIME types and the googleapis export
+          endpoint (e.g., .docx, .xlsx).
+        - Binary files use googleapis direct download endpoint (e.g., uploaded PDFs or ZIPs).
+
+        Additionally, the function enriches the file_data object with additional
+        metadata, including the download method and URL used.
+        Args:
+            file_data (FileData): The metadata of the file being downloaded.
 
         Returns:
             Tuple[str, str]: (download URL, file extension or "")
-
-        Raises:
-            SourceConnectionError: If no valid export or download link is available.
         """
-        with self.connection_config.get_client() as client:
-            metadata = client.get(fileId=file_id, fields="exportLinks,webContentLink").execute()
-
-        export_links = metadata.get("exportLinks", {})
-        web_link = metadata.get("webContentLink")
-
+        mime_type = file_data.additional_metadata.get("mimeType", "")
+        file_id = file_data.identifier
         if export_mime := GOOGLE_EXPORT_MIME_MAP.get(mime_type):
-            url = export_links.get(export_mime)
-            if not url:
-                raise SourceConnectionError(f"No export link found for {file_id} as {export_mime}")
+            export_url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?mimeType={export_mime}"
             ext = EXPORT_EXTENSION_MAP.get(export_mime, "")
-            return url, ext
-
-        if not web_link:
-            raise SourceConnectionError(f"No webContentLink available for file {file_id}")
-        return web_link, ""
+            # do above but with dict's update
+            file_data.additional_metadata.update(
+                {
+                    "export_mime_type": export_mime,
+                    "export_extension": ext,
+                    "download_method": "export_link",
+                    "download_url_used": export_url,
+                }
+            )
+            return export_url, ext
+        download_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media"
+        file_data.additional_metadata.update(
+            {
+                "download_method": "direct_download_link",
+                "download_url_used": download_url,
+            }
+        )
+        return download_url, ""
 
     @requires_dependencies(["httpx", "google.auth"], extras="google-drive")
     def _download_url(self, file_data: FileData, url: str, ext: str = "") -> Path:
@@ -549,6 +580,13 @@ class GoogleDriveDownloader(Downloader):
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
 
+        download_path = self.get_download_path(file_data)
+        if ext:
+            download_path = download_path.with_suffix(ext)
+
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Streaming file to {download_path}")
+
         access_config = self.connection_config.access_config.get_secret_value()
         key_data = access_config.get_service_account_key()
         creds = service_account.Credentials.from_service_account_info(
@@ -561,13 +599,6 @@ class GoogleDriveDownloader(Downloader):
             "Authorization": f"Bearer {creds.token}",
         }
 
-        download_path = self.get_download_path(file_data)
-        if ext:
-            download_path = download_path.with_suffix(ext)
-
-        download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"Streaming file to {download_path}")
-
         with (
             httpx.Client(timeout=None, follow_redirects=True) as client,
             client.stream("GET", url, headers=headers) as response,
@@ -576,6 +607,7 @@ class GoogleDriveDownloader(Downloader):
                 raise SourceConnectionError(
                     f"Failed to stream download from {url}: {response.status_code}"
                 )
+            validate_mime_types(file_data, response)
             with open(download_path, "wb") as f:
                 for chunk in response.iter_bytes():
                     f.write(chunk)
@@ -584,13 +616,12 @@ class GoogleDriveDownloader(Downloader):
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         mime_type = file_data.additional_metadata.get("mimeType", "")
-        record_id = file_data.identifier
 
         logger.debug(
             f"Downloading file {file_data.source_identifiers.fullpath} of type {mime_type}"
         )
 
-        download_url, ext = self._get_download_url_and_ext(record_id, mime_type)
+        download_url, ext = self._get_download_url_and_ext(file_data)
         download_path = self._download_url(file_data, download_url, ext)
 
         file_data.additional_metadata.update(
