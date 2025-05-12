@@ -49,7 +49,10 @@ def mock_cursor(mocker: MockerFixture):
 
 @pytest.fixture
 def mock_get_cursor(mocker: MockerFixture, mock_cursor: MagicMock):
-    mock = mocker.patch.context_manager(SnowflakeConnectionConfig, "get_cursor", autospec=True)
+    mock = mocker.patch(
+        "unstructured_ingest.processes.connectors.sql.snowflake.SnowflakeConnectionConfig.get_cursor",
+        autospec=True,
+    )
     mock.return_value.__enter__.return_value = mock_cursor
     return mock
 
@@ -134,8 +137,9 @@ def test_parse_values_with_vector_columns_embedding_dimension_none(
 ):
     mock_embeddings_dimension = mocker.PropertyMock
     mock_embeddings_dimension.return_value = None
-    mocker.patch.object(
-        SnowflakeUploader, "embeddings_dimension", new_callable=mock_embeddings_dimension
+    mocker.patch(
+        "unstructured_ingest.processes.connectors.sql.snowflake.SnowflakeUploader.embeddings_dimension",
+        new_callable=mock_embeddings_dimension,
     )
     columns = ["embeddings", "languages", "other_column"]
 
