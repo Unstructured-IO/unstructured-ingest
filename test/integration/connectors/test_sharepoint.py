@@ -24,7 +24,7 @@ def sharepoint_config():
         def __init__(self):
             self.client_id = os.environ["SHAREPOINT_CLIENT_ID"]
             self.client_cred = os.environ["SHAREPOINT_CRED"]
-            self.user_pname = os.environ["MS_USER_PNAME"]
+            # self.user_pname = os.environ["MS_USER_PNAME"]
             self.tenant = os.environ["MS_TENANT_ID"]
 
     return SharepointTestConfig()
@@ -43,7 +43,7 @@ async def test_sharepoint_source(temp_dir):
         client_id=config.client_id,
         site=site,
         tenant=config.tenant,
-        user_pname=config.user_pname,
+        # user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True)
@@ -91,7 +91,7 @@ async def test_sharepoint_source_with_path(temp_dir):
         client_id=config.client_id,
         site=site,
         tenant=config.tenant,
-        user_pname=config.user_pname,
+        # user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True, path="Folder1")
@@ -139,7 +139,7 @@ async def test_sharepoint_root_with_path(temp_dir):
         client_id=config.client_id,
         site=site,
         tenant=config.tenant,
-        user_pname=config.user_pname,
+        # user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True, path="e2e-test-folder")
@@ -187,7 +187,7 @@ async def test_sharepoint_shared_documents(temp_dir):
         client_id=config.client_id,
         site=site,
         tenant=config.tenant,
-        user_pname=config.user_pname,
+        # user_pname=config.user_pname,
         access_config=access_config,
     )
     index_config = SharepointIndexerConfig(recursive=True, path="Shared Documents")
