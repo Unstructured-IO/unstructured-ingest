@@ -1,3 +1,9 @@
+## 1.0.28
+
+### Fixes
+
+* **Fix Makes user_pname optional for Sharepoint**
+
 ## 1.0.27
 
 ### Fixes

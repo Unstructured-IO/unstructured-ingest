@@ -41,7 +41,7 @@ class SharepointAccessConfig(OnedriveAccessConfig):
 class SharepointConnectionConfig(OnedriveConnectionConfig):
     user_pname: Optional[str] = Field(
         default=None,
-        description="User principal name or service account, usually your Azure AD email."
+        description="User principal name or service account, usually your Azure AD email.",
     )
     site: str = Field(
         description="Sharepoint site url. Process either base url e.g \
