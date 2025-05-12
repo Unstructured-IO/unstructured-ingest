@@ -1,3 +1,7 @@
+## 1.0.26
+
+* **Fix Notion connector error with FileIcons**
+
 ## 1.0.25
 
 * **Fix Notion user text and html getters**
