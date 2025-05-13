@@ -1,3 +1,9 @@
+## 1.0.35
+
+### Enhancements
+
+* **Added better syncblock handling in Notion connector**
+
 ## 1.0.34
 
 * **Improve Confluence Indexer's precheck** - validate access to each space
