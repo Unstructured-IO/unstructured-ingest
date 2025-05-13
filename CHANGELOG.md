@@ -1,3 +1,9 @@
+## 1.0.28
+
+### Enhancements
+
+* **Added better syncblock handling in Notion connector**
+
 ## 1.0.27
 
 ### Fixes
