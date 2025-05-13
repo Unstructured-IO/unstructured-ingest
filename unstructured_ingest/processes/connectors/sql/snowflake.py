@@ -37,8 +37,8 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "snowflake"
 
+EMBEDDINGS_COLUMN = "embeddings"
 _ARRAY_COLUMNS = (
-    "embeddings",
     "languages",
     "link_urls",
     "link_texts",
@@ -47,6 +47,7 @@ _ARRAY_COLUMNS = (
     "emphasized_text_contents",
     "emphasized_text_tags",
 )
+_VECTOR_COLUMNS = (EMBEDDINGS_COLUMN,)
 
 
 class SnowflakeAccessConfig(SQLAccessConfig):
@@ -174,6 +175,33 @@ class SnowflakeUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
+    _embeddings_dimension: Optional[int] = None
+
+    @property
+    def embeddings_dimension(self) -> Optional[int]:
+        """
+        Get the dimension of the embeddings column in the Snowflake table.
+        If the column is not present or is not of type VECTOR, returns None.
+        """
+        if self._embeddings_dimension is None:
+            with self.connection_config.get_cursor() as cursor:
+                embeddings_column = cursor.execute(
+                    f"SHOW COLUMNS LIKE '{EMBEDDINGS_COLUMN}' IN {self.upload_config.table_name}"
+                ).fetchone()
+            if embeddings_column:
+                data_type = {}
+                if isinstance(embeddings_column, dict):
+                    data_type = json.loads(embeddings_column.get("data_type", "{}"))
+                elif isinstance(embeddings_column, tuple):
+                    data_type = json.loads(embeddings_column[3] or "{}")
+                if isinstance(data_type, dict) and data_type.get("type") == "VECTOR":
+                    self._embeddings_dimension = data_type.get("dimension")
+        # If the _embeddings_dimension is still None, it means the column
+        # is not present or not a VECTOR type
+        if self._embeddings_dimension is None:
+            self._embeddings_dimension = 0
+        return self._embeddings_dimension
+
     @requires_dependencies(["pandas"], extras="snowflake")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         super().run(path=path, file_data=file_data, **kwargs)
@@ -193,7 +221,7 @@ class SnowflakeUploader(SQLUploader):
                         parsed.append(None)
                     else:
                         parsed.append(parse_date_string(value))
-                elif column_name in _ARRAY_COLUMNS:
+                elif column_name in _ARRAY_COLUMNS or column_name in _VECTOR_COLUMNS:
                     if not isinstance(value, list) and (
                         value is None or pd.isna(value)
                     ):  # pandas is nan
@@ -206,16 +234,18 @@ class SnowflakeUploader(SQLUploader):
         return output
 
     def _parse_values(self, columns: list[str]) -> str:
-        return ",".join(
-            [
-                (
-                    f"PARSE_JSON({self.values_delimiter})"
-                    if col in _ARRAY_COLUMNS
-                    else self.values_delimiter
+        embeddings_dimension = self.embeddings_dimension
+        parsed_values = []
+        for col in columns:
+            if col in _VECTOR_COLUMNS and embeddings_dimension:
+                parsed_values.append(
+                    f"PARSE_JSON({self.values_delimiter})::VECTOR(FLOAT,{embeddings_dimension})"
                 )
-                for col in columns
-            ]
-        )
+            elif col in _ARRAY_COLUMNS or col in _VECTOR_COLUMNS:
+                parsed_values.append(f"PARSE_JSON({self.values_delimiter})")
+            else:
+                parsed_values.append(self.values_delimiter)
+        return ",".join(parsed_values)
 
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
@@ -228,8 +258,8 @@ class SnowflakeUploader(SQLUploader):
                 f"record id column "
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
+        df = self._fit_to_schema(df=df, add_missing_columns=True, case_sensitive=False)
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df)
 
         columns = list(df.columns)
         stmt = "INSERT INTO {table_name} ({columns}) SELECT {values}".format(
