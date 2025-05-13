@@ -178,7 +178,9 @@ class GoogleDriveIndexer(Indexer):
                 raise SourceConnectionError("Google drive API unreachable for an unknown reason!")
 
     @staticmethod
-    def count_files_recursively(files_client: "GoogleAPIResource", folder_id: str, extensions: list[str] = None) -> int:
+    def count_files_recursively(
+        files_client: "GoogleAPIResource", folder_id: str, extensions: list[str] = None
+    ) -> int:
         """
         Count non-folder files recursively under the given folder.
         If `extensions` is provided, only count files
@@ -480,40 +482,22 @@ class GoogleDriveDownloaderConfig(DownloaderConfig):
     pass
 
 
-def validate_mime_types(file_data: FileData, response: "httpx.Response") -> None:
-    """Check if the downloaded file's MIME type matches the expected MIME type.
-
-    Args:
-        file_data (FileData): The metadata of the file being downloaded.
-        response (httpx.Response): The HTTP response from the download request.
-
-    Raises:
-        SourceConnectionError: If the MIME types do not match.
+def _get_extension(file_data: FileData) -> str:
     """
-    resource_mime_type = file_data.additional_metadata.get("mimeType")
-    export_mime_type = file_data.additional_metadata.get("export_mime_type")
-    expected_mime_type = export_mime_type or resource_mime_type
-    response_mime_type = response.headers.get("Content-Type").split(";")[0].strip()
-    if response_mime_type != expected_mime_type:
-        raise SourceConnectionError(
-            f"Content-Type mismatch: expected {expected_mime_type}, "
-            f"got {response_mime_type}"
-        )
+    Returns the extension for a given source MIME type.
+    """
+    source_mime_type = file_data.additional_metadata.get("export_mime_type", "")
+    export_mime_type = GOOGLE_EXPORT_MIME_MAP.get(source_mime_type, "")
+    if export_mime_type:
+        return EXPORT_EXTENSION_MAP.get(export_mime_type, "")
+    return ""
 
 
 @dataclass
 class GoogleDriveDownloader(Downloader):
     """
-    Downloads files from Google Drive using authenticated direct HTTP requests
-    via `exportLinks` (for Google-native files) and `webContentLink` (for binary files).
-
-    These links emulate the behavior of Google Drive's "File > Download as..." options
-    in the UI and bypass the size limitations of `files.export()`.
-
-    Behavior:
-    - Google-native formats are downloaded using `exportLinks` in appropriate MIME formats.
-    - Binary files (non-Google-native) are downloaded using `webContentLink`.
-    - All downloads are performed via `requests.get()` using a valid bearer token.
+    Downloads files from Google Drive using googleapis client. For native files, it uses the export
+    functionality for files <10MB and LRO (Long Running Operation) for files >10MB.
     """
 
     connection_config: GoogleDriveConnectionConfig
@@ -522,77 +506,221 @@ class GoogleDriveDownloader(Downloader):
     )
     connector_type: str = CONNECTOR_TYPE
 
-    def _get_download_url_and_ext(self, file_data: FileData) -> tuple[str, str]:
-        """
-        Resolves the appropriate download URL and expected file extension for a Google Drive file.
+    @requires_dependencies(["googleapiclient"], extras="google-drive")
+    def _direct_download_file(self, file_id, download_path: Path):
+        """Downloads a file from Google Drive using the Drive API's media download functionality.
+        The method uses Google Drive API's media download functionality to stream the file
+        content directly to disk.
 
-        - Google-native files use export MIME types and the googleapis export
-          endpoint (e.g., .docx, .xlsx).
-        - Binary files use googleapis direct download endpoint (e.g., uploaded PDFs or ZIPs).
-
-        Additionally, the function enriches the file_data object with additional
-        metadata, including the download method and URL used.
         Args:
-            file_data (FileData): The metadata of the file being downloaded.
+            file_id (str): The ID of the file to download from Google Drive.
+            download_path (Path): The local path where the file should be saved.
+
+        Raises:
+            SourceConnectionError: If the download operation fails.
+        """
+        from googleapiclient.errors import HttpError
+        from googleapiclient.http import MediaIoBaseDownload
+
+        try:
+            with self.connection_config.get_client() as client:
+                # pylint: disable=maybe-no-member
+                request = client.get_media(fileId=file_id)
+
+                with open(download_path, "wb") as file:
+                    downloader = MediaIoBaseDownload(file, request)
+                    done = False
+                    while done is False:
+                        status, done = downloader.next_chunk()
+                        logger.debug(f"Download progress:{int(status.progress() * 100)}.")
+
+        except (HttpError, ValueError) as error:
+            logger.exception(f"Error downloading file {file_id} to {download_path}: {error}")
+            raise SourceConnectionError("Failed to download file") from error
+
+    @requires_dependencies(["googleapiclient"], extras="google-drive")
+    def _export_gdrive_file_with_lro(
+        self, file_id: str, download_path: Path, mime_type: str
+    ) -> None:
+        """Exports a Google Drive file using Long-Running Operation (LRO) for large files
+        (>10MB of the exported file size).
+
+        This method is used when the standard export method fails due to file size limitations.
+        It uses the Drive API's LRO functionality to handle large file exports.
+
+        Args:
+            file_id (str): The ID of the Google Drive file to export.
+            download_path (Path): The local path where the exported file should be saved.
+            mime_type (str): The target MIME type for the exported file.
+
+        Raises:
+            SourceConnectionError: If the export operation fails.
+        """
+
+        import backoff
+        from googleapiclient.errors import HttpError
+
+        max_time = 10 * 60  # 10 minutes
+        max_tries = 10
+
+        class OperationNotFinished(Exception):
+            """
+            Exception raised when the operation is not finished.
+            """
+
+            pass
+
+        def is_fatal_code(e: Exception) -> bool:
+            """
+            Returns True if the error is fatal and should not be retried.
+            403 and 429 can mean "Too many requests" or "User rate limit exceeded"
+            which should be retried.
+            """
+            return (
+                isinstance(e, HttpError)
+                and 400 <= e.resp.status < 500
+                and e.resp.status not in [403, 429]
+            )
+
+        @backoff.on_exception(
+            backoff.expo,
+            (HttpError, OperationNotFinished),
+            max_tries=max_tries,
+            max_time=max_time,
+            giveup=is_fatal_code,
+        )
+        def _poll_operation(operation: dict, operations_client: "GoogleAPIResource") -> dict:
+            """
+            Helper function to poll the operation until it's complete.
+            Uses backoff exponential retry logic.
+
+            Each `operations.get` call uses the Google API requests limit. Details:
+            https://developers.google.com/workspace/drive/api/guides/limits
+
+            The limits as of May 2025 are:
+            - 12.000 calls per 60 seconds
+
+            In case of request limitting, the API will return 403 `User rate limit exceeded` error
+            or 429 `Too many requests` error.
+            """
+            if operation.get("done", False):
+                return operation
+            if "error" in operation:
+                raise SourceConnectionError(
+                    f"Export operation failed: {operation['error']['message']}"
+                )
+            # Refresh the operation status:
+            # FYI: In some cases the `operations.get` call errors with 403 "User does not have
+            # permission" error even if the same user create the operation with `download` method.
+            updated_operation = operations_client.get(name=operation["name"]).execute()
+            if not updated_operation.get("done", False):
+                raise OperationNotFinished()
+            return updated_operation
+
+        try:
+            with self._get_files_and_operations_client() as (files_client, operations_client):
+                # Start the LRO
+                operation = files_client.download(fileId=file_id, mimeType=mime_type).execute()
+
+                # In case the operation is not finished, poll it until it's complete
+                updated_operation = _poll_operation(operation, operations_client)
+
+                # Get the download URI from the completed operation
+                download_uri = updated_operation["response"]["downloadUri"]
+
+            # Download the file using the URI
+            self._raw_download_google_drive_file(download_uri, download_path)
+
+        except HttpError as error:
+            raise SourceConnectionError(f"Failed to export file using Google Drive LRO: {error}")
+
+    @requires_dependencies(["googleapiclient"], extras="google-drive")
+    def _export_gdrive_native_file(
+        self, file_id: str, download_path: Path, mime_type: str
+    ) -> bytes:
+        """Exports a Google Drive native file (Docs, Sheets, Slides) to a specified format.
+
+        This method uses the Google Drive API's export functionality to convert Google Workspace
+        files to other formats (e.g., Google Docs to PDF, Google Sheets to Excel).
+        For files larger than 10MB, it falls back to using Long-Running Operation (LRO).
+
+        Args:
+            file_id (str): The ID of the Google Drive file to export.
+            download_path (Path): The local path where the exported file should be saved.
+            mime_type (str): The target MIME type for the exported file (e.g., 'application/pdf').
 
         Returns:
-            Tuple[str, str]: (download URL, file extension or "")
-        """
-        mime_type = file_data.additional_metadata.get("mimeType", "")
-        file_id = file_data.identifier
-        if export_mime := GOOGLE_EXPORT_MIME_MAP.get(mime_type):
-            export_url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?mimeType={export_mime}"
-            ext = EXPORT_EXTENSION_MAP.get(export_mime, "")
-            # do above but with dict's update
-            file_data.additional_metadata.update(
-                {
-                    "export_mime_type": export_mime,
-                    "export_extension": ext,
-                    "download_method": "export_link",
-                    "download_url_used": export_url,
-                }
-            )
-            return export_url, ext
-        download_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media"
-        file_data.additional_metadata.update(
-            {
-                "download_method": "direct_download_link",
-                "download_url_used": download_url,
-            }
-        )
-        return download_url, ""
+            bytes: The exported file content.
 
-    @requires_dependencies(["httpx", "google.auth"], extras="google-drive")
-    def _download_url(self, file_data: FileData, url: str, ext: str = "") -> Path:
+        Raises:
+            HttpError: If the export operation fails.
+        """
+        from googleapiclient.errors import HttpError
+        from googleapiclient.http import MediaIoBaseDownload
+
+        with self.connection_config.get_client() as client:
+            try:
+                # pylint: disable=maybe-no-member
+                request = client.export_media(fileId=file_id, mimeType=mime_type)
+                with open(download_path, "wb") as file:
+                    downloader = MediaIoBaseDownload(file, request)
+                    done = False
+                    while done is False:
+                        status, done = downloader.next_chunk()
+                        logger.debug(f"Download progress: {int(status.progress() * 100)}.")
+
+            except HttpError as error:
+                if error.resp.status == 403 and "too large" in error.reason:
+                    # If we get a 403, try using LRO for large files
+                    logger.debug("File too large for direct export, using LRO")
+                    self._export_gdrive_file_with_lro(file_id, download_path, mime_type)
+                else:
+                    raise SourceConnectionError(f"Failed to export file: {error}")
+
+    @requires_dependencies(["googleapiclient"], extras="google-drive")
+    @contextmanager
+    def _get_files_and_operations_client(
+        self,
+    ) -> Generator[tuple["GoogleAPIResource", "GoogleAPIResource"], None, None]:
+        """
+        Returns a context manager for the files and operations clients for the Google Drive API.
+
+        Yields:
+            Tuple[GoogleAPIResource, GoogleAPIResource]: A tuple of the files
+                and operations clients.
+        """
+        from googleapiclient.discovery import build
+
+        creds = self._get_credentials()
+        service = build("drive", "v3", credentials=creds)
+        with (
+            service.operations() as operations_client,
+            service.files() as files_client,
+        ):
+            yield files_client, operations_client
+
+    @requires_dependencies(["httpx"])
+    def _raw_download_google_drive_file(self, url: str, download_path: Path) -> Path:
         """
         Streams file content directly to disk using authenticated HTTP request.
+        Must use httpx to stream the file to disk as currently there's no google SDK
+        functionality to download a file like for get media or export operations.
 
         Writes the file to the correct path in the download directory while downloading.
         Avoids buffering large files in memory.
 
-        Returns:
-            Path to the downloaded file.
+        Args:
+            url (str): The URL of the file to download.
+            download_path (Path): The path to save the downloaded file.
 
-        Raises:
-            SourceConnectionError: If the HTTP request fails.
+        Returns:
+            Path: The path to the downloaded file.
         """
         import httpx
         from google.auth.transport.requests import Request
-        from google.oauth2 import service_account
 
-        download_path = self.get_download_path(file_data)
-        if ext:
-            download_path = download_path.with_suffix(ext)
+        creds = self._get_credentials()
 
-        download_path.parent.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"Streaming file to {download_path}")
-
-        access_config = self.connection_config.access_config.get_secret_value()
-        key_data = access_config.get_service_account_key()
-        creds = service_account.Credentials.from_service_account_info(
-            key_data,
-            scopes=["https://www.googleapis.com/auth/drive.readonly"],
-        )
         creds.refresh(Request())
 
         headers = {
@@ -607,10 +735,76 @@ class GoogleDriveDownloader(Downloader):
                 raise SourceConnectionError(
                     f"Failed to stream download from {url}: {response.status_code}"
                 )
-            validate_mime_types(file_data, response)
             with open(download_path, "wb") as f:
                 for chunk in response.iter_bytes():
                     f.write(chunk)
+        return download_path
+
+    @requires_dependencies(["google"], extras="google-drive")
+    def _get_credentials(self):
+        """
+        Retrieves the credentials for Google Drive API access.
+
+        Returns:
+            Credentials: The credentials for Google Drive API access.
+        """
+        from google.oauth2 import service_account
+
+        access_config = self.connection_config.access_config.get_secret_value()
+        key_data = access_config.get_service_account_key()
+        creds = service_account.Credentials.from_service_account_info(
+            key_data,
+            scopes=["https://www.googleapis.com/auth/drive.readonly"],
+        )
+        return creds
+
+    def _download_file(self, file_data: FileData) -> Path:
+        """Downloads a file from Google Drive using either direct download or export based
+        on the source file's MIME type.
+
+        This method determines the appropriate download method based on the file's MIME type:
+        - For Google Workspace files (Docs, Sheets, Slides), uses export functionality
+        - For other files, uses direct download
+
+        Args:
+            file_data (FileData): The metadata of the file being downloaded.
+
+        Returns:
+            Path: The path to the downloaded file.
+
+        Raises:
+            SourceConnectionError: If the download fails.
+        """
+        mime_type = file_data.additional_metadata.get("mimeType", "")
+        file_id = file_data.identifier
+
+        download_path = self.get_download_path(file_data)
+        if not download_path:
+            raise SourceConnectionError(f"Failed to get download path for file {file_id}")
+
+        if mime_type in GOOGLE_EXPORT_MIME_MAP:
+            # For Google Workspace files, use export functionality
+            ext = _get_extension(file_data)
+            download_path = download_path.with_suffix(ext)
+            export_mime = GOOGLE_EXPORT_MIME_MAP[mime_type]
+            self._export_gdrive_native_file(
+                file_id=file_id, download_path=download_path, mime_type=export_mime
+            )
+            file_data.additional_metadata.update(
+                {
+                    "export_mime_type": export_mime,
+                    "export_extension": ext,
+                    "download_method": "export_link",
+                }
+            )
+        else:
+            # For other files, use direct download
+            self._direct_download_file(file_id=file_id, download_path=download_path)
+            file_data.additional_metadata.update(
+                {
+                    "download_method": "direct_download_link",
+                }
+            )
 
         return download_path
 
@@ -621,15 +815,8 @@ class GoogleDriveDownloader(Downloader):
             f"Downloading file {file_data.source_identifiers.fullpath} of type {mime_type}"
         )
 
-        download_url, ext = self._get_download_url_and_ext(file_data)
-        download_path = self._download_url(file_data, download_url, ext)
+        download_path = self._download_file(file_data)
 
-        file_data.additional_metadata.update(
-            {
-                "download_method": "export_link" if ext else "web_content_link",
-                "download_url_used": download_url,
-            }
-        )
         file_data.local_download_path = str(download_path.resolve())
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
