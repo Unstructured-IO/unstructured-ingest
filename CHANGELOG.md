@@ -1,3 +1,9 @@
+## 1.0.28
+
+### Fixes
+
+* **Fix Google Drive download links and enhance download method to use LRO for large files**
+
 ## 1.0.27
 
 ### Fixes
