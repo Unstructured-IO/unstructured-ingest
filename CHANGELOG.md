@@ -1,6 +1,19 @@
-## 1.0.26
+## 1.0.28
 
 * **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
+
+
+## 1.0.27
+
+### Fixes
+
+* **Fix table schema example for Snowflake Destination connector**
+* **Fix Snowflake Destination issue with dropping/removing case insensitive column names when populating the table**
+* **Fix Snowflake Destination issue with `embeddings` column when using `VECTOR` type**
+
+## 1.0.26
+
+* **Fix Notion connector error with FileIcons**
 
 ## 1.0.25
 
