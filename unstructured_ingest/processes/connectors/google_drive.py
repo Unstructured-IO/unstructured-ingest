@@ -527,6 +527,9 @@ class GoogleDriveDownloader(Downloader):
                 # pylint: disable=maybe-no-member
                 request = client.get_media(fileId=file_id)
 
+                # Create parent directory tree if needed
+                download_path.parent.mkdir(parents=True, exist_ok=True)
+
                 with open(download_path, "wb") as file:
                     downloader = MediaIoBaseDownload(file, request)
                     done = False
