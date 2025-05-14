@@ -32,7 +32,9 @@ class RedisAccessConfig(AccessConfig):
         default=None, description="If not anonymous, use this uri, if specified."
     )
     password: Optional[str] = Field(
-        default=None, description="Password used to connect to database if uri is not specified"
+        default=None, 
+        description="Password used to connect to database if uri is "
+                    "not specified and connection is not anonymous."
     )
 
 
