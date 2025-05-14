@@ -1,6 +1,34 @@
-## 1.0.24-dev1
+## 1.0.29-dev1
 
-* **Fixed issue in the fsspec destination connector where files with the same name were overwriting each other**
+* **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
+
+## 1.0.29
+
+### Fixes
+
+* **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
+
+## 1.0.28
+
+### Fixes
+
+* **Fix Makes user_pname optional for Sharepoint**
+
+## 1.0.27
+
+### Fixes
+
+* **Fix table schema example for Snowflake Destination connector**
+* **Fix Snowflake Destination issue with dropping/removing case insensitive column names when populating the table**
+* **Fix Snowflake Destination issue with `embeddings` column when using `VECTOR` type**
+
+## 1.0.26
+
+* **Fix Notion connector error with FileIcons**
+
+## 1.0.25
+
+* **Fix Notion user text and html getters**
 
 ## 1.0.24
 
