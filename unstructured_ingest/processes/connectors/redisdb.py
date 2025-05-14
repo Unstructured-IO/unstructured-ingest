@@ -64,9 +64,9 @@ class RedisConnectionConfig(ConnectionConfig):
             if not self.host:
                 raise ValueError("Please pass a hostname either directly or through uri")
             if self.port is None:
-                raise ValueError("URI not specified - port cannot be None")
+                raise ValueError("Since URI is not specified, port cannot be None")
             if self.ssl is None:
-                raise ValueError("URI not specified - ssl cannot be None")
+                raise ValueError("Since URI is not specified, ssl cannot be None")
         return self
 
     @requires_dependencies(["redis"], extras="redis")
