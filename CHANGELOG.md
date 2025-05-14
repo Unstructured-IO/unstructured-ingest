@@ -1,3 +1,9 @@
+## 1.0.29
+
+### Fixes
+
+* **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
+
 ## 1.0.28
 
 ### Fixes
