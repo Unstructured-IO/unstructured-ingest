@@ -1,5 +1,8 @@
 ## 1.0.28
 
+### Fixes
+
+* **Fix Makes user_pname optional for Sharepoint**
 * **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
 
 
