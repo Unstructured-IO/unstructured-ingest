@@ -1,3 +1,7 @@
+## 1.0.29-dev1
+
+* **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
+
 ## 1.0.29
 
 ### Fixes
