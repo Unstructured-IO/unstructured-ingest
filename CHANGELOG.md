@@ -2,6 +2,7 @@
 
 ### Fixes
 
+* **Fix Makes user_pname optional for Sharepoint**
 * **Fix Google Drive download links and enhance download method to use LRO for large files**
 
 ## 1.0.27
