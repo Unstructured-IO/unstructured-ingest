@@ -527,9 +527,6 @@ class GoogleDriveDownloader(Downloader):
                 # pylint: disable=maybe-no-member
                 request = client.get_media(fileId=file_id)
 
-                # Create parent directory tree if needed
-                download_path.parent.mkdir(parents=True, exist_ok=True)
-
                 with open(download_path, "wb") as file:
                     downloader = MediaIoBaseDownload(file, request)
                     done = False
@@ -789,6 +786,7 @@ class GoogleDriveDownloader(Downloader):
             # For Google Workspace files, use export functionality
             ext = _get_extension(file_data)
             download_path = download_path.with_suffix(ext)
+            download_path.parent.mkdir(parents=True, exist_ok=True)
             export_mime = GOOGLE_EXPORT_MIME_MAP[mime_type]
             self._export_gdrive_native_file(
                 file_id=file_id, download_path=download_path, mime_type=export_mime
@@ -802,6 +800,7 @@ class GoogleDriveDownloader(Downloader):
             )
         else:
             # For other files, use direct download
+            download_path.parent.mkdir(parents=True, exist_ok=True)
             self._direct_download_file(file_id=file_id, download_path=download_path)
             file_data.additional_metadata.update(
                 {
