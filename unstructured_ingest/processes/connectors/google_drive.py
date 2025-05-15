@@ -479,7 +479,8 @@ class GoogleDriveIndexer(Indexer):
 
 
 class GoogleDriveDownloaderConfig(DownloaderConfig):
-    pass
+    lro_max_tries: int = 10
+    lro_max_time: int = 10 * 60  # 10 minutes
 
 
 def _get_extension(file_data: FileData) -> str:
@@ -557,11 +558,11 @@ class GoogleDriveDownloader(Downloader):
             SourceConnectionError: If the export operation fails.
         """
 
-        import backoff
+        import tenacity
         from googleapiclient.errors import HttpError
 
-        max_time = 10 * 60  # 10 minutes
-        max_tries = 10
+        max_time = self.download_config.lro_max_time
+        max_tries = self.download_config.lro_max_tries
 
         class OperationNotFinished(Exception):
             """
@@ -582,12 +583,14 @@ class GoogleDriveDownloader(Downloader):
                 and e.resp.status not in [403, 429]
             )
 
-        @backoff.on_exception(
-            backoff.expo,
-            (HttpError, OperationNotFinished),
-            max_tries=max_tries,
-            max_time=max_time,
-            giveup=is_fatal_code,
+        @tenacity.retry(
+            wait=tenacity.wait_exponential(),
+            retry=tenacity.retry_if_exception(
+                lambda e: (
+                    isinstance(e, (HttpError, OperationNotFinished)) and not is_fatal_code(e)
+                )
+            ),
+            stop=(tenacity.stop_after_attempt(max_tries) | tenacity.stop_after_delay(max_time)),
         )
         def _poll_operation(operation: dict, operations_client: "GoogleAPIResource") -> dict:
             """
