@@ -1,3 +1,13 @@
+## 1.0.29-dev1
+
+* **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
+
+## 1.0.29
+
+### Fixes
+
+* **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
+
 ## 1.0.28
 
 ### Fixes

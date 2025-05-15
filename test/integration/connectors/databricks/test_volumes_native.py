@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
@@ -205,33 +205,39 @@ def databricks_destination_context(
         yield client
     finally:
         # Cleanup
-        try:
-            for file in client.files.list_directory_contents(
-                directory_path=_get_volume_path(env_data.catalog, volume, volume_path)
-            ):
-                client.files.delete(file.path)
-            client.files.delete_directory(_get_volume_path(env_data.catalog, volume, volume_path))
-        except NotFound:
-            # Directory was never created, don't need to delete
-            pass
+        with suppress(NotFound):
+            client.workspace.delete(
+                path=_get_volume_path(env_data.catalog, volume, volume_path), recursive=True
+            )
 
 
-def validate_upload(client: WorkspaceClient, catalog: str, volume: str, volume_path: str):
-    files = list(
-        client.files.list_directory_contents(
-            directory_path=_get_volume_path(catalog, volume, volume_path)
-        )
-    )
+def list_files_recursively(client: WorkspaceClient, path: str):
+    files = []
+    objects = client.files.list_directory_contents(path)
+    for obj in objects:
+        full_path = obj.path
+        if obj.is_directory:
+            files.extend(list_files_recursively(client, full_path))
+        else:
+            files.append(full_path)
+    return files
 
-    assert len(files) == 1
 
-    resp = client.files.download(files[0].path)
-    data = json.loads(resp.contents.read())
+def validate_upload(
+    client: WorkspaceClient, catalog: str, volume: str, volume_path: str, num_files: int
+):
+    files = list_files_recursively(client, _get_volume_path(catalog, volume, volume_path))
 
-    assert len(data) == 22
-    element_types = {v["type"] for v in data}
-    assert len(element_types) == 1
-    assert "CompositeElement" in element_types
+    assert len(files) == num_files
+
+    for i in range(num_files):
+        resp = client.files.download(files[i])
+        data = json.loads(resp.contents.read())
+
+        assert len(data) == 22
+        element_types = {v["type"] for v in data}
+        assert len(element_types) == 1
+        assert "CompositeElement" in element_types
 
 
 @pytest.mark.asyncio
@@ -267,4 +273,52 @@ async def test_volumes_native_destination(upload_file: Path):
             catalog=env_data.catalog,
             volume="test-platform",
             volume_path=volume_path,
+            num_files=1,
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
+@requires_env(
+    "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
+)
+async def test_volumes_native_destination_same_filenames_different_folder(upload_file: Path):
+    env_data = get_basic_auth_env_data()
+    volume_path = f"databricks-volumes-test-output-{uuid.uuid4()}"
+    file_data_1 = FileData(
+        source_identifiers=SourceIdentifiers(
+            fullpath=f"folder1/{upload_file.name}", filename=upload_file.name
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    file_data_2 = FileData(
+        source_identifiers=SourceIdentifiers(
+            fullpath=f"folder2/{upload_file.name}", filename=upload_file.name
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    with databricks_destination_context(
+        volume="test-platform", volume_path=volume_path, env_data=env_data
+    ) as workspace_client:
+        connection_config = env_data.get_connection_config()
+        uploader = DatabricksNativeVolumesUploader(
+            connection_config=connection_config,
+            upload_config=DatabricksNativeVolumesUploaderConfig(
+                volume="test-platform",
+                volume_path=volume_path,
+                catalog=env_data.catalog,
+            ),
+        )
+        uploader.precheck()
+        uploader.run(path=upload_file, file_data=file_data_1)
+        uploader.run(path=upload_file, file_data=file_data_2)
+
+        validate_upload(
+            client=workspace_client,
+            catalog=env_data.catalog,
+            volume="test-platform",
+            volume_path=volume_path,
+            num_files=2,
         )
