@@ -78,7 +78,6 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         import dropbox
 
         dbx = dropbox.Dropbox(
-            oauth2_access_token=None,
             oauth2_refresh_token=refresh_token,
             app_key=app_key,
             app_secret=app_secret,
@@ -114,9 +113,20 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
                     "Unable to retrieve an access token from Dropbox. "
                     "Please check that your refresh token, app key, and secret are valid."
                 )
-            base_conf["token"] = new_token
-        elif not base_conf.get("token"):  # we might already have an access token from outside
-            # We have neither an existing short?lived token nor refresh credentials
+            # Use the generated token in the fsspec expected parameter
+            base_conf["oauth2_access_token"] = new_token
+            
+            # The dropboxdrivefs library expects only one auth method, so we need to 
+            # remove the refresh_token when we've generated an access token
+            # to avoid conflicting auth methods
+            if "token" in base_conf:
+                del base_conf["token"]
+        elif base_conf.get("token"):
+            # Handle case where a short-lived token is provided directly
+            # Rename it to match what the dropboxdrivefs expects
+            base_conf["oauth2_access_token"] = base_conf.pop("token")
+        elif not (refresh_token and app_key and app_secret):
+            # We have neither an existing short-lived token nor refresh credentials
             raise ValueError(
                 "No valid token or refresh_token with app credentials was found. "
                 "Please check that your refresh token, app key, and secret are valid "
