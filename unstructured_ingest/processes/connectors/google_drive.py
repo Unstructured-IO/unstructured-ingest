@@ -52,6 +52,10 @@ EXPORT_EXTENSION_MAP = {
     "text/html": ".html",
 }
 
+# LRO Export Size Threshold is 10MB in real but the exported file might be slightly larger
+# than the original Google Workspace file - thus the threshold is set to 9MB
+LRO_EXPORT_SIZE_THRESHOLD = 9 * 1024 * 1024  # 9MB
+
 
 class GoogleDriveAccessConfig(AccessConfig):
     service_account_key: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
@@ -142,8 +146,7 @@ class GoogleDriveIndexer(Indexer):
             "originalFilename",
             "capabilities",
             "permissionIds",
-            "webViewLink",
-            "webContentLink",
+            "size",
         ]
     )
 
@@ -540,9 +543,7 @@ class GoogleDriveDownloader(Downloader):
             raise SourceConnectionError("Failed to download file") from error
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
-    def _export_gdrive_file_with_lro(
-        self, file_id: str, download_path: Path, mime_type: str
-    ) -> None:
+    def _export_gdrive_file_with_lro(self, file_id: str, download_path: Path, mime_type: str):
         """Exports a Google Drive file using Long-Running Operation (LRO) for large files
         (>10MB of the exported file size).
 
@@ -553,7 +554,6 @@ class GoogleDriveDownloader(Downloader):
             file_id (str): The ID of the Google Drive file to export.
             download_path (Path): The local path where the exported file should be saved.
             mime_type (str): The target MIME type for the exported file.
-
         Raises:
             SourceConnectionError: If the export operation fails.
         """
@@ -635,12 +635,14 @@ class GoogleDriveDownloader(Downloader):
             self._raw_download_google_drive_file(download_uri, download_path)
 
         except HttpError as error:
-            raise SourceConnectionError(f"Failed to export file using Google Drive LRO: {error}")
+            raise SourceConnectionError(
+                f"Failed to export file using Google Drive LRO: {error}"
+            ) from error
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
     def _export_gdrive_native_file(
-        self, file_id: str, download_path: Path, mime_type: str
-    ) -> bytes:
+        self, file_id: str, download_path: Path, mime_type: str, file_size: int
+    ):
         """Exports a Google Drive native file (Docs, Sheets, Slides) to a specified format.
 
         This method uses the Google Drive API's export functionality to convert Google Workspace
@@ -651,7 +653,8 @@ class GoogleDriveDownloader(Downloader):
             file_id (str): The ID of the Google Drive file to export.
             download_path (Path): The local path where the exported file should be saved.
             mime_type (str): The target MIME type for the exported file (e.g., 'application/pdf').
-
+            file_size (int): The size of the file to export - used to determine if the
+                file is large enough to use LRO instead of direct export endpoint.
         Returns:
             bytes: The exported file content.
 
@@ -660,6 +663,10 @@ class GoogleDriveDownloader(Downloader):
         """
         from googleapiclient.errors import HttpError
         from googleapiclient.http import MediaIoBaseDownload
+
+        if file_size > LRO_EXPORT_SIZE_THRESHOLD:
+            self._export_gdrive_file_with_lro(file_id, download_path, mime_type)
+            return
 
         with self.connection_config.get_client() as client:
             try:
@@ -671,14 +678,14 @@ class GoogleDriveDownloader(Downloader):
                     while done is False:
                         status, done = downloader.next_chunk()
                         logger.debug(f"Download progress: {int(status.progress() * 100)}.")
-
             except HttpError as error:
-                if error.resp.status == 403 and "too large" in error.reason:
-                    # If we get a 403, try using LRO for large files
-                    logger.debug("File too large for direct export, using LRO")
+                if error.resp.status == 403 and "too large" in error.reason.lower():
+                    # Even though we have the LRO threashold, for some smaller files the
+                    # export size might exceed 10MB and we get a 403 error.
+                    # In that case, we use LRO as a fallback.
                     self._export_gdrive_file_with_lro(file_id, download_path, mime_type)
                 else:
-                    raise SourceConnectionError(f"Failed to export file: {error}")
+                    raise SourceConnectionError(f"Failed to export file: {error}") from error
 
     @requires_dependencies(["googleapiclient"], extras="google-drive")
     @contextmanager
@@ -779,6 +786,7 @@ class GoogleDriveDownloader(Downloader):
             SourceConnectionError: If the download fails.
         """
         mime_type = file_data.additional_metadata.get("mimeType", "")
+        file_size = int(file_data.additional_metadata.get("size", 0))
         file_id = file_data.identifier
 
         download_path = self.get_download_path(file_data)
@@ -792,7 +800,10 @@ class GoogleDriveDownloader(Downloader):
             download_path.parent.mkdir(parents=True, exist_ok=True)
             export_mime = GOOGLE_EXPORT_MIME_MAP[mime_type]
             self._export_gdrive_native_file(
-                file_id=file_id, download_path=download_path, mime_type=export_mime
+                file_id=file_id,
+                download_path=download_path,
+                mime_type=export_mime,
+                file_size=file_size,
             )
             file_data.additional_metadata.update(
                 {
