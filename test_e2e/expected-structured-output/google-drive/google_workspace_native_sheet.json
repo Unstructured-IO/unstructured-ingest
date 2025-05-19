@@ -1,25 +1,28 @@
 [
   {
-    "type": "UncategorizedText",
-    "element_id": "56d531394823d81787d77a04462ed096",
-    "text": "Lorem ipsum dolor sit amet.",
+    "type": "Table",
+    "element_id": "b754689147af2d3b519dd7d5cf2dc477",
+    "text": "City Year Color London 2022 Green New York 2021 Red Lisbon 2013 Blue",
     "metadata": {
+      "page_name": "Sheet1",
+      "page_number": 1,
+      "text_as_html": "<table><tr><td>City</td><td>Year</td><td>Color</td></tr><tr><td>London</td><td>2022</td><td>Green</td></tr><tr><td>New York</td><td>2021</td><td>Red</td></tr><tr><td>Lisbon</td><td>2013</td><td>Blue</td></tr></table>",
       "languages": [
-        "por",
-        "cat"
+        "eng"
       ],
-      "filetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "filetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "data_source": {
         "url": null,
         "record_locator": {
-          "file_id": "1yXGjX5j0MhKb01vfGRjNJqXyrHBnHxVo"
+          "file_id": "1FZML_CCjOvOKinVDsQuEz9bV-pkWBlIMLLEmh882qH0"
         },
-        "date_created": "1718722775.76",
-        "date_modified": "1718722788.018",
+        "date_created": "1747407489.865",
+        "date_modified": "1747649993.808",
         "permissions_data": [
           {
             "read": {
               "users": [
+                "03117299979490230249",
                 "03887347926440898356",
                 "04774006893477068632",
                 "09147371668407854156",
@@ -34,6 +37,7 @@
           {
             "update": {
               "users": [
+                "03117299979490230249",
                 "03887347926440898356",
                 "04774006893477068632",
                 "09147371668407854156",
@@ -48,7 +52,7 @@
           {
             "delete": {
               "users": [
-                "09147371668407854156"
+                "03117299979490230249"
               ],
               "groups": []
             }

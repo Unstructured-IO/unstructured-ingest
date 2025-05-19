@@ -42,7 +42,7 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --partition-by-api \
   --partition-endpoint "https://api.unstructuredapp.io" \
   --download-dir "$DOWNLOAD_DIR" \
-  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.version \
+  --metadata-exclude coordinates,filename,file_directory,metadata.data_source.date_processed,metadata.data_source.filesize_bytes,metadata.last_modified,metadata.detection_class_prob,metadata.parent_id,metadata.category_depth,metadata.data_source.version,metadata.image_base64 \
   --num-processes "$max_processes" \
   --strategy hi_res \
   --preserve-downloads \
@@ -51,7 +51,6 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
   --drive-id 1OQZ66OHBE30rNsNa7dweGLfRmXvkT_jr \
   --service-account-key-path "$GCP_INGEST_SERVICE_KEY_FILE" \
   --recursive \
-  --extensions "pdf,docx" \
   --work-dir "$WORK_DIR" \
   local \
   --output-dir "$OUTPUT_DIR"
