@@ -809,7 +809,7 @@ class GoogleDriveDownloader(Downloader):
                 {
                     "export_mime_type": export_mime,
                     "export_extension": ext,
-                    "download_method": "export_link",
+                    "download_method": "google_workspace_export",
                 }
             )
         else:
@@ -818,7 +818,7 @@ class GoogleDriveDownloader(Downloader):
             self._direct_download_file(file_id=file_id, download_path=download_path)
             file_data.additional_metadata.update(
                 {
-                    "download_method": "direct_download_link",
+                    "download_method": "direct_download",
                 }
             )
 

@@ -15,7 +15,7 @@
       ],
       "filetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "data_source": {
-        "url": "https://drive.google.com/uc?id=117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8&export=download",
+        "url": null,
         "record_locator": {
           "file_id": "117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8"
         },
@@ -58,8 +58,7 @@
               "groups": []
             }
           }
-        ],
-        "filesize_bytes": 6201
+        ]
       }
     }
   },
@@ -79,7 +78,7 @@
       ],
       "filetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "data_source": {
-        "url": "https://drive.google.com/uc?id=117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8&export=download",
+        "url": null,
         "record_locator": {
           "file_id": "117qrVqiCoR5EjYMsDHGdy3UMkEtKr9Q8"
         },
@@ -122,8 +121,7 @@
               "groups": []
             }
           }
-        ],
-        "filesize_bytes": 6201
+        ]
       }
     }
   }
