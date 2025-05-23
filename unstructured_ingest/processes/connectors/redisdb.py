@@ -32,9 +32,9 @@ class RedisAccessConfig(AccessConfig):
         default=None, description="If not anonymous, use this uri, if specified."
     )
     password: Optional[str] = Field(
-        default=None, 
+        default=None,
         description="Password used to connect to database if uri is "
-                    "not specified and connection is not anonymous."
+        "not specified and connection is not anonymous.",
     )
 
 
@@ -45,7 +45,7 @@ class RedisConnectionConfig(ConnectionConfig):
     host: Optional[str] = Field(
         default=None,
         description="Hostname or IP address of a Redis instance to connect to "
-                    "if uri is not specified.",
+        "if uri is not specified.",
     )
     database: int = Field(default=0, description="Database index to connect to.")
     port: Optional[int] = Field(
@@ -126,6 +126,20 @@ class RedisUploaderConfig(UploaderConfig):
     key_prefix: str = Field(default="", description="Prefix for Redis keys")
 
 
+def _form_redis_pipeline_error_message(error: str) -> str:
+    """
+    Form a user-friendly error message for Redis pipeline errors.
+    The error message has `$` character at the beginning and `) of pipeline` at the end.
+    Everything between these two strings is the value an should be removed.
+    """
+    start = error.find("$")
+    end = error.find(") of pipeline")
+    if start != -1 and end != -1:
+        return error[: start + 1] + "<value>" + error[end:]
+    else:
+        return error
+
+
 @dataclass
 class RedisUploader(Uploader):
     upload_config: RedisUploaderConfig
@@ -182,14 +196,14 @@ class RedisUploader(Uploader):
                 # Redis with stack extension supports JSON type
                 await pipe.json().set(key_with_prefix, "$", element).execute()
             except redis_exceptions.ResponseError as e:
-                message = str(e)
+                message = _form_redis_pipeline_error_message(str(e))
                 if "unknown command `JSON.SET`" in message:
                     # if this error occurs, Redis server doesn't support JSON type,
                     # so save as string type instead
                     await pipe.set(key_with_prefix, json.dumps(element)).execute()
                     redis_stack = False
                 else:
-                    raise e
+                    raise redis_exceptions.ResponseError(message) from e
         return redis_stack
 
 
