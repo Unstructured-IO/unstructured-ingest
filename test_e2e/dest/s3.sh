@@ -49,7 +49,8 @@ PYTHONPATH=${PYTHONPATH:-.} "$RUN_SCRIPT" \
 
 # Simply check the number of files uploaded
 expected_num_files=1
-num_files_in_s3=$(AWS_ACCESS_KEY_ID="$S3_INGEST_TEST_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_INGEST_TEST_SECRET_KEY" aws s3 ls "${DESTINATION_S3}" --region us-east-2 | grep -c "\.json$")
+num_files_in_s3=$(AWS_ACCESS_KEY_ID="$S3_INGEST_TEST_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_INGEST_TEST_SECRET_KEY" aws s3 ls "${DESTINATION_S3}" --region us-east-2 --recursive | grep -c "\.json$")
+
 if [ "$num_files_in_s3" -ne "$expected_num_files" ]; then
   echo "Expected $expected_num_files files to be uploaded to s3, but found $num_files_in_s3 files."
   exit 1
