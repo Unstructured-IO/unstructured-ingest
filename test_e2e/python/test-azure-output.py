@@ -19,14 +19,20 @@ def down(connection_string: str, container: str, blob_path: str):
     )
     blob_list = [b.name for b in list(container_client.list_blobs(name_starts_with=blob_path))]
     print(f"deleting all content from {container}/{blob_path}")
-    # Delete all content in folder first
-    container_client.delete_blobs(*[b for b in blob_list if b != blob_path])
-
-    # Delete folder itself
-    try:
-        container_client.delete_blob(blob_path)
-    except azure.core.exceptions.ResourceNotFoundError:
-        print(f"folder {blob_path} not found")
+    
+    files = []
+    folders = []
+    for blob in blob_list:
+        blob_props = container_client.get_blob_client(blob).get_blob_properties()
+        if blob_props.size == 0 and not blob.endswith("/_empty"):
+            folders.append(blob)
+        else:
+            files.append(blob)
+    
+    # Delete all content in folders first, then delete the folders
+    container_client.delete_blobs(*files)
+    for folder in folders[::-1]:
+        container_client.delete_blob(folder)
 
 
 @cli.command()
