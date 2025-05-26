@@ -1,3 +1,7 @@
+## 1.0.31
+
+* **Cap redis client version to 5.3.0**
+
 ## 1.0.30
 
 * **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
