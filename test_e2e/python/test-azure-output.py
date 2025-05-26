@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import azure.core.exceptions
 import click
 from azure.storage.blob import ContainerClient
 
@@ -19,7 +18,7 @@ def down(connection_string: str, container: str, blob_path: str):
     )
     blob_list = [b.name for b in list(container_client.list_blobs(name_starts_with=blob_path))]
     print(f"deleting all content from {container}/{blob_path}")
-    
+
     files = []
     folders = []
     for blob in blob_list:
@@ -28,7 +27,7 @@ def down(connection_string: str, container: str, blob_path: str):
             folders.append(blob)
         else:
             files.append(blob)
-    
+
     # Delete all content in folders first, then delete the folders
     container_client.delete_blobs(*files)
     for folder in folders[::-1]:
