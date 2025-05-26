@@ -1,4 +1,4 @@
-## 1.0.29-dev2
+## 1.0.30
 
 * **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
 * **Added more descriptive Redis connector error messages**
