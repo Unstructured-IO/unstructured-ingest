@@ -1,3 +1,7 @@
+## 1.0.32
+
+* **Fix google drive connector's dependencies**
+
 ## 1.0.31
 
 * **Cap redis client version to 5.3.0**
