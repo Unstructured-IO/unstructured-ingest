@@ -1,3 +1,7 @@
+## 1.0.33
+
+* **Fix pinecone serverless_region default value to be compatible with starter plans**
+
 ## 1.0.32
 
 * **Fix google drive connector's dependencies**
