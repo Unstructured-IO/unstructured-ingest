@@ -12,6 +12,7 @@ from unstructured_ingest.data_types.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.errors_v2 import  UserError, UserAuthError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -126,21 +127,31 @@ class ConfluenceIndexer(Indexer):
 
     def precheck(self) -> bool:
         try:
-            # Attempt to retrieve a list of spaces with limit=1.
-            # This should only succeed if all creds are valid
-            with self.connection_config.get_client() as client:
-                if self.index_config.spaces:
-                    # If specific spaces are provided, check if we can access them
-                    for space_key in self.index_config.spaces:
-                        client.get_space(space_key)
-                else:
-                    # opportunistically check the first space in list of all spaces
-                    client.get_all_spaces(limit=1)
-            logger.info("Connection to Confluence successful.")
-            return True
+            self.connection_config.get_client()
         except Exception as e:
             logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to connect to Confluence: {e}")
+            raise UserAuthError(f"Failed to connect to Confluence: {e}")
+
+        with self.connection_config.get_client() as client:
+            # opportunistically check the first space in list of all spaces
+            try:
+                client.get_all_spaces(limit=1)
+            except Exception as e:
+                logger.error(f"Failed to connect to find any Confluence space: {e}", exc_info=True)
+                raise UserError(f"Failed to connect to find any Confluence space: {e}")
+
+            logger.info("Connection to Confluence successful.")
+
+            # If specific spaces are provided, check if we can access them
+            if self.index_config.spaces:
+                for space_key in self.index_config.spaces:
+                    try:
+                        client.get_space(space_key)
+                    except Exception as e:
+                        logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
+                        raise UserError(f"Failed to connect to Confluence Space {space_key} : {e}")
+        return True
+
 
     def _get_space_ids_and_keys(self) -> List[Tuple[str, int]]:
         """
