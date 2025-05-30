@@ -135,12 +135,12 @@ def test_precheck_with_spaces_raises(monkeypatch, connection_config):
     indexer = ConfluenceIndexer(connection_config=connection_config, index_config=index_config)
     mock_client = mock.MagicMock()
     mock_client.get_space.side_effect = Exception("fail")
-    from unstructured_ingest.processes.connectors.confluence import SourceConnectionError
+    from unstructured_ingest.processes.connectors.confluence import UserError
 
     with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
         type(connection_config).get_client.return_value.__enter__.return_value = mock_client
 
-        with pytest.raises(SourceConnectionError):
+        with pytest.raises(UserError):
             indexer.precheck()
 
 
@@ -154,10 +154,10 @@ def test_precheck_without_spaces_raises(monkeypatch, connection_config):
     indexer = ConfluenceIndexer(connection_config=connection_config, index_config=index_config)
     mock_client = mock.MagicMock()
     mock_client.get_all_spaces.side_effect = Exception("fail")
-    from unstructured_ingest.processes.connectors.confluence import SourceConnectionError
+    from unstructured_ingest.processes.connectors.confluence import UserError
 
     with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
         type(connection_config).get_client.return_value.__enter__.return_value = mock_client
 
-        with pytest.raises(SourceConnectionError):
+        with pytest.raises(UserError):
             indexer.precheck()
