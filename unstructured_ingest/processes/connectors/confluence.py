@@ -129,7 +129,13 @@ class ConfluenceIndexer(Indexer):
             # Attempt to retrieve a list of spaces with limit=1.
             # This should only succeed if all creds are valid
             with self.connection_config.get_client() as client:
-                client.get_all_spaces(limit=1)
+                if self.index_config.spaces:
+                    # If specific spaces are provided, check if we can access them
+                    for space_key in self.index_config.spaces:
+                        client.get_space(space_key)
+                else:
+                    # opportunistically check the first space in list of all spaces
+                    client.get_all_spaces(limit=1)
             logger.info("Connection to Confluence successful.")
             return True
         except Exception as e:
