@@ -344,6 +344,7 @@ class GoogleDriveIndexer(Indexer):
                 },
             ),
             additional_metadata=root_info,
+            display_name=source_identifiers.fullpath,
         )
 
     def get_paginated_results(
