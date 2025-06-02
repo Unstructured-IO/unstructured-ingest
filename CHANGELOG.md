@@ -1,4 +1,4 @@
-## 1.0.34-dev
+## 1.0.34
 
 * **Improve Confluence Indexer's precheck** - validate access to each space
 
