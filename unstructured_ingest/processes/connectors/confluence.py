@@ -97,7 +97,7 @@ class ConfluenceConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["atlassian"], extras="confluence")
     @contextmanager
-    def get_client(self) -> "Confluence":
+    def get_client(self) -> Generator["Confluence", None, None]:
         from atlassian import Confluence
 
         access_configs = self.access_config.get_secret_value()
@@ -143,15 +143,20 @@ class ConfluenceIndexer(Indexer):
             logger.info("Connection to Confluence successful.")
 
             # If specific spaces are provided, check if we can access them
+            errors = []
+
             if self.index_config.spaces:
                 for space_key in self.index_config.spaces:
                     try:
                         client.get_space(space_key)
                     except Exception as e:
                         logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
-                        raise UserError(f"Failed to connect to Confluence Space {space_key} : {e}")
-        return True
+                        errors.append(f"Failed to connect to '{space_key}' space, cause: '{e}'")
 
+            if errors:
+                raise UserError("\n".join(errors))
+
+        return True
 
     def _get_space_ids_and_keys(self) -> List[Tuple[str, int]]:
         """
