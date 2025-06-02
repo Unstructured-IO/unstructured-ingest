@@ -1,3 +1,7 @@
+## 1.0.33-dev
+
+* **Improve Confluence Indexer's precheck** - validate access to each space
+
 ## 1.0.32
 
 * **Fix google drive connector's dependencies**
