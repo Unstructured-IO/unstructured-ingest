@@ -1,6 +1,14 @@
-## 1.0.33
+## 1.0.35
 
 * **Fix pinecone serverless_region default value to be compatible with starter plans**
+
+## 1.0.34
+
+* **Improve Confluence Indexer's precheck** - validate access to each space
+
+## 1.0.33
+
+* **Fix google drive not setting the display_name property on the FileData object**
 
 ## 1.0.32
 
