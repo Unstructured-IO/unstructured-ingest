@@ -32,7 +32,7 @@ class ConnectionConfig(BaseModel):
         return self
 
     def _is_access_config_optional(self) -> bool:
-        access_config_type = self.model_fields["access_config"].annotation
+        access_config_type = self.__class__.model_fields["access_config"].annotation
         return (
             hasattr(access_config_type, "__origin__")
             and hasattr(access_config_type, "__args__")
