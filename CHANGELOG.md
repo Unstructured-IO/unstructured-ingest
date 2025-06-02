@@ -1,3 +1,7 @@
+## 1.0.33
+
+* **Fix google drive not setting the display_name property on the FileData object**
+
 ## 1.0.32
 
 * **Fix google drive connector's dependencies**
