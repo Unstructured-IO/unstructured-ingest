@@ -125,7 +125,7 @@ def test_precheck_without_spaces_calls_get_all_spaces(monkeypatch, connection_co
 
 
 def test_precheck_with_spaces_raises(monkeypatch, connection_config):
-    """Test that precheck raises SourceConnectionError if get_space fails."""
+    """Test that precheck raises UserError if get_space fails."""
     spaces = ["A", "B"]
     index_config = ConfluenceIndexerConfig(
         max_num_of_spaces=100,
