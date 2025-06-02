@@ -129,7 +129,7 @@ class ConfluenceIndexer(Indexer):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
+            logger.exception(f"Failed to connect to Confluence: {e}")
             raise UserAuthError(f"Failed to connect to Confluence: {e}")
 
         with self.connection_config.get_client() as client:
@@ -137,7 +137,7 @@ class ConfluenceIndexer(Indexer):
             try:
                 client.get_all_spaces(limit=1)
             except Exception as e:
-                logger.error(f"Failed to connect to find any Confluence space: {e}", exc_info=True)
+                logger.exception(f"Failed to connect to find any Confluence space: {e}")
                 raise UserError(f"Failed to connect to find any Confluence space: {e}")
 
             logger.info("Connection to Confluence successful.")
@@ -150,7 +150,7 @@ class ConfluenceIndexer(Indexer):
                     try:
                         client.get_space(space_key)
                     except Exception as e:
-                        logger.error(f"Failed to connect to Confluence: {e}", exc_info=True)
+                        logger.exception(f"Failed to connect to Confluence: {e}")
                         errors.append(f"Failed to connect to '{space_key}' space, cause: '{e}'")
 
             if errors:
@@ -428,7 +428,7 @@ class ConfluenceDownloader(Downloader):
                     expand="history.lastUpdated,version,body.view",
                 )
         except Exception as e:
-            logger.error(f"Failed to retrieve page with ID {doc_id}: {e}", exc_info=True)
+            logger.exception(f"Failed to retrieve page with ID {doc_id}: {e}")
             raise SourceConnectionError(f"Failed to retrieve page with ID {doc_id}: {e}")
 
         if not page:
