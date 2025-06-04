@@ -3,7 +3,6 @@ from pathlib import Path
 from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.pipeline import Pipeline
-from unstructured_ingest.processes.chunker import ChunkerConfig
 from unstructured_ingest.processes.connectors.fsspec.s3 import (
     CONNECTOR_TYPE,
     S3ConnectionConfig,
@@ -13,7 +12,6 @@ from unstructured_ingest.processes.connectors.fsspec.s3 import (
 from unstructured_ingest.processes.connectors.local import (
     LocalUploaderConfig,
 )
-from unstructured_ingest.processes.embedder import EmbedderConfig
 from unstructured_ingest.processes.filter import FiltererConfig
 from unstructured_ingest.processes.partitioner import PartitionerConfig
 
@@ -31,8 +29,8 @@ if __name__ == "__main__":
         downloader_config=S3DownloaderConfig(download_dir=download_path),
         source_connection_config=S3ConnectionConfig(anonymous=True),
         partitioner_config=PartitionerConfig(strategy="fast"),
-        chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        embedder_config=EmbedderConfig(embedding_provider="huggingface"),
+        chunker_config=None,
+        embedder_config=None,
         uploader_config=LocalUploaderConfig(output_dir=str(output_path.resolve())),
         filterer_config=FiltererConfig(max_file_size=900000),
     ).run()
