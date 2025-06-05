@@ -67,13 +67,15 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     logger.info(f"Found the requested library: {self.library}")
                     site_drive_item = drive.get().execute_query().root
                     break
-            logger.warning(
-                f"Library '{self.library}' not found in site '{self.site}'. "
-                "Using the default drive instead."
-            )
 
         # If no specific library was found or requested, use the default drive
         if not site_drive_item:
+            if self.library:
+                logger.warning(
+                    f"Library '{self.library}' not found in site '{self.site}'. "
+                    "Using the default drive instead."
+                )
+
             site_drive_item = client_site.drive.get().execute_query().root
 
         return site_drive_item
