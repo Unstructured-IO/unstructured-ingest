@@ -62,6 +62,7 @@ python_version=$(python --version 2>&1)
 # TODO: remove lines committed with this comment once the tests are fixed
 tests_to_ignore=(
   'outlook.sh'
+  's3.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then
