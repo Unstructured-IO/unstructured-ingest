@@ -93,7 +93,6 @@ class SharepointIndexer(OnedriveIndexer):
                         break
             if not site_drive_item:
                 site_drive_item = site.drive.get().execute_query().root
-            # site_drive_item = site.drive.get().execute_query().root
         except ClientRequestException:
             logger.info("Site not found")
 
@@ -143,7 +142,6 @@ class SharepointDownloader(OnedriveDownloader):
                         break
             if not site_drive_item:
                 site_drive_item = site.drive.get().execute_query().root
-            # site_drive_item = site.drive.get().execute_query().root
         except ClientRequestException:
             logger.info("Site not found")
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
