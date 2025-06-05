@@ -1,3 +1,7 @@
+## 1.0.36
+
+* **Fix output path in blob storage destination connector**
+
 ## 1.0.35
 
 * **Fix output path in blob storage destination connector**
