@@ -67,6 +67,10 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     logger.info(f"Found the requested library: {self.library}")
                     site_drive_item = drive.get().execute_query().root
                     break
+            logger.warning(
+                f"Library '{self.library}' not found in site '{self.site}'. "
+                "Using the default drive instead."
+            )
 
         # If no specific library was found or requested, use the default drive
         if not site_drive_item:
@@ -99,7 +103,6 @@ class SharepointIndexer(OnedriveIndexer):
         client = await asyncio.to_thread(self.connection_config.get_client)
         try:
             client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            breakpoint()
             site_drive_item = self.connection_config._get_drive_item(client_site)
         except ClientRequestException:
             logger.info("Site not found")
