@@ -343,9 +343,10 @@ class FsspecUploader(Uploader):
             raise self.wrap_error(e=e)
 
     def get_upload_path(self, file_data: FileData) -> Path:
-        upload_path = Path(
-            self.upload_config.path_without_protocol
-        ) / file_data.source_identifiers.fullpath.lstrip("/")
+        upload_path = (
+            Path(self.upload_config.path_without_protocol)
+            / file_data.source_identifiers.relative_path.lstrip("/")
+        )
         updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
         return updated_upload_path
 

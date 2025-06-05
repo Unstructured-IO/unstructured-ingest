@@ -224,11 +224,18 @@ def list_files_recursively(client: WorkspaceClient, path: str):
 
 
 def validate_upload(
-    client: WorkspaceClient, catalog: str, volume: str, volume_path: str, num_files: int
+    client: WorkspaceClient,
+    catalog: str,
+    volume: str,
+    volume_path: str,
+    num_files: int,
+    filepath_in_destination: list[str] = None,
 ):
     files = list_files_recursively(client, _get_volume_path(catalog, volume, volume_path))
 
     assert len(files) == num_files
+    if filepath_in_destination:
+        assert files == filepath_in_destination
 
     for i in range(num_files):
         resp = client.files.download(files[i])
@@ -321,4 +328,49 @@ async def test_volumes_native_destination_same_filenames_different_folder(upload
             volume="test-platform",
             volume_path=volume_path,
             num_files=2,
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
+@requires_env(
+    "DATABRICKS_HOST", "DATABRICKS_CLIENT_ID", "DATABRICKS_CLIENT_SECRET", "DATABRICKS_CATALOG"
+)
+async def test_volumes_native_destination_different_fullpath_relative_path(upload_file: Path):
+    env_data = get_basic_auth_env_data()
+    volume_path = f"databricks-volumes-test-output-{uuid.uuid4()}"
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(
+            relative_path=f"folder2/{upload_file.name}",
+            fullpath=f"folder1/folder2/{upload_file.name}",
+            filename=upload_file.name,
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    with databricks_destination_context(
+        volume="test-platform", volume_path=volume_path, env_data=env_data
+    ) as workspace_client:
+        connection_config = env_data.get_connection_config()
+        uploader = DatabricksNativeVolumesUploader(
+            connection_config=connection_config,
+            upload_config=DatabricksNativeVolumesUploaderConfig(
+                volume="test-platform",
+                volume_path=volume_path,
+                catalog=env_data.catalog,
+            ),
+        )
+        uploader.precheck()
+        uploader.run(path=upload_file, file_data=file_data)
+
+        filepath_in_destination = [
+            f"/Volumes/utic-dev-tech-fixtures/default/test-platform/{volume_path}/folder1/folder2/DA-1p-with-duplicate-pages.pdf.json.json"
+        ]
+        validate_upload(
+            client=workspace_client,
+            catalog=env_data.catalog,
+            volume="test-platform",
+            volume_path=volume_path,
+            num_files=1,
+            filepath_in_destination=filepath_in_destination,
         )

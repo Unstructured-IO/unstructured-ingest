@@ -1,6 +1,14 @@
-## 1.0.35
+## 1.0.37
 
 * **Fix pinecone serverless_region default value to be compatible with starter plans**
+
+## 1.0.36
+
+* **Added Notion connector sync block handling by teddysupercuts**
+
+## 1.0.35
+
+* **Fix output path in blob storage destination connector**
 
 ## 1.0.34
 
