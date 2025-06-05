@@ -1,3 +1,7 @@
+## 1.0.37
+
+* **Added ability to use libraries in Sharepoint connector**
+
 ## 1.0.36
 
 * **Added Notion connector sync block handling by teddysupercuts**
