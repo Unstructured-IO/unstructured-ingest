@@ -1,3 +1,7 @@
+## 1.0.38
+
+* **Fix pinecone serverless_region default value to be compatible with starter plans**
+
 ## 1.0.37
 
 * **Added ability to use libraries in Sharepoint connector**

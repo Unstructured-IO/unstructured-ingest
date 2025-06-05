@@ -240,7 +240,7 @@ class PineconeUploader(VectorDBUploader):
         destination_name: str = "unstructuredautocreated",
         destination_type: Literal["pod", "serverless"] = "serverless",
         serverless_cloud: str = "aws",
-        serverless_region: str = "us-west-2",
+        serverless_region: str = "us-east-1",
         pod_environment: str = "us-east1-gcp",
         pod_type: str = "p1.x1",
         pod_count: int = 1,
