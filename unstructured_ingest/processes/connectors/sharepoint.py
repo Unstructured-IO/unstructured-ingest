@@ -51,6 +51,11 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     https://[tenant]-admin.sharepoint.com.\
                     This requires the app to be registered at a tenant level"
     )
+    library: Optional[str] = Field(
+        default=None,
+        description="Sharepoint library name. If not provided, the default \
+                    drive will be used.",
+    )
 
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
@@ -77,7 +82,18 @@ class SharepointIndexer(OnedriveIndexer):
         client = await asyncio.to_thread(self.connection_config.get_client)
         try:
             site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = site.drive.get().execute_query().root
+            site_drive_item = None
+            if self.connection_config.library:
+                for drive in site.drives.get().execute_query():
+                    if drive.name == self.connection_config.library:
+                        logger.info(
+                            f"Found the requested library: {self.connection_config.library}"
+                        )
+                        site_drive_item = drive.get().execute_query().root
+                        break
+            if not site_drive_item:
+                site_drive_item = site.drive.get().execute_query().root
+            # site_drive_item = site.drive.get().execute_query().root
         except ClientRequestException:
             logger.info("Site not found")
 
@@ -119,7 +135,15 @@ class SharepointDownloader(OnedriveDownloader):
 
         try:
             site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = site.drive.get().execute_query().root
+            site_drive_item = None
+            if self.connection_config.library:
+                for drive in site.drives.get().execute_query():
+                    if drive.name == self.connection_config.library:
+                        site_drive_item = drive.get().execute_query().root
+                        break
+            if not site_drive_item:
+                site_drive_item = site.drive.get().execute_query().root
+            # site_drive_item = site.drive.get().execute_query().root
         except ClientRequestException:
             logger.info("Site not found")
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
