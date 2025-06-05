@@ -29,6 +29,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from office365.onedrive.driveitems.driveItem import DriveItem
+    from office365.onedrive.sites.site import Site
 
 CONNECTOR_TYPE = "sharepoint"
 LEGACY_DEFAULT_PATH = "Shared Documents"
@@ -51,6 +52,33 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     https://[tenant]-admin.sharepoint.com.\
                     This requires the app to be registered at a tenant level"
     )
+    library: Optional[str] = Field(
+        default=None,
+        description="Sharepoint library name. If not provided, the default \
+                    drive will be used.",
+    )
+
+    def _get_drive_item(self, client_site: Site) -> DriveItem:
+        """Helper method to get the drive item for the specified library or default drive."""
+        site_drive_item = None
+        if self.library:
+            for drive in client_site.drives.get().execute_query():
+                if drive.name == self.library:
+                    logger.info(f"Found the requested library: {self.library}")
+                    site_drive_item = drive.get().execute_query().root
+                    break
+
+        # If no specific library was found or requested, use the default drive
+        if not site_drive_item:
+            if self.library:
+                logger.warning(
+                    f"Library '{self.library}' not found in site '{self.site}'. "
+                    "Using the default drive instead."
+                )
+
+            site_drive_item = client_site.drive.get().execute_query().root
+
+        return site_drive_item
 
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
@@ -76,8 +104,8 @@ class SharepointIndexer(OnedriveIndexer):
 
         client = await asyncio.to_thread(self.connection_config.get_client)
         try:
-            site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = site.drive.get().execute_query().root
+            client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
+            site_drive_item = self.connection_config._get_drive_item(client_site)
         except ClientRequestException:
             logger.info("Site not found")
 
@@ -118,8 +146,8 @@ class SharepointDownloader(OnedriveDownloader):
         client = self.connection_config.get_client()
 
         try:
-            site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = site.drive.get().execute_query().root
+            client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
+            site_drive_item = self.connection_config._get_drive_item(client_site)
         except ClientRequestException:
             logger.info("Site not found")
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
