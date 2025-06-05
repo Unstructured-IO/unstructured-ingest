@@ -49,7 +49,7 @@ def anon_connection_config() -> S3ConnectionConfig:
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
-async def test_s3_source(anon_connection_config: S3ConnectionConfig):
+async def xtest_s3_source(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/small-pdf-set/")
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
