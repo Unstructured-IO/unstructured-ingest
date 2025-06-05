@@ -216,6 +216,7 @@ async def test_sharepoint_shared_documents(temp_dir):
         ),
     )
 
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
@@ -263,6 +264,7 @@ async def test_sharepoint_library(temp_dir):
             ],
         ),
     )
+
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)

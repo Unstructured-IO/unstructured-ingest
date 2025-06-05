@@ -57,6 +57,22 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     drive will be used.",
     )
 
+    def _get_drive_item(self, site):
+        """Helper method to get the drive item for the specified library or default drive."""
+        site_drive_item = None
+        if self.library:
+            for drive in site.drives.get().execute_query():
+                if drive.name == self.library:
+                    logger.info(f"Found the requested library: {self.library}")
+                    site_drive_item = drive.get().execute_query().root
+                    break
+
+        # If no specific library was found or requested, use the default drive
+        if not site_drive_item:
+            site_drive_item = site.drive.get().execute_query().root
+
+        return site_drive_item
+
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
     pass
@@ -82,17 +98,7 @@ class SharepointIndexer(OnedriveIndexer):
         client = await asyncio.to_thread(self.connection_config.get_client)
         try:
             site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = None
-            if self.connection_config.library:
-                for drive in site.drives.get().execute_query():
-                    if drive.name == self.connection_config.library:
-                        logger.info(
-                            f"Found the requested library: {self.connection_config.library}"
-                        )
-                        site_drive_item = drive.get().execute_query().root
-                        break
-            if not site_drive_item:
-                site_drive_item = site.drive.get().execute_query().root
+            site_drive_item = self.connection_config._get_drive_item(site)
         except ClientRequestException:
             logger.info("Site not found")
 
@@ -134,14 +140,7 @@ class SharepointDownloader(OnedriveDownloader):
 
         try:
             site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = None
-            if self.connection_config.library:
-                for drive in site.drives.get().execute_query():
-                    if drive.name == self.connection_config.library:
-                        site_drive_item = drive.get().execute_query().root
-                        break
-            if not site_drive_item:
-                site_drive_item = site.drive.get().execute_query().root
+            site_drive_item = self.connection_config._get_drive_item(site)
         except ClientRequestException:
             logger.info("Site not found")
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
