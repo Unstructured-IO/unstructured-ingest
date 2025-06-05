@@ -215,3 +215,99 @@ async def test_sharepoint_shared_documents(temp_dir):
             ],
         ),
     )
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
+@requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
+async def test_sharepoint_library(temp_dir):
+    site = "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source"
+    library = "Documents2"
+    config = sharepoint_config()
+
+    # Create connection and indexer configurations
+    access_config = SharepointAccessConfig(client_cred=config.client_cred)
+    connection_config = SharepointConnectionConfig(
+        client_id=config.client_id,
+        site=site,
+        library=library,
+        tenant=config.tenant,
+        access_config=access_config,
+    )
+    index_config = SharepointIndexerConfig(recursive=True)
+
+    download_config = SharepointDownloaderConfig(download_dir=temp_dir)
+
+    # Instantiate indexer and downloader
+    indexer = SharepointIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = SharepointDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
+
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="sharepoint5",
+            expected_num_files=3,
+            validate_downloaded_files=True,
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                "additional_metadata.LastModified",
+                "additional_metadata.@microsoft.graph.downloadUrl",
+            ],
+        ),
+    )
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
+@requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
+async def test_sharepoint_library_with_path(temp_dir):
+    site = "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source"
+    library = "Documents2"
+    config = sharepoint_config()
+
+    # Create connection and indexer configurations
+    access_config = SharepointAccessConfig(client_cred=config.client_cred)
+    connection_config = SharepointConnectionConfig(
+        client_id=config.client_id,
+        site=site,
+        library=library,
+        tenant=config.tenant,
+        access_config=access_config,
+    )
+    index_config = SharepointIndexerConfig(recursive=True, path="e2e-library-folder")
+
+    download_config = SharepointDownloaderConfig(download_dir=temp_dir)
+
+    # Instantiate indexer and downloader
+    indexer = SharepointIndexer(
+        connection_config=connection_config,
+        index_config=index_config,
+    )
+    downloader = SharepointDownloader(
+        connection_config=connection_config,
+        download_config=download_config,
+    )
+
+    # Run the source connector validation
+    await source_connector_validation(
+        indexer=indexer,
+        downloader=downloader,
+        configs=SourceValidationConfigs(
+            test_id="sharepoint6",
+            expected_num_files=1,
+            validate_downloaded_files=True,
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                "additional_metadata.LastModified",
+                "additional_metadata.@microsoft.graph.downloadUrl",
+            ],
+        ),
+    )
