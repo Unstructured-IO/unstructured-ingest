@@ -115,7 +115,8 @@ def collection():
                 index_params=index_params,
             )
             print(
-                f"Created collection {COLLECTION_WITHOUT_DYNAMIC_FIELDS}: {collection_resp_no_dynamic}"
+                f"Created collection {COLLECTION_WITHOUT_DYNAMIC_FIELDS}: \
+                {collection_resp_no_dynamic}"
             )
 
             yield EXISTENT_COLLECTION_NAME
@@ -236,7 +237,8 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
 
     assert (
         len(metadata_found) > 0
-    ), f"Expected to find metadata fields in staged data. Available keys: {list(sample_element.keys())}"
+    ), f"Expected to find metadata fields in staged data.\
+   Available keys: {list(sample_element.keys())}"
     print(f"Found metadata fields: {metadata_found}")
 
     uploader.run(path=staged_filepath, file_data=file_data)
@@ -261,7 +263,8 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
 
         assert (
             len(stored_metadata) > 0
-        ), f"Expected metadata fields to be stored in Milvus. Available fields: {list(sample_result.keys())}"
+        ), f"Expected metadata fields to be stored in Milvus. \
+        Available fields: {list(sample_result.keys())}"
         print(f"Successfully stored metadata fields: {stored_metadata}")
 
         # Verify filename is specifically stored if present
@@ -319,17 +322,16 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
         )
 
         assert len(results) > 0, "Should have results from the uploaded data"
-
+        
         # Verify that only core fields are present (no metadata fields)
         sample_result = results[0]
-        core_fields = {"id", "record_id", "embeddings"}
-        present_metadata_fields = set(sample_result.keys()) & set(
-            ALLOWED_METADATA_FIELDS
+        core_fields = {'id', 'record_id', 'embeddings'}
+        
+        # The result should only contain the fields defined in the schema
+        assert set(sample_result.keys()) == core_fields, (
+            "Unexpected fields found in collection with dynamic fields disabled. "
+            f"Expected: {core_fields}, Found: {set(sample_result.keys())}"
         )
-
-        # Should have minimal or no metadata fields when dynamic fields are disabled
-        print(f"Fields present in result: {list(sample_result.keys())}")
-        print(f"Metadata fields that got through: {present_metadata_fields}")
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
