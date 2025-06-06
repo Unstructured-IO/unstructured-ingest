@@ -1,3 +1,7 @@
+## 1.0.39
+
+* **Add `display_name` to FileData in 14 connectors**
+
 ## 1.0.38
 
 * **Fix pinecone serverless_region default value to be compatible with starter plans**
