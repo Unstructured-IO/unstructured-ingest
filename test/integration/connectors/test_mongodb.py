@@ -17,6 +17,7 @@ from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_T
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -201,6 +202,8 @@ async def test_mongodb_source(temp_dir: Path):
             expected_num_files=4,
             validate_downloaded_files=True,
             expected_number_indexed_file_data=1,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 

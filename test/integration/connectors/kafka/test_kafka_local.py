@@ -22,6 +22,7 @@ from test.integration.connectors.utils.docker_compose import docker_compose_cont
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
@@ -90,7 +91,11 @@ async def test_kafka_source_local(kafka_seed_topic: str):
             indexer=indexer,
             downloader=downloader,
             configs=SourceValidationConfigs(
-                test_id="kafka-local", expected_num_files=5, validate_downloaded_files=True
+                test_id="kafka-local",
+                expected_num_files=5,
+                validate_downloaded_files=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
             ),
         )
 

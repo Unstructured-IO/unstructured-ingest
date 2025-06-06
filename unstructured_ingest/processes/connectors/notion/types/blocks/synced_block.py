@@ -19,11 +19,11 @@ class OriginalSyncedBlock(BlockBase):
     @classmethod
     def from_dict(cls, data: dict):
         """Create OriginalSyncedBlock from dictionary data.
-        
+
         Original blocks contain children content.
         """
         if "children" not in data:
-             raise ValueError(f"OriginalSyncedBlock data missing 'children': {data}")
+            raise ValueError(f"OriginalSyncedBlock data missing 'children': {data}")
         return cls(children=data["children"])
 
     def get_html(self) -> Optional[HtmlTag]:
@@ -38,7 +38,7 @@ class DuplicateSyncedBlock(BlockBase):
     @staticmethod
     def can_have_children() -> bool:
         """Check if duplicate synced blocks can have children.
-        
+
         Duplicate blocks themselves don't have children directly fetched here,
         but they represent content that does, so Notion API might report has_children=True
         on the parent block object. The actual children are fetched from the original block.
@@ -48,7 +48,7 @@ class DuplicateSyncedBlock(BlockBase):
     @classmethod
     def from_dict(cls, data: dict):
         """Create DuplicateSyncedBlock from dictionary data.
-        
+
         Duplicate blocks contain a 'synced_from' reference.
         """
         synced_from_data = data.get("synced_from")
@@ -63,7 +63,7 @@ class DuplicateSyncedBlock(BlockBase):
 
     def get_html(self) -> Optional[HtmlTag]:
         """Get HTML representation of the duplicate synced block.
-        
+
         HTML representation might need fetching the original block's content,
         which is outside the scope of this simple data class.
         """
@@ -74,7 +74,7 @@ class SyncBlock(BlockBase):
     @staticmethod
     def can_have_children() -> bool:
         """Check if synced blocks can have children.
-        
+
         Synced blocks (both original and duplicate) can conceptually have children.
         """
         return True
@@ -82,7 +82,7 @@ class SyncBlock(BlockBase):
     @classmethod
     def from_dict(cls, data: dict):
         """Create appropriate SyncedBlock subclass from dictionary data.
-        
+
         Determine if it's a duplicate (has 'synced_from') or original (has 'children').
         """
         if data.get("synced_from") is not None:
@@ -99,10 +99,9 @@ class SyncBlock(BlockBase):
             # Consider logging a warning here if strictness is needed.
             return OriginalSyncedBlock(children=[])
 
-
     def get_html(self) -> Optional[HtmlTag]:
         """Get HTML representation of the synced block.
-        
+
         The specific instance returned by from_dict (Original or Duplicate)
         will handle its own get_html logic.
         This method on the base SyncBlock might not be directly called.

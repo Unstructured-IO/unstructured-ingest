@@ -231,6 +231,7 @@ class ConfluenceIndexer(Indexer):
                     metadata=metadata,
                     additional_metadata=additional_metadata,
                     source_identifiers=source_identifiers,
+                    display_name=source_identifiers.fullpath,
                 )
                 yield file_data
 

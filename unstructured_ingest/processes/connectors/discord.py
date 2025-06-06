@@ -91,6 +91,7 @@ class DiscordIndexer(Indexer):
             connector_type=CONNECTOR_TYPE,
             source_identifiers=source_identifiers,
             metadata=metadata,
+            display_name=source_identifiers.fullpath,
         )
 
 

@@ -6,6 +6,7 @@ from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZE
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.processes.connectors.jira import (
@@ -64,5 +65,7 @@ async def test_jira_source(temp_dir):
             expected_num_files=9,
             validate_file_data=True,
             validate_downloaded_files=True,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )

@@ -119,21 +119,21 @@ class LocalIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for file_path in self.list_files():
+            source_identifiers = SourceIdentifiers(
+                fullpath=str(file_path.resolve()),
+                filename=file_path.name,
+                rel_path=(
+                    str(file_path.resolve()).replace(str(self.index_config.path.resolve()), "")[1:]
+                    if not self.index_config.path.is_file()
+                    else self.index_config.path.name
+                ),
+            )
             file_data = FileData(
                 identifier=str(file_path.resolve()),
                 connector_type=CONNECTOR_TYPE,
-                source_identifiers=SourceIdentifiers(
-                    fullpath=str(file_path.resolve()),
-                    filename=file_path.name,
-                    rel_path=(
-                        str(file_path.resolve()).replace(str(self.index_config.path.resolve()), "")[
-                            1:
-                        ]
-                        if not self.index_config.path.is_file()
-                        else self.index_config.path.name
-                    ),
-                ),
+                source_identifiers=source_identifiers,
                 metadata=self.get_file_metadata(path=file_path),
+                display_name=source_identifiers.fullpath,
             )
             yield file_data
 

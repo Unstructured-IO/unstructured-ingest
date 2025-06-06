@@ -6,6 +6,7 @@ from test.integration.connectors.utils.constants import BLOB_STORAGE_TAG, SOURCE
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.processes.connectors.sharepoint import (
@@ -72,6 +73,8 @@ async def test_sharepoint_source(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -119,6 +122,8 @@ async def test_sharepoint_source_with_path(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -166,6 +171,8 @@ async def test_sharepoint_root_with_path(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -213,6 +220,8 @@ async def test_sharepoint_shared_documents(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -262,6 +271,8 @@ async def test_sharepoint_library(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -311,5 +322,7 @@ async def test_sharepoint_library_with_path(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )

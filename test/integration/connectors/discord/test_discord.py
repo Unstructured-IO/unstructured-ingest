@@ -10,6 +10,7 @@ from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZE
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.error import SourceConnectionError
@@ -62,6 +63,8 @@ async def test_discord_source():
                 expected_num_files=expected_num_files,
                 expected_number_indexed_file_data=expected_num_files,
                 validate_downloaded_files=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
             ),
         )
 

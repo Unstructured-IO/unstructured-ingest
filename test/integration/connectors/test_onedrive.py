@@ -13,6 +13,7 @@ from test.integration.connectors.utils.constants import (
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -107,6 +108,8 @@ async def test_onedrive_source(temp_dir):
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
             ],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 

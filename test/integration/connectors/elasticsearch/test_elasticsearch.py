@@ -20,6 +20,7 @@ from test.integration.connectors.utils.docker import HealthCheck, container_cont
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -203,6 +204,8 @@ async def test_elasticsearch_source(source_index: str, movies_dataframe: pd.Data
                 expected_num_files=expected_num_files,
                 expected_number_indexed_file_data=1,
                 validate_downloaded_files=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
             ),
         )
 

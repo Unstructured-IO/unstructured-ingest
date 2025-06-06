@@ -19,6 +19,7 @@ from test.integration.connectors.utils.validation.destination import (
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.processes.connectors.sql.sqlite import (
@@ -76,6 +77,8 @@ async def test_sqlite_source(source_database_setup: Path, temp_dir: Path):
             expected_num_files=SEED_DATA_ROWS,
             expected_number_indexed_file_data=2,
             validate_downloaded_files=True,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
