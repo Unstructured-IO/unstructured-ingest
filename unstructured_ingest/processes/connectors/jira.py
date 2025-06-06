@@ -262,6 +262,7 @@ class JiraIndexer(Indexer):
             metadata=metadata,
             additional_metadata=issue.model_dump(),
             source_identifiers=source_identifiers,
+            display_name=source_identifiers.fullpath,
         )
         return file_data
 
