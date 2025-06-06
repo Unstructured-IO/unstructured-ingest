@@ -1,0 +1,5 @@
+{
+    "url": "ws://surrealdb:8000",
+    "username": "root",
+    "password": "root"
+}

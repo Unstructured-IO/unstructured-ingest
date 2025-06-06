@@ -9,6 +9,7 @@ import unstructured_ingest.processes.connectors.kafka  # noqa: F401
 import unstructured_ingest.processes.connectors.lancedb  # noqa: F401
 import unstructured_ingest.processes.connectors.qdrant  # noqa: F401
 import unstructured_ingest.processes.connectors.sql  # noqa: F401
+import unstructured_ingest.processes.connectors.surrealdb  # noqa: F401
 import unstructured_ingest.processes.connectors.weaviate  # noqa: F401
 from unstructured_ingest.processes.connector_registry import (
     add_destination_entry,
