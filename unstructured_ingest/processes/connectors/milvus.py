@@ -29,6 +29,25 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "milvus"
 
+# Fields allowed to be extracted as metadata (similar to Pinecone)
+ALLOWED_METADATA_FIELDS = (
+    "element_id",
+    "text",
+    "parent_id",
+    "category_depth",
+    "emphasized_text_tags",
+    "emphasized_text_contents",
+    "coordinates",
+    "last_modified",
+    "page_number",
+    "filename",
+    "is_continuation",
+    "link_urls",
+    "link_texts",
+    "text_as_html",
+    "entities",
+)
+
 
 class MilvusAccessConfig(AccessConfig):
     password: Optional[str] = Field(default=None, description="Milvus password")
@@ -79,6 +98,14 @@ class MilvusUploadStagerConfig(UploadStagerConfig):
     flatten_metadata: bool = True
     """If set - flatten "metadata" key and put contents directly into data"""
 
+    metadata_fields: list[str] = Field(
+        default=list(ALLOWED_METADATA_FIELDS),
+        description=(
+            "which metadata from the source element to map to the dynamic fields being sent to "
+            "Milvus. Only used when the collection has dynamic fields enabled."
+        ),
+    )
+
 
 @dataclass
 class MilvusUploadStager(UploadStager):
@@ -97,10 +124,39 @@ class MilvusUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         working_data = element_dict.copy()
-        if self.upload_stager_config.flatten_metadata and (
-            metadata := working_data.pop("metadata", None)
-        ):
+        
+        # Check if we should extract metadata for dynamic fields
+        # We'll extract metadata similar to Pinecone, but only include it if dynamic fields are supported
+        embeddings = working_data.pop("embeddings", None)
+        metadata: dict[str, Any] = working_data.pop("metadata", {})
+        data_source = metadata.pop("data_source", {})
+        coordinates = metadata.pop("coordinates", {})
+        
+        # Extract metadata from multiple sources (similar to Pinecone)
+        extracted_metadata = {}
+        for possible_meta in [element_dict, metadata, data_source, coordinates]:
+            extracted_metadata.update(
+                {
+                    k: v
+                    for k, v in possible_meta.items()
+                    if k in self.upload_stager_config.metadata_fields
+                }
+            )
+        
+        # Flatten the extracted metadata
+        flattened_metadata = flatten_dict(
+            extracted_metadata,
+            separator="_",
+            flatten_lists=True,
+            remove_none=True,
+        )
+        
+        # Apply the original flatten_metadata logic first
+        if self.upload_stager_config.flatten_metadata and metadata:
             working_data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
+
+        # Add the extracted metadata as separate fields (will be stored in dynamic fields if supported)
+        working_data.update(flattened_metadata)
 
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
         #  remove once that gets updated
@@ -154,6 +210,23 @@ class MilvusUploader(Uploader):
     upload_config: MilvusUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def has_dynamic_fields_enabled(self) -> bool:
+        """Check if the target collection has dynamic fields enabled."""
+        try:
+            with self.get_client() as client:
+                # Get collection schema information
+                collection_info = client.describe_collection(self.upload_config.collection_name)
+                
+                # Check if dynamic field is enabled
+                # The schema info should contain enable_dynamic_field or enableDynamicField
+                schema_info = collection_info.get("enable_dynamic_field", 
+                                                 collection_info.get("enableDynamicField", False))
+                return bool(schema_info)
+        except Exception as e:
+            logger.warning(f"Could not determine if collection has dynamic fields enabled: {e}")
+            # Default to False if we can't determine the schema
+            return False
+
     @DestinationConnectionError.wrap
     def precheck(self):
         from pymilvus import MilvusException
@@ -164,6 +237,14 @@ class MilvusUploader(Uploader):
                     raise DestinationConnectionError(
                         f"Collection '{self.upload_config.collection_name}' does not exist"
                     )
+                
+                # Log whether dynamic fields are enabled for this collection
+                dynamic_fields_enabled = self.has_dynamic_fields_enabled()
+                if dynamic_fields_enabled:
+                    logger.info(f"Collection '{self.upload_config.collection_name}' has dynamic fields enabled - metadata will be stored")
+                else:
+                    logger.info(f"Collection '{self.upload_config.collection_name}' does not have dynamic fields enabled - metadata will not be stored")
+                    
         except MilvusException as milvus_exception:
             raise DestinationConnectionError(
                 f"failed to precheck Milvus: {str(milvus_exception.message)}"
@@ -200,6 +281,28 @@ class MilvusUploader(Uploader):
             f"uploading {len(data)} entries to {self.connection_config.db_name} "
             f"db in collection {self.upload_config.collection_name}"
         )
+        
+        # Check if collection supports dynamic fields
+        dynamic_fields_enabled = self.has_dynamic_fields_enabled()
+        
+        # If dynamic fields are not enabled, we need to filter out the metadata fields
+        # to avoid insertion errors for fields not defined in the schema
+        if not dynamic_fields_enabled:
+            logger.info("Filtering out metadata fields as collection does not support dynamic fields")
+            # Remove metadata fields that are not part of the base schema
+            filtered_data = []
+            for item in data:
+                filtered_item = {}
+                for key, value in item.items():
+                    # Keep core fields and any fields that would be in the original schema
+                    # The actual core schema fields will depend on the collection definition
+                    # but typically include id, embeddings, record_id, and basic document fields
+                    if (key in ['id', 'embeddings', 'vector', RECORD_ID_LABEL] or 
+                        not key in ALLOWED_METADATA_FIELDS):
+                        filtered_item[key] = value
+                filtered_data.append(filtered_item)
+            data = filtered_data
+        
         with self.get_client() as client:
             try:
                 res = client.insert(collection_name=self.upload_config.collection_name, data=data)
