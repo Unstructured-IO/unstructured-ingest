@@ -216,38 +216,28 @@ class MilvusUploader(Uploader):
     connection_config: MilvusConnectionConfig
     upload_config: MilvusUploaderConfig
     connector_type: str = CONNECTOR_TYPE
-    _collection_info: Optional[dict[str, Any]] = field(init=False, default=None)
-
-    def get_collection_info(self) -> dict[str, Any]:
-        """Gets collection information from Milvus."""
-        if self._collection_info:
-            return self._collection_info
-        with self.get_client() as client:
-            logger.debug(f"Describing collection: {self.upload_config.collection_name}")
-            self._collection_info = client.describe_collection(
-                self.upload_config.collection_name,
-            )
-        return self._collection_info
 
     def has_dynamic_fields_enabled(self) -> bool:
         """Check if the target collection has dynamic fields enabled."""
         try:
-            # Get collection schema information
-            collection_info = self.get_collection_info()
+            with self.get_client() as client:
+                # Get collection schema information
+                collection_info = client.describe_collection(
+                    self.upload_config.collection_name
+                )
 
-            # Check if dynamic field is enabled
-            # The schema info should contain enable_dynamic_field or enableDynamicField
-            schema_info = collection_info.get(
-                "enable_dynamic_field",
-                collection_info.get("enableDynamicField", False),
-            )
-            return bool(schema_info)
+                # Check if dynamic field is enabled
+                # The schema info should contain enable_dynamic_field or enableDynamicField
+                schema_info = collection_info.get(
+                    "enable_dynamic_field",
+                    collection_info.get("enableDynamicField", False),
+                )
+                return bool(schema_info)
         except Exception as e:
             logger.warning(
                 f"Could not determine if collection has dynamic fields enabled: {e}"
             )
             # Default to False if we can't determine the schema
-            self._collection_info = None
             return False
 
     @DestinationConnectionError.wrap
@@ -262,7 +252,6 @@ class MilvusUploader(Uploader):
                     )
 
                 # Log whether dynamic fields are enabled for this collection
-                self.get_collection_info()
                 dynamic_fields_enabled = self.has_dynamic_fields_enabled()
                 if dynamic_fields_enabled:
                     logger.info(
@@ -323,7 +312,10 @@ class MilvusUploader(Uploader):
             logger.info(
                 "Filtering out metadata fields as collection does not support dynamic fields"
             )
-            collection_info = self.get_collection_info()
+            with self.get_client() as client:
+                collection_info = client.describe_collection(
+                    self.upload_config.collection_name,
+                )
             schema_fields = {
                 field["name"]
                 for field in collection_info.get("fields", [])
