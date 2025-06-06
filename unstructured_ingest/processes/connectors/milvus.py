@@ -128,8 +128,8 @@ class MilvusUploadStager(UploadStager):
         working_data = element_dict.copy()
 
         # Check if we should extract metadata for dynamic fields
-        # We'll extract metadata similar to Pinecone, but only include it if dynamic fields are supported
-        embeddings = working_data.pop("embeddings", None)
+        # We'll extract metadata similar to Pinecone
+        # but only include it if dynamic fields are supported
         metadata: dict[str, Any] = working_data.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
@@ -159,7 +159,8 @@ class MilvusUploadStager(UploadStager):
                 flatten_dict(metadata, keys_to_omit=["data_source_record_locator"])
             )
 
-        # Add the extracted metadata as separate fields (will be stored in dynamic fields if supported)
+        # Add the extracted metadata as separate fields
+        # (will be stored in dynamic fields if supported)
         working_data.update(flattened_metadata)
 
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
@@ -254,11 +255,13 @@ class MilvusUploader(Uploader):
                 dynamic_fields_enabled = self.has_dynamic_fields_enabled()
                 if dynamic_fields_enabled:
                     logger.info(
-                        f"Collection '{self.upload_config.collection_name}' has dynamic fields enabled - metadata will be stored"
+                        f"Collection '{self.upload_config.collection_name}' \
+                       has dynamic fields enabled - metadata will be stored"
                     )
                 else:
                     logger.info(
-                        f"Collection '{self.upload_config.collection_name}' does not have dynamic fields enabled - metadata will not be stored"
+                        f"Collection '{self.upload_config.collection_name}' \
+                        does not have dynamic fields enabled - metadata will not be stored"
                     )
 
         except MilvusException as milvus_exception:
@@ -319,7 +322,7 @@ class MilvusUploader(Uploader):
                     # but typically include id, embeddings, record_id, and basic document fields
                     if (
                         key in ["id", "embeddings", "vector", RECORD_ID_LABEL]
-                        or not key in ALLOWED_METADATA_FIELDS
+                        or key not in ALLOWED_METADATA_FIELDS
                     ):
                         filtered_item[key] = value
                 filtered_data.append(filtered_item)
