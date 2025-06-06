@@ -71,7 +71,9 @@ class MilvusConnectionConfig(ConnectionConfig):
         connection_config_dict.pop("access_config", None)
         connection_config_dict.update(access_config_dict)
         # Drop any that were not set explicitly
-        connection_config_dict = {k: v for k, v in connection_config_dict.items() if v is not None}
+        connection_config_dict = {
+            k: v for k, v in connection_config_dict.items() if v is not None
+        }
         return connection_config_dict
 
     @requires_dependencies(["pymilvus"], extras="milvus")
@@ -124,14 +126,14 @@ class MilvusUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         working_data = element_dict.copy()
-        
+
         # Check if we should extract metadata for dynamic fields
         # We'll extract metadata similar to Pinecone, but only include it if dynamic fields are supported
         embeddings = working_data.pop("embeddings", None)
         metadata: dict[str, Any] = working_data.pop("metadata", {})
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
-        
+
         # Extract metadata from multiple sources (similar to Pinecone)
         extracted_metadata = {}
         for possible_meta in [element_dict, metadata, data_source, coordinates]:
@@ -142,7 +144,7 @@ class MilvusUploadStager(UploadStager):
                     if k in self.upload_stager_config.metadata_fields
                 }
             )
-        
+
         # Flatten the extracted metadata
         flattened_metadata = flatten_dict(
             extracted_metadata,
@@ -150,10 +152,12 @@ class MilvusUploadStager(UploadStager):
             flatten_lists=True,
             remove_none=True,
         )
-        
+
         # Apply the original flatten_metadata logic first
         if self.upload_stager_config.flatten_metadata and metadata:
-            working_data.update(flatten_dict(metadata, keys_to_omit=["data_source_record_locator"]))
+            working_data.update(
+                flatten_dict(metadata, keys_to_omit=["data_source_record_locator"])
+            )
 
         # Add the extracted metadata as separate fields (will be stored in dynamic fields if supported)
         working_data.update(flattened_metadata)
@@ -190,7 +194,9 @@ class MilvusUploadStager(UploadStager):
                 )
         for json_dumps_field in json_dumps_fields:
             if json_dumps_field in working_data:
-                working_data[json_dumps_field] = json.dumps(working_data[json_dumps_field])
+                working_data[json_dumps_field] = json.dumps(
+                    working_data[json_dumps_field]
+                )
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
 
@@ -215,15 +221,21 @@ class MilvusUploader(Uploader):
         try:
             with self.get_client() as client:
                 # Get collection schema information
-                collection_info = client.describe_collection(self.upload_config.collection_name)
-                
+                collection_info = client.describe_collection(
+                    self.upload_config.collection_name
+                )
+
                 # Check if dynamic field is enabled
                 # The schema info should contain enable_dynamic_field or enableDynamicField
-                schema_info = collection_info.get("enable_dynamic_field", 
-                                                 collection_info.get("enableDynamicField", False))
+                schema_info = collection_info.get(
+                    "enable_dynamic_field",
+                    collection_info.get("enableDynamicField", False),
+                )
                 return bool(schema_info)
         except Exception as e:
-            logger.warning(f"Could not determine if collection has dynamic fields enabled: {e}")
+            logger.warning(
+                f"Could not determine if collection has dynamic fields enabled: {e}"
+            )
             # Default to False if we can't determine the schema
             return False
 
@@ -237,14 +249,18 @@ class MilvusUploader(Uploader):
                     raise DestinationConnectionError(
                         f"Collection '{self.upload_config.collection_name}' does not exist"
                     )
-                
+
                 # Log whether dynamic fields are enabled for this collection
                 dynamic_fields_enabled = self.has_dynamic_fields_enabled()
                 if dynamic_fields_enabled:
-                    logger.info(f"Collection '{self.upload_config.collection_name}' has dynamic fields enabled - metadata will be stored")
+                    logger.info(
+                        f"Collection '{self.upload_config.collection_name}' has dynamic fields enabled - metadata will be stored"
+                    )
                 else:
-                    logger.info(f"Collection '{self.upload_config.collection_name}' does not have dynamic fields enabled - metadata will not be stored")
-                    
+                    logger.info(
+                        f"Collection '{self.upload_config.collection_name}' does not have dynamic fields enabled - metadata will not be stored"
+                    )
+
         except MilvusException as milvus_exception:
             raise DestinationConnectionError(
                 f"failed to precheck Milvus: {str(milvus_exception.message)}"
@@ -263,7 +279,9 @@ class MilvusUploader(Uploader):
             f"from milvus collection {self.upload_config.collection_name}"
         )
         with self.get_client() as client:
-            delete_filter = f'{self.upload_config.record_id_key} == "{file_data.identifier}"'
+            delete_filter = (
+                f'{self.upload_config.record_id_key} == "{file_data.identifier}"'
+            )
             resp = client.delete(
                 collection_name=self.upload_config.collection_name, filter=delete_filter
             )
@@ -281,14 +299,16 @@ class MilvusUploader(Uploader):
             f"uploading {len(data)} entries to {self.connection_config.db_name} "
             f"db in collection {self.upload_config.collection_name}"
         )
-        
+
         # Check if collection supports dynamic fields
         dynamic_fields_enabled = self.has_dynamic_fields_enabled()
-        
+
         # If dynamic fields are not enabled, we need to filter out the metadata fields
         # to avoid insertion errors for fields not defined in the schema
         if not dynamic_fields_enabled:
-            logger.info("Filtering out metadata fields as collection does not support dynamic fields")
+            logger.info(
+                "Filtering out metadata fields as collection does not support dynamic fields"
+            )
             # Remove metadata fields that are not part of the base schema
             filtered_data = []
             for item in data:
@@ -297,20 +317,28 @@ class MilvusUploader(Uploader):
                     # Keep core fields and any fields that would be in the original schema
                     # The actual core schema fields will depend on the collection definition
                     # but typically include id, embeddings, record_id, and basic document fields
-                    if (key in ['id', 'embeddings', 'vector', RECORD_ID_LABEL] or 
-                        not key in ALLOWED_METADATA_FIELDS):
+                    if (
+                        key in ["id", "embeddings", "vector", RECORD_ID_LABEL]
+                        or not key in ALLOWED_METADATA_FIELDS
+                    ):
                         filtered_item[key] = value
                 filtered_data.append(filtered_item)
             data = filtered_data
-        
+
         with self.get_client() as client:
             try:
-                res = client.insert(collection_name=self.upload_config.collection_name, data=data)
+                res = client.insert(
+                    collection_name=self.upload_config.collection_name, data=data
+                )
             except MilvusException as milvus_exception:
                 raise WriteError(
                     f"failed to upload records to Milvus: {str(milvus_exception.message)}"
                 ) from milvus_exception
-            if "err_count" in res and isinstance(res["err_count"], int) and res["err_count"] > 0:
+            if (
+                "err_count" in res
+                and isinstance(res["err_count"], int)
+                and res["err_count"] > 0
+            ):
                 err_count = res["err_count"]
                 raise WriteError(f"failed to upload {err_count} docs")
 
