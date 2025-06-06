@@ -216,28 +216,38 @@ class MilvusUploader(Uploader):
     connection_config: MilvusConnectionConfig
     upload_config: MilvusUploaderConfig
     connector_type: str = CONNECTOR_TYPE
+    _collection_info: Optional[dict[str, Any]] = field(init=False, default=None)
+
+    def get_collection_info(self) -> dict[str, Any]:
+        """Gets collection information from Milvus."""
+        if self._collection_info:
+            return self._collection_info
+        with self.get_client() as client:
+            logger.debug(f"Describing collection: {self.upload_config.collection_name}")
+            self._collection_info = client.describe_collection(
+                self.upload_config.collection_name,
+            )
+        return self._collection_info
 
     def has_dynamic_fields_enabled(self) -> bool:
         """Check if the target collection has dynamic fields enabled."""
         try:
-            with self.get_client() as client:
-                # Get collection schema information
-                collection_info = client.describe_collection(
-                    self.upload_config.collection_name
-                )
+            # Get collection schema information
+            collection_info = self.get_collection_info()
 
-                # Check if dynamic field is enabled
-                # The schema info should contain enable_dynamic_field or enableDynamicField
-                schema_info = collection_info.get(
-                    "enable_dynamic_field",
-                    collection_info.get("enableDynamicField", False),
-                )
-                return bool(schema_info)
+            # Check if dynamic field is enabled
+            # The schema info should contain enable_dynamic_field or enableDynamicField
+            schema_info = collection_info.get(
+                "enable_dynamic_field",
+                collection_info.get("enableDynamicField", False),
+            )
+            return bool(schema_info)
         except Exception as e:
             logger.warning(
                 f"Could not determine if collection has dynamic fields enabled: {e}"
             )
             # Default to False if we can't determine the schema
+            self._collection_info = None
             return False
 
     @DestinationConnectionError.wrap
@@ -252,16 +262,17 @@ class MilvusUploader(Uploader):
                     )
 
                 # Log whether dynamic fields are enabled for this collection
+                self.get_collection_info()
                 dynamic_fields_enabled = self.has_dynamic_fields_enabled()
                 if dynamic_fields_enabled:
                     logger.info(
-                        f"Collection '{self.upload_config.collection_name}' \
-                       has dynamic fields enabled - metadata will be stored"
+                        f"Collection '{self.upload_config.collection_name}' "
+                        "has dynamic fields enabled - metadata will be stored"
                     )
                 else:
                     logger.info(
-                        f"Collection '{self.upload_config.collection_name}' \
-                        does not have dynamic fields enabled - metadata will not be stored"
+                        f"Collection '{self.upload_config.collection_name}' "
+                        "does not have dynamic fields enabled - metadata will not be stored"
                     )
 
         except MilvusException as milvus_exception:
@@ -312,19 +323,18 @@ class MilvusUploader(Uploader):
             logger.info(
                 "Filtering out metadata fields as collection does not support dynamic fields"
             )
+            collection_info = self.get_collection_info()
+            schema_fields = {
+                field["name"]
+                for field in collection_info.get("fields", [])
+                if not field.get("auto_id", False)
+            }
             # Remove metadata fields that are not part of the base schema
             filtered_data = []
             for item in data:
-                filtered_item = {}
-                for key, value in item.items():
-                    # Keep core fields and any fields that would be in the original schema
-                    # The actual core schema fields will depend on the collection definition
-                    # but typically include id, embeddings, record_id, and basic document fields
-                    if (
-                        key in ["id", "embeddings", "vector", RECORD_ID_LABEL]
-                        or key not in ALLOWED_METADATA_FIELDS
-                    ):
-                        filtered_item[key] = value
+                filtered_item = {
+                    key: value for key, value in item.items() if key in schema_fields
+                }
                 filtered_data.append(filtered_item)
             data = filtered_data
 
