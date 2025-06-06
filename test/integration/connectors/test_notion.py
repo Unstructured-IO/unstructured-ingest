@@ -8,6 +8,7 @@ from test.integration.connectors.utils.validation.source import (
     get_all_file_data,
     run_all_validations,
     update_fixtures,
+    source_filedata_display_name_set_check,
 )
 from unstructured_ingest.interfaces import Downloader, Indexer
 from unstructured_ingest.processes.connectors.notion.connector import (
@@ -56,6 +57,8 @@ def test_notion_source_database(temp_dir):
             expected_num_files=1,
             validate_downloaded_files=True,
             exclude_fields_extend=["metadata.date_created", "metadata.date_modified"],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -95,6 +98,8 @@ def test_notion_source_page(temp_dir):
             expected_num_files=1,
             validate_downloaded_files=True,
             exclude_fields_extend=["metadata.date_created", "metadata.date_modified"],
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 

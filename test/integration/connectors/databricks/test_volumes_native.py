@@ -18,6 +18,7 @@ from test.integration.connectors.utils.constants import (
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -114,6 +115,8 @@ async def test_volumes_native_source(tmp_path: Path):
             configs=SourceValidationConfigs(
                 test_id="databricks_volumes_native",
                 expected_num_files=1,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
             ),
         )
 
@@ -144,6 +147,8 @@ async def test_volumes_native_source_pat(tmp_path: Path):
             configs=SourceValidationConfigs(
                 test_id="databricks_volumes_native_pat",
                 expected_num_files=1,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
             ),
         )
 
