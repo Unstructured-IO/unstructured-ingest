@@ -167,6 +167,10 @@ class MilvusUploadStager(UploadStager):
         # (will be stored in dynamic fields if supported)
         working_data.update(flattened_metadata)
 
+        # Overwrite filename from file_data, this ensures the one from the source connector is used
+        if file_data.source_identifiers.filename:
+            working_data["filename"] = file_data.source_identifiers.filename
+
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
         #  remove once that gets updated
         defaults = {"is_continuation": False}

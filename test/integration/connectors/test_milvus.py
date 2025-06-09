@@ -177,8 +177,7 @@ async def test_milvus_destination(
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=upload_file_with_embeddings.name,
-            filename=upload_file_with_embeddings.name,
+            fullpath=str(upload_file), filename=upload_file.stem
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
@@ -221,8 +220,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=upload_file_with_embeddings.name,
-            filename=upload_file_with_embeddings.name,
+            fullpath=str(upload_file), filename=upload_file.stem
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="metadata_test_file",
@@ -307,8 +305,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=upload_file_with_embeddings.name,
-            filename=upload_file_with_embeddings.name,
+            fullpath=str(upload_file), filename=upload_file.stem
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="no_dynamic_test_file",
