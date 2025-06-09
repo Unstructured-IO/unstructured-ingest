@@ -244,6 +244,14 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
         output_filename=upload_file_with_embeddings.name,
     )
 
+    # Clean None values from staged data to prevent silent record dropping by Milvus
+    with staged_filepath.open() as f:
+        staged_data = json.load(f)
+    cleaned_data = [{k: v for k, v in item.items() if v is not None} for item in staged_data]
+    cleaned_staged_filepath = tmp_path / "cleaned_staged_data.json"
+    with cleaned_staged_filepath.open("w") as f:
+        json.dump(cleaned_data, f)
+
     # Load staged data to check what metadata was extracted
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
@@ -261,7 +269,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
    Available keys: {list(sample_element.keys())}"
     print(f"Found metadata fields: {metadata_found}")
 
-    uploader.run(path=staged_filepath, file_data=file_data)
+    uploader.run(path=cleaned_staged_filepath, file_data=file_data)
 
     # Query the uploaded data to verify metadata was stored
     with uploader.get_client() as client:
