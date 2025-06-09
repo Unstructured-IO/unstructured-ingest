@@ -200,7 +200,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     """Test that metadata is properly stored when dynamic fields are enabled."""
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath="test_document.pdf", filename="test_document.pdf"
+            fullpath=upload_file.name, filename=upload_file.name
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="metadata_test_file",
@@ -270,7 +270,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
         # Verify filename is specifically stored if present
         if "filename" in stored_metadata:
             assert (
-                sample_result["filename"] == "test_document.pdf"
+                sample_result["filename"] == upload_file.name
             ), "Filename should be correctly stored"
 
 
@@ -284,7 +284,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     """Test that metadata is properly filtered when dynamic fields are not enabled."""
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath="test_document.pdf", filename="test_document.pdf"
+            fullpath=upload_file.name, filename=upload_file.name
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="no_dynamic_test_file",
