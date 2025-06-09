@@ -1,8 +1,9 @@
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Generator, List, Optional, Tuple
 
 from pydantic import Field, Secret
 
@@ -417,6 +418,92 @@ class ConfluenceDownloader(Downloader):
         logger.debug(f"normalized permissions generated: {parsed_permissions_dict}")
         return parsed_permissions_dict
 
+    def _download_page_attachments(
+        self, client: "Confluence", page_file_data: FileData
+    ) -> list[DownloadResponse]:
+        """Downloads attachments from the Confluence page. Return a `DownloadResponse` for each.
+
+        Places downloaded files into a directory named with page identifier.
+        """
+        page_id = page_file_data.identifier
+        download_directory = (
+            Path(self.download_dir) / page_file_data.source_identifiers.relative_path
+        ).with_suffix("")
+
+        attachments = self._get_all_attachments_from_content(client, page_id, limit=1)
+        if attachments:
+            download_directory.mkdir(exist_ok=True, parents=True)
+
+        responses: list[DownloadResponse] = []
+        for attachment in attachments:
+            attachment_id = attachment["id"]
+            attachment_filename: str = attachment["title"]
+            attachment_fullpath = (
+                Path(page_file_data.source_identifiers.fullpath).with_suffix("")
+                / attachment_filename
+            ).as_posix()
+
+            attachment_file_data = FileData(
+                identifier=attachment_id,
+                connector_type=self.connector_type,
+                metadata=FileDataSourceMetadata(
+                    date_processed=str(time.time()),
+                    url=f"{page_file_data.metadata.url}/attachments/{attachment_id}",
+                    record_locator={"page_id": page_id, "document_id": attachment_id},
+                ),
+                additional_metadata={
+                    "page_id": page_id,
+                    "document_id": attachment_id,
+                    "type": attachment["type"],
+                },
+                source_identifiers=SourceIdentifiers(
+                    filename=attachment_filename,
+                    fullpath=attachment_fullpath,
+                ),
+            )
+            download_path = download_directory / attachment_filename
+            client.download_attachments_from_page(
+                page_id=page_file_data.identifier,
+                path=download_directory,
+                filename=attachment_filename,
+            )
+            responses.append(DownloadResponse(file_data=attachment_file_data, path=download_path))
+
+        return responses
+
+    def _get_all_attachments_from_content(
+        self,
+        client: "Confluence",
+        page_id: Any,
+        start: int = 0,
+        limit: int = 50,
+        expand: Any | None = None,
+        filename: Any | None = None,
+        media_type: Any | None = None,
+    ) -> list:
+        """Using offset-based pagination retrieves all attachments from Confluence page.
+
+        Returns concatenated results of `get_attachments_from_content` calls.
+        """
+        all_attachments = []
+        start = 0
+        while True:
+            attachments = client.get_attachments_from_content(
+                page_id,
+                start=start,
+                limit=limit,
+                expand=expand,
+                filename=filename,
+                media_type=media_type,
+            ).get("results", [])
+            all_attachments += attachments
+            if len(attachments) < limit:
+                break
+            start += limit
+            print(f"{page_id}: {len(attachments)} new attachments, start at {start}")
+
+        return all_attachments
+
     def run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
 
@@ -471,23 +558,10 @@ class ConfluenceDownloader(Downloader):
         )
         if self.download_config.extract_files:
             with self.connection_config.get_client() as client:
-                extracted_download_responses = self.download_embedded_files(
-                    html=content,
-                    current_file_data=download_response["file_data"],
-                    session=client._session,
+                attachments_download_responses = self._download_page_attachments(
+                    client=client, page_file_data=file_data
                 )
-                if extracted_download_responses:
-                    for dr in extracted_download_responses:
-                        fd = dr["file_data"]
-                        source_file_path = Path(file_data.source_identifiers.fullpath).with_suffix(
-                            ""
-                        )
-                        new_fullpath = source_file_path / fd.source_identifiers.filename
-                        fd.source_identifiers = SourceIdentifiers(
-                            fullpath=new_fullpath.as_posix(), filename=new_fullpath.name
-                        )
-                    extracted_download_responses.append(download_response)
-                    return extracted_download_responses
+                return attachments_download_responses + [download_response]
         return download_response
 
 
