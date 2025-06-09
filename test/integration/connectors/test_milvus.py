@@ -337,7 +337,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
         # Verify filename is specifically stored if present
         if "filename" in stored_metadata:
             assert (
-                sample_result["filename"] == upload_file.stem
+                sample_result["filename"] == upload_file.name
             ), "Filename should be correctly stored"
 
 
