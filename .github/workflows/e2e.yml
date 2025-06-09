@@ -321,6 +321,7 @@ jobs:
 
     - name: Temp upload test fixtures
       uses: actions/upload-artifact@v4
+      if: always()
       with:
           name: test_e2e-expected-structured-output-uncategorized
           path: |
