@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 
 import docker
+import numpy as np
 import pytest
 from _pytest.fixtures import TopRequest
 from pymilvus import (
@@ -41,6 +42,23 @@ EXISTENT_COLLECTION_NAME = "test_collection"
 COLLECTION_WITHOUT_DYNAMIC_FIELDS = "test_collection_no_dynamic"
 NONEXISTENT_COLLECTION_NAME = "nonexistent_collection"
 DB_URI = "http://localhost:19530"
+
+
+def add_fake_embeddings(upload_file: Path, tmp_path: Path) -> Path:
+    """
+    Reads a JSON file of elements, adds a fake embedding vector to each element,
+    and returns the path to the new file.
+    """
+    with open(upload_file) as f:
+        elements = json.load(f)
+
+    for el in elements:
+        el["embeddings"] = np.random.rand(384).tolist()
+
+    output_filename = tmp_path / "docs-with-fake-embeddings.json"
+    with open(output_filename, "w") as f:
+        json.dump(elements, f)
+    return output_filename
 
 
 def get_schema(enable_dynamic_field: bool = True) -> CollectionSchema:
@@ -156,9 +174,11 @@ async def test_milvus_destination(
     collection: str,
     tmp_path: Path,
 ):
+    upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=upload_file.name, filename=upload_file.name
+            fullpath=upload_file_with_embeddings.name,
+            filename=upload_file_with_embeddings.name,
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
@@ -169,10 +189,10 @@ async def test_milvus_destination(
         upload_config=MilvusUploaderConfig(collection_name=collection, db_name=DB_NAME),
     )
     staged_filepath = stager.run(
-        elements_filepath=upload_file,
+        elements_filepath=upload_file_with_embeddings,
         file_data=file_data,
         output_dir=tmp_path,
-        output_filename=upload_file.name,
+        output_filename=upload_file_with_embeddings.name,
     )
     uploader.precheck()
     uploader.run(path=staged_filepath, file_data=file_data)
@@ -198,9 +218,11 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     tmp_path: Path,
 ):
     """Test that metadata is properly stored when dynamic fields are enabled."""
+    upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=upload_file.name, filename=upload_file.name
+            fullpath=upload_file_with_embeddings.name,
+            filename=upload_file_with_embeddings.name,
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="metadata_test_file",
@@ -218,10 +240,10 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     ), "Collection should have dynamic fields enabled"
 
     staged_filepath = stager.run(
-        elements_filepath=upload_file,
+        elements_filepath=upload_file_with_embeddings,
         file_data=file_data,
         output_dir=tmp_path,
-        output_filename=upload_file.name,
+        output_filename=upload_file_with_embeddings.name,
     )
 
     # Load staged data to check what metadata was extracted
@@ -282,9 +304,11 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     tmp_path: Path,
 ):
     """Test that metadata is properly filtered when dynamic fields are not enabled."""
+    upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
-            fullpath=upload_file.name, filename=upload_file.name
+            fullpath=upload_file_with_embeddings.name,
+            filename=upload_file_with_embeddings.name,
         ),
         connector_type=CONNECTOR_TYPE,
         identifier="no_dynamic_test_file",
@@ -304,10 +328,10 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     ), "Collection should NOT have dynamic fields enabled"
 
     staged_filepath = stager.run(
-        elements_filepath=upload_file,
+        elements_filepath=upload_file_with_embeddings,
         file_data=file_data,
         output_dir=tmp_path,
-        output_filename=upload_file.name,
+        output_filename=upload_file_with_embeddings.name,
     )
 
     # This should not raise an error even though metadata fields are present in staged data
