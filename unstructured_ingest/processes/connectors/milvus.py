@@ -190,7 +190,7 @@ class MilvusUploadStager(UploadStager):
             "last_modified",
         ]
 
-        json_dumps_fields = ["languages", "data_source_permissions_data"]
+        json_dumps_fields = ["data_source_permissions_data"]
 
         for datetime_column in datetime_columns:
             if datetime_column in working_data:

@@ -128,34 +128,52 @@ def collection():
         milvus_client = MilvusClient(uri=DB_URI)
         try:
             # Create the database
-            database_resp = milvus_client._get_connection().create_database(
-                db_name=DB_NAME
-            )
+            if DB_NAME not in milvus_client.list_databases():
+                database_resp = milvus_client._get_connection().create_database(
+                    db_name=DB_NAME,
+                )
+                print(f"Created database {DB_NAME}: {database_resp}")
             milvus_client.using_database(db_name=DB_NAME)
-
-            print(f"Created database {DB_NAME}: {database_resp}")
 
             # Create the collection with dynamic fields enabled
             schema = get_schema(enable_dynamic_field=True)
             index_params = get_index_params()
+            if milvus_client.has_collection(collection_name=EXISTENT_COLLECTION_NAME):
+                milvus_client.drop_collection(collection_name=EXISTENT_COLLECTION_NAME)
             collection_resp = milvus_client.create_collection(
                 collection_name=EXISTENT_COLLECTION_NAME,
                 schema=schema,
                 index_params=index_params,
             )
             print(f"Created collection {EXISTENT_COLLECTION_NAME}: {collection_resp}")
+            desc_dynamic = milvus_client.describe_collection(
+                collection_name=EXISTENT_COLLECTION_NAME,
+            )
+            print(f"Post-creation description for '{EXISTENT_COLLECTION_NAME}':")
+            print(json.dumps(desc_dynamic, indent=2, cls=NpEncoder))
 
             # Create a second collection without dynamic fields for testing
             schema_no_dynamic = get_schema(enable_dynamic_field=False)
+            if milvus_client.has_collection(
+                collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
+            ):
+                milvus_client.drop_collection(
+                    collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
+                )
             collection_resp_no_dynamic = milvus_client.create_collection(
                 collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
                 schema=schema_no_dynamic,
                 index_params=index_params,
             )
             print(
-                f"Created collection {COLLECTION_WITHOUT_DYNAMIC_FIELDS}: \
-                {collection_resp_no_dynamic}"
+                f"Created collection {COLLECTION_WITHOUT_DYNAMIC_FIELDS}: "
+                f"{collection_resp_no_dynamic}",
             )
+            desc_no_dynamic = milvus_client.describe_collection(
+                collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
+            )
+            print(f"Post-creation description for '{COLLECTION_WITHOUT_DYNAMIC_FIELDS}':")
+            print(json.dumps(desc_no_dynamic, indent=2, cls=NpEncoder))
 
             yield EXISTENT_COLLECTION_NAME
         finally:
