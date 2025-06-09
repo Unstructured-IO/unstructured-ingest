@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from pathlib import Path
 
@@ -36,6 +37,8 @@ from unstructured_ingest.processes.connectors.milvus import (
     MilvusUploadStager,
     MilvusUploadStagerConfig,
 )
+
+logger = logging.getLogger(__name__)
 
 DB_NAME = "test_database"
 EXISTENT_COLLECTION_NAME = "test_collection"
@@ -132,7 +135,7 @@ def collection():
                 database_resp = milvus_client._get_connection().create_database(
                     db_name=DB_NAME,
                 )
-                print(f"Created database {DB_NAME}: {database_resp}")
+                logger.debug(f"Created database {DB_NAME}: {database_resp}")
             milvus_client.using_database(db_name=DB_NAME)
 
             # Create the collection with dynamic fields enabled
@@ -145,12 +148,12 @@ def collection():
                 schema=schema,
                 index_params=index_params,
             )
-            print(f"Created collection {EXISTENT_COLLECTION_NAME}: {collection_resp}")
+            logger.debug(f"Created collection {EXISTENT_COLLECTION_NAME}: {collection_resp}")
             desc_dynamic = milvus_client.describe_collection(
                 collection_name=EXISTENT_COLLECTION_NAME,
             )
-            print(f"Post-creation description for '{EXISTENT_COLLECTION_NAME}':")
-            print(json.dumps(desc_dynamic, indent=2, cls=NpEncoder))
+            logger.debug(f"Post-creation description for '{EXISTENT_COLLECTION_NAME}':")
+            logger.debug(json.dumps(desc_dynamic, indent=2, cls=NpEncoder))
 
             # Create a second collection without dynamic fields for testing
             schema_no_dynamic = get_schema(enable_dynamic_field=False)
@@ -165,15 +168,15 @@ def collection():
                 schema=schema_no_dynamic,
                 index_params=index_params,
             )
-            print(
+            logger.debug(
                 f"Created collection {COLLECTION_WITHOUT_DYNAMIC_FIELDS}: "
                 f"{collection_resp_no_dynamic}",
             )
             desc_no_dynamic = milvus_client.describe_collection(
                 collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
             )
-            print(f"Post-creation description for '{COLLECTION_WITHOUT_DYNAMIC_FIELDS}':")
-            print(json.dumps(desc_no_dynamic, indent=2, cls=NpEncoder))
+            logger.debug(f"Post-creation description for '{COLLECTION_WITHOUT_DYNAMIC_FIELDS}':")
+            logger.debug(json.dumps(desc_no_dynamic, indent=2, cls=NpEncoder))
 
             yield EXISTENT_COLLECTION_NAME
         finally:
@@ -212,7 +215,7 @@ async def test_milvus_destination(
     collection: str,
     tmp_path: Path,
 ):
-    print("\n--- Running test_milvus_destination ---")
+    logger.debug("\n--- Running test_milvus_destination ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
@@ -234,32 +237,32 @@ async def test_milvus_destination(
     )
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
-    print(f"Number of staged elements: {len(staged_elements)}")
+    logger.debug(f"Number of staged elements: {len(staged_elements)}")
     if staged_elements:
-        print("Sample staged element for test_milvus_destination:")
-        print(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
+        logger.debug("Sample staged element for test_milvus_destination:")
+        logger.debug(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
     uploader.precheck()
-    print("Running uploader for the first time...")
+    logger.debug("Running uploader for the first time...")
     uploader.run(path=staged_filepath, file_data=file_data)
-    print("First uploader run finished.")
+    logger.debug("First uploader run finished.")
 
     # Run validation
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
     expected_count = len(staged_elements)
     with uploader.get_client() as client:
-        print(f"Validating count, expecting: {expected_count}")
+        logger.debug(f"Validating count, expecting: {expected_count}")
         validate_count(client=client, expected_count=expected_count)
-        print("Count validation successful.")
+        logger.debug("Count validation successful.")
 
     # Rerun and make sure the same documents get updated
-    print("Running uploader for the second time (rerun)...")
+    logger.debug("Running uploader for the second time (rerun)...")
     uploader.run(path=staged_filepath, file_data=file_data)
-    print("Second uploader run finished.")
+    logger.debug("Second uploader run finished.")
     with uploader.get_client() as client:
-        print(f"Validating count on rerun, expecting: {expected_count}")
+        logger.debug(f"Validating count on rerun, expecting: {expected_count}")
         validate_count(client=client, expected_count=expected_count)
-        print("Count validation on rerun successful.")
+        logger.debug("Count validation on rerun successful.")
 
 
 @pytest.mark.asyncio
@@ -270,7 +273,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     tmp_path: Path,
 ):
     """Test that metadata is properly stored when dynamic fields are enabled."""
-    print("\n--- Running test_milvus_metadata_storage_with_dynamic_fields ---")
+    logger.debug("\n--- Running test_milvus_metadata_storage_with_dynamic_fields ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
@@ -301,10 +304,10 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     # Load staged data to check what metadata was extracted
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
-    print(f"Number of staged elements: {len(staged_elements)}")
+    logger.debug(f"Number of staged elements: {len(staged_elements)}")
     if staged_elements:
-        print("Sample staged element before upload:")
-        print(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
+        logger.debug("Sample staged element before upload:")
+        logger.debug(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
 
     # Verify that metadata fields are present in staged data
     sample_element = staged_elements[0]
@@ -317,25 +320,25 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
         len(metadata_found) > 0
     ), f"Expected to find metadata fields in staged data.\
    Available keys: {list(sample_element.keys())}"
-    print(f"Found metadata fields: {metadata_found}")
+    logger.debug(f"Found metadata fields: {metadata_found}")
 
-    print("Running uploader...")
+    logger.debug("Running uploader...")
     uploader.run(path=staged_filepath, file_data=file_data)
-    print("Uploader finished.")
+    logger.debug("Uploader finished.")
 
     # Query the uploaded data to verify metadata was stored
     with uploader.get_client() as client:
         # Query with specific record ID
-        print(f"Querying collection '{collection}' for record_id '{file_data.identifier}'")
+        logger.debug(f"Querying collection '{collection}' for record_id '{file_data.identifier}'")
         results = client.query(
             collection_name=collection,
             filter=f'record_id == "{file_data.identifier}"',
             output_fields=["*"],  # Get all fields including dynamic fields
         )
-        print(f"Query returned {len(results)} results.")
+        logger.debug(f"Query returned {len(results)} results.")
         if results:
-            print("Sample query result:")
-            print(json.dumps(get_printable_sample(results[0]), indent=2, cls=NpEncoder))
+            logger.debug("Sample query result:")
+            logger.debug(json.dumps(get_printable_sample(results[0]), indent=2, cls=NpEncoder))
 
         assert len(results) > 0, "Should have results from the uploaded data"
 
@@ -350,7 +353,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
             len(stored_metadata) > 0
         ), f"Expected metadata fields to be stored in Milvus. \
         Available fields: {list(sample_result.keys())}"
-        print(f"Successfully stored metadata fields: {stored_metadata}")
+        logger.debug(f"Successfully stored metadata fields: {stored_metadata}")
 
         # Verify filename is specifically stored if present
         if "filename" in stored_metadata:
@@ -367,7 +370,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     tmp_path: Path,
 ):
     """Test that metadata is properly filtered when dynamic fields are not enabled."""
-    print("\n--- Running test_milvus_metadata_filtering_without_dynamic_fields ---")
+    logger.debug("\n--- Running test_milvus_metadata_filtering_without_dynamic_fields ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
@@ -399,19 +402,19 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
 
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
-    print(f"Number of staged elements: {len(staged_elements)}")
+    logger.debug(f"Number of staged elements: {len(staged_elements)}")
     if staged_elements:
-        print("Sample staged element before upload:")
-        print(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
+        logger.debug("Sample staged element before upload:")
+        logger.debug(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
 
     # This should not raise an error even though metadata fields are present in staged data
-    print("Running uploader...")
+    logger.debug("Running uploader...")
     uploader.run(path=staged_filepath, file_data=file_data)
-    print("Uploader finished.")
+    logger.debug("Uploader finished.")
 
     # Verify data was uploaded successfully
     with uploader.get_client() as client:
-        print(
+        logger.debug(
             f"Querying collection '{COLLECTION_WITHOUT_DYNAMIC_FIELDS}' "
             f"for record_id '{file_data.identifier}'"
         )
@@ -421,10 +424,10 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
             output_fields=["*"],
         )
 
-        print(f"Query returned {len(results)} results.")
+        logger.debug(f"Query returned {len(results)} results.")
         if results:
-            print("Sample query result:")
-            print(json.dumps(get_printable_sample(results[0]), indent=2, cls=NpEncoder))
+            logger.debug("Sample query result:")
+            logger.debug(json.dumps(get_printable_sample(results[0]), indent=2, cls=NpEncoder))
         assert len(results) > 0, "Should have results from the uploaded data"
 
         # Verify that only core fields are present (no metadata fields)
