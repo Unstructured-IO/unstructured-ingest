@@ -156,7 +156,11 @@ class MilvusUploadStager(UploadStager):
         # Apply the original flatten_metadata logic first
         if self.upload_stager_config.flatten_metadata and metadata:
             working_data.update(
-                flatten_dict(metadata, keys_to_omit=["data_source_record_locator"])
+                flatten_dict(
+                    metadata,
+                    keys_to_omit=["data_source_record_locator"],
+                    remove_none=True,
+                )
             )
 
         # Add the extracted metadata as separate fields
