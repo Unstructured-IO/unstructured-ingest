@@ -44,6 +44,26 @@ NONEXISTENT_COLLECTION_NAME = "nonexistent_collection"
 DB_URI = "http://localhost:19530"
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
+def get_printable_sample(element: dict) -> dict:
+    """Creates a copy of an element and truncates embeddings for printing."""
+    sample = element.copy()
+    if "embeddings" in sample and isinstance(sample["embeddings"], (list, np.ndarray)):
+        embeddings = np.asarray(sample["embeddings"])
+        sample["embeddings"] = f"first 5: {embeddings[:5].tolist()}..."
+    return sample
+
+
 def add_fake_embeddings(upload_file: Path, tmp_path: Path) -> Path:
     """
     Reads a JSON file of elements, adds a fake embedding vector to each element,
@@ -199,7 +219,7 @@ async def test_milvus_destination(
     print(f"Number of staged elements: {len(staged_elements)}")
     if staged_elements:
         print("Sample staged element for test_milvus_destination:")
-        print(json.dumps(staged_elements[0], indent=2))
+        print(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
     uploader.precheck()
     print("Running uploader for the first time...")
     uploader.run(path=staged_filepath, file_data=file_data)
@@ -266,7 +286,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     print(f"Number of staged elements: {len(staged_elements)}")
     if staged_elements:
         print("Sample staged element before upload:")
-        print(json.dumps(staged_elements[0], indent=2))
+        print(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
 
     # Verify that metadata fields are present in staged data
     sample_element = staged_elements[0]
@@ -297,7 +317,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
         print(f"Query returned {len(results)} results.")
         if results:
             print("Sample query result:")
-            print(json.dumps(results[0], indent=2))
+            print(json.dumps(get_printable_sample(results[0]), indent=2, cls=NpEncoder))
 
         assert len(results) > 0, "Should have results from the uploaded data"
 
@@ -364,7 +384,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     print(f"Number of staged elements: {len(staged_elements)}")
     if staged_elements:
         print("Sample staged element before upload:")
-        print(json.dumps(staged_elements[0], indent=2))
+        print(json.dumps(get_printable_sample(staged_elements[0]), indent=2))
 
     # This should not raise an error even though metadata fields are present in staged data
     print("Running uploader...")
@@ -386,7 +406,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
         print(f"Query returned {len(results)} results.")
         if results:
             print("Sample query result:")
-            print(json.dumps(results[0], indent=2))
+            print(json.dumps(get_printable_sample(results[0]), indent=2, cls=NpEncoder))
         assert len(results) > 0, "Should have results from the uploaded data"
 
         # Verify that only core fields are present (no metadata fields)
