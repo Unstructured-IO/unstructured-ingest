@@ -107,15 +107,6 @@ jobs:
           pr_name=$(echo "$prs" | jq -r '.[0].title')
           echo "PR_NAME=$pr_name" >> $GITHUB_ENV
 
-      - name: Temp upload test fixtures
-        uses: actions/upload-artifact@v4
-        with:
-            name: test_e2e-expected-structured-output
-            path: |
-              test_e2e/expected-structured-output/
-            retention-days: 1
-            overwrite: true
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
