@@ -16,7 +16,7 @@
     },
     "date_created": "2024-01-09T20:39:22+00:00",
     "date_modified": null,
-    "date_processed": "1749467535.8265543",
+    "date_processed": "1749474748.0297651",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -25,6 +25,6 @@
     "collection": "sample-mongodb-data"
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmp6ewvhmog/659daefa21dd8c9054b084b7.txt",
+  "local_download_path": "/tmp/tmpx8lrbb1y/659daefa21dd8c9054b084b7.txt",
   "display_name": "ingest-test-db.sample-mongodb-data, batch 659daefa21dd8c9054b084b6-659daefa21dd8c9054b084b9"
 }
