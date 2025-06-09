@@ -174,6 +174,7 @@ async def test_milvus_destination(
     collection: str,
     tmp_path: Path,
 ):
+    print("\n--- Running test_milvus_destination ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
@@ -193,20 +194,34 @@ async def test_milvus_destination(
         output_dir=tmp_path,
         output_filename=upload_file_with_embeddings.name,
     )
+    with staged_filepath.open() as f:
+        staged_elements = json.load(f)
+    print(f"Number of staged elements: {len(staged_elements)}")
+    if staged_elements:
+        print("Sample staged element for test_milvus_destination:")
+        print(json.dumps(staged_elements[0], indent=2))
     uploader.precheck()
+    print("Running uploader for the first time...")
     uploader.run(path=staged_filepath, file_data=file_data)
+    print("First uploader run finished.")
 
     # Run validation
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
     expected_count = len(staged_elements)
     with uploader.get_client() as client:
+        print(f"Validating count, expecting: {expected_count}")
         validate_count(client=client, expected_count=expected_count)
+        print("Count validation successful.")
 
     # Rerun and make sure the same documents get updated
+    print("Running uploader for the second time (rerun)...")
     uploader.run(path=staged_filepath, file_data=file_data)
+    print("Second uploader run finished.")
     with uploader.get_client() as client:
+        print(f"Validating count on rerun, expecting: {expected_count}")
         validate_count(client=client, expected_count=expected_count)
+        print("Count validation on rerun successful.")
 
 
 @pytest.mark.asyncio
@@ -217,6 +232,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     tmp_path: Path,
 ):
     """Test that metadata is properly stored when dynamic fields are enabled."""
+    print("\n--- Running test_milvus_metadata_storage_with_dynamic_fields ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
@@ -244,17 +260,13 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
         output_filename=upload_file_with_embeddings.name,
     )
 
-    # Clean None values from staged data to prevent silent record dropping by Milvus
-    with staged_filepath.open() as f:
-        staged_data = json.load(f)
-    cleaned_data = [{k: v for k, v in item.items() if v is not None} for item in staged_data]
-    cleaned_staged_filepath = tmp_path / "cleaned_staged_data.json"
-    with cleaned_staged_filepath.open("w") as f:
-        json.dump(cleaned_data, f)
-
     # Load staged data to check what metadata was extracted
     with staged_filepath.open() as f:
         staged_elements = json.load(f)
+    print(f"Number of staged elements: {len(staged_elements)}")
+    if staged_elements:
+        print("Sample staged element before upload:")
+        print(json.dumps(staged_elements[0], indent=2))
 
     # Verify that metadata fields are present in staged data
     sample_element = staged_elements[0]
@@ -269,16 +281,23 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
    Available keys: {list(sample_element.keys())}"
     print(f"Found metadata fields: {metadata_found}")
 
-    uploader.run(path=cleaned_staged_filepath, file_data=file_data)
+    print("Running uploader...")
+    uploader.run(path=staged_filepath, file_data=file_data)
+    print("Uploader finished.")
 
     # Query the uploaded data to verify metadata was stored
     with uploader.get_client() as client:
         # Query with specific record ID
+        print(f"Querying collection '{collection}' for record_id '{file_data.identifier}'")
         results = client.query(
             collection_name=collection,
             filter=f'record_id == "{file_data.identifier}"',
             output_fields=["*"],  # Get all fields including dynamic fields
         )
+        print(f"Query returned {len(results)} results.")
+        if results:
+            print("Sample query result:")
+            print(json.dumps(results[0], indent=2))
 
         assert len(results) > 0, "Should have results from the uploaded data"
 
@@ -310,6 +329,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     tmp_path: Path,
 ):
     """Test that metadata is properly filtered when dynamic fields are not enabled."""
+    print("\n--- Running test_milvus_metadata_filtering_without_dynamic_fields ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
         source_identifiers=SourceIdentifiers(
@@ -339,19 +359,36 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
         output_filename=upload_file_with_embeddings.name,
     )
 
+    with staged_filepath.open() as f:
+        staged_elements = json.load(f)
+    print(f"Number of staged elements: {len(staged_elements)}")
+    if staged_elements:
+        print("Sample staged element before upload:")
+        print(json.dumps(staged_elements[0], indent=2))
+
     # This should not raise an error even though metadata fields are present in staged data
+    print("Running uploader...")
     uploader.run(path=staged_filepath, file_data=file_data)
+    print("Uploader finished.")
 
     # Verify data was uploaded successfully
     with uploader.get_client() as client:
+        print(
+            f"Querying collection '{COLLECTION_WITHOUT_DYNAMIC_FIELDS}' "
+            f"for record_id '{file_data.identifier}'"
+        )
         results = client.query(
             collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
             filter=f'record_id == "{file_data.identifier}"',
             output_fields=["*"],
         )
 
+        print(f"Query returned {len(results)} results.")
+        if results:
+            print("Sample query result:")
+            print(json.dumps(results[0], indent=2))
         assert len(results) > 0, "Should have results from the uploaded data"
-        
+
         # Verify that only core fields are present (no metadata fields)
         sample_result = results[0]
         core_fields = {'id', 'record_id', 'embeddings'}
