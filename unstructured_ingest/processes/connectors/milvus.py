@@ -190,7 +190,7 @@ class MilvusUploadStager(UploadStager):
             "last_modified",
         ]
 
-        json_dumps_fields = ["data_source_permissions_data"]
+        json_dumps_fields = ["languages", "data_source_permissions_data"]
 
         for datetime_column in datetime_columns:
             if datetime_column in working_data:
@@ -309,6 +309,19 @@ class MilvusUploader(Uploader):
 
         # Check if collection supports dynamic fields
         dynamic_fields_enabled = self.has_dynamic_fields_enabled()
+
+        # If dynamic fields are enabled, 'languages' field needs to be a list
+        if dynamic_fields_enabled:
+            logger.info("Dynamic fields enabled, ensuring 'languages' field is a list.")
+            for item in data:
+                if "languages" in item and isinstance(item["languages"], str):
+                    try:
+                        item["languages"] = json.loads(item["languages"])
+                    except (json.JSONDecodeError, TypeError):
+                        logger.warning(
+                            f"Could not JSON decode languages field: {item['languages']}. "
+                            "Leaving as string.",
+                        )
 
         # If dynamic fields are not enabled, we need to filter out the metadata fields
         # to avoid insertion errors for fields not defined in the schema
