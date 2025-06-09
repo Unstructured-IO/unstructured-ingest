@@ -108,28 +108,9 @@ jobs:
         # Sharepoint
         SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
         SHAREPOINT_CRED: ${{ secrets.SHAREPOINT_CRED }}
-        OVERWRITE_FIXTURES: "true"
       run : |
         make integration-test-connectors-blob-storage
         make parse-skipped-tests
-
-    - name: Temp upload test fixtures
-      uses: actions/upload-artifact@v4
-      with:
-          name: test_e2e-expected-structured-output-blob-storage
-          path: |
-            test/integration/connectors/expected_results/databricks_volumes_native
-            test/integration/connectors/expected_results/databricks_volumes_native_pat
-            test/integration/connectors/expected_results/onedrive
-            test/integration/connectors/expected_results/sharepoint
-            test/integration/connectors/expected_results/sharepoint1
-            test/integration/connectors/expected_results/sharepoint2
-            test/integration/connectors/expected_results/sharepoint3
-            test/integration/connectors/expected_results/sharepoint4
-            test/integration/connectors/expected_results/sharepoint5
-            test/integration/connectors/expected_results/sharepoint6
-          retention-days: 1
-          overwrite: true
 
   sql_connectors_int_test:
     runs-on: ubuntu-latest-m
@@ -164,21 +145,9 @@ jobs:
         DATABRICKS_SERVER_HOSTNAME: ${{ secrets.DATABRICKS_SERVER_HOSTNAME }}
         DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
         DATABRICKS_ACCESS_TOKEN: ${{ secrets.DATABRICKS_ACCESS_TOKEN }}
-        OVERWRITE_FIXTURES: "true"
       run : |
         make integration-test-connectors-sql
         make parse-skipped-tests
-
-    - name: Temp upload test fixtures
-      uses: actions/upload-artifact@v4
-      with:
-          name: test_e2e-expected-structured-output-sql
-          path: |
-            test/integration/connectors/expected_results/postgres
-            test/integration/connectors/expected_results/singlestore
-            test/integration/connectors/expected_results/sqlite
-          retention-days: 1
-          overwrite: true
 
   nosql_connectors_int_test:
     runs-on: ubuntu-latest-m
@@ -211,21 +180,9 @@ jobs:
         VECTARA_OAUTH_CLIENT_ID: ${{secrets.VECTARA_OAUTH_CLIENT_ID}}
         VECTARA_OAUTH_SECRET: ${{secrets.VECTARA_OAUTH_SECRET}}
         VECTARA_CUSTOMER_ID: ${{secrets.VECTARA_CUSTOMER_ID}}
-        OVERWRITE_FIXTURES: "true"
       run : |
         make integration-test-connectors-nosql
         make parse-skipped-tests
-
-    - name: Temp upload test fixtures
-      uses: actions/upload-artifact@v4
-      with:
-          name: test_e2e-expected-structured-output-nosql
-          path: |
-            test/integration/connectors/expected_results/elasticsearch
-            test/integration/connectors/expected_results/opensearch
-            test/integration/connectors/expected_results/mongodb
-          retention-days: 1
-          overwrite: true
 
   vector_db_connectors_int_test:
     runs-on: ubuntu-latest-m
@@ -261,19 +218,9 @@ jobs:
         GCP_INGEST_SERVICE_KEY: ${{ secrets.GCP_INGEST_SERVICE_KEY }}
         # Pinecone
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-        OVERWRITE_FIXTURES: "true"
       run : |
         make integration-test-connectors-vector-db
         make parse-skipped-tests
-
-    - name: Temp upload test fixtures
-      uses: actions/upload-artifact@v4
-      with:
-          name: test_e2e-expected-structured-output-vector-db
-          path: |
-            test/integration/connectors/expected_results/astradb
-          retention-days: 1
-          overwrite: true
 
   uncategorized_connectors_int_test:
     runs-on: ubuntu-latest-m
@@ -314,24 +261,9 @@ jobs:
         JIRA_INGEST_USER_EMAIL: ${{ secrets.JIRA_INGEST_USER_EMAIL }}
         # Zendesk 
         ZENDESK_TOKEN: ${{ secrets.ZENDESK_TOKEN }}
-        OVERWRITE_FIXTURES: "true"
       run : |
         make integration-test-connectors-uncategorized
         make parse-skipped-tests
-
-    - name: Temp upload test fixtures
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-          name: test_e2e-expected-structured-output-uncategorized
-          path: |
-            test/integration/connectors/expected_results/discord
-            test/integration/connectors/expected_results/notion_database
-            test/integration/connectors/expected_results/notion_page
-            test/integration/connectors/expected_results/zendesk-articles
-            test/integration/connectors/expected_results/zendesk-tickets
-          retention-days: 1
-          overwrite: true
 
   src_e2e_test:
     runs-on: ubuntu-latest-m
