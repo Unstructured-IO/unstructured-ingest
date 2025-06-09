@@ -16,10 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/base-cache
+      - uses: ./.github/actions/setup-environment/action
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          check-only: 'true'
 
   update-fixtures-and-pr:
     runs-on: ubuntu-latest-m
