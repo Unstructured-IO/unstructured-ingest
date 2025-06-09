@@ -13,14 +13,14 @@
       "user_pname": null,
       "server_relative_path": "Folder1/Folder2/fake-email.txt"
     },
-    "date_created": "1738364377.0",
-    "date_modified": "1738364377.0",
-    "date_processed": "1747082382.469887",
+    "date_created": "1738335577.0",
+    "date_modified": "1738335577.0",
+    "date_processed": "1749467409.6202116",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=bbb9ada5-a64e-4bee-8ed9-7fc9f66a38d3&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJuYW1laWQiOiI2YzE2MDc1My05YjYzLTQ3MDktYTE0MC0xN2EyN2QzMDg3YTZAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NDcwODU5NzMifQ.CgoKBHNuaWQSAjY0EgsIxPD2ruTniD4QBRoNNDAuMTI2LjI2LjE2MSosUVo1V0pJa2twOU43RUdQMmRad0hKb0xWYjV5ajZhTzJGd1Fvd1lHYkdPMD0wnQE4AUIQoZ2GZC6wAIDVNYofF60U_koQaGFzaGVkcHJvb2Z0b2tlbnoBMboBZXNoYXJlcG9pbnR0ZW5hbnRzZXR0aW5ncy5yZWFkd3JpdGUuYWxsIGFsbHNpdGVzLndyaXRlIGFsbHNpdGVzLm1hbmFnZSBhbGxmaWxlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkyAEB.T6VQn0SrmYyu3bf2w-olFX97FcMVsnO_zfjPF1Nf-XE&ApiVersion=2.0",
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=bbb9ada5-a64e-4bee-8ed9-7fc9f66a38d3&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJteS1vbmVkcml2ZS1hcHAiLCJuYW1laWQiOiI4MTMyZTAwYS0xYmU0LTRiYTUtYTNjYy1mNmI4MjU0YzkwZjJAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NDk0NzEwMDYifQ.CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCOb_1o-H1JM-EAUaDTIwLjE5MC4xNTMuMzcqLFFaNVdKSWtrcDlON0VHUDJkWndISm9MVmI1eWo2YU8yRndRb3dZR2JHTzA9MJ0BOAFCEKGmaO91QACQPy4R7BVFqOtKEGhhc2hlZHByb29mdG9rZW56ATG6AS5hbGxzaXRlcy53cml0ZSBhbGxmaWxlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkyAEB.HGrM78x6kurCcRr5wC5tLUHSUEJBMr4Q2vpcYKIjMSM&ApiVersion=2.0",
     "eTag": "\"{BBB9ADA5-A64E-4BEE-8ED9-7FC9F66A38D3},1\"",
     "id": "0153RHRSFFVW43WTVG5ZFY5WL7ZH3GUOGT",
     "name": "fake-email.txt",
@@ -29,6 +29,6 @@
     "size": 836
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpa7wo0zdd/Folder2/fake-email.txt",
-  "display_name": null
+  "local_download_path": "/tmp/tmpnq4szkz0/Folder2/fake-email.txt",
+  "display_name": "Folder1/Folder2/fake-email.txt"
 }

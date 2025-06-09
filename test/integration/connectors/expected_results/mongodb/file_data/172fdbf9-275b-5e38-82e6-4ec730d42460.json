@@ -11,7 +11,7 @@
     },
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734616944.92011",
+    "date_processed": "1749467535.8265543",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -21,7 +21,7 @@
   },
   "reprocess": false,
   "local_download_path": null,
-  "display_name": null,
+  "display_name": "ingest-test-db.sample-mongodb-data, batch 659daefa21dd8c9054b084b6-659daefa21dd8c9054b084b9",
   "batch_items": [
     {
       "identifier": "659daefa21dd8c9054b084b6",

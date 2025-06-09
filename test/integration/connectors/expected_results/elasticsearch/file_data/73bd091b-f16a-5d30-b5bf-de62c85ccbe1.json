@@ -8,7 +8,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734441751.49743",
+    "date_processed": "1749467398.150684",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -17,7 +17,7 @@
   },
   "reprocess": false,
   "local_download_path": null,
-  "display_name": null,
+  "display_name": "url=http://localhost:9200/movies, batch_size=10 ids=5..7",
   "batch_items": [
     {
       "identifier": "0",
