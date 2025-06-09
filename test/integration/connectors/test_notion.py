@@ -7,8 +7,8 @@ from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     get_all_file_data,
     run_all_validations,
-    update_fixtures,
     source_filedata_display_name_set_check,
+    update_fixtures,
 )
 from unstructured_ingest.interfaces import Downloader, Indexer
 from unstructured_ingest.processes.connectors.notion.connector import (
