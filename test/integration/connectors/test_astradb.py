@@ -173,6 +173,7 @@ async def test_astra_search_source(
             validate_downloaded_files=True,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
+            exclude_fields_extend=["display_name"]  # includes dynamic ids, might change
         ),
     )
 
