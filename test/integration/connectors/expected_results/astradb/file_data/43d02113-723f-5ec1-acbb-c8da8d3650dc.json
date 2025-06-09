@@ -8,7 +8,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1742508009.054028",
+    "date_processed": "1749474598.4987292",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -18,7 +18,7 @@
   },
   "reprocess": false,
   "local_download_path": null,
-  "display_name": null,
+  "display_name": "ingest_test_src-None-[762c0093-2277-4f3e-ac00-932277af3e0e..25b75f1d-a2ea-4c97-b75f-1da2eadc97f7]",
   "batch_items": [
     {
       "identifier": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7",
