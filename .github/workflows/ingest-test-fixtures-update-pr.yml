@@ -35,7 +35,7 @@ jobs:
         id: full-python-version
         run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
       - name: Setup virtual environment
-        uses: ./.github/actions/base-cache
+        uses: ./.github/actions/setup-environment/action
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Update test fixtures
