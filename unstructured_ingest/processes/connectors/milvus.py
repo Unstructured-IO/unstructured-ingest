@@ -127,45 +127,31 @@ class MilvusUploadStager(UploadStager):
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         working_data = element_dict.copy()
 
-        # Check if we should extract metadata for dynamic fields
-        # We'll extract metadata similar to Pinecone
-        # but only include it if dynamic fields are supported
-        metadata: dict[str, Any] = working_data.pop("metadata", {})
-        data_source = metadata.pop("data_source", {})
-        coordinates = metadata.pop("coordinates", {})
+        if self.upload_stager_config.flatten_metadata:
+            metadata: dict[str, Any] = working_data.pop("metadata", {})
+            data_source = metadata.pop("data_source", {})
+            coordinates = metadata.pop("coordinates", {})
 
-        # Extract metadata from multiple sources (similar to Pinecone)
-        extracted_metadata = {}
-        for possible_meta in [element_dict, metadata, data_source, coordinates]:
-            extracted_metadata.update(
-                {
-                    k: v
-                    for k, v in possible_meta.items()
-                    if k in self.upload_stager_config.metadata_fields
-                }
-            )
+            # Extract metadata from multiple sources
+            extracted_metadata = {}
+            for possible_meta in [working_data, metadata, data_source, coordinates]:
+                extracted_metadata.update(
+                    {
+                        k: v
+                        for k, v in possible_meta.items()
+                        if k in self.upload_stager_config.metadata_fields
+                    }
+                )
 
-        # Flatten the extracted metadata
-        flattened_metadata = flatten_dict(
-            extracted_metadata,
-            separator="_",
-            flatten_lists=True,
-            remove_none=True,
-        )
-
-        # Apply the original flatten_metadata logic first
-        if self.upload_stager_config.flatten_metadata and metadata:
-            working_data.update(
-                flatten_dict(
-                    metadata,
-                    keys_to_omit=["data_source_record_locator"],
+            # Flatten the extracted metadata and add to the top-level
+            if extracted_metadata:
+                flattened_metadata = flatten_dict(
+                    extracted_metadata,
+                    separator="_",
+                    flatten_lists=True,
                     remove_none=True,
                 )
-            )
-
-        # Add the extracted metadata as separate fields
-        # (will be stored in dynamic fields if supported)
-        working_data.update(flattened_metadata)
+                working_data.update(flattened_metadata)
 
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
         #  remove once that gets updated

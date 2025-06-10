@@ -189,6 +189,19 @@ def get_count(client: MilvusClient, collection_name: str = "test_collection") ->
     return resp[0][count_field]
 
 
+def get_count_for_id(client: MilvusClient, collection_name: str, record_id: str) -> int:
+    count_field = "count(*)"
+    resp = client.query(
+        collection_name=collection_name,
+        filter=f'record_id == "{record_id}"',
+        output_fields=[count_field],
+    )
+    # The response can be empty if no records match
+    if not resp or count_field not in resp[0]:
+        return 0
+    return resp[0][count_field]
+
+
 def validate_count(
     client: MilvusClient,
     expected_count: int,
@@ -205,6 +218,30 @@ def validate_count(
     assert current_count == expected_count, (
         f"Expected count ({expected_count}) doesn't match how "
         f"much came back from collection: {current_count}"
+    )
+
+
+def validate_count_for_id(
+    client: MilvusClient,
+    expected_count: int,
+    collection_name: str,
+    record_id: str,
+    retries: int = 10,
+    interval: int = 1,
+) -> None:
+    current_count = get_count_for_id(
+        client=client, collection_name=collection_name, record_id=record_id
+    )
+    retry_count = 0
+    while current_count != expected_count and retry_count < retries:
+        time.sleep(interval)
+        current_count = get_count_for_id(
+            client=client, collection_name=collection_name, record_id=record_id
+        )
+        retry_count += 1
+    assert current_count == expected_count, (
+        f"Expected count for record_id '{record_id}' ({expected_count}) doesn't match "
+        f"what came back from collection: {current_count}"
     )
 
 
@@ -252,7 +289,12 @@ async def test_milvus_destination(
     expected_count = len(staged_elements)
     with uploader.get_client() as client:
         logger.debug(f"Validating count, expecting: {expected_count}")
-        validate_count(client=client, expected_count=expected_count)
+        validate_count_for_id(
+            client=client,
+            expected_count=expected_count,
+            collection_name=collection,
+            record_id=file_data.identifier,
+        )
         logger.debug("Count validation successful.")
 
     # Rerun and make sure the same documents get updated
@@ -261,7 +303,12 @@ async def test_milvus_destination(
     logger.debug("Second uploader run finished.")
     with uploader.get_client() as client:
         logger.debug(f"Validating count on rerun, expecting: {expected_count}")
-        validate_count(client=client, expected_count=expected_count)
+        validate_count_for_id(
+            client=client,
+            expected_count=expected_count,
+            collection_name=collection,
+            record_id=file_data.identifier,
+        )
         logger.debug("Count validation on rerun successful.")
 
 
@@ -328,6 +375,12 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
 
     # Query the uploaded data to verify metadata was stored
     with uploader.get_client() as client:
+        validate_count_for_id(
+            client=client,
+            expected_count=len(staged_elements),
+            collection_name=collection,
+            record_id=file_data.identifier,
+        )
         # Query with specific record ID
         logger.debug(f"Querying collection '{collection}' for record_id '{file_data.identifier}'")
         results = client.query(
@@ -414,6 +467,12 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
 
     # Verify data was uploaded successfully
     with uploader.get_client() as client:
+        validate_count_for_id(
+            client=client,
+            expected_count=len(staged_elements),
+            collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS,
+            record_id=file_data.identifier,
+        )
         logger.debug(
             f"Querying collection '{COLLECTION_WITHOUT_DYNAMIC_FIELDS}' "
             f"for record_id '{file_data.identifier}'"
