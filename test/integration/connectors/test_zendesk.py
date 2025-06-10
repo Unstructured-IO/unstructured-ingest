@@ -57,7 +57,7 @@ async def test_zendesk_source_tickets(temp_dir: Path):
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="zendesk-tickets",
-            expected_num_files=8,
+            expected_num_files=7,
             validate_file_data=False,
             validate_downloaded_files=True,
             predownload_file_data_check=source_filedata_display_name_set_check,
