@@ -29,7 +29,6 @@ from test.integration.connectors.utils.validation.destination import (
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.processes.connectors.milvus import (
-    ALLOWED_METADATA_FIELDS,
     CONNECTOR_TYPE,
     MilvusConnectionConfig,
     MilvusUploader,
@@ -358,15 +357,13 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
 
     # Verify that metadata fields are present in staged data
     sample_element = staged_elements[0]
-    metadata_found = []
-    for field in ALLOWED_METADATA_FIELDS:
-        if field in sample_element:
-            metadata_found.append(field)
+    expected_fields = ["filename", "filetype", "languages"]
+    metadata_found = [field for field in expected_fields if field in sample_element]
 
-    assert (
-        len(metadata_found) > 0
-    ), f"Expected to find metadata fields in staged data.\
-   Available keys: {list(sample_element.keys())}"
+    assert len(metadata_found) == len(
+        expected_fields
+    ), f"Expected to find metadata fields in staged data. \
+   Found: {metadata_found}, Available keys: {list(sample_element.keys())}"
     logger.debug(f"Found metadata fields: {metadata_found}")
 
     logger.debug("Running uploader...")
@@ -522,23 +519,6 @@ def test_dynamic_fields_detection(collection: str):
     assert (
         not uploader_without_dynamic.has_dynamic_fields_enabled()
     ), "Should detect dynamic fields are disabled"
-
-
-@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
-def test_metadata_fields_configuration():
-    """Test that metadata fields can be configured in the stager."""
-    # Test default metadata fields
-    stager_default = MilvusUploadStager()
-    assert stager_default.upload_stager_config.metadata_fields == list(
-        ALLOWED_METADATA_FIELDS
-    )
-
-    # Test custom metadata fields
-    custom_fields = ["filename", "page_number"]
-    stager_custom = MilvusUploadStager(
-        upload_stager_config=MilvusUploadStagerConfig(metadata_fields=custom_fields)
-    )
-    assert stager_custom.upload_stager_config.metadata_fields == custom_fields
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)

@@ -29,25 +29,6 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "milvus"
 
-# Fields allowed to be extracted as metadata (similar to Pinecone)
-ALLOWED_METADATA_FIELDS = (
-    "element_id",
-    "text",
-    "parent_id",
-    "category_depth",
-    "emphasized_text_tags",
-    "emphasized_text_contents",
-    "coordinates",
-    "last_modified",
-    "page_number",
-    "filename",
-    "is_continuation",
-    "link_urls",
-    "link_texts",
-    "text_as_html",
-    "entities",
-)
-
 
 class MilvusAccessConfig(AccessConfig):
     password: Optional[str] = Field(default=None, description="Milvus password")
@@ -100,14 +81,6 @@ class MilvusUploadStagerConfig(UploadStagerConfig):
     flatten_metadata: bool = True
     """If set - flatten "metadata" key and put contents directly into data"""
 
-    metadata_fields: list[str] = Field(
-        default=list(ALLOWED_METADATA_FIELDS),
-        description=(
-            "which metadata from the source element to map to the dynamic fields being sent to "
-            "Milvus. Only used when the collection has dynamic fields enabled."
-        ),
-    )
-
 
 @dataclass
 class MilvusUploadStager(UploadStager):
@@ -129,29 +102,13 @@ class MilvusUploadStager(UploadStager):
 
         if self.upload_stager_config.flatten_metadata:
             metadata: dict[str, Any] = working_data.pop("metadata", {})
-            data_source = metadata.pop("data_source", {})
-            coordinates = metadata.pop("coordinates", {})
-
-            # Extract metadata from multiple sources
-            extracted_metadata = {}
-            for possible_meta in [working_data, metadata, data_source, coordinates]:
-                extracted_metadata.update(
-                    {
-                        k: v
-                        for k, v in possible_meta.items()
-                        if k in self.upload_stager_config.metadata_fields
-                    }
-                )
-
-            # Flatten the extracted metadata and add to the top-level
-            if extracted_metadata:
-                flattened_metadata = flatten_dict(
-                    extracted_metadata,
-                    separator="_",
-                    flatten_lists=True,
-                    remove_none=True,
-                )
-                working_data.update(flattened_metadata)
+            flattened_metadata = flatten_dict(
+                metadata,
+                separator="_",
+                flatten_lists=True,
+                remove_none=True,
+            )
+            working_data.update(flattened_metadata)
 
         # TODO: milvus sdk doesn't seem to support defaults via the schema yet,
         #  remove once that gets updated
