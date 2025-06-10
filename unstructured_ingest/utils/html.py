@@ -12,6 +12,7 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
+    from bs4 import BeautifulSoup
     from bs4.element import Tag
     from requests import Session
 
@@ -96,7 +97,7 @@ class HtmlMixin(BaseModel):
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html, "html.parser")
-        tags = soup.find_all("a", href=True)
+        tags = self._find_hyperlink_tags(soup)
         hrefs = [
             tag["href"]
             for tag in tags
@@ -157,4 +158,16 @@ class HtmlMixin(BaseModel):
                 session=session,
             )
             for url_to_download in urls_to_download
+        ]
+
+    @requires_dependencies(["bs4"])
+    def _find_hyperlink_tags(self, html_soup: "BeautifulSoup") -> list["Tag"]:
+        """Find hyperlink tags in the HTML.
+
+        Overwrite this method to customize the tag search.
+        """
+        from bs4.element import Tag
+
+        return [
+            element for element in html_soup.find_all("a", href=True) if isinstance(element, Tag)
         ]
