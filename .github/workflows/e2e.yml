@@ -261,20 +261,9 @@ jobs:
         JIRA_INGEST_USER_EMAIL: ${{ secrets.JIRA_INGEST_USER_EMAIL }}
         # Zendesk 
         ZENDESK_TOKEN: ${{ secrets.ZENDESK_TOKEN }}
-        OVERWRITE_FIXTURES: "true"
       run : |
         make integration-test-connectors-uncategorized
         make parse-skipped-tests
-
-    - name: Temp upload test fixtures
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-          name: test_e2e-expected-structured-output-uncategorized
-          path: |
-            test/integration/connectors/expected_results/zendesk-tickets
-          retention-days: 1
-          overwrite: true
 
   src_e2e_test:
     runs-on: ubuntu-latest-m
