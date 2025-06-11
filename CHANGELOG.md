@@ -1,6 +1,10 @@
-## 1.0.39
+## 1.0.40
 
 * **Fix extracting embedded files from Confluence pages**
+
+## 1.0.39
+
+* **Added metadata export to milvus destination connector**
 
 ## 1.0.38
 
