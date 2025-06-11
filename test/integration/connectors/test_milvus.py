@@ -359,10 +359,10 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     expected_fields = ["filename", "filetype", "languages"]
     metadata_found = [field for field in expected_fields if field in sample_element]
 
-    assert len(metadata_found) == len(
-        expected_fields
-    ), f"Expected to find metadata fields in staged data. \
-   Found: {metadata_found}, Available keys: {list(sample_element.keys())}"
+    assert len(metadata_found) == len(expected_fields), (
+        "Expected to find metadata fields in staged data. "
+        f"Found: {metadata_found}, Available keys: {list(sample_element.keys())}"
+    )
     logger.debug(f"Found metadata fields: {metadata_found}")
 
     logger.debug("Running uploader...")
@@ -398,10 +398,10 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
             if field in sample_result:
                 stored_metadata.append(field)
 
-        assert (
-            len(stored_metadata) > 0
-        ), f"Expected metadata fields to be stored in Milvus. \
-        Available fields: {list(sample_result.keys())}"
+        assert len(stored_metadata) > 0, (
+            "Expected metadata fields to be stored in Milvus. "
+            f"Available fields: {list(sample_result.keys())}"
+        )
         logger.debug(f"Successfully stored metadata fields: {stored_metadata}")
 
         # Verify filename is specifically stored if present
