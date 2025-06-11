@@ -168,7 +168,6 @@ class MilvusUploader(Uploader):
         """Check if the target collection has dynamic fields enabled."""
         try:
             with self.get_client() as client:
-                # Get collection schema information
                 collection_info = client.describe_collection(
                     self.upload_config.collection_name
                 )
@@ -184,7 +183,6 @@ class MilvusUploader(Uploader):
             logger.warning(
                 f"Could not determine if collection has dynamic fields enabled: {e}"
             )
-            # Default to False if we can't determine the schema
             return False
 
     @DestinationConnectionError.wrap
@@ -196,19 +194,6 @@ class MilvusUploader(Uploader):
                 if not client.has_collection(self.upload_config.collection_name):
                     raise DestinationConnectionError(
                         f"Collection '{self.upload_config.collection_name}' does not exist"
-                    )
-
-                # Log whether dynamic fields are enabled for this collection
-                dynamic_fields_enabled = self.has_dynamic_fields_enabled()
-                if dynamic_fields_enabled:
-                    logger.info(
-                        f"Collection '{self.upload_config.collection_name}' "
-                        "has dynamic fields enabled - metadata will be stored"
-                    )
-                else:
-                    logger.info(
-                        f"Collection '{self.upload_config.collection_name}' "
-                        "does not have dynamic fields enabled - metadata will not be stored"
                     )
 
         except MilvusException as milvus_exception:
@@ -253,7 +238,7 @@ class MilvusUploader(Uploader):
 
         # If dynamic fields are enabled, 'languages' field needs to be a list
         if dynamic_fields_enabled:
-            logger.info("Dynamic fields enabled, ensuring 'languages' field is a list.")
+            logger.debug("Dynamic fields enabled, ensuring 'languages' field is a list.")
             prepared_data = []
             for item in data:
                 new_item = item.copy()
@@ -270,9 +255,6 @@ class MilvusUploader(Uploader):
 
         # If dynamic fields are not enabled, we need to filter out the metadata fields
         # to avoid insertion errors for fields not defined in the schema
-        logger.info(
-            "Filtering out metadata fields as collection does not support dynamic fields"
-        )
         with self.get_client() as client:
             collection_info = client.describe_collection(
                 self.upload_config.collection_name,
