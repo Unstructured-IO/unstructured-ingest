@@ -105,7 +105,7 @@ class MilvusUploadStager(UploadStager):
             flattened_metadata = flatten_dict(
                 metadata,
                 separator="_",
-                flatten_lists=True,
+                flatten_lists=False,
                 remove_none=True,
             )
             working_data.update(flattened_metadata)
