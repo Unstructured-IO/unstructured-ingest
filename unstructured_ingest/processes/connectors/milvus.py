@@ -1,7 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator, Optional, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret

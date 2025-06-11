@@ -34,7 +34,6 @@ from unstructured_ingest.processes.connectors.milvus import (
     MilvusUploader,
     MilvusUploaderConfig,
     MilvusUploadStager,
-    MilvusUploadStagerConfig,
 )
 
 logger = logging.getLogger(__name__)
