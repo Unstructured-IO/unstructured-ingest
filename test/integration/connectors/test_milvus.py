@@ -90,12 +90,8 @@ def get_schema(enable_dynamic_field: bool = True) -> CollectionSchema:
         is_primary=True,
         auto_id=True,
     )
-    embeddings_field = FieldSchema(
-        name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=384
-    )
-    record_id_field = FieldSchema(
-        name="record_id", dtype=DataType.VARCHAR, max_length=64
-    )
+    embeddings_field = FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=384)
+    record_id_field = FieldSchema(name="record_id", dtype=DataType.VARCHAR, max_length=64)
 
     schema = CollectionSchema(
         enable_dynamic_field=enable_dynamic_field,
@@ -111,9 +107,7 @@ def get_schema(enable_dynamic_field: bool = True) -> CollectionSchema:
 
 def get_index_params() -> IndexParams:
     index_params = IndexParams()
-    index_params.add_index(
-        field_name="embeddings", index_type="AUTOINDEX", metric_type="COSINE"
-    )
+    index_params.add_index(field_name="embeddings", index_type="AUTOINDEX", metric_type="COSINE")
     index_params.add_index(field_name="record_id", index_type="Trie")
     return index_params
 
@@ -253,9 +247,7 @@ async def test_milvus_destination(
     logger.debug("\n--- Running test_milvus_destination ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
-        source_identifiers=SourceIdentifiers(
-            fullpath=str(upload_file), filename=upload_file.stem
-        ),
+        source_identifiers=SourceIdentifiers(fullpath=str(upload_file), filename=upload_file.stem),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
@@ -321,9 +313,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     logger.debug("\n--- Running test_milvus_metadata_storage_with_dynamic_fields ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
-        source_identifiers=SourceIdentifiers(
-            fullpath=str(upload_file), filename=upload_file.stem
-        ),
+        source_identifiers=SourceIdentifiers(fullpath=str(upload_file), filename=upload_file.stem),
         connector_type=CONNECTOR_TYPE,
         identifier="metadata_test_file",
     )
@@ -335,9 +325,7 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
     )
 
     # Verify dynamic fields are enabled
-    assert (
-        uploader.has_dynamic_fields_enabled()
-    ), "Collection should have dynamic fields enabled"
+    assert uploader.has_dynamic_fields_enabled(), "Collection should have dynamic fields enabled"
 
     staged_filepath = stager.run(
         elements_filepath=upload_file_with_embeddings,
@@ -406,9 +394,9 @@ async def test_milvus_metadata_storage_with_dynamic_fields(
 
         # Verify filename is specifically stored if present
         if "filename" in stored_metadata:
-            assert (
-                sample_result["filename"] == upload_file.name
-            ), "Filename should be correctly stored"
+            assert sample_result["filename"] == upload_file.name, (
+                "Filename should be correctly stored"
+            )
 
 
 @pytest.mark.asyncio
@@ -422,9 +410,7 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     logger.debug("\n--- Running test_milvus_metadata_filtering_without_dynamic_fields ---")
     upload_file_with_embeddings = add_fake_embeddings(upload_file, tmp_path)
     file_data = FileData(
-        source_identifiers=SourceIdentifiers(
-            fullpath=str(upload_file), filename=upload_file.stem
-        ),
+        source_identifiers=SourceIdentifiers(fullpath=str(upload_file), filename=upload_file.stem),
         connector_type=CONNECTOR_TYPE,
         identifier="no_dynamic_test_file",
     )
@@ -438,9 +424,9 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
     )
 
     # Verify dynamic fields are NOT enabled
-    assert (
-        not uploader.has_dynamic_fields_enabled()
-    ), "Collection should NOT have dynamic fields enabled"
+    assert not uploader.has_dynamic_fields_enabled(), (
+        "Collection should NOT have dynamic fields enabled"
+    )
 
     staged_filepath = stager.run(
         elements_filepath=upload_file_with_embeddings,
@@ -487,8 +473,8 @@ async def test_milvus_metadata_filtering_without_dynamic_fields(
 
         # Verify that only core fields are present (no metadata fields)
         sample_result = results[0]
-        core_fields = {'id', 'record_id', 'embeddings'}
-        
+        core_fields = {"id", "record_id", "embeddings"}
+
         # The result should only contain the fields defined in the schema
         assert set(sample_result.keys()) == core_fields, (
             "Unexpected fields found in collection with dynamic fields disabled. "
@@ -504,9 +490,9 @@ def test_dynamic_fields_detection(collection: str):
         connection_config=MilvusConnectionConfig(uri=DB_URI),
         upload_config=MilvusUploaderConfig(db_name=DB_NAME, collection_name=collection),
     )
-    assert (
-        uploader_with_dynamic.has_dynamic_fields_enabled()
-    ), "Should detect dynamic fields are enabled"
+    assert uploader_with_dynamic.has_dynamic_fields_enabled(), (
+        "Should detect dynamic fields are enabled"
+    )
 
     # Test with dynamic fields disabled
     uploader_without_dynamic = MilvusUploader(
@@ -515,9 +501,9 @@ def test_dynamic_fields_detection(collection: str):
             db_name=DB_NAME, collection_name=COLLECTION_WITHOUT_DYNAMIC_FIELDS
         ),
     )
-    assert (
-        not uploader_without_dynamic.has_dynamic_fields_enabled()
-    ), "Should detect dynamic fields are disabled"
+    assert not uploader_without_dynamic.has_dynamic_fields_enabled(), (
+        "Should detect dynamic fields are disabled"
+    )
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
@@ -548,9 +534,7 @@ def test_precheck_fails_on_nonexistent_collection(collection: str):
 def test_precheck_fails_on_nonexisting_db(collection: str):
     uploader = MilvusUploader(
         connection_config=MilvusConnectionConfig(uri=DB_URI),
-        upload_config=MilvusUploaderConfig(
-            db_name="nonexisting_db", collection_name=collection
-        ),
+        upload_config=MilvusUploaderConfig(db_name="nonexisting_db", collection_name=collection),
     )
     with pytest.raises(
         DestinationConnectionError,
