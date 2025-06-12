@@ -6,6 +6,7 @@ from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZE
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.processes.connectors.confluence import (
@@ -62,6 +63,8 @@ async def test_confluence_source(temp_dir):
             test_id="confluence",
             expected_num_files=11,
             validate_downloaded_files=True,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -106,6 +109,10 @@ async def test_confluence_source_large(temp_dir):
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="confluence_large", expected_num_files=301, validate_file_data=False
+            test_id="confluence_large",
+            expected_num_files=301,
+            validate_file_data=False,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )

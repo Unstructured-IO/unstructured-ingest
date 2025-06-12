@@ -199,17 +199,24 @@ class ElasticsearchIndexer(Indexer):
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         for batch in batch_generator(ids, self.index_config.batch_size):
+            batch_items = [BatchItem(identifier=b) for b in batch]
+            url = f"{self.connection_config.hosts[0]}/{self.index_config.index_name}"
+            display_name = (
+                f"url={url}, batch_size={len(batch_items)} "
+                f"ids={batch_items[0].identifier}..{batch_items[-1].identifier}"
+            )  # noqa: E501
             # Make sure the hash is always a positive number to create identified
             yield ElasticsearchBatchFileData(
                 connector_type=CONNECTOR_TYPE,
                 metadata=FileDataSourceMetadata(
-                    url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
+                    url=url,
                     date_processed=str(time()),
                 ),
                 additional_metadata=ElastisearchAdditionalMetadata(
                     index_name=self.index_config.index_name,
                 ),
-                batch_items=[BatchItem(identifier=b) for b in batch],
+                batch_items=batch_items,
+                display_name=display_name,
             )
 
 

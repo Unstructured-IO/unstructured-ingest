@@ -182,14 +182,15 @@ class SalesforceIndexer(Indexer):
                     record_with_extension = record["Id"] + self.get_file_extension(
                         record["attributes"]["type"]
                     )
+                    source_identifiers = SourceIdentifiers(
+                        filename=record_with_extension,
+                        fullpath=f"{record['attributes']['type']}/{record_with_extension}",
+                    )
                     files_list.append(
                         FileData(
                             connector_type=CONNECTOR_TYPE,
                             identifier=record["Id"],
-                            source_identifiers=SourceIdentifiers(
-                                filename=record_with_extension,
-                                fullpath=f"{record['attributes']['type']}/{record_with_extension}",
-                            ),
+                            source_identifiers=source_identifiers,
                             metadata=FileDataSourceMetadata(
                                 url=record["attributes"]["url"],
                                 version=str(parser.parse(record["SystemModstamp"]).timestamp()),
@@ -200,6 +201,7 @@ class SalesforceIndexer(Indexer):
                                 record_locator={"id": record["Id"]},
                             ),
                             additional_metadata={"record_type": record["attributes"]["type"]},
+                            display_name=source_identifiers.fullpath,
                         )
                     )
             except SalesforceMalformedRequest as e:

@@ -86,12 +86,13 @@ class ZendeskIndexer(Indexer):
     async def get_tickets(self) -> AsyncGenerator[ZendeskFileData, None]:
         async with self.connection_config.get_client() as client:
             async for ticket in client.get_tickets():
+                source_identifiers = SourceIdentifiers(
+                    filename=f"{ticket.id}.txt", fullpath=f"tickets/{ticket.id}.txt"
+                )
                 yield ZendeskFileData(
                     identifier=str(ticket.id),
                     connector_type=self.connector_type,
-                    source_identifiers=SourceIdentifiers(
-                        filename=f"{ticket.id}.txt", fullpath=f"tickets/{ticket.id}.txt"
-                    ),
+                    source_identifiers=source_identifiers,
                     additional_metadata=ZendeskAdditionalMetadata(
                         item_type="ticket", content=ticket
                     ),
@@ -101,17 +102,19 @@ class ZendeskIndexer(Indexer):
                         date_modified=ticket.updated_at.isoformat() if ticket.updated_at else None,
                         date_processed=str(time()),
                     ),
+                    display_name=source_identifiers.fullpath,
                 )
 
     async def get_articles(self) -> AsyncGenerator[ZendeskFileData, None]:
         async with self.connection_config.get_client() as client:
             async for article in client.get_articles():
+                source_identifiers = SourceIdentifiers(
+                    filename=f"{article.id}.html", fullpath=f"articles/{article.id}.html"
+                )
                 yield ZendeskFileData(
                     identifier=str(article.id),
                     connector_type=self.connector_type,
-                    source_identifiers=SourceIdentifiers(
-                        filename=f"{article.id}.html", fullpath=f"articles/{article.id}.html"
-                    ),
+                    source_identifiers=source_identifiers,
                     additional_metadata=ZendeskAdditionalMetadata(
                         item_type="article", content=article
                     ),
@@ -123,6 +126,7 @@ class ZendeskIndexer(Indexer):
                         ),
                         date_processed=str(time()),
                     ),
+                    display_name=source_identifiers.fullpath,
                 )
 
     async def run_async(self, **kwargs: Any) -> AsyncGenerator[ZendeskFileData, None]:

@@ -149,6 +149,10 @@ class MongoDBIndexer(Indexer):
 
         for id_batch in batch_generator(ids, batch_size=batch_size):
             # Make sure the hash is always a positive number to create identifier
+            display_name = (
+                f"{self.index_config.database}.{self.index_config.collection}, "
+                f"batch {id_batch[0]}-{id_batch[-1]}"
+            )
             metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
@@ -164,6 +168,7 @@ class MongoDBIndexer(Indexer):
                 additional_metadata=MongoDBAdditionalMetadata(
                     collection=self.index_config.collection, database=self.index_config.database
                 ),
+                display_name=display_name,
             )
             yield file_data
 

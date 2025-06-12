@@ -133,14 +133,15 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                 if rel_path.startswith("/"):
                     rel_path = rel_path[1:]
                 filename = Path(file_info.path).name
+                source_identifiers = SourceIdentifiers(
+                    filename=filename,
+                    rel_path=rel_path,
+                    fullpath=file_info.path,
+                )
                 yield FileData(
                     identifier=str(uuid5(NAMESPACE_DNS, file_info.path)),
                     connector_type=self.connector_type,
-                    source_identifiers=SourceIdentifiers(
-                        filename=filename,
-                        rel_path=rel_path,
-                        fullpath=file_info.path,
-                    ),
+                    source_identifiers=source_identifiers,
                     additional_metadata={
                         "catalog": self.index_config.catalog,
                         "path": file_info.path,
@@ -148,6 +149,7 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                     metadata=FileDataSourceMetadata(
                         url=file_info.path, date_modified=str(file_info.modification_time)
                     ),
+                    display_name=source_identifiers.fullpath,
                 )
         except Exception as e:
             raise self.connection_config.wrap_error(e=e)

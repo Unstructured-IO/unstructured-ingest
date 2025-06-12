@@ -190,21 +190,22 @@ class GitLabIndexer(Indexer):
                     "file_path": file["path"],
                     "ref": ref,
                 }
-
+                source_identifiers = SourceIdentifiers(
+                    fullpath=file["path"],
+                    filename=Path(file["path"]).name,
+                    rel_path=relative_path,
+                )
                 yield FileData(
                     identifier=file["id"],
                     connector_type=CONNECTOR_TYPE,
-                    source_identifiers=SourceIdentifiers(
-                        fullpath=file["path"],
-                        filename=Path(file["path"]).name,
-                        rel_path=relative_path,
-                    ),
+                    source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
                         url=file["id"],
                         record_locator=record_locator,
                         permissions_data=[{"mode": file["mode"]}],
                     ),
                     additional_metadata={},
+                    display_name=source_identifiers.fullpath,
                 )
 
 

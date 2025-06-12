@@ -7,6 +7,7 @@ from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZE
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.errors_v2 import UserAuthError
@@ -56,9 +57,11 @@ async def test_zendesk_source_tickets(temp_dir: Path):
         downloader=downloader,
         configs=SourceValidationConfigs(
             test_id="zendesk-tickets",
-            expected_num_files=8,
+            expected_num_files=7,
             validate_file_data=False,
             validate_downloaded_files=True,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 
@@ -98,6 +101,8 @@ async def test_zendesk_source_articles(temp_dir):
             expected_num_files=8,
             validate_file_data=True,
             validate_downloaded_files=True,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )
 

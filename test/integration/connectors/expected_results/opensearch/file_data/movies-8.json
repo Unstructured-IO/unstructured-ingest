@@ -18,7 +18,7 @@
     },
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734441717.4266481",
+    "date_processed": "1749474698.783613",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -26,6 +26,6 @@
     "index_name": "movies"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpz9m4m2ia/movies-8.txt",
-  "display_name": null
+  "local_download_path": "/tmp/tmp0zu4hj7w/movies-8.txt",
+  "display_name": "url=http://localhost:9200/movies, batch_size=10 ids=7..4"
 }

@@ -8,7 +8,7 @@
     "record_locator": null,
     "date_created": null,
     "date_modified": null,
-    "date_processed": "1734614838.793458",
+    "date_processed": "1749467370.4465034",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -18,7 +18,7 @@
   },
   "reprocess": false,
   "local_download_path": null,
-  "display_name": null,
+  "display_name": "cars-car_id-[8..7]",
   "batch_items": [
     {
       "identifier": "10",

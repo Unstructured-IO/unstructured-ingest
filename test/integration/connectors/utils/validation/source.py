@@ -18,12 +18,14 @@ NONSTANDARD_METADATA_FIELDS = {
     ]
 }
 
+FILEDATA_CHECKS_TYPE = Callable[[FileData], None] | tuple[Callable[[FileData], None], ...]
+
 
 class SourceValidationConfigs(ValidationConfig):
     expected_number_indexed_file_data: Optional[int] = None
     expected_num_files: Optional[int] = None
-    predownload_file_data_check: Optional[Callable[[FileData], None]] = None
-    postdownload_file_data_check: Optional[Callable[[FileData], None]] = None
+    predownload_file_data_check: Optional[FILEDATA_CHECKS_TYPE] = None
+    postdownload_file_data_check: Optional[FILEDATA_CHECKS_TYPE] = None
     exclude_fields: list[str] = Field(
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
@@ -40,9 +42,17 @@ class SourceValidationConfigs(ValidationConfig):
         self, predownload_file_data: FileData, postdownload_file_data: FileData
     ):
         if predownload_file_data_check := self.predownload_file_data_check:
-            predownload_file_data_check(predownload_file_data)
+            if isinstance(predownload_file_data_check, tuple):
+                for check in predownload_file_data_check:
+                    check(predownload_file_data)
+            else:
+                predownload_file_data_check(predownload_file_data)
         if postdownload_file_data_check := self.postdownload_file_data_check:
-            postdownload_file_data_check(postdownload_file_data)
+            if isinstance(postdownload_file_data_check, tuple):
+                for check in postdownload_file_data_check:
+                    check(postdownload_file_data)
+            else:
+                postdownload_file_data_check(postdownload_file_data)
 
     def run_download_dir_validation(self, download_dir: Path):
         if expected_num_files := self.expected_num_files:
@@ -329,3 +339,13 @@ async def source_connector_validation(
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
         )
+
+
+def source_filedata_display_name_set_check(file_data: FileData) -> None:
+    """
+    Check if the display_name of the file_data is set.
+    If not, raise an AssertionError.
+    """
+    assert file_data.display_name, (
+        "FileData display_name is not set. This is required for a given connector."
+    )

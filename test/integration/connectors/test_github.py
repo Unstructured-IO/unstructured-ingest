@@ -6,6 +6,7 @@ from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZE
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.processes.connectors.github import (
@@ -44,6 +45,10 @@ async def test_github_source(temp_dir):
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="github", expected_num_files=2, validate_downloaded_files=True
+            test_id="github",
+            expected_num_files=2,
+            validate_downloaded_files=True,
+            predownload_file_data_check=source_filedata_display_name_set_check,
+            postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
     )

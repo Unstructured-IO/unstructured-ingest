@@ -12,7 +12,7 @@
     "record_locator": null,
     "date_created": "2025-02-21T16:20:22+00:00",
     "date_modified": "2025-02-21T16:20:22+00:00",
-    "date_processed": "1742490385.866842",
+    "date_processed": "1749468799.788721",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -47,6 +47,6 @@
     }
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmpzy2_b98i/articles/34257323948187.html",
-  "display_name": null
+  "local_download_path": "/tmp/tmp90hy0glh/articles/34257323948187.html",
+  "display_name": "articles/34257323948187.html"
 }

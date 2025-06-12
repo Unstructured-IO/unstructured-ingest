@@ -184,6 +184,7 @@ class AirtableIndexer(Indexer):
                     filename=str(Path(fullpath).name),
                     fullpath=fullpath,
                 ),
+                display_name=fullpath,
             )
 
 
