@@ -33,6 +33,8 @@ from unstructured_ingest.utils.string_and_date_utils import fix_unescaped_unicod
 
 if TYPE_CHECKING:
     from atlassian import Confluence
+    from bs4 import BeautifulSoup
+    from bs4.element import Tag
 
 CONNECTOR_TYPE = "confluence"
 
@@ -236,10 +238,27 @@ class ConfluenceIndexer(Indexer):
                 yield file_data
 
 
-class ConfluenceDownloaderConfig(DownloaderConfig, HtmlMixin):
+class ConfluenceDownloaderConfig(HtmlMixin, DownloaderConfig):
     max_num_metadata_permissions: int = Field(
         250, description="Approximate maximum number of permissions included in metadata"
     )
+
+    @requires_dependencies(["bs4"])
+    def _find_hyperlink_tags(self, html_soup: "BeautifulSoup") -> list["Tag"]:
+        from bs4.element import Tag
+
+        return [
+            element
+            for element in html_soup.find_all(
+                "a",
+                attrs={
+                    "class": "confluence-embedded-file",
+                    "data-linked-resource-type": "attachment",
+                    "href": True,
+                },
+            )
+            if isinstance(element, Tag)
+        ]
 
 
 @dataclass
