@@ -8,7 +8,7 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.errors_v2 import UserError
+from unstructured_ingest.errors_v2 import UserError, UserAuthError, RateLimitError, ProviderError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -53,6 +53,50 @@ class PineconeConnectionConfig(ConnectionConfig):
     access_config: Secret[PineconeAccessConfig] = Field(
         default=PineconeAccessConfig(), validate_default=True
     )
+
+    def wrap_error(self, e: Exception) -> Exception:
+        from pinecone.exceptions import (
+            AuthenticationException,
+            NotFoundException,
+            PineconeApiException,
+            PineconeException,
+        )
+
+        # Handle authentication errors
+        if isinstance(e, AuthenticationException):
+            return UserAuthError(str(e))
+
+        # Handle not found errors (index, vector, etc.)
+        if isinstance(e, NotFoundException):
+            return UserError(f"Resource not found: {e}")
+
+        # Handle API exceptions with status codes
+        if isinstance(e, PineconeApiException):
+            status_code = getattr(e, 'status_code', None)
+            if status_code:
+                if status_code in [401, 403]:
+                    return UserAuthError(str(e))
+                if status_code == 429:
+                    return RateLimitError(str(e))
+                if 400 <= status_code < 500:
+                    return UserError(str(e))
+                if status_code >= 500:
+                    return ProviderError(str(e))
+
+        # Handle other Pinecone-specific exceptions
+        if isinstance(e, PineconeException):
+            # Check if it's a rate limit error by examining the message
+            error_message = str(e).lower()
+            if any(keyword in error_message for keyword in ['rate limit', 'quota', 'throttle']):
+                return RateLimitError(str(e))
+            if any(keyword in error_message for keyword in ['auth', 'unauthorized', 'forbidden']):
+                return UserAuthError(str(e))
+            # Default to user error for other Pinecone exceptions
+            return UserError(str(e))
+
+        # Log and return unhandled exceptions
+        logger.error(f"unhandled exception from pinecone ({type(e)}): {e}", exc_info=True)
+        return e
 
     @requires_dependencies(["pinecone"], extras="pinecone")
     def get_client(self, **index_kwargs) -> "Pinecone":
@@ -199,18 +243,17 @@ class PineconeUploader(VectorDBUploader):
         self.create_destination(**kwargs)
 
     def index_exists(self, index_name: Optional[str]) -> bool:
-        from pinecone.exceptions import NotFoundException
-
         index_name = index_name or self.connection_config.index_name
         pc = self.connection_config.get_client()
         try:
             pc.describe_index(index_name)
             return True
-        except NotFoundException:
-            return False
         except Exception as e:
-            logger.error(f"failed to check if pinecone index exists : {e}")
-            raise DestinationConnectionError(f"failed to check if pinecone index exists : {e}")
+            wrapped_error = self.connection_config.wrap_error(e)
+            if isinstance(wrapped_error, UserError):
+                # NotFoundException should return False, not raise
+                return False
+            raise wrapped_error
 
     def precheck(self):
         try:
@@ -224,8 +267,7 @@ class PineconeUploader(VectorDBUploader):
                     f"index {self.connection_config.index_name} does not exist"
                 )
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            raise self.connection_config.wrap_error(e)
 
     def format_destination_name(self, destination_name: str) -> str:
         # Pinecone naming requirements:
@@ -296,8 +338,9 @@ class PineconeUploader(VectorDBUploader):
             delete_kwargs["namespace"] = namespace
             try:
                 index.delete(**delete_kwargs)
-            except UserError as e:
-                logger.error(f"failed to delete batch of ids: {delete_kwargs} {e}")
+            except Exception as e:
+                wrapped_error = self.connection_config.wrap_error(e)
+                logger.error(f"failed to delete batch of ids: {delete_kwargs} {wrapped_error}")
 
         logger.debug(
             f"deleted any content with metadata "
@@ -326,8 +369,9 @@ class PineconeUploader(VectorDBUploader):
 
             try:
                 index.delete(**delete_kwargs)
-            except UserError as e:
-                logger.error(f"failed to delete batch of ids: {delete_kwargs} {e}")
+            except Exception as e:
+                wrapped_error = self.connection_config.wrap_error(e)
+                logger.error(f"failed to delete batch of ids: {delete_kwargs} {wrapped_error}")
 
         logger.info(
             f"deleted {deleted_ids} records with metadata "
@@ -363,8 +407,8 @@ class PineconeUploader(VectorDBUploader):
             # Wait for and retrieve responses (this raises in case of error)
             try:
                 results = [async_result.get() for async_result in async_results]
-            except PineconeApiException as api_error:
-                raise DestinationConnectionError(f"http error: {api_error}") from api_error
+            except Exception as e:
+                raise self.connection_config.wrap_error(e)
             logger.debug(f"results: {results}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
