@@ -162,7 +162,7 @@ class SurrealDBUploader(Uploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def upload_dataframe(self, df: "DataFrame") -> None:
-        logger.debug(f"uploading {len(df)} entries to {self.connection_config.table} ")
+        logger.info(f"uploading {len(df)} entries to {self.connection_config.table} ")
 
         with self.connection_config.get_client() as conn:
             columns = df.columns.tolist()
