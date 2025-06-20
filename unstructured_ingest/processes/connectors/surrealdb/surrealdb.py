@@ -156,7 +156,7 @@ class SurrealDBUploader(Uploader):
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as conn:
-                conn.query("SELECT 1;")
+                conn.query("SELECT * FROM 1;")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
