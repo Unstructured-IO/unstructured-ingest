@@ -1,3 +1,7 @@
+## 1.0.42
+
+* **Fix document limits in Confluence connectr**
+
 ## 1.0.41
 
 * **Add `display_name` to FileData in 14 connectors**
