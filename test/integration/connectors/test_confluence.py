@@ -27,7 +27,7 @@ from unstructured_ingest.processes.connectors.confluence import (
     [
         (["testteamsp", "MFS"], 500, 100, 11, True, "confluence"),
         (["testteamsp"], 500, 1, 1, True, "confluence_limit"),
-        (["testteamsp1"], 10, 250, 301, False, "confluence_large"),
+        (["testteamsp1"], 10, 301, 301, False, "confluence_large"),
     ],
 )
 async def test_confluence_source_param(
