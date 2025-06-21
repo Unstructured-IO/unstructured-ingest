@@ -1,3 +1,7 @@
+## 1.0.42
+
+* **Disable broken tests**
+
 ## 1.0.41
 
 * **Add `display_name` to FileData in 14 connectors**
