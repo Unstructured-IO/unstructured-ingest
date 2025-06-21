@@ -1,3 +1,7 @@
+## 1.0.42
+
+* **Replace no longer supported TogetherAI test model**
+
 ## 1.0.41
 
 * **Add `display_name` to FileData in 14 connectors**
