@@ -56,19 +56,32 @@ class PineconeConnectionConfig(ConnectionConfig):
 
     def wrap_error(self, e: Exception) -> Exception:
         from pinecone.exceptions import (
-            AuthenticationException,
+            UnauthorizedException,
+            ForbiddenException,
             NotFoundException,
+            ServiceException,
             PineconeApiException,
             PineconeException,
+            PineconeApiValueError,
+            PineconeApiTypeError,
+            PineconeConfigurationError,
         )
 
         # Handle authentication errors
-        if isinstance(e, AuthenticationException):
+        if isinstance(e, (UnauthorizedException, ForbiddenException)):
             return UserAuthError(str(e))
 
         # Handle not found errors (index, vector, etc.)
         if isinstance(e, NotFoundException):
             return UserError(f"Resource not found: {e}")
+
+        # Handle service errors (server-side issues)
+        if isinstance(e, ServiceException):
+            return ProviderError(str(e))
+
+        # Handle API value/type/configuration errors
+        if isinstance(e, (PineconeApiValueError, PineconeApiTypeError, PineconeConfigurationError)):
+            return UserError(str(e))
 
         # Handle API exceptions with status codes
         if isinstance(e, PineconeApiException):

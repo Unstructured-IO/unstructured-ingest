@@ -129,6 +129,33 @@ class CloudWeaviateConnectionConfig(WeaviateConnectionConfig):
         ) as weaviate_client:
             yield weaviate_client
 
+    def wrap_error(self, e: Exception) -> Exception:
+        from weaviate.exceptions import (
+            AuthenticationFailedException,
+            UnexpectedStatusCodeException,
+            WeaviateStartUpError,
+        )
+
+        # Handle authentication errors
+        if isinstance(e, AuthenticationFailedException):
+            return UserAuthError(str(e))
+
+        # Handle unexpected status codes
+        if isinstance(e, UnexpectedStatusCodeException):
+            status_code = e.status_code
+            if 400 <= status_code < 500:
+                return UserError(str(e))
+            if status_code >= 500:
+                return ProviderError(str(e))
+
+        # Handle startup/connection errors
+        if isinstance(e, WeaviateStartUpError):
+            return ProviderError(str(e))
+
+        # Log and return unhandled exceptions
+        logger.error(f"unhandled exception from weaviate cloud ({type(e)}): {e}", exc_info=True)
+        return e
+
 
 class CloudWeaviateUploadStagerConfig(WeaviateUploadStagerConfig):
     pass
