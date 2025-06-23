@@ -186,12 +186,15 @@ class ConfluenceIndexer(Indexer):
             pages = client.get_all_pages_from_space(
                 space=space_key,
                 start=0,
-                limit=self.index_config.max_num_of_docs_from_each_space,
                 expand=None,
                 content_type="page",  # blogpost and comment types not currently supported
                 status=None,
             )
-        doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in pages]
+        # Limit the number of documents to max_num_of_docs_from_each_space
+        # Note: this is needed because the limit field in client.get_all_pages_from_space does 
+        # not seem to work as expected
+        limited_pages = pages[: self.index_config.max_num_of_docs_from_each_space]
+        doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in limited_pages]
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:

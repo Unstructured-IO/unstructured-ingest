@@ -1,3 +1,7 @@
+## 1.0.43
+
+* **Fix document limits in Confluence connectr**
+
 ## 1.0.42
 
 * **Replace no longer supported TogetherAI test model**
