@@ -23,11 +23,11 @@ from unstructured_ingest.processes.connectors.confluence import (
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
 @pytest.mark.parametrize(
-    "spaces,max_num_of_spaces,max_num_of_docs_from_each_space,expected_num_files,validate_downloaded_files,test_id",
+    "spaces,max_num_of_spaces,max_num_of_docs_from_each_space,expected_num_files,validate_downloaded_files,validate_file_data,test_id",
     [
-        (["testteamsp", "MFS"], 500, 100, 11, True, "confluence"),
-        (["testteamsp"], 500, 1, 1, True, "confluence_limit"),
-        (["testteamsp1"], 10, 301, 301, False, "confluence_large"),
+        (["testteamsp", "MFS"], 500, 100, 11, True, True, "confluence"),
+        (["testteamsp"], 500, 1, 1, True, True, "confluence_limit"),
+        (["testteamsp1"], 10, 301, 301, False, False, "confluence_large"),
     ],
 )
 async def test_confluence_source_param(
@@ -37,6 +37,7 @@ async def test_confluence_source_param(
     max_num_of_docs_from_each_space,
     expected_num_files,
     validate_downloaded_files,
+    validate_file_data,
     test_id,
 ):
     """
@@ -75,5 +76,6 @@ async def test_confluence_source_param(
             test_id=test_id,
             expected_num_files=expected_num_files,
             validate_downloaded_files=validate_downloaded_files,
+            validate_file_data=validate_file_data
         ),
     )
