@@ -76,6 +76,8 @@ class MongoDBConnectionConfig(ConnectionConfig):
         from pymongo.driver_info import DriverInfo
         from pymongo.server_api import ServerApi
 
+
+        logger.info(f"foobar mongo changes")
         access_config = self.access_config.get_secret_value()
         if uri := access_config.uri:
             client_kwargs = {
@@ -114,8 +116,11 @@ class MongoDBIndexer(Indexer):
     def precheck(self) -> None:
         """Validates the connection to the MongoDB server."""
         try:
+            logger.info(f"Prechecking in nicks mongo changes")
             with self.connection_config.get_client() as client:
+                logger.info(f"Pinging in nicks mongo changes")
                 client.admin.command("ping")
+                logger.info(f"Pinged in nicks mongo changes")
                 database_names = client.list_database_names()
                 database_name = self.index_config.database
                 if database_name not in database_names:
