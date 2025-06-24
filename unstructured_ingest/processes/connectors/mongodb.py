@@ -82,12 +82,14 @@ class MongoDBConnectionConfig(ConnectionConfig):
                 "host": uri,
                 "server_api": ServerApi(version=SERVER_API_VERSION),
                 "driver": DriverInfo(name="unstructured", version=unstructured_version),
+                "authMechanism": "SCRAM-SHA-256",
             }
         else:
             client_kwargs = {
                 "host": self.host,
                 "port": self.port,
                 "server_api": ServerApi(version=SERVER_API_VERSION),
+                "authMechanism": "SCRAM-SHA-256",
             }
         with MongoClient(**client_kwargs) as client:
             yield client
