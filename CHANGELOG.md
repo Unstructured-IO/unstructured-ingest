@@ -1,3 +1,7 @@
+## 1.1.0
+
+* **Allow skipping .json extension for fsspec uploads**
+
 ## 1.0.43
 
 * **Fix document limits in Confluence connectr**
