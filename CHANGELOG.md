@@ -1,3 +1,9 @@
+## 1.0.44
+
+### Fixes
+
+* **Fix downloading files that have special characters (like `[` or `]`) inside their names, when using `fsspec` based connectors**
+
 ## 1.0.43
 
 * **Fix document limits in Confluence connectr**
