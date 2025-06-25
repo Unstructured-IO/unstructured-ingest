@@ -1,5 +1,6 @@
 {
   "directory_structure": [
-    "Why_is_the_sky_blue?.txt"
+    "Why_is_the_sky_blue?.txt",
+    "[test]?*.txt"
   ]
 }
