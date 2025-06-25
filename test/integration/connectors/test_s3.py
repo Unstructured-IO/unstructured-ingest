@@ -104,7 +104,7 @@ async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig
                     validate_postdownload_file_data,
                     source_filedata_display_name_set_check,
                 ),
-                expected_num_files=1,
+                expected_num_files=2,
             ),
         )
 
