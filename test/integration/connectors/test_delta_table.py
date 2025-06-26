@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from deltalake import DeltaTable
 from fsspec import get_filesystem_class
+from pydantic import Secret
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.utils import requires_env
@@ -27,13 +28,24 @@ multiprocessing.set_start_method("spawn")
 async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
     destination_path = str(temp_dir)
     connection_config = DeltaTableConnectionConfig(
-        access_config=DeltaTableAccessConfig(),
+        access_config=Secret(DeltaTableAccessConfig()),
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(
+            filename=upload_file.name,
+            fullpath=upload_file.name,
+        ),
+    )
+
     new_upload_file = stager.run(
         elements_filepath=upload_file,
+        file_data=mock_file_data,
         output_dir=temp_dir,
         output_filename=upload_file.name,
     )
@@ -86,17 +98,30 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     s3_bucket = "s3://utic-platform-test-destination"
     destination_path = f"{s3_bucket}/destination/test"
     connection_config = DeltaTableConnectionConfig(
-        access_config=DeltaTableAccessConfig(
-            aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+        access_config=Secret(
+            DeltaTableAccessConfig(
+                aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+            )
         ),
         aws_region=aws_credentials["AWS_REGION"],
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(
+            filename=upload_file.name,
+            fullpath=upload_file.name,
+        ),
+    )
+
     new_upload_file = stager.run(
         elements_filepath=upload_file,
+        file_data=mock_file_data,
         output_dir=temp_dir,
         output_filename=upload_file.name,
     )
@@ -149,17 +174,30 @@ async def test_delta_table_destination_s3_bad_creds(upload_file: Path, temp_dir:
     s3_bucket = "s3://utic-platform-test-destination"
     destination_path = f"{s3_bucket}/destination/test"
     connection_config = DeltaTableConnectionConfig(
-        access_config=DeltaTableAccessConfig(
-            aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+        access_config=Secret(
+            DeltaTableAccessConfig(
+                aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+            )
         ),
         aws_region=aws_credentials["AWS_REGION"],
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(
+            filename=upload_file.name,
+            fullpath=upload_file.name,
+        ),
+    )
+
     new_upload_file = stager.run(
         elements_filepath=upload_file,
+        file_data=mock_file_data,
         output_dir=temp_dir,
         output_filename=upload_file.name,
     )
