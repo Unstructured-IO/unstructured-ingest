@@ -208,7 +208,7 @@ class DeltaTableUploader(Uploader):
             queue: Queue[str] = Queue()
 
             if current_process().daemon:
-                # Run inline; write_deltalake_with_error_handling will push any traceback to our queue
+                # write_deltalake_with_error_handling will push any traceback to our queue
                 write_deltalake_with_error_handling(queue=queue, **writer_kwargs)
             else:
                 # On non-daemon processes we still guard against SIGABRT by running in a subprocess.
