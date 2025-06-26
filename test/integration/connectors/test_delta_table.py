@@ -64,8 +64,7 @@ async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
         await uploader.run_async(path=new_upload_file, file_data=file_data)
     else:
         uploader.run(path=new_upload_file, file_data=file_data)
-    delta_table_path = os.path.join(destination_path, upload_file.name)
-    delta_table = DeltaTable(table_uri=delta_table_path)
+    delta_table = DeltaTable(table_uri=destination_path)
     df = delta_table.to_pandas()
 
     EXPECTED_COLUMNS = 10
@@ -142,8 +141,7 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
             await uploader.run_async(path=new_upload_file, file_data=file_data)
         else:
             uploader.run(path=new_upload_file, file_data=file_data)
-        delta_table_path = os.path.join(destination_path, upload_file.name)
-        delta_table = DeltaTable(table_uri=delta_table_path, storage_options=aws_credentials)
+        delta_table = DeltaTable(table_uri=destination_path, storage_options=aws_credentials)
         df = delta_table.to_pandas()
 
         EXPECTED_COLUMNS = 10

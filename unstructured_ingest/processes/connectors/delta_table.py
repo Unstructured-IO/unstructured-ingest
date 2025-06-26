@@ -159,6 +159,7 @@ class DeltaTableUploader(Uploader):
             from deltalake import DeltaTable  # pylint: disable=import-error
 
             dt = DeltaTable(upload_path, storage_options=storage_options)
+            logger.debug(f"Table exists: deleting rows for {file_data.identifier}")
             # Table exists – remove any previous rows for this record_id so that appending is
             # effectively an idempotent overwrite for the record.
             dt.delete(predicate=f"{RECORD_ID_LABEL} = '{file_data.identifier}'")
@@ -166,7 +167,7 @@ class DeltaTableUploader(Uploader):
         except Exception:
             # Table does not exist yet (or cannot be opened) – we will create it below with
             # mode="overwrite". All other failures will be captured later by the writer.
-            pass
+            logger.debug("Table does not exist: creating new table")
 
         writer_kwargs = {
             "table_or_uri": upload_path,
