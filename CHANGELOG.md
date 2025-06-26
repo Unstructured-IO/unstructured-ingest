@@ -1,3 +1,7 @@
+## 1.0.45
+
+* **Improve Jira attachment path results**
+
 ## 1.0.44
 
 * **Improve DeltaTable ingestion process and reliability**
