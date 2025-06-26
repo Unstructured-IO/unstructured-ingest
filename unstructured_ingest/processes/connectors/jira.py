@@ -402,7 +402,7 @@ class JiraDownloader(Downloader):
         new_filedata = parent_filedata.model_copy(deep=True)
         if new_filedata.metadata.record_locator is None:
             new_filedata.metadata.record_locator = {}
-        # Not sure why this line is here. Gets stripped out in 416
+        # Not sure why this line is here. Gets stripped out in later
         new_filedata.metadata.record_locator["parent_issue"] = (
             parent_filedata.metadata.record_locator["id"]
         )
