@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from deltalake import DeltaTable
 from fsspec import get_filesystem_class
+from pydantic import Secret
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, SQL_TAG
 from test.integration.utils import requires_env
@@ -27,13 +28,24 @@ multiprocessing.set_start_method("spawn")
 async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
     destination_path = str(temp_dir)
     connection_config = DeltaTableConnectionConfig(
-        access_config=DeltaTableAccessConfig(),
+        access_config=Secret(DeltaTableAccessConfig()),
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(
+            filename=upload_file.name,
+            fullpath=upload_file.name,
+        ),
+    )
+
     new_upload_file = stager.run(
         elements_filepath=upload_file,
+        file_data=mock_file_data,
         output_dir=temp_dir,
         output_filename=upload_file.name,
     )
@@ -52,11 +64,10 @@ async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
         await uploader.run_async(path=new_upload_file, file_data=file_data)
     else:
         uploader.run(path=new_upload_file, file_data=file_data)
-    delta_table_path = os.path.join(destination_path, upload_file.name)
-    delta_table = DeltaTable(table_uri=delta_table_path)
+    delta_table = DeltaTable(table_uri=destination_path)
     df = delta_table.to_pandas()
 
-    EXPECTED_COLUMNS = 10
+    EXPECTED_COLUMNS = 11
     EXPECTED_ROWS = 22
     assert len(df) == EXPECTED_ROWS, (
         f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
@@ -86,17 +97,30 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
     s3_bucket = "s3://utic-platform-test-destination"
     destination_path = f"{s3_bucket}/destination/test"
     connection_config = DeltaTableConnectionConfig(
-        access_config=DeltaTableAccessConfig(
-            aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+        access_config=Secret(
+            DeltaTableAccessConfig(
+                aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+            )
         ),
         aws_region=aws_credentials["AWS_REGION"],
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(
+            filename=upload_file.name,
+            fullpath=upload_file.name,
+        ),
+    )
+
     new_upload_file = stager.run(
         elements_filepath=upload_file,
+        file_data=mock_file_data,
         output_dir=temp_dir,
         output_filename=upload_file.name,
     )
@@ -117,11 +141,10 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
             await uploader.run_async(path=new_upload_file, file_data=file_data)
         else:
             uploader.run(path=new_upload_file, file_data=file_data)
-        delta_table_path = os.path.join(destination_path, upload_file.name)
-        delta_table = DeltaTable(table_uri=delta_table_path, storage_options=aws_credentials)
+        delta_table = DeltaTable(table_uri=destination_path, storage_options=aws_credentials)
         df = delta_table.to_pandas()
 
-        EXPECTED_COLUMNS = 10
+        EXPECTED_COLUMNS = 11
         EXPECTED_ROWS = 22
         assert len(df) == EXPECTED_ROWS, (
             f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
@@ -149,17 +172,30 @@ async def test_delta_table_destination_s3_bad_creds(upload_file: Path, temp_dir:
     s3_bucket = "s3://utic-platform-test-destination"
     destination_path = f"{s3_bucket}/destination/test"
     connection_config = DeltaTableConnectionConfig(
-        access_config=DeltaTableAccessConfig(
-            aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+        access_config=Secret(
+            DeltaTableAccessConfig(
+                aws_access_key_id=aws_credentials["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=aws_credentials["AWS_SECRET_ACCESS_KEY"],
+            )
         ),
         aws_region=aws_credentials["AWS_REGION"],
         table_uri=destination_path,
     )
     stager_config = DeltaTableUploadStagerConfig()
     stager = DeltaTableUploadStager(upload_stager_config=stager_config)
+
+    mock_file_data = FileData(
+        identifier="mock file data",
+        connector_type=CONNECTOR_TYPE,
+        source_identifiers=SourceIdentifiers(
+            filename=upload_file.name,
+            fullpath=upload_file.name,
+        ),
+    )
+
     new_upload_file = stager.run(
         elements_filepath=upload_file,
+        file_data=mock_file_data,
         output_dir=temp_dir,
         output_filename=upload_file.name,
     )
