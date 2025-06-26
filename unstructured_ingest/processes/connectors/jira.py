@@ -419,7 +419,7 @@ class JiraDownloader(Downloader):
             # add issue_parent to the fullpath and rel_path
             # to ensure that the attachment is saved in the same folder as the parent issue
             fullpath=(issue_parent / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
-            rel_path=fullpath,
+            rel_path=(issue_parent / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
         )
         return new_filedata
 
