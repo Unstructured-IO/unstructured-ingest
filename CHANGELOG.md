@@ -1,3 +1,7 @@
+## 1.0.44
+
+* **Improve DeltaTable ingestion process and reliability**
+
 ## 1.0.43
 
 * **Fix document limits in Confluence connectr**
