@@ -67,7 +67,7 @@ async def test_delta_table_destination_local(upload_file: Path, temp_dir: Path):
     delta_table = DeltaTable(table_uri=destination_path)
     df = delta_table.to_pandas()
 
-    EXPECTED_COLUMNS = 10
+    EXPECTED_COLUMNS = 11
     EXPECTED_ROWS = 22
     assert len(df) == EXPECTED_ROWS, (
         f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
@@ -144,7 +144,7 @@ async def test_delta_table_destination_s3(upload_file: Path, temp_dir: Path):
         delta_table = DeltaTable(table_uri=destination_path, storage_options=aws_credentials)
         df = delta_table.to_pandas()
 
-        EXPECTED_COLUMNS = 10
+        EXPECTED_COLUMNS = 11
         EXPECTED_ROWS = 22
         assert len(df) == EXPECTED_ROWS, (
             f"Number of rows in table vs expected: {len(df)}/{EXPECTED_ROWS}"
