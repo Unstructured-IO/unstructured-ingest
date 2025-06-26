@@ -76,6 +76,6 @@ async def test_confluence_source_param(
             test_id=test_id,
             expected_num_files=expected_num_files,
             validate_downloaded_files=validate_downloaded_files,
-            validate_file_data=validate_file_data
+            validate_file_data=validate_file_data,
         ),
     )

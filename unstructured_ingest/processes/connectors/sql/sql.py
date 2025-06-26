@@ -133,8 +133,10 @@ class SQLIndexer(Indexer, ABC):
 
         for batch in id_batches:
             batch_items = [BatchItem(identifier=str(b)) for b in batch]
-            display_name = (f"{self.index_config.table_name}-{self.index_config.id_column}"
-                            f"-[{batch_items[0].identifier}..{batch_items[-1].identifier}]")
+            display_name = (
+                f"{self.index_config.table_name}-{self.index_config.id_column}"
+                f"-[{batch_items[0].identifier}..{batch_items[-1].identifier}]"
+            )
             # Make sure the hash is always a positive number to create identified
             yield SqlBatchFileData(
                 connector_type=self.connector_type,
@@ -145,7 +147,7 @@ class SQLIndexer(Indexer, ABC):
                     table_name=self.index_config.table_name, id_column=self.index_config.id_column
                 ),
                 batch_items=batch_items,
-                display_name=display_name
+                display_name=display_name,
             )
 
 
