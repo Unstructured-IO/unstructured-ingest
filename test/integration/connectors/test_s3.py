@@ -76,18 +76,15 @@ async def test_s3_source(anon_connection_config: S3ConnectionConfig):
             ),
         )
 
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig):
-    indexer_config = S3IndexerConfig(
-        remote_url="s3://utic-dev-tech-fixtures/special-characters/"
-    )
+    indexer_config = S3IndexerConfig(remote_url="s3://utic-dev-tech-fixtures/special-characters/")
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
         download_config = S3DownloaderConfig(download_dir=tempdir_path)
-        indexer = S3Indexer(
-            connection_config=anon_connection_config, index_config=indexer_config
-        )
+        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
         downloader = S3Downloader(
             connection_config=anon_connection_config, download_config=download_config
         )
@@ -108,25 +105,22 @@ async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig
             ),
         )
 
+
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 def test_s3_source_no_access(anon_connection_config: S3ConnectionConfig):
-    indexer_config = S3IndexerConfig(
-        remote_url="s3://utic-ingest-test-fixtures/destination/"
-    )
-    indexer = S3Indexer(
-        connection_config=anon_connection_config, index_config=indexer_config
-    )
+    indexer_config = S3IndexerConfig(remote_url="s3://utic-ingest-test-fixtures/destination/")
+    indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
     with pytest.raises(UserAuthError):
         indexer.precheck()
+
 
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 def test_s3_source_no_bucket(anon_connection_config: S3ConnectionConfig):
     indexer_config = S3IndexerConfig(remote_url="s3://fake-bucket")
-    indexer = S3Indexer(
-        connection_config=anon_connection_config, index_config=indexer_config
-    )
+    indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
     with pytest.raises(UserError):
         indexer.precheck()
+
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, "minio", BLOB_STORAGE_TAG)
@@ -139,9 +133,7 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
     ):
         tempdir_path = Path(tempdir)
         download_config = S3DownloaderConfig(download_dir=tempdir_path)
-        indexer = S3Indexer(
-            connection_config=anon_connection_config, index_config=indexer_config
-        )
+        indexer = S3Indexer(connection_config=anon_connection_config, index_config=indexer_config)
         downloader = S3Downloader(
             connection_config=anon_connection_config, download_config=download_config
         )
@@ -167,12 +159,14 @@ async def test_s3_minio_source(anon_connection_config: S3ConnectionConfig):
             ),
         )
 
+
 def get_aws_credentials() -> dict:
     access_key = os.getenv("S3_INGEST_TEST_ACCESS_KEY", None)
     assert access_key
     secret_key = os.getenv("S3_INGEST_TEST_SECRET_KEY", None)
     assert secret_key
     return {"aws_access_key_id": access_key, "aws_secret_access_key": secret_key}
+
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
@@ -191,9 +185,7 @@ async def test_s3_destination(upload_file: Path):
     uploader = S3Uploader(connection_config=connection_config, upload_config=upload_config)
     s3fs = uploader.fs
     file_data = FileData(
-        source_identifiers=SourceIdentifiers(
-            fullpath=upload_file.name, filename=upload_file.name
-        ),
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
         connector_type=CONNECTOR_TYPE,
         identifier="mock file data",
     )
@@ -204,13 +196,12 @@ async def test_s3_destination(upload_file: Path):
         else:
             uploader.run(path=upload_file, file_data=file_data)
         uploaded_files = [
-            Path(file)
-            for file in s3fs.ls(path=destination_path)
-            if Path(file).name != "_empty"
+            Path(file) for file in s3fs.ls(path=destination_path) if Path(file).name != "_empty"
         ]
         assert len(uploaded_files) == 1
     finally:
         s3fs.rm(path=destination_path, recursive=True)
+
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
@@ -252,13 +243,12 @@ async def test_s3_destination_same_filename_different_folders(upload_file: Path)
             uploader.run(path=upload_file, file_data=file_data_1)
             uploader.run(path=upload_file, file_data=file_data_2)
         uploaded_files = [
-            Path(file)
-            for file in s3fs.ls(path=destination_path)
-            if Path(file).name != "_empty"
+            Path(file) for file in s3fs.ls(path=destination_path) if Path(file).name != "_empty"
         ]
         assert len(uploaded_files) == 2
     finally:
         s3fs.rm(path=destination_path, recursive=True)
+
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
@@ -292,9 +282,7 @@ async def test_s3_destination_different_relative_path_and_full_path(upload_file:
         else:
             uploader.run(path=upload_file, file_data=file_data)
         uploaded_files = [
-            Path(file)
-            for file in s3fs.ls(path=destination_path)
-            if Path(file).name != "_empty"
+            Path(file) for file in s3fs.ls(path=destination_path) if Path(file).name != "_empty"
         ]
         assert len(uploaded_files) == 1
         assert uploaded_files[0].as_posix() == f"{destination_path.lstrip('s3://')}/folder1"
