@@ -247,7 +247,8 @@ class JiraIndexer(Indexer):
         )
 
         # Construct relative path and filename
-        filename = f"{issue.id}.txt"
+        # filename = f"{issue.id}.txt"
+        filename = f"{issue.key}.txt"
         relative_path = str(Path(issue.get_project_id()) / filename)
 
         source_identifiers = SourceIdentifiers(
@@ -402,6 +403,7 @@ class JiraDownloader(Downloader):
         new_filedata = parent_filedata.model_copy(deep=True)
         if new_filedata.metadata.record_locator is None:
             new_filedata.metadata.record_locator = {}
+        # TODO: This line seems to be stripped out later. Look into original purpose.
         new_filedata.metadata.record_locator["parent_issue"] = (
             parent_filedata.metadata.record_locator["id"]
         )
@@ -412,9 +414,14 @@ class JiraDownloader(Downloader):
         new_filedata.metadata.date_created = attachment_dict.pop("created", None)
         new_filedata.metadata.url = attachment_dict.pop("self", None)
         new_filedata.metadata.record_locator = attachment_dict
+        issue_parent = Path(parent_filedata.source_identifiers.fullpath).parent
+        issue_without_extension = Path(parent_filedata.source_identifiers.fullpath).with_suffix('')
         new_filedata.source_identifiers = SourceIdentifiers(
             filename=filename,
-            fullpath=(Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
+            # add issue_parent to the fullpath and rel_path
+            # to ensure that the attachment is saved in the same folder as the parent issue
+            fullpath=(issue_without_extension / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
+            rel_path=(issue_without_extension / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
         )
         return new_filedata
 
