@@ -409,7 +409,7 @@ class JiraDownloader(Downloader):
         )
         # Append an identifier for attachment to not conflict with issue ids
         new_filedata.identifier = "{}a".format(attachment_dict["id"])
-        filename = attachment_dict["filename"]
+        filename = attachment_dict["filename"] + "." + str(attachment_dict["id"])
         new_filedata.metadata.filesize_bytes = attachment_dict.pop("size", None)
         new_filedata.metadata.date_created = attachment_dict.pop("created", None)
         new_filedata.metadata.url = attachment_dict.pop("self", None)
@@ -420,8 +420,9 @@ class JiraDownloader(Downloader):
             filename=filename,
             # add issue_parent to the fullpath and rel_path
             # to ensure that the attachment is saved in the same folder as the parent issue
-            fullpath=(issue_without_extension / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
-            rel_path=(issue_without_extension / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
+            fullpath=str((issue_without_extension / Path(filename)).as_posix()),
+            rel_path=str((issue_without_extension / Path(filename)).as_posix()),
+            # rel_path=(issue_without_extension / Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
         )
         return new_filedata
 
