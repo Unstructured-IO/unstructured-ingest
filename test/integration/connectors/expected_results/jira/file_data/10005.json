@@ -2,9 +2,9 @@
   "identifier": "10005",
   "connector_type": "jira",
   "source_identifiers": {
-    "filename": "10005.txt",
-    "fullpath": "JCTP2/10005.txt",
-    "rel_path": "JCTP2/10005.txt"
+    "filename": "JCTP2-3.txt",
+    "fullpath": "JCTP2/JCTP2-3.txt",
+    "rel_path": "JCTP2/JCTP2-3.txt"
   },
   "metadata": {
     "url": null,
@@ -15,7 +15,7 @@
     },
     "date_created": "2023-08-22T11:32:18.249+0000",
     "date_modified": "2023-08-22T11:32:21.717+0000",
-    "date_processed": "1750969893.933564",
+    "date_processed": "1751000891.62863",
     "permissions_data": null,
     "filesize_bytes": null
   },
@@ -24,6 +24,6 @@
     "key": "JCTP2-3"
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpf64p5t9w/JCTP2/10005.txt",
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpx_kxo1sj/JCTP2/JCTP2-3.txt",
   "display_name": "Jira Connector Test Project 2"
 }
