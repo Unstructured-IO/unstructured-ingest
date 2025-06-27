@@ -197,8 +197,10 @@ class AstraDBIndexer(Indexer):
         id_batches = batch_generator(ids, self.index_config.batch_size)
         for batch in id_batches:
             batch_items = [BatchItem(identifier=b) for b in batch]
-            display_name = (f"{self.index_config.collection_name}-{self.index_config.keyspace}"
-                            f"-[{batch_items[0].identifier}..{batch_items[-1].identifier}]")
+            display_name = (
+                f"{self.index_config.collection_name}-{self.index_config.keyspace}"
+                f"-[{batch_items[0].identifier}..{batch_items[-1].identifier}]"
+            )
             fd = AstraDBBatchFileData(
                 connector_type=CONNECTOR_TYPE,
                 metadata=FileDataSourceMetadata(

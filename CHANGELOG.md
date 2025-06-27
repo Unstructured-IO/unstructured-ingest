@@ -1,8 +1,12 @@
-## 1.0.44
+## 1.0.45
 
 ### Fixes
 
 * **Fix downloading files that have special characters (like `[` or `]`) inside their names, when using `fsspec` based connectors**
+
+## 1.0.44
+
+* **Improve DeltaTable ingestion process and reliability**
 
 ## 1.0.43
 
