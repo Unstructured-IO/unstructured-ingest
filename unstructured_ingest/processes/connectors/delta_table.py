@@ -252,7 +252,7 @@ class DeltaTableUploader(Uploader):
                 # still raise a helpful error for callers.
                 if not current_process().daemon and writer.exitcode != 0:
                     raise RuntimeError(
-                        f"write_deltalake subprocess exited with code {writer.exitcode} (no traceback)"
+                        f"write_deltalake subprocess exited with code {writer.exitcode}"
                     )
 
         _single_attempt()
