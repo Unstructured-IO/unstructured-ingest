@@ -1,4 +1,4 @@
-## 1.0.46-dev0
+## 1.0.46
 
 * **Fix delta-table `pyo3_runtime.PanicException: Forked process detected` on Linux**
 
