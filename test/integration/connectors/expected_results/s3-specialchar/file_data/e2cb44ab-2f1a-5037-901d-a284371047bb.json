@@ -1,0 +1,39 @@
+{
+  "identifier": "e2cb44ab-2f1a-5037-901d-a284371047bb",
+  "connector_type": "s3",
+  "source_identifiers": {
+    "filename": "[test]?*.txt",
+    "fullpath": "utic-dev-tech-fixtures/special-characters/[test]?*.txt",
+    "rel_path": "[test]?*.txt"
+  },
+  "metadata": {
+    "url": "s3://utic-dev-tech-fixtures/special-characters/[test]?*.txt",
+    "version": "aa50658109a5296b6b0fda35084b78be",
+    "record_locator": {
+      "protocol": "s3",
+      "remote_file_path": "s3://utic-dev-tech-fixtures/special-characters/"
+    },
+    "date_created": "1750861154.0",
+    "date_modified": "1750861154.0",
+    "date_processed": "1750862132.0641234",
+    "permissions_data": null,
+    "filesize_bytes": 47
+  },
+  "additional_metadata": {
+    "Key": "utic-dev-tech-fixtures/special-characters/[test]?*.txt",
+    "LastModified": "2025-06-25T14:19:14+00:00",
+    "ETag": "\"aa50658109a5296b6b0fda35084b78be\"",
+    "ChecksumAlgorithm": [
+      "CRC64NVME"
+    ],
+    "Size": 47,
+    "StorageClass": "STANDARD",
+    "type": "file",
+    "size": 47,
+    "name": "utic-dev-tech-fixtures/special-characters/[test]?*.txt",
+    "original_file_path": "utic-dev-tech-fixtures/special-characters/[test]?*.txt"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmpo4c0jypd/[test]?*.txt",
+  "display_name": "utic-dev-tech-fixtures/special-characters/[test]?*.txt"
+}
