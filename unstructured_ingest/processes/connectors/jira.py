@@ -424,19 +424,28 @@ class JiraDownloader(Downloader):
         self, attachment_dict: dict, parent_filedata: FileData
     ) -> FileData:
         new_filedata = parent_filedata.model_copy(deep=True)
-        if new_filedata.metadata.record_locator is None:
-            new_filedata.metadata.record_locator = {}
-        # TODO: This line seems to be stripped out later. Look into original purpose.
-        new_filedata.metadata.record_locator["parent_issue"] = (
-            parent_filedata.metadata.record_locator["id"]
-        )
+        
+        # Create attachment record_locator with parent context
+        attachment_record_locator = {
+            "id": attachment_dict["id"],
+            "filename": attachment_dict["filename"],
+            "size": attachment_dict.get("size"),
+            "created": attachment_dict.get("created"),
+            "mimeType": attachment_dict.get("mimeType"),
+            "self": attachment_dict.get("self"),
+            "parent_issue": {
+                "id": parent_filedata.metadata.record_locator["id"],
+                "key": parent_filedata.metadata.record_locator["key"]
+            }
+        }
+        
         # Append an identifier for attachment to not conflict with issue ids
         new_filedata.identifier = "{}a".format(attachment_dict["id"])
         filename = f'{attachment_dict["filename"]}.{attachment_dict["id"]}'
-        new_filedata.metadata.filesize_bytes = attachment_dict.pop("size", None)
-        new_filedata.metadata.date_created = attachment_dict.pop("created", None)
-        new_filedata.metadata.url = attachment_dict.pop("self", None)
-        new_filedata.metadata.record_locator = attachment_dict
+        new_filedata.metadata.filesize_bytes = attachment_dict.get("size", None)
+        new_filedata.metadata.date_created = attachment_dict.get("created", None)
+        new_filedata.metadata.url = attachment_dict.get("self", None)
+        new_filedata.metadata.record_locator = attachment_record_locator
         issue_without_extension = Path(parent_filedata.source_identifiers.fullpath).with_suffix('')
         new_filedata.source_identifiers = SourceIdentifiers(
             filename=filename,
