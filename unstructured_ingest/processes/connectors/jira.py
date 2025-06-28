@@ -41,9 +41,16 @@ DEFAULT_R_SEP = "\n"
 class JiraIssueMetadata(BaseModel):
     id: str
     key: str
+    fields: Optional[dict] = None  # Add fields to capture attachment data
 
     def get_project_id(self) -> str:
         return self.key.split("-")[0]
+    
+    def get_attachments(self) -> List[dict]:
+        """Extract attachment information from fields"""
+        if self.fields and "attachment" in self.fields:
+            return self.fields["attachment"]
+        return []
 
 
 class FieldGetter(dict):
@@ -196,15 +203,15 @@ class JiraIndexer(Indexer):
                     yield JiraIssueMetadata.model_validate(issue)
 
     def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id", "status"]
+        fields = ["key", "id", "status", "attachment"]  # Add attachment field
         jql = "project in ({})".format(", ".join(self.index_config.projects))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
         return self.run_jql(jql=jql, fields=fields)
 
-    def _get_issues_within_single_board(self, board_id: str) -> List[JiraIssueMetadata]:
+    def _get_issues_within_single_board(self, board_id: str) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
-            fields = ["key", "id"]
+            fields = ["key", "id", "attachment"]  # Add attachment field
             if self.index_config.status_filters:
                 jql = "status in ({}) ORDER BY id".format(
                     ", ".join([f'"{s}"' for s in self.index_config.status_filters])
@@ -233,17 +240,34 @@ class JiraIndexer(Indexer):
         return jql
 
     def _get_issues_by_keys(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id"]
+        fields = ["key", "id", "attachment"]  # Add attachment field
         jql = "key in ({})".format(", ".join(self.index_config.issues))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
         return self.run_jql(jql=jql, fields=fields)
 
     def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
-        # Build metadata
+        # Build metadata with attachments included in record_locator
+        record_locator = {"id": issue.id, "key": issue.key}
+        
+        # Add attachments to record_locator if they exist
+        attachments = issue.get_attachments()
+        if attachments:
+            record_locator["attachments"] = [
+                {
+                    "id": att["id"],
+                    "filename": att["filename"],
+                    "size": att.get("size"),
+                    "created": att.get("created"),
+                    "mimeType": att.get("mimeType"),
+                    "self": att.get("self")
+                }
+                for att in attachments
+            ]
+        
         metadata = FileDataSourceMetadata(
             date_processed=str(time()),
-            record_locator=issue.model_dump(),
+            record_locator=record_locator,
         )
 
         # Construct relative path and filename
