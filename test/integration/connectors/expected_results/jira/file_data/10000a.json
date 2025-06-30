@@ -12,36 +12,69 @@
     "record_locator": {
       "id": "10000",
       "filename": "image-20230823-143650.png",
-      "author": {
-        "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/user?accountId=712020%3A7bc7fdcb-67e7-435d-b4a2-128aee12820c",
-        "accountId": "712020:7bc7fdcb-67e7-435d-b4a2-128aee12820c",
-        "emailAddress": "devops+jira-connector@unstructured.io",
-        "avatarUrls": {
-          "48x48": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
-          "24x24": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
-          "16x16": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
-          "32x32": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png"
-        },
-        "displayName": "Unstructured Devops",
-        "active": true,
-        "timeZone": "Etc/GMT",
-        "accountType": "atlassian"
-      },
+      "created": "2023-08-23T14:37:07.577+0000",
       "mimeType": "image/png",
-      "content": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/content/10000",
-      "thumbnail": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/thumbnail/10000"
+      "parent": {
+        "id": "10000",
+        "key": "JCTP1-1",
+        "full_path": "JCTP1/JCTP1-1.txt"
+      },
+      "full_path": "JCTP1/JCTP1-1/image-20230823-143650.png.10000"
     },
     "date_created": "2023-08-23T14:37:07.577+0000",
     "date_modified": "2025-02-21T13:25:46.017+0000",
-    "date_processed": "1751049249.3349419",
+    "date_processed": "1751302527.99865",
     "permissions_data": null,
     "filesize_bytes": 516618
   },
   "additional_metadata": {
     "id": "10000",
-    "key": "JCTP1-1"
+    "key": "JCTP1-1",
+    "fields": {
+      "attachment": [
+        {
+          "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/10000",
+          "id": "10000",
+          "filename": "image-20230823-143650.png",
+          "author": {
+            "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/user?accountId=712020%3A7bc7fdcb-67e7-435d-b4a2-128aee12820c",
+            "accountId": "712020:7bc7fdcb-67e7-435d-b4a2-128aee12820c",
+            "emailAddress": "devops+jira-connector@unstructured.io",
+            "avatarUrls": {
+              "48x48": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
+              "24x24": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
+              "16x16": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png",
+              "32x32": "https://secure.gravatar.com/avatar/04abdb66f320c5c8cb47d9671ab8e20c?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FUD-1.png"
+            },
+            "displayName": "Unstructured Devops",
+            "active": true,
+            "timeZone": "Etc/GMT",
+            "accountType": "atlassian"
+          },
+          "created": "2023-08-23T14:37:07.577+0000",
+          "size": 516618,
+          "mimeType": "image/png",
+          "content": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/content/10000",
+          "thumbnail": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/attachment/thumbnail/10000"
+        }
+      ],
+      "status": {
+        "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/status/10000",
+        "description": "",
+        "iconUrl": "https://unstructured-jira-connector-test.atlassian.net/",
+        "name": "To Do",
+        "id": "10000",
+        "statusCategory": {
+          "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "To Do"
+        }
+      }
+    }
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmplj0vxjz9/JCTP1/attachments/10000.png",
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpnv0jd051/JCTP1/attachments/10000.png",
   "display_name": "Jira Connector Test Project 1"
 }
