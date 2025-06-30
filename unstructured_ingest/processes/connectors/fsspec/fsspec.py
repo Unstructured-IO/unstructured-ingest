@@ -346,7 +346,8 @@ class FsspecUploader(Uploader):
         upload_path = Path(
             self.upload_config.path_without_protocol
         ) / file_data.source_identifiers.relative_path.lstrip("/")
-        updated_upload_path = upload_path.parent / f"{upload_path.name}.json"
+        suffix = os.environ.get("UNSTRUCTURED_INGEST_UPLOAD_APPEND_SUFFIX", ".json")
+        updated_upload_path = upload_path.parent / f"{upload_path.name}{suffix}"
         return updated_upload_path
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
