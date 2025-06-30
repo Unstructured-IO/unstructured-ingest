@@ -134,8 +134,15 @@ class DeltaTableUploader(Uploader):
 
                 response = s3_client.get_bucket_location(Bucket=bucket_name)
 
-                if self.connection_config.aws_region != response.get("LocationConstraint"):
-                    raise ValueError("Wrong AWS Region was provided.")
+                bucket_region = _normalize_location_constraint(response.get("LocationConstraint"))
+
+                if self.connection_config.aws_region != bucket_region:
+                    raise ValueError(
+                        "Wrong AWS region provided: bucket "
+                        f"'{bucket_name}' resides in '{bucket_region}', "
+                        "but configuration specifies "
+                        f"'{self.connection_config.aws_region}'."
+                    )
 
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -268,6 +275,29 @@ class DeltaTableUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:  # type: ignore[override]
         df = get_data_df(path)
         self.upload_dataframe(df=df, file_data=file_data)
+
+
+def _normalize_location_constraint(location: Optional[str]) -> str:
+    """Return canonical AWS region name for a LocationConstraint value.
+
+    The S3 GetBucketLocation operation returns *null* (→ ``None``) for buckets in
+    the legacy **us-east-1** region and ``"EU"`` for very old buckets that were
+    created in the historical **EU** region (now **eu-west-1**).  For every other
+    region the API already returns the correct AWS region string.  This helper
+    normalises the legacy values so callers can reliably compare regions.
+
+    Args:
+        location: The LocationConstraint value returned by the S3 GetBucketLocation operation.
+
+    Returns:
+        The canonical AWS region name for the given location constraint.
+    """
+
+    if location is None:
+        return "us-east-1"
+    if location == "EU":
+        return "eu-west-1"
+    return location
 
 
 delta_table_destination_entry = DestinationRegistryEntry(
