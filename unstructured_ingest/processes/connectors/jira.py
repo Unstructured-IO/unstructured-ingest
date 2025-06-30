@@ -265,10 +265,8 @@ class JiraIndexer(Indexer):
                 {
                     "id": att["id"],
                     "filename": att["filename"],
-                    "size": att.get("size"),
                     "created": att.get("created"),
-                    "mimeType": att.get("mimeType"),
-                    "self": att.get("self")
+                    "mimeType": att.get("mimeType")
                 }
                 for att in attachments
             ]
@@ -433,11 +431,9 @@ class JiraDownloader(Downloader):
         attachment_record_locator = {
             "id": attachment_dict["id"],
             "filename": attachment_dict["filename"],
-            "size": attachment_dict.get("size"),
             "created": attachment_dict.get("created"),
             "mimeType": attachment_dict.get("mimeType"),
-            "self": attachment_dict.get("self"),
-            "parent_issue": {
+            "parent": {
                 "id": parent_filedata.metadata.record_locator["id"],
                 "key": parent_filedata.metadata.record_locator["key"],
                 "fullpath": parent_filedata.source_identifiers.fullpath
