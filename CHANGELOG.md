@@ -1,3 +1,17 @@
+## 1.0.47
+
+* **Fix delta-table: normalize S3 LocationConstraint values to handle us-east-1 and EU buckets**
+
+## 1.0.46
+
+* **Fix delta-table `pyo3_runtime.PanicException: Forked process detected` on Linux**
+
+## 1.0.45
+
+### Fixes
+
+* **Fix downloading files that have special characters (like `[` or `]`) inside their names, when using `fsspec` based connectors**
+
 ## 1.0.45
 
 * **Improve Jira attachment path results**

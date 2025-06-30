@@ -274,7 +274,7 @@ class FsspecDownloader(Downloader):
         try:
             rpath = file_data.additional_metadata["original_file_path"]
             with self.connection_config.get_client(protocol=self.protocol) as client:
-                client.get(rpath=rpath, lpath=download_path.as_posix())
+                client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
             raise self.wrap_error(e=e)
@@ -286,7 +286,7 @@ class FsspecDownloader(Downloader):
         try:
             rpath = file_data.additional_metadata["original_file_path"]
             with self.connection_config.get_client(protocol=self.protocol) as client:
-                await client.get(rpath=rpath, lpath=download_path.as_posix())
+                await client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
             raise self.wrap_error(e=e)

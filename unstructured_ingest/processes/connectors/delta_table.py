@@ -1,7 +1,7 @@
 import logging
 import traceback
 from dataclasses import dataclass, field
-from multiprocessing import Process, Queue, current_process
+from multiprocessing import Queue, current_process
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import urlparse
@@ -134,8 +134,15 @@ class DeltaTableUploader(Uploader):
 
                 response = s3_client.get_bucket_location(Bucket=bucket_name)
 
-                if self.connection_config.aws_region != response.get("LocationConstraint"):
-                    raise ValueError("Wrong AWS Region was provided.")
+                bucket_region = _normalize_location_constraint(response.get("LocationConstraint"))
+
+                if self.connection_config.aws_region != bucket_region:
+                    raise ValueError(
+                        "Wrong AWS region provided: bucket "
+                        f"'{bucket_name}' resides in '{bucket_region}', "
+                        "but configuration specifies "
+                        f"'{self.connection_config.aws_region}'."
+                    )
 
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
@@ -186,10 +193,25 @@ class DeltaTableUploader(Uploader):
         )
 
         def _is_commit_conflict(exc: BaseException) -> bool:  # noqa: ANN401
-            """Return True if exception looks like a Delta Lake commit conflict."""
+            """Return True if exception looks like a Delta Lake commit conflict.
 
-            return isinstance(exc, RuntimeError) and (
-                "CommitFailed" in str(exc) or "Metadata changed" in str(exc)
+            Besides the canonical *CommitFailed* / *Metadata changed* errors that
+            deltalake surfaces when two writers clash, we occasionally hit
+            messages such as *Delta transaction failed, version 0 already
+            exists* while multiple processes race to create the very first log
+            entry. These situations are equally safe to retry, so detect them
+            too.
+            """
+
+            return isinstance(exc, RuntimeError) and any(
+                marker in str(exc)
+                for marker in (
+                    "CommitFailed",
+                    "Metadata changed",
+                    "version 0 already exists",
+                    "version already exists",
+                    "Delta transaction failed",
+                )
             )
 
         @retry(
@@ -206,25 +228,39 @@ class DeltaTableUploader(Uploader):
             # cause ingest to fail, even though all tasks are completed normally. Putting the writer
             # into a process mitigates this issue by ensuring python interpreter waits properly for
             # deltalake's rust backend to finish
-            queue: Queue[str] = Queue()
+            # Use a multiprocessing context that relies on 'spawn' to avoid inheriting the
+            # parent process' Tokio runtime, which leads to `pyo3_runtime.PanicException`.
+            from multiprocessing import get_context
+
+            ctx = get_context("spawn")
+            queue: "Queue[str]" = ctx.Queue()
 
             if current_process().daemon:
                 # write_deltalake_with_error_handling will push any traceback to our queue
                 write_deltalake_with_error_handling(queue=queue, **writer_kwargs)
             else:
-                # On non-daemon processes we still guard against SIGABRT by running in a subprocess.
-                writer = Process(
+                # On non-daemon processes we still guard against SIGABRT by running in a
+                # dedicated subprocess created via the 'spawn' method.
+                writer = ctx.Process(
                     target=write_deltalake_with_error_handling,
                     kwargs={"queue": queue, **writer_kwargs},
                 )
                 writer.start()
                 writer.join()
 
-            # Check if the queue has any exception message
-            if not queue.empty():
-                error_message = queue.get()
-                logger.error("Exception occurred in write_deltalake: %s", error_message)
-                raise RuntimeError(f"Error in write_deltalake: {error_message}")
+                # First surface any traceback captured inside the subprocess so users see the real
+                # root-cause instead of a generic non-zero exit code.
+                if not queue.empty():
+                    error_message = queue.get()
+                    logger.error("Exception occurred in write_deltalake: %s", error_message)
+                    raise RuntimeError(f"Error in write_deltalake: {error_message}")
+
+                # If the subprocess terminated abnormally but produced no traceback (e.g., SIGABRT),
+                # still raise a helpful error for callers.
+                if not current_process().daemon and writer.exitcode != 0:
+                    raise RuntimeError(
+                        f"write_deltalake subprocess exited with code {writer.exitcode}"
+                    )
 
         _single_attempt()
 
@@ -239,6 +275,29 @@ class DeltaTableUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:  # type: ignore[override]
         df = get_data_df(path)
         self.upload_dataframe(df=df, file_data=file_data)
+
+
+def _normalize_location_constraint(location: Optional[str]) -> str:
+    """Return canonical AWS region name for a LocationConstraint value.
+
+    The S3 GetBucketLocation operation returns `null` (`None`) for buckets in
+    the legacy `us-east-1` region and `EU` for very old buckets that were
+    created in the historical `EU` region (now `eu-west-1`). For every other
+    region the API already returns the correct AWS region string. This helper
+    normalises the legacy values so callers can reliably compare regions.
+
+    Args:
+        location: The LocationConstraint value returned by the S3 GetBucketLocation operation.
+
+    Returns:
+        The canonical AWS region name for the given location constraint.
+    """
+
+    if location is None:
+        return "us-east-1"
+    if location == "EU":
+        return "eu-west-1"
+    return location
 
 
 delta_table_destination_entry = DestinationRegistryEntry(
