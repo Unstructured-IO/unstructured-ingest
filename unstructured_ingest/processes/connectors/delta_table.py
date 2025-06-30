@@ -280,10 +280,10 @@ class DeltaTableUploader(Uploader):
 def _normalize_location_constraint(location: Optional[str]) -> str:
     """Return canonical AWS region name for a LocationConstraint value.
 
-    The S3 GetBucketLocation operation returns *null* (→ ``None``) for buckets in
-    the legacy **us-east-1** region and ``"EU"`` for very old buckets that were
-    created in the historical **EU** region (now **eu-west-1**).  For every other
-    region the API already returns the correct AWS region string.  This helper
+    The S3 GetBucketLocation operation returns `null` (`None`) for buckets in
+    the legacy `us-east-1` region and `EU` for very old buckets that were
+    created in the historical `EU` region (now `eu-west-1`). For every other
+    region the API already returns the correct AWS region string. This helper
     normalises the legacy values so callers can reliably compare regions.
 
     Args:

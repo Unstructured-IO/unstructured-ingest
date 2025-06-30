@@ -1,3 +1,7 @@
+## 1.0.47
+
+* **Fix delta-table: normalize S3 LocationConstraint values to handle us-east-1 and EU buckets**
+
 ## 1.0.46
 
 * **Fix delta-table `pyo3_runtime.PanicException: Forked process detected` on Linux**
