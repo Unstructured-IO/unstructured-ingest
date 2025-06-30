@@ -41,9 +41,16 @@ DEFAULT_R_SEP = "\n"
 class JiraIssueMetadata(BaseModel):
     id: str
     key: str
+    fields: Optional[dict] = None  # Add fields to capture attachment data
 
     def get_project_id(self) -> str:
         return self.key.split("-")[0]
+
+    def get_attachments(self) -> List[dict]:
+        """Extract attachment information from fields"""
+        if self.fields and "attachment" in self.fields:
+            return self.fields["attachment"]
+        return []
 
 
 class FieldGetter(dict):
@@ -196,15 +203,17 @@ class JiraIndexer(Indexer):
                     yield JiraIssueMetadata.model_validate(issue)
 
     def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id", "status"]
+        fields = ["key", "id", "status", "attachment"]  # Add attachment field
         jql = "project in ({})".format(", ".join(self.index_config.projects))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
         return self.run_jql(jql=jql, fields=fields)
 
-    def _get_issues_within_single_board(self, board_id: str) -> List[JiraIssueMetadata]:
+    def _get_issues_within_single_board(
+        self, board_id: str
+    ) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
-            fields = ["key", "id"]
+            fields = ["key", "id", "attachment"]  # Add attachment field
             if self.index_config.status_filters:
                 jql = "status in ({}) ORDER BY id".format(
                     ", ".join([f'"{s}"' for s in self.index_config.status_filters])
@@ -233,22 +242,37 @@ class JiraIndexer(Indexer):
         return jql
 
     def _get_issues_by_keys(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id"]
+        fields = ["key", "id", "attachment"]  # Add attachment field
         jql = "key in ({})".format(", ".join(self.index_config.issues))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
         return self.run_jql(jql=jql, fields=fields)
 
     def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
-        # Build metadata
+        # Construct relative path and filename first
+        filename = f"{issue.key}.txt"
+        relative_path = str(Path(issue.get_project_id()) / filename)
+
+        # Build metadata with attachments included in record_locator
+        record_locator = {"id": issue.id, "key": issue.key, "full_path": relative_path}
+
+        # Add attachments to record_locator if they exist
+        attachments = issue.get_attachments()
+        if attachments:
+            record_locator["attachments"] = [
+                {
+                    "id": att["id"],
+                    "filename": att["filename"],
+                    "created": att.get("created"),
+                    "mimeType": att.get("mimeType"),
+                }
+                for att in attachments
+            ]
+
         metadata = FileDataSourceMetadata(
             date_processed=str(time()),
-            record_locator=issue.model_dump(),
+            record_locator=record_locator,
         )
-
-        # Construct relative path and filename
-        filename = f"{issue.id}.txt"
-        relative_path = str(Path(issue.get_project_id()) / filename)
 
         source_identifiers = SourceIdentifiers(
             filename=filename,
@@ -400,21 +424,37 @@ class JiraDownloader(Downloader):
         self, attachment_dict: dict, parent_filedata: FileData
     ) -> FileData:
         new_filedata = parent_filedata.model_copy(deep=True)
-        if new_filedata.metadata.record_locator is None:
-            new_filedata.metadata.record_locator = {}
-        new_filedata.metadata.record_locator["parent_issue"] = (
-            parent_filedata.metadata.record_locator["id"]
-        )
+
+        # Create attachment record_locator with parent context
+        attachment_record_locator = {
+            "id": attachment_dict["id"],
+            "filename": attachment_dict["filename"],
+            "created": attachment_dict.get("created"),
+            "mimeType": attachment_dict.get("mimeType"),
+            "parent": {
+                "id": parent_filedata.metadata.record_locator["id"],
+                "key": parent_filedata.metadata.record_locator["key"],
+                "full_path": parent_filedata.source_identifiers.fullpath,
+            },
+        }
+
         # Append an identifier for attachment to not conflict with issue ids
         new_filedata.identifier = "{}a".format(attachment_dict["id"])
-        filename = attachment_dict["filename"]
-        new_filedata.metadata.filesize_bytes = attachment_dict.pop("size", None)
-        new_filedata.metadata.date_created = attachment_dict.pop("created", None)
-        new_filedata.metadata.url = attachment_dict.pop("self", None)
-        new_filedata.metadata.record_locator = attachment_dict
+        filename = f"{attachment_dict['filename']}.{attachment_dict['id']}"
+        new_filedata.metadata.filesize_bytes = attachment_dict.get("size")
+        new_filedata.metadata.date_created = attachment_dict.get("created")
+        new_filedata.metadata.url = attachment_dict.get("self")
+        new_filedata.metadata.record_locator = attachment_record_locator
+        full_path = (
+            Path(parent_filedata.source_identifiers.fullpath).with_suffix("") / Path(filename)
+        ).as_posix()
+        new_filedata.metadata.record_locator["full_path"] = full_path
         new_filedata.source_identifiers = SourceIdentifiers(
             filename=filename,
-            fullpath=(Path(str(attachment_dict["id"])) / Path(filename)).as_posix(),
+            # add issue_parent to the fullpath and rel_path
+            # to ensure that the attachment is saved in the same folder as the parent issue
+            fullpath=full_path,
+            rel_path=full_path,
         )
         return new_filedata
 

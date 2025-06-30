@@ -2,28 +2,46 @@
   "identifier": "10002",
   "connector_type": "jira",
   "source_identifiers": {
-    "filename": "10002.txt",
-    "fullpath": "JCTP1/10002.txt",
-    "rel_path": "JCTP1/10002.txt"
+    "filename": "JCTP1-3.txt",
+    "fullpath": "JCTP1/JCTP1-3.txt",
+    "rel_path": "JCTP1/JCTP1-3.txt"
   },
   "metadata": {
     "url": null,
     "version": null,
     "record_locator": {
       "id": "10002",
-      "key": "JCTP1-3"
+      "key": "JCTP1-3",
+      "full_path": "JCTP1/JCTP1-3.txt"
     },
     "date_created": "2023-08-22T11:29:46.189+0000",
     "date_modified": "2023-08-23T14:36:31.252+0000",
-    "date_processed": "1745877950.495379",
+    "date_processed": "1751302529.9340868",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
     "id": "10002",
-    "key": "JCTP1-3"
+    "key": "JCTP1-3",
+    "fields": {
+      "attachment": [],
+      "status": {
+        "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/status/10002",
+        "description": "",
+        "iconUrl": "https://unstructured-jira-connector-test.atlassian.net/",
+        "name": "Done",
+        "id": "10002",
+        "statusCategory": {
+          "self": "https://unstructured-jira-connector-test.atlassian.net/rest/api/2/statuscategory/3",
+          "id": 3,
+          "key": "done",
+          "colorName": "green",
+          "name": "Done"
+        }
+      }
+    }
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmphmteub8f/JCTP1/10002.txt",
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpnv0jd051/JCTP1/JCTP1-3.txt",
   "display_name": "Jira Connector Test Project 1"
 }

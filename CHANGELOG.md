@@ -1,3 +1,7 @@
+## 1.0.48
+
+* **Improve Jira attachment path results**
+
 ## 1.0.47
 
 * **Fix delta-table: normalize S3 LocationConstraint values to handle us-east-1 and EU buckets**
