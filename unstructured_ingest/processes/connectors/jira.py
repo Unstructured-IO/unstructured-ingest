@@ -247,8 +247,16 @@ class JiraIndexer(Indexer):
         return self.run_jql(jql=jql, fields=fields)
 
     def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
+        # Construct relative path and filename first
+        filename = f"{issue.key}.txt"
+        relative_path = str(Path(issue.get_project_id()) / filename)
+
         # Build metadata with attachments included in record_locator
-        record_locator = {"id": issue.id, "key": issue.key}
+        record_locator = {
+            "id": issue.id, 
+            "key": issue.key,
+            "fullpath": relative_path
+        }
         
         # Add attachments to record_locator if they exist
         attachments = issue.get_attachments()
@@ -269,10 +277,6 @@ class JiraIndexer(Indexer):
             date_processed=str(time()),
             record_locator=record_locator,
         )
-
-        # Construct relative path and filename
-        filename = f"{issue.key}.txt"
-        relative_path = str(Path(issue.get_project_id()) / filename)
 
         source_identifiers = SourceIdentifiers(
             filename=filename,
@@ -435,7 +439,8 @@ class JiraDownloader(Downloader):
             "self": attachment_dict.get("self"),
             "parent_issue": {
                 "id": parent_filedata.metadata.record_locator["id"],
-                "key": parent_filedata.metadata.record_locator["key"]
+                "key": parent_filedata.metadata.record_locator["key"],
+                "fullpath": parent_filedata.source_identifiers.fullpath
             }
         }
         
