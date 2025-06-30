@@ -255,7 +255,7 @@ class JiraIndexer(Indexer):
         record_locator = {
             "id": issue.id, 
             "key": issue.key,
-            "fullpath": relative_path
+            "full_path": relative_path
         }
         
         # Add attachments to record_locator if they exist
@@ -436,7 +436,7 @@ class JiraDownloader(Downloader):
             "parent": {
                 "id": parent_filedata.metadata.record_locator["id"],
                 "key": parent_filedata.metadata.record_locator["key"],
-                "fullpath": parent_filedata.source_identifiers.fullpath
+                "full_path": parent_filedata.source_identifiers.fullpath
             }
         }
         
@@ -447,13 +447,14 @@ class JiraDownloader(Downloader):
         new_filedata.metadata.date_created = attachment_dict.get("created", None)
         new_filedata.metadata.url = attachment_dict.get("self", None)
         new_filedata.metadata.record_locator = attachment_record_locator
-        issue_without_extension = Path(parent_filedata.source_identifiers.fullpath).with_suffix('')
+        full_path = (Path(parent_filedata.source_identifiers.fullpath).with_suffix('') / Path(filename)).as_posix()
+        new_filedata.metadata.record_locator["full_path"] = full_path
         new_filedata.source_identifiers = SourceIdentifiers(
             filename=filename,
             # add issue_parent to the fullpath and rel_path
             # to ensure that the attachment is saved in the same folder as the parent issue
-            fullpath=(issue_without_extension / Path(filename)).as_posix(),
-            rel_path=(issue_without_extension / Path(filename)).as_posix(),
+            fullpath=full_path,
+            rel_path=full_path,
         )
         return new_filedata
 
