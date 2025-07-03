@@ -13,14 +13,13 @@
       "user_pname": null,
       "server_relative_path": "e2e-test-folder/fake-memo.pdf"
     },
-    "date_created": "1738100496.0",
-    "date_modified": "1738100496.0",
-    "date_processed": "1749467421.358538",
+    "date_created": "1738129296.0",
+    "date_modified": "1738129296.0",
+    "date_processed": "1751556742.386029",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/_layouts/15/download.aspx?UniqueId=5883ea2b-1b4e-4744-82ff-4c89f5052a3b&Translate=false&tempauth=v1.eyJzaXRlaWQiOiIxMmQ1NzBlMC01ZTAwLTRlYjQtOTUyYS0xY2YwNzkwMjU0N2UiLCJhcHBfZGlzcGxheW5hbWUiOiJteS1vbmVkcml2ZS1hcHAiLCJuYW1laWQiOiI4MTMyZTAwYS0xYmU0LTRiYTUtYTNjYy1mNmI4MjU0YzkwZjJAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NDk0NzEwMTcifQ.CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCNq0yPeH1JM-EAUaDjIwLjE5MC4xMzIuMTA2KixlL2RBNWN2Qk5UdnowN0p4YmFxL256Tm5qTmljRWNEclhOczNkZ2hGTWt3PTB9OAFCEKGmaPIfEACQPy4exOW-NqxKEGhhc2hlZHByb29mdG9rZW56ATG6AS5hbGxzaXRlcy53cml0ZSBhbGxmaWxlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkyAEB.Uljl--Ld64Mg7RaL95mDLy8eMoLX1_Xl9kQcFWMz4gU&ApiVersion=2.0",
     "eTag": "\"{5883EA2B-1B4E-4744-82FF-4C89F5052A3B},1\"",
     "id": "01QKP26QZL5KBVQTQ3IRDYF72MRH2QKKR3",
     "name": "fake-memo.pdf",
@@ -29,6 +28,6 @@
     "size": 13374
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmpsqp6881k/fake-memo.pdf",
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmp6393qkvy/fake-memo.pdf",
   "display_name": "e2e-test-folder/fake-memo.pdf"
 }
