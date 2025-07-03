@@ -1,3 +1,7 @@
+## 1.0.49
+
+* **Improve MongoDB SCRAM-SHA-1 authentication error message**
+
 ## 1.0.48
 
 * **Improve Jira attachment path results**
