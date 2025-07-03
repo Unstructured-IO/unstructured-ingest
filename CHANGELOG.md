@@ -1,6 +1,10 @@
-## 1.0.49-dev0
+## 1.0.50-dev0
 
 * **Update ingest cli and docs readme files**
+
+## 1.0.49
+
+* **Improve MongoDB SCRAM-SHA-1 authentication error message**
 
 ## 1.0.48
 
