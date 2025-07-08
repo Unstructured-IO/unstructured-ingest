@@ -1,5 +1,5 @@
 """Utility functions for unstructured-ingest."""
 
-from unstructured_ingest.utils.filesystem import ensure_directory
+from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
 
-__all__ = ["ensure_directory"]
+__all__ = ["mkdir_concurrent_safe"]
