@@ -1,3 +1,7 @@
+## 1.0.51
+
+* **Fix SharePoint connector UnboundLocalError when site not found**
+
 ## 1.0.50-dev0
 
 * **Update ingest cli and docs readme files**
