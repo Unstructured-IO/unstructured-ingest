@@ -150,6 +150,7 @@ class SharepointDownloader(OnedriveDownloader):
             site_drive_item = self.connection_config._get_drive_item(client_site)
         except ClientRequestException:
             logger.info("Site not found")
+            raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
 
         if not file:
