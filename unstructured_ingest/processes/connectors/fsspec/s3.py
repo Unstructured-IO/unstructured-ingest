@@ -122,6 +122,10 @@ class S3Indexer(FsspecIndexer):
 
     def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
         path = file_info["Key"]
+
+        # Log file operation using the mixin
+        self.log_file_operation("Getting metadata", file_path=path)
+
         date_created = None
         date_modified = None
         modified = file_info.get("LastModified")
@@ -147,9 +151,10 @@ class S3Indexer(FsspecIndexer):
             record_locator["metadata"] = metadata
         issue_characters = [char for char in CHARACTERS_TO_AVOID if char in path]
         if issue_characters:
-            logger.warning(
-                f"File path {path} contains characters "
-                f"that can cause issues with S3: {issue_characters}"
+            # Use the mixin's warning method with context
+            self.log_warning_with_context(
+                f"File path contains characters that can cause issues with S3: {issue_characters}",
+                context={"path": path, "problematic_characters": issue_characters},
             )
         return FileDataSourceMetadata(
             date_created=date_created,

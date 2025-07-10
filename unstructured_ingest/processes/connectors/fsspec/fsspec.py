@@ -105,6 +105,12 @@ class FsspecIndexer(Indexer):
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
+        self.log_operation_start(
+            "Connection validation",
+            protocol=self.index_config.protocol,
+            path=self.index_config.path_without_protocol,
+        )
+
         try:
             fs = get_filesystem_class(self.index_config.protocol)(
                 **self.connection_config.get_access_config(),
@@ -112,13 +118,26 @@ class FsspecIndexer(Indexer):
             files = fs.ls(path=self.index_config.path_without_protocol, detail=True)
             valid_files = [x.get("name") for x in files if x.get("type") == "file"]
             if not valid_files:
+                self.log_operation_complete("Connection validation", count=0)
                 return
             file_to_sample = valid_files[0]
             logger.debug(f"attempting to make HEAD request for file: {file_to_sample}")
             with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
                 client.head(path=file_to_sample)
+
+            # Log successful connection validation
+            self.log_connection_validated(
+                connector_type=self.connector_type,
+                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+            )
+
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            # Log failed connection validation
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+            )
             raise self.wrap_error(e=e)
 
     def get_file_info(self) -> list[dict[str, Any]]:
@@ -200,9 +219,23 @@ class FsspecIndexer(Indexer):
         init_file_data.additional_metadata = self.get_metadata(file_info=file_info)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        # Log indexing start
+        self.log_indexing_start(f"{self.connector_type} files")
+
         files = self.get_file_info()
-        for file_info in files:
+        total_files = len(files)
+
+        self.log_operation_start("File indexing", total_files=total_files)
+
+        for i, file_info in enumerate(files):
             file_path = self.get_path(file_info=file_info)
+
+            # Log progress for large datasets
+            if total_files > 5:  # Only log progress for larger operations
+                self.log_progress(
+                    current=i + 1, total=total_files, item_type="files", operation="Indexing"
+                )
+
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
             rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip("/")
@@ -221,6 +254,9 @@ class FsspecIndexer(Indexer):
                 additional_metadata=additional_metadata,
                 display_name=file_path,
             )
+
+        # Log indexing completion
+        self.log_indexing_complete(f"{self.connector_type} files", total_files)
 
 
 class FsspecDownloaderConfig(DownloaderConfig):
@@ -271,12 +307,29 @@ class FsspecDownloader(Downloader):
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Log download start
+        rpath = file_data.additional_metadata["original_file_path"]
+        file_size = file_data.metadata.filesize_bytes
+        self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
+
         try:
-            rpath = file_data.additional_metadata["original_file_path"]
             with self.connection_config.get_client(protocol=self.protocol) as client:
                 client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
+
+            # Log download completion
+            self.log_download_complete(
+                file_path=rpath, file_id=file_data.identifier, download_path=str(download_path)
+            )
+
         except Exception as e:
+            # Log download error
+            self.log_error_with_context(
+                "File download failed",
+                error=e,
+                context={"file_path": rpath, "file_id": file_data.identifier},
+            )
             raise self.wrap_error(e=e)
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
