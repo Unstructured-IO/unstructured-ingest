@@ -1,3 +1,7 @@
+## 1.0.52
+
+* **Fix mkdir race condition in concurrent operations**
+
 ## 1.0.51
 
 * **Fix SharePoint connector UnboundLocalError when site not found**
