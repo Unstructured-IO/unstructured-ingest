@@ -7806,7 +7806,7 @@ snowflake = [
 ]
 togetherai = [
     { name = "together", version = "1.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "together", version = "1.5.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "together", version = "1.5.21", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 tsv = [
     { name = "unstructured", extra = ["tsv"] },
