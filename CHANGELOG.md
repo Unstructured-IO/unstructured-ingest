@@ -1,3 +1,7 @@
+## 1.0.54
+
+* **Fix bump Togetherai dependency**
+
 ## 1.0.53
 
 * **Handle SharePoint site access failure properly**

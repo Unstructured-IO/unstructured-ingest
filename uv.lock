@@ -6914,7 +6914,7 @@ wheels = [
 
 [[package]]
 name = "together"
-version = "1.5.8"
+version = "1.5.21"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'darwin'",
@@ -6934,7 +6934,6 @@ dependencies = [
     { name = "filelock", marker = "python_full_version >= '3.10'" },
     { name = "numpy", marker = "python_full_version >= '3.10'" },
     { name = "pillow", marker = "python_full_version >= '3.10'" },
-    { name = "pyarrow", marker = "python_full_version >= '3.10'" },
     { name = "pydantic", marker = "python_full_version >= '3.10'" },
     { name = "requests", marker = "python_full_version >= '3.10'" },
     { name = "rich", marker = "python_full_version >= '3.10'" },
@@ -6942,9 +6941,9 @@ dependencies = [
     { name = "tqdm", marker = "python_full_version >= '3.10'" },
     { name = "typer", marker = "python_full_version >= '3.10'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/81/04/551a69d03e194ae3eb45d0bb722a361c086c3399ef7af4c716e32a02b971/together-1.5.8.tar.gz", hash = "sha256:feb67ba8751fa8abb8d4ae16e2e34c5265ee707ac6a28caa1ada01d49f87d168", size = 65442, upload-time = "2025-05-12T14:03:46.494Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ea/53/e33c5e6d53c2e2bbd07f9dcb1979e27ac670fca0e4e238b169aa4c358ee2/together-1.5.21.tar.gz", hash = "sha256:59adb8cf4c5b77eca76b8c66a73c47c45fd828aaf4f059f33f893f8c5f68f85a", size = 69887 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/d0/899d6be8ba9ba0d12f3cdc23cfb4aa994628d50a88cb08f6e685bcd536d4/together-1.5.8-py3-none-any.whl", hash = "sha256:4386d55383e7fba6976d31b4febec8f820de2a68314c3b0b53c0ee4c34aae20a", size = 88715, upload-time = "2025-05-12T14:03:45.407Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/31/6556a303ea39929fa016f4260eef289b620cf366a576c304507cb75b4d12/together-1.5.21-py3-none-any.whl", hash = "sha256:35e6c0072033a2e5f1105de8781e969f41cffc85dae508b6f4dc293360026872", size = 96141 },
 ]
 
 [[package]]
@@ -7807,7 +7806,7 @@ snowflake = [
 ]
 togetherai = [
     { name = "together", version = "1.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "together", version = "1.5.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "together", version = "1.5.21", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 tsv = [
     { name = "unstructured", extra = ["tsv"] },
