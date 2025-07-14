@@ -92,6 +92,44 @@ class SharepointIndexer(OnedriveIndexer):
     index_config: SharepointIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def _handle_client_request_exception(self, e: "ClientRequestException", context: str) -> None:
+        """Convert ClientRequestException to appropriate user-facing error based on HTTP status."""
+        if hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+            status_code = e.response.status_code
+            if status_code == 401:
+                raise UserAuthError(
+                    f"Unauthorized access to {context}. "
+                    f"Check client credentials and permissions"
+                )
+            elif status_code == 403:
+                raise UserAuthError(
+                    f"Access forbidden to {context}. "
+                    f"Check app permissions (Sites.Read.All required)"
+                )
+            elif status_code == 404:
+                raise UserError(f"Not found: {context}")
+        
+        raise UserError(f"Failed to access {context}: {str(e)}")
+
+    def _validate_path(self, site_drive_item: "DriveItem", path: str) -> None:
+        """Validate that the specified path exists and is accessible."""
+        from office365.runtime.client_request_exception import ClientRequestException
+        
+        try:
+            path_item = site_drive_item.get_by_path(path).get().execute_query()
+            if path_item is None or not hasattr(path_item, 'is_folder'):
+                raise UserError(
+                    f"SharePoint path '{path}' not found in site {self.connection_config.site}. "
+                    f"Check that the path exists and you have access to it"
+                )
+            logger.info(f"SharePoint path '{path}' validated successfully")
+        except ClientRequestException as e:
+            logger.error(f"Failed to access SharePoint path '{path}': {e}")
+            self._handle_client_request_exception(e, f"SharePoint path '{path}'")
+        except Exception as e:
+            logger.error(f"Unexpected error accessing SharePoint path '{path}': {e}")
+            raise UserError(f"Failed to validate SharePoint path '{path}': {str(e)}")
+
     @requires_dependencies(["office365"], extras="sharepoint")
     def precheck(self) -> None:
         """Validate SharePoint connection before indexing."""
@@ -107,26 +145,17 @@ class SharepointIndexer(OnedriveIndexer):
         try:
             client = self.connection_config.get_client()
             client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            self.connection_config._get_drive_item(client_site)
+            site_drive_item = self.connection_config._get_drive_item(client_site)
+            
+            path = self.index_config.path
+            if path and path != LEGACY_DEFAULT_PATH:
+                self._validate_path(site_drive_item, path)
+            
             logger.info(f"SharePoint connection validated successfully for site: {self.connection_config.site}")
+            
         except ClientRequestException as e:
             logger.error(f"SharePoint precheck failed for site: {self.connection_config.site}")
-            if hasattr(e, 'response') and hasattr(e.response, 'status_code'):
-                status_code = e.response.status_code
-                if status_code == 401:
-                    raise UserAuthError(
-                        f"Unauthorized access to SharePoint site {self.connection_config.site}. "
-                        f"Check client credentials and permissions"
-                    )
-                elif status_code == 403:
-                    raise UserAuthError(
-                        f"Access forbidden to SharePoint site {self.connection_config.site}. "
-                        f"Check app permissions (Sites.Read.All required)"
-                    )
-                elif status_code == 404:
-                    raise UserError(f"SharePoint site not found: {self.connection_config.site}")
-            
-            raise UserError(f"Failed to connect to SharePoint site {self.connection_config.site}: {str(e)}")
+            self._handle_client_request_exception(e, f"SharePoint site {self.connection_config.site}")
         except Exception as e:
             logger.error(f"Unexpected error during SharePoint precheck: {e}", exc_info=True)
             raise UserError(f"Failed to validate SharePoint connection: {str(e)}")
