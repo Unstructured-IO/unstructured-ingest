@@ -13,6 +13,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
+from unstructured_ingest.errors_v2 import UserAuthError, UserError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
@@ -90,6 +91,45 @@ class SharepointIndexer(OnedriveIndexer):
     connection_config: SharepointConnectionConfig
     index_config: SharepointIndexerConfig
     connector_type: str = CONNECTOR_TYPE
+
+    @requires_dependencies(["office365"], extras="sharepoint")
+    def precheck(self) -> None:
+        """Validate SharePoint connection before indexing."""
+        from office365.runtime.client_request_exception import ClientRequestException
+        
+        token_resp = self.connection_config.get_token()
+        if "error" in token_resp:
+            raise UserAuthError(
+                f"SharePoint authentication failed: {token_resp['error']} "
+                f"({token_resp.get('error_description', 'No description')})"
+            )
+        
+        try:
+            client = self.connection_config.get_client()
+            client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
+            self.connection_config._get_drive_item(client_site)
+            logger.info(f"SharePoint connection validated successfully for site: {self.connection_config.site}")
+        except ClientRequestException as e:
+            logger.error(f"SharePoint precheck failed for site: {self.connection_config.site}")
+            if hasattr(e, 'response') and hasattr(e.response, 'status_code'):
+                status_code = e.response.status_code
+                if status_code == 401:
+                    raise UserAuthError(
+                        f"Unauthorized access to SharePoint site {self.connection_config.site}. "
+                        f"Check client credentials and permissions"
+                    )
+                elif status_code == 403:
+                    raise UserAuthError(
+                        f"Access forbidden to SharePoint site {self.connection_config.site}. "
+                        f"Check app permissions (Sites.Read.All required)"
+                    )
+                elif status_code == 404:
+                    raise UserError(f"SharePoint site not found: {self.connection_config.site}")
+            
+            raise UserError(f"Failed to connect to SharePoint site {self.connection_config.site}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error during SharePoint precheck: {e}", exc_info=True)
+            raise UserError(f"Failed to validate SharePoint connection: {str(e)}")
 
     @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
