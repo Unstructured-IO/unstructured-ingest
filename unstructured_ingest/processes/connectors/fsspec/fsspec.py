@@ -125,14 +125,12 @@ class FsspecIndexer(Indexer):
             with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
                 client.head(path=file_to_sample)
 
-            # Log successful connection validation
             self.log_connection_validated(
                 connector_type=self.connector_type,
                 endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
             )
 
         except Exception as e:
-            # Log failed connection validation
             self.log_connection_failed(
                 connector_type=self.connector_type,
                 error=e,
@@ -219,7 +217,6 @@ class FsspecIndexer(Indexer):
         init_file_data.additional_metadata = self.get_metadata(file_info=file_info)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        # Log indexing start
         self.log_indexing_start(f"{self.connector_type} files")
 
         files = self.get_file_info()
@@ -230,8 +227,8 @@ class FsspecIndexer(Indexer):
         for i, file_info in enumerate(files):
             file_path = self.get_path(file_info=file_info)
 
-            # Log progress for large datasets
-            if total_files > 5:  # Only log progress for larger operations
+            # Only log progress for larger operations
+            if total_files > 5:
                 self.log_progress(
                     current=i + 1, total=total_files, item_type="files", operation="Indexing"
                 )
@@ -255,7 +252,6 @@ class FsspecIndexer(Indexer):
                 display_name=file_path,
             )
 
-        # Log indexing completion
         self.log_indexing_complete(f"{self.connector_type} files", total_files)
 
 
@@ -308,7 +304,6 @@ class FsspecDownloader(Downloader):
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Log download start
         rpath = file_data.additional_metadata["original_file_path"]
         file_size = file_data.metadata.filesize_bytes
         self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
@@ -318,13 +313,11 @@ class FsspecDownloader(Downloader):
                 client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
 
-            # Log download completion
             self.log_download_complete(
                 file_path=rpath, file_id=file_data.identifier, download_path=str(download_path)
             )
 
         except Exception as e:
-            # Log download error
             self.log_error_with_context(
                 "File download failed",
                 error=e,
