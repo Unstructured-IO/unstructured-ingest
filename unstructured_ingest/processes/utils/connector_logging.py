@@ -56,7 +56,6 @@ class OperationTimer:
         duration = time() - self.start_times[operation_name]
         del self.start_times[operation_name]
 
-        # Store duration for statistics
         if operation_name not in self.durations:
             self.durations[operation_name] = []
         self.durations[operation_name].append(duration)
@@ -105,7 +104,6 @@ class DataSanitizer:
         path_str = str(path)
         path_obj = Path(path_str)
 
-        # Show only filename and parent directory for context
         if len(path_obj.parts) > 2:
             return f".../{path_obj.parent.name}/{path_obj.name}"
         return path_obj.name
@@ -124,7 +122,6 @@ class DataSanitizer:
             return "<url>"
         try:
             parsed = urlparse(url)
-            # Remove query parameters that might contain sensitive data
             return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
         except Exception:
             return "<url>"
@@ -157,7 +154,6 @@ class DataSanitizer:
                 table_name, record_id = parts
                 return f"{table_name}:{DataSanitizer.sanitize_id(record_id)}"
 
-        # Handle file paths (default behavior)
         return DataSanitizer.sanitize_path(location_str)
 
     @staticmethod
@@ -247,7 +243,6 @@ class ConnectorLoggingMixin:
         """Log the start of a major operation and start timing."""
         logger.info("Starting %s", operation)
 
-        # Start timing the operation
         self._timer.start_operation(operation)
 
         if kwargs:
@@ -259,7 +254,6 @@ class ConnectorLoggingMixin:
 
     def log_operation_complete(self, operation: str, count: Optional[int] = None, **kwargs):
         """Log the completion of a major operation and log timing."""
-        # End timing and get duration
         duration = self._timer.end_operation(operation)
 
         if count is not None:
@@ -267,7 +261,6 @@ class ConnectorLoggingMixin:
         else:
             logger.info("Completed %s", operation)
 
-        # Log timing information
         if duration is not None:
             timing_kwargs = dict(kwargs)
             if count is not None:
@@ -370,7 +363,6 @@ class ConnectorLoggingMixin:
         else:
             logger.debug("%s: <document>", operation)
 
-        # Add content size to kwargs if provided
         if content_size is not None:
             kwargs["content_size"] = content_size
 
@@ -389,7 +381,6 @@ class ConnectorLoggingMixin:
         **kwargs,
     ):
         """Log file-related operations (backward compatibility wrapper)."""
-        # Convert to document terminology for internal processing
         self.log_document_operation(
             operation=operation, document_location=file_path, document_id=file_id, **kwargs
         )
@@ -408,7 +399,6 @@ class ConnectorLoggingMixin:
         else:
             logger.info("Starting document download")
 
-        # Start timing the download
         self._timer.start_operation(operation_name)
 
         self.log_document_operation(
@@ -429,7 +419,6 @@ class ConnectorLoggingMixin:
         """Log the completion of a document download/retrieval and log timing."""
         operation_name = f"Download {document_id or 'document'}"
 
-        # End timing and get duration
         duration = self._timer.end_operation(operation_name)
 
         logger.info("Document download completed")
@@ -440,7 +429,6 @@ class ConnectorLoggingMixin:
         if items_retrieved is not None:
             details["items_retrieved"] = items_retrieved
 
-        # Log timing with transfer speed or processing speed if available
         if duration is not None:
             if content_size:
                 transfer_speed = content_size / duration if duration > 0 else 0
@@ -498,7 +486,6 @@ class ConnectorLoggingMixin:
         else:
             logger.info("Starting file upload")
 
-        # Start timing the upload
         self._timer.start_operation(operation_name)
 
         details = {}
@@ -517,7 +504,6 @@ class ConnectorLoggingMixin:
         """Log the completion of a file upload and log timing."""
         operation_name = f"Upload {Path(file_path).name if file_path else 'file'}"
 
-        # End timing and get duration
         duration = self._timer.end_operation(operation_name)
 
         logger.info("File upload completed")
@@ -528,7 +514,6 @@ class ConnectorLoggingMixin:
         if file_id:
             details["file_id"] = file_id
 
-        # Log timing with transfer speed if available
         if duration is not None and file_size:
             transfer_speed = file_size / duration if duration > 0 else 0
             details["transfer_speed_mbps"] = round(transfer_speed / (1024 * 1024), 2)
@@ -545,19 +530,16 @@ class ConnectorLoggingMixin:
         else:
             logger.info("Starting indexing of %s", source_type)
 
-        # Start timing the indexing
         self._timer.start_operation(operation_name)
 
     def log_indexing_complete(self, source_type: str, count: int):
         """Log the completion of indexing operation and log timing."""
         operation_name = f"Indexing {source_type}"
 
-        # End timing and get duration
         duration = self._timer.end_operation(operation_name)
 
         logger.info("Indexing completed: %s %s items indexed", count, source_type)
 
-        # Log timing with indexing speed
         if duration is not None:
             indexing_speed = count / duration if duration > 0 else 0
             self._log_timing(
@@ -566,6 +548,50 @@ class ConnectorLoggingMixin:
                 items_indexed=count,
                 items_per_second=round(indexing_speed, 2),
             )
+
+    def log_info(self, message: str, context: Optional[Dict[str, Any]] = None, **kwargs):
+        """Log an info message with optional context and sanitization."""
+        logger.info(message)
+        self._log_context("Info", context, **kwargs)
+
+    def log_debug(self, message: str, context: Optional[Dict[str, Any]] = None, **kwargs):
+        """Log a debug message with optional context and sanitization."""
+        logger.debug(message)
+        self._log_context("Debug", context, **kwargs)
+
+    def log_warning(self, message: str, context: Optional[Dict[str, Any]] = None, **kwargs):
+        """Log a warning message with optional context and sanitization."""
+        logger.warning(message)
+        self._log_context("Warning", context, **kwargs)
+
+    def log_error(
+        self,
+        message: str,
+        error: Optional[Exception] = None,
+        context: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
+        """Log an error message with optional exception, context and sanitization."""
+        if error:
+            logger.error("%s: %s", message, error, exc_info=True)
+        else:
+            logger.error(message)
+        self._log_context("Error", context, **kwargs)
+
+    def _log_context(self, log_type: str, context: Optional[Dict[str, Any]], **kwargs):
+        """Helper method to log context with sanitization."""
+        all_context = {}
+        if context:
+            all_context.update(context)
+        if kwargs:
+            all_context.update(kwargs)
+
+        if all_context:
+            if self._should_sanitize():
+                sanitized_context = self._sanitizer.sanitize_dict(all_context)
+                logger.debug("%s context: %s", log_type, sanitized_context)
+            else:
+                logger.debug("%s context: %s", log_type, all_context)
 
     def log_warning_with_context(self, message: str, context: Optional[Dict[str, Any]] = None):
         """Log a warning with optional context."""
