@@ -104,7 +104,13 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 return UserError(message)
             if http_code >= 500:
                 return ProviderError(message)
-        logger.error(f"unhandled exception from s3 ({type(e)}): {e}", exc_info=True)
+        logger.error(
+            "Unhandled exception from S3 (type: %s, endpoint: %s): %s", 
+            type(e).__name__, 
+            self.endpoint_url or 'default',
+            e, 
+            exc_info=True
+        )
         return e
 
 
@@ -123,7 +129,8 @@ class S3Indexer(FsspecIndexer):
     def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
         path = file_info["Key"]
 
-        # Log file operation using the mixin
+        # Log file operation using the enhanced mixin
+        self.log_debug("Getting metadata for S3 object", context={"file_path": path})
         self.log_file_operation("Getting metadata", file_path=path)
 
         date_created = None
@@ -152,7 +159,7 @@ class S3Indexer(FsspecIndexer):
         issue_characters = [char for char in CHARACTERS_TO_AVOID if char in path]
         if issue_characters:
             # Use the mixin's warning method with context
-            self.log_warning_with_context(
+            self.log_warning(
                 f"File path contains characters that can cause issues with S3: {issue_characters}",
                 context={"path": path, "problematic_characters": issue_characters},
             )
