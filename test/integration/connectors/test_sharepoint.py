@@ -353,7 +353,7 @@ def indexer_factory(base_sharepoint_config):
             tenant=base_sharepoint_config['tenant'],
             access_config=access_config,
         )
-        index_config = SharepointIndexerConfig(path=path)
+        index_config = SharepointIndexerConfig(path=path or "")
         return SharepointIndexer(
             connection_config=connection_config,
             index_config=index_config,
