@@ -84,8 +84,8 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
 
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
-    pass
-
+    # TODO: We can probably make path non-optional on OnedriveIndexerConfig once tested
+    path: str = Field(default="")
 
 @dataclass
 class SharepointIndexer(OnedriveIndexer):
@@ -154,8 +154,7 @@ class SharepointIndexer(OnedriveIndexer):
             client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
             site_drive_item = self.connection_config._get_drive_item(client_site)
 
-            # TODO: We can probably make path non-optional in the future
-            path = self.index_config.path or ""
+            path = self.index_config.path
             if not self._is_root_path(path):
                 self._validate_folder_path(site_drive_item, path)
 
@@ -194,8 +193,7 @@ class SharepointIndexer(OnedriveIndexer):
                 f"Unable to access SharePoint site at {self.connection_config.site}: {str(e)}"
             )
 
-        # TODO: We can probably make path non-optional in the future
-        path = self.index_config.path or ""
+        path = self.index_config.path
         target_drive_item = await asyncio.to_thread(
             self._get_target_drive_item, site_drive_item, path
         )
