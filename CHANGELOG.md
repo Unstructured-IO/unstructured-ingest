@@ -1,3 +1,8 @@
+## 1.0.55
+
+* **Fix: add precheck method to SharePoint connector**
+
+
 ## 1.0.54
 
 * **Fix bump Togetherai dependency**

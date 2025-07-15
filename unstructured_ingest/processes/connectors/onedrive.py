@@ -20,6 +20,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
 )
+from unstructured_ingest.errors_v2 import UserAuthError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -114,12 +115,27 @@ class OnedriveConnectionConfig(ConnectionConfig):
             except ValueError as exc:
                 logger.error("Couldn't set up credentials.")
                 raise exc
+            
             if "error" in token:
-                raise SourceConnectionNetworkError(
-                    "failed to fetch token, {}: {}".format(
-                        token["error"], token["error_description"]
+                error_codes = token.get("error_codes", [])
+                error_type = token.get("error", "")
+                error_description = token.get("error_description", "")
+                
+                # 7000215: Invalid client secret provided
+                # 7000218: Invalid client id provided
+                # 700016: Application not found in directory
+                # 90002: Tenant not found
+                auth_error_codes = [7000215, 7000218, 700016, 90002]
+                
+                if (any(code in error_codes for code in auth_error_codes) or 
+                    error_type in ["invalid_client", "unauthorized_client", "invalid_grant"]):
+                    raise UserAuthError(
+                        f"Authentication failed: {error_type}: {error_description}"
                     )
-                )
+                else:
+                    raise SourceConnectionNetworkError(
+                        f"Failed to fetch token: {error_type}: {error_description}"
+                    )
             return token
 
     @requires_dependencies(["office365"], extras="onedrive")
