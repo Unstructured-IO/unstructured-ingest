@@ -418,7 +418,10 @@ def insufficient_perms_config():
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 @requires_env("MS_USER_PNAME")
-async def test_sharepoint_precheck_insufficient_permissions(insufficient_perms_config, base_sharepoint_config):
+async def test_sharepoint_precheck_insufficient_permissions(
+    insufficient_perms_config,
+    base_sharepoint_config,
+):
     """Test precheck with credentials that have insufficient permissions."""
     from unstructured_ingest.errors_v2 import UserAuthError
 
