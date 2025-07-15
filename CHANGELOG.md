@@ -1,3 +1,15 @@
+## 1.0.54
+
+* **Fix bump Togetherai dependency**
+
+## 1.0.53
+
+* **Handle SharePoint site access failure properly**
+
+## 1.0.52
+
+* **Fix mkdir race condition in concurrent operations**
+
 ## 1.0.51
 
 * **Fix SharePoint connector UnboundLocalError when site not found**

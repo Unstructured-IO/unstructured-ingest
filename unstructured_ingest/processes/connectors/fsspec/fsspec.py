@@ -30,6 +30,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
+from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -302,7 +303,7 @@ class FsspecDownloader(Downloader):
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
+        mkdir_concurrent_safe(download_path.parent)
 
         rpath = file_data.additional_metadata["original_file_path"]
         file_size = file_data.metadata.filesize_bytes
@@ -328,7 +329,7 @@ class FsspecDownloader(Downloader):
 
     async def async_run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
+        mkdir_concurrent_safe(download_path.parent)
         try:
             rpath = file_data.additional_metadata["original_file_path"]
             with self.connection_config.get_client(protocol=self.protocol) as client:

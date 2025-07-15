@@ -106,8 +106,11 @@ class SharepointIndexer(OnedriveIndexer):
         try:
             client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
             site_drive_item = self.connection_config._get_drive_item(client_site)
-        except ClientRequestException:
-            logger.info("Site not found")
+        except ClientRequestException as e:
+            logger.error(f"Failed to access SharePoint site: {self.connection_config.site}")
+            raise SourceConnectionError(
+                f"Unable to access SharePoint site at {self.connection_config.site}: {str(e)}"
+            )
 
         path = self.index_config.path
         # Deprecated sharepoint sdk needed a default path. Microsoft Graph SDK does not.
