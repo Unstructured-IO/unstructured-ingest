@@ -111,8 +111,19 @@ class SharepointIndexer(OnedriveIndexer):
 
         raise UserError(f"Failed to access {context}: {str(e)}")
 
-    def _validate_path(self, site_drive_item: DriveItem, path: str) -> None:
-        """Validate that the specified path exists and is accessible."""
+    def _is_root_path(self, path: str) -> bool:
+        """Check if the path represents root access (empty string or legacy default)."""
+        return not path or not path.strip() or path == LEGACY_DEFAULT_PATH
+    
+    def _get_target_drive_item(self, site_drive_item: DriveItem, path: str) -> DriveItem:
+        """Get the drive item to search in based on the path."""
+        if self._is_root_path(path):
+            return site_drive_item
+        else:
+            return site_drive_item.get_by_path(path).get().execute_query()
+    
+    def _validate_folder_path(self, site_drive_item: DriveItem, path: str) -> None:
+        """Validate that a specific folder path exists and is accessible."""
         from office365.runtime.client_request_exception import ClientRequestException
 
         try:
@@ -122,7 +133,7 @@ class SharepointIndexer(OnedriveIndexer):
                     f"SharePoint path '{path}' not found in site {self.connection_config.site}. "
                     f"Check that the path exists and you have access to it"
                 )
-            logger.info(f"SharePoint path '{path}' validated successfully")
+            logger.info(f"SharePoint folder path '{path}' validated successfully")
         except ClientRequestException as e:
             logger.error(f"Failed to access SharePoint path '{path}': {e}")
             self._handle_client_request_exception(e, f"SharePoint path '{path}'")
@@ -143,9 +154,10 @@ class SharepointIndexer(OnedriveIndexer):
             client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
             site_drive_item = self.connection_config._get_drive_item(client_site)
 
-            path = self.index_config.path
-            if path and path != LEGACY_DEFAULT_PATH:
-                self._validate_path(site_drive_item, path)
+            # TODO: We can probably make path non-optional in the future
+            path = self.index_config.path or ""
+            if not self._is_root_path(path):
+                self._validate_folder_path(site_drive_item, path)
 
             logger.info(
                 f"SharePoint connection validated successfully for site: "
@@ -182,12 +194,13 @@ class SharepointIndexer(OnedriveIndexer):
                 f"Unable to access SharePoint site at {self.connection_config.site}: {str(e)}"
             )
 
-        path = self.index_config.path
-        # Deprecated sharepoint sdk needed a default path. Microsoft Graph SDK does not.
-        if path and path != LEGACY_DEFAULT_PATH:
-            site_drive_item = site_drive_item.get_by_path(path).get().execute_query()
+        # TODO: We can probably make path non-optional in the future
+        path = self.index_config.path or ""
+        target_drive_item = await asyncio.to_thread(
+            self._get_target_drive_item, site_drive_item, path
+        )
 
-        for drive_item in site_drive_item.get_files(
+        for drive_item in target_drive_item.get_files(
             recursive=self.index_config.recursive
         ).execute_query():
             file_data = await self.drive_item_to_file_data(drive_item=drive_item)
