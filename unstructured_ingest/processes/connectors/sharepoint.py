@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
 from pydantic import Field
 
-if TYPE_CHECKING:
-    from office365.runtime.client_request_exception import ClientRequestException
-
 from unstructured_ingest.data_types.file_data import (
     FileData,
 )
@@ -34,6 +31,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 if TYPE_CHECKING:
     from office365.onedrive.driveitems.driveItem import DriveItem
     from office365.onedrive.sites.site import Site
+    from office365.runtime.client_request_exception import ClientRequestException
 
 CONNECTOR_TYPE = "sharepoint"
 LEGACY_DEFAULT_PATH = "Shared Documents"
