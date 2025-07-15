@@ -335,7 +335,7 @@ def base_sharepoint_config():
     return {
         'client_id': config.client_id,
         'tenant': config.tenant,
-        'site': "https://unstructuredai.sharepoint.com/sites/ingest-integration-test",
+        'site': "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source",
         'client_cred': config.client_cred
     }
 
