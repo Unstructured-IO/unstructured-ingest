@@ -1,3 +1,7 @@
+## 1.0.55
+
+* **Improved logging in connectors' operations with LoggingMixin class**
+
 ## 1.0.54
 
 * **Fix bump Togetherai dependency**
