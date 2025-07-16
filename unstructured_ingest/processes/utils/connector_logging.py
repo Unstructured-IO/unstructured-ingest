@@ -87,7 +87,7 @@ class OperationTimer:
         else:
             return f"{seconds / 3600:.1f}h"
 
-    def get_active_operations(self) -> list[str]:
+    def get_active_operations(self) -> List[str]:
         """Get list of currently active (started but not ended) operations."""
         return list(self.start_times.keys())
 
@@ -653,7 +653,7 @@ class ConnectorLoggingMixin:
             logger.info("Max time: %s", self._timer.format_duration(stats["max_seconds"]))
             logger.info("Operation count: %s", stats["count"])
 
-    def get_active_operations(self) -> list[str]:
+    def get_active_operations(self) -> List[str]:
         """Get list of currently active operations (for debugging)."""
         return self._timer.get_active_operations()
 
