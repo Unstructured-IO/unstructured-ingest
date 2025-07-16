@@ -207,7 +207,8 @@ class ConnectorLoggingMixin:
 
     def __init__(self, *args, **kwargs):
         """
-        Initialize the mixin by setting up logging configuration, data sanitization, and operation timing.
+        Initialize the mixin by setting up logging configuration, data sanitization,
+        and operation timing.
 
         This method ensures that the mixin provides standardized logging patterns for connectors.
         It initializes:
