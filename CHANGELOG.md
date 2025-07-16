@@ -1,6 +1,11 @@
-## 1.0.55
+## 1.0.56
 
 * **Improved logging in connectors' operations with LoggingMixin class**
+
+## 1.0.55
+
+* **Fix: add precheck method to SharePoint connector**
+
 
 ## 1.0.54
 
