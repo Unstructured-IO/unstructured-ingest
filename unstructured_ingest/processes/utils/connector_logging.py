@@ -42,7 +42,7 @@ class OperationTimer:
 
     def __init__(self):
         self.start_times: Dict[str, float] = {}
-        self.durations: Dict[str, list[float]] = {}
+        self.durations: Dict[str, List[float]] = {}
 
     def start_operation(self, operation_name: str) -> None:
         """Start timing an operation."""
