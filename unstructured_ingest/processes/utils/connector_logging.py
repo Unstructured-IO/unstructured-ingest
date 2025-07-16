@@ -123,7 +123,7 @@ class DataSanitizer:
         try:
             parsed = urlparse(url)
             return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-        except Exception:
+        except (ValueError, TypeError):
             return "<url>"
 
     @staticmethod
