@@ -1,6 +1,6 @@
 from pathlib import Path
 from time import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from unstructured_ingest.logger import logger
