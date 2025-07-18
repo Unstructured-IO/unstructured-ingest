@@ -14,7 +14,7 @@ from unstructured_ingest.processes.connectors.local import (
 from unstructured_ingest.processes.embedder import EmbedderConfig
 from unstructured_ingest.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent
+base_path = Path(__file__).parent.parent
 docs_path = base_path / "example-docs"
 work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
