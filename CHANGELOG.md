@@ -1,3 +1,7 @@
+## 1.0.56
+
+* **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
+
 ## 1.0.55
 
 * **Fix: add precheck method to SharePoint connector**
