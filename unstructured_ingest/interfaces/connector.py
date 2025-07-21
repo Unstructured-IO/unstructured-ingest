@@ -5,7 +5,7 @@ from typing import Any, TypeVar, Union
 from pydantic import BaseModel, Secret, model_validator
 from pydantic.types import _SecretBase
 
-from unstructured_ingest.processes.utils.connector_logging import ConnectorLoggingMixin
+from unstructured_ingest.processes.utils.logging.connector import ConnectorLoggingMixin
 
 
 class AccessConfig(BaseModel):
