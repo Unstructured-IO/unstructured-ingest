@@ -1,4 +1,5 @@
-from .connector_logging import ConnectorLoggingMixin, DataSanitizer, LoggingConfig
+from .logging.sanitizer import DataSanitizer
+from .logging.connector import ConnectorLoggingMixin, LoggingConfig
 
 __all__ = [
     "ConnectorLoggingMixin",
