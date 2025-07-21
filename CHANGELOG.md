@@ -1,3 +1,7 @@
+## 1.0.56-dev0
+
+- **Feat: improve HtmlMixin produced metadata**
+
 ## 1.0.55
 
 * **Fix: add precheck method to SharePoint connector**
