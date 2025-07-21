@@ -1,6 +1,5 @@
 from pathlib import Path
-from time import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 from urllib.parse import urlparse
 
 from unstructured_ingest.logger import logger
@@ -18,8 +17,6 @@ class LoggingConfig:
         log_progress_interval: int = 10,
         sanitize_logs: bool = True,
         show_connection_details: bool = False,
-        log_timings: bool = True,
-        timing_threshold_seconds: float = 1.0,
     ):
         # Backward compatibility: if new parameters aren't specified, use old ones
         self.log_file_paths = log_file_paths
@@ -33,63 +30,6 @@ class LoggingConfig:
         self.log_progress_interval = log_progress_interval
         self.sanitize_logs = sanitize_logs
         self.show_connection_details = show_connection_details
-        self.log_timings = log_timings
-        self.timing_threshold_seconds = timing_threshold_seconds
-
-
-class OperationTimer:
-    """Utility class for tracking operation timing."""
-
-    def __init__(self):
-        self.start_times: Dict[str, float] = {}
-        self.durations: Dict[str, List[float]] = {}
-
-    def start_operation(self, operation_name: str) -> None:
-        """Start timing an operation."""
-        self.start_times[operation_name] = time()
-
-    def end_operation(self, operation_name: str) -> Optional[float]:
-        """End timing an operation and return duration in seconds."""
-        if operation_name not in self.start_times:
-            return None
-
-        duration = time() - self.start_times[operation_name]
-        del self.start_times[operation_name]
-
-        if operation_name not in self.durations:
-            self.durations[operation_name] = []
-        self.durations[operation_name].append(duration)
-
-        return duration
-
-    def get_statistics(self, operation_name: str) -> Optional[Dict[str, Any]]:
-        """Get timing statistics for an operation."""
-        if operation_name not in self.durations or not self.durations[operation_name]:
-            return None
-
-        durations = self.durations[operation_name]
-        return {
-            "count": len(durations),
-            "total_seconds": sum(durations),
-            "average_seconds": sum(durations) / len(durations),
-            "min_seconds": min(durations),
-            "max_seconds": max(durations),
-        }
-
-    def format_duration(self, seconds: float) -> str:
-        """Format duration in a human-readable way."""
-        if seconds < 1:
-            return f"{seconds * 1000:.1f}ms"
-        elif seconds < 60:
-            return f"{seconds:.2f}s"
-        elif seconds < 3600:
-            return f"{seconds / 60:.1f}m"
-        else:
-            return f"{seconds / 3600:.1f}h"
-
-    def get_active_operations(self) -> List[str]:
-        """Get list of currently active (started but not ended) operations."""
-        return list(self.start_times.keys())
 
 
 class DataSanitizer:
@@ -223,7 +163,6 @@ class ConnectorLoggingMixin:
         super().__init__(*args, **kwargs)
         self._logging_config = LoggingConfig()
         self._sanitizer = DataSanitizer()
-        self._timer = OperationTimer()
 
     def set_logging_config(self, config: LoggingConfig):
         """Set the logging configuration for this connector."""
@@ -233,31 +172,9 @@ class ConnectorLoggingMixin:
         """Check if log sanitization is enabled."""
         return self._logging_config.sanitize_logs
 
-    def _should_log_timing(self) -> bool:
-        """Check if timing logging is enabled."""
-        return self._logging_config.log_timings
-
-    def _log_timing(self, operation: str, duration: float, **kwargs):
-        """Log timing information if enabled and above threshold."""
-        if not self._should_log_timing():
-            return
-
-        if duration >= self._logging_config.timing_threshold_seconds:
-            formatted_duration = self._timer.format_duration(duration)
-            logger.info("%s completed in %s", operation, formatted_duration)
-
-            if kwargs:
-                if self._should_sanitize():
-                    sanitized_kwargs = self._sanitizer.sanitize_dict(kwargs)
-                    logger.debug("Timing details: %s", sanitized_kwargs)
-                else:
-                    logger.debug("Timing details: %s", kwargs)
-
     def log_operation_start(self, operation: str, **kwargs):
-        """Log the start of a major operation and start timing."""
+        """Log the start of a major operation."""
         logger.info("Starting %s", operation)
-
-        self._timer.start_operation(operation)
 
         if kwargs:
             if self._should_sanitize():
@@ -267,22 +184,11 @@ class ConnectorLoggingMixin:
                 logger.debug("%s parameters: %s", operation, kwargs)
 
     def log_operation_complete(self, operation: str, count: Optional[int] = None, **kwargs):
-        """Log the completion of a major operation and log timing."""
-        duration = self._timer.end_operation(operation)
-
+        """Log the completion of a major operation."""
         if count is not None:
             logger.info("Completed %s (%s items)", operation, count)
         else:
             logger.info("Completed %s", operation)
-
-        if duration is not None:
-            timing_kwargs = dict(kwargs)
-            if count is not None:
-                timing_kwargs["items_processed"] = count
-                timing_kwargs["items_per_second"] = (
-                    round(count / duration, 2) if duration > 0 else 0
-                )
-            self._log_timing(operation, duration, **timing_kwargs)
 
         if kwargs:
             if self._should_sanitize():
@@ -290,10 +196,6 @@ class ConnectorLoggingMixin:
                 logger.debug("%s results: %s", operation, sanitized_kwargs)
             else:
                 logger.debug("%s results: %s", operation, kwargs)
-
-    def log_timed_operation(self, operation: str, duration: float, **kwargs):
-        """Log a pre-timed operation (when you measure duration externally)."""
-        self._log_timing(operation, duration, **kwargs)
 
     def log_connection_validated(self, connector_type: str, endpoint: Optional[str] = None):
         """Log successful connection validation."""
@@ -405,15 +307,8 @@ class ConnectorLoggingMixin:
         document_id: Optional[str] = None,
         content_size: Optional[int] = None,
     ):
-        """Log the start of a document download/retrieval and start timing."""
-        operation_name = f"Download {document_id or 'document'}"
-
-        if content_size:
-            logger.info("Starting document download (%s bytes)", content_size)
-        else:
-            logger.info("Starting document download")
-
-        self._timer.start_operation(operation_name)
+        """Log the start of a document download/retrieval."""
+        logger.info("Starting document download")
 
         self.log_document_operation(
             "Download",
@@ -430,11 +325,7 @@ class ConnectorLoggingMixin:
         content_size: Optional[int] = None,
         items_retrieved: Optional[int] = None,
     ):
-        """Log the completion of a document download/retrieval and log timing."""
-        operation_name = f"Download {document_id or 'document'}"
-
-        duration = self._timer.end_operation(operation_name)
-
+        """Log the completion of a document download/retrieval."""
         logger.info("Document download completed")
 
         details = {}
@@ -442,15 +333,6 @@ class ConnectorLoggingMixin:
             details["download_path"] = download_path
         if items_retrieved is not None:
             details["items_retrieved"] = items_retrieved
-
-        if duration is not None:
-            if content_size:
-                transfer_speed = content_size / duration if duration > 0 else 0
-                details["transfer_speed_mbps"] = round(transfer_speed / (1024 * 1024), 2)
-            elif items_retrieved:
-                processing_speed = items_retrieved / duration if duration > 0 else 0
-                details["items_per_second"] = round(processing_speed, 2)
-            self._log_timing(operation_name, duration, **details)
 
         self.log_document_operation(
             "Download completed",
@@ -466,7 +348,7 @@ class ConnectorLoggingMixin:
         file_id: Optional[str] = None,
         file_size: Optional[int] = None,
     ):
-        """Log the start of a file download and start timing (backward compatibility wrapper)."""
+        """Log the start of a file download (backward compatibility wrapper)."""
         self.log_document_download_start(
             document_location=file_path, document_id=file_id, content_size=file_size
         )
@@ -478,7 +360,7 @@ class ConnectorLoggingMixin:
         download_path: Optional[str] = None,
         file_size: Optional[int] = None,
     ):
-        """Log the completion of a file download and log timing (backward compatibility wrapper)."""
+        """Log the completion of a file download (backward compatibility wrapper)."""
         self.log_document_download_complete(
             document_location=file_path,
             document_id=file_id,
@@ -492,15 +374,8 @@ class ConnectorLoggingMixin:
         destination: Optional[str] = None,
         file_size: Optional[int] = None,
     ):
-        """Log the start of a file upload and start timing."""
-        operation_name = f"Upload {Path(file_path).name if file_path else 'file'}"
-
-        if file_size:
-            logger.info("Starting file upload (%s bytes)", file_size)
-        else:
-            logger.info("Starting file upload")
-
-        self._timer.start_operation(operation_name)
+        """Log the start of a file upload."""
+        logger.info("Starting file upload")
 
         details = {}
         if destination:
@@ -515,11 +390,7 @@ class ConnectorLoggingMixin:
         file_id: Optional[str] = None,
         file_size: Optional[int] = None,
     ):
-        """Log the completion of a file upload and log timing."""
-        operation_name = f"Upload {Path(file_path).name if file_path else 'file'}"
-
-        duration = self._timer.end_operation(operation_name)
-
+        """Log the completion of a file upload."""
         logger.info("File upload completed")
 
         details = {}
@@ -528,40 +399,18 @@ class ConnectorLoggingMixin:
         if file_id:
             details["file_id"] = file_id
 
-        if duration is not None and file_size:
-            transfer_speed = file_size / duration if duration > 0 else 0
-            details["transfer_speed_mbps"] = round(transfer_speed / (1024 * 1024), 2)
-            self._log_timing(operation_name, duration, **details)
-
         self.log_file_operation("Upload completed", file_path=file_path, **details)
 
     def log_indexing_start(self, source_type: str, count: Optional[int] = None):
-        """Log the start of indexing operation and start timing."""
-        operation_name = f"Indexing {source_type}"
-
+        """Log the start of indexing operation."""
         if count:
             logger.info("Starting indexing of %s (%s items)", source_type, count)
         else:
             logger.info("Starting indexing of %s", source_type)
 
-        self._timer.start_operation(operation_name)
-
     def log_indexing_complete(self, source_type: str, count: int):
-        """Log the completion of indexing operation and log timing."""
-        operation_name = f"Indexing {source_type}"
-
-        duration = self._timer.end_operation(operation_name)
-
+        """Log the completion of indexing operation."""
         logger.info("Indexing completed: %s %s items indexed", count, source_type)
-
-        if duration is not None:
-            indexing_speed = count / duration if duration > 0 else 0
-            self._log_timing(
-                operation_name,
-                duration,
-                items_indexed=count,
-                items_per_second=round(indexing_speed, 2),
-            )
 
     def log_info(self, message: str, context: Optional[Dict[str, Any]] = None, **kwargs):
         """Log an info message with optional context and sanitization."""
@@ -655,22 +504,3 @@ class ConnectorLoggingMixin:
         logger.info("%s summary:", operation)
         for key, value in stats.items():
             logger.info("  %s: %s", key, value)
-
-    def log_timing_summary(self, operation: str):
-        """Log timing statistics for an operation."""
-        stats = self._timer.get_statistics(operation)
-        if stats:
-            logger.info("%s timing summary:", operation)
-            logger.info("Total time: %s", self._timer.format_duration(stats["total_seconds"]))
-            logger.info("Average time: %s", self._timer.format_duration(stats["average_seconds"]))
-            logger.info("Min time: %s", self._timer.format_duration(stats["min_seconds"]))
-            logger.info("Max time: %s", self._timer.format_duration(stats["max_seconds"]))
-            logger.info("Operation count: %s", stats["count"])
-
-    def get_active_operations(self) -> List[str]:
-        """Get list of currently active operations (for debugging)."""
-        return self._timer.get_active_operations()
-
-    def get_operation_statistics(self, operation: str) -> Optional[Dict[str, Any]]:
-        """Get timing statistics for a specific operation."""
-        return self._timer.get_statistics(operation)
