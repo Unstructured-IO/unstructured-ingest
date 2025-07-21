@@ -1,6 +1,6 @@
 ## 1.0.56-dev0
 
-- **Feat: improve HtmlMixin produced metadata**
+- **Fix: set correct display_name in HtmlMixin produced FileData**
 
 ## 1.0.55
 
