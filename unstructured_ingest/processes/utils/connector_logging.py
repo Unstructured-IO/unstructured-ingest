@@ -147,19 +147,17 @@ class ConnectorLoggingMixin:
 
     def __init__(self, *args, **kwargs):
         """
-        Initialize the mixin by setting up logging configuration, data sanitization,
-        and operation timing.
+    Initialize the mixin by setting up logging configuration and data sanitization.
 
-        This method ensures that the mixin provides standardized logging patterns for connectors.
-        It initializes:
-        - `_logging_config`: Manages logging behavior and settings.
-        - `_sanitizer`: Handles sanitization of sensitive data in logs.
-        - `_timer`: Tracks and logs operation timings.
+    This method ensures that the mixin provides standardized logging patterns for connectors.
+    It initializes:
+    - `_logging_config`: Manages logging behavior and settings.
+    - `_sanitizer`: Handles sanitization of sensitive data in logs.
 
-        Args:
-            *args: Positional arguments passed to the parent class.
-            **kwargs: Keyword arguments passed to the parent class.
-        """
+    Args:
+        *args: Positional arguments passed to the parent class.
+        **kwargs: Keyword arguments passed to the parent class.
+    """
         super().__init__(*args, **kwargs)
         self._logging_config = LoggingConfig()
         self._sanitizer = DataSanitizer()
