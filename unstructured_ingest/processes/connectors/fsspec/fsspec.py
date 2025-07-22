@@ -28,7 +28,6 @@ from unstructured_ingest.interfaces import (
     Uploader,
     UploaderConfig,
 )
-from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
 from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
 
@@ -122,7 +121,7 @@ class FsspecIndexer(Indexer):
                 self.log_operation_complete("Connection validation", count=0)
                 return
             file_to_sample = valid_files[0]
-            logger.debug(f"attempting to make HEAD request for file: {file_to_sample}")
+            self.log_debug(f"attempting to make HEAD request for file: {file_to_sample}")
             with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
                 client.head(path=file_to_sample)
 
@@ -167,7 +166,7 @@ class FsspecIndexer(Indexer):
 
     def sample_n_files(self, files: list[dict[str, Any]], n) -> list[dict[str, Any]]:
         if len(files) <= n:
-            logger.warning(
+            self.log_warning(
                 f"number of files to be sampled={n} is not smaller than the number"
                 f" of files found ({len(files)}). Returning all of the files as the"
                 " sample."
@@ -399,7 +398,7 @@ class FsspecUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        logger.debug(f"writing local file {path_str} to {upload_path}")
+        self.log_debug(f"writing local file {path_str} to {upload_path}")
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
             client.upload(lpath=path_str, rpath=upload_path.as_posix())
 
@@ -407,6 +406,6 @@ class FsspecUploader(Uploader):
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
         # Odd that fsspec doesn't run exists() as async even when client support async
-        logger.debug(f"writing local file {path_str} to {upload_path}")
+        self.log_debug(f"writing local file {path_str} to {upload_path}")
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
             client.upload(lpath=path_str, rpath=upload_path.as_posix())
