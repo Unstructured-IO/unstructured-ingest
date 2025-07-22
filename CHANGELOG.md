@@ -1,6 +1,10 @@
-## 1.0.56
+## 1.0.57
 
 * **Improved logging in connectors' operations with LoggingMixin class**
+
+## 1.0.56
+
+- **Fix: set correct display_name in HtmlMixin produced FileData**
 
 ## 1.0.55
 
