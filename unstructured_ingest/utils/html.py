@@ -129,7 +129,7 @@ class HtmlMixin(BaseModel):
         )
         result_file_data = file_data.model_copy(deep=True)
         result_file_data.metadata.url = url
-        result_file_data.display_name = f"{result_file_data.display_name or ''} > {filename}"
+        result_file_data.display_name = filename
         if result_file_data.metadata.record_locator is None:
             result_file_data.metadata.record_locator = {}
         result_file_data.metadata.record_locator["parent_url"] = url
