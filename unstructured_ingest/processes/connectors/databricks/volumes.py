@@ -117,18 +117,48 @@ class DatabricksVolumesIndexer(Indexer, ABC):
     connection_config: DatabricksVolumesConnectionConfig
 
     def precheck(self) -> None:
+        self.log_operation_start(
+            "Connection validation",
+            catalog=self.index_config.catalog,
+            schema=self.index_config.databricks_schema,
+            volume=self.index_config.volume,
+            path=self.index_config.path,
+        )
+
         try:
             self.connection_config.get_client()
         except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"databricks://{self.connection_config.host}{self.index_config.path}",
+            )
             raise self.connection_config.wrap_error(e=e) from e
 
+        self.log_connection_validated(
+            connector_type=self.connector_type,
+            endpoint=f"databricks://{self.connection_config.host}{self.index_config.path}",
+        )
+
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        self.log_indexing_start(f"{self.connector_type} files")
+
         try:
+            total_files = 0
+            self.log_operation_start("File indexing", recursive=self.index_config.recursive)
             for file_info in self.connection_config.get_client().dbfs.list(
                 path=self.index_config.path, recursive=self.index_config.recursive
             ):
                 if file_info.is_dir:
                     continue
+                total_files += 1
+                if total_files > 5:
+                    self.log_progress(
+                        current=total_files,
+                        total=total_files,
+                        item_type="files",
+                        operation="Indexing",
+                    )
                 rel_path = file_info.path.replace(self.index_config.path, "")
                 if rel_path.startswith("/"):
                     rel_path = rel_path[1:]
@@ -151,7 +181,15 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                     ),
                     display_name=source_identifiers.fullpath,
                 )
+
+            self.log_indexing_complete(f"{self.connector_type} files", total_files)
+
         except Exception as e:
+            self.log_error_with_context(
+                "File indexing failed",
+                error=e,
+                context={"path": self.index_config.path, "recursive": self.index_config.recursive},
+            )
             raise self.connection_config.wrap_error(e=e)
 
 
@@ -165,10 +203,22 @@ class DatabricksVolumesDownloader(Downloader, ABC):
     connection_config: DatabricksVolumesConnectionConfig
 
     def precheck(self) -> None:
+        self.log_operation_start("Connection validation")
+
         try:
             self.connection_config.get_client()
         except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"databricks://{self.connection_config.host}",
+            )
             raise self.connection_config.wrap_error(e=e)
+
+        self.log_connection_validated(
+            connector_type=self.connector_type,
+            endpoint=f"databricks://{self.connection_config.host}",
+        )
 
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)
@@ -177,14 +227,27 @@ class DatabricksVolumesDownloader(Downloader, ABC):
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         volumes_path = file_data.additional_metadata["path"]
-        logger.info(f"Writing {file_data.identifier} to {download_path}")
+
+        self.log_download_start(file_path=volumes_path, file_id=file_data.identifier)
+
         try:
             with self.connection_config.get_client().dbfs.download(path=volumes_path) as c:
                 read_content = c._read_handle.read()
         except Exception as e:
+            self.log_error_with_context(
+                "File download failed",
+                error=e,
+                context={"file_path": volumes_path, "file_id": file_data.identifier},
+            )
             raise self.connection_config.wrap_error(e=e)
+
         with open(download_path, "wb") as f:
             f.write(read_content)
+
+        self.log_download_complete(
+            file_path=volumes_path, file_id=file_data.identifier, download_path=str(download_path)
+        )
+
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
@@ -209,13 +272,39 @@ class DatabricksVolumesUploader(Uploader, ABC):
             )
 
     def precheck(self) -> None:
+        self.log_operation_start(
+            "Connection validation",
+            catalog=self.upload_config.catalog,
+            schema=self.upload_config.databricks_schema,
+            volume=self.upload_config.volume,
+            path=self.upload_config.path,
+        )
+
         try:
-            assert self.connection_config.get_client().current_user.me().active
+            client = self.connection_config.get_client()
+            user = client.current_user.me()
+            if not user.active:
+                raise ValueError("User account is not active")
+
         except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"databricks://{self.connection_config.host}{self.upload_config.path}",
+            )
             raise self.connection_config.wrap_error(e=e)
+
+        self.log_connection_validated(
+            connector_type=self.connector_type,
+            endpoint=f"databricks://{self.connection_config.host}{self.upload_config.path}",
+        )
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = self.get_output_path(file_data=file_data)
+        path_str = str(path.resolve())
+
+        self.log_upload_start(file_path=path_str, destination=output_path)
+
         with open(path, "rb") as elements_file:
             try:
                 self.connection_config.get_client().files.upload(
@@ -224,4 +313,11 @@ class DatabricksVolumesUploader(Uploader, ABC):
                     overwrite=True,
                 )
             except Exception as e:
+                self.log_error_with_context(
+                    "File upload failed",
+                    error=e,
+                    context={"file_path": path_str, "destination": output_path},
+                )
                 raise self.connection_config.wrap_error(e=e)
+
+        self.log_upload_complete(file_path=path_str, destination=output_path)
