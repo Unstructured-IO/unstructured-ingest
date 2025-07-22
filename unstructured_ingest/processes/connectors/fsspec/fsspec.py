@@ -313,10 +313,6 @@ class FsspecDownloader(Downloader):
                 client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
 
-            self.log_download_complete(
-                file_path=rpath, file_id=file_data.identifier, download_path=str(download_path)
-            )
-
         except Exception as e:
             self.log_error_with_context(
                 "File download failed",
@@ -324,18 +320,36 @@ class FsspecDownloader(Downloader):
                 context={"file_path": rpath, "file_id": file_data.identifier},
             )
             raise self.wrap_error(e=e)
+
+        self.log_download_complete(
+            file_path=rpath, file_id=file_data.identifier, download_path=str(download_path),
+        )
+
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
     async def async_run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         mkdir_concurrent_safe(download_path.parent)
+        rpath = file_data.additional_metadata["original_file_path"]
+        file_size = file_data.metadata.filesize_bytes
+        self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
+        
         try:
-            rpath = file_data.additional_metadata["original_file_path"]
             with self.connection_config.get_client(protocol=self.protocol) as client:
                 await client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
+            self.log_error_with_context(
+                "File download failed",
+                error=e,
+                context={"file_path": rpath, "file_id": file_data.identifier},
+            )
             raise self.wrap_error(e=e)
+
+        self.log_download_complete(
+            file_path=rpath, file_id=file_data.identifier, download_path=str(download_path),
+        )
+
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
 
@@ -379,6 +393,8 @@ class FsspecUploader(Uploader):
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
+        self.log_operation_start("Connection validation", protocol=self.upload_config.protocol)
+
         try:
             fs = get_filesystem_class(self.upload_config.protocol)(
                 **self.connection_config.get_access_config(),
@@ -386,7 +402,16 @@ class FsspecUploader(Uploader):
             upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
             fs.write_bytes(path=upload_path.as_posix(), value=b"")
         except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+            )
             raise self.wrap_error(e=e)
+        self.log_connection_validated(
+            connector_type=self.connector_type,
+            endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+        )
 
     def get_upload_path(self, file_data: FileData) -> Path:
         upload_path = Path(
@@ -398,14 +423,31 @@ class FsspecUploader(Uploader):
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        self.log_debug(f"writing local file {path_str} to {upload_path}")
-        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
-            client.upload(lpath=path_str, rpath=upload_path.as_posix())
+        self.log_upload_start(file_path=path_str, destination=upload_path.as_posix())
+        try:
+            with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+                client.upload(lpath=path_str, rpath=upload_path.as_posix())
+        except Exception as e:
+            self.log_error_with_context(
+                "File upload failed",
+                error=e,
+                context={"file_path": path_str, "destination": upload_path.as_posix()},
+            )
+            raise self.wrap_error(e=e)
+        self.log_upload_complete(file_path=path_str, destination=upload_path.as_posix())
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        # Odd that fsspec doesn't run exists() as async even when client support async
-        self.log_debug(f"writing local file {path_str} to {upload_path}")
-        with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
-            client.upload(lpath=path_str, rpath=upload_path.as_posix())
+        self.log_upload_start(file_path=path_str, destination=upload_path.as_posix())
+        try:
+            with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+                client.upload(lpath=path_str, rpath=upload_path.as_posix())
+        except Exception as e:
+            self.log_error_with_context(
+                "File upload failed",
+                error=e,
+                context={"file_path": path_str, "destination": upload_path.as_posix()},
+            )
+            raise self.wrap_error(e=e)
+        self.log_upload_complete(file_path=path_str, destination=upload_path.as_posix())
