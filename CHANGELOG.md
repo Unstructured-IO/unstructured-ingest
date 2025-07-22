@@ -1,3 +1,7 @@
+## 1.0.56
+
+- **Fix: set correct display_name in HtmlMixin produced FileData**
+
 ## 1.0.55
 
 * **Fix: add precheck method to SharePoint connector**
