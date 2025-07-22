@@ -1,4 +1,4 @@
-## 1.0.56-dev0
+## 1.0.56
 
 - **Feat: improve HtmlMixin produced metadata**
 
