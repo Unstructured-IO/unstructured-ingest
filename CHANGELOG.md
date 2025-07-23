@@ -1,3 +1,7 @@
+## 1.1.0
+
+- **Feature**: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.
+
 ## 1.0.59
 
 * **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
