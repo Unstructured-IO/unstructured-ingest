@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 class OctoAiEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr = Field(description="API key for OctoAI")
+    api_key: SecretStr = Field(description="API key for OctoAI.")
     embedder_model_name: str = Field(
         default="thenlper/gte-large", alias="model_name", description="octoai model name"
     )
