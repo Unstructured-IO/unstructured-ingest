@@ -1,3 +1,7 @@
+## 1.0.59
+
+* **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
+
 ## 1.0.58
 
 * **o11y: Improved logging in connectors' operations with LoggingMixin class**
