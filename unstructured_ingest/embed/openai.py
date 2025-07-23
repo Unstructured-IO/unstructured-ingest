@@ -87,7 +87,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "OpenAI":
-        from openai import OpenAI, DefaultHttpxClient
+        from openai import DefaultHttpxClient, OpenAI
 
         client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
         return OpenAI(
