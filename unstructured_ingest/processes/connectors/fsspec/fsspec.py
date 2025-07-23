@@ -314,7 +314,7 @@ class FsspecDownloader(Downloader):
             self.handle_directory_download(lpath=download_path)
 
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File download failed",
                 error=e,
                 context={"file_path": rpath, "file_id": file_data.identifier},
@@ -341,7 +341,7 @@ class FsspecDownloader(Downloader):
                 await client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File download failed",
                 error=e,
                 context={"file_path": rpath, "file_id": file_data.identifier},
@@ -433,7 +433,7 @@ class FsspecUploader(Uploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File upload failed",
                 error=e,
                 context={"file_path": path_str, "destination": upload_path.as_posix()},
@@ -449,7 +449,7 @@ class FsspecUploader(Uploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File upload failed",
                 error=e,
                 context={"file_path": path_str, "destination": upload_path.as_posix()},

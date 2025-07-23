@@ -22,8 +22,11 @@ class DataSanitizer:
     @staticmethod
     def sanitize_id(identifier: str) -> str:
         """Sanitize IDs for logging, showing only first/last few characters."""
-        if not identifier or len(identifier) < 8:
+        if not identifier:
             return "<id>"
+        if len(identifier) < 10:
+            half_len = len(identifier) // 2
+            return f"{identifier[:half_len]}..."
         return f"{identifier[:4]}...{identifier[-4:]}"
 
     @staticmethod
@@ -42,8 +45,9 @@ class DataSanitizer:
         """Sanitize tokens and secrets for logging."""
         if not token:
             return "<token>"
-        if len(token) < 8:
-            return "<token>"
+        if len(token) < 10:
+            half_len = len(token) // 2
+            return f"{token[:half_len]}..."
         return f"{token[:4]}...{token[-4:]}"
 
     @staticmethod

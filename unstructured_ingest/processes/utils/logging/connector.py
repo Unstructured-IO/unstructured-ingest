@@ -343,28 +343,6 @@ class ConnectorLoggingMixin:
             else:
                 logger.debug("%s context: %s", log_type, all_context)
 
-    def log_warning_with_context(self, message: str, context: Optional[Dict[str, Any]] = None):
-        """Log a warning with optional context."""
-        logger.warning(message)
-        if context:
-            if self._should_sanitize():
-                sanitized_context = self._sanitizer.sanitize_dict(context)
-                logger.debug("Warning context: %s", sanitized_context)
-            else:
-                logger.debug("Warning context: %s", context)
-
-    def log_error_with_context(
-        self, message: str, error: Exception, context: Optional[Dict[str, Any]] = None
-    ):
-        """Log an error with optional context."""
-        logger.error("%s: %s", message, error, exc_info=True)
-        if context:
-            if self._should_sanitize():
-                sanitized_context = self._sanitizer.sanitize_dict(context)
-                logger.debug("Error context: %s", sanitized_context)
-            else:
-                logger.debug("Error context: %s", context)
-
     def log_api_call(self, method: str, endpoint: str, status_code: Optional[int] = None, **kwargs):
         """Log API call details."""
         if self._should_sanitize():
@@ -385,9 +363,3 @@ class ConnectorLoggingMixin:
                 logger.debug("API call details: %s", sanitized_kwargs)
             else:
                 logger.debug("API call details: %s", kwargs)
-
-    def log_summary(self, operation: str, stats: Dict[str, Any]):
-        """Log a summary of operations with statistics."""
-        logger.info("%s summary:", operation)
-        for key, value in stats.items():
-            logger.info("  %s: %s", key, value)
