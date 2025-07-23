@@ -1,15 +1,18 @@
+## 1.0.58
+
+* **o11y: Improved logging in connectors' operations with LoggingMixin class**
+
 ## 1.0.57
 
-- **test: Longer interval for pinecone integration tests**
+* **test: Longer interval for pinecone integration tests**
 
 ## 1.0.56
 
-- **Fix: set correct display_name in HtmlMixin produced FileData**
+* **Fix: set correct display_name in HtmlMixin produced FileData**
 
 ## 1.0.55
 
 * **Fix: add precheck method to SharePoint connector**
-
 
 ## 1.0.54
 
