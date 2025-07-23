@@ -12,7 +12,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.tls import ssl_context_with_optional_ca_override
 
 if TYPE_CHECKING:
-    from openai import AsyncAzureOpenAI, AzureOpenAI,
+    from openai import AsyncAzureOpenAI, AzureOpenAI
 
 
 class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
