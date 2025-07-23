@@ -18,9 +18,10 @@ from unstructured_ingest.errors_v2 import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.tls import ssl_context_with_optional_ca_override
 
 if TYPE_CHECKING:
-    from openai import AsyncOpenAI, OpenAI
+    from openai import AsyncOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient, OpenAI
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
@@ -88,13 +89,19 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
     def get_client(self) -> "OpenAI":
         from openai import OpenAI
 
-        return OpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
+        client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
+        return OpenAI(
+            api_key=self.api_key.get_secret_value(), http_client=client, base_url=self.base_url
+        )
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncOpenAI":
         from openai import AsyncOpenAI
 
-        return AsyncOpenAI(api_key=self.api_key.get_secret_value(), base_url=self.base_url)
+        client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
+        return AsyncOpenAI(
+            api_key=self.api_key.get_secret_value(), http_client=client, base_url=self.base_url
+        )
 
 
 @dataclass

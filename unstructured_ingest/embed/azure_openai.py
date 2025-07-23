@@ -9,9 +9,10 @@ from unstructured_ingest.embed.openai import (
     OpenAIEmbeddingEncoder,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.utils.tls import ssl_context_with_optional_ca_override
 
 if TYPE_CHECKING:
-    from openai import AsyncAzureOpenAI, AzureOpenAI
+    from openai import AsyncAzureOpenAI, AzureOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient
 
 
 class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
@@ -25,7 +26,9 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     def get_client(self) -> "AzureOpenAI":
         from openai import AzureOpenAI
 
+        client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
         return AzureOpenAI(
+            http_client=client,
             api_key=self.api_key.get_secret_value(),
             api_version=self.api_version,
             azure_endpoint=self.azure_endpoint,
@@ -35,7 +38,9 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     def get_async_client(self) -> "AsyncAzureOpenAI":
         from openai import AsyncAzureOpenAI
 
+        client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
         return AsyncAzureOpenAI(
+            http_client=client,
             api_key=self.api_key.get_secret_value(),
             api_version=self.api_version,
             azure_endpoint=self.azure_endpoint,

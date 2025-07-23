@@ -4,3 +4,4 @@ pydantic>=2.7
 tqdm
 click
 opentelemetry-sdk
+certifi>=2025.7.14

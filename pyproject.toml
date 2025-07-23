@@ -210,3 +210,9 @@ fail_under = 0
 
 [tool.hatch.build.targets.sdist]
     packages = ["/unstructured_ingest"]
+
+[[tool.uv.index]]
+name = "PyPi"
+url = "https://pypi.org/simple"
+explicit = false
+default = true
