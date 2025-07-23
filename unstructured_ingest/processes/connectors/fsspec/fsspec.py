@@ -322,7 +322,9 @@ class FsspecDownloader(Downloader):
             raise self.wrap_error(e=e)
 
         self.log_download_complete(
-            file_path=rpath, file_id=file_data.identifier, download_path=str(download_path),
+            file_path=rpath,
+            file_id=file_data.identifier,
+            download_path=str(download_path),
         )
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
@@ -333,7 +335,7 @@ class FsspecDownloader(Downloader):
         rpath = file_data.additional_metadata["original_file_path"]
         file_size = file_data.metadata.filesize_bytes
         self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
-        
+
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
                 await client.get_file(rpath=rpath, lpath=download_path.as_posix())
@@ -347,7 +349,9 @@ class FsspecDownloader(Downloader):
             raise self.wrap_error(e=e)
 
         self.log_download_complete(
-            file_path=rpath, file_id=file_data.identifier, download_path=str(download_path),
+            file_path=rpath,
+            file_id=file_data.identifier,
+            download_path=str(download_path),
         )
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
