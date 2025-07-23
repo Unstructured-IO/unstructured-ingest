@@ -1,6 +1,14 @@
-## 1.0.56
+## 1.0.58
 
 * **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
+
+## 1.0.57
+
+- **test: Longer interval for pinecone integration tests**
+
+## 1.0.56
+
+- **Fix: set correct display_name in HtmlMixin produced FileData**
 
 ## 1.0.55
 
