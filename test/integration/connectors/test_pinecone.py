@@ -110,7 +110,7 @@ def validate_pinecone_index(
     index_name: str,
     expected_num_of_vectors: int,
     retries=30,
-    interval=1,
+    interval=5,
     namespace: str = "default",
 ) -> None:
     # Because there's a delay for the index to catch up to the recent writes, add in a retry

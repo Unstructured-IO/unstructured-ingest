@@ -87,6 +87,7 @@ class SharepointIndexerConfig(OnedriveIndexerConfig):
     # TODO: We can probably make path non-optional on OnedriveIndexerConfig once tested
     path: str = Field(default="")
 
+
 @dataclass
 class SharepointIndexer(OnedriveIndexer):
     connection_config: SharepointConnectionConfig
@@ -114,14 +115,14 @@ class SharepointIndexer(OnedriveIndexer):
     def _is_root_path(self, path: str) -> bool:
         """Check if the path represents root access (empty string or legacy default)."""
         return not path or not path.strip() or path == LEGACY_DEFAULT_PATH
-    
+
     def _get_target_drive_item(self, site_drive_item: DriveItem, path: str) -> DriveItem:
         """Get the drive item to search in based on the path."""
         if self._is_root_path(path):
             return site_drive_item
         else:
             return site_drive_item.get_by_path(path).get().execute_query()
-    
+
     def _validate_folder_path(self, site_drive_item: DriveItem, path: str) -> None:
         """Validate that a specific folder path exists and is accessible."""
         from office365.runtime.client_request_exception import ClientRequestException

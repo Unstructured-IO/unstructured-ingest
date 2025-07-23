@@ -1,15 +1,27 @@
-## 1.0.57
+
+## 1.0.60
 
 Canary to see if tests fail with no changes
 
+## 1.0.59
+
+* **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
+
+## 1.0.58
+
+* **o11y: Improved logging in connectors' operations with LoggingMixin class**
+
+## 1.0.57
+
+* **test: Longer interval for pinecone integration tests**
+
 ## 1.0.56
 
-- **Fix: set correct display_name in HtmlMixin produced FileData**
+* **Fix: set correct display_name in HtmlMixin produced FileData**
 
 ## 1.0.55
 
 * **Fix: add precheck method to SharePoint connector**
-
 
 ## 1.0.54
 
