@@ -1,3 +1,7 @@
+## 1.0.57
+
+- **test: Longer interval for pinecone integration tests**
+
 ## 1.0.56
 
 - **Fix: set correct display_name in HtmlMixin produced FileData**
