@@ -314,7 +314,7 @@ class FsspecDownloader(Downloader):
             self.handle_directory_download(lpath=download_path)
 
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File download failed",
                 error=e,
                 context={"file_path": rpath, "file_id": file_data.identifier},
@@ -322,7 +322,9 @@ class FsspecDownloader(Downloader):
             raise self.wrap_error(e=e)
 
         self.log_download_complete(
-            file_path=rpath, file_id=file_data.identifier, download_path=str(download_path),
+            file_path=rpath,
+            file_id=file_data.identifier,
+            download_path=str(download_path),
         )
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
@@ -333,13 +335,12 @@ class FsspecDownloader(Downloader):
         rpath = file_data.additional_metadata["original_file_path"]
         file_size = file_data.metadata.filesize_bytes
         self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
-        
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
                 await client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File download failed",
                 error=e,
                 context={"file_path": rpath, "file_id": file_data.identifier},
@@ -347,7 +348,9 @@ class FsspecDownloader(Downloader):
             raise self.wrap_error(e=e)
 
         self.log_download_complete(
-            file_path=rpath, file_id=file_data.identifier, download_path=str(download_path),
+            file_path=rpath,
+            file_id=file_data.identifier,
+            download_path=str(download_path),
         )
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
@@ -380,6 +383,7 @@ class FsspecUploader(Uploader):
         )
 
     def __post_init__(self):
+        super().__post_init__()
         # TODO once python3.9 no longer supported and kw_only is allowed in dataclasses, remove:
         if not self.upload_config:
             raise TypeError(
@@ -428,7 +432,7 @@ class FsspecUploader(Uploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File upload failed",
                 error=e,
                 context={"file_path": path_str, "destination": upload_path.as_posix()},
@@ -444,7 +448,7 @@ class FsspecUploader(Uploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File upload failed",
                 error=e,
                 context={"file_path": path_str, "destination": upload_path.as_posix()},
