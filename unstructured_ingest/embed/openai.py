@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from openai import AsyncOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient, OpenAI
 from pydantic import Field, SecretStr
 
 from unstructured_ingest.embed.interfaces import (
@@ -20,6 +19,9 @@ from unstructured_ingest.errors_v2 import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.tls import ssl_context_with_optional_ca_override
+
+if TYPE_CHECKING:
+    from openai import AsyncOpenAI, OpenAI
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
@@ -85,7 +87,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "OpenAI":
-        from openai import OpenAI
+        from openai import DefaultHttpxClient, OpenAI
 
         client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
         return OpenAI(
@@ -94,7 +96,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncOpenAI":
-        from openai import AsyncOpenAI
+        from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
         client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
         return AsyncOpenAI(

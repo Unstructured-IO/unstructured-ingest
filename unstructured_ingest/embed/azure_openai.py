@@ -1,6 +1,6 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from openai import AsyncAzureOpenAI, AzureOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient
 from pydantic import Field
 
 from unstructured_ingest.embed.openai import (
@@ -10,6 +10,9 @@ from unstructured_ingest.embed.openai import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.tls import ssl_context_with_optional_ca_override
+
+if TYPE_CHECKING:
+    from openai import AsyncAzureOpenAI, AzureOpenAI
 
 
 class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
@@ -21,7 +24,7 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
 
     @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "AzureOpenAI":
-        from openai import AzureOpenAI
+        from openai import AzureOpenAI, DefaultHttpxClient
 
         client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
         return AzureOpenAI(
@@ -33,7 +36,7 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncAzureOpenAI":
-        from openai import AsyncAzureOpenAI
+        from openai import AsyncAzureOpenAI, DefaultAsyncHttpxClient
 
         client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
         return AsyncAzureOpenAI(
