@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from unstructured_ingest.interfaces import ProcessorConfig
-from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.pipeline import Pipeline
 from unstructured_ingest.processes.chunker import ChunkerConfig
 from unstructured_ingest.processes.connectors.local import (
@@ -21,9 +20,8 @@ output_path = work_dir / "output"
 download_path = work_dir / "download"
 
 if __name__ == "__main__":
-    logger.info(f"writing all content in: {work_dir.resolve()}")
     Pipeline.from_configs(
-        context=ProcessorConfig(work_dir=str(work_dir.resolve())),
+        context=ProcessorConfig(work_dir=str(work_dir.resolve()), verbose=True),
         indexer_config=LocalIndexerConfig(
             input_path=str(docs_path.resolve()) + "/language-docs/UDHR_first_article_all.txt"
         ),

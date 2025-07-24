@@ -7559,7 +7559,6 @@ wheels = [
 name = "unstructured-ingest"
 source = { editable = "." }
 dependencies = [
-    { name = "certifi" },
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "opentelemetry-sdk" },
@@ -7913,7 +7912,6 @@ requires-dist = [
     { name = "bs4", marker = "extra == 'biomed'" },
     { name = "bs4", marker = "extra == 'gcs'" },
     { name = "bs4", marker = "extra == 'zendesk'" },
-    { name = "certifi", specifier = ">=2025.7.14" },
     { name = "chromadb", marker = "extra == 'chroma'" },
     { name = "clarifai", marker = "extra == 'clarifai'" },
     { name = "click" },
