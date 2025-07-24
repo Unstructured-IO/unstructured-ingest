@@ -185,7 +185,7 @@ class DatabricksVolumesIndexer(Indexer, ABC):
             self.log_indexing_complete(f"{self.connector_type} files", total_files)
 
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File indexing failed",
                 error=e,
                 context={"path": self.index_config.path, "recursive": self.index_config.recursive},
@@ -234,7 +234,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
             with self.connection_config.get_client().dbfs.download(path=volumes_path) as c:
                 read_content = c._read_handle.read()
         except Exception as e:
-            self.log_error_with_context(
+            self.log_error(
                 "File download failed",
                 error=e,
                 context={"file_path": volumes_path, "file_id": file_data.identifier},
@@ -313,7 +313,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
                     overwrite=True,
                 )
             except Exception as e:
-                self.log_error_with_context(
+                self.log_error(
                     "File upload failed",
                     error=e,
                     context={"file_path": path_str, "destination": output_path},

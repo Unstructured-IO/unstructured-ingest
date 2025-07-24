@@ -151,6 +151,7 @@ class ConnectorLoggingMixin:
         **kwargs,
     ):
         """Log document-related operations (universal for all connector types)."""
+
         if self._logging_config.log_document_locations and document_location:
             if self._should_sanitize():
                 sanitized_location = self._sanitizer.sanitize_location(document_location)
@@ -253,6 +254,20 @@ class ConnectorLoggingMixin:
             document_id=file_id,
             download_path=download_path,
             content_size=file_size,
+        )
+
+    def log_stager_start(self, elements_filepath: str, output_path: str):
+        """Log the start of a stager operation."""
+        logger.info("Starting staging")
+
+        self.log_file_operation("Staging", file_path=elements_filepath, destination=output_path)
+
+    def log_stager_complete(self, elements_filepath: str, output_path: str):
+        """Log the completion of a stager operation."""
+        logger.info("Staging completed")
+
+        self.log_file_operation(
+            "Staging completed", file_path=elements_filepath, destination=output_path
         )
 
     def log_upload_start(

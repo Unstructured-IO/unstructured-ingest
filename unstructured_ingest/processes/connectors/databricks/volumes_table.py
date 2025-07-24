@@ -60,12 +60,18 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
         output_dir.mkdir(exist_ok=True, parents=True)
         output_path = output_dir / output_filename
         final_output_path = output_path.with_suffix(".json")
+        self.log_stager_start(
+            elements_filepath=elements_filepath.as_posix(), output_path=final_output_path.as_posix()
+        )
         data = get_json_data(path=elements_filepath)
         for element in data:
             element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
             element[RECORD_ID_LABEL] = file_data.identifier
             element["metadata"] = json.dumps(element.get("metadata", {}))
         write_data(path=final_output_path, data=data, indent=None)
+        self.log_stager_complete(
+            elements_filepath=elements_filepath.as_posix(), output_path=final_output_path.as_posix()
+        )
         return final_output_path
 
 
@@ -86,6 +92,10 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
         self.upload_config.table_name = table_name
         connectors_dir = Path(__file__).parents[1]
         collection_config_file = connectors_dir / "assets" / "databricks_delta_table_schema.sql"
+
+        self.log_operation_start(
+            "Creating destination", database=self.upload_config.database, table_name=table_name
+        )
         with self.get_cursor() as cursor:
             cursor.execute("SHOW TABLES")
             table_names = [r[1] for r in cursor.fetchall()]
@@ -97,27 +107,45 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             destination_schema = "".join([line.strip() for line in data_lines])
             logger.info(f"creating table {table_name} for user")
             cursor.execute(destination_schema)
-            return True
+        self.log_operation_complete(
+            "Creating destination", database=self.upload_config.database, table_name=table_name
+        )
+        return True
 
     def precheck(self) -> None:
-        with self.connection_config.get_cursor() as cursor:
-            cursor.execute("SHOW CATALOGS")
-            catalogs = [r[0] for r in cursor.fetchall()]
-            if self.upload_config.catalog not in catalogs:
-                raise ValueError(
-                    "Catalog {} not found in {}".format(
-                        self.upload_config.catalog, ", ".join(catalogs)
+        self.log_operation_start(
+            "Prechecking connection", endpoint=f"https://{self.connection_config.server_hostname}"
+        )
+        try:
+            with self.connection_config.get_cursor() as cursor:
+                cursor.execute("SHOW CATALOGS")
+                catalogs = [r[0] for r in cursor.fetchall()]
+                if self.upload_config.catalog not in catalogs:
+                    raise ValueError(
+                        "Catalog {} not found in {}".format(
+                            self.upload_config.catalog, ", ".join(catalogs)
+                        )
                     )
-                )
-            cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
-            cursor.execute("SHOW DATABASES")
-            databases = [r[0] for r in cursor.fetchall()]
-            if self.upload_config.database not in databases:
-                raise ValueError(
-                    "Database {} not found in {}".format(
-                        self.upload_config.database, ", ".join(databases)
+                cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
+                cursor.execute("SHOW DATABASES")
+                databases = [r[0] for r in cursor.fetchall()]
+                if self.upload_config.database not in databases:
+                    raise ValueError(
+                        "Database {} not found in {}".format(
+                            self.upload_config.database, ", ".join(databases)
+                        )
                     )
-                )
+        except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"https://{self.connection_config.server_hostname}",
+            )
+            raise e
+        self.log_connection_validated(
+            connector_type=self.connector_type,
+            endpoint=f"https://{self.connection_config.server_hostname}",
+        )
 
     def get_output_path(self, file_data: FileData, suffix: str = ".json") -> str:
         filename = Path(file_data.source_identifiers.filename)
@@ -159,6 +187,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             logger.debug(f"deleted {deleted_rows} rows from table {self.upload_config.table_name}")
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.log_upload_start(file_path=path.as_posix(), destination=self.upload_config.table_name)
         if self.can_delete():
             self.delete_previous_content(file_data=file_data)
         with self.get_cursor(staging_allowed_local_path=path.parent.as_posix()) as cursor:
@@ -175,6 +204,9 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             select_column_str = ", ".join(select_columns)
             sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {select_column_str} FROM json.`{catalog_path}`"  # noqa: E501
             cursor.execute(sql_statment)
+        self.log_upload_complete(
+            file_path=path.as_posix(), destination=self.upload_config.table_name
+        )
 
 
 databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
