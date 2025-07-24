@@ -1,3 +1,7 @@
+## 1.1.2
+
+* **Fix**: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic
+
 ## 1.1.1
 
 * **Fix: Update examples**
