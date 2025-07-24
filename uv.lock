@@ -642,11 +642,11 @@ wheels = [
 
 [[package]]
 name = "certifi"
-version = "2025.4.26"
+version = "2025.7.14"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e8/9e/c05b3920a3b7d20d3d3310465f50348e5b3694f4f88c6daf736eef3024c4/certifi-2025.4.26.tar.gz", hash = "sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6", size = 160705, upload-time = "2025-04-26T02:12:29.51Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/76/52c535bcebe74590f296d6c77c86dabf761c41980e1347a2422e4aa2ae41/certifi-2025.7.14.tar.gz", hash = "sha256:8ea99dbdfaaf2ba2f9bac77b9249ef62ec5218e7c2b2e903378ed5fccf765995", size = 163981, upload-time = "2025-07-14T03:29:28.449Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4a/7e/3db2bd1b1f9e95f7cddca6d6e75e2f2bd9f51b1246e546d88addca0106bd/certifi-2025.4.26-py3-none-any.whl", hash = "sha256:30350364dfe371162649852c63336a15c70c6510c2ad5015b21c2345311805f3", size = 159618, upload-time = "2025-04-26T02:12:27.662Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/52/34c6cf5bb9285074dc3531c437b3919e825d976fde097a7a73f79e726d03/certifi-2025.7.14-py3-none-any.whl", hash = "sha256:6b31f564a415d79ee77df69d757bb49a5bb53bd9f756cbbe24394ffd6fc1f4b2", size = 162722, upload-time = "2025-07-14T03:29:26.863Z" },
 ]
 
 [[package]]
@@ -6941,9 +6941,9 @@ dependencies = [
     { name = "tqdm", marker = "python_full_version >= '3.10'" },
     { name = "typer", marker = "python_full_version >= '3.10'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/53/e33c5e6d53c2e2bbd07f9dcb1979e27ac670fca0e4e238b169aa4c358ee2/together-1.5.21.tar.gz", hash = "sha256:59adb8cf4c5b77eca76b8c66a73c47c45fd828aaf4f059f33f893f8c5f68f85a", size = 69887 }
+sdist = { url = "https://files.pythonhosted.org/packages/ea/53/e33c5e6d53c2e2bbd07f9dcb1979e27ac670fca0e4e238b169aa4c358ee2/together-1.5.21.tar.gz", hash = "sha256:59adb8cf4c5b77eca76b8c66a73c47c45fd828aaf4f059f33f893f8c5f68f85a", size = 69887, upload-time = "2025-07-10T21:04:43.781Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/31/6556a303ea39929fa016f4260eef289b620cf366a576c304507cb75b4d12/together-1.5.21-py3-none-any.whl", hash = "sha256:35e6c0072033a2e5f1105de8781e969f41cffc85dae508b6f4dc293360026872", size = 96141 },
+    { url = "https://files.pythonhosted.org/packages/fc/31/6556a303ea39929fa016f4260eef289b620cf366a576c304507cb75b4d12/together-1.5.21-py3-none-any.whl", hash = "sha256:35e6c0072033a2e5f1105de8781e969f41cffc85dae508b6f4dc293360026872", size = 96141, upload-time = "2025-07-10T21:04:42.418Z" },
 ]
 
 [[package]]
@@ -7559,6 +7559,7 @@ wheels = [
 name = "unstructured-ingest"
 source = { editable = "." }
 dependencies = [
+    { name = "certifi" },
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "opentelemetry-sdk" },
@@ -7618,6 +7619,8 @@ delta-table = [
     { name = "boto3" },
     { name = "deltalake" },
     { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "tenacity" },
 ]
 discord = [
     { name = "discord-py" },
@@ -7910,6 +7913,7 @@ requires-dist = [
     { name = "bs4", marker = "extra == 'biomed'" },
     { name = "bs4", marker = "extra == 'gcs'" },
     { name = "bs4", marker = "extra == 'zendesk'" },
+    { name = "certifi", specifier = ">=2025.7.14" },
     { name = "chromadb", marker = "extra == 'chroma'" },
     { name = "clarifai", marker = "extra == 'clarifai'" },
     { name = "click" },
@@ -7970,6 +7974,7 @@ requires-dist = [
     { name = "psycopg2-binary", marker = "extra == 'postgres'" },
     { name = "psycopg2-binary", marker = "extra == 'snowflake'" },
     { name = "pyairtable", marker = "extra == 'airtable'" },
+    { name = "pyarrow", marker = "extra == 'delta-table'" },
     { name = "pyarrow", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "pyarrow", marker = "extra == 'vastdb'" },
     { name = "pydantic", specifier = ">=2.7" },
@@ -7993,6 +7998,7 @@ requires-dist = [
     { name = "singlestoredb", marker = "extra == 'singlestore'" },
     { name = "slack-sdk", extras = ["optional"], marker = "extra == 'slack'" },
     { name = "snowflake-connector-python", marker = "extra == 'snowflake'" },
+    { name = "tenacity", marker = "extra == 'delta-table'" },
     { name = "tenacity", marker = "extra == 'google-drive'" },
     { name = "tenacity", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "tiktoken", marker = "extra == 'octoai'" },
