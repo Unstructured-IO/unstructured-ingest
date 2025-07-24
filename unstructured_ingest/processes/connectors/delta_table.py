@@ -48,7 +48,8 @@ class DeltaTableAccessConfig(AccessConfig):
 
 class DeltaTableConnectionConfig(ConnectionConfig):
     access_config: Secret[DeltaTableAccessConfig] = Field(
-        default=Secret(DeltaTableAccessConfig()), validate_default=True
+        default_factory=lambda: Secret[DeltaTableAccessConfig](DeltaTableAccessConfig()),
+        validate_default=True,
     )
     aws_region: Optional[str] = Field(default=None, description="AWS Region")
     table_uri: str = Field(
