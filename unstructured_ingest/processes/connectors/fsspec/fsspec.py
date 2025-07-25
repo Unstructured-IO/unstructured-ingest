@@ -105,10 +105,9 @@ class FsspecIndexer(Indexer):
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
-        self.log_operation_start(
-            "Connection validation",
-            protocol=self.index_config.protocol,
-            path=self.index_config.path_without_protocol,
+        self.log_connection_validation_start(
+            connector_type=self.connector_type,
+            endpoint=self.index_config.remote_url,
         )
 
         try:
@@ -125,18 +124,17 @@ class FsspecIndexer(Indexer):
             with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
                 client.head(path=file_to_sample)
 
-            self.log_connection_validated(
-                connector_type=self.connector_type,
-                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
-            )
-
         except Exception as e:
-            self.log_connection_failed(
+            self.log_connection_validation_failed(
                 connector_type=self.connector_type,
                 error=e,
-                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+                endpoint=self.index_config.remote_url,
             )
             raise self.wrap_error(e=e)
+        self.log_connection_validation_success(
+            connector_type=self.connector_type,
+            endpoint=self.index_config.remote_url,
+        )
 
     def get_file_info(self) -> list[dict[str, Any]]:
         if not self.index_config.recursive:
@@ -217,42 +215,58 @@ class FsspecIndexer(Indexer):
         init_file_data.additional_metadata = self.get_metadata(file_info=file_info)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        self.log_indexing_start(f"{self.connector_type} files")
+        self.log_indexing_start(
+            connector_type=self.connector_type, endpoint=self.index_config.remote_url
+        )
 
         files = self.get_file_info()
         total_files = len(files)
 
-        self.log_operation_start("File indexing", total_files=total_files)
+        try:
+            for i, file_info in enumerate(files):
+                file_path = self.get_path(file_info=file_info)
 
-        for i, file_info in enumerate(files):
-            file_path = self.get_path(file_info=file_info)
+                # Only log progress for larger operations
+                if total_files > 5:
+                    self.log_indexing_progress(
+                        connector_type=self.connector_type,
+                        current=i + 1,
+                        total=total_files,
+                        item_type="files",
+                        endpoint=self.index_config.remote_url,
+                    )
 
-            # Only log progress for larger operations
-            if total_files > 5:
-                self.log_progress(
-                    current=i + 1, total=total_files, item_type="files", operation="Indexing"
+                # Note: we remove any remaining leading slashes (Box introduces these)
+                # to get a valid relative path
+                rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip(
+                    "/"
                 )
 
-            # Note: we remove any remaining leading slashes (Box introduces these)
-            # to get a valid relative path
-            rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip("/")
-
-            additional_metadata = self.sterilize_info(file_data=file_info)
-            additional_metadata["original_file_path"] = file_path
-            yield FileData(
-                identifier=str(uuid5(NAMESPACE_DNS, file_path)),
-                connector_type=self.connector_type,
-                source_identifiers=SourceIdentifiers(
-                    filename=Path(file_path).name,
-                    rel_path=rel_path or None,
-                    fullpath=file_path,
-                ),
-                metadata=self.get_metadata(file_info=file_info),
-                additional_metadata=additional_metadata,
-                display_name=file_path,
+                additional_metadata = self.sterilize_info(file_data=file_info)
+                additional_metadata["original_file_path"] = file_path
+                yield FileData(
+                    identifier=str(uuid5(NAMESPACE_DNS, file_path)),
+                    connector_type=self.connector_type,
+                    source_identifiers=SourceIdentifiers(
+                        filename=Path(file_path).name,
+                        rel_path=rel_path or None,
+                        fullpath=file_path,
+                    ),
+                    metadata=self.get_metadata(file_info=file_info),
+                    additional_metadata=additional_metadata,
+                    display_name=file_path,
+                )
+        except Exception as e:
+            self.log_indexing_failed(
+                connector_type=self.connector_type, error=e, endpoint=self.index_config.remote_url
             )
+            raise self.wrap_error(e=e)
 
-        self.log_indexing_complete(f"{self.connector_type} files", total_files)
+        self.log_indexing_complete(
+            connector_type=self.connector_type,
+            count=total_files,
+            endpoint=self.index_config.remote_url,
+        )
 
 
 class FsspecDownloaderConfig(DownloaderConfig):
@@ -301,12 +315,11 @@ class FsspecDownloader(Downloader):
         return self.connection_config.wrap_error(e=e)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        self.log_download_start(file_data=file_data)
         download_path = self.get_download_path(file_data=file_data)
         mkdir_concurrent_safe(download_path.parent)
 
         rpath = file_data.additional_metadata["original_file_path"]
-        file_size = file_data.metadata.filesize_bytes
-        self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
 
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
@@ -314,45 +327,28 @@ class FsspecDownloader(Downloader):
             self.handle_directory_download(lpath=download_path)
 
         except Exception as e:
-            self.log_error(
-                "File download failed",
-                error=e,
-                context={"file_path": rpath, "file_id": file_data.identifier},
-            )
+            self.log_download_failed(file_data=file_data, error=e)
             raise self.wrap_error(e=e)
 
-        self.log_download_complete(
-            file_path=rpath,
-            file_id=file_data.identifier,
-            download_path=str(download_path),
-        )
+        self.log_download_complete(file_data=file_data)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
     async def async_run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        self.log_download_start(file_data=file_data)
         download_path = self.get_download_path(file_data=file_data)
         mkdir_concurrent_safe(download_path.parent)
         rpath = file_data.additional_metadata["original_file_path"]
-        file_size = file_data.metadata.filesize_bytes
-        self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
 
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
                 await client.get_file(rpath=rpath, lpath=download_path.as_posix())
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
-            self.log_error(
-                "File download failed",
-                error=e,
-                context={"file_path": rpath, "file_id": file_data.identifier},
-            )
+            self.log_download_failed(file_data=file_data, error=e)
             raise self.wrap_error(e=e)
 
-        self.log_download_complete(
-            file_path=rpath,
-            file_id=file_data.identifier,
-            download_path=str(download_path),
-        )
+        self.log_download_complete(file_data=file_data)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
@@ -398,7 +394,10 @@ class FsspecUploader(Uploader):
     def precheck(self) -> None:
         from fsspec import get_filesystem_class
 
-        self.log_operation_start("Connection validation", protocol=self.upload_config.protocol)
+        self.log_connection_validation_start(
+            connector_type=self.connector_type,
+            endpoint=self.upload_config.remote_url,
+        )
 
         try:
             fs = get_filesystem_class(self.upload_config.protocol)(
@@ -407,13 +406,13 @@ class FsspecUploader(Uploader):
             upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
             fs.write_bytes(path=upload_path.as_posix(), value=b"")
         except Exception as e:
-            self.log_connection_failed(
+            self.log_connection_validation_failed(
                 connector_type=self.connector_type,
                 error=e,
                 endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
             )
             raise self.wrap_error(e=e)
-        self.log_connection_validated(
+        self.log_connection_validation_success(
             connector_type=self.connector_type,
             endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
         )
@@ -426,33 +425,25 @@ class FsspecUploader(Uploader):
         return updated_upload_path
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.log_upload_start(file_data=file_data)
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        self.log_upload_start(file_path=path_str, destination=upload_path.as_posix())
         try:
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_error(
-                "File upload failed",
-                error=e,
-                context={"file_path": path_str, "destination": upload_path.as_posix()},
-            )
+            self.log_upload_failed(file_data=file_data, error=e)
             raise self.wrap_error(e=e)
-        self.log_upload_complete(file_path=path_str, destination=upload_path.as_posix())
+        self.log_upload_complete(file_data=file_data)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.log_upload_start(file_data=file_data)
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
-        self.log_upload_start(file_path=path_str, destination=upload_path.as_posix())
         try:
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_error(
-                "File upload failed",
-                error=e,
-                context={"file_path": path_str, "destination": upload_path.as_posix()},
-            )
+            self.log_upload_failed(file_data=file_data, error=e)
             raise self.wrap_error(e=e)
-        self.log_upload_complete(file_path=path_str, destination=upload_path.as_posix())
+        self.log_upload_complete(file_data=file_data)

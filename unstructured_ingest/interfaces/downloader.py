@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.connector import BaseConnector
 from unstructured_ingest.interfaces.process import BaseProcess
+from unstructured_ingest.processes.utils.logging.connectors import DownloaderConnectorLoggingMixin
 
 
 class DownloaderConfig(BaseModel):
@@ -29,9 +30,12 @@ class DownloadResponse(TypedDict):
 download_responses = Union[list[DownloadResponse], DownloadResponse]
 
 
-class Downloader(BaseProcess, BaseConnector, ABC):
+class Downloader(BaseProcess, BaseConnector, DownloaderConnectorLoggingMixin, ABC):
     connector_type: str
     download_config: DownloaderConfigT
+
+    def __post_init__(self):
+        DownloaderConnectorLoggingMixin.__init__(self)
 
     def get_download_path(self, file_data: FileData) -> Optional[Path]:
         if not file_data.source_identifiers:

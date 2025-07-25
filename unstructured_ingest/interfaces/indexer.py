@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.connector import BaseConnector
 from unstructured_ingest.interfaces.process import BaseProcess
+from unstructured_ingest.processes.utils.logging.connectors import IndexerConnectorLoggingMixin
 
 
 class IndexerConfig(BaseModel):
@@ -15,9 +16,12 @@ class IndexerConfig(BaseModel):
 IndexerConfigT = TypeVar("IndexerConfigT", bound=IndexerConfig)
 
 
-class Indexer(BaseProcess, BaseConnector, ABC):
+class Indexer(BaseProcess, BaseConnector, IndexerConnectorLoggingMixin, ABC):
     connector_type: str
     index_config: Optional[IndexerConfigT] = None
+
+    def __post_init__(self):
+        IndexerConnectorLoggingMixin.__init__(self)
 
     def is_async(self) -> bool:
         return False
