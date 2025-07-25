@@ -57,7 +57,7 @@ class ConnectorLoggingMixin:
     ):
         """Log an error message with optional exception, context and sanitization."""
         if error:
-            logger.error("%s: %s", message, error, exc_info=True)
+            logger.error(f"{message}: {error}", exc_info=True)
         else:
             logger.error(message)
         self._log_context("Error", **kwargs)
@@ -67,31 +67,31 @@ class ConnectorLoggingMixin:
         if kwargs:
             if self._should_sanitize():
                 sanitized_context = self.sanitizer.sanitize_dict(kwargs)
-                logger.debug("%s context: %s", log_type, sanitized_context)
+                logger.debug(f"{log_type} context: {sanitized_context}")
             else:
-                logger.debug("%s context: %s", log_type, kwargs)
+                logger.debug(f"{log_type} context: {kwargs}")
 
     def log_operation_start(self, operation: str, **kwargs):
         """Log the start of a major operation."""
-        self.log_info("Starting %s", operation)
+        self.log_info(f"Starting {operation}")
 
         if kwargs:
             if self._should_sanitize():
                 sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_debug("%s parameters: %s", operation, sanitized_kwargs)
+                self.log_debug(f"{operation} parameters: {sanitized_kwargs}")
             else:
-                self.log_debug("%s parameters: %s", operation, kwargs)
+                self.log_debug(f"{operation} parameters: {kwargs}")
 
     def log_operation_complete(self, operation: str, **kwargs):
         """Log the completion of a major operation."""
-        self.log_info("Completed %s", operation)
+        self.log_info(f"Completed {operation}")
 
         if kwargs:
             if self._should_sanitize():
                 sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_debug("%s results: %s", operation, sanitized_kwargs)
+                self.log_debug(f"{operation} results: {sanitized_kwargs}")
             else:
-                self.log_debug("%s results: %s", operation, kwargs)
+                self.log_debug(f"{operation} results: {kwargs}")
 
     def log_operation_progress(
         self, operation: str, current: int, total: int, item_type: str, **kwargs
@@ -101,20 +101,20 @@ class ConnectorLoggingMixin:
         if kwargs:
             if self._should_sanitize():
                 sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_debug("%s progress: %s", operation, sanitized_kwargs)
+                self.log_debug(f"{operation} progress: {sanitized_kwargs}")
             else:
-                self.log_debug("%s progress: %s", operation, kwargs)
+                self.log_debug(f"{operation} progress: {kwargs}")
 
     def log_operation_failed(self, operation: str, error: Exception, **kwargs):
         """Log the failure of a major operation."""
-        self.log_error("Failed %s", operation, error=error)
+        self.log_error(f"Failed {operation}", error=error)
 
         if kwargs:
             if self._should_sanitize():
                 sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_error("%s failed: %s", operation, sanitized_kwargs)
+                self.log_error(f"{operation} failed: {sanitized_kwargs}")
             else:
-                self.log_error("%s failed: %s", operation, kwargs)
+                self.log_error(f"{operation} failed: {kwargs}")
 
     def log_connection_validation_start(self, connector_type: str, endpoint: Optional[str] = None):
         """Log the start of a connection validation operation."""

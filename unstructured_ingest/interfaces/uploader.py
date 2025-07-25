@@ -29,6 +29,9 @@ class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
     upload_config: UploaderConfigT
     connector_type: str
 
+    def __post_init__(self):
+        UploaderConnectorLoggingMixin.__init__(self)
+
     def is_async(self) -> bool:
         return False
 

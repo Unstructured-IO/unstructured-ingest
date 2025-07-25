@@ -23,6 +23,9 @@ UploadStagerConfigT = TypeVar("UploadStagerConfigT", bound=UploadStagerConfig)
 class UploadStager(BaseProcess, UploadStagerConnectorLoggingMixin, ABC):
     upload_stager_config: UploadStagerConfigT
 
+    def __post_init__(self):
+        UploadStagerConnectorLoggingMixin.__init__(self)
+
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return element_dict
 

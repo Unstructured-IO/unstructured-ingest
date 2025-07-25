@@ -34,6 +34,9 @@ class Downloader(BaseProcess, BaseConnector, DownloaderConnectorLoggingMixin, AB
     connector_type: str
     download_config: DownloaderConfigT
 
+    def __post_init__(self):
+        DownloaderConnectorLoggingMixin.__init__(self)
+
     def get_download_path(self, file_data: FileData) -> Optional[Path]:
         if not file_data.source_identifiers:
             return None

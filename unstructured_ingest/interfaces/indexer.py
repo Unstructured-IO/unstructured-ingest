@@ -20,6 +20,9 @@ class Indexer(BaseProcess, BaseConnector, IndexerConnectorLoggingMixin, ABC):
     connector_type: str
     index_config: Optional[IndexerConfigT] = None
 
+    def __post_init__(self):
+        IndexerConnectorLoggingMixin.__init__(self)
+
     def is_async(self) -> bool:
         return False
 

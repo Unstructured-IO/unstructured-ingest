@@ -128,10 +128,7 @@ class S3Indexer(FsspecIndexer):
 
     def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
         path = file_info["Key"]
-
-        self.log_debug("Getting metadata for S3 object", context={"file_path": path})
-        self.log_file_operation("Getting metadata", file_path=path)
-
+        self.log_debug("Getting metadata for S3 object", path=path)
         date_created = None
         date_modified = None
         modified = file_info.get("LastModified")
@@ -159,7 +156,8 @@ class S3Indexer(FsspecIndexer):
         if issue_characters:
             self.log_warning(
                 f"File path contains characters that can cause issues with S3: {issue_characters}",
-                context={"path": path, "problematic_characters": issue_characters},
+                path=path,
+                problematic_characters=issue_characters,
             )
         return FileDataSourceMetadata(
             date_created=date_created,
