@@ -303,16 +303,18 @@ class ConnectorLoggingMixin:
 
         self.log_file_operation("Upload completed", file_path=file_path, **details)
 
-    def log_indexing_start(self, source_type: str, count: Optional[int] = None):
+    def log_indexing_start(self, source_type: str):
         """Log the start of indexing operation."""
-        if count:
-            logger.info("Starting indexing of %s (%s items)", source_type, count)
-        else:
-            logger.info("Starting indexing of %s", source_type)
+        logger.info("Starting indexing of %s elements", source_type)
 
-    def log_indexing_complete(self, source_type: str, count: int):
+    def log_indexing_complete(self, source_type: str, count: Optional[int] = None):
         """Log the completion of indexing operation."""
-        logger.info("Indexing completed: %s %s items indexed", count, source_type)
+        if count:
+            logger.info(
+                f"Indexing completed: {source_type} indexed, {count} elements indexed"
+            )
+        else:
+            logger.info(f"Indexing completed: {source_type} indexed")
 
     def log_info(self, message: str, context: Optional[Dict[str, Any]] = None, **kwargs):
         """Log an info message with optional context and sanitization."""

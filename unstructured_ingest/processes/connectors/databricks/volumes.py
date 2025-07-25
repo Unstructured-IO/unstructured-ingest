@@ -145,7 +145,6 @@ class DatabricksVolumesIndexer(Indexer, ABC):
 
         try:
             total_files = 0
-            self.log_operation_start("File indexing", recursive=self.index_config.recursive)
             for file_info in self.connection_config.get_client().dbfs.list(
                 path=self.index_config.path, recursive=self.index_config.recursive
             ):
@@ -182,15 +181,20 @@ class DatabricksVolumesIndexer(Indexer, ABC):
                     display_name=source_identifiers.fullpath,
                 )
 
-            self.log_indexing_complete(f"{self.connector_type} files", total_files)
-
         except Exception as e:
             self.log_error(
                 "File indexing failed",
                 error=e,
-                context={"path": self.index_config.path, "recursive": self.index_config.recursive},
+                context={
+                    "path": self.index_config.path,
+                    "recursive": self.index_config.recursive,
+                    "catalog": self.index_config.catalog,
+                    "schema": self.index_config.databricks_schema,
+                    "volume": self.index_config.volume,
+                },
             )
             raise self.connection_config.wrap_error(e=e)
+        self.log_indexing_complete(f"{self.connector_type} files", total_files)
 
 
 class DatabricksVolumesDownloaderConfig(DownloaderConfig):

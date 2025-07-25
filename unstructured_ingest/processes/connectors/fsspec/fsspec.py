@@ -222,8 +222,6 @@ class FsspecIndexer(Indexer):
         files = self.get_file_info()
         total_files = len(files)
 
-        self.log_operation_start("File indexing", total_files=total_files)
-
         for i, file_info in enumerate(files):
             file_path = self.get_path(file_info=file_info)
 
