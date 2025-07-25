@@ -60,18 +60,12 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
         output_dir.mkdir(exist_ok=True, parents=True)
         output_path = output_dir / output_filename
         final_output_path = output_path.with_suffix(".json")
-        self.log_stager_start(
-            elements_filepath=elements_filepath.as_posix(), output_path=final_output_path.as_posix()
-        )
         data = get_json_data(path=elements_filepath)
         for element in data:
             element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
             element[RECORD_ID_LABEL] = file_data.identifier
             element["metadata"] = json.dumps(element.get("metadata", {}))
         write_data(path=final_output_path, data=data, indent=None)
-        self.log_stager_complete(
-            elements_filepath=elements_filepath.as_posix(), output_path=final_output_path.as_posix()
-        )
         return final_output_path
 
 
