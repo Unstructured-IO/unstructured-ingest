@@ -222,8 +222,6 @@ class FsspecIndexer(Indexer):
         files = self.get_file_info()
         total_files = len(files)
 
-        self.log_operation_start("File indexing", total_files=total_files)
-
         for i, file_info in enumerate(files):
             file_path = self.get_path(file_info=file_info)
 
@@ -335,7 +333,6 @@ class FsspecDownloader(Downloader):
         rpath = file_data.additional_metadata["original_file_path"]
         file_size = file_data.metadata.filesize_bytes
         self.log_download_start(file_path=rpath, file_id=file_data.identifier, file_size=file_size)
-
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
                 await client.get_file(rpath=rpath, lpath=download_path.as_posix())

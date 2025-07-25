@@ -151,6 +151,7 @@ class ConnectorLoggingMixin:
         **kwargs,
     ):
         """Log document-related operations (universal for all connector types)."""
+
         if self._logging_config.log_document_locations and document_location:
             if self._should_sanitize():
                 sanitized_location = self._sanitizer.sanitize_location(document_location)
@@ -255,6 +256,20 @@ class ConnectorLoggingMixin:
             content_size=file_size,
         )
 
+    def log_stager_start(self, elements_filepath: str, output_path: str):
+        """Log the start of a stager operation."""
+        logger.info("Starting staging")
+
+        self.log_file_operation("Staging", file_path=elements_filepath, destination=output_path)
+
+    def log_stager_complete(self, elements_filepath: str, output_path: str):
+        """Log the completion of a stager operation."""
+        logger.info("Staging completed")
+
+        self.log_file_operation(
+            "Staging completed", file_path=elements_filepath, destination=output_path
+        )
+
     def log_upload_start(
         self,
         file_path: Optional[str] = None,
@@ -288,16 +303,18 @@ class ConnectorLoggingMixin:
 
         self.log_file_operation("Upload completed", file_path=file_path, **details)
 
-    def log_indexing_start(self, source_type: str, count: Optional[int] = None):
+    def log_indexing_start(self, source_type: str):
         """Log the start of indexing operation."""
-        if count:
-            logger.info("Starting indexing of %s (%s items)", source_type, count)
-        else:
-            logger.info("Starting indexing of %s", source_type)
+        logger.info("Starting indexing of %s elements", source_type)
 
-    def log_indexing_complete(self, source_type: str, count: int):
+    def log_indexing_complete(self, source_type: str, count: Optional[int] = None):
         """Log the completion of indexing operation."""
-        logger.info("Indexing completed: %s %s items indexed", count, source_type)
+        if count:
+            logger.info(
+                f"Indexing completed: {source_type} indexed, {count} elements indexed"
+            )
+        else:
+            logger.info(f"Indexing completed: {source_type} indexed")
 
     def log_info(self, message: str, context: Optional[Dict[str, Any]] = None, **kwargs):
         """Log an info message with optional context and sanitization."""

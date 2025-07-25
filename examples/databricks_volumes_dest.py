@@ -39,15 +39,13 @@ if __name__ == "__main__":
                 client_id=os.environ["DATABRICKS_CLIENT_ID"],
                 client_secret=os.environ["DATABRICKS_CLIENT_SECRET"],
             ),
-            host=os.environ["DATABRICKS_HOST"],
-            catalog=os.environ["DATABRICKS_CATALOG"],
-            volume=os.environ["DATABRICKS_VOLUME"],
-            volume_path=os.environ["DATABRICKS_VOLUME_PATH"],
+            host=os.environ["DATABRICKS_HOST"]
         ),
         uploader_config=DatabricksNativeVolumesUploaderConfig(
             overwrite=True,
             catalog=os.environ["DATABRICKS_CATALOG"],
             volume=os.environ["DATABRICKS_VOLUME"],
             volume_path=os.environ["DATABRICKS_VOLUME_PATH"],
+            schema=os.environ["DATABRICKS_SCHEMA"],
         ),
     ).run()

@@ -28,6 +28,7 @@ if __name__ == "__main__":
         indexer_config=DatabricksNativeVolumesIndexerConfig(
             host=os.environ["DATABRICKS_HOST"],
             catalog=os.environ["DATABRICKS_CATALOG"],
+            schema=os.environ["DATABRICKS_SCHEMA"],
             volume=os.environ["DATABRICKS_VOLUME"],
             volume_path=os.environ["DATABRICKS_VOLUME_PATH"],
         ),
@@ -38,9 +39,6 @@ if __name__ == "__main__":
                 client_secret=os.environ["DATABRICKS_CLIENT_SECRET"],
             ),
             host=os.environ["DATABRICKS_HOST"],
-            catalog=os.environ["DATABRICKS_CATALOG"],
-            volume=os.environ["DATABRICKS_VOLUME"],
-            volume_path=os.environ["DATABRICKS_VOLUME_PATH"],
         ),
         partitioner_config=PartitionerConfig(strategy="fast"),
         chunker_config=ChunkerConfig(
