@@ -9,7 +9,7 @@ class UploadStagerConnectorLoggingMixin(ConnectorLoggingMixin):
         self, elements_filepath: Path, file_data: FileData, output_dir: Path, output_filename: str
     ):
         self.log_operation_start(
-            "Uploading stager",
+            "Staging for upload",
             connector_type=file_data.connector_type,
             elements_filepath=elements_filepath,
             identifier=file_data.identifier,
@@ -24,7 +24,7 @@ class UploadStagerConnectorLoggingMixin(ConnectorLoggingMixin):
         self, elements_filepath: Path, file_data: FileData, output_dir: Path, output_filename: str
     ):
         self.log_operation_complete(
-            "Uploading stager",
+            "Staging for upload",
             connector_type=file_data.connector_type,
             elements_filepath=elements_filepath,
             identifier=file_data.identifier,
@@ -44,7 +44,7 @@ class UploadStagerConnectorLoggingMixin(ConnectorLoggingMixin):
         error: Exception,
     ):
         self.log_operation_failed(
-            "Uploading stager",
+            "Staging for upload",
             error,
             connector_type=file_data.connector_type,
             elements_filepath=elements_filepath,

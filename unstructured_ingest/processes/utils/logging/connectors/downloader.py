@@ -5,7 +5,7 @@ from unstructured_ingest.processes.utils.logging.connectors.base import Connecto
 class DownloaderConnectorLoggingMixin(ConnectorLoggingMixin):
     def log_download_start(self, file_data: FileData):
         self.log_operation_start(
-            "Downloading file",
+            f"Downloading file {file_data.display_name}",
             identifier=file_data.identifier,
             connector_type=file_data.connector_type,
             source_identifiers=file_data.source_identifiers,
@@ -15,7 +15,7 @@ class DownloaderConnectorLoggingMixin(ConnectorLoggingMixin):
 
     def log_download_complete(self, file_data: FileData):
         self.log_operation_complete(
-            "Downloading file",
+            f"Downloading file {file_data.display_name}",
             identifier=file_data.identifier,
             connector_type=file_data.connector_type,
             source_identifiers=file_data.source_identifiers,
@@ -25,7 +25,7 @@ class DownloaderConnectorLoggingMixin(ConnectorLoggingMixin):
 
     def log_download_failed(self, file_data: FileData, error: Exception):
         self.log_operation_failed(
-            "Downloading file",
+            f"Downloading file {file_data.display_name}",
             error,
             identifier=file_data.identifier,
             connector_type=file_data.connector_type,

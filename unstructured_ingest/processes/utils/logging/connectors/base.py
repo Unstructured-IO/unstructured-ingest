@@ -73,48 +73,21 @@ class ConnectorLoggingMixin:
 
     def log_operation_start(self, operation: str, **kwargs):
         """Log the start of a major operation."""
-        self.log_info(f"Starting {operation}")
-
-        if kwargs:
-            if self._should_sanitize():
-                sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_debug(f"{operation} parameters: {sanitized_kwargs}")
-            else:
-                self.log_debug(f"{operation} parameters: {kwargs}")
+        self.log_info(f"{operation} started", **kwargs)
 
     def log_operation_complete(self, operation: str, **kwargs):
         """Log the completion of a major operation."""
-        self.log_info(f"Completed {operation}")
-
-        if kwargs:
-            if self._should_sanitize():
-                sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_debug(f"{operation} results: {sanitized_kwargs}")
-            else:
-                self.log_debug(f"{operation} results: {kwargs}")
+        self.log_info(f"{operation} completed", **kwargs)
 
     def log_operation_progress(
         self, operation: str, current: int, total: int, item_type: str, **kwargs
     ):
         """Log the progress of a major operation."""
-        self.log_info(f"{operation} {current}/{total} {item_type}s")
-        if kwargs:
-            if self._should_sanitize():
-                sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_debug(f"{operation} progress: {sanitized_kwargs}")
-            else:
-                self.log_debug(f"{operation} progress: {kwargs}")
+        self.log_info(f"{operation} {current}/{total} {item_type}s", **kwargs)
 
     def log_operation_failed(self, operation: str, error: Exception, **kwargs):
         """Log the failure of a major operation."""
-        self.log_error(f"Failed {operation}", error=error)
-
-        if kwargs:
-            if self._should_sanitize():
-                sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
-                self.log_error(f"{operation} failed: {sanitized_kwargs}")
-            else:
-                self.log_error(f"{operation} failed: {kwargs}")
+        self.log_error(f"{operation} failed", error=error, **kwargs)
 
     def log_connection_validation_start(self, connector_type: str, endpoint: Optional[str] = None):
         """Log the start of a connection validation operation."""
