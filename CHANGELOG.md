@@ -1,6 +1,14 @@
+## 1.1.3
+
+* **o11y: Add logs to Databricks connectors and examples**
+
+## 1.1.2
+
+* **Fix**: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic
+
 ## 1.1.1
 
-* **o11y: Add logs to Databricks connectors**
+* **Fix: Update examples**
 
 ## 1.1.0
 

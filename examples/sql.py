@@ -3,7 +3,6 @@ import sqlite3
 from pathlib import Path
 
 from unstructured_ingest.interfaces import ProcessorConfig
-from unstructured_ingest.logger import logger
 from unstructured_ingest.pipeline.pipeline import Pipeline
 from unstructured_ingest.processes.chunker import ChunkerConfig
 from unstructured_ingest.processes.connectors.local import (
@@ -23,7 +22,7 @@ from unstructured_ingest.processes.connectors.sql import (
 from unstructured_ingest.processes.embedder import EmbedderConfig
 from unstructured_ingest.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent
+base_path = Path(__file__).parent.parent
 docs_path = base_path / "example-docs"
 work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
@@ -32,10 +31,9 @@ download_path = work_dir / "download"
 SQLITE_DB_PATH = "test-sql-db.sqlite"
 
 if __name__ == "__main__":
-    logger.info(f"writing all content in: {work_dir.resolve()}")
 
     configs = {
-        "context": ProcessorConfig(work_dir=str(work_dir.resolve())),
+        "context": ProcessorConfig(work_dir=str(work_dir.resolve()), verbose=True),
         "indexer_config": LocalIndexerConfig(input_path=str(docs_path.resolve()) + "/multisimple/"),
         "downloader_config": LocalDownloaderConfig(download_dir=download_path),
         "source_connection_config": LocalConnectionConfig(),
@@ -58,7 +56,7 @@ if __name__ == "__main__":
 
     query = None
     script_path = (
-        Path(__file__).parent.parent.parent.parent.parent
+        Path(__file__).parent.parent
         / Path("test_e2e/env_setup/sql/sqlite-schema.sql")
     ).resolve()
     with open(script_path) as f:
