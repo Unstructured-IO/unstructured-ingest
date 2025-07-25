@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseProcess
+from unstructured_ingest.processes.utils.logging.connectors import UploadStagerConnectorLoggingMixin
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.data_prep import get_json_data, write_data
 
@@ -19,7 +20,7 @@ UploadStagerConfigT = TypeVar("UploadStagerConfigT", bound=UploadStagerConfig)
 
 
 @dataclass
-class UploadStager(BaseProcess, ABC):
+class UploadStager(BaseProcess, UploadStagerConnectorLoggingMixin, ABC):
     upload_stager_config: UploadStagerConfigT
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:

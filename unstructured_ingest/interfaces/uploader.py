@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseConnector, BaseProcess
+from unstructured_ingest.processes.utils.logging.connectors import UploaderConnectorLoggingMixin
 from unstructured_ingest.utils.data_prep import get_json_data
 
 
@@ -24,7 +25,7 @@ class UploadContent:
 
 
 @dataclass
-class Uploader(BaseProcess, BaseConnector, ABC):
+class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
     upload_config: UploaderConfigT
     connector_type: str
 
