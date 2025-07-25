@@ -93,6 +93,18 @@ class ConnectorLoggingMixin:
             else:
                 self.log_debug("%s results: %s", operation, kwargs)
 
+    def log_operation_progress(
+        self, operation: str, current: int, total: int, item_type: str, **kwargs
+    ):
+        """Log the progress of a major operation."""
+        self.log_info(f"{operation} {current}/{total} {item_type}s")
+        if kwargs:
+            if self._should_sanitize():
+                sanitized_kwargs = self.sanitizer.sanitize_dict(kwargs)
+                self.log_debug("%s progress: %s", operation, sanitized_kwargs)
+            else:
+                self.log_debug("%s progress: %s", operation, kwargs)
+
     def log_operation_failed(self, operation: str, error: Exception, **kwargs):
         """Log the failure of a major operation."""
         self.log_error("Failed %s", operation, error=error)
