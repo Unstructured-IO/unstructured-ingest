@@ -53,9 +53,9 @@ class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
         try:
             self._run(path=path, file_data=file_data, **kwargs)
         except Exception as e:
-            self.log_upload_failed(path=path, file_data=file_data, error=e)
+            self.log_upload_failed(file_data=file_data, path=path, error=e)
             raise e
-        self.log_upload_complete(path=path, file_data=file_data)
+        self.log_upload_complete(file_data=file_data, path=path)
 
     def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_json_data(path=path)
@@ -66,9 +66,9 @@ class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
         try:
             await self._run_async(path=path, file_data=file_data, **kwargs)
         except Exception as e:
-            self.log_upload_failed(path=path, file_data=file_data, error=e)
+            self.log_upload_failed(file_data=file_data, path=path, error=e)
             raise e
-        self.log_upload_complete(path=path, file_data=file_data)
+        self.log_upload_complete(file_data=file_data, path=path)
 
     async def _run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_json_data(path=path)

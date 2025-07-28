@@ -254,8 +254,6 @@ class FsspecDownloader(Downloader):
     )
 
     def is_async(self) -> bool:
-        # Fsspec is strange when it comes to async.
-        # Right now there is no dedicated _run_async method, we rely on sync methods.
         with self.connection_config.get_client(protocol=self.protocol) as client:
             return client.async_impl
 
@@ -300,6 +298,9 @@ class FsspecDownloader(Downloader):
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        return self._run(file_data=file_data, **kwargs)
+
 
 class FsspecUploaderConfig(FileConfig, UploaderConfig):
     pass
@@ -315,8 +316,6 @@ class FsspecUploader(Uploader):
     connection_config: FsspecConnectionConfigT
 
     def is_async(self) -> bool:
-        # Fsspec is strange when it comes to async.
-        # Right now there is no dedicated _run_async method, we rely on sync methods.
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
             return client.async_impl
 
@@ -366,3 +365,6 @@ class FsspecUploader(Uploader):
         upload_path = self.get_upload_path(file_data=file_data)
         with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
             client.upload(lpath=path_str, rpath=upload_path.as_posix())
+
+    async def _run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        return self._run(path=path, file_data=file_data, **kwargs)

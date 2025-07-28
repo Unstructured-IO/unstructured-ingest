@@ -5,7 +5,7 @@ from unstructured_ingest.processes.utils.logging.connectors.base import Connecto
 
 
 class UploaderConnectorLoggingMixin(ConnectorLoggingMixin):
-    def log_upload_start(self, path: Path, file_data: FileData):
+    def log_upload_start(self, file_data: FileData, path: Path = None):
         self.log_operation_start(
             f"Uploading file {file_data.display_name}",
             path=path,
@@ -16,7 +16,7 @@ class UploaderConnectorLoggingMixin(ConnectorLoggingMixin):
             display_name=file_data.display_name,
         )
 
-    def log_upload_complete(self, path: Path, file_data: FileData):
+    def log_upload_complete(self, file_data: FileData, path: Path = None):
         self.log_operation_complete(
             f"Uploading file {file_data.display_name}",
             path=path,
@@ -27,7 +27,7 @@ class UploaderConnectorLoggingMixin(ConnectorLoggingMixin):
             display_name=file_data.display_name,
         )
 
-    def log_upload_failed(self, path: Path, file_data: FileData, error: Exception):
+    def log_upload_failed(self, file_data: FileData, path: Path = None, error: Exception = None):
         self.log_operation_failed(
             f"Uploading file {file_data.display_name}",
             error,
