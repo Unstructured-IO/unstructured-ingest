@@ -129,6 +129,7 @@ class GoogleDriveIndexerConfig(IndexerConfig):
 class GoogleDriveIndexer(Indexer):
     connection_config: GoogleDriveConnectionConfig
     index_config: GoogleDriveIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
     fields: list[str] = field(
         default_factory=lambda: [
             "id",
