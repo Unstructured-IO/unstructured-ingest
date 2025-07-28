@@ -367,7 +367,7 @@ class PineconeUploader(VectorDBUploader):
                 raise DestinationConnectionError(f"http error: {api_error}") from api_error
             logger.debug(f"results: {results}")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing a total of {len(data)} elements via"
             f" document batches to destination"

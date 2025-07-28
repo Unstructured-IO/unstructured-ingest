@@ -191,8 +191,8 @@ class VastdbUploader(SQLUploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["pandas"], extras="vastdb")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        super().run(path=path, file_data=file_data, **kwargs)
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super()._run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["pyarrow", "pandas"], extras="vastdb")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:

@@ -340,14 +340,14 @@ class IbmWatsonxUploader(SQLUploader):
             raise ProviderError(f"Failed to upload data to table: {e}")
 
     @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 
         df = pd.DataFrame(data)
         self.upload_dataframe(df=df, file_data=file_data)
 
     @requires_dependencies(["pandas"], extras="ibm-watsonx-s3")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         df = get_data_df(path=path)
         self.upload_dataframe(df=df, file_data=file_data)
 
