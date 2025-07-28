@@ -157,7 +157,7 @@ class RedisUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    async def _run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         first_element = data[0]
         redis_stack = await self._check_redis_stack(first_element)
         logger.info(

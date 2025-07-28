@@ -415,7 +415,7 @@ class ElasticsearchUploader(Uploader):
             raise WriteError(f"failed to delete records: {failures}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
         from elasticsearch.helpers.errors import BulkIndexError
 
         parallel_bulk = self.load_parallel_bulk()

@@ -83,7 +83,6 @@ class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
             raise e
         self.log_upload_complete(file_data=file_data)
 
-    # TODO: Convert into @abstractmethod once all existing uploaders have this implemented
     def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         raise NotImplementedError()
 

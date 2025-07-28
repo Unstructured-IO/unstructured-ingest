@@ -171,7 +171,7 @@ class ChromaUploader(Uploader):
         )
         return chroma_dict
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name} "

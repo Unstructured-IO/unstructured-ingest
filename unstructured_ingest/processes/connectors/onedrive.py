@@ -379,7 +379,7 @@ class OnedriveUploader(Uploader):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["office365"], extras="onedrive")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         from office365.onedrive.driveitems.conflict_behavior import ConflictBehavior
         from office365.runtime.client_request_exception import ClientRequestException
 

@@ -44,7 +44,7 @@ from unstructured_ingest.processes.connector_registry import (
 )
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
-from unstructured_ingest.utils.data_prep import batch_generator, get_json_data
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import truncate_string_bytes
 
@@ -459,7 +459,7 @@ class AstraDBUploader(Uploader):
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
-    async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    async def _run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
@@ -480,11 +480,7 @@ class AstraDBUploader(Uploader):
             ]
         )
 
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data = get_json_data(path=path)
-        await self.run_data(data=data, file_data=file_data)
-
-    def run(self, **kwargs: Any) -> Any:
+    def _run(self, **kwargs: Any) -> Any:
         raise NotImplementedError("Use astradb run_async instead")
 
 

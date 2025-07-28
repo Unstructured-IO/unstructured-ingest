@@ -319,7 +319,7 @@ class Neo4jUploader(Uploader):
     def is_async(self):
         return True
 
-    async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
+    async def _run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
         staged_data = get_json_data(path)
 
         graph_data = _GraphData.model_validate(staged_data)

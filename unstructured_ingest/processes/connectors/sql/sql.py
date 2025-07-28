@@ -439,12 +439,12 @@ class SQLUploader(Uploader):
             if rowcount > 0:
                 logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 
         df = pd.DataFrame(data)
         self.upload_dataframe(df=df, file_data=file_data)
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         df = get_data_df(path=path)
         self.upload_dataframe(df=df, file_data=file_data)

@@ -214,7 +214,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
         except Exception as e:
             raise self.connection_config.wrap_error(e=e)
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         output_path = self.get_output_path(file_data=file_data)
         with open(path, "rb") as elements_file:
             try:

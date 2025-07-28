@@ -158,7 +158,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             deleted_rows = results[0][0]
             logger.debug(f"deleted {deleted_rows} rows from table {self.upload_config.table_name}")
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         if self.can_delete():
             self.delete_previous_content(file_data=file_data)
         with self.get_cursor(staging_allowed_local_path=path.parent.as_posix()) as cursor:

@@ -329,7 +329,7 @@ class VectaraUploader(Uploader):
 
         logger.info(f"indexing document {document['id']} succeeded")
 
-    async def run_data_async(
+    async def _run_data_async(
         self,
         data: list[dict],
         file_data: FileData,

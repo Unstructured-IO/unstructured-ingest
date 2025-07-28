@@ -347,7 +347,7 @@ class MongoDBUploader(Uploader):
             f"deleted {delete_results.deleted_count} records from collection {collection.name}"
         )
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"db, {self.upload_config.database}, "

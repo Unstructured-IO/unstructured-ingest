@@ -270,6 +270,6 @@ class KafkaUploader(Uploader, ABC):
         if failed_producer:
             raise KafkaException("failed to produce all messages in batch")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         for element_batch in batch_generator(data, batch_size=self.upload_config.batch_size):
             self.produce_batch(elements=element_batch)

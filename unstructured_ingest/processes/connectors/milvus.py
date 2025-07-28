@@ -285,7 +285,7 @@ class MilvusUploader(Uploader):
                 err_count = res["err_count"]
                 raise WriteError(f"failed to upload {err_count} docs")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         self.delete_by_record_id(file_data=file_data)
         self.insert_results(data=data)
 

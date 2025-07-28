@@ -135,14 +135,14 @@ class KdbaiUploader(Uploader):
             self.upsert_batch(batch=batch_df)
 
     @requires_dependencies(["pandas"], extras="kdbai")
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 
         df = pd.DataFrame(data=data)
         self.process_dataframe(df=df)
 
     @requires_dependencies(["pandas"], extras="kdbai")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_data_df(path=path)
         self.process_dataframe(df=data)
 

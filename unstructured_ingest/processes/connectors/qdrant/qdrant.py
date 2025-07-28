@@ -125,7 +125,7 @@ class QdrantUploader(Uploader, ABC):
     def is_async(self):
         return True
 
-    async def run_data_async(
+    async def _run_data_async(
         self,
         data: list[dict],
         file_data: FileData,

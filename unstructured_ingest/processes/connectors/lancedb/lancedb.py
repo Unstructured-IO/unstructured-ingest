@@ -137,7 +137,7 @@ class LanceDBUploader(Uploader):
                 table.close()
 
     @requires_dependencies(["pandas"], extras="lancedb")
-    async def run_async(self, path, file_data, **kwargs):
+    async def _run_async(self, path, file_data, **kwargs):
         import pandas as pd
 
         df = pd.read_feather(path)

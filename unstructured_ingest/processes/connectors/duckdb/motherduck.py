@@ -109,14 +109,14 @@ class MotherDuckUploader(Uploader):
             conn.query(f'INSERT INTO "{database}"."{db_schema}"."{table}" BY NAME SELECT * FROM df')
 
     @requires_dependencies(["pandas"], extras="duckdb")
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         import pandas as pd
 
         df = pd.DataFrame(data=data)
         self.upload_dataframe(df=df)
 
     @requires_dependencies(["pandas"], extras="duckdb")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         df = get_data_df(path)
         self.upload_dataframe(df=df)
 
