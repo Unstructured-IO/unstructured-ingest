@@ -432,9 +432,9 @@ class FsspecUploader(Uploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_upload_failed(file_data=file_data, error=e)
+            self.log_upload_failed(path=path, file_data=file_data, error=e)
             raise self.wrap_error(e=e)
-        self.log_upload_complete(file_data=file_data)
+        self.log_upload_complete(path=path, file_data=file_data)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         self.log_upload_start(path=path, file_data=file_data)
@@ -444,6 +444,6 @@ class FsspecUploader(Uploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 client.upload(lpath=path_str, rpath=upload_path.as_posix())
         except Exception as e:
-            self.log_upload_failed(file_data=file_data, error=e)
+            self.log_upload_failed(path=path, file_data=file_data, error=e)
             raise self.wrap_error(e=e)
-        self.log_upload_complete(file_data=file_data)
+        self.log_upload_complete(path=path, file_data=file_data)
