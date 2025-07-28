@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar
@@ -49,18 +49,81 @@ class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
         return False
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.log_upload_start(path=path, file_data=file_data)
+        try:
+            self._run(path=path, file_data=file_data, **kwargs)
+        except Exception as e:
+            self.log_upload_failed(path=path, file_data=file_data, error=e)
+            raise e
+        self.log_upload_complete(path=path, file_data=file_data)
+
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_json_data(path=path)
-        self.run_data(data=data, file_data=file_data, **kwargs)
+        self._run_data(data=data, file_data=file_data, **kwargs)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.log_upload_start(path=path, file_data=file_data)
+        try:
+            await self._run_async(path=path, file_data=file_data, **kwargs)
+        except Exception as e:
+            self.log_upload_failed(path=path, file_data=file_data, error=e)
+            raise e
+        self.log_upload_complete(path=path, file_data=file_data)
+
+    async def _run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         data = get_json_data(path=path)
-        await self.run_data_async(data=data, file_data=file_data, **kwargs)
+        await self._run_data_async(data=data, file_data=file_data, **kwargs)
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
-        raise NotImplementedError()
+        self.log_upload_start(file_data=file_data)
+        try:
+            self._run_data(data=data, file_data=file_data, **kwargs)
+        except Exception as e:
+            self.log_upload_failed(file_data=file_data, error=e)
+            raise e
+        self.log_upload_complete(file_data=file_data)
+
+    @abstractmethod
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        pass
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
-        return self.run_data(data=data, file_data=file_data, **kwargs)
+        self.log_upload_start(file_data=file_data)
+        try:
+            await self._run_data_async(data=data, file_data=file_data, **kwargs)
+        except Exception as e:
+            self.log_upload_failed(file_data=file_data, error=e)
+            raise e
+        self.log_upload_complete(file_data=file_data)
+
+    async def _run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        self._run_data(data=data, file_data=file_data, **kwargs)
+
+    @property
+    # TODO: Convert into @abstractmethod once all existing uploaders have this property
+    def endpoint_to_log(self) -> str:
+        return ""
+
+    def precheck(self) -> None:
+        self.log_connection_validation_start(
+            connector_type=self.connector_type, endpoint=self.endpoint_to_log
+        )
+        try:
+            self._precheck()
+        except Exception as e:
+            self.log_connection_validation_failed(
+                connector_type=self.connector_type, error=e, endpoint=self.endpoint_to_log
+            )
+            raise self.wrap_error(e=e)
+        self.log_connection_validation_success(
+            connector_type=self.connector_type, endpoint=self.endpoint_to_log
+        )
+
+    def _precheck(self) -> None:
+        pass
+
+    def wrap_error(self, e: Exception) -> Exception:
+        return e
 
 
 @dataclass
