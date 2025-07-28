@@ -27,7 +27,7 @@ class Indexer(BaseProcess, BaseConnector, IndexerConnectorLoggingMixin, ABC):
     def is_async(self) -> bool:
         return False
 
-    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         self.log_indexing_start(connector_type=self.connector_type, endpoint=self.endpoint_to_log)
         try:
             response = self._run(**kwargs)
