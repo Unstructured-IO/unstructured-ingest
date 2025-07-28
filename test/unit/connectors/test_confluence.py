@@ -99,11 +99,10 @@ def test_precheck_with_spaces_calls_get_space(monkeypatch, connection_config):
     with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
         type(connection_config).get_client.return_value.__enter__.return_value = mock_client
 
-        result = indexer.precheck()
+        indexer.precheck()
         calls = [mock.call(space) for space in spaces]
         mock_client.get_space.assert_has_calls(calls, any_order=False)
         assert mock_client.get_space.call_count == len(spaces)
-        assert result is True
 
 
 def test_precheck_without_spaces_calls_get_all_spaces(monkeypatch, connection_config):
@@ -118,10 +117,9 @@ def test_precheck_without_spaces_calls_get_all_spaces(monkeypatch, connection_co
     with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
         type(connection_config).get_client.return_value.__enter__.return_value = mock_client
 
-        result = indexer.precheck()
+        indexer.precheck()
         mock_client.get_all_spaces.assert_called_once_with(limit=1)
         mock_client.get_space.assert_not_called()
-        assert result is True
 
 
 def test_precheck_with_spaces_raises(monkeypatch, connection_config):
