@@ -313,7 +313,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
             if not resp.failed and not resp.successful:
                 break
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"class {self.connection_config.access_config} "
