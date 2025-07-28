@@ -425,7 +425,7 @@ class FsspecUploader(Uploader):
         return updated_upload_path
 
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        self.log_upload_start(file_data=file_data)
+        self.log_upload_start(path=path, file_data=file_data)
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
         try:
@@ -437,7 +437,7 @@ class FsspecUploader(Uploader):
         self.log_upload_complete(file_data=file_data)
 
     async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        self.log_upload_start(file_data=file_data)
+        self.log_upload_start(path=path, file_data=file_data)
         path_str = str(path.resolve())
         upload_path = self.get_upload_path(file_data=file_data)
         try:

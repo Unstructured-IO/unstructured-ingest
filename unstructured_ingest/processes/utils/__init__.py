@@ -1,5 +1,5 @@
 from .logging.sanitizer import DataSanitizer
 
-__all__ = [ 
+__all__ = [
     "DataSanitizer",
 ]
