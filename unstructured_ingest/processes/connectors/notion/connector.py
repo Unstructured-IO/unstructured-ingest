@@ -73,7 +73,8 @@ class NotionIndexerConfig(IndexerConfig):
 class NotionIndexer(Indexer):
     connection_config: NotionConnectionConfig
     index_config: NotionIndexerConfig
-
+    connector_type: str = CONNECTOR_TYPE
+    
     def is_async(self) -> bool:
         return False
 

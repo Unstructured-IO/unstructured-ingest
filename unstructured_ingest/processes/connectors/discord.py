@@ -58,7 +58,8 @@ class DiscordIndexerConfig(IndexerConfig):
 class DiscordIndexer(Indexer):
     connection_config: DiscordConnectionConfig
     index_config: DiscordIndexerConfig
-
+    connector_type: str = CONNECTOR_TYPE
+    
     def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         self.connection_config.get_client()
         channels_to_process: set[str] = set(self.index_config.channels or [])

@@ -158,6 +158,7 @@ class AstraDBIndexerConfig(IndexerConfig):
 class AstraDBIndexer(Indexer):
     connection_config: AstraDBConnectionConfig
     index_config: AstraDBIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
 
     def get_collection(self) -> "AstraDBCollection":
         return get_astra_collection(
