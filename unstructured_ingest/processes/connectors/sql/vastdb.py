@@ -98,7 +98,7 @@ class VastdbIndexer(SQLIndexer):
             ids = sorted([result[self.index_config.id_column] for result in results.to_pylist()])
             return ids
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_table(self.index_config.table_name) as table:
                 table.select()
@@ -182,7 +182,7 @@ class VastdbUploader(SQLUploader):
     connection_config: VastdbConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_table(self.upload_config.table_name) as table:
                 table.select()
@@ -191,8 +191,8 @@ class VastdbUploader(SQLUploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     @requires_dependencies(["pandas"], extras="vastdb")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        super().run(path=path, file_data=file_data, **kwargs)
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super()._run(path=path, file_data=file_data, **kwargs)
 
     @requires_dependencies(["pyarrow", "pandas"], extras="vastdb")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:

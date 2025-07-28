@@ -129,14 +129,14 @@ class CouchbaseUploader(Uploader):
     upload_config: CouchbaseUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"bucket, {self.connection_config.bucket} "
@@ -163,7 +163,7 @@ class CouchbaseIndexer(Indexer):
     index_config: CouchbaseIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:
@@ -193,7 +193,7 @@ class CouchbaseIndexer(Indexer):
                 if attempts == max_attempts:
                     raise SourceConnectionError(f"failed to get document ids: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[CouchbaseBatchFileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[CouchbaseBatchFileData, None, None]:
         ids = self._get_doc_ids()
         for batch in batch_generator(ids, self.index_config.batch_size):
             # Make sure the hash is always a positive number to create identified
@@ -280,7 +280,7 @@ class CouchbaseDownloader(Downloader):
             download_path=download_path,
         )
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         couchbase_file_data = CouchbaseBatchFileData.cast(file_data=file_data)
         bucket_name: str = couchbase_file_data.additional_metadata.bucket
         ids: list[str] = [item.identifier for item in couchbase_file_data.batch_items]
@@ -315,7 +315,7 @@ class CouchbaseDownloader(Downloader):
         for doc_id in ids:
             yield self.process_doc_id(doc_id, collection, bucket_name, file_data)
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError()
 
 

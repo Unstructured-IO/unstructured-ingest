@@ -71,7 +71,7 @@ class BaseDuckDBUploadStager(UploadStager):
         return data
 
     @requires_dependencies(["pandas"], extras="duckdb")
-    def run(
+    def _run(
         self,
         elements_filepath: Path,
         file_data: FileData,

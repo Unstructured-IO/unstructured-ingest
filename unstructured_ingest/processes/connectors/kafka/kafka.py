@@ -158,10 +158,10 @@ class KafkaIndexer(Indexer, ABC):
         for message in self.generate_messages():
             yield self.generate_file_data(message)
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         raise NotImplementedError()
 
-    def precheck(self):
+    def _precheck(self):
         try:
             with self.get_consumer() as consumer:
                 # timeout needs at least 3 secs, more info:
@@ -193,7 +193,7 @@ class KafkaDownloader(Downloader, ABC):
     version: Optional[str] = None
     source_url: Optional[str] = None
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         source_identifiers = file_data.source_identifiers
         if source_identifiers is None:
             raise ValueError("FileData is missing source_identifiers")
@@ -226,7 +226,7 @@ class KafkaUploader(Uploader, ABC):
     connection_config: KafkaConnectionConfig
     upload_config: KafkaUploaderConfig
 
-    def precheck(self):
+    def _precheck(self):
         try:
             with self.connection_config.get_consumer() as consumer:
                 cluster_meta = consumer.list_topics(timeout=self.upload_config.timeout)
@@ -270,6 +270,6 @@ class KafkaUploader(Uploader, ABC):
         if failed_producer:
             raise KafkaException("failed to produce all messages in batch")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         for element_batch in batch_generator(data, batch_size=self.upload_config.batch_size):
             self.produce_batch(elements=element_batch)

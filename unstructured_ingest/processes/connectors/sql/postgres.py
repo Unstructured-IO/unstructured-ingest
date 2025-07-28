@@ -147,8 +147,8 @@ class PostgresUploader(SQLUploader):
     values_delimiter: str = "%s"
 
     @requires_dependencies(["pandas"], extras="postgres")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        super().run(path=path, file_data=file_data, **kwargs)
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        super()._run(path=path, file_data=file_data, **kwargs)
 
 
 postgres_source_entry = SourceRegistryEntry(

@@ -239,7 +239,7 @@ class AzureAISearchUploader(Uploader):
             raise ValueError("no key field found in index fields")
         return key_fields[0].name
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_search_client() as search_client:
                 search_client.get_document_count()
@@ -247,7 +247,7 @@ class AzureAISearchUploader(Uploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing document batches to destination"
             f" endpoint at {str(self.connection_config.endpoint)}"

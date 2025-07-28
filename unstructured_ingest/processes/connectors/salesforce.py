@@ -143,7 +143,7 @@ class SalesforceIndexer(Indexer):
             if record_type not in ACCEPTED_CATEGORIES:
                 raise ValueError(f"{record_type} not currently an accepted Salesforce category")
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:
@@ -209,7 +209,7 @@ class SalesforceIndexer(Indexer):
 
         return files_list
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for f in self.list_files():
             yield f
 
@@ -277,7 +277,7 @@ class SalesforceDownloader(Downloader):
         record_json = records[0]
         return record_json
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         record = self.get_record(file_data)
 
         try:

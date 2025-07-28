@@ -127,7 +127,7 @@ class ConfluenceIndexer(Indexer):
     index_config: ConfluenceIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> bool:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:
@@ -157,8 +157,6 @@ class ConfluenceIndexer(Indexer):
 
             if errors:
                 raise UserError("\n".join(errors))
-
-        return True
 
     def _get_space_ids_and_keys(self) -> List[Tuple[str, int]]:
         """
@@ -440,7 +438,7 @@ class ConfluenceDownloader(Downloader):
         logger.debug(f"normalized permissions generated: {parsed_permissions_dict}")
         return parsed_permissions_dict
 
-    def run(self, file_data: FileData, **kwargs) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs) -> download_responses:
         from bs4 import BeautifulSoup
 
         doc_id = file_data.identifier

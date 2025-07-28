@@ -31,7 +31,6 @@ download_path = work_dir / "download"
 SQLITE_DB_PATH = "test-sql-db.sqlite"
 
 if __name__ == "__main__":
-
     configs = {
         "context": ProcessorConfig(work_dir=str(work_dir.resolve()), verbose=True),
         "indexer_config": LocalIndexerConfig(input_path=str(docs_path.resolve()) + "/multisimple/"),
@@ -56,8 +55,7 @@ if __name__ == "__main__":
 
     query = None
     script_path = (
-        Path(__file__).parent.parent
-        / Path("test_e2e/env_setup/sql/sqlite-schema.sql")
+        Path(__file__).parent.parent / Path("test_e2e/env_setup/sql/sqlite-schema.sql")
     ).resolve()
     with open(script_path) as f:
         query = f.read()

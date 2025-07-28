@@ -115,7 +115,7 @@ class GithubIndexer(Indexer):
     index_config: GithubIndexerConfig = field(default_factory=GithubIndexerConfig)
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_repo()
         except Exception as e:
@@ -160,7 +160,7 @@ class GithubIndexer(Indexer):
             ),
         )
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for element in self.list_files():
             yield self.convert_element(element=element)
 
@@ -203,7 +203,7 @@ class GithubDownloader(Downloader):
             raise self.connection_config.wrap_error(e=e)
         return resp.content
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         content_file = self.get_file(file_data)
         contents = self.get_contents(content_file)
         download_path = self.get_download_path(file_data)

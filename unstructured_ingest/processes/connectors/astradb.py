@@ -44,7 +44,7 @@ from unstructured_ingest.processes.connector_registry import (
 )
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
-from unstructured_ingest.utils.data_prep import batch_generator, get_json_data
+from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.string_and_date_utils import truncate_string_bytes
 
@@ -158,6 +158,7 @@ class AstraDBIndexerConfig(IndexerConfig):
 class AstraDBIndexer(Indexer):
     connection_config: AstraDBConnectionConfig
     index_config: AstraDBIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
 
     def get_collection(self) -> "AstraDBCollection":
         return get_astra_collection(
@@ -166,7 +167,7 @@ class AstraDBIndexer(Indexer):
             keyspace=self.index_config.keyspace,
         )
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.get_collection().options()
         except Exception as e:
@@ -191,7 +192,7 @@ class AstraDBIndexer(Indexer):
 
         return set(ids)
 
-    def run(self, **kwargs: Any) -> Generator[AstraDBBatchFileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[AstraDBBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         id_batches = batch_generator(ids, self.index_config.batch_size)
@@ -272,10 +273,10 @@ class AstraDBDownloader(Downloader):
             file_data=cast_file_data, download_path=download_path
         )
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError("Use astradb run_async instead")
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         # Get metadata from file_data
         astra_file_data = AstraDBBatchFileData.cast(file_data=file_data)
         ids: list[str] = [item.identifier for item in astra_file_data.batch_items]
@@ -371,7 +372,7 @@ class AstraDBUploader(Uploader):
         self.create_destination(**kwargs)
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             if self.upload_config.collection_name:
                 collection = get_astra_collection(
@@ -459,7 +460,7 @@ class AstraDBUploader(Uploader):
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
-    async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    async def _run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
@@ -480,11 +481,7 @@ class AstraDBUploader(Uploader):
             ]
         )
 
-    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        data = get_json_data(path=path)
-        await self.run_data(data=data, file_data=file_data)
-
-    def run(self, **kwargs: Any) -> Any:
+    def _run(self, **kwargs: Any) -> Any:
         raise NotImplementedError("Use astradb run_async instead")
 
 

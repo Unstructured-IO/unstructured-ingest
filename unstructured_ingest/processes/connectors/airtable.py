@@ -164,11 +164,11 @@ class AirtableIndexer(Indexer):
             return self.get_all_table_meta()
         return self.get_meta_from_list()
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         client = self.connection_config.get_client()
         client.request(method="HEAD", url=client.build_url("meta", "bases"))
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         table_metas = self.get_table_metas()
         for table_meta in table_metas:
             fullpath = (
@@ -214,7 +214,7 @@ class AirtableDownloader(Downloader):
         return row_dict
 
     @requires_dependencies(["pandas"], extras="airtable")
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         import pandas as pd
 
         table_meta = AirtableTableMeta.model_validate(file_data.additional_metadata)

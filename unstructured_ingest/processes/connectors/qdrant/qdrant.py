@@ -111,7 +111,7 @@ class QdrantUploader(Uploader, ABC):
     connection_config: QdrantConnectionConfig
 
     @DestinationConnectionError.wrap
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         with self.connection_config.get_client() as client:
             collections_response = client.get_collections()
             collection_names = [c.name for c in collections_response.collections]
@@ -125,7 +125,7 @@ class QdrantUploader(Uploader, ABC):
     def is_async(self):
         return True
 
-    async def run_data_async(
+    async def _run_data_async(
         self,
         data: list[dict],
         file_data: FileData,

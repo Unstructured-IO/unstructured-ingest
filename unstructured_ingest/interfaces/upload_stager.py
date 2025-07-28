@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseProcess
+from unstructured_ingest.processes.utils.logging.connectors import UploadStagerConnectorLoggingMixin
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.data_prep import get_json_data, write_data
 
@@ -19,8 +20,11 @@ UploadStagerConfigT = TypeVar("UploadStagerConfigT", bound=UploadStagerConfig)
 
 
 @dataclass
-class UploadStager(BaseProcess, ABC):
+class UploadStager(BaseProcess, UploadStagerConnectorLoggingMixin, ABC):
     upload_stager_config: UploadStagerConfigT
+
+    def __post_init__(self):
+        UploadStagerConnectorLoggingMixin.__init__(self)
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return element_dict
@@ -59,6 +63,84 @@ class UploadStager(BaseProcess, ABC):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
+        self.log_upload_stager_start(
+            elements_filepath=elements_filepath,
+            file_data=file_data,
+            output_dir=output_dir,
+            output_filename=output_filename,
+        )
+        try:
+            response = self._run(
+                elements_filepath=elements_filepath,
+                file_data=file_data,
+                output_dir=output_dir,
+                output_filename=output_filename,
+                **kwargs,
+            )
+        except Exception as e:
+            self.log_upload_stager_failed(
+                elements_filepath=elements_filepath,
+                file_data=file_data,
+                output_dir=output_dir,
+                output_filename=output_filename,
+                error=e,
+            )
+            raise self.wrap_error(e=e)
+        self.log_upload_stager_complete(
+            elements_filepath=elements_filepath,
+            file_data=file_data,
+            output_dir=output_dir,
+            output_filename=output_filename,
+        )
+        return response
+
+    async def run_async(
+        self,
+        elements_filepath: Path,
+        file_data: FileData,
+        output_dir: Path,
+        output_filename: str,
+        **kwargs: Any,
+    ) -> Path:
+        self.log_upload_stager_start(
+            elements_filepath=elements_filepath,
+            file_data=file_data,
+            output_dir=output_dir,
+            output_filename=output_filename,
+        )
+        try:
+            response = await self._run_async(
+                elements_filepath=elements_filepath,
+                file_data=file_data,
+                output_dir=output_dir,
+                output_filename=output_filename,
+                **kwargs,
+            )
+        except Exception as e:
+            self.log_upload_stager_failed(
+                elements_filepath=elements_filepath,
+                file_data=file_data,
+                output_dir=output_dir,
+                output_filename=output_filename,
+                error=e,
+            )
+            raise self.wrap_error(e=e)
+        self.log_upload_stager_complete(
+            elements_filepath=elements_filepath,
+            file_data=file_data,
+            output_dir=output_dir,
+            output_filename=output_filename,
+        )
+        return response
+
+    def _run(
+        self,
+        elements_filepath: Path,
+        file_data: FileData,
+        output_dir: Path,
+        output_filename: str,
+        **kwargs: Any,
+    ) -> Path:
         output_file = self.get_output_path(output_filename=output_filename, output_dir=output_dir)
         if elements_filepath.suffix == ".ndjson":
             self.stream_update(
@@ -72,7 +154,7 @@ class UploadStager(BaseProcess, ABC):
             raise ValueError(f"Unsupported file extension: {elements_filepath}")
         return output_file
 
-    async def run_async(
+    async def _run_async(
         self,
         elements_filepath: Path,
         file_data: FileData,
@@ -80,10 +162,13 @@ class UploadStager(BaseProcess, ABC):
         output_filename: str,
         **kwargs: Any,
     ) -> Path:
-        return self.run(
+        return self._run(
             elements_filepath=elements_filepath,
             output_dir=output_dir,
             output_filename=output_filename,
             file_data=file_data,
             **kwargs,
         )
+
+    def wrap_error(self, e: Exception) -> Exception:
+        return e

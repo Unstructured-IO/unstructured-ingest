@@ -11,12 +11,12 @@ from pathlib import Path
 def mkdir_concurrent_safe(path: Path) -> None:
     """
     Create directory safely in concurrent environments, handling race conditions.
-    
+
     This addresses the issue where Path.mkdir(parents=True, exist_ok=True) can still
-    raise FileExistsError when multiple processes attempt to create overlapping 
+    raise FileExistsError when multiple processes attempt to create overlapping
     directory structures simultaneously. In this codebase, this occurs when multiple
     files are being downloaded in parallel and archive extraction is happening in parallel.
-    
+
     Related: https://github.com/python/cpython/pull/112966/files
     Python core team used the same approach to fix zipfile race conditions.
     """

@@ -70,6 +70,10 @@ class LocalIndexer(Indexer):
     )
     connector_type: str = CONNECTOR_TYPE
 
+    @property
+    def endpoint_to_log(self) -> str:
+        return self.index_config.path
+
     def list_files(self) -> list[Path]:
         input_path = self.index_config.path
         if input_path.is_file():
@@ -117,7 +121,7 @@ class LocalIndexer(Indexer):
             filesize_bytes=filesize_bytes,
         )
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for file_path in self.list_files():
             source_identifiers = SourceIdentifiers(
                 fullpath=str(file_path.resolve()),
@@ -151,7 +155,11 @@ class LocalDownloader(Downloader):
     def get_download_path(self, file_data: FileData) -> Path:
         return Path(file_data.source_identifiers.fullpath)
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    @property
+    def endpoint_to_log(self) -> str:
+        return self.download_config.download_dir
+
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         return DownloadResponse(
             file_data=file_data, path=Path(file_data.source_identifiers.fullpath)
         )
@@ -182,6 +190,10 @@ class LocalUploader(Uploader):
     def is_async(self) -> bool:
         return False
 
+    @property
+    def endpoint_to_log(self) -> str:
+        return self.upload_config.output_path
+
     def get_destination_path(self, file_data: FileData) -> Path:
         if source_identifiers := file_data.source_identifiers:
             rel_path = (
@@ -199,12 +211,12 @@ class LocalUploader(Uploader):
         final_path.parent.mkdir(parents=True, exist_ok=True)
         return final_path
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         final_path = self.get_destination_path(file_data=file_data)
         with final_path.open("w") as f:
             json.dump(data, f)
 
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+    def _run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
         final_path = self.get_destination_path(file_data=file_data)
         logger.debug(f"copying file from {path} to {final_path}")
         shutil.copy(src=str(path), dst=str(final_path))

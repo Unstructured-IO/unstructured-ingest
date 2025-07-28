@@ -129,6 +129,7 @@ class GoogleDriveIndexerConfig(IndexerConfig):
 class GoogleDriveIndexer(Indexer):
     connection_config: GoogleDriveConnectionConfig
     index_config: GoogleDriveIndexerConfig
+    connector_type: str = CONNECTOR_TYPE
     fields: list[str] = field(
         default_factory=lambda: [
             "id",
@@ -224,7 +225,7 @@ class GoogleDriveIndexer(Indexer):
                     break
         return count
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         """
         Enhanced precheck that verifies not only connectivity
         but also that the provided drive_id is valid and accessible.
@@ -471,7 +472,7 @@ class GoogleDriveIndexer(Indexer):
         logger.debug(f"normalized permissions generated: {normalized_permissions}")
         return [{k: v} for k, v in normalized_permissions.items()]
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         with self.connection_config.get_client() as client:
             for f in self.get_files(
                 files_client=client,
@@ -825,7 +826,7 @@ class GoogleDriveDownloader(Downloader):
 
         return download_path
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         mime_type = file_data.additional_metadata.get("mimeType", "")
 
         logger.debug(

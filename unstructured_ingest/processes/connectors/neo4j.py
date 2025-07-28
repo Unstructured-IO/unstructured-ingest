@@ -309,7 +309,7 @@ class Neo4jUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     @DestinationConnectionError.wrap
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         async def verify_auth():
             async with self.connection_config.get_client() as client:
                 await client.verify_connectivity()
@@ -319,7 +319,7 @@ class Neo4jUploader(Uploader):
     def is_async(self):
         return True
 
-    async def run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
+    async def _run_async(self, path: Path, file_data: FileData, **kwargs) -> None:  # type: ignore
         staged_data = get_json_data(path)
 
         graph_data = _GraphData.model_validate(staged_data)

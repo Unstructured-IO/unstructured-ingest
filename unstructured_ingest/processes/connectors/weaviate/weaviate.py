@@ -218,7 +218,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
         with self.connection_config.get_client() as weaviate_client:
             return weaviate_client.collections.exists(name=collection_name)
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
             # only if collection name populated should we check that it exists
@@ -313,7 +313,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
             if not resp.failed and not resp.successful:
                 break
 
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
             f"class {self.connection_config.access_config} "

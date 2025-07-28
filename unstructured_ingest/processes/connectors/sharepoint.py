@@ -143,7 +143,7 @@ class SharepointIndexer(OnedriveIndexer):
             raise UserError(f"Failed to validate SharePoint path '{path}': {str(e)}")
 
     @requires_dependencies(["office365"], extras="sharepoint")
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         """Validate SharePoint connection before indexing."""
         from office365.runtime.client_request_exception import ClientRequestException
 

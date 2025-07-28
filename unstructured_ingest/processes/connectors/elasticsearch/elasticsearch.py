@@ -160,7 +160,7 @@ class ElasticsearchIndexer(Indexer):
     index_config: ElasticsearchIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
                 indices = client.indices.get_alias(index="*")
@@ -195,7 +195,7 @@ class ElasticsearchIndexer(Indexer):
 
             return {hit["_id"] for hit in hits}
 
-    def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         for batch in batch_generator(ids, self.index_config.batch_size):
@@ -285,7 +285,7 @@ class ElasticsearchDownloader(Downloader):
             download_path=download_path,
         )
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError()
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
@@ -295,7 +295,7 @@ class ElasticsearchDownloader(Downloader):
 
         return AsyncElasticsearch, async_scan
 
-    async def run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
+    async def _run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
         elasticsearch_filedata = ElasticsearchBatchFileData.cast(file_data=file_data)
         AsyncClient, async_scan = self.load_async()
 
@@ -377,7 +377,7 @@ class ElasticsearchUploader(Uploader):
     upload_config: ElasticsearchUploaderConfig
     connection_config: ElasticsearchConnectionConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
                 indices = client.indices.get_alias(index="*")
@@ -415,7 +415,7 @@ class ElasticsearchUploader(Uploader):
             raise WriteError(f"failed to delete records: {failures}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
-    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
+    def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
         from elasticsearch.helpers.errors import BulkIndexError
 
         parallel_bulk = self.load_parallel_bulk()
