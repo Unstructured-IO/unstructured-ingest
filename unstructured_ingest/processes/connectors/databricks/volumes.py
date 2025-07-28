@@ -116,13 +116,13 @@ class DatabricksVolumesIndexer(Indexer, ABC):
     index_config: DatabricksVolumesIndexerConfig
     connection_config: DatabricksVolumesConnectionConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:
             raise self.connection_config.wrap_error(e=e) from e
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         try:
             for file_info in self.connection_config.get_client().dbfs.list(
                 path=self.index_config.path, recursive=self.index_config.recursive
@@ -164,7 +164,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
     download_config: DatabricksVolumesDownloaderConfig
     connection_config: DatabricksVolumesConnectionConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:
@@ -173,7 +173,7 @@ class DatabricksVolumesDownloader(Downloader, ABC):
     def get_download_path(self, file_data: FileData) -> Path:
         return self.download_config.download_dir / Path(file_data.source_identifiers.relative_path)
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         download_path.parent.mkdir(parents=True, exist_ok=True)
         volumes_path = file_data.additional_metadata["path"]
@@ -208,7 +208,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
                 self.upload_config.path, f"{file_data.source_identifiers.filename}.json"
             )
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             assert self.connection_config.get_client().current_user.me().active
         except Exception as e:

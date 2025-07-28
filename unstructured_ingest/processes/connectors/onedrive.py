@@ -158,7 +158,7 @@ class OnedriveIndexer(Indexer):
     index_config: OnedriveIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             token_resp: dict = self.connection_config.get_token()
             if error := token_resp.get("error"):
@@ -299,7 +299,7 @@ class OnedriveDownloader(Downloader):
         return self.download_dir / Path(rel_path)
 
     @SourceConnectionError.wrap
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         try:
             file = self._fetch_file(file_data=file_data)
             fsize = file.get_property("size", 0)
@@ -354,7 +354,7 @@ class OnedriveUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["office365"], extras="onedrive")
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         from office365.runtime.client_request_exception import ClientRequestException
 
         try:

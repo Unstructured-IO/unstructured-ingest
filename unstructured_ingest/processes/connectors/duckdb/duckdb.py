@@ -92,7 +92,7 @@ class DuckDBUploader(Uploader):
     upload_config: DuckDBUploaderConfig
     connection_config: DuckDBConnectionConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")

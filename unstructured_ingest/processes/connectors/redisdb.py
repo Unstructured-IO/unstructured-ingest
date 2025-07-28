@@ -149,7 +149,7 @@ class RedisUploader(Uploader):
     def is_async(self) -> bool:
         return True
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.create_client() as client:
                 client.ping()

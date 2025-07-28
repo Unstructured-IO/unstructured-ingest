@@ -117,7 +117,7 @@ class VectaraUploader(Uploader):
     def is_async(self) -> bool:
         return True
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self._check_connection_and_corpora()
         except Exception as e:

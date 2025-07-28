@@ -109,7 +109,7 @@ class SQLIndexer(Indexer, ABC):
             ids = sorted([result[0] for result in results])
             return ids
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
@@ -117,7 +117,7 @@ class SQLIndexer(Indexer, ABC):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
         ids = self._get_doc_ids()
         id_batches: list[frozenset[str]] = [
             frozenset(
@@ -213,7 +213,7 @@ class SQLDownloader(Downloader, ABC):
             file_data=cast_file_data, download_path=download_path
         )
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         sql_filedata = SqlBatchFileData.cast(file_data=file_data)
         data_dfs = self.get_data(file_data=sql_filedata)
         download_responses = []
@@ -268,7 +268,7 @@ class SQLUploadStager(UploadStager):
         write_data(path=output_path, data=data)
         return output_path
 
-    def run(
+    def _run(
         self,
         elements_filepath: Path,
         file_data: FileData,
@@ -314,7 +314,7 @@ class SQLUploader(Uploader):
     values_delimiter: str = "?"
     _columns: list[str] = field(init=False, default=None)
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")

@@ -112,7 +112,7 @@ class DeltaTableUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     @requires_dependencies(["boto3"], extras="delta-table")
-    def precheck(self):
+    def _precheck(self):
         secrets = self.connection_config.access_config.get_secret_value()
         if (
             self.connection_config.aws_region

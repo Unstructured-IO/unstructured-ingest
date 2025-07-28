@@ -86,7 +86,7 @@ class SlackIndexer(Indexer):
     connection_config: SlackConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
         for channel in self.index_config.channels:
             messages = []
@@ -143,7 +143,7 @@ class SlackIndexer(Indexer):
         )
 
     @SourceConnectionError.wrap
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         client = self.connection_config.get_client()
         for channel in self.index_config.channels:
             # NOTE: Querying conversations history guarantees that the bot is in the channel
@@ -160,10 +160,10 @@ class SlackDownloader(Downloader):
     connection_config: SlackConnectionConfig
     download_config: SlackDownloaderConfig = field(default_factory=SlackDownloaderConfig)
 
-    def run(self, file_data, **kwargs):
-        raise NotImplementedError
+    def _run(self, file_data, **kwargs):
+        raise NotImplementedError()
 
-    async def run_async(self, file_data: FileData, **kwargs) -> DownloadResponse:
+    async def _run_async(self, file_data: FileData, **kwargs) -> DownloadResponse:
         # NOTE: Indexer should provide source identifiers required to generate the download path
         download_path = self.get_download_path(file_data)
         if download_path is None:

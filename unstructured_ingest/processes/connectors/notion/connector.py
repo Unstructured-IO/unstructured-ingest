@@ -77,7 +77,7 @@ class NotionIndexer(Indexer):
     def is_async(self) -> bool:
         return False
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         """Check the connection to the Notion API."""
         try:
             client = self.connection_config.get_client()
@@ -90,7 +90,7 @@ class NotionIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
         processed_pages: set[str] = set()
         processed_databases: set[str] = set()
@@ -272,7 +272,7 @@ class NotionDownloader(Downloader):
     download_config: NotionDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         client = self.connection_config.get_client()
         record_locator = file_data.metadata.record_locator
 

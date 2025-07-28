@@ -103,7 +103,7 @@ class KdbaiUploader(Uploader):
     upload_config: KdbaiUploaderConfig
     connector_type: str = field(default=CONNECTOR_TYPE, init=False)
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.get_database()
         except Exception as e:

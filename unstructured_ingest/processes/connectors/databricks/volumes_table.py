@@ -47,7 +47,7 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
         default_factory=DatabricksVolumeDeltaTableStagerConfig
     )
 
-    def run(
+    def _run(
         self,
         elements_filepath: Path,
         output_dir: Path,
@@ -99,7 +99,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             cursor.execute(destination_schema)
             return True
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         with self.connection_config.get_cursor() as cursor:
             cursor.execute("SHOW CATALOGS")
             catalogs = [r[0] for r in cursor.fetchall()]

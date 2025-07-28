@@ -218,7 +218,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
         with self.connection_config.get_client() as weaviate_client:
             return weaviate_client.collections.exists(name=collection_name)
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
             # only if collection name populated should we check that it exists

@@ -136,7 +136,7 @@ class GitLabIndexer(Indexer):
     connection_config: GitLabConnectionConfig
     index_config: GitLabIndexerConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         """Validates the connection to the GitLab instance by authenticating or
         accessing the project.
 
@@ -158,7 +158,7 @@ class GitLabIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Iterates over the GitLab repository tree and yields file metadata as `FileData` objects.
 
         This method fetches the repository tree for the specified branch and iterates
@@ -218,7 +218,7 @@ class GitLabDownloader(Downloader):
     connection_config: GitLabConnectionConfig
     download_config: GitLabDownloaderConfig
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         """Downloads a file from the repository and returns a `DownloadResponse`.
 
         Args:

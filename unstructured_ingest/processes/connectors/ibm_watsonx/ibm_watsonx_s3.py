@@ -218,7 +218,7 @@ class IbmWatsonxUploader(SQLUploader):
     upload_config: IbmWatsonxUploaderConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         with self.connection_config.get_catalog() as catalog:
             if not catalog.namespace_exists(self.upload_config.namespace):
                 raise UserError(f"Namespace '{self.upload_config.namespace}' does not exist")

@@ -166,7 +166,7 @@ class AstraDBIndexer(Indexer):
             keyspace=self.index_config.keyspace,
         )
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.get_collection().options()
         except Exception as e:
@@ -191,7 +191,7 @@ class AstraDBIndexer(Indexer):
 
         return set(ids)
 
-    def run(self, **kwargs: Any) -> Generator[AstraDBBatchFileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[AstraDBBatchFileData, None, None]:
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         id_batches = batch_generator(ids, self.index_config.batch_size)
@@ -272,10 +272,10 @@ class AstraDBDownloader(Downloader):
             file_data=cast_file_data, download_path=download_path
         )
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         raise NotImplementedError("Use astradb run_async instead")
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> download_responses:
         # Get metadata from file_data
         astra_file_data = AstraDBBatchFileData.cast(file_data=file_data)
         ids: list[str] = [item.identifier for item in astra_file_data.batch_items]
@@ -371,7 +371,7 @@ class AstraDBUploader(Uploader):
         self.create_destination(**kwargs)
 
     @requires_dependencies(["astrapy"], extras="astradb")
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             if self.upload_config.collection_name:
                 collection = get_astra_collection(

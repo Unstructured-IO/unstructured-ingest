@@ -178,7 +178,7 @@ class MilvusUploader(Uploader):
             return False
 
     @DestinationConnectionError.wrap
-    def precheck(self):
+    def _precheck(self):
         from pymilvus import MilvusException
 
         try:

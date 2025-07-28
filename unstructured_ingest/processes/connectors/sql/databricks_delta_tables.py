@@ -139,7 +139,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
             cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
             yield cursor
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         with self.connection_config.get_cursor() as cursor:
             cursor.execute("SHOW CATALOGS")
             catalogs = [r[0] for r in cursor.fetchall()]

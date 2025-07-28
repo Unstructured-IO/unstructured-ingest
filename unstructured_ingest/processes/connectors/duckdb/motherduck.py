@@ -91,7 +91,7 @@ class MotherDuckUploader(Uploader):
     upload_config: MotherDuckUploaderConfig
     connection_config: MotherDuckConnectionConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")

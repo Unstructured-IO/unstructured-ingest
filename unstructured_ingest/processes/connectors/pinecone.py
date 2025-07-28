@@ -212,7 +212,7 @@ class PineconeUploader(VectorDBUploader):
             logger.error(f"failed to check if pinecone index exists : {e}")
             raise DestinationConnectionError(f"failed to check if pinecone index exists : {e}")
 
-    def precheck(self):
+    def _precheck(self):
         try:
             # just a connection check here. not an actual index_exists check
             self.index_exists("just-checking-our-connection")

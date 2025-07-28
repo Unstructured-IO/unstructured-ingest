@@ -95,7 +95,7 @@ class OutlookIndexer(Indexer):
     connection_config: OutlookConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         messages = self._list_messages(recursive=self.index_config.recursive)
 
         for message in messages:
@@ -105,7 +105,7 @@ class OutlookIndexer(Indexer):
         raise NotImplementedError
 
     @SourceConnectionError.wrap
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         client = self.connection_config.get_client()
         client.users[self.index_config.user_email].get().execute_query()
 
@@ -195,7 +195,7 @@ class OutlookDownloader(Downloader):
     connection_config: OutlookConnectionConfig
     download_config: OutlookDownloaderConfig = field(default_factory=OutlookDownloaderConfig)
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         # NOTE: Indexer should provide source identifiers required to generate the download path
         download_path = self.get_download_path(file_data)
         if download_path is None:

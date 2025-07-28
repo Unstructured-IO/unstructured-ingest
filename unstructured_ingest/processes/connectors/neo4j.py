@@ -309,7 +309,7 @@ class Neo4jUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     @DestinationConnectionError.wrap
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         async def verify_auth():
             async with self.connection_config.get_client() as client:
                 await client.verify_connectivity()

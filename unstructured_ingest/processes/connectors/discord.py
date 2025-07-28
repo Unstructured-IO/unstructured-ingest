@@ -59,7 +59,7 @@ class DiscordIndexer(Indexer):
     connection_config: DiscordConnectionConfig
     index_config: DiscordIndexerConfig
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         self.connection_config.get_client()
         channels_to_process: set[str] = set(self.index_config.channels or [])
 
@@ -68,7 +68,7 @@ class DiscordIndexer(Indexer):
             if file_data:
                 yield file_data
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         if not self.connection_config.access_config.get_secret_value().token:
             raise SourceConnectionError("Discord token is missing")
         if not self.index_config.channels:
@@ -110,11 +110,11 @@ class DiscordDownloader(Downloader):
     def is_async(self) -> bool:
         return True
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def _run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         # Synchronous run is not implemented
         raise NotImplementedError()
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         record_locator = file_data.metadata.record_locator
 
         if "channel_id" not in record_locator:

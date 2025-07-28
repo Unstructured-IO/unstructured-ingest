@@ -27,7 +27,7 @@ class Indexer(BaseProcess, BaseConnector, IndexerConnectorLoggingMixin, ABC):
     def is_async(self) -> bool:
         return False
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         self.log_indexing_start(connector_type=self.connector_type, endpoint=self.endpoint_to_log)
         try:
             response = self._run(**kwargs)
@@ -71,7 +71,7 @@ class Indexer(BaseProcess, BaseConnector, IndexerConnectorLoggingMixin, ABC):
     @property
     # TODO: Convert into @abstractmethod once all existing indexers have this property
     def endpoint_to_log(self) -> str:
-        return ""
+        return "<ENDPOINT TO SPECIFY>"
 
     def precheck(self) -> None:
         self.log_connection_validation_start(

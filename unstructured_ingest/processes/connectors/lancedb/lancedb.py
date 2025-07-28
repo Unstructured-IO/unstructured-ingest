@@ -74,7 +74,7 @@ class LanceDBUploadStager(UploadStager):
     )
 
     @requires_dependencies(["pandas"], extras="lancedb")
-    def run(
+    def _run(
         self,
         elements_filepath: Path,
         file_data: FileData,
@@ -119,7 +119,7 @@ class LanceDBUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
 
     @DestinationConnectionError.wrap
-    def precheck(self):
+    def _precheck(self):
         async def _precheck() -> None:
             async with self.connection_config.get_async_connection() as conn:
                 table = await conn.open_table(self.upload_config.table_name)

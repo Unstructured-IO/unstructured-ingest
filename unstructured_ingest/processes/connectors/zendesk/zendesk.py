@@ -73,7 +73,7 @@ class ZendeskIndexer(Indexer):
     index_config: ZendeskIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         """Validates connection to Zendesk API."""
         self.connection_config.get_client()
 
@@ -208,7 +208,7 @@ class ZendeskDownloader(Downloader):
                 for comment in comments:
                     await f.write(comment.as_text())
 
-    async def run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    async def _run_async(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         zendesk_filedata = ZendeskFileData.cast(file_data=file_data)
 
         item_type = zendesk_filedata.additional_metadata.item_type

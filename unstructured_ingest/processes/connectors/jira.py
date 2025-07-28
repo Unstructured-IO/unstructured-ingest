@@ -177,7 +177,7 @@ class JiraIndexer(Indexer):
     index_config: JiraIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
                 response = client.get_permissions("BROWSE_PROJECTS")
@@ -300,7 +300,7 @@ class JiraIndexer(Indexer):
             generators.append(self._get_issues_within_projects)
         return generators
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         seen_keys = []
         for gen in self.get_generators():
             for issue in gen():
@@ -485,7 +485,7 @@ class JiraDownloader(Downloader):
                 )
         return download_responses
 
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         issue_key = file_data.additional_metadata.get("key")
         if not issue_key:
             raise ValueError("Issue key not found in metadata.")

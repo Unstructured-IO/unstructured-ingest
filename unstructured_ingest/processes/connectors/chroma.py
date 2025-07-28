@@ -132,7 +132,7 @@ class ChromaUploader(Uploader):
     upload_config: ChromaUploaderConfig
     connection_config: ChromaConnectionConfig
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             self.connection_config.get_client()
         except Exception as e:

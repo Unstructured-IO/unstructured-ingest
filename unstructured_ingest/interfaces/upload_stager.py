@@ -55,7 +55,7 @@ class UploadStager(BaseProcess, UploadStagerConnectorLoggingMixin, ABC):
         ]
         write_data(path=output_file, data=conformed_elements)
 
-    def run(
+    def _run(
         self,
         elements_filepath: Path,
         file_data: FileData,

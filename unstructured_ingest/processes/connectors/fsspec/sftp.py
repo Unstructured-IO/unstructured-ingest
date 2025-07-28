@@ -100,7 +100,7 @@ class SftpIndexer(FsspecIndexer):
         self.connection_config.host = parsed_url.hostname or self.connection_config.host
         self.connection_config.port = parsed_url.port or self.connection_config.port
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for file in super().run(**kwargs):
             new_identifier = (
                 f"sftp://"

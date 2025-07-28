@@ -239,7 +239,7 @@ class AzureAISearchUploader(Uploader):
             raise ValueError("no key field found in index fields")
         return key_fields[0].name
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_search_client() as search_client:
                 search_client.get_document_count()

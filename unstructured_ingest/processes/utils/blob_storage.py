@@ -17,7 +17,7 @@ class BlobStoreUploadStager(UploadStager):
         default_factory=BlobStoreUploadStagerConfig
     )
 
-    def run(
+    def _run(
         self,
         elements_filepath: Path,
         file_data: FileData,

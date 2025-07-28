@@ -125,7 +125,7 @@ class MongoDBIndexer(Indexer):
     index_config: MongoDBIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         """Validates the connection to the MongoDB server."""
         try:
             with self.connection_config.get_client() as client:
@@ -151,7 +151,7 @@ class MongoDBIndexer(Indexer):
             logger.error(f"Failed to validate connection: {e}", exc_info=True)
             raise SourceConnectionError(f"Failed to validate connection: {e}")
 
-    def run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
+    def _run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
         with self.connection_config.get_client() as client:
             database = client[self.index_config.database]
@@ -250,7 +250,7 @@ class MongoDBDownloader(Downloader):
 
     @SourceConnectionError.wrap
     @requires_dependencies(["bson"], extras="mongodb")
-    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
+    def _run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         """Fetches the document from MongoDB and writes it to a file."""
         from bson.errors import InvalidId
         from bson.objectid import ObjectId
@@ -303,7 +303,7 @@ class MongoDBUploader(Uploader):
     connection_config: MongoDBConnectionConfig
     connector_type: str = CONNECTOR_TYPE
 
-    def precheck(self) -> None:
+    def _precheck(self) -> None:
         try:
             with self.connection_config.get_client() as client:
                 client.admin.command("ping")
