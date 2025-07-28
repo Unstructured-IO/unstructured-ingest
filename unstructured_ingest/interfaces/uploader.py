@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar
@@ -83,9 +83,9 @@ class Uploader(BaseProcess, BaseConnector, UploaderConnectorLoggingMixin, ABC):
             raise e
         self.log_upload_complete(file_data=file_data)
 
-    @abstractmethod
+    # TODO: Convert into @abstractmethod once all existing uploaders have this implemented
     def _run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
-        pass
+        raise NotImplementedError()
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         self.log_upload_start(file_data=file_data)
