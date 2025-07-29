@@ -74,7 +74,7 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
                 embeddings.extend(embeddings)
         except Exception as e:
             raise self.wrap_error(e=e)
-        for element, embedding in zip(elements_with_text, embeddings):
+        for element, embedding in zip(elements_with_text, embeddings, strict=True):
             element[EMBEDDINGS_KEY] = embedding
         return elements
 
