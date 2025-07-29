@@ -1,3 +1,4 @@
+import hashlib
 import os
 from abc import ABC
 from pathlib import Path
@@ -36,11 +37,21 @@ class Downloader(BaseProcess, BaseConnector, ABC):
     def get_download_path(self, file_data: FileData) -> Optional[Path]:
         if not file_data.source_identifiers:
             return None
+        
         rel_path = file_data.source_identifiers.relative_path
         if not rel_path:
             return None
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        return self.download_dir / Path(rel_path)
+        
+        normalized_path = rel_path[1:] if rel_path.startswith("/") else rel_path
+        if not normalized_path or not normalized_path.strip():
+            return None
+        
+        filename = Path(normalized_path).name
+        if not filename:
+            return None
+        
+        dir_hash = hashlib.sha256(normalized_path.encode('utf-8')).hexdigest()[:12]
+        return self.download_dir / dir_hash / filename
 
     @staticmethod
     def is_float(value: str):
