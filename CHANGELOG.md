@@ -1,3 +1,7 @@
+## 1.1.3
+
+* **Fix**: prevent S3 path conflicts using hash-based directory isolation
+
 ## 1.1.2
 
 * **Fix**: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic
