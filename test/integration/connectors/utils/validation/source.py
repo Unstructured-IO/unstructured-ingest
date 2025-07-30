@@ -169,18 +169,25 @@ def run_expected_download_files_validation(
 
 def run_directory_structure_validation(expected_output_dir: Path, download_files: list[str]):
     s3_keys_file = expected_output_dir / "expected_s3_keys.json"
-    with s3_keys_file.open("r") as f:
-        s3_keys = json.load(f)["s3_keys"]
     
-    expected_paths = []
-    for s3_key in s3_keys:
-        hash_based_path = generate_hash_based_path(s3_key)
-        if hash_based_path:
-            expected_paths.append(str(hash_based_path))
-    
-    expected_paths.sort()
-    download_files.sort()
-    assert expected_paths == download_files
+    if s3_keys_file.exists():
+        with s3_keys_file.open("r") as f:
+            s3_keys = json.load(f)["s3_keys"]
+        
+        expected_paths = []
+        for s3_key in s3_keys:
+            hash_based_path = generate_hash_based_path(s3_key)
+            if hash_based_path:
+                expected_paths.append(str(hash_based_path))
+        
+        expected_paths.sort()
+        download_files.sort()
+        assert expected_paths == download_files
+    else:
+        directory_record = expected_output_dir / "directory_structure.json"
+        with directory_record.open("r") as f:
+            directory_structure = json.load(f)["directory_structure"]
+        assert directory_structure == download_files
 
 
 def update_fixtures(
