@@ -145,11 +145,23 @@ def check_raw_file_contents(
     configs: SourceValidationConfigs,
 ):
     current_files = get_files(dir_path=current_output_dir)
+    expected_files = get_files(dir_path=expected_output_dir)
     found_diff = False
     files = []
+    
     for current_file in current_files:
+        # Extract original filename from tempfile name
+        original_filename = None
+        for expected_file in expected_files:
+            if current_file.endswith('_' + expected_file):
+                original_filename = expected_file
+                break
+        else:
+            original_filename = current_file.split('_', 1)[1] if '_' in current_file else current_file
+        
         current_file_path = current_output_dir / current_file
-        expected_file_path = expected_output_dir / current_file
+        expected_file_path = expected_output_dir / original_filename
+        
         if configs.detect_diff(expected_file_path, current_file_path):
             found_diff = True
             files.append(str(expected_file_path))
@@ -186,6 +198,12 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
     with directory_record.open("r") as f:
         directory_structure = json.load(f)["directory_structure"]
     
+    # Check if downloads match expected structure exactly (non-tempfile case)
+    if set(directory_structure) == set(download_files):
+        assert len(download_files) == len(set(download_files))
+        return
+    
+    # Try tempfile validation logic
     actual_filenames = []
     for download_file in download_files:
         for expected_filename in directory_structure:
