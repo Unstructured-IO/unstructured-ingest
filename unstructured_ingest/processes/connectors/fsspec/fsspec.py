@@ -29,7 +29,7 @@ from unstructured_ingest.interfaces import (
     UploaderConfig,
 )
 from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
-from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
+from unstructured_ingest.utils.filesystem import generate_hash_based_path, mkdir_concurrent_safe
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -270,6 +270,16 @@ class FsspecDownloader(Downloader):
     download_config: Optional[FsspecDownloaderConfigT] = field(
         default_factory=lambda: FsspecDownloaderConfig()
     )
+    
+    def get_download_path(self, file_data: FileData) -> Optional[Path]:
+        if not file_data.source_identifiers:
+            return None
+        
+        rel_path = file_data.source_identifiers.relative_path
+        if not rel_path:
+            return None
+        
+        return generate_hash_based_path(rel_path, self.download_dir)
 
     def is_async(self) -> bool:
         with self.connection_config.get_client(protocol=self.protocol) as client:
