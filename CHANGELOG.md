@@ -1,10 +1,10 @@
 ## 1.1.3
 
-* **Fix**: prevent S3 path conflicts using hash-based directory isolation
+* **Fix: Remove unnecessary deletion operation in ES connector**
 
 ## 1.1.2
 
-* **Fix**: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic
+* **Fix: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic**
 
 ## 1.1.1
 
@@ -12,7 +12,7 @@
 
 ## 1.1.0
 
-* **Feature**: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.
+* **Feature: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.**
 
 ## 1.0.59
 
