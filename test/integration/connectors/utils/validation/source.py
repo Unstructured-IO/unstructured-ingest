@@ -10,7 +10,6 @@ from pydantic import Field
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import Downloader, Indexer
-from unstructured_ingest.utils.filesystem import generate_hash_based_path
 
 NONSTANDARD_METADATA_FIELDS = {
     "additional_metadata.@microsoft.graph.downloadUrl": [
@@ -174,15 +173,22 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
         with s3_keys_file.open("r") as f:
             s3_keys = json.load(f)["s3_keys"]
         
-        expected_paths = []
-        for s3_key in s3_keys:
-            hash_based_path = generate_hash_based_path(s3_key)
-            if hash_based_path:
-                expected_paths.append(str(hash_based_path))
+        expected_filenames = [Path(s3_key).name for s3_key in s3_keys]
+        actual_filenames = []
         
-        expected_paths.sort()
-        download_files.sort()
-        assert expected_paths == download_files
+        for download_file in download_files:
+            for expected_filename in expected_filenames:
+                if download_file.endswith('_' + expected_filename):
+                    actual_filenames.append(expected_filename)
+                    break
+            else:
+                actual_filenames.append(download_file.split('_', 1)[1] if '_' in download_file else download_file)
+        
+        expected_filenames.sort()
+        actual_filenames.sort()
+        assert expected_filenames == actual_filenames
+        assert len(download_files) == len(set(download_files))
+        
     else:
         directory_record = expected_output_dir / "directory_structure.json"
         with directory_record.open("r") as f:

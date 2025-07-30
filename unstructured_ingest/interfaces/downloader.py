@@ -1,4 +1,5 @@
 import os
+import tempfile
 from abc import ABC
 from pathlib import Path
 from typing import Any, Optional, TypedDict, TypeVar, Union
@@ -40,9 +41,23 @@ class Downloader(BaseProcess, BaseConnector, ABC):
         rel_path = file_data.source_identifiers.relative_path
         if not rel_path:
             return None
+            
+        original_filename = Path(rel_path).name
+        if not original_filename:
+            return None
+            
+        download_dir = self.download_dir
+        download_dir.mkdir(parents=True, exist_ok=True)
         
-        rel_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        return self.download_dir / Path(rel_path)
+        fd, temp_path = tempfile.mkstemp(
+            suffix=f"_{original_filename}",
+            dir=download_dir,
+            text=False
+        )
+        os.close(fd)
+        os.unlink(temp_path)
+        
+        return Path(temp_path)
 
     @staticmethod
     def is_float(value: str):
