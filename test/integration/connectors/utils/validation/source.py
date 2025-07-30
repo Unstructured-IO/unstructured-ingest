@@ -102,7 +102,22 @@ def check_files(expected_output_dir: Path, all_file_data: list[FileData]):
 def check_files_in_paths(expected_output_dir: Path, current_output_dir: Path):
     expected_files = get_files(dir_path=expected_output_dir)
     current_files = get_files(dir_path=current_output_dir)
-    diff = set(expected_files) ^ set(current_files)
+    
+    # Extract original filenames from tempfile names
+    actual_filenames = []
+    for current_file in current_files:
+        for expected_file in expected_files:
+            if current_file.endswith('_' + expected_file):
+                actual_filenames.append(expected_file)
+                break
+        else:
+            actual_filenames.append(
+                current_file.split('_', 1)[1] if '_' in current_file else current_file
+            )
+    
+    expected_files.sort()
+    actual_filenames.sort()
+    diff = set(expected_files) ^ set(actual_filenames)
     assert not diff, "diff in files that exist: {}".format(", ".join(diff))
 
 
