@@ -178,7 +178,9 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
                 actual_filenames.append(expected_filename)
                 break
         else:
-            actual_filenames.append(download_file.split('_', 1)[1] if '_' in download_file else download_file)
+            actual_filenames.append(
+                download_file.split('_', 1)[1] if '_' in download_file else download_file
+            )
     
     directory_structure.sort()
     actual_filenames.sort()
