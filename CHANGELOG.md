@@ -1,3 +1,7 @@
+## 1.1.4
+
+* **Fix**: prevent S3 path conflicts using hash-based directory isolation
+
 ## 1.1.3
 
 * **Fix: Remove unnecessary deletion operation in ES connector**
