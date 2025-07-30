@@ -1,5 +1,9 @@
 ## 1.1.2
 
+* **Fix**: Embedding batches don't overwrite one another
+
+## 1.1.2
+
 * **Fix**: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic
 
 ## 1.1.1
