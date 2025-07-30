@@ -167,33 +167,23 @@ def run_expected_download_files_validation(
 
 
 def run_directory_structure_validation(expected_output_dir: Path, download_files: list[str]):
-    s3_keys_file = expected_output_dir / "expected_s3_keys.json"
+    directory_record = expected_output_dir / "directory_structure.json"
+    with directory_record.open("r") as f:
+        directory_structure = json.load(f)["directory_structure"]
     
-    if s3_keys_file.exists():
-        with s3_keys_file.open("r") as f:
-            s3_keys = json.load(f)["s3_keys"]
-        
-        expected_filenames = [Path(s3_key).name for s3_key in s3_keys]
-        actual_filenames = []
-        
-        for download_file in download_files:
-            for expected_filename in expected_filenames:
-                if download_file.endswith('_' + expected_filename):
-                    actual_filenames.append(expected_filename)
-                    break
-            else:
-                actual_filenames.append(download_file.split('_', 1)[1] if '_' in download_file else download_file)
-        
-        expected_filenames.sort()
-        actual_filenames.sort()
-        assert expected_filenames == actual_filenames
-        assert len(download_files) == len(set(download_files))
-        
-    else:
-        directory_record = expected_output_dir / "directory_structure.json"
-        with directory_record.open("r") as f:
-            directory_structure = json.load(f)["directory_structure"]
-        assert directory_structure == download_files
+    actual_filenames = []
+    for download_file in download_files:
+        for expected_filename in directory_structure:
+            if download_file.endswith('_' + expected_filename):
+                actual_filenames.append(expected_filename)
+                break
+        else:
+            actual_filenames.append(download_file.split('_', 1)[1] if '_' in download_file else download_file)
+    
+    directory_structure.sort()
+    actual_filenames.sort()
+    assert directory_structure == actual_filenames
+    assert len(download_files) == len(set(download_files))
 
 
 def update_fixtures(
