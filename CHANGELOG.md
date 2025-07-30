@@ -1,4 +1,4 @@
-## 1.1.2
+## 1.1.3
 
 * **Fix**: Embedding batches don't overwrite one another
 
