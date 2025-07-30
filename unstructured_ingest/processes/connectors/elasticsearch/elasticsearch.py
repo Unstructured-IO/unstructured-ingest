@@ -19,7 +19,6 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
-    WriteError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -336,6 +335,7 @@ class ElasticsearchUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         data = element_dict.copy()
+        # when _op_type is not specified, it defaults to "index": Overwrites if exists, creates if not.
         resp = {
             "_index": self.upload_stager_config.index_name,
             "_id": get_enhanced_element_id(element_dict=data, file_data=file_data),
@@ -397,23 +397,6 @@ class ElasticsearchUploader(Uploader):
 
         return parallel_bulk
 
-    def delete_by_record_id(self, client, file_data: FileData) -> None:
-        logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
-            f"from {self.upload_config.index_name} index"
-        )
-        delete_resp = client.delete_by_query(
-            index=self.upload_config.index_name,
-            body={"query": {"match": {self.upload_config.record_id_key: file_data.identifier}}},
-        )
-        logger.info(
-            "deleted {} records from index {}".format(
-                delete_resp["deleted"], self.upload_config.index_name
-            )
-        )
-        if failures := delete_resp.get("failures"):
-            raise WriteError(f"failed to delete records: {failures}")
-
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
         from elasticsearch.helpers.errors import BulkIndexError
@@ -429,7 +412,6 @@ class ElasticsearchUploader(Uploader):
         )
 
         with self.connection_config.get_client() as client:
-            self.delete_by_record_id(client=client, file_data=file_data)
             if not client.indices.exists(index=self.upload_config.index_name):
                 logger.warning(
                     f"{(self.__class__.__name__).replace('Uploader', '')} index does not exist: "
@@ -446,6 +428,10 @@ class ElasticsearchUploader(Uploader):
                         thread_count=self.upload_config.num_threads,
                     )
                     collections.deque(iterator, maxlen=0)
+                    logger.info(
+                        f"uploaded batch of {len(batch)} elements to index "
+                        f"{self.upload_config.index_name}"
+                    )
                 except BulkIndexError as e:
                     sanitized_errors = [
                         self._sanitize_bulk_index_error(error) for error in e.errors
