@@ -25,5 +25,3 @@ def mkdir_concurrent_safe(path: Path) -> None:
     except FileExistsError:
         if not (path.exists() and path.is_dir()):
             raise
-
-
