@@ -1,4 +1,3 @@
-import hashlib
 import os
 from abc import ABC
 from pathlib import Path
@@ -9,6 +8,7 @@ from pydantic import BaseModel, Field
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces.connector import BaseConnector
 from unstructured_ingest.interfaces.process import BaseProcess
+from unstructured_ingest.utils.filesystem import generate_hash_based_path
 
 
 class DownloaderConfig(BaseModel):
@@ -42,16 +42,7 @@ class Downloader(BaseProcess, BaseConnector, ABC):
         if not rel_path:
             return None
         
-        normalized_path = rel_path[1:] if rel_path.startswith("/") else rel_path
-        if not normalized_path or not normalized_path.strip():
-            return None
-        
-        filename = Path(normalized_path).name
-        if not filename:
-            return None
-        
-        dir_hash = hashlib.sha256(normalized_path.encode('utf-8')).hexdigest()[:12]
-        return self.download_dir / dir_hash / filename
+        return generate_hash_based_path(rel_path, self.download_dir)
 
     @staticmethod
     def is_float(value: str):
