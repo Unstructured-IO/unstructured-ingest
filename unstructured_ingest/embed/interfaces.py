@@ -67,14 +67,14 @@ class BaseEmbeddingEncoder(BaseEncoder, ABC):
         elements = elements.copy()
         elements_with_text = [e for e in elements if e.get("text")]
         texts = [e["text"] for e in elements_with_text]
-        embeddings = []
+        all_embeddings = []
         try:
             for batch in batch_generator(texts, batch_size=self.config.batch_size or len(texts)):
-                embeddings = self.embed_batch(client=client, batch=batch)
-                embeddings.extend(embeddings)
+                embeddings_batch = self.embed_batch(client=client, batch=batch)
+                all_embeddings.extend(embeddings_batch)
         except Exception as e:
             raise self.wrap_error(e=e)
-        for element, embedding in zip(elements_with_text, embeddings, strict=True):
+        for element, embedding in zip(elements_with_text, all_embeddings, strict=True):
             element[EMBEDDINGS_KEY] = embedding
         return elements
 
@@ -130,7 +130,7 @@ class AsyncBaseEmbeddingEncoder(BaseEncoder, ABC):
                 all_embeddings.extend(embeddings_batch)
         except Exception as e:
             raise self.wrap_error(e=e)
-        for element, embedding in zip(elements_with_text, all_embeddings):
+        for element, embedding in zip(elements_with_text, all_embeddings, strict=True):
             element[EMBEDDINGS_KEY] = embedding
         return elements
 
