@@ -1,3 +1,7 @@
+## 1.1.4
+
+* **Fix: Prevent download path conflicts using collision-safe temporary file generation** 
+
 ## 1.1.3
 
 * **Fix: Remove unnecessary deletion operation in ES connector**

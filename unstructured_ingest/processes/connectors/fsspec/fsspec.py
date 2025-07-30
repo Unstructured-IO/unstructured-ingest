@@ -270,6 +270,7 @@ class FsspecDownloader(Downloader):
     download_config: Optional[FsspecDownloaderConfigT] = field(
         default_factory=lambda: FsspecDownloaderConfig()
     )
+    
 
     def is_async(self) -> bool:
         with self.connection_config.get_client(protocol=self.protocol) as client:
