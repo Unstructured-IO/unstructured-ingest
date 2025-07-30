@@ -279,10 +279,7 @@ class FsspecDownloader(Downloader):
         if not filename:
             return None
         
-        temp_dir = tempfile.mkdtemp(
-            prefix="unstructured_", 
-            dir=self.download_dir
-        )
+        temp_dir = tempfile.mkdtemp(prefix="unstructured_")
         return Path(temp_dir) / filename
 
     def is_async(self) -> bool:
