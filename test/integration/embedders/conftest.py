@@ -40,10 +40,15 @@ class MockOpenAIEmbeddingsHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
+        request_body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+        input = request_body["input"]
         body = {
-            "data": [{"object": "embedding", "embedding": [], "index": 0}],
+            "data": [
+                {"object": "embedding", "embedding": [], "index": i}
+                for i, _ in enumerate([input] if isinstance(input, str) else input)
+            ],
             "object": "list",
-            "model": "text-embedding-ada-002",
+            "model": request_body["model"],
             "usage": {"prompt_tokens": 1, "total_tokens": 2},
         }
         self.wfile.write(json.dumps(body).encode("utf-8"))
