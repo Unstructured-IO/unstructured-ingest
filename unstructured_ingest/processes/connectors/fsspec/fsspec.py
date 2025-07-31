@@ -385,7 +385,7 @@ class FsspecUploader(Uploader):
 
     def __post_init__(self):
         super().__post_init__()
-        # TODO once python3.9 no longer supported and kw_only is allowed in dataclasses, remove:
+        # TODO: Consider using `kw_only` instead
         if not self.upload_config:
             raise TypeError(
                 f"{self.__class__.__name__}.__init__() "
