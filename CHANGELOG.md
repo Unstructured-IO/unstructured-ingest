@@ -1,3 +1,7 @@
+## 1.2.2
+
+* **Fix**: prevent S3 path conflicts using tempfile for directory isolation
+
 ## 1.2.1
 
 * **Fix**: Embeddings are properly assigned when embedding in batches
