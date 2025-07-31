@@ -146,8 +146,6 @@ test = [
 ]
 # Add constraints needed for CI
 ci = [
-    # consistency with local-inference-pin
-    "protobuf<4.24",
     "grpcio>=1.65.5",
     # TODO: Pinned in transformers package, remove when that gets updated
     "tokenizers>=0.19,<0.20",
