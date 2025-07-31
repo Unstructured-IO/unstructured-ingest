@@ -264,6 +264,8 @@ FsspecDownloaderConfigT = TypeVar("FsspecDownloaderConfigT", bound=FsspecDownloa
 
 @dataclass
 class FsspecDownloader(Downloader):
+    TEMP_DIR_PREFIX = "unstructured_"
+    
     protocol: str
     connection_config: FsspecConnectionConfigT
     connector_type: str = CONNECTOR_TYPE
@@ -272,17 +274,18 @@ class FsspecDownloader(Downloader):
     )
     
     def get_download_path(self, file_data: FileData) -> Optional[Path]:
-        if not file_data.source_identifiers:
+        has_source_identifiers = file_data.source_identifiers is not None
+        has_filename = has_source_identifiers and file_data.source_identifiers.filename
+        
+        if not (has_source_identifiers and has_filename):
             return None
         
         filename = file_data.source_identifiers.filename
-        if not filename:
-            return None
         
         mkdir_concurrent_safe(self.download_dir)
         
         temp_dir = tempfile.mkdtemp(
-            prefix="unstructured_", 
+            prefix=self.TEMP_DIR_PREFIX, 
             dir=self.download_dir
         )
         return Path(temp_dir) / filename

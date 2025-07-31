@@ -173,14 +173,12 @@ def run_directory_structure_validation(expected_output_dir: Path, download_files
         with s3_keys_file.open("r") as f:
             s3_keys = json.load(f)["s3_keys"]
         
-        expected_filenames = [Path(s3_key).name for s3_key in s3_keys]
-        actual_filenames = [Path(download_file).name for download_file in download_files]
+        expected_filenames = {Path(s3_key).name for s3_key in s3_keys}
+        actual_filenames = {Path(download_file).name for download_file in download_files}
         
-        expected_filenames.sort()
-        actual_filenames.sort()
         assert expected_filenames == actual_filenames, (
-            f"Expected filenames: {expected_filenames}, "
-            f"Got filenames: {actual_filenames}"
+            f"Expected filenames: {sorted(expected_filenames)}, "
+            f"Got filenames: {sorted(actual_filenames)}"
         )
     else:
         directory_record = expected_output_dir / "directory_structure.json"
