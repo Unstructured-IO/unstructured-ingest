@@ -2,8 +2,8 @@
 
 set -e
 
-# python version must match lowest supported (3.9)
-python_version=${UV_PYTHON_VERSION:-"3.9"}
+# python version must match lowest supported (3.10)
+python_version=${UV_PYTHON_VERSION:-"3.10"}
 
 # if major and minor python version (x.y) is not equal to current python_version, error out
 if [[ $(python --version | cut -d ' ' -f 2 | cut -d '.' -f 1-2) != $(echo "$python_version" | cut -d '.' -f 1-2) ]]; then

@@ -367,7 +367,7 @@ FsspecUploaderConfigT = TypeVar("FsspecUploaderConfigT", bound=FsspecUploaderCon
 @dataclass
 class FsspecUploader(Uploader):
     connector_type: str = CONNECTOR_TYPE
-    upload_config: FsspecUploaderConfigT = field(default=None)
+    upload_config: FsspecUploaderConfigT = field(kw_only=True)
     connection_config: FsspecConnectionConfigT
 
     def is_async(self) -> bool:
@@ -382,15 +382,6 @@ class FsspecUploader(Uploader):
         return get_filesystem_class(self.upload_config.protocol)(
             **fs_kwargs,
         )
-
-    def __post_init__(self):
-        super().__post_init__()
-        # TODO once python3.9 no longer supported and kw_only is allowed in dataclasses, remove:
-        if not self.upload_config:
-            raise TypeError(
-                f"{self.__class__.__name__}.__init__() "
-                f"missing 1 required positional argument: 'upload_config'"
-            )
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)

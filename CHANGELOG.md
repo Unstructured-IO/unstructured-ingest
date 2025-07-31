@@ -1,3 +1,6 @@
+## 1.2.0
+* **Drop Python 3.9 support**
+
 ## 1.1.3
 
 * **Fix: Remove unnecessary deletion operation in ES connector**
