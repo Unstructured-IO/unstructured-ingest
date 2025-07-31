@@ -1,3 +1,7 @@
+## 1.2.1
+
+* **Fix**: Embeddings are properly assigned when embedding in batches
+
 ## 1.2.0
 * **Drop Python 3.9 support**
 
