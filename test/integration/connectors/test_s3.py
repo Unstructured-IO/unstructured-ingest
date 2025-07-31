@@ -310,12 +310,9 @@ class TestS3SecurityFeatures:
         access_config = S3AccessConfig()
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
         
-        config = connection_config.get_access_config()
-        
-        # Should be forced to anonymous mode for security
-        assert config["anon"] is True
-        assert "key" not in config
-        assert "secret" not in config
+        # Should raise UserAuthError instead of silently changing behavior
+        with pytest.raises(UserAuthError, match="No authentication method specified"):
+            config = connection_config.get_access_config()
 
     def test_explicit_credentials_work_normally(self):
         """Test that explicit credentials bypass security checks"""
@@ -416,19 +413,19 @@ class TestS3SecurityFeatures:
         config = connection_config.get_access_config()
         assert config["endpoint_url"] == endpoint
 
-    def test_security_warning_logged(self, caplog):
-        """Test that security warning is logged when automatic credentials would be used"""
+    def test_security_error_raised(self):
+        """Test that security error is raised when automatic credentials would be used"""
         access_config = S3AccessConfig(allow_ambient_credentials=False)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
         
-        # This should trigger the security warning
-        config = connection_config.get_access_config()
+        # This should raise UserAuthError with helpful message
+        with pytest.raises(UserAuthError) as exc_info:
+            config = connection_config.get_access_config()
         
-        # Should be forced to anonymous
-        assert config["anon"] is True
-        
-        # Should log security warning
-        assert "Forcing anonymous mode to prevent automatic credential pickup" in caplog.text
+        # Should provide clear error message
+        error_message = str(exc_info.value)
+        assert "No authentication method specified" in error_message
+        assert "allow_ambient_credentials=False" in error_message
 
     def test_ambient_credentials_info_logged(self, caplog):
         """Test that info message is logged when using ambient credentials"""

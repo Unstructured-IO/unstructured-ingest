@@ -58,7 +58,7 @@ class S3AccessConfig(FsspecAccessConfig):
     )
     allow_ambient_credentials: bool = Field(
         default=False,
-        description="SECURITY: Explicitly allow using ambient AWS credentials from .aws folder, "
+        description="Explicitly allow using ambient AWS credentials from .aws folder, "
         "environment variables, or IAM roles. When False (default), only explicit credentials or "
         "anonymous access are allowed."
     )
@@ -96,13 +96,12 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             access_configs: dict[str, Any] = {"anon": False}
             # Don't pass explicit credentials, let s3fs/boto3 auto-detect
         elif not self.anonymous:
-            # SECURITY WARNING: User set anonymous=False but no credentials and no ambient permission
-            logger.warning(
-                "anonymous=False but no explicit credentials provided and allow_ambient_credentials=False. "
-                "Forcing anonymous mode to prevent automatic credential pickup. "
-                "Use explicit credentials, set allow_ambient_credentials=True, or set anonymous=True."
+            # SECURITY ERROR: User set anonymous=False but provided no credentials and no ambient permission
+            # This prevents automatic credential pickup and forces explicit choice
+            raise UserAuthError(
+                "No authentication method specified. anonymous=False but no explicit credentials provided "
+                "and allow_ambient_credentials=False." 
             )
-            access_configs: dict[str, Any] = {"anon": True}
         else:
             # User explicitly wants anonymous mode
             access_configs: dict[str, Any] = {"anon": True}
