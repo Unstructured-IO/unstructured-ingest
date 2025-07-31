@@ -1,3 +1,7 @@
+## 1.2.3
+
+**Fix**: fix: auto-detect S3 bucket region from error headers to resolve new bucket connection failures
+
 ## 1.2.2
 
 * **Fix**: prevent S3 path conflicts using tempfile for directory isolation

@@ -56,6 +56,11 @@ class S3AccessConfig(FsspecAccessConfig):
     token: Optional[str] = Field(
         default=None, description="If not anonymous, use this security token, if specified."
     )
+    region: Optional[str] = Field(
+        default=None, 
+        description="AWS region name (e.g., 'us-east-2'). If not specified, will attempt "
+        "to auto-detect from bucket location or use AWS default region."
+    )
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
@@ -77,9 +82,12 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             access_configs["endpoint_url"] = self.endpoint_url
 
         # Avoid injecting None by filtering out k,v pairs where the value is None
-        access_configs.update(
-            {k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v}
-        )
+        access_values = {k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v}
+        
+        if access_values.get("region") and not self.endpoint_url:
+            access_configs["client_kwargs"] = {"region_name": access_values.pop("region")}
+        
+        access_configs.update(access_values)
         return access_configs
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
@@ -113,6 +121,13 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         )
         return e
 
+    def _extract_region_from_error(self, e: Exception) -> Optional[str]:
+        if isinstance(e, PermissionError) and hasattr(e, '__cause__'):
+            response = getattr(e.__cause__, 'response', {})
+            headers = response.get('ResponseMetadata', {}).get('HTTPHeaders', {})
+            return headers.get('x-amz-bucket-region')
+        return None
+
 
 @dataclass
 class S3Indexer(FsspecIndexer):
@@ -122,6 +137,57 @@ class S3Indexer(FsspecIndexer):
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)
+
+    def precheck(self) -> None:
+        self.log_operation_start(
+            "Connection validation",
+            protocol=self.index_config.protocol,
+            path=self.index_config.path_without_protocol,
+        )
+
+        try:
+            self._attempt_precheck()
+            return
+        except Exception as e:
+            if not self.connection_config.endpoint_url:
+                detected_region = self.connection_config._extract_region_from_error(e)
+                if detected_region and not self.connection_config.access_config.get_secret_value().region:
+                    access_config = self.connection_config.access_config.get_secret_value()
+                    access_config.region = detected_region
+                    try:
+                        self._attempt_precheck()
+                        self.log_info(f"Connected using auto-detected region: {detected_region}")
+                        return
+                    except Exception:
+                        access_config.region = None
+            
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+            )
+            raise self.wrap_error(e=e)
+
+    def _attempt_precheck(self) -> None:
+        from fsspec import get_filesystem_class
+        
+        fs = get_filesystem_class(self.index_config.protocol)(
+            **self.connection_config.get_access_config(),
+        )
+        files = fs.ls(path=self.index_config.path_without_protocol, detail=True)
+        valid_files = [x.get("name") for x in files if x.get("type") == "file"]
+        if not valid_files:
+            self.log_operation_complete("Connection validation", count=0)
+            return
+        file_to_sample = valid_files[0]
+        self.log_debug(f"attempting to make HEAD request for file: {file_to_sample}")
+        with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+            client.head(path=file_to_sample)
+
+        self.log_connection_validated(
+            connector_type=self.connector_type,
+            endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+        )
 
     def get_path(self, file_info: dict) -> str:
         return file_info["Key"]
