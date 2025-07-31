@@ -27,18 +27,18 @@ def generate_presigned_list_url(bucket_name, prefix="", expiration=3600):
         return presigned_url
         
     except NoCredentialsError:
-        print("❌ AWS credentials not found. Please configure your AWS credentials:")
+        print("AWS credentials not found. Please configure your AWS credentials:")
         print("   - AWS CLI: aws configure")
         print("   - Environment: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY")
         print("   - IAM role (if running on EC2)")
         return None
         
     except ClientError as e:
-        print(f"❌ AWS error: {e}")
+        print(f"AWS error: {e}")
         return None
         
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
         return None
 
 def test_presigned_url(presigned_url):
@@ -49,18 +49,18 @@ def test_presigned_url(presigned_url):
     try:
         response = requests.head(presigned_url, timeout=30)
         if response.status_code in [200, 403]:
-            print("✅ Presigned URL is accessible")
+            print("Presigned URL is accessible")
             return True
         else:
-            print(f"❌ Presigned URL returned status {response.status_code}")
+            print(f"Presigned URL returned status {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ Error testing presigned URL: {e}")
+        print(f"Error testing presigned URL: {e}")
         return False
 
 def main():
     """Generate and test a presigned URL."""
-    print("🔗 S3 Presigned URL Generator for Ambient Credentials Testing")
+    print("S3 Presigned URL Generator for Ambient Credentials Testing")
     print("=" * 60)
     
     if len(sys.argv) < 2:
@@ -84,12 +84,12 @@ def main():
     if not presigned_url:
         return 1
     
-    print(f"\n✅ Generated presigned URL:")
+    print(f"\nGenerated presigned URL:")
     print(f"{presigned_url}")
     
     # Test the URL
     if test_presigned_url(presigned_url):
-        print(f"\n🎉 SUCCESS! You can use this presigned URL for testing:")
+        print(f"\nSUCCESS! You can use this presigned URL for testing:")
         print(f"\nFor the test scripts:")
         print(f"export TEST_PRESIGNED_URL='{presigned_url}'")
         print(f"export TEST_ROLE_ARN='arn:aws:iam::YOUR_ACCOUNT:role/YOUR_ROLE'")
