@@ -1,10 +1,17 @@
+## 1.2.1
+
+* **Fix**: Embeddings are properly assigned when embedding in batches
+
+## 1.2.0
+* **Drop Python 3.9 support**
+
 ## 1.1.3
 
-* **Fix**: Embedding batches don't overwrite one another
+* **Fix: Remove unnecessary deletion operation in ES connector**
 
 ## 1.1.2
 
-* **Fix**: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic
+* **Fix: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic**
 
 ## 1.1.1
 
@@ -12,7 +19,7 @@
 
 ## 1.1.0
 
-* **Feature**: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.
+* **Feature: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.**
 
 ## 1.0.59
 
