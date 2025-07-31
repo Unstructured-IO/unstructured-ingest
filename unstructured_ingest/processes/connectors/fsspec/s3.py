@@ -153,16 +153,20 @@ class S3Indexer(FsspecIndexer):
         except Exception as e:
             if not self.connection_config.endpoint_url:
                 detected_region = self.connection_config._extract_region_from_error(e)
-                secret_value = self.connection_config.access_config.get_secret_value()
-                if detected_region and not secret_value.region:
-                    access_config = self.connection_config.access_config.get_secret_value()
-                    access_config.region = detected_region
+                if detected_region:
+                    self.log_debug(f"Detected bucket region from error headers: {detected_region}")
+                if detected_region and not self.connection_config.access_config.get_secret_value().region:
+                    original_access_config = self.connection_config.access_config
+                    temp_access_config = self.connection_config.access_config.get_secret_value().model_copy()
+                    temp_access_config.region = detected_region
+                    self.connection_config.access_config = temp_access_config
+                    
                     try:
                         self._attempt_precheck()
                         self.log_info(f"Connected using auto-detected region: {detected_region}")
                         return
                     except Exception:
-                        access_config.region = None
+                        self.connection_config.access_config = original_access_config
             
             self.log_connection_failed(
                 connector_type=self.connector_type,
