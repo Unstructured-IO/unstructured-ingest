@@ -56,6 +56,12 @@ class S3AccessConfig(FsspecAccessConfig):
     token: Optional[str] = Field(
         default=None, description="If not anonymous, use this security token, if specified."
     )
+    allow_ambient_credentials: bool = Field(
+        default=False,
+        description="SECURITY: Explicitly allow using ambient AWS credentials from .aws folder, "
+        "environment variables, or IAM roles. When False (default), only explicit credentials or "
+        "anonymous access are allowed."
+    )
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
@@ -72,14 +78,37 @@ class S3ConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
-        access_configs: dict[str, Any] = {"anon": self.anonymous}
+        access_config = self.access_config.get_secret_value()
+        has_explicit_credentials = bool(access_config.key or access_config.secret or access_config.token)
+        
+        # SECURITY: Prevent automatic credential pickup unless explicitly allowed
+        if has_explicit_credentials:
+            # User provided explicit credentials - use them
+            access_configs: dict[str, Any] = {"anon": False}
+            access_configs.update(
+                {k: v for k, v in access_config.model_dump().items() 
+                 if v and k != "allow_ambient_credentials"}
+            )
+        elif access_config.allow_ambient_credentials:
+            # User explicitly allowed ambient credentials - enable automatic credential pickup
+            logger.info("Using ambient AWS credentials (environment variables, .aws folder, IAM roles)")
+            access_configs: dict[str, Any] = {"anon": False}
+            # Don't pass explicit credentials, let s3fs/boto3 auto-detect
+        elif not self.anonymous:
+            # SECURITY WARNING: User set anonymous=False but no credentials and no ambient permission
+            logger.warning(
+                "anonymous=False but no explicit credentials provided and allow_ambient_credentials=False. "
+                "Forcing anonymous mode to prevent automatic credential pickup. "
+                "Use explicit credentials, set allow_ambient_credentials=True, or set anonymous=True."
+            )
+            access_configs: dict[str, Any] = {"anon": True}
+        else:
+            # User explicitly wants anonymous mode
+            access_configs: dict[str, Any] = {"anon": True}
+        
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
-
-        # Avoid injecting None by filtering out k,v pairs where the value is None
-        access_configs.update(
-            {k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v}
-        )
+            
         return access_configs
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
