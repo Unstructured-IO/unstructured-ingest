@@ -82,7 +82,9 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             access_configs["endpoint_url"] = self.endpoint_url
 
         # Avoid injecting None by filtering out k,v pairs where the value is None
-        access_values = {k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v}
+        access_values = {
+            k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v
+        }
         
         if access_values.get("region") and not self.endpoint_url:
             access_configs["client_kwargs"] = {"region_name": access_values.pop("region")}
@@ -151,7 +153,8 @@ class S3Indexer(FsspecIndexer):
         except Exception as e:
             if not self.connection_config.endpoint_url:
                 detected_region = self.connection_config._extract_region_from_error(e)
-                if detected_region and not self.connection_config.access_config.get_secret_value().region:
+                secret_value = self.connection_config.access_config.get_secret_value()
+                if detected_region and not secret_value.region:
                     access_config = self.connection_config.access_config.get_secret_value()
                     access_config.region = detected_region
                     try:
