@@ -155,11 +155,13 @@ class S3Indexer(FsspecIndexer):
                 detected_region = self.connection_config._extract_region_from_error(e)
                 if detected_region:
                     self.log_debug(f"Detected bucket region from error headers: {detected_region}")
-                if detected_region and not self.connection_config.access_config.get_secret_value().region:
+                current_region = self.connection_config.access_config.get_secret_value().region
+                if detected_region and detected_region != current_region:
                     original_access_config = self.connection_config.access_config
                     temp_access_config = self.connection_config.access_config.get_secret_value().model_copy()
                     temp_access_config.region = detected_region
-                    self.connection_config.access_config = temp_access_config
+                    from pydantic import Secret
+                    self.connection_config.access_config = Secret(temp_access_config)
                     
                     try:
                         self._attempt_precheck()
