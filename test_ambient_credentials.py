@@ -21,9 +21,9 @@ def test_configuration_validation():
             presigned_url="https://my-bucket.s3.amazonaws.com/prefix?X-Amz-Algorithm=AWS4-HMAC-SHA256",
             role_arn="arn:aws:iam::123456789012:role/MyS3Role"
         )
-        print("✅ Valid ambient credentials configuration accepted")
+        print("Valid ambient credentials configuration accepted")
     except Exception as e:
-        print(f"❌ Valid configuration failed: {e}")
+        print(f"Valid configuration failed: {e}")
         return False
     
     # Test 2: Missing presigned_url
@@ -32,10 +32,10 @@ def test_configuration_validation():
             use_ambient_credentials=True,
             role_arn="arn:aws:iam::123456789012:role/MyS3Role"
         )
-        print("❌ Should have failed with missing presigned_url")
+        print("Should have failed with missing presigned_url")
         return False
     except ValueError:
-        print("✅ Missing presigned_url correctly rejected")
+        print("Missing presigned_url correctly rejected")
     
     # Test 3: Invalid presigned_url format
     try:
@@ -44,10 +44,10 @@ def test_configuration_validation():
             presigned_url="invalid-url",
             role_arn="arn:aws:iam::123456789012:role/MyS3Role"
         )
-        print("❌ Should have failed with invalid presigned_url")
+        print("Should have failed with invalid presigned_url")
         return False
     except ValueError:
-        print("✅ Invalid presigned_url correctly rejected")
+        print("Invalid presigned_url correctly rejected")
     
     # Test 4: Invalid role_arn format
     try:
@@ -56,10 +56,10 @@ def test_configuration_validation():
             presigned_url="https://example.com/valid",
             role_arn="invalid-arn"
         )
-        print("❌ Should have failed with invalid role_arn")
+        print("Should have failed with invalid role_arn")
         return False
     except ValueError:
-        print("✅ Invalid role_arn correctly rejected")
+        print("Invalid role_arn correctly rejected")
     
     return True
 
@@ -73,10 +73,10 @@ def test_backwards_compatibility():
         config = S3AccessConfig(key="test-key", secret="test-secret")
         conn = S3ConnectionConfig(access_config=config)
         access_dict = conn.get_access_config()
-        print("✅ Traditional credentials still work")
+        print("Traditional credentials still work")
         print(f"   Config: {access_dict}")
     except Exception as e:
-        print(f"❌ Traditional credentials failed: {e}")
+        print(f"Traditional credentials failed: {e}")
         return False
     
     # Test anonymous access
@@ -84,10 +84,10 @@ def test_backwards_compatibility():
         config = S3AccessConfig()
         conn = S3ConnectionConfig(access_config=config, anonymous=True)
         access_dict = conn.get_access_config()
-        print("✅ Anonymous access still works")
+        print("Anonymous access still works")
         print(f"   Config: {access_dict}")
     except Exception as e:
-        print(f"❌ Anonymous access failed: {e}")
+        print(f"Anonymous access failed: {e}")
         return False
     
     return True
@@ -115,7 +115,7 @@ def test_mocked_ambient_flow():
         }) as mock_assume:
             try:
                 access_dict = conn.get_access_config()
-                print("✅ Mocked ambient credentials flow successful")
+                print("Mocked ambient credentials flow successful")
                 print(f"   Generated temporary credentials: {access_dict}")
                 
                 # Verify structure
@@ -129,11 +129,11 @@ def test_mocked_ambient_flow():
                 assert 'presigned_url' not in access_dict
                 assert 'role_arn' not in access_dict
                 
-                print("✅ All validations passed")
+                print("All validations passed")
                 return True
                 
             except Exception as e:
-                print(f"❌ Mocked flow failed: {e}")
+                print(f"Mocked flow failed: {e}")
                 return False
 
 
@@ -143,14 +143,14 @@ def test_real_aws_validation():
     
     # Check if AWS credentials are available
     if not (os.getenv('AWS_ACCESS_KEY_ID') or os.path.exists(os.path.expanduser('~/.aws/credentials'))):
-        print("⚠️  No AWS credentials found - skipping real AWS tests")
+        print("No AWS credentials found - skipping real AWS tests")
         print("   To test with real AWS:")
         print("   1. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY")
         print("   2. Or configure ~/.aws/credentials")
         print("   3. Provide a real presigned URL and role ARN")
         return True
     
-    print("ℹ️  AWS credentials detected - you can test with real values")
+    print("AWS credentials detected - you can test with real values")
     print("   Modify this script to include your test values:")
     print("   - presigned_url: Generate one from AWS Console or CLI")
     print("   - role_arn: Your test IAM role ARN")
@@ -166,10 +166,10 @@ def test_real_aws_validation():
     
     try:
         access_dict = conn.get_access_config()
-        print("✅ Real AWS ambient credentials flow successful")
+        print("Real AWS ambient credentials flow successful")
         print(f"   Generated credentials: {access_dict}")
     except Exception as e:
-        print(f"❌ Real AWS flow failed: {e}")
+        print(f"Real AWS flow failed: {e}")
         return False
     """
     
@@ -178,7 +178,7 @@ def test_real_aws_validation():
 
 def main():
     """Run all tests."""
-    print("🧪 Testing S3 Ambient Credentials Implementation")
+    print("Testing S3 Ambient Credentials Implementation")
     print("=" * 50)
     
     tests = [
@@ -194,17 +194,17 @@ def main():
             result = test()
             results.append(result)
         except Exception as e:
-            print(f"❌ Test {test.__name__} crashed: {e}")
+            print(f"Test {test.__name__} crashed: {e}")
             results.append(False)
     
     print("\n" + "=" * 50)
     if all(results):
-        print("🎉 ALL TESTS PASSED!")
-        print("\n✅ The ambient credentials implementation is working correctly")
-        print("✅ Ready for production use")
+        print("ALL TESTS PASSED!")
+        print("\nThe ambient credentials implementation is working correctly")
+        print("Ready for production use")
         return 0
     else:
-        print("❌ Some tests failed")
+        print("Some tests failed")
         return 1
 
 
