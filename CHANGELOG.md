@@ -1,6 +1,13 @@
-## 1.1.4
+## 1.2.2
 
-* **Fix**: prevent S3 path conflicts using hash-based directory isolation
+* **Fix**: prevent S3 path conflicts using tempfile for directory isolation
+
+## 1.2.1
+
+* **Fix**: Embeddings are properly assigned when embedding in batches
+
+## 1.2.0
+* **Drop Python 3.9 support**
 
 ## 1.1.3
 

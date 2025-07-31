@@ -335,7 +335,7 @@ class ElasticsearchUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         data = element_dict.copy()
-        # when _op_type is not specified, it defaults to "index": 
+        # when _op_type is not specified, it defaults to "index":
         # Overwrites if exists, creates if not.
         resp = {
             "_index": self.upload_stager_config.index_name,

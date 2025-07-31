@@ -32,20 +32,22 @@ class LogSpanExporter(ConsoleSpanExporter):
             self.log_out(self.formatter(span))
         return SpanExportResult.SUCCESS
 
+
 def get_log_out() -> Callable:
     level_names_mapping = {
-        'CRITICAL': logging.CRITICAL,
-        'FATAL': logging.FATAL,
-        'ERROR': logging.ERROR,
-        'WARN': logging.WARNING,
-        'WARNING': logging.WARNING,
-        'INFO': logging.INFO,
-        'DEBUG': logging.DEBUG,
-        'NOTSET': logging.NOTSET,
+        "CRITICAL": logging.CRITICAL,
+        "FATAL": logging.FATAL,
+        "ERROR": logging.ERROR,
+        "WARN": logging.WARNING,
+        "WARNING": logging.WARNING,
+        "INFO": logging.INFO,
+        "DEBUG": logging.DEBUG,
+        "NOTSET": logging.NOTSET,
     }
     log_level = os.getenv("OTEL_LOG_LEVEL", "DEBUG").upper()
     log_level_int = level_names_mapping.get(log_level, logging.DEBUG)
     return lambda message: logger.log(log_level_int, message)
+
 
 @dataclass
 class OtelHandler:
