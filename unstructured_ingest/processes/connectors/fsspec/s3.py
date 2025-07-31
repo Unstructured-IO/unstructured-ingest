@@ -4,8 +4,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
+from urllib.parse import urlparse
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, validator
 
 from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
@@ -31,6 +32,7 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStagerConfig,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+
 
 CONNECTOR_TYPE = "s3"
 
