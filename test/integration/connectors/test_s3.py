@@ -48,6 +48,66 @@ def anon_connection_config() -> S3ConnectionConfig:
     return S3ConnectionConfig(access_config=S3AccessConfig(), anonymous=True)
 
 
+@pytest.fixture
+def ambient_credentials_config() -> S3ConnectionConfig:
+    """Test fixture for ambient credentials with mock values."""
+    access_config = S3AccessConfig(
+        use_ambient_credentials=True,
+        presigned_url="https://example.com/mock-presigned-url",
+        role_arn="arn:aws:iam::123456789012:role/test-role"
+    )
+    return S3ConnectionConfig(access_config=access_config)
+
+
+class TestS3AmbientCredentials:
+    """Test suite for S3 ambient credentials functionality."""
+    
+    def test_ambient_credentials_validation_missing_presigned_url(self):
+        """Test that validation fails when presigned_url is missing."""
+        with pytest.raises(ValueError, match="presigned_url is required"):
+            S3AccessConfig(
+                use_ambient_credentials=True,
+                role_arn="arn:aws:iam::123456789012:role/test-role"
+            )
+    
+    def test_ambient_credentials_validation_missing_role_arn(self):
+        """Test that validation fails when role_arn is missing."""
+        with pytest.raises(ValueError, match="role_arn is required"):
+            S3AccessConfig(
+                use_ambient_credentials=True,
+                presigned_url="https://example.com/mock-presigned-url"
+            )
+    
+    def test_ambient_credentials_validation_invalid_presigned_url(self):
+        """Test that validation fails for invalid presigned URL format."""
+        with pytest.raises(ValueError, match="must be a valid HTTP/HTTPS URL"):
+            S3AccessConfig(
+                use_ambient_credentials=True,
+                presigned_url="invalid-url",
+                role_arn="arn:aws:iam::123456789012:role/test-role"
+            )
+    
+    def test_ambient_credentials_validation_invalid_role_arn(self):
+        """Test that validation fails for invalid role ARN format."""
+        with pytest.raises(ValueError, match="must be a valid AWS IAM role ARN"):
+            S3AccessConfig(
+                use_ambient_credentials=True,
+                presigned_url="https://example.com/mock-presigned-url",
+                role_arn="invalid-arn"
+            )
+    
+    def test_ambient_credentials_valid_config(self):
+        """Test that valid ambient credentials configuration passes validation."""
+        config = S3AccessConfig(
+            use_ambient_credentials=True,
+            presigned_url="https://example.com/mock-presigned-url",
+            role_arn="arn:aws:iam::123456789012:role/test-role"
+        )
+        assert config.use_ambient_credentials is True
+        assert config.presigned_url == "https://example.com/mock-presigned-url"
+        assert config.role_arn == "arn:aws:iam::123456789012:role/test-role"
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 async def test_s3_source(anon_connection_config: S3ConnectionConfig):

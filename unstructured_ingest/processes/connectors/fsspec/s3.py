@@ -1,10 +1,12 @@
 import contextlib
+import requests
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
+from urllib.parse import urlparse
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, validator
 
 from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
@@ -31,6 +33,14 @@ from unstructured_ingest.processes.utils.blob_storage import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
+try:
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError
+except ImportError:
+    boto3 = None
+    ClientError = None
+    NoCredentialsError = None
+
 CONNECTOR_TYPE = "s3"
 
 # https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html#object-key-guidelines-avoid-characters
@@ -56,6 +66,35 @@ class S3AccessConfig(FsspecAccessConfig):
     token: Optional[str] = Field(
         default=None, description="If not anonymous, use this security token, if specified."
     )
+    # New ambient credentials fields
+    use_ambient_credentials: bool = Field(
+        default=False, 
+        description="Use ambient AWS credentials (environment variables, profiles, IAM roles)"
+    )
+    presigned_url: Optional[str] = Field(
+        default=None, 
+        description="Presigned URL with list permissions to validate bucket access (required when using ambient credentials)"
+    )
+    role_arn: Optional[str] = Field(
+        default=None, 
+        description="ARN of the IAM role to assume for S3 operations (required when using ambient credentials)"
+    )
+    
+    @validator('presigned_url', always=True)
+    def validate_presigned_url(cls, v, values):
+        if values.get('use_ambient_credentials') and not v:
+            raise ValueError("presigned_url is required when use_ambient_credentials is True")
+        if v and not v.startswith(('http://', 'https://')):
+            raise ValueError("presigned_url must be a valid HTTP/HTTPS URL")
+        return v
+    
+    @validator('role_arn', always=True)
+    def validate_role_arn(cls, v, values):
+        if values.get('use_ambient_credentials') and not v:
+            raise ValueError("role_arn is required when use_ambient_credentials is True")
+        if v and not v.startswith('arn:aws:iam::'):
+            raise ValueError("role_arn must be a valid AWS IAM role ARN")
+        return v
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
@@ -70,21 +109,95 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         default=False, description="Connect to s3 without local AWS credentials."
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    
+    def _validate_presigned_url(self, presigned_url: str) -> bool:
+        """
+        Validate that the presigned URL works by making a HEAD request.
+        Returns True if the URL is valid and accessible.
+        """
+        try:
+            response = requests.head(presigned_url, timeout=30)
+            # Accept 200 (OK) or 403 (Forbidden but exists)
+            # 403 can happen if the presigned URL allows list but not head operation
+            return response.status_code in [200, 403]
+        except requests.RequestException as e:
+            logger.error(f"Failed to validate presigned URL: {e}")
+            return False
+    
+    def _assume_role_and_get_credentials(self, role_arn: str) -> dict[str, Any]:
+        """
+        Use ambient AWS credentials to assume the specified role and return temporary credentials.
+        """
+        try:
+            if not boto3:
+                raise ImportError("boto3 is required for ambient credentials support")
+            
+            # Create STS client using ambient credentials
+            sts_client = boto3.client('sts')
+            
+            # Assume the role
+            response = sts_client.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName=f"unstructured-ingest-{int(time())}",
+                DurationSeconds=3600  # 1 hour
+            )
+            
+            credentials = response['Credentials']
+            return {
+                'key': credentials['AccessKeyId'],
+                'secret': credentials['SecretAccessKey'],
+                'token': credentials['SessionToken']
+            }
+        except (ClientError, NoCredentialsError) as e:
+            logger.error(f"Failed to assume role {role_arn}: {e}")
+            raise UserAuthError(f"Failed to assume role: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error assuming role {role_arn}: {e}")
+            raise ProviderError(f"Role assumption failed: {e}")
 
     def get_access_config(self) -> dict[str, Any]:
+        access_config = self.access_config.get_secret_value()
+        
+        # Handle ambient credentials flow
+        if access_config.use_ambient_credentials:
+            # Validate presigned URL first
+            if not self._validate_presigned_url(access_config.presigned_url):
+                raise UserAuthError("Invalid or inaccessible presigned URL provided")
+            
+            # Assume role and get temporary credentials
+            temp_credentials = self._assume_role_and_get_credentials(access_config.role_arn)
+            
+            access_configs: dict[str, Any] = {"anon": False}
+            if self.endpoint_url:
+                access_configs["endpoint_url"] = self.endpoint_url
+            
+            # Use temporary credentials from assumed role
+            access_configs.update(temp_credentials)
+            return access_configs
+        
+        # Handle traditional flow (explicit credentials or anonymous)
         access_configs: dict[str, Any] = {"anon": self.anonymous}
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
 
         # Avoid injecting None by filtering out k,v pairs where the value is None
+        # Exclude the new ambient credential fields from being passed to s3fs
+        excluded_fields = {'use_ambient_credentials', 'presigned_url', 'role_arn'}
         access_configs.update(
-            {k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v}
+            {k: v for k, v in access_config.model_dump().items() 
+             if v is not None and k not in excluded_fields}
         )
         return access_configs
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
     @contextmanager
     def get_client(self, protocol: str) -> Generator["S3FileSystem", None, None]:
+        access_config = self.access_config.get_secret_value()
+        
+        # Additional dependency check for ambient credentials
+        if access_config.use_ambient_credentials and not boto3:
+            raise ImportError("boto3 is required for ambient credentials support. Install with 'pip install boto3'")
+        
         with super().get_client(protocol=protocol) as client:
             yield client
 
