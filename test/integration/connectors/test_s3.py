@@ -288,3 +288,158 @@ async def test_s3_destination_different_relative_path_and_full_path(upload_file:
         assert uploaded_files[0].as_posix() == f"{destination_path.lstrip('s3://')}/folder1"
     finally:
         s3fs.rm(path=destination_path, recursive=True)
+
+
+# Security Tests for Ambient Credentials
+class TestS3SecurityFeatures:
+    """Test suite for S3 security features and ambient credentials"""
+
+    def test_allow_ambient_credentials_field_default(self):
+        """Test that allow_ambient_credentials defaults to False"""
+        access_config = S3AccessConfig()
+        assert access_config.allow_ambient_credentials is False
+
+    def test_allow_ambient_credentials_field_explicit(self):
+        """Test setting allow_ambient_credentials explicitly"""
+        access_config = S3AccessConfig(allow_ambient_credentials=True)
+        assert access_config.allow_ambient_credentials is True
+
+    def test_default_security_blocks_automatic_credentials(self):
+        """Test that default behavior blocks automatic credential pickup"""
+        # No explicit credentials provided, anonymous=False (default)
+        access_config = S3AccessConfig()
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        
+        config = connection_config.get_access_config()
+        
+        # Should be forced to anonymous mode for security
+        assert config["anon"] is True
+        assert "key" not in config
+        assert "secret" not in config
+
+    def test_explicit_credentials_work_normally(self):
+        """Test that explicit credentials bypass security checks"""
+        access_config = S3AccessConfig(key="test-key", secret="test-secret")
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        
+        config = connection_config.get_access_config()
+        
+        # Should use explicit credentials
+        assert config["anon"] is False
+        assert config["key"] == "test-key"
+        assert config["secret"] == "test-secret"
+
+    def test_explicit_anonymous_mode_respected(self):
+        """Test that explicit anonymous=True is respected"""
+        access_config = S3AccessConfig()
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=True)
+        
+        config = connection_config.get_access_config()
+        
+        # Should be anonymous
+        assert config["anon"] is True
+        assert "key" not in config
+
+    def test_allow_ambient_credentials_enables_ambient_mode(self):
+        """Test that allow_ambient_credentials=True enables ambient credential pickup"""
+        access_config = S3AccessConfig(allow_ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        
+        config = connection_config.get_access_config()
+        
+        # Should allow ambient credentials (anon=False, no explicit credentials)
+        assert config["anon"] is False
+        assert "key" not in config
+        assert "secret" not in config
+        assert "token" not in config
+
+    def test_allow_ambient_credentials_field_excluded_from_config(self):
+        """Test that allow_ambient_credentials field is not passed to s3fs"""
+        # Test with explicit credentials
+        access_config = S3AccessConfig(
+            key="test-key", 
+            secret="test-secret",
+            allow_ambient_credentials=True  # Should be excluded
+        )
+        connection_config = S3ConnectionConfig(access_config=access_config)
+        
+        config = connection_config.get_access_config()
+        
+        # allow_ambient_credentials should not appear in final config
+        assert "allow_ambient_credentials" not in config
+        assert config["key"] == "test-key"
+        assert config["secret"] == "test-secret"
+
+    def test_none_values_filtered_but_falsy_values_preserved(self):
+        """Test that None values are filtered but other falsy values are preserved"""
+        access_config = S3AccessConfig(
+            key="test-key",
+            secret=None,  # Should be filtered
+            token=""      # Should be preserved (empty string)
+        )
+        connection_config = S3ConnectionConfig(access_config=access_config)
+        
+        config = connection_config.get_access_config()
+        
+        # None should be filtered, empty string should be preserved
+        assert config["key"] == "test-key"
+        assert "secret" not in config  # None was filtered
+        assert config["token"] == ""   # Empty string preserved
+
+    def test_endpoint_url_preserved_with_all_auth_modes(self):
+        """Test that endpoint_url is preserved across all authentication modes"""
+        endpoint = "https://custom-s3.example.com"
+        
+        # Test with explicit credentials
+        access_config = S3AccessConfig(key="test-key", secret="test-secret")
+        connection_config = S3ConnectionConfig(
+            access_config=access_config, 
+            endpoint_url=endpoint
+        )
+        config = connection_config.get_access_config()
+        assert config["endpoint_url"] == endpoint
+        
+        # Test with ambient credentials
+        access_config = S3AccessConfig(allow_ambient_credentials=True)
+        connection_config = S3ConnectionConfig(
+            access_config=access_config, 
+            endpoint_url=endpoint
+        )
+        config = connection_config.get_access_config()
+        assert config["endpoint_url"] == endpoint
+        
+        # Test with anonymous mode
+        connection_config = S3ConnectionConfig(
+            anonymous=True, 
+            endpoint_url=endpoint
+        )
+        config = connection_config.get_access_config()
+        assert config["endpoint_url"] == endpoint
+
+    def test_security_warning_logged(self, caplog):
+        """Test that security warning is logged when automatic credentials would be used"""
+        access_config = S3AccessConfig(allow_ambient_credentials=False)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        
+        # This should trigger the security warning
+        config = connection_config.get_access_config()
+        
+        # Should be forced to anonymous
+        assert config["anon"] is True
+        
+        # Should log security warning
+        assert "Forcing anonymous mode to prevent automatic credential pickup" in caplog.text
+
+    def test_ambient_credentials_info_logged(self, caplog):
+        """Test that info message is logged when using ambient credentials"""
+        access_config = S3AccessConfig(allow_ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        
+        # This should trigger the ambient credentials info log
+        config = connection_config.get_access_config()
+        
+        # Should use ambient credentials
+        assert config["anon"] is False
+        
+        # Should log ambient credentials info
+        assert "Using ambient AWS credentials" in caplog.text

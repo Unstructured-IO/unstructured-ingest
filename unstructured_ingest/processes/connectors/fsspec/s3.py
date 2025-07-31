@@ -85,9 +85,10 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         if has_explicit_credentials:
             # User provided explicit credentials - use them
             access_configs: dict[str, Any] = {"anon": False}
+            # Avoid injecting None by filtering out k,v pairs where the value is None
             access_configs.update(
                 {k: v for k, v in access_config.model_dump().items() 
-                 if v and k != "allow_ambient_credentials"}
+                 if v is not None and k != "allow_ambient_credentials"}
             )
         elif access_config.allow_ambient_credentials:
             # User explicitly allowed ambient credentials - enable automatic credential pickup
