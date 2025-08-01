@@ -1,4 +1,5 @@
 import contextlib
+import os
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
@@ -56,11 +57,12 @@ class S3AccessConfig(FsspecAccessConfig):
     token: Optional[str] = Field(
         default=None, description="If not anonymous, use this security token, if specified."
     )
-    allow_ambient_credentials: bool = Field(
+    ambient_credentials: bool = Field(
         default=False,
         description="Explicitly allow using ambient AWS credentials from .aws folder, "
-        "environment variables, or IAM roles. When False (default), only explicit credentials or "
-        "anonymous access are allowed."
+        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS environment "
+        "variable to also be set to 'true' for security. When False (default), only explicit "
+        "credentials or anonymous access are allowed."
     )
 
 
@@ -88,19 +90,30 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             # Avoid injecting None by filtering out k,v pairs where the value is None
             access_configs.update(
                 {k: v for k, v in access_config.model_dump().items() 
-                 if v is not None and k != "allow_ambient_credentials"}
+                 if v is not None and k != "ambient_credentials"}
             )
-        elif access_config.allow_ambient_credentials:
-            # User explicitly allowed ambient credentials - enable automatic credential pickup
-            logger.info("Using ambient AWS credentials (environment variables, .aws folder, IAM roles)")
-            access_configs: dict[str, Any] = {"anon": False}
-            # Don't pass explicit credentials, let s3fs/boto3 auto-detect
+        elif access_config.ambient_credentials:
+            # Check if environment variable also allows ambient credentials
+            env_allows_ambient = os.getenv("ALLOW_AMBIENT_CREDENTIALS", "").lower() == "true"
+            
+            if env_allows_ambient:
+                # Both field and environment allow ambient credentials - enable automatic credential pickup
+                logger.info("Using ambient AWS credentials (environment variables, .aws folder, IAM roles)")
+                access_configs: dict[str, Any] = {"anon": False}
+                # Don't pass explicit credentials, let s3fs/boto3 auto-detect
+            else:
+                # Field allows but environment doesn't - raise error for security
+                raise UserAuthError(
+                    "Ambient credentials requested (ambient_credentials=True) but "
+                    "ALLOW_AMBIENT_CREDENTIALS environment variable is not set to 'true'. "
+                    "Set ALLOW_AMBIENT_CREDENTIALS=true to enable ambient credentials."
+                )
         elif not self.anonymous:
             # SECURITY ERROR: User set anonymous=False but provided no credentials and no ambient permission
             # This prevents automatic credential pickup and forces explicit choice
             raise UserAuthError(
                 "No authentication method specified. anonymous=False but no explicit credentials provided "
-                "and allow_ambient_credentials=False." 
+                "and ambient_credentials=False." 
             )
         else:
             # User explicitly wants anonymous mode
