@@ -295,13 +295,13 @@ class TestS3AmbientCredentials:
 
     def test_ambient_credentials_field_default(self):
         """Test that ambient_credentials defaults to False"""
-        access_config = S3AccessConfig()
-        assert access_config.ambient_credentials is False
+        connection_config = S3ConnectionConfig()
+        assert connection_config.ambient_credentials is False
 
     def test_ambient_credentials_field_explicit(self):
         """Test setting ambient_credentials explicitly"""
-        access_config = S3AccessConfig(ambient_credentials=True)
-        assert access_config.ambient_credentials is True
+        connection_config = S3ConnectionConfig(ambient_credentials=True)
+        assert connection_config.ambient_credentials is True
 
     def test_default_blocks_automatic_credentials(self):
         """Test that default behavior blocks automatic credential pickup"""
@@ -341,8 +341,7 @@ class TestS3AmbientCredentials:
         # Clear the environment variable
         monkeypatch.delenv("ALLOW_AMBIENT_CREDENTIALS_S3", raising=False)
 
-        access_config = S3AccessConfig(ambient_credentials=True)
-        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        connection_config = S3ConnectionConfig(ambient_credentials=True, anonymous=False)
 
         # Should raise error when env var is not set
         with pytest.raises(
@@ -356,8 +355,7 @@ class TestS3AmbientCredentials:
         # Set the environment variable
         monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
 
-        access_config = S3AccessConfig(ambient_credentials=True)
-        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        connection_config = S3ConnectionConfig(ambient_credentials=True, anonymous=False)
 
         config = connection_config.get_access_config()
 
@@ -373,9 +371,11 @@ class TestS3AmbientCredentials:
         access_config = S3AccessConfig(
             key="test-key",
             secret="test-secret",
-            ambient_credentials=True,  # Should be excluded
         )
-        connection_config = S3ConnectionConfig(access_config=access_config)
+        connection_config = S3ConnectionConfig(
+            access_config=access_config,
+            ambient_credentials=True,  # Should be excluded from final config
+        )
 
         config = connection_config.get_access_config()
 
@@ -412,8 +412,7 @@ class TestS3AmbientCredentials:
 
         # Test with ambient credentials
         monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
-        access_config = S3AccessConfig(ambient_credentials=True)
-        connection_config = S3ConnectionConfig(access_config=access_config, endpoint_url=endpoint)
+        connection_config = S3ConnectionConfig(ambient_credentials=True, endpoint_url=endpoint)
         config = connection_config.get_access_config()
         assert config["endpoint_url"] == endpoint
 
@@ -424,8 +423,7 @@ class TestS3AmbientCredentials:
 
     def test_authentication_error_raised(self):
         """Test that authentication error is raised when automatic credentials would be used"""
-        access_config = S3AccessConfig(ambient_credentials=False)
-        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        connection_config = S3ConnectionConfig(ambient_credentials=False, anonymous=False)
 
         # This should raise UserAuthError with helpful message
         with pytest.raises(UserAuthError) as exc_info:
@@ -440,8 +438,7 @@ class TestS3AmbientCredentials:
         """Test that only 'true' (case-insensitive) values for ALLOW_AMBIENT_CREDENTIALS_S3 work"""
         valid_values = ["true", "TRUE", "True", "tRuE"]
 
-        access_config = S3AccessConfig(ambient_credentials=True)
-        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        connection_config = S3ConnectionConfig(ambient_credentials=True, anonymous=False)
 
         for value in valid_values:
             monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", value)
@@ -460,8 +457,7 @@ class TestS3AmbientCredentials:
         # Ensure we capture INFO level logs
         caplog.set_level(logging.INFO)
 
-        access_config = S3AccessConfig(ambient_credentials=True)
-        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+        connection_config = S3ConnectionConfig(ambient_credentials=True, anonymous=False)
 
         # This should trigger the ambient credentials info log
         config = connection_config.get_access_config()
@@ -491,7 +487,7 @@ class TestS3AmbientCredentials:
 
         # Use ambient credentials (no explicit key/secret provided)
         connection_config = S3ConnectionConfig(
-            access_config=S3AccessConfig(ambient_credentials=True),
+            ambient_credentials=True,
         )
         upload_config = S3UploaderConfig(remote_url=destination_path)
         uploader = S3Uploader(connection_config=connection_config, upload_config=upload_config)

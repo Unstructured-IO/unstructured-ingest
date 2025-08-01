@@ -57,13 +57,6 @@ class S3AccessConfig(FsspecAccessConfig):
     token: Optional[str] = Field(
         default=None, description="If not anonymous, use this security token, if specified."
     )
-    ambient_credentials: bool = Field(
-        default=False,
-        description="Explicitly allow using ambient AWS credentials from .aws folder, "
-        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS_S3 environment "
-        "variable to also be set to 'true' (case insensitive) for security. When False (default), "
-        "only explicit credentials or anonymous access are allowed.",
-    )
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
@@ -76,6 +69,13 @@ class S3ConnectionConfig(FsspecConnectionConfig):
     )
     anonymous: bool = Field(
         default=False, description="Connect to s3 without local AWS credentials."
+    )
+    ambient_credentials: bool = Field(
+        default=False,
+        description="Explicitly allow using ambient AWS credentials from .aws folder, "
+        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS_S3 environment "
+        "variable to also be set to 'true' (case insensitive) for security. When False (default), "
+        "only explicit credentials or anonymous access are allowed.",
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
@@ -91,13 +91,9 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             access_configs = {"anon": False}
             # Avoid injecting None by filtering out k,v pairs where the value is None
             access_configs.update(
-                {
-                    k: v
-                    for k, v in access_config.model_dump().items()
-                    if v is not None and k != "ambient_credentials"
-                }
+                {k: v for k, v in access_config.model_dump().items() if v is not None}
             )
-        elif access_config.ambient_credentials:
+        elif self.ambient_credentials:
             if os.getenv("ALLOW_AMBIENT_CREDENTIALS_S3", "").lower() == "true":
                 logger.info(
                     "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
