@@ -97,9 +97,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 }
             )
         elif access_config.ambient_credentials:
-            env_allows_ambient = os.getenv("ALLOW_AMBIENT_CREDENTIALS", "").lower() == "true"
-
-            if env_allows_ambient:
+            if os.getenv("ALLOW_AMBIENT_CREDENTIALS", "").lower() == "true":
                 logger.info(
                     "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
                 )
