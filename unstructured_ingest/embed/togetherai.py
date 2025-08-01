@@ -9,9 +9,14 @@ from unstructured_ingest.embed.interfaces import (
     EmbeddingConfig,
 )
 from unstructured_ingest.errors_v2 import (
+    ProviderError,
+    UserAuthError,
+    UserError,
+    is_internal_error,
+)
+from unstructured_ingest.errors_v2 import (
     RateLimitError as CustomRateLimitError,
 )
-from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError, is_internal_error
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
