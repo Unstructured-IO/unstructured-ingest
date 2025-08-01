@@ -164,6 +164,11 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         return e
 
     def _extract_region_from_error(self, e: Exception) -> Optional[str]:
+        # Parent class wraps PermissionError → UserAuthError before we see it
+        # Need to unwrap: UserAuthError.args[0] gives us the original PermissionError
+        if hasattr(e, 'args') and e.args and isinstance(e.args[0], PermissionError):
+            e = e.args[0]
+        
         if isinstance(e, PermissionError) and hasattr(e, '__cause__'):
             response = getattr(e.__cause__, 'response', {})
             headers = response.get('ResponseMetadata', {}).get('HTTPHeaders', {})
@@ -198,7 +203,7 @@ class S3Indexer(FsspecIndexer):
                         return
                     except Exception:
                         access_config.region = current_region
-            raise self.wrap_error(e=e)
+            raise e
 
     def get_path(self, file_info: dict) -> str:
         return file_info["Key"]
