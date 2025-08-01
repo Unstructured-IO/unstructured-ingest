@@ -99,7 +99,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 {
                     k: v
                     for k, v in access_config.model_dump().items()
-                    if v is not None and k != "ambient_credentials"
+                    if v is not None and k not in ("ambient_credentials", "region")
                 }
             )
         elif access_config.ambient_credentials:
