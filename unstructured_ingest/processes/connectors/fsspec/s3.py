@@ -60,7 +60,7 @@ class S3AccessConfig(FsspecAccessConfig):
     ambient_credentials: bool = Field(
         default=False,
         description="Explicitly allow using ambient AWS credentials from .aws folder, "
-        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS environment "
+        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS_S3 environment "
         "variable to also be set to 'true' (case insensitive) for security. When False (default), "
         "only explicit credentials or anonymous access are allowed.",
     )
@@ -98,7 +98,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 }
             )
         elif access_config.ambient_credentials:
-            if os.getenv("ALLOW_AMBIENT_CREDENTIALS", "").lower() == "true":
+            if os.getenv("ALLOW_AMBIENT_CREDENTIALS_S3", "").lower() == "true":
                 logger.info(
                     "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
                 )
@@ -108,7 +108,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 # Field allows but environment doesn't - raise error for security
                 raise UserAuthError(
                     "Ambient credentials requested (ambient_credentials=True) but "
-                    "ALLOW_AMBIENT_CREDENTIALS environment variable is not set to 'true'. "
+                    "ALLOW_AMBIENT_CREDENTIALS_S3 environment variable is not set to 'true'. "
                 )
         elif self.anonymous:
             access_configs = {"anon": True}

@@ -337,16 +337,16 @@ class TestS3AmbientCredentials:
         assert "key" not in config
 
     def test_ambient_credentials_requires_env_var(self, monkeypatch):
-        """Test that ambient_credentials=True requires ALLOW_AMBIENT_CREDENTIALS env var"""
+        """Test that ambient_credentials=True requires ALLOW_AMBIENT_CREDENTIALS_S3 env var"""
         # Clear the environment variable
-        monkeypatch.delenv("ALLOW_AMBIENT_CREDENTIALS", raising=False)
+        monkeypatch.delenv("ALLOW_AMBIENT_CREDENTIALS_S3", raising=False)
 
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
 
         # Should raise error when env var is not set
         with pytest.raises(
-            UserAuthError, match="ALLOW_AMBIENT_CREDENTIALS environment variable is not set"
+            UserAuthError, match="ALLOW_AMBIENT_CREDENTIALS_S3 environment variable is not set"
         ):
             connection_config.get_access_config()
 
@@ -354,7 +354,7 @@ class TestS3AmbientCredentials:
         """Test that ambient_credentials=True enables ambient credential pickup
         when env var is set"""
         # Set the environment variable
-        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
 
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
@@ -411,7 +411,7 @@ class TestS3AmbientCredentials:
         assert config["endpoint_url"] == endpoint
 
         # Test with ambient credentials
-        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, endpoint_url=endpoint)
         config = connection_config.get_access_config()
@@ -437,14 +437,14 @@ class TestS3AmbientCredentials:
         assert "ambient_credentials=False" in error_message
 
     def test_ambient_credentials_env_var_variations(self, monkeypatch):
-        """Test that only 'true' (case-insensitive) values for ALLOW_AMBIENT_CREDENTIALS work"""
+        """Test that only 'true' (case-insensitive) values for ALLOW_AMBIENT_CREDENTIALS_S3 work"""
         valid_values = ["true", "TRUE", "True", "tRuE"]
 
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
 
         for value in valid_values:
-            monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", value)
+            monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", value)
 
             # Should not raise error
             config = connection_config.get_access_config()
@@ -455,7 +455,7 @@ class TestS3AmbientCredentials:
         import logging
 
         # Set the environment variable
-        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
 
         # Ensure we capture INFO level logs
         caplog.set_level(logging.INFO)
@@ -484,7 +484,7 @@ class TestS3AmbientCredentials:
         monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", test_secret_key)
 
         # Set the environment variable to allow ambient credentials
-        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
 
         s3_bucket = "s3://utic-ingest-test-fixtures"
         destination_path = f"{s3_bucket}/destination/{uuid.uuid4()}"
