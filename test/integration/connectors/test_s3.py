@@ -290,8 +290,8 @@ async def test_s3_destination_different_relative_path_and_full_path(upload_file:
         s3fs.rm(path=destination_path, recursive=True)
 
 
-class TestS3SecurityFeatures:
-    """Test suite for S3 security features and ambient credentials"""
+class TestS3AmbientCredentials:
+    """Test suite for S3 ambient credentials functionality"""
 
     def test_ambient_credentials_field_default(self):
         """Test that ambient_credentials defaults to False"""
@@ -303,7 +303,7 @@ class TestS3SecurityFeatures:
         access_config = S3AccessConfig(ambient_credentials=True)
         assert access_config.ambient_credentials is True
 
-    def test_default_security_blocks_automatic_credentials(self):
+    def test_default_blocks_automatic_credentials(self):
         """Test that default behavior blocks automatic credential pickup"""
         # No explicit credentials provided, anonymous=False (default)
         access_config = S3AccessConfig()
@@ -314,7 +314,7 @@ class TestS3SecurityFeatures:
             connection_config.get_access_config()
 
     def test_explicit_credentials_work_normally(self):
-        """Test that explicit credentials bypass security checks"""
+        """Test that explicit credentials work with normal authentication"""
         access_config = S3AccessConfig(key="test-key", secret="test-secret")
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
 
@@ -422,8 +422,8 @@ class TestS3SecurityFeatures:
         config = connection_config.get_access_config()
         assert config["endpoint_url"] == endpoint
 
-    def test_security_error_raised(self):
-        """Test that security error is raised when automatic credentials would be used"""
+    def test_authentication_error_raised(self):
+        """Test that authentication error is raised when automatic credentials would be used"""
         access_config = S3AccessConfig(ambient_credentials=False)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
 
