@@ -34,7 +34,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 CONNECTOR_TYPE = "s3"
 
-# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html#object-key-guidelines-avoid-characters  # noqa
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html#object-key-guidelines-avoid-characters # noqa
 CHARACTERS_TO_AVOID = ["\\", "{", "^", "}", "%", "`", "]", '"', ">", "[", "~", "<", "#", "|"]
 
 if TYPE_CHECKING:
@@ -56,6 +56,11 @@ class S3AccessConfig(FsspecAccessConfig):
     )
     token: Optional[str] = Field(
         default=None, description="If not anonymous, use this security token, if specified."
+    )
+    region: Optional[str] = Field(
+        default=None, 
+        description="AWS region name (e.g., 'us-east-2'). If not specified, will attempt "
+        "to auto-detect from bucket location or use AWS default region."
     )
     ambient_credentials: bool = Field(
         default=False,
@@ -94,7 +99,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 {
                     k: v
                     for k, v in access_config.model_dump().items()
-                    if v is not None and k != "ambient_credentials"
+                    if v is not None and k not in ("ambient_credentials", "region")
                 }
             )
         elif access_config.ambient_credentials:
@@ -121,6 +126,9 @@ class S3ConnectionConfig(FsspecConnectionConfig):
 
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
+
+        if access_config.region and not self.endpoint_url:
+            access_configs.setdefault("client_kwargs", {})["region_name"] = access_config.region
 
         return access_configs
 
@@ -155,6 +163,18 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         )
         return e
 
+    def _extract_region_from_error(self, e: Exception) -> Optional[str]:
+        # Parent class wraps PermissionError → UserAuthError before we see it
+        # Need to unwrap: UserAuthError.args[0] gives us the original PermissionError
+        if hasattr(e, 'args') and e.args and isinstance(e.args[0], PermissionError):
+            e = e.args[0]
+        
+        if isinstance(e, PermissionError) and hasattr(e, '__cause__'):
+            response = getattr(e.__cause__, 'response', {})
+            headers = response.get('ResponseMetadata', {}).get('HTTPHeaders', {})
+            return headers.get('x-amz-bucket-region')
+        return None
+
 
 @dataclass
 class S3Indexer(FsspecIndexer):
@@ -164,6 +184,38 @@ class S3Indexer(FsspecIndexer):
 
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)
+
+    def _retry_with_region(self, detected_region: str) -> None:
+        # Must create new config object since S3 client config is built at call time
+        original_access_config = self.connection_config.access_config
+        access_config = self.connection_config.access_config.get_secret_value()
+        temp_access_config = access_config.model_copy()
+        temp_access_config.region = detected_region
+        self.connection_config.access_config = Secret(temp_access_config)
+        
+        try:
+            super().precheck()
+            self.log_info(f"Connected using auto-detected region: {detected_region}")
+        except Exception:
+            self.connection_config.access_config = original_access_config
+            raise
+
+    def precheck(self) -> None:
+        try:
+            super().precheck()
+        except Exception as e:
+            if not self.connection_config.endpoint_url and (
+                detected_region := self.connection_config._extract_region_from_error(e)
+            ):
+                self.log_debug(f"Detected bucket region from error headers: {detected_region}")
+                current_region = self.connection_config.access_config.get_secret_value().region
+                if detected_region != current_region:
+                    try:
+                        self._retry_with_region(detected_region)
+                        return
+                    except Exception:
+                        pass  # Fall through to original error
+            raise e
 
     def get_path(self, file_info: dict) -> str:
         return file_info["Key"]
