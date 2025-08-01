@@ -34,8 +34,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 CONNECTOR_TYPE = "s3"
 
-# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
-# #object-key-guidelines-avoid-characters
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html#object-key-guidelines-avoid-characters  # noqa
 CHARACTERS_TO_AVOID = ["\\", "{", "^", "}", "%", "`", "]", '"', ">", "[", "~", "<", "#", "|"]
 
 if TYPE_CHECKING:
@@ -86,8 +85,10 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             access_config.key or access_config.secret or access_config.token
         )
 
+        access_configs: dict[str, Any]
+
         if has_explicit_credentials:
-            access_configs: dict[str, Any] = {"anon": False}
+            access_configs = {"anon": False}
             # Avoid injecting None by filtering out k,v pairs where the value is None
             access_configs.update(
                 {
@@ -101,7 +102,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 logger.info(
                     "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
                 )
-                access_configs: dict[str, Any] = {"anon": False}
+                access_configs = {"anon": False}
                 # Don't pass explicit credentials, let s3fs/boto3 auto-detect
             else:
                 # Field allows but environment doesn't - raise error for security
@@ -116,7 +117,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 "provided and ambient_credentials=False."
             )
         else:
-            access_configs: dict[str, Any] = {"anon": True}
+            access_configs = {"anon": True}
 
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
