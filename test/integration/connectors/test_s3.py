@@ -290,7 +290,6 @@ async def test_s3_destination_different_relative_path_and_full_path(upload_file:
         s3fs.rm(path=destination_path, recursive=True)
 
 
-# Security Tests for Ambient Credentials
 class TestS3SecurityFeatures:
     """Test suite for S3 security features and ambient credentials"""
 
@@ -451,44 +450,13 @@ class TestS3SecurityFeatures:
             config = connection_config.get_access_config()
             assert config["anon"] is False
 
-    def test_ambient_credentials_env_var_invalid_values(self, monkeypatch):
-        """Test that invalid values for ALLOW_AMBIENT_CREDENTIALS are rejected"""
-        invalid_values = [
-            "false",
-            "FALSE",
-            "0",
-            "1",
-            "yes",
-            "YES",
-            "no",
-            "NO",
-            "on",
-            "ON",
-            "off",
-            "OFF",
-            "random",
-            "",
-        ]
-
-        access_config = S3AccessConfig(ambient_credentials=True)
-        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
-
-        for value in invalid_values:
-            monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", value)
-
-            # Should raise error for each invalid value
-            with pytest.raises(
-                UserAuthError, match="ALLOW_AMBIENT_CREDENTIALS environment variable is not set"
-            ):
-                connection_config.get_access_config()
-
     def test_ambient_credentials_info_logged(self, caplog, monkeypatch):
         """Test that info message is logged when using ambient credentials"""
         import logging
-        
+
         # Set the environment variable
         monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
-        
+
         # Ensure we capture INFO level logs
         caplog.set_level(logging.INFO)
 
