@@ -1,6 +1,14 @@
+## 1.2.5
+
+* **Fix**: auto-detect S3 bucket region from error headers to resolve new bucket connection failures
+
+## 1.2.4
+
+* **Fix**: properly handle Together API 5xx errors as ProviderError instead of UserError
+
 ## 1.2.3
 
-**Fix**: fix: auto-detect S3 bucket region from error headers to resolve new bucket connection failures
+* **Feature**: allow environment credentials for S3
 
 ## 1.2.2
 

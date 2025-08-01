@@ -288,3 +288,230 @@ async def test_s3_destination_different_relative_path_and_full_path(upload_file:
         assert uploaded_files[0].as_posix() == f"{destination_path.lstrip('s3://')}/folder1"
     finally:
         s3fs.rm(path=destination_path, recursive=True)
+
+
+class TestS3AmbientCredentials:
+    """Test suite for S3 ambient credentials functionality"""
+
+    def test_ambient_credentials_field_default(self):
+        """Test that ambient_credentials defaults to False"""
+        access_config = S3AccessConfig()
+        assert access_config.ambient_credentials is False
+
+    def test_ambient_credentials_field_explicit(self):
+        """Test setting ambient_credentials explicitly"""
+        access_config = S3AccessConfig(ambient_credentials=True)
+        assert access_config.ambient_credentials is True
+
+    def test_default_blocks_automatic_credentials(self):
+        """Test that default behavior blocks automatic credential pickup"""
+        # No explicit credentials provided, anonymous=False (default)
+        access_config = S3AccessConfig()
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        # Should raise UserAuthError instead of silently changing behavior
+        with pytest.raises(UserAuthError, match="No authentication method specified"):
+            connection_config.get_access_config()
+
+    def test_explicit_credentials_work_normally(self):
+        """Test that explicit credentials work with normal authentication"""
+        access_config = S3AccessConfig(key="test-key", secret="test-secret")
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        config = connection_config.get_access_config()
+
+        # Should use explicit credentials
+        assert config["anon"] is False
+        assert config["key"] == "test-key"
+        assert config["secret"] == "test-secret"
+
+    def test_explicit_anonymous_mode_respected(self):
+        """Test that explicit anonymous=True is respected"""
+        access_config = S3AccessConfig()
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=True)
+
+        config = connection_config.get_access_config()
+
+        # Should be anonymous
+        assert config["anon"] is True
+        assert "key" not in config
+
+    def test_ambient_credentials_requires_env_var(self, monkeypatch):
+        """Test that ambient_credentials=True requires ALLOW_AMBIENT_CREDENTIALS_S3 env var"""
+        # Clear the environment variable
+        monkeypatch.delenv("ALLOW_AMBIENT_CREDENTIALS_S3", raising=False)
+
+        access_config = S3AccessConfig(ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        # Should raise error when env var is not set
+        with pytest.raises(
+            UserAuthError, match="ALLOW_AMBIENT_CREDENTIALS_S3 environment variable is not set"
+        ):
+            connection_config.get_access_config()
+
+    def test_ambient_credentials_enables_ambient_mode(self, monkeypatch):
+        """Test that ambient_credentials=True enables ambient credential pickup
+        when env var is set"""
+        # Set the environment variable
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
+
+        access_config = S3AccessConfig(ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        config = connection_config.get_access_config()
+
+        # Should allow ambient credentials (anon=False, no explicit credentials)
+        assert config["anon"] is False
+        assert "key" not in config
+        assert "secret" not in config
+        assert "token" not in config
+
+    def test_ambient_credentials_field_excluded_from_config(self):
+        """Test that ambient_credentials field is not passed to s3fs"""
+        # Test with explicit credentials
+        access_config = S3AccessConfig(
+            key="test-key",
+            secret="test-secret",
+            ambient_credentials=True,  # Should be excluded
+        )
+        connection_config = S3ConnectionConfig(access_config=access_config)
+
+        config = connection_config.get_access_config()
+
+        # ambient_credentials should not appear in final config
+        assert "ambient_credentials" not in config
+        assert config["key"] == "test-key"
+        assert config["secret"] == "test-secret"
+
+    def test_none_values_filtered_but_falsy_values_preserved(self):
+        """Test that None values are filtered but other falsy values are preserved"""
+        access_config = S3AccessConfig(
+            key="test-key",
+            secret=None,  # Should be filtered
+            token="",  # Should be preserved (empty string)
+        )
+        connection_config = S3ConnectionConfig(access_config=access_config)
+
+        config = connection_config.get_access_config()
+
+        # None should be filtered, empty string should be preserved
+        assert config["key"] == "test-key"
+        assert "secret" not in config  # None was filtered
+        assert config["token"] == ""  # Empty string preserved
+
+    def test_endpoint_url_preserved_with_all_auth_modes(self, monkeypatch):
+        """Test that endpoint_url is preserved across all authentication modes"""
+        endpoint = "https://custom-s3.example.com"
+
+        # Test with explicit credentials
+        access_config = S3AccessConfig(key="test-key", secret="test-secret")
+        connection_config = S3ConnectionConfig(access_config=access_config, endpoint_url=endpoint)
+        config = connection_config.get_access_config()
+        assert config["endpoint_url"] == endpoint
+
+        # Test with ambient credentials
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
+        access_config = S3AccessConfig(ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, endpoint_url=endpoint)
+        config = connection_config.get_access_config()
+        assert config["endpoint_url"] == endpoint
+
+        # Test with anonymous mode
+        connection_config = S3ConnectionConfig(anonymous=True, endpoint_url=endpoint)
+        config = connection_config.get_access_config()
+        assert config["endpoint_url"] == endpoint
+
+    def test_authentication_error_raised(self):
+        """Test that authentication error is raised when automatic credentials would be used"""
+        access_config = S3AccessConfig(ambient_credentials=False)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        # This should raise UserAuthError with helpful message
+        with pytest.raises(UserAuthError) as exc_info:
+            connection_config.get_access_config()
+
+        # Should provide clear error message
+        error_message = str(exc_info.value)
+        assert "No authentication method specified" in error_message
+        assert "ambient_credentials=False" in error_message
+
+    def test_ambient_credentials_env_var_variations(self, monkeypatch):
+        """Test that only 'true' (case-insensitive) values for ALLOW_AMBIENT_CREDENTIALS_S3 work"""
+        valid_values = ["true", "TRUE", "True", "tRuE"]
+
+        access_config = S3AccessConfig(ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        for value in valid_values:
+            monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", value)
+
+            # Should not raise error
+            config = connection_config.get_access_config()
+            assert config["anon"] is False
+
+    def test_ambient_credentials_info_logged(self, caplog, monkeypatch):
+        """Test that info message is logged when using ambient credentials"""
+        import logging
+
+        # Set the environment variable
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
+
+        # Ensure we capture INFO level logs
+        caplog.set_level(logging.INFO)
+
+        access_config = S3AccessConfig(ambient_credentials=True)
+        connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
+
+        # This should trigger the ambient credentials info log
+        config = connection_config.get_access_config()
+
+        # Should use ambient credentials
+        assert config["anon"] is False
+
+        # Should log ambient credentials info
+        assert "Using ambient AWS credentials" in caplog.text
+
+    @pytest.mark.asyncio
+    @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, BLOB_STORAGE_TAG)
+    @requires_env("S3_INGEST_TEST_ACCESS_KEY", "S3_INGEST_TEST_SECRET_KEY")
+    async def test_s3_destination_with_ambient_credentials(self, upload_file: Path, monkeypatch):
+        """Test S3 destination using ambient credentials with standard AWS env vars"""
+        # Get test credentials and set them as standard AWS environment variables
+        test_access_key = os.getenv("S3_INGEST_TEST_ACCESS_KEY")
+        test_secret_key = os.getenv("S3_INGEST_TEST_SECRET_KEY")
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", test_access_key)
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", test_secret_key)
+
+        # Set the environment variable to allow ambient credentials
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS_S3", "true")
+
+        s3_bucket = "s3://utic-ingest-test-fixtures"
+        destination_path = f"{s3_bucket}/destination/{uuid.uuid4()}"
+
+        # Use ambient credentials (no explicit key/secret provided)
+        connection_config = S3ConnectionConfig(
+            access_config=S3AccessConfig(ambient_credentials=True),
+        )
+        upload_config = S3UploaderConfig(remote_url=destination_path)
+        uploader = S3Uploader(connection_config=connection_config, upload_config=upload_config)
+        s3fs = uploader.fs
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(
+                fullpath=upload_file.name, filename=upload_file.name
+            ),
+            connector_type=CONNECTOR_TYPE,
+            identifier="mock file data",
+        )
+        try:
+            uploader.precheck()
+            if uploader.is_async():
+                await uploader.run_async(path=upload_file, file_data=file_data)
+            else:
+                uploader.run(path=upload_file, file_data=file_data)
+            uploaded_files = [
+                Path(file) for file in s3fs.ls(path=destination_path) if Path(file).name != "_empty"
+            ]
+            assert len(uploaded_files) == 1
+        finally:
+            s3fs.rm(path=destination_path, recursive=True)

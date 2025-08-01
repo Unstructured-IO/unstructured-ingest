@@ -1,4 +1,5 @@
 import contextlib
+import os
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import time
@@ -61,6 +62,13 @@ class S3AccessConfig(FsspecAccessConfig):
         description="AWS region name (e.g., 'us-east-2'). If not specified, will attempt "
         "to auto-detect from bucket location or use AWS default region."
     )
+    ambient_credentials: bool = Field(
+        default=False,
+        description="Explicitly allow using ambient AWS credentials from .aws folder, "
+        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS_S3 environment "
+        "variable to also be set to 'true' (case insensitive) for security. When False (default), "
+        "only explicit credentials or anonymous access are allowed.",
+    )
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
@@ -77,19 +85,54 @@ class S3ConnectionConfig(FsspecConnectionConfig):
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     def get_access_config(self) -> dict[str, Any]:
-        access_configs: dict[str, Any] = {"anon": self.anonymous}
+        access_config = self.access_config.get_secret_value()
+        has_explicit_credentials = bool(
+            access_config.key or access_config.secret or access_config.token
+        )
+
+        access_configs: dict[str, Any]
+
+        if has_explicit_credentials:
+            access_configs = {"anon": False}
+            # Avoid injecting None by filtering out k,v pairs where the value is None
+            access_configs.update(
+                {
+                    k: v
+                    for k, v in access_config.model_dump().items()
+                    if v is not None and k != "ambient_credentials"
+                }
+            )
+        elif access_config.ambient_credentials:
+            if os.getenv("ALLOW_AMBIENT_CREDENTIALS_S3", "").lower() == "true":
+                logger.info(
+                    "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
+                )
+                access_configs = {"anon": False}
+                # Don't pass explicit credentials, let s3fs/boto3 auto-detect
+            else:
+                # Field allows but environment doesn't - raise error for security
+                raise UserAuthError(
+                    "Ambient credentials requested (ambient_credentials=True) but "
+                    "ALLOW_AMBIENT_CREDENTIALS_S3 environment variable is not set to 'true'. "
+                )
+        elif self.anonymous:
+            access_configs = {"anon": True}
+        else:
+            # User set anonymous=False but provided no credentials and no ambient permission
+            raise UserAuthError(
+                "No authentication method specified. anonymous=False but no explicit credentials "
+                "provided and ambient_credentials=False."
+            )
+
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
 
-        # Avoid injecting None by filtering out k,v pairs where the value is None
-        access_values = {
-            k: v for k, v in self.access_config.get_secret_value().model_dump().items() if v
-        }
-        
-        if access_values.get("region") and not self.endpoint_url:
-            access_configs["client_kwargs"] = {"region_name": access_values.pop("region")}
-        
-        access_configs.update(access_values)
+        access_config = self.access_config.get_secret_value()
+        if access_config.region and not self.endpoint_url:
+            if "client_kwargs" not in access_configs:
+                access_configs["client_kwargs"] = {}
+            access_configs["client_kwargs"]["region_name"] = access_config.region
+
         return access_configs
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
