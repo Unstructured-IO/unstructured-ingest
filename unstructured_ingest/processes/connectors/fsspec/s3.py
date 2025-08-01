@@ -110,14 +110,14 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                     "Ambient credentials requested (ambient_credentials=True) but "
                     "ALLOW_AMBIENT_CREDENTIALS environment variable is not set to 'true'. "
                 )
-        elif not self.anonymous:
+        elif self.anonymous:
+            access_configs = {"anon": True}
+        else:
             # User set anonymous=False but provided no credentials and no ambient permission
             raise UserAuthError(
                 "No authentication method specified. anonymous=False but no explicit credentials "
                 "provided and ambient_credentials=False."
             )
-        else:
-            access_configs = {"anon": True}
 
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
