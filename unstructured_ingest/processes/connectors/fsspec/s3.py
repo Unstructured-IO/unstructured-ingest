@@ -185,6 +185,21 @@ class S3Indexer(FsspecIndexer):
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)
 
+    def _retry_with_region(self, detected_region: str) -> None:
+        # Must create new config object since S3 client config is built at call time
+        original_access_config = self.connection_config.access_config
+        access_config = self.connection_config.access_config.get_secret_value()
+        temp_access_config = access_config.model_copy()
+        temp_access_config.region = detected_region
+        self.connection_config.access_config = Secret(temp_access_config)
+        
+        try:
+            super().precheck()
+            self.log_info(f"Connected using auto-detected region: {detected_region}")
+        except Exception:
+            self.connection_config.access_config = original_access_config
+            raise
+
     def precheck(self) -> None:
         try:
             super().precheck()
@@ -193,16 +208,13 @@ class S3Indexer(FsspecIndexer):
                 detected_region := self.connection_config._extract_region_from_error(e)
             ):
                 self.log_debug(f"Detected bucket region from error headers: {detected_region}")
-                access_config = self.connection_config.access_config.get_secret_value()
-                current_region = access_config.region
+                current_region = self.connection_config.access_config.get_secret_value().region
                 if detected_region != current_region:
-                    access_config.region = detected_region
                     try:
-                        super().precheck()
-                        self.log_info(f"Connected using auto-detected region: {detected_region}")
+                        self._retry_with_region(detected_region)
                         return
                     except Exception:
-                        access_config.region = current_region
+                        pass  # Fall through to original error
             raise e
 
     def get_path(self, file_info: dict) -> str:
