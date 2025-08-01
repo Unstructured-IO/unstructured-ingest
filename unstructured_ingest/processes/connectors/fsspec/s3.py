@@ -34,7 +34,8 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 CONNECTOR_TYPE = "s3"
 
-# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html#object-key-guidelines-avoid-characters
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+# #object-key-guidelines-avoid-characters
 CHARACTERS_TO_AVOID = ["\\", "{", "^", "}", "%", "`", "]", '"', ">", "[", "~", "<", "#", "|"]
 
 if TYPE_CHECKING:
@@ -102,7 +103,8 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             env_allows_ambient = os.getenv("ALLOW_AMBIENT_CREDENTIALS", "").lower() == "true"
 
             if env_allows_ambient:
-                # Both field and environment allow ambient credentials - enable automatic credential pickup
+                # Both field and environment allow ambient credentials - enable
+                # automatic credential pickup
                 logger.info(
                     "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
                 )
@@ -116,11 +118,12 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                     "Set ALLOW_AMBIENT_CREDENTIALS=true to enable ambient credentials."
                 )
         elif not self.anonymous:
-            # SECURITY ERROR: User set anonymous=False but provided no credentials and no ambient permission
+            # SECURITY ERROR: User set anonymous=False but provided no credentials
+            # and no ambient permission
             # This prevents automatic credential pickup and forces explicit choice
             raise UserAuthError(
-                "No authentication method specified. anonymous=False but no explicit credentials provided "
-                "and ambient_credentials=False."
+                "No authentication method specified. anonymous=False but no explicit credentials "
+                "provided and ambient_credentials=False."
             )
         else:
             # User explicitly wants anonymous mode

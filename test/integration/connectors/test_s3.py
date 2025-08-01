@@ -352,7 +352,8 @@ class TestS3SecurityFeatures:
             config = connection_config.get_access_config()
 
     def test_ambient_credentials_enables_ambient_mode(self, monkeypatch):
-        """Test that ambient_credentials=True enables ambient credential pickup when env var is set"""
+        """Test that ambient_credentials=True enables ambient credential pickup 
+        when env var is set"""
         # Set the environment variable
         monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
 
