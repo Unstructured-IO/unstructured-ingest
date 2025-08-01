@@ -127,11 +127,8 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
 
-        access_config = self.access_config.get_secret_value()
         if access_config.region and not self.endpoint_url:
-            if "client_kwargs" not in access_configs:
-                access_configs["client_kwargs"] = {}
-            access_configs["client_kwargs"]["region_name"] = access_config.region
+            access_configs.setdefault("client_kwargs", {})["region_name"] = access_config.region
 
         return access_configs
 
@@ -184,63 +181,24 @@ class S3Indexer(FsspecIndexer):
         return self.connection_config.wrap_error(e=e)
 
     def precheck(self) -> None:
-        self.log_operation_start(
-            "Connection validation",
-            protocol=self.index_config.protocol,
-            path=self.index_config.path_without_protocol,
-        )
-
         try:
-            self._attempt_precheck()
-            return
+            super().precheck()
         except Exception as e:
-            if not self.connection_config.endpoint_url:
-                detected_region = self.connection_config._extract_region_from_error(e)
-                if detected_region:
-                    self.log_debug(f"Detected bucket region from error headers: {detected_region}")
-                current_region = self.connection_config.access_config.get_secret_value().region
-                if detected_region and detected_region != current_region:
-                    original_access_config = self.connection_config.access_config
-                    access_config = self.connection_config.access_config.get_secret_value()
-                    temp_access_config = access_config.model_copy()
-                    temp_access_config.region = detected_region
-                    from pydantic import Secret
-                    self.connection_config.access_config = Secret(temp_access_config)
-                    
+            if not self.connection_config.endpoint_url and (
+                detected_region := self.connection_config._extract_region_from_error(e)
+            ):
+                self.log_debug(f"Detected bucket region from error headers: {detected_region}")
+                access_config = self.connection_config.access_config.get_secret_value()
+                current_region = access_config.region
+                if detected_region != current_region:
+                    access_config.region = detected_region
                     try:
-                        self._attempt_precheck()
+                        super().precheck()
                         self.log_info(f"Connected using auto-detected region: {detected_region}")
                         return
                     except Exception:
-                        self.connection_config.access_config = original_access_config
-            
-            self.log_connection_failed(
-                connector_type=self.connector_type,
-                error=e,
-                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
-            )
+                        access_config.region = current_region
             raise self.wrap_error(e=e)
-
-    def _attempt_precheck(self) -> None:
-        from fsspec import get_filesystem_class
-        
-        fs = get_filesystem_class(self.index_config.protocol)(
-            **self.connection_config.get_access_config(),
-        )
-        files = fs.ls(path=self.index_config.path_without_protocol, detail=True)
-        valid_files = [x.get("name") for x in files if x.get("type") == "file"]
-        if not valid_files:
-            self.log_operation_complete("Connection validation", count=0)
-            return
-        file_to_sample = valid_files[0]
-        self.log_debug(f"attempting to make HEAD request for file: {file_to_sample}")
-        with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
-            client.head(path=file_to_sample)
-
-        self.log_connection_validated(
-            connector_type=self.connector_type,
-            endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
-        )
 
     def get_path(self, file_info: dict) -> str:
         return file_info["Key"]
