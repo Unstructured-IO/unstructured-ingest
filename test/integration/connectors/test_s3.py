@@ -312,7 +312,7 @@ class TestS3SecurityFeatures:
 
         # Should raise UserAuthError instead of silently changing behavior
         with pytest.raises(UserAuthError, match="No authentication method specified"):
-            config = connection_config.get_access_config()
+            connection_config.get_access_config()
 
     def test_explicit_credentials_work_normally(self):
         """Test that explicit credentials bypass security checks"""
@@ -349,10 +349,10 @@ class TestS3SecurityFeatures:
         with pytest.raises(
             UserAuthError, match="ALLOW_AMBIENT_CREDENTIALS environment variable is not set"
         ):
-            config = connection_config.get_access_config()
+            connection_config.get_access_config()
 
     def test_ambient_credentials_enables_ambient_mode(self, monkeypatch):
-        """Test that ambient_credentials=True enables ambient credential pickup 
+        """Test that ambient_credentials=True enables ambient credential pickup
         when env var is set"""
         # Set the environment variable
         monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
@@ -401,7 +401,7 @@ class TestS3SecurityFeatures:
         assert "secret" not in config  # None was filtered
         assert config["token"] == ""  # Empty string preserved
 
-    def test_endpoint_url_preserved_with_all_auth_modes(self):
+    def test_endpoint_url_preserved_with_all_auth_modes(self, monkeypatch):
         """Test that endpoint_url is preserved across all authentication modes"""
         endpoint = "https://custom-s3.example.com"
 
@@ -412,6 +412,7 @@ class TestS3SecurityFeatures:
         assert config["endpoint_url"] == endpoint
 
         # Test with ambient credentials
+        monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, endpoint_url=endpoint)
         config = connection_config.get_access_config()
@@ -429,7 +430,7 @@ class TestS3SecurityFeatures:
 
         # This should raise UserAuthError with helpful message
         with pytest.raises(UserAuthError) as exc_info:
-            config = connection_config.get_access_config()
+            connection_config.get_access_config()
 
         # Should provide clear error message
         error_message = str(exc_info.value)
@@ -479,12 +480,17 @@ class TestS3SecurityFeatures:
             with pytest.raises(
                 UserAuthError, match="ALLOW_AMBIENT_CREDENTIALS environment variable is not set"
             ):
-                config = connection_config.get_access_config()
+                connection_config.get_access_config()
 
     def test_ambient_credentials_info_logged(self, caplog, monkeypatch):
         """Test that info message is logged when using ambient credentials"""
+        import logging
+        
         # Set the environment variable
         monkeypatch.setenv("ALLOW_AMBIENT_CREDENTIALS", "true")
+        
+        # Ensure we capture INFO level logs
+        caplog.set_level(logging.INFO)
 
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
