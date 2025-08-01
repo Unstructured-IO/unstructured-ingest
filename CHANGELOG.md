@@ -1,3 +1,7 @@
+## 1.2.4
+
+**Fix**: properly handle Together API 5xx errors as ProviderError instead of UserError
+
 ## 1.2.3
 
 * **Feature**: allow environment credentials for S3
