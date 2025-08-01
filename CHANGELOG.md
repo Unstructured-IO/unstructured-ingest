@@ -1,3 +1,7 @@
+## 1.2.3
+
+* **Feature**: allow environment credentials for S3
+
 ## 1.2.2
 
 * **Fix**: prevent S3 path conflicts using tempfile for directory isolation
