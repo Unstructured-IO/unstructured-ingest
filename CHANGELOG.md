@@ -1,3 +1,7 @@
+## 1.2.5
+
+**Fix**: move S3 ambient_credentials out of AccessConfig
+
 ## 1.2.4
 
 **Fix**: properly handle Together API 5xx errors as ProviderError instead of UserError
