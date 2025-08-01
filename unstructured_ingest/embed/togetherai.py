@@ -11,7 +11,7 @@ from unstructured_ingest.embed.interfaces import (
 from unstructured_ingest.errors_v2 import (
     RateLimitError as CustomRateLimitError,
 )
-from unstructured_ingest.errors_v2 import UserAuthError, UserError, is_internal_error
+from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError, is_internal_error
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -34,14 +34,22 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
         from together.error import AuthenticationError, RateLimitError, TogetherException
 
         if not isinstance(e, TogetherException):
-            logger.error(f"unhandled exception from openai: {e}", exc_info=True)
+            logger.error(f"unhandled exception from together: {e}", exc_info=True)
             return e
         message = e.args[0]
         if isinstance(e, AuthenticationError):
             return UserAuthError(message)
         if isinstance(e, RateLimitError):
             return CustomRateLimitError(message)
-        return UserError(message)
+        
+        status_code = getattr(e, 'status_code', None)
+        if status_code is not None:
+            if 400 <= status_code < 500:
+                return UserError(message)
+            if status_code >= 500:
+                return ProviderError(message)
+        logger.error(f"unhandled exception from together: {e}", exc_info=True)
+        return e
 
     def run_precheck(self) -> None:
         client = self.get_client()
