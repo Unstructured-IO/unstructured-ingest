@@ -201,7 +201,8 @@ class S3Indexer(FsspecIndexer):
                 current_region = self.connection_config.access_config.get_secret_value().region
                 if detected_region and detected_region != current_region:
                     original_access_config = self.connection_config.access_config
-                    temp_access_config = self.connection_config.access_config.get_secret_value().model_copy()
+                    access_config = self.connection_config.access_config.get_secret_value()
+                    temp_access_config = access_config.model_copy()
                     temp_access_config.region = detected_region
                     from pydantic import Secret
                     self.connection_config.access_config = Secret(temp_access_config)
