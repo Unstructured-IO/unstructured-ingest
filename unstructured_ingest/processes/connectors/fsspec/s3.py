@@ -61,8 +61,8 @@ class S3AccessConfig(FsspecAccessConfig):
         default=False,
         description="Explicitly allow using ambient AWS credentials from .aws folder, "
         "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS environment "
-        "variable to also be set to 'true' for security. When False (default), only explicit "
-        "credentials or anonymous access are allowed.",
+        "variable to also be set to 'true' (case insensitive) for security. When False (default), "
+        "only explicit credentials or anonymous access are allowed.",
     )
 
 

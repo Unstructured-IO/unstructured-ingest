@@ -437,7 +437,7 @@ class TestS3SecurityFeatures:
 
     def test_ambient_credentials_env_var_variations(self, monkeypatch):
         """Test that only 'true' (case-insensitive) values for ALLOW_AMBIENT_CREDENTIALS work"""
-        valid_values = ["true", "TRUE", "True", "TRUE", "tRuE"]
+        valid_values = ["true", "TRUE", "True", "tRuE"]
 
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
@@ -451,7 +451,22 @@ class TestS3SecurityFeatures:
 
     def test_ambient_credentials_env_var_invalid_values(self, monkeypatch):
         """Test that invalid values for ALLOW_AMBIENT_CREDENTIALS are rejected"""
-        invalid_values = ["false", "FALSE", "0", "1", "yes", "YES", "no", "NO", "random", ""]
+        invalid_values = [
+            "false",
+            "FALSE",
+            "0",
+            "1",
+            "yes",
+            "YES",
+            "no",
+            "NO",
+            "on",
+            "ON",
+            "off",
+            "OFF",
+            "random",
+            "",
+        ]
 
         access_config = S3AccessConfig(ambient_credentials=True)
         connection_config = S3ConnectionConfig(access_config=access_config, anonymous=False)
