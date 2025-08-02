@@ -32,6 +32,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
 
       - name: Install twine for Azure upload
         run: uv add --group release twine
@@ -51,10 +52,14 @@ jobs:
 
       - name: Publish package to Azure Artifacts
         run: |
-          if twine upload -r azure dist/*; then
-            echo "✅ Successfully published to Azure Artifacts"
+          if twine upload -r azure dist/* --skip-existing; then
+            echo "✅ Successfully published to Azure Artifacts (or already existed)"
           else
+            EXIT_CODE=$?
             echo "❌ Azure Artifacts upload failed, but PyPI upload succeeded"
+            if [[ $EXIT_CODE == 1 ]]; then
+              echo "⚠️  This may be due to version conflicts or connectivity issues"
+            fi
             echo "This is non-critical - the package is available on PyPI"
             exit 0
           fi
