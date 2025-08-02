@@ -32,3 +32,29 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Install twine for Azure upload
+        run: uv add --group release twine
+
+      - name: Create .pypirc for Azure Artifacts
+        run: |
+          cat <<EOF > ~/.pypirc
+          [distutils]
+          index-servers =
+              azure
+
+          [azure]
+          repository: https://pkgs.dev.azure.com/${{ secrets.AZURE_ORG }}/${{ secrets.AZURE_PROJECT }}/_packaging/${{ secrets.AZURE_FEED }}/pypi/upload/
+          username: ${{ secrets.AZURE_USERNAME }}
+          password: ${{ secrets.AZURE_ARTIFACTS_PAT }}
+          EOF
+
+      - name: Publish package to Azure Artifacts
+        run: |
+          if twine upload -r azure dist/*; then
+            echo "✅ Successfully published to Azure Artifacts"
+          else
+            echo "❌ Azure Artifacts upload failed, but PyPI upload succeeded"
+            echo "This is non-critical - the package is available on PyPI"
+            exit 0
+          fi
