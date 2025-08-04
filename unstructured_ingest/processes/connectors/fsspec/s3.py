@@ -164,8 +164,7 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         return e
 
     def _extract_region_from_error(self, e: Exception) -> Optional[str]:
-        # Parent class wraps PermissionError → UserAuthError before we see it
-        # Need to unwrap: UserAuthError.args[0] gives us the original PermissionError
+        # Unwrap UserAuthError to get original PermissionError
         if hasattr(e, 'args') and e.args and isinstance(e.args[0], PermissionError):
             e = e.args[0]
         
@@ -174,6 +173,15 @@ class S3ConnectionConfig(FsspecConnectionConfig):
             headers = response.get('ResponseMetadata', {}).get('HTTPHeaders', {})
             return headers.get('x-amz-bucket-region')
         return None
+    
+    def update_region(self, region: str) -> tuple[Any, Any]:
+        """Update config with new region, returning old config for rollback."""
+        original_config = self.access_config
+        access_config = self.access_config.get_secret_value()
+        temp_config = access_config.model_copy()
+        temp_config.region = region
+        self.access_config = Secret(temp_config)
+        return original_config, region
 
 
 @dataclass
@@ -185,21 +193,6 @@ class S3Indexer(FsspecIndexer):
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)
 
-    def _retry_with_region(self, detected_region: str) -> None:
-        # Must create new config object since S3 client config is built at call time
-        original_access_config = self.connection_config.access_config
-        access_config = self.connection_config.access_config.get_secret_value()
-        temp_access_config = access_config.model_copy()
-        temp_access_config.region = detected_region
-        self.connection_config.access_config = Secret(temp_access_config)
-        
-        try:
-            super().precheck()
-            self.log_info(f"Connected using auto-detected region: {detected_region}")
-        except Exception:
-            self.connection_config.access_config = original_access_config
-            raise
-
     def precheck(self) -> None:
         try:
             super().precheck()
@@ -210,11 +203,13 @@ class S3Indexer(FsspecIndexer):
                 self.log_debug(f"Detected bucket region from error headers: {detected_region}")
                 current_region = self.connection_config.access_config.get_secret_value().region
                 if detected_region != current_region:
+                    original_config, _ = self.connection_config.update_region(detected_region)
                     try:
-                        self._retry_with_region(detected_region)
+                        super().precheck()
+                        self.log_info(f"Connected using auto-detected region: {detected_region}")
                         return
                     except Exception:
-                        pass  # Fall through to original error
+                        self.connection_config.access_config = original_config
             raise e
 
     def get_path(self, file_info: dict) -> str:
@@ -287,6 +282,55 @@ class S3Uploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: S3ConnectionConfig
     upload_config: S3UploaderConfig = field(default=None)
+
+    def precheck(self) -> None:
+        from fsspec import get_filesystem_class
+        
+        self.log_operation_start(
+            "Connection validation",
+            protocol=self.upload_config.protocol,
+            path=self.upload_config.path_without_protocol,
+        )
+        
+        try:
+            fs = get_filesystem_class(self.upload_config.protocol)(
+                **self.connection_config.get_access_config(),
+            )
+            fs.ls(path=self.upload_config.path_without_protocol, detail=False)
+            
+            self.log_connection_validated(
+                connector_type=self.connector_type,
+                endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+            )
+        except Exception as e:
+            if not self.connection_config.endpoint_url and (
+                detected_region := self.connection_config._extract_region_from_error(e)
+            ):
+                self.log_debug(f"Detected bucket region from error headers: {detected_region}")
+                current_region = self.connection_config.access_config.get_secret_value().region
+                if detected_region != current_region:
+                    original_config, _ = self.connection_config.update_region(detected_region)
+                    try:
+                        fs = get_filesystem_class(self.upload_config.protocol)(
+                            **self.connection_config.get_access_config(),
+                        )
+                        fs.ls(path=self.upload_config.path_without_protocol, detail=False)
+                        
+                        self.log_info(f"Connected using auto-detected region: {detected_region}")
+                        self.log_connection_validated(
+                            connector_type=self.connector_type,
+                            endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+                        )
+                        return
+                    except Exception:
+                        self.connection_config.access_config = original_config
+            
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+            )
+            raise self.wrap_error(e=e)
 
 
 s3_source_entry = SourceRegistryEntry(
