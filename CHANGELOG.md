@@ -1,6 +1,11 @@
+## 1.2.6
+
+* **Fix**: auto-detect S3 bucket region from error headers to resolve new bucket connection failures
+
 ## 1.2.5
 
 * **Fix**: auto-detect S3 bucket region from error headers to resolve new bucket connection failures
+* **Fix**: move S3 ambient_credentials out of AccessConfig
 
 ## 1.2.4
 

@@ -62,13 +62,6 @@ class S3AccessConfig(FsspecAccessConfig):
         description="AWS region name (e.g., 'us-east-2'). If not specified, will attempt "
         "to auto-detect from bucket location or use AWS default region."
     )
-    ambient_credentials: bool = Field(
-        default=False,
-        description="Explicitly allow using ambient AWS credentials from .aws folder, "
-        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS_S3 environment "
-        "variable to also be set to 'true' (case insensitive) for security. When False (default), "
-        "only explicit credentials or anonymous access are allowed.",
-    )
 
 
 class S3ConnectionConfig(FsspecConnectionConfig):
@@ -81,6 +74,13 @@ class S3ConnectionConfig(FsspecConnectionConfig):
     )
     anonymous: bool = Field(
         default=False, description="Connect to s3 without local AWS credentials."
+    )
+    ambient_credentials: bool = Field(
+        default=False,
+        description="Explicitly allow using ambient AWS credentials from .aws folder, "
+        "environment variables, or IAM roles. Requires ALLOW_AMBIENT_CREDENTIALS_S3 environment "
+        "variable to also be set to 'true' (case insensitive) for security. When False (default), "
+        "only explicit credentials or anonymous access are allowed.",
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
@@ -99,10 +99,10 @@ class S3ConnectionConfig(FsspecConnectionConfig):
                 {
                     k: v
                     for k, v in access_config.model_dump().items()
-                    if v is not None and k not in ("ambient_credentials", "region")
+                    if v is not None and k != "region"
                 }
             )
-        elif access_config.ambient_credentials:
+        elif self.ambient_credentials:
             if os.getenv("ALLOW_AMBIENT_CREDENTIALS_S3", "").lower() == "true":
                 logger.info(
                     "Using ambient AWS credentials (environment variables, .aws folder, IAM roles)"
