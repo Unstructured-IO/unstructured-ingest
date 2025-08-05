@@ -34,9 +34,6 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
           skip-existing: true
 
-      - name: Install twine for Azure upload
-        run: uv add --group release twine
-
       - name: Create .pypirc for Azure Artifacts
         run: |
           cat <<EOF > ~/.pypirc
