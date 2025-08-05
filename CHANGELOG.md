@@ -1,3 +1,7 @@
+## 1.2.6
+
+**Publish to both pypi and artifacts**
+
 ## 1.2.5
 
 **Fix**: move S3 ambient_credentials out of AccessConfig
