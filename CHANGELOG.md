@@ -1,3 +1,7 @@
+## 1.2.7
+
+**Fix**: Fix artifact url
+
 ## 1.2.6
 
 **Publish to both pypi and artifacts**
