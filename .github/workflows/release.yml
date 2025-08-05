@@ -43,6 +43,7 @@ jobs:
 
           [azure]
           repository: https://pkgs.dev.azure.com/${{ secrets.AZURE_ARTIFACTS_FEED }}/_packaging/${{ secrets.AZURE_ARTIFACTS_FEED }}/pypi/upload/
+          repository: https://pkgs.dev.azure.com/${{ secrets.AZURE_ARTIFACTS_FEED }}/_packaging/${{ secrets.AZURE_ARTIFACTS_FEED }}/pypi/upload/
           username: ${{ secrets.AZURE_ARTIFACTS_USERNAME }}
           password: ${{ secrets.AZURE_ARTIFACTS_PAT }}
           EOF
