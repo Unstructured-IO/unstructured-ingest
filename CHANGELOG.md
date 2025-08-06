@@ -1,3 +1,7 @@
+## 1.2.9
+
+**Fix**: enable s3fs cache_regions for bucket region detection
+
 ## 1.2.8
 
 **Fix**: Fix artifact url

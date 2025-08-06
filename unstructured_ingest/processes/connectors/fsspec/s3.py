@@ -118,6 +118,9 @@ class S3ConnectionConfig(FsspecConnectionConfig):
         if self.endpoint_url:
             access_configs["endpoint_url"] = self.endpoint_url
 
+        # This allows s3fs to properly follow AWS region redirects
+        access_configs["cache_regions"] = True
+
         return access_configs
 
     @requires_dependencies(["s3fs", "fsspec"], extras="s3")
