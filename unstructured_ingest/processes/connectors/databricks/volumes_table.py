@@ -25,6 +25,7 @@ from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, get_json_data, write_data
+from unstructured_ingest.errors_v2 import ValueError
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
 

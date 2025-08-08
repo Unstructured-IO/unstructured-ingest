@@ -9,11 +9,14 @@ from pydantic import Field
 from unstructured_ingest.data_types.file_data import (
     FileData,
 )
-from unstructured_ingest.error import (
+from unstructured_ingest.errors_v2 import (
     SourceConnectionError,
     SourceConnectionNetworkError,
+    UserAuthError,
+    UserError,
+    ValueError,
+    NotFoundError,
 )
-from unstructured_ingest.errors_v2 import UserAuthError, UserError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
@@ -239,7 +242,7 @@ class SharepointDownloader(OnedriveDownloader):
         file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
 
         if not file:
-            raise FileNotFoundError(f"file not found: {server_relative_path}")
+            raise NotFoundError(f"file not found: {server_relative_path}")
         return file
 
 

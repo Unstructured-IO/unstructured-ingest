@@ -17,7 +17,7 @@ from unstructured_ingest.processes.connectors.notion.types.database import Datab
 from unstructured_ingest.processes.connectors.notion.types.database_properties import map_cells
 from unstructured_ingest.processes.connectors.notion.types.page import Page
 from unstructured_ingest.utils.dep_check import requires_dependencies
-
+from unstructured_ingest.errors_v2 import TimeoutError, SourceConnectionError
 
 @requires_dependencies(["httpx"], extras="notion")
 def _get_retry_strategy(
@@ -132,8 +132,8 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
                 else (self.parent.client.send(request))
             )  # type: ignore
             return response.status_code
-        except httpx.TimeoutException:
-            raise RequestTimeoutError()
+        except httpx.TimeoutException as e:
+            raise TimeoutError(str(e))
 
     def query(self, database_id: str, **kwargs: Any) -> Tuple[List[Page], dict]:
         """Get a list of [Pages](https://developers.notion.com/reference/page) contained in the database.
@@ -236,8 +236,8 @@ class PagesEndpoint(NotionPagesEndpoint):
                 else (self.parent.client.send(request))
             )  # type: ignore
             return response.status_code
-        except httpx.TimeoutException:
-            raise RequestTimeoutError()
+        except httpx.TimeoutException as e:
+            raise TimeoutError(str(e))
 
 
 class Client(NotionClient):
@@ -266,9 +266,9 @@ class AsyncBlocksChildrenEndpoint(NotionBlocksChildrenEndpoint):
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise HTTPResponseError(f"Failed to list blocks: {str(e)}")
-        except httpx.TimeoutException:
-            raise RequestTimeoutError()
+            raise SourceConnectionError(f"Failed to list blocks: {str(e)}")
+        except httpx.TimeoutException as e:
+            raise TimeoutError(str(e))
 
         resp = response.json()
         child_blocks = [Block.from_dict(data=b) for b in resp.pop("results", [])]
@@ -307,9 +307,9 @@ class AsyncDatabasesEndpoint(NotionDatabasesEndpoint):
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise HTTPResponseError(f"Failed to retrieve database: {str(e)}")
-        except httpx.TimeoutException:
-            raise RequestTimeoutError()
+            raise SourceConnectionError(f"Failed to retrieve database: {str(e)}")
+        except httpx.TimeoutException as e:
+            raise TimeoutError(str(e))
 
         return Database.from_dict(data=response.json())
 
@@ -322,9 +322,9 @@ class AsyncDatabasesEndpoint(NotionDatabasesEndpoint):
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise HTTPResponseError(f"Failed to query database: {str(e)}")
-        except httpx.TimeoutException:
-            raise RequestTimeoutError()
+            raise SourceConnectionError(f"Failed to query database: {str(e)}")
+        except httpx.TimeoutException as e:
+            raise TimeoutError(str(e))
 
         resp = response.json()
         pages = [Page.from_dict(data=p) for p in resp.pop("results", [])]

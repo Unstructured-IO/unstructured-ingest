@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError
-from unstructured_ingest.errors_v2 import UserError
+from unstructured_ingest.errors_v2 import UserError, APIError, NotFoundError, DestinationConnectionError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -220,7 +219,7 @@ class PineconeUploader(VectorDBUploader):
             if self.connection_config.index_name and not self.index_exists(
                 self.connection_config.index_name
             ):
-                raise DestinationConnectionError(
+                raise NotFoundError(
                     f"index {self.connection_config.index_name} does not exist"
                 )
         except Exception as e:
@@ -364,7 +363,7 @@ class PineconeUploader(VectorDBUploader):
             try:
                 results = [async_result.get() for async_result in async_results]
             except PineconeApiException as api_error:
-                raise DestinationConnectionError(f"http error: {api_error}") from api_error
+                raise APIError(f"http error: {api_error}") from api_error
             logger.debug(f"results: {results}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:

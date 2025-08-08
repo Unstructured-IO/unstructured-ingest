@@ -13,10 +13,11 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import (
+from unstructured_ingest.errors_v2 import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    ValueError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -101,7 +102,6 @@ class KafkaIndexer(Indexer, ABC):
 
     @requires_dependencies(["confluent_kafka"], extras="kafka")
     def generate_messages(self) -> Generator[Any, None, None]:
-        from confluent_kafka import KafkaError, KafkaException
 
         messages_consumed = 0
         max_empty_polls = 10
@@ -122,7 +122,7 @@ class KafkaIndexer(Indexer, ABC):
                         )
                         break
                     else:
-                        raise KafkaException(msg.error())
+                        raise APIError(msg.error())
                 try:
                     empty_polls = 0
                     messages_consumed += 1
@@ -246,8 +246,6 @@ class KafkaUploader(Uploader, ABC):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     def produce_batch(self, elements: list[dict]) -> None:
-        from confluent_kafka.error import KafkaException
-
         producer = self.connection_config.get_producer()
         failed_producer = False
 
@@ -268,7 +266,7 @@ class KafkaUploader(Uploader, ABC):
             logger.debug(f"another iteration of kafka producer flush. Queue length: {producer_len}")
             producer.flush(timeout=self.upload_config.timeout)
         if failed_producer:
-            raise KafkaException("failed to produce all messages in batch")
+            raise APIError("failed to produce all kafka messages in batch")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         for element_batch in batch_generator(data, batch_size=self.upload_config.batch_size):

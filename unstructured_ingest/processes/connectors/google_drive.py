@@ -13,8 +13,10 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import (
+from unstructured_ingest.errors_v2 import (
     SourceConnectionError,
+    ValueError,
+    UserAuthError
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -113,7 +115,7 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
         except HttpError as exc:
             raise ValueError(f"{exc.reason}")
         except exceptions.DefaultCredentialsError:
-            raise ValueError("The provided API key is invalid.")
+            raise UserAuthError("The provided API key is invalid.")
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):

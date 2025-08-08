@@ -19,6 +19,7 @@ from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.errors_v2 import ValueError
 
 if TYPE_CHECKING:
     from pyairtable import Api

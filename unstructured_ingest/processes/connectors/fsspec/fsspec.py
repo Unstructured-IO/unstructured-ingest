@@ -30,6 +30,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
 from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
+from unstructured_ingest.errors_v2 import ValueError, TypeError
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem

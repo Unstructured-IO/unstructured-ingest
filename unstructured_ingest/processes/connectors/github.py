@@ -85,7 +85,7 @@ class GithubConnectionConfig(ConnectionConfig):
         if status_code > 500:
             return ProviderError(e.response.text)
         logger.debug(f"unhandled http error: {e}")
-        return e
+        return APIError(str(e))
 
     @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
@@ -97,7 +97,7 @@ class GithubConnectionConfig(ConnectionConfig):
         if isinstance(e, HTTPError):
             return self.wrap_http_error(e=e)
         logger.debug(f"unhandled error: {e}")
-        return e
+        return APIError(str(e))
 
 
 class GithubIndexerConfig(IndexerConfig):

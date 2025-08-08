@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError
+from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError, DestinationConnectionError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -292,9 +292,9 @@ class IbmWatsonxUploader(SQLUploader):
             except CommitFailedException as e:
                 table.refresh()
                 logger.debug(e)
-                raise IcebergCommitFailedException(e)
+                raise DestinationConnectionError(str(e))
             except RESTError:
-                raise
+                raise DestinationConnectionError(str(e))
             except Exception as e:
                 raise ProviderError(f"Failed to upload data to table: {e}")
 

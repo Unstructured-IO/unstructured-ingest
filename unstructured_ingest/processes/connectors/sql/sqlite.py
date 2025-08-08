@@ -28,6 +28,7 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     parse_date_string,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.errors_v2 import ValueError
 
 if TYPE_CHECKING:
     from sqlite3 import Connection as SqliteConnection

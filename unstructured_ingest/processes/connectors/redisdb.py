@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Generator, Optional
 from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.errors_v2 import DestinationConnectionError, ValueError, ResponseError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -203,7 +203,7 @@ class RedisUploader(Uploader):
                     await pipe.set(key_with_prefix, json.dumps(element)).execute()
                     redis_stack = False
                 else:
-                    raise redis_exceptions.ResponseError(message) from e
+                    raise ResponseError(message) from e
         return redis_stack
 
 

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError
+from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError, ValueError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,

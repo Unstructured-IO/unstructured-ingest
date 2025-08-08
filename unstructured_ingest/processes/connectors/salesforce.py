@@ -25,7 +25,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, SourceConnectionNetworkError
+from unstructured_ingest.errors_v2 import SourceConnectionError, SourceConnectionNetworkError, ValueError, NotFoundError, MissingCategoryError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -40,11 +40,6 @@ from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
-
-
-class MissingCategoryError(Exception):
-    """There are no categories with that name."""
-
 
 CONNECTOR_TYPE = "salesforce"
 

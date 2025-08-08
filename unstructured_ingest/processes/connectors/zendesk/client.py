@@ -211,7 +211,7 @@ class ZendeskClient:
 
         if not isinstance(e, httpx.HTTPStatusError):
             logger.error(f"unhandled exception from Zendesk client: {e}", exc_info=True)
-            return e
+            return APIError(str(e))
         url = e.request.url
         response_code = e.response.status_code
         if response_code == 401:

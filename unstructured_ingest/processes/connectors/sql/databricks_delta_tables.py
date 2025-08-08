@@ -22,6 +22,7 @@ from unstructured_ingest.processes.connectors.sql.sql import (
 )
 from unstructured_ingest.utils.data_prep import split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
+from unstructured_ingest.errors_v2 import ValueError
 
 if TYPE_CHECKING:
     from databricks.sdk.core import oauth_service_principal

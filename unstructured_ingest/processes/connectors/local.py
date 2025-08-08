@@ -33,6 +33,7 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
+from unstructured_ingest.errors_v2 import FileExistsError
 
 CONNECTOR_TYPE = "local"
 
@@ -168,7 +169,7 @@ class LocalUploaderConfig(UploaderConfig):
 
     def __post_init__(self):
         if self.output_path.exists() and self.output_path.is_file():
-            raise ValueError("output path already exists as a file")
+            raise FileExistsError(f"output path {self.output_path} already exists as a file")
 
 
 @dataclass
