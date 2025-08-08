@@ -1,6 +1,10 @@
-## 1.2.9
+## 1.2.10
 
 * **o11y: standardize exception classes across the repo**:
+
+## 1.2.9
+
+**Fix**: enable s3fs cache_regions for bucket region detection
 
 ## 1.2.8
 
