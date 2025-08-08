@@ -14,7 +14,7 @@ from unstructured_ingest.data_types.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.errors_v2 import (
-    APIError,
+    IngestError,
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
@@ -124,7 +124,7 @@ class KafkaIndexer(Indexer, ABC):
                         )
                         break
                     else:
-                        raise APIError(msg.error())
+                        raise IngestError(msg.error())
                 try:
                     empty_polls = 0
                     messages_consumed += 1
@@ -268,7 +268,7 @@ class KafkaUploader(Uploader, ABC):
             logger.debug(f"another iteration of kafka producer flush. Queue length: {producer_len}")
             producer.flush(timeout=self.upload_config.timeout)
         if failed_producer:
-            raise APIError("failed to produce all kafka messages in batch")
+            raise IngestError("failed to produce all kafka messages in batch")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         for element_batch in batch_generator(data, batch_size=self.upload_config.batch_size):

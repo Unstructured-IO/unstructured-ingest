@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Literal, Optional, Union
 from pydantic import BaseModel, Field, HttpUrl
 
 from unstructured_ingest.errors_v2 import (
-    APIError,
+    IngestError,
     ProviderError,
     RateLimitError,
     UserAuthError,
@@ -217,7 +217,7 @@ class ZendeskClient:
 
         if not isinstance(e, httpx.HTTPStatusError):
             logger.error(f"unhandled exception from Zendesk client: {e}", exc_info=True)
-            return APIError(str(e))
+            return IngestError(str(e))
         url = e.request.url
         response_code = e.response.status_code
         if response_code == 401:

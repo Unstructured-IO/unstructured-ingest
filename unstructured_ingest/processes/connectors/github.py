@@ -12,7 +12,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.errors_v2 import APIError, ProviderError, UserAuthError, UserError
+from unstructured_ingest.errors_v2 import IngestError, ProviderError, UserAuthError, UserError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -85,7 +85,7 @@ class GithubConnectionConfig(ConnectionConfig):
         if status_code > 500:
             return ProviderError(e.response.text)
         logger.debug(f"unhandled http error: {e}")
-        return APIError(str(e))
+        return IngestError(str(e))
 
     @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
@@ -97,7 +97,7 @@ class GithubConnectionConfig(ConnectionConfig):
         if isinstance(e, HTTPError):
             return self.wrap_http_error(e=e)
         logger.debug(f"unhandled error: {e}")
-        return APIError(str(e))
+        return IngestError(str(e))
 
 
 class GithubIndexerConfig(IndexerConfig):
