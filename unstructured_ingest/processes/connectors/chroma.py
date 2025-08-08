@@ -7,7 +7,7 @@ from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import DestinationConnectionError, ValueError
+from unstructured_ingest.error import DestinationConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,

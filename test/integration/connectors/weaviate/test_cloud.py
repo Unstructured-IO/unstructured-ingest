@@ -1,7 +1,7 @@
 import pytest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
-from unstructured_ingest.errors_v2 import ValueError
+from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.weaviate.cloud import (
     CONNECTOR_TYPE,
     CloudWeaviateAccessConfig,

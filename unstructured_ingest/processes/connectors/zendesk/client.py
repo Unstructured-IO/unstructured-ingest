@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, HttpUrl
 
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     IngestError,
     ProviderError,
     RateLimitError,

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field, Secret, field_validator
 
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     DestinationConnectionError,
 )
 from unstructured_ingest.interfaces import (

@@ -7,7 +7,7 @@ from pydantic import Field, Secret
 
 from unstructured_ingest.__version__ import __version__ as unstructured_io_ingest_version
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import DestinationConnectionError
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,

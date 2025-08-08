@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from unstructured_ingest.errors_v2 import ValueError
+from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,

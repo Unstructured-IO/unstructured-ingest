@@ -25,7 +25,7 @@ from test.integration.connectors.utils.validation.source import (
     source_filedata_display_name_set_check,
 )
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.errors_v2 import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connectors.kafka.local import (
     CONNECTOR_TYPE,

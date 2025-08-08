@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional
 from pydantic import Field
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import DestinationConnectionError
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.interfaces import (
     ConnectionConfig,
     Uploader,

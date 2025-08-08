@@ -9,7 +9,7 @@ from notion_client.api_endpoints import DatabasesEndpoint as NotionDatabasesEndp
 from notion_client.api_endpoints import Endpoint
 from notion_client.api_endpoints import PagesEndpoint as NotionPagesEndpoint
 
-from unstructured_ingest.errors_v2 import SourceConnectionError, TimeoutError
+from unstructured_ingest.error import SourceConnectionError, TimeoutError
 from unstructured_ingest.processes.connectors.notion.ingest_backoff import RetryHandler
 from unstructured_ingest.processes.connectors.notion.ingest_backoff.types import RetryStrategyConfig
 from unstructured_ingest.processes.connectors.notion.types.block import Block

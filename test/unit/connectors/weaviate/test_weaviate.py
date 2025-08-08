@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import Secret
 
-from unstructured_ingest.errors_v2 import ValueError
+from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateAccessConfig,
     WeaviateConnectionConfig,

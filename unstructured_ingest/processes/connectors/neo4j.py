@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, Secret, ValidationError, fiel
 
 from unstructured_ingest.data_types.entities import EntitiesData, Entity, EntityRelationship
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import IngestError, DestinationConnectionError, ValueError
+from unstructured_ingest.error import IngestError, DestinationConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,

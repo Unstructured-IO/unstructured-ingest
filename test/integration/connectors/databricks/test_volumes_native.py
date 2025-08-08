@@ -22,7 +22,7 @@ from test.integration.connectors.utils.validation.source import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.errors_v2 import UserAuthError, UserError
+from unstructured_ingest.error import UserAuthError, UserError
 from unstructured_ingest.processes.connectors.databricks.volumes_native import (
     CONNECTOR_TYPE,
     DatabricksNativeVolumesAccessConfig,

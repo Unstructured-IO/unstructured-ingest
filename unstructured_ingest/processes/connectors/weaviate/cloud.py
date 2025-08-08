@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.errors_v2 import ValueError
+from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
 from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateAccessConfig,

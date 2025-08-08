@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     ProviderError,
     UserAuthError,
     UserError,
     ValueError,
 )
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     RateLimitError as CustomRateLimitError,
 )
 from unstructured_ingest.logger import logger

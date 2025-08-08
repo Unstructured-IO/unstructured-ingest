@@ -13,7 +13,7 @@ from test.integration.connectors.utils.validation.source import (
     source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.errors_v2 import UserAuthError, ValueError
+from unstructured_ingest.error import UserAuthError, ValueError
 from unstructured_ingest.processes.connectors.discord import (
     CONNECTOR_TYPE,
     DiscordAccessConfig,

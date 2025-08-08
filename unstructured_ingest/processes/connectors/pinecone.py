@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     IngestError,
     DestinationConnectionError,
     NotFoundError,

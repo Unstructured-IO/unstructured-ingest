@@ -13,7 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.errors_v2 import SourceConnectionError, UserAuthError, ValueError
+from unstructured_ingest.error import SourceConnectionError, UserAuthError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
