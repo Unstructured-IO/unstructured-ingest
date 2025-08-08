@@ -2,7 +2,7 @@ from abc import ABC
 from functools import wraps
 
 
-class APIError(Exception, ABC):
+class IngestError(Exception, ABC):
     error_string: str
 
     @classmethod
@@ -25,7 +25,7 @@ class APIError(Exception, ABC):
         return wrapper
 
 
-class ConnectionError(APIError):
+class ConnectionError(IngestError):
     error_string = "Connection error: {}"
 
 
@@ -45,19 +45,19 @@ class EmbeddingEncoderConnectionError(ConnectionError):
     error_string = "Error in connecting to the embedding model provider: {}"
 
 
-class ValueError(APIError):
+class ValueError(IngestError):
     error_string = "Value error: {}"
 
 
-class WriteError(APIError):
+class WriteError(IngestError):
     error_string = "Error in writing to downstream data source: {}"
 
 
-class PartitionError(APIError):
+class PartitionError(IngestError):
     error_string = "Error in partitioning content: {}"
 
 
-class UserError(APIError):
+class UserError(IngestError):
     error_string = "User error: {}"
 
 
@@ -73,43 +73,43 @@ class QuotaError(UserError):
     error_string = "Quota error: {}"
 
 
-class ProviderError(APIError):
+class ProviderError(IngestError):
     error_string = "Provider error: {}"
 
 
-class NotFoundError(APIError):
+class NotFoundError(IngestError):
     error_string = "Not found error: {}"
 
 
-class MissingCategoryError(APIError):
+class MissingCategoryError(IngestError):
     error_string = "Missing category error: {}"
 
 
-class ResponseError(APIError):
+class ResponseError(IngestError):
     error_string = "Response error: {}"
 
 
-class ValidationError(APIError):
+class ValidationError(IngestError):
     error_string = "Validation error: {}"
 
 
-class KeyError(APIError):
+class KeyError(IngestError):
     error_string = "Key error: {}"
 
 
-class FileExistsError(APIError):
+class FileExistsError(IngestError):
     error_string = "File exists error: {}"
 
 
-class TimeoutError(APIError):
+class TimeoutError(IngestError):
     error_string = "Timeout error: {}"
 
 
-class TypeError(APIError):
+class TypeError(IngestError):
     error_string = "Type error: {}"
 
 
-class IcebergCommitFailedException(APIError):
+class IcebergCommitFailedException(IngestError):
     error_string = "Failed to commit changes to the iceberg table"
 
 
