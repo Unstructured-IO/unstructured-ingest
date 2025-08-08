@@ -1,15 +1,14 @@
 from unittest import mock
 
 import pytest
-from pydantic import ValidationError
 
+from unstructured_ingest.errors_v2 import ValidationError
 from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,
     ConfluenceIndexer,
     ConfluenceIndexerConfig,
 )
-from unstructured_ingest.errors_v2 import ValidationError
 
 
 @pytest.fixture
