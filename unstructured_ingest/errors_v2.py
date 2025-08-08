@@ -108,6 +108,9 @@ class TimeoutError(APIError):
 class TypeError(APIError):
     error_string = "Type error: {}"
 
+class IcebergCommitFailedException(APIError):
+    error_string = "Failed to commit changes to the iceberg table"
+
 
 recognized_errors = [
     UserError,

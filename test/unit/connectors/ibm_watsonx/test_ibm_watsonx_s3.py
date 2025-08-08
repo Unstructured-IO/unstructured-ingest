@@ -360,7 +360,7 @@ def test_ibm_watsonx_uploader_upload_data_table_rest_error(
 ):
     mock_transaction.append.side_effect = RESTError()
 
-    with pytest.raises(DestinationConnectionError):
+    with pytest.raises(RESTError):
         uploader.upload_data_table(mock_table, mock_data_table, file_data)
     assert mock_table.refresh.call_count == 0
 

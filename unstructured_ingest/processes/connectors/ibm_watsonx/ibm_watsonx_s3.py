@@ -13,6 +13,7 @@ from unstructured_ingest.errors_v2 import (
     ProviderError,
     UserAuthError,
     UserError,
+    IcebergCommitFailedException,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -43,10 +44,6 @@ CONNECTOR_TYPE = "ibm_watsonx_s3"
 DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
-
-
-class IcebergCommitFailedException(Exception):
-    """Failed to commit changes to the iceberg table."""
 
 
 class IbmWatsonxAccessConfig(AccessConfig):
@@ -297,7 +294,7 @@ class IbmWatsonxUploader(SQLUploader):
             except CommitFailedException as e:
                 table.refresh()
                 logger.debug(e)
-                raise DestinationConnectionError(str(e))
+                raise IcebergCommitFailedException(str(e))
             except RESTError as e:
                 raise DestinationConnectionError(str(e))
             except Exception as e:
