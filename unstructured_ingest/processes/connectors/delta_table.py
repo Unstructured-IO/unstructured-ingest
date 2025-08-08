@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import DestinationConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -254,12 +254,12 @@ class DeltaTableUploader(Uploader):
                 if not queue.empty():
                     error_message = queue.get()
                     logger.error("Exception occurred in write_deltalake: %s", error_message)
-                    raise RuntimeError(f"Error in write_deltalake: {error_message}")
+                    raise DestinationConnectionError(f"Error in write_deltalake: {error_message}")
 
                 # If the subprocess terminated abnormally but produced no traceback (e.g., SIGABRT),
                 # still raise a helpful error for callers.
                 if not current_process().daemon and writer.exitcode != 0:
-                    raise RuntimeError(
+                    raise DestinationConnectionError(
                         f"write_deltalake subprocess exited with code {writer.exitcode}"
                     )
 

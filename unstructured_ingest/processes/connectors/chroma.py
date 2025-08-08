@@ -7,7 +7,7 @@ from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import DestinationConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -151,7 +151,7 @@ class ChromaUploader(Uploader):
                 metadatas=batch["metadatas"],
             )
         except Exception as e:
-            raise ValueError(f"chroma error: {e}") from e
+            raise DestinationConnectionError(f"chroma error: {e}") from e
 
     @staticmethod
     def prepare_chroma_list(chunk: tuple[dict[str, Any]]) -> dict[str, list[Any]]:

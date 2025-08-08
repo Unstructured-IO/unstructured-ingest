@@ -10,7 +10,7 @@ from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError
+from unstructured_ingest.error import ProviderError, UserAuthError, UserError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,

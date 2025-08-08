@@ -376,7 +376,7 @@ def indexer_factory(base_sharepoint_config):
 )
 async def test_sharepoint_precheck_error_scenarios(indexer_factory, error_scenario, expected_error):
     """Parametrized test for different SharePoint precheck error scenarios."""
-    from unstructured_ingest.errors_v2 import UserAuthError, UserError
+    from unstructured_ingest.error import UserAuthError, UserError
 
     error_class_map = {"UserAuthError": UserAuthError, "UserError": UserError}
 
@@ -427,7 +427,7 @@ async def test_sharepoint_precheck_insufficient_permissions(
     base_sharepoint_config,
 ):
     """Test precheck with credentials that have insufficient permissions."""
-    from unstructured_ingest.errors_v2 import UserAuthError
+    from unstructured_ingest.error import UserAuthError
 
     access_config = SharepointAccessConfig(client_cred=insufficient_perms_config.client_cred)
     connection_config = SharepointConnectionConfig(

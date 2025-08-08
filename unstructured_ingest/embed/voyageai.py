@@ -8,8 +8,8 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError, is_internal_error
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import ProviderError, UserAuthError, UserError, is_internal_error
+from unstructured_ingest.error import (
     RateLimitError as CustomRateLimitError,
 )
 from unstructured_ingest.logger import logger

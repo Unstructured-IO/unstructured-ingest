@@ -1,8 +1,8 @@
 from unittest import mock
 
 import pytest
-from pydantic import ValidationError
 
+from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,
@@ -23,7 +23,7 @@ def connection_config():
 
 
 def test_connection_config_multiple_auth():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         ConfluenceConnectionConfig(
             access_config=ConfluenceAccessConfig(
                 password="password",
@@ -35,7 +35,7 @@ def test_connection_config_multiple_auth():
 
 
 def test_connection_config_multiple_auth2():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         ConfluenceConnectionConfig(
             access_config=ConfluenceAccessConfig(
                 api_token="api_token",
@@ -47,7 +47,7 @@ def test_connection_config_multiple_auth2():
 
 
 def test_connection_config_multiple_auth3():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         ConfluenceConnectionConfig(
             access_config=ConfluenceAccessConfig(
                 api_token="api_token",
@@ -59,7 +59,7 @@ def test_connection_config_multiple_auth3():
 
 
 def test_connection_config_no_auth():
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValueError):
         ConfluenceConnectionConfig(access_config=ConfluenceAccessConfig(), url="url")
 
 

@@ -13,7 +13,7 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.errors_v2 import UserAuthError, is_internal_error
+from unstructured_ingest.error import UserAuthError, is_internal_error
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:

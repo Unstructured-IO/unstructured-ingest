@@ -8,7 +8,7 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     ProviderError,
     QuotaError,
     RateLimitError,

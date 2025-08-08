@@ -2,7 +2,7 @@ from dataclasses import fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from unstructured_ingest.errors_v2 import ProviderError, QuotaError, UserAuthError, UserError
+from unstructured_ingest.error import ProviderError, QuotaError, UserAuthError, UserError
 from unstructured_ingest.logger import logger
 
 if TYPE_CHECKING:

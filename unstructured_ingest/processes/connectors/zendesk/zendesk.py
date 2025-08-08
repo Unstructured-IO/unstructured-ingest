@@ -13,6 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.error import SourceConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -222,7 +223,9 @@ class ZendeskDownloader(Downloader):
             ticket = ZendeskTicket.model_validate(zendesk_filedata.additional_metadata.content)
             await self.download_ticket(ticket=ticket, download_path=download_path)
         else:
-            raise RuntimeError(f"Item type {item_type} cannot be handled by the downloader")
+            raise SourceConnectionError(
+                f"Item type {item_type} cannot be handled by the downloader"
+            )
         return super().generate_download_response(
             file_data=zendesk_filedata, download_path=download_path
         )
