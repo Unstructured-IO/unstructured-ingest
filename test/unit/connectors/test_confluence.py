@@ -9,6 +9,7 @@ from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceIndexer,
     ConfluenceIndexerConfig,
 )
+from unstructured_ingest.errors_v2 import ValidationError
 
 
 @pytest.fixture

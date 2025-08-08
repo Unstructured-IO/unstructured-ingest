@@ -305,8 +305,8 @@ class IbmWatsonxUploader(SQLUploader):
 
         try:
             return _upload_data_table(table, data_table, file_data)
-        except RESTError:
-            raise
+        except RESTError as e:
+            raise DestinationConnectionError(str(e))
         except ProviderError:
             raise
         except Exception as e:

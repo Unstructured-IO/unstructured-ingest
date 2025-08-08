@@ -9,6 +9,7 @@ from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateUploader,
     WeaviateUploaderConfig,
 )
+from unstructured_ingest.errors_v2 import ValueError
 
 
 class WeaviateConnectionConfigTest(WeaviateConnectionConfig):

@@ -1,10 +1,14 @@
+## 1.2.9
+
+* **o11y: standardize exception classes across the repo**:
+
 ## 1.2.8
 
-**Fix**: Fix artifact url
+**Fix: Fix artifact url**
 
 ## 1.2.7
 
-**Fix**: Fix artifact url
+**Fix: Fix artifact url**
 
 ## 1.2.6
 
@@ -12,23 +16,23 @@
 
 ## 1.2.5
 
-**Fix**: move S3 ambient_credentials out of AccessConfig
+**Fix: move S3 ambient_credentials out of AccessConfig**
 
 ## 1.2.4
 
-**Fix**: properly handle Together API 5xx errors as ProviderError instead of UserError
+**Fix: properly handle Together API 5xx errors as ProviderError instead of UserError**
 
 ## 1.2.3
 
-* **Feature**: allow environment credentials for S3
+* **Feature: allow environment credentials for S3**
 
 ## 1.2.2
 
-* **Fix**: prevent S3 path conflicts using tempfile for directory isolation
+* **Fix: prevent S3 path conflicts using tempfile for directory isolation**
 
 ## 1.2.1
 
-* **Fix**: Embeddings are properly assigned when embedding in batches
+* **Fix: Embeddings are properly assigned when embedding in batches**
 
 ## 1.2.0
 * **Drop Python 3.9 support**
