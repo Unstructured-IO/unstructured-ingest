@@ -1,8 +1,9 @@
 from abc import ABC
 from functools import wraps
+from typing import Optional
 
 
-class IngestError(Exception, ABC):
+class UnstructuredIngestError(Exception, ABC):
     error_string: str
     status_code: Optional[int] = None
 
@@ -26,7 +27,7 @@ class IngestError(Exception, ABC):
         return wrapper
 
 
-class ConnectionError(IngestError):
+class ConnectionError(UnstructuredIngestError):
     error_string = "Connection error: {}"
     status_code: Optional[int] = 400
 
@@ -51,7 +52,7 @@ class EmbeddingEncoderConnectionError(ConnectionError):
     status_code: Optional[int] = 400
 
 
-class UserError(IngestError):
+class UserError(UnstructuredIngestError):
     error_string = "User error: {}"
     status_code: Optional[int] = 401
 
@@ -66,36 +67,36 @@ class RateLimitError(UserError):
     status_code: Optional[int] = 429
 
 
-class NotFoundError(IngestError):
+class NotFoundError(UnstructuredIngestError):
     error_string = "Not found error: {}"
     status_code: Optional[int] = 404
 
 
-class TimeoutError(IngestError):
+class TimeoutError(UnstructuredIngestError):
     error_string = "Timeout error: {}"
     status_code: Optional[int] = 408
 
 
-class ResponseError(IngestError):
+class ResponseError(UnstructuredIngestError):
     error_string = "Response error: {}"
     status_code: Optional[int] = 400
 
 
-class WriteError(IngestError):
+class WriteError(UnstructuredIngestError):
     error_string = "Error in writing to downstream data source: {}"
     status_code: Optional[int] = 400
 
 
-class ProviderError(IngestError):
+class ProviderError(UnstructuredIngestError):
     error_string = "Provider error: {}"
     status_code: Optional[int] = 500
 
 
-class ValueError(IngestError):
+class ValueError(UnstructuredIngestError):
     error_string = "Value error: {}"
 
 
-class PartitionError(IngestError):
+class PartitionError(UnstructuredIngestError):
     error_string = "Error in partitioning content: {}"
 
 
@@ -103,27 +104,27 @@ class QuotaError(UserError):
     error_string = "Quota error: {}"
 
 
-class MissingCategoryError(IngestError):
+class MissingCategoryError(UnstructuredIngestError):
     error_string = "Missing category error: {}"
 
 
-class ValidationError(IngestError):
+class ValidationError(UnstructuredIngestError):
     error_string = "Validation error: {}"
 
 
-class KeyError(IngestError):
+class KeyError(UnstructuredIngestError):
     error_string = "Key error: {}"
 
 
-class FileExistsError(IngestError):
+class FileExistsError(UnstructuredIngestError):
     error_string = "File exists error: {}"
 
 
-class TypeError(IngestError):
+class TypeError(UnstructuredIngestError):
     error_string = "Type error: {}"
 
 
-class IcebergCommitFailedException(IngestError):
+class IcebergCommitFailedException(UnstructuredIngestError):
     error_string = "Failed to commit changes to the iceberg table"
 
 

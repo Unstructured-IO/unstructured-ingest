@@ -16,10 +16,10 @@ from unstructured_ingest.data_types.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.error import (
-    IngestError,
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    UnstructuredIngestError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -444,7 +444,7 @@ class ElasticsearchUploader(Uploader):
                     raise DestinationConnectionError(str(e))
                 except Exception as e:
                     logger.error(f"Batch upload failed - {e}")
-                    raise IngestError(str(e))
+                    raise UnstructuredIngestError(str(e))
 
     def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
         """Remove data uploaded to index from the log, leave only error information.
