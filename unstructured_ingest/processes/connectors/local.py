@@ -13,6 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.errors_v2 import FileExistsError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -33,7 +34,6 @@ from unstructured_ingest.processes.utils.blob_storage import (
     BlobStoreUploadStager,
     BlobStoreUploadStagerConfig,
 )
-from unstructured_ingest.errors_v2 import FileExistsError
 
 CONNECTOR_TYPE = "local"
 

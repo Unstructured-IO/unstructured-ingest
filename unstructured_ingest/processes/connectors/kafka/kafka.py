@@ -14,6 +14,7 @@ from unstructured_ingest.data_types.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.errors_v2 import (
+    APIError,
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
@@ -102,6 +103,7 @@ class KafkaIndexer(Indexer, ABC):
 
     @requires_dependencies(["confluent_kafka"], extras="kafka")
     def generate_messages(self) -> Generator[Any, None, None]:
+        from confluent_kafka import KafkaError
 
         messages_consumed = 0
         max_empty_polls = 10

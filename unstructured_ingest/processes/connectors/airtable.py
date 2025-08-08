@@ -6,6 +6,7 @@ from uuid import NAMESPACE_DNS, uuid5
 from pydantic import BaseModel, Field, Secret, field_validator
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.errors_v2 import ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -19,7 +20,6 @@ from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.errors_v2 import ValueError
 
 if TYPE_CHECKING:
     from pyairtable import Api

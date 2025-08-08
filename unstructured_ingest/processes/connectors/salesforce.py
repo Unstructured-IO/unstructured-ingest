@@ -25,7 +25,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.errors_v2 import SourceConnectionError, SourceConnectionNetworkError, ValueError, NotFoundError, MissingCategoryError
+from unstructured_ingest.errors_v2 import (
+    MissingCategoryError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+    ValueError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,

@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import UserError, APIError, NotFoundError, DestinationConnectionError
+from unstructured_ingest.errors_v2 import (
+    APIError,
+    DestinationConnectionError,
+    NotFoundError,
+    UserError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -219,9 +224,7 @@ class PineconeUploader(VectorDBUploader):
             if self.connection_config.index_name and not self.index_exists(
                 self.connection_config.index_name
             ):
-                raise NotFoundError(
-                    f"index {self.connection_config.index_name} does not exist"
-                )
+                raise NotFoundError(f"index {self.connection_config.index_name} does not exist")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")

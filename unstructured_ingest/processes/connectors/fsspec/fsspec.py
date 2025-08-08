@@ -17,6 +17,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.errors_v2 import TypeError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -30,7 +31,6 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.processes.connectors.fsspec.utils import sterilize_dict
 from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
-from unstructured_ingest.errors_v2 import ValueError, TypeError
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -266,29 +266,26 @@ FsspecDownloaderConfigT = TypeVar("FsspecDownloaderConfigT", bound=FsspecDownloa
 @dataclass
 class FsspecDownloader(Downloader):
     TEMP_DIR_PREFIX = "unstructured_"
-    
+
     protocol: str
     connection_config: FsspecConnectionConfigT
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[FsspecDownloaderConfigT] = field(
         default_factory=lambda: FsspecDownloaderConfig()
     )
-    
+
     def get_download_path(self, file_data: FileData) -> Optional[Path]:
         has_source_identifiers = file_data.source_identifiers is not None
         has_filename = has_source_identifiers and file_data.source_identifiers.filename
-        
+
         if not (has_source_identifiers and has_filename):
             return None
-        
+
         filename = file_data.source_identifiers.filename
-        
+
         mkdir_concurrent_safe(self.download_dir)
-        
-        temp_dir = tempfile.mkdtemp(
-            prefix=self.TEMP_DIR_PREFIX, 
-            dir=self.download_dir
-        )
+
+        temp_dir = tempfile.mkdtemp(prefix=self.TEMP_DIR_PREFIX, dir=self.download_dir)
         return Path(temp_dir) / filename
 
     def is_async(self) -> bool:

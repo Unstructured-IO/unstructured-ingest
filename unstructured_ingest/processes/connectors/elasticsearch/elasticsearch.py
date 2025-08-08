@@ -16,6 +16,7 @@ from unstructured_ingest.data_types.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.errors_v2 import (
+    APIError,
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,

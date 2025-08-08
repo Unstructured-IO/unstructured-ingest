@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
+from unstructured_ingest.errors_v2 import ValueError
 from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
 from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateAccessConfig,
@@ -14,7 +15,6 @@ from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateUploadStagerConfig,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.errors_v2 import ValueError
 
 if TYPE_CHECKING:
     from weaviate.auth import AuthCredentials

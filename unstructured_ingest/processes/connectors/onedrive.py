@@ -21,7 +21,6 @@ from unstructured_ingest.errors_v2 import (
     SourceConnectionNetworkError,
     UserAuthError,
     ValueError,
-    NotFoundError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,

@@ -10,12 +10,12 @@ from unstructured_ingest.data_types.file_data import (
     FileData,
 )
 from unstructured_ingest.errors_v2 import (
+    NotFoundError,
     SourceConnectionError,
     SourceConnectionNetworkError,
     UserAuthError,
     UserError,
     ValueError,
-    NotFoundError,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (

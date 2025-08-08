@@ -24,8 +24,10 @@ class APIError(Exception, ABC):
 
         return wrapper
 
+
 class ConnectionError(APIError):
     error_string = "Connection error: {}"
+
 
 class SourceConnectionError(ConnectionError):
     error_string = "Error in getting data from upstream data source: {}"
@@ -78,28 +80,57 @@ class ProviderError(APIError):
 class NotFoundError(APIError):
     error_string = "Not found error: {}"
 
+
 class MissingCategoryError(APIError):
     error_string = "Missing category error: {}"
+
 
 class ResponseError(APIError):
     error_string = "Response error: {}"
 
+
 class ValidationError(APIError):
     error_string = "Validation error: {}"
+
 
 class KeyError(APIError):
     error_string = "Key error: {}"
 
+
 class FileExistsError(APIError):
     error_string = "File exists error: {}"
+
 
 class TimeoutError(APIError):
     error_string = "Timeout error: {}"
 
+
 class TypeError(APIError):
     error_string = "Type error: {}"
 
-recognized_errors = [UserError, UserAuthError, RateLimitError, QuotaError, ProviderError, NotFoundError, TypeError, ValueError, FileExistsError, TimeoutError, KeyError, ResponseError, ValidationError, PartitionError, WriteError, ConnectionError, SourceConnectionError, SourceConnectionNetworkError, DestinationConnectionError, EmbeddingEncoderConnectionError]
+
+recognized_errors = [
+    UserError,
+    UserAuthError,
+    RateLimitError,
+    QuotaError,
+    ProviderError,
+    NotFoundError,
+    TypeError,
+    ValueError,
+    FileExistsError,
+    TimeoutError,
+    KeyError,
+    ResponseError,
+    ValidationError,
+    PartitionError,
+    WriteError,
+    ConnectionError,
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+    DestinationConnectionError,
+    EmbeddingEncoderConnectionError,
+]
 
 
 def is_internal_error(e: Exception) -> bool:

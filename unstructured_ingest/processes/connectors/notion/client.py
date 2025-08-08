@@ -8,8 +8,8 @@ from notion_client.api_endpoints import BlocksEndpoint as NotionBlocksEndpoint
 from notion_client.api_endpoints import DatabasesEndpoint as NotionDatabasesEndpoint
 from notion_client.api_endpoints import Endpoint
 from notion_client.api_endpoints import PagesEndpoint as NotionPagesEndpoint
-from notion_client.errors import HTTPResponseError, RequestTimeoutError
 
+from unstructured_ingest.errors_v2 import SourceConnectionError, TimeoutError
 from unstructured_ingest.processes.connectors.notion.ingest_backoff import RetryHandler
 from unstructured_ingest.processes.connectors.notion.ingest_backoff.types import RetryStrategyConfig
 from unstructured_ingest.processes.connectors.notion.types.block import Block
@@ -17,7 +17,7 @@ from unstructured_ingest.processes.connectors.notion.types.database import Datab
 from unstructured_ingest.processes.connectors.notion.types.database_properties import map_cells
 from unstructured_ingest.processes.connectors.notion.types.page import Page
 from unstructured_ingest.utils.dep_check import requires_dependencies
-from unstructured_ingest.errors_v2 import TimeoutError, SourceConnectionError
+
 
 @requires_dependencies(["httpx"], extras="notion")
 def _get_retry_strategy(

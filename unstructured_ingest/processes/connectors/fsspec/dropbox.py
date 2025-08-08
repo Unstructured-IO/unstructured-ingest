@@ -11,10 +11,11 @@ from unstructured_ingest.errors_v2 import (
     ProviderError,
     UserAuthError,
     UserError,
-    RateLimitError as CustomRateLimitError,
     ValueError,
 )
-    
+from unstructured_ingest.errors_v2 import (
+    RateLimitError as CustomRateLimitError,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,

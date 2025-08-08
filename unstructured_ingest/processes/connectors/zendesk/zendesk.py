@@ -13,6 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.errors_v2 import SourceConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -26,7 +27,6 @@ from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.html import HtmlMixin
-from unstructured_ingest.errors_v2 import ValueError, SourceConnectionError
 
 from .client import ZendeskArticle, ZendeskClient, ZendeskTicket
 
@@ -223,7 +223,9 @@ class ZendeskDownloader(Downloader):
             ticket = ZendeskTicket.model_validate(zendesk_filedata.additional_metadata.content)
             await self.download_ticket(ticket=ticket, download_path=download_path)
         else:
-            raise SourceConnectionError(f"Item type {item_type} cannot be handled by the downloader")
+            raise SourceConnectionError(
+                f"Item type {item_type} cannot be handled by the downloader"
+            )
         return super().generate_download_response(
             file_data=zendesk_filedata, download_path=download_path
         )
