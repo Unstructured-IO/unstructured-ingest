@@ -1,3 +1,7 @@
+## 1.2.10
+
+**Fix**: Fix astradb await async get_collection
+
 ## 1.2.9
 
 **Fix**: enable s3fs cache_regions for bucket region detection

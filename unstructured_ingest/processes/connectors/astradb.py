@@ -140,7 +140,7 @@ async def get_async_astra_collection(
     )
 
     # Get async collection from AsyncDatabase
-    async_astra_db_collection = async_astra_db.get_collection(name=collection_name)
+    async_astra_db_collection = await async_astra_db.get_collection(name=collection_name)
     return async_astra_db_collection
 
 
