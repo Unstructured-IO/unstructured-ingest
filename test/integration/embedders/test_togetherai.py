@@ -15,7 +15,7 @@ from unstructured_ingest.embed.togetherai import (
     TogetherAIEmbeddingConfig,
     TogetherAIEmbeddingEncoder,
 )
-from unstructured_ingest.errors_v2 import UserAuthError
+from unstructured_ingest.error import UserAuthError
 from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "TOGETHERAI_API_KEY"

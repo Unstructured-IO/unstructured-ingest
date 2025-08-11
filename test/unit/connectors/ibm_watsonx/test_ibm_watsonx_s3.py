@@ -8,7 +8,7 @@ from pyiceberg.exceptions import CommitFailedException, RESTError
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.errors_v2 import ProviderError, UserError
+from unstructured_ingest.error import ProviderError, UserError
 from unstructured_ingest.processes.connectors.ibm_watsonx import IBM_WATSONX_S3_CONNECTOR_TYPE
 from unstructured_ingest.processes.connectors.ibm_watsonx.ibm_watsonx_s3 import (
     IbmWatsonxAccessConfig,
@@ -360,7 +360,7 @@ def test_ibm_watsonx_uploader_upload_data_table_rest_error(
 ):
     mock_transaction.append.side_effect = RESTError()
 
-    with pytest.raises(RESTError):
+    with pytest.raises(ProviderError):
         uploader.upload_data_table(mock_table, mock_data_table, file_data)
     assert mock_table.refresh.call_count == 0
 

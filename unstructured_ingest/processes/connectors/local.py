@@ -13,6 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.error import FileExistsError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -168,7 +169,7 @@ class LocalUploaderConfig(UploaderConfig):
 
     def __post_init__(self):
         if self.output_path.exists() and self.output_path.is_file():
-            raise ValueError("output path already exists as a file")
+            raise FileExistsError(f"output path {self.output_path} already exists as a file")
 
 
 @dataclass

@@ -13,7 +13,7 @@ from test.integration.connectors.utils.validation.source import (
     source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import UserAuthError, ValueError
 from unstructured_ingest.processes.connectors.discord import (
     CONNECTOR_TYPE,
     DiscordAccessConfig,
@@ -76,7 +76,7 @@ def test_discord_source_precheck_fail_no_token():
 
     connection_config = DiscordConnectionConfig(access_config=DiscordAccessConfig(token=""))
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
-    with pytest.raises(SourceConnectionError):
+    with pytest.raises(UserAuthError):
         indexer.precheck()
 
 
@@ -89,5 +89,5 @@ def test_discord_source_precheck_fail_no_channels():
         access_config=DiscordAccessConfig(token=get_env_data().token)
     )
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
-    with pytest.raises(SourceConnectionError):
+    with pytest.raises(ValueError):
         indexer.precheck()

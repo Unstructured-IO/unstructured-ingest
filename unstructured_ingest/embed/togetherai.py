@@ -8,13 +8,13 @@ from unstructured_ingest.embed.interfaces import (
     BaseEmbeddingEncoder,
     EmbeddingConfig,
 )
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     ProviderError,
     UserAuthError,
     UserError,
     is_internal_error,
 )
-from unstructured_ingest.errors_v2 import (
+from unstructured_ingest.error import (
     RateLimitError as CustomRateLimitError,
 )
 from unstructured_ingest.logger import logger
@@ -46,8 +46,8 @@ class TogetherAIEmbeddingConfig(EmbeddingConfig):
             return UserAuthError(message)
         if isinstance(e, RateLimitError):
             return CustomRateLimitError(message)
-        
-        status_code = getattr(e, 'status_code', None)
+
+        status_code = getattr(e, "status_code", None)
         if status_code is not None:
             if 400 <= status_code < 500:
                 return UserError(message)

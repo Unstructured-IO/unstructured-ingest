@@ -7,7 +7,12 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, WriteError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    KeyError,
+    ValueError,
+    WriteError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,

@@ -8,7 +8,13 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Tuple
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.errors_v2 import ProviderError, UserAuthError, UserError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    IcebergCommitFailedException,
+    ProviderError,
+    UserAuthError,
+    UserError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -38,10 +44,6 @@ CONNECTOR_TYPE = "ibm_watsonx_s3"
 DEFAULT_IBM_CLOUD_AUTH_URL = "https://iam.cloud.ibm.com/identity/token"
 DEFAULT_ICEBERG_URI_PATH = "/mds/iceberg"
 DEFAULT_ICEBERG_CATALOG_TYPE = "rest"
-
-
-class IcebergCommitFailedException(Exception):
-    """Failed to commit changes to the iceberg table."""
 
 
 class IbmWatsonxAccessConfig(AccessConfig):
@@ -292,16 +294,16 @@ class IbmWatsonxUploader(SQLUploader):
             except CommitFailedException as e:
                 table.refresh()
                 logger.debug(e)
-                raise IcebergCommitFailedException(e)
-            except RESTError:
-                raise
+                raise IcebergCommitFailedException(str(e))
+            except RESTError as e:
+                raise DestinationConnectionError(str(e))
             except Exception as e:
                 raise ProviderError(f"Failed to upload data to table: {e}")
 
         try:
             return _upload_data_table(table, data_table, file_data)
-        except RESTError:
-            raise
+        except RESTError as e:
+            raise DestinationConnectionError(str(e))
         except ProviderError:
             raise
         except Exception as e:

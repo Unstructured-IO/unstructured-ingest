@@ -10,7 +10,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.errors_v2 import ProviderError, UserError
+from unstructured_ingest.error import ProviderError, UserError, ValueError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -125,7 +125,7 @@ class GcsConnectionConfig(FsspecConnectionConfig):
                 raise UserError(message)
             if http_error_code >= 500:
                 raise ProviderError(message)
-        logger.error(f"unhandled exception from gcs ({type(e)}): {e}", exc_info=True)
+        logger.error(f"({type(e)} from gcs): {e}", exc_info=True)
         return e
 
 

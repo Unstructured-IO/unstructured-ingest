@@ -15,7 +15,7 @@ from unstructured_ingest.embed.octoai import (
     OctoAiEmbeddingConfig,
     OctoAIEmbeddingEncoder,
 )
-from unstructured_ingest.errors_v2 import UserAuthError, UserError
+from unstructured_ingest.error import UserAuthError, UserError
 from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "OCTOAI_API_KEY"

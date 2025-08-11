@@ -6,6 +6,7 @@ from uuid import NAMESPACE_DNS, uuid5
 from pydantic import BaseModel, Field, Secret, field_validator
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
