@@ -1,3 +1,7 @@
+## 1.2.11
+
+* **Fix: temporarily restore errors_v2.py**
+
 ## 1.2.10
 
 * **o11y: standardize exception classes across the repo**:
