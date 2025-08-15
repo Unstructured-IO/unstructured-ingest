@@ -10,7 +10,6 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     DestinationConnectionError,
     KeyError,
-    ValueError,
     WriteError,
 )
 from unstructured_ingest.interfaces import (
