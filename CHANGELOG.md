@@ -1,3 +1,7 @@
+## 1.2.12-dev0
+
+* **Fix: confluence integration test to use new link and credential**
+
 ## 1.2.11
 
 * **Fix: temporarily restore errors_v2.py**
@@ -8,7 +12,7 @@
 
 ## 1.2.9
 
-**Fix**: enable s3fs cache_regions for bucket region detection
+**Fix: enable s3fs cache_regions for bucket region detection**
 
 ## 1.2.8
 
