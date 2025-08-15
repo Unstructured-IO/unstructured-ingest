@@ -1,0 +1,55 @@
+{
+  "identifier": "196760",
+  "connector_type": "confluence",
+  "source_identifiers": {
+    "filename": "196760.html",
+    "fullpath": "~712020ee2049b23ac64da1b06405e83e96830f/196760.html",
+    "rel_path": "~712020ee2049b23ac64da1b06405e83e96830f/196760.html"
+  },
+  "metadata": {
+    "url": "https://unstructured-team-hzkrx37e.atlassian.net/pages/196760",
+    "version": "1",
+    "record_locator": {
+      "space_id": "~712020ee2049b23ac64da1b06405e83e96830f",
+      "document_id": "196760"
+    },
+    "date_created": "2024-11-19T17:18:57.479Z",
+    "date_modified": "2024-11-19T17:18:58.489Z",
+    "date_processed": "1755267783.477126",
+    "permissions_data": [
+      {
+        "read": {
+          "users": [
+            "712020:ee2049b2-3ac6-4da1-b064-05e83e96830f"
+          ],
+          "groups": [
+            "f866838e-f226-45cf-8f6a-80c6696cfe91"
+          ]
+        }
+      },
+      {
+        "update": {
+          "users": [],
+          "groups": [
+            "f866838e-f226-45cf-8f6a-80c6696cfe91"
+          ]
+        }
+      },
+      {
+        "delete": {
+          "users": [],
+          "groups": []
+        }
+      }
+    ],
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "space_key": "~712020ee2049b23ac64da1b06405e83e96830f",
+    "space_id": 196610,
+    "document_id": "196760"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/h7/n848df9s5yn7ml8rxb61vhyc0000gp/T/tmp6zunz56a/~712020ee2049b23ac64da1b06405e83e96830f/196760.html",
+  "display_name": "Project Plan"
+}

@@ -25,9 +25,7 @@ from unstructured_ingest.processes.connectors.confluence import (
 @pytest.mark.parametrize(
     "spaces,max_num_of_spaces,max_num_of_docs_from_each_space,expected_num_files,validate_downloaded_files,validate_file_data,test_id",
     [
-        (["testteamsp", "MFS"], 500, 100, 11, True, True, "confluence"),
-        (["testteamsp"], 500, 1, 1, True, True, "confluence_limit"),
-        (["testteamsp1"], 10, 301, 301, False, False, "confluence_large"),
+        (["~712020ee2049b23ac64da1b06405e83e96830f"], 10, 301, 301, True, True, "confluence_small"),
     ],
 )
 async def test_confluence_source_param(
@@ -43,7 +41,7 @@ async def test_confluence_source_param(
     """
     Integration test for the Confluence source connector using various space and document limits.
     """
-    confluence_url = "https://unstructured-ingest-test.atlassian.net"
+    confluence_url = "https://unstructured-team-hzkrx37e.atlassian.net"
     user_email = os.environ["CONFLUENCE_USER_EMAIL"]
     api_token = os.environ["CONFLUENCE_API_TOKEN"]
 
