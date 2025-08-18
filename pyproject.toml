@@ -143,7 +143,6 @@ test = [
     "pyarrow",
     "networkx",
     "htmlbuilder",
-    "office365",
 ]
 # Add constraints needed for CI
 ci = [
