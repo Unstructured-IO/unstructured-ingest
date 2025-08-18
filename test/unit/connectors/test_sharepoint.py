@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -66,10 +66,13 @@ def file_data():
     )
 
 
+@patch('unstructured_ingest.processes.connectors.sharepoint.requires_dependencies')
 def test_fetch_file_retries_on_429_error(
-    mock_client, mock_drive_item, mock_site, sharepoint_downloader, file_data
+    mock_requires_deps, mock_client, mock_drive_item, mock_site, mock_file, sharepoint_downloader, file_data
 ):
     """Test that _fetch_file retries when encountering 429 errors"""
+    mock_requires_deps.return_value = lambda func: func
+    
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = (
         mock_site
     )
@@ -84,10 +87,13 @@ def test_fetch_file_retries_on_429_error(
     assert mock_drive_item.get_by_path.return_value.get.return_value.execute_query.call_count == 3
 
 
+@patch('unstructured_ingest.processes.connectors.sharepoint.requires_dependencies')
 def test_fetch_file_fails_after_max_retries(
-    mock_client, mock_drive_item, mock_site, sharepoint_downloader, file_data
+    mock_requires_deps, mock_client, mock_drive_item, mock_site, sharepoint_downloader, file_data
 ):
     """Test that _fetch_file fails after exhausting max retries"""
+    mock_requires_deps.return_value = lambda func: func
+    
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = (
         mock_site
     )
@@ -105,10 +111,13 @@ def test_fetch_file_fails_after_max_retries(
     )
 
 
+@patch('unstructured_ingest.processes.connectors.sharepoint.requires_dependencies')
 def test_fetch_file_handles_site_not_found_immediately(
-    mock_client, sharepoint_downloader, file_data
+    mock_requires_deps, mock_client, sharepoint_downloader, file_data
 ):
     """Test that site not found errors are not retried"""
+    mock_requires_deps.return_value = lambda func: func
+    
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
         Exception("Site not found")
     )
@@ -117,3 +126,4 @@ def test_fetch_file_handles_site_not_found_immediately(
         sharepoint_downloader._fetch_file(file_data)
 
     assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 1
+
