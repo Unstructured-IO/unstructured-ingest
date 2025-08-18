@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -66,7 +66,6 @@ def file_data():
     )
 
 
-@patch("unstructured_ingest.processes.connectors.sharepoint.logger")
 def test_fetch_file_retries_on_429_error(
     mock_client, mock_drive_item, mock_site, sharepoint_downloader, file_data
 ):
@@ -85,7 +84,6 @@ def test_fetch_file_retries_on_429_error(
     assert mock_drive_item.get_by_path.return_value.get.return_value.execute_query.call_count == 3
 
 
-@patch("unstructured_ingest.processes.connectors.sharepoint.logger")
 def test_fetch_file_fails_after_max_retries(
     mock_client, mock_drive_item, mock_site, sharepoint_downloader, file_data
 ):
