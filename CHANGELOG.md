@@ -1,3 +1,7 @@
+## 1.2.12-dev1
+
+* **Fix: fix Milvus stager to use correct exception**
+
 ## 1.2.12-dev0
 
 * **Fix: confluence integration test to use new link and credential**
