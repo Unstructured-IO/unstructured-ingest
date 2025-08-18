@@ -13,6 +13,7 @@ from unstructured_ingest.data_types.file_data import (
 from unstructured_ingest.error import (
     NotFoundError,
     SourceConnectionError,
+    SourceConnectionNetworkError,
     UserAuthError,
     UserError,
     ValueError,
