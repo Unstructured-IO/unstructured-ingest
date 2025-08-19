@@ -211,12 +211,7 @@ class SharepointIndexer(OnedriveIndexer):
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):
-    max_retries: int = Field(
-        default=10,
-        description="Maximum number of retries to download data",
-        ge=2,
-        le=50,
-    )
+    max_retries: int = 10
 
 
 @dataclass
@@ -265,7 +260,7 @@ class SharepointDownloader(OnedriveDownloader):
                 )
                 site_drive_item = self.connection_config._get_drive_item(client_site)
             except ClientRequestException:
-                logger.info("Site not found")
+                logger.info(f"Site not found: {self.connection_config.site}")
                 raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
             file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
             return file

@@ -117,3 +117,19 @@ def test_fetch_file_handles_site_not_found_immediately(
         sharepoint_downloader._fetch_file(file_data)
 
     assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 1
+
+
+def test_fetch_file_without_errors(
+    mock_client, mock_drive_item, mock_site, mock_file, sharepoint_downloader, file_data
+):
+    """Test successful file fetch without any errors"""
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = (
+        mock_site
+    )
+    mock_drive_item.get_by_path.return_value.get.return_value.execute_query.return_value = mock_file
+    result = sharepoint_downloader._fetch_file(file_data)
+
+    assert result == mock_file
+    assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 1
+    assert mock_drive_item.get_by_path.return_value.get.return_value.execute_query.call_count == 1
+    mock_drive_item.get_by_path.assert_called_with("/sites/test/Shared Documents/test.docx")
