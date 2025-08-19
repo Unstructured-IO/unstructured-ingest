@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
@@ -210,7 +211,7 @@ class SharepointIndexer(OnedriveIndexer):
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):
-    pass
+    max_retries: int = 10
 
 
 @dataclass
@@ -219,10 +220,22 @@ class SharepointDownloader(OnedriveDownloader):
     download_config: SharepointDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @staticmethod
+    def retry_on_status_code(exc):
+        error_msg = str(exc).lower()
+        return "429" in error_msg or "activitylimitreached" in error_msg or "throttled" in error_msg
+
     @SourceConnectionNetworkError.wrap
     @requires_dependencies(["office365"], extras="sharepoint")
     def _fetch_file(self, file_data: FileData) -> DriveItem:
         from office365.runtime.client_request_exception import ClientRequestException
+        from tenacity import (
+            before_log,
+            retry,
+            retry_if_exception,
+            stop_after_attempt,
+            wait_exponential,
+        )
 
         if file_data.source_identifiers is None or not file_data.source_identifiers.fullpath:
             raise ValueError(
@@ -233,13 +246,27 @@ class SharepointDownloader(OnedriveDownloader):
         server_relative_path = file_data.source_identifiers.fullpath
         client = self.connection_config.get_client()
 
-        try:
-            client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = self.connection_config._get_drive_item(client_site)
-        except ClientRequestException:
-            logger.info("Site not found")
-            raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
-        file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
+        @retry(
+            stop=stop_after_attempt(self.download_config.max_retries),
+            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
+            retry=retry_if_exception(self.retry_on_status_code),
+            before=before_log(logger, logging.DEBUG),
+            reraise=True,
+        )
+        def _get_item_by_path() -> DriveItem:
+            try:
+                client_site = (
+                    client.sites.get_by_url(self.connection_config.site).get().execute_query()
+                )
+                site_drive_item = self.connection_config._get_drive_item(client_site)
+            except ClientRequestException:
+                logger.info(f"Site not found: {self.connection_config.site}")
+                raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
+            file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
+            return file
+
+        # Call the retry-wrapped function
+        file = _get_item_by_path()
 
         if not file:
             raise NotFoundError(f"file not found: {server_relative_path}")
