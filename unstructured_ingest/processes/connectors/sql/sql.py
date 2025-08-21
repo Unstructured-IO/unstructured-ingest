@@ -60,10 +60,19 @@ class SqlBatchFileData(BatchFileData):
 
 def parse_date_string(date_value: Union[str, int]) -> datetime:
     try:
-        timestamp = float(date_value) / 1000 if isinstance(date_value, int) else float(date_value)
+        if isinstance(date_value, int):
+            timestamp = date_value / 1000
+        else:
+            timestamp = float(date_value)
         return datetime.fromtimestamp(timestamp)
     except Exception as e:
         logger.debug(f"date {date_value} string not a timestamp: {e}")
+
+    if isinstance(date_value, str):
+        try:
+            return datetime.fromisoformat(date_value)
+        except Exception:
+            pass
     return parser.parse(date_value)
 
 
