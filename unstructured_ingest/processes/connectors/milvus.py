@@ -1,6 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
@@ -97,6 +98,14 @@ class MilvusUploadStager(UploadStager):
             return timestamp
         except ValueError:
             pass
+
+        # Try fast ISO format parsing before falling back to dateutil
+        try:
+            dt = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
+            return dt.timestamp()
+        except ValueError:
+            pass
+
         return parser.parse(date_string).timestamp()
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
