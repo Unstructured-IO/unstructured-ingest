@@ -63,10 +63,10 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         description="aws secret access key", default=None
     )
     region_name: str = Field(
-        description="aws region name", 
+        description="aws region name",
         default_factory=lambda: (
-            os.getenv("BEDROCK_REGION_NAME") or 
-            os.getenv("AWS_DEFAULT_REGION") or 
+            os.getenv("BEDROCK_REGION_NAME") or
+            os.getenv("AWS_DEFAULT_REGION") or
             "us-west-2"
         )
     )
