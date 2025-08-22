@@ -58,9 +58,11 @@ def conform_query(query: str, provider: str) -> dict:
 
 
 class BedrockEmbeddingConfig(EmbeddingConfig):
-    aws_access_key_id: SecretStr = Field(description="aws access key id")
-    aws_secret_access_key: SecretStr = Field(description="aws secret access key")
+    aws_access_key_id: SecretStr | None = Field(description="aws access key id", default=None)
+    aws_secret_access_key: SecretStr | None = Field(description="aws secret access key", default=None)
     region_name: str = Field(description="aws region name", default="us-west-2")
+    endpoint_url: str | None = Field(description="custom bedrock endpoint url", default=None)
+    access_method: str = Field(description="authentication method", default="credentials")  # "credentials" or "iam"
     embedder_model_name: str = Field(
         default="amazon.titan-embed-text-v1",
         alias="model_name",
@@ -96,6 +98,16 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         return e
 
     def run_precheck(self) -> None:
+        # Validate access method and credentials configuration
+        if self.access_method == "credentials":
+            if not (self.aws_access_key_id and self.aws_secret_access_key):
+                raise ValueError("Credentials access method requires aws_access_key_id and aws_secret_access_key")
+        elif self.access_method == "iam":
+            # For IAM, credentials are handled by AWS SDK
+            pass
+        else:
+            raise ValueError(f"Invalid access_method: {self.access_method}. Must be 'credentials' or 'iam'")
+            
         client = self.get_bedrock_client()
         try:
             model_info = client.list_foundation_models(byOutputModality="EMBEDDING")
@@ -113,11 +125,26 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
             raise self.wrap_error(e=e)
 
     def get_client_kwargs(self) -> dict:
-        return {
-            "aws_access_key_id": self.aws_access_key_id.get_secret_value(),
-            "aws_secret_access_key": self.aws_secret_access_key.get_secret_value(),
+        kwargs = {
             "region_name": self.region_name,
         }
+        
+        if self.endpoint_url:
+            kwargs["endpoint_url"] = self.endpoint_url
+            
+        if self.access_method == "credentials":
+            if self.aws_access_key_id and self.aws_secret_access_key:
+                kwargs["aws_access_key_id"] = self.aws_access_key_id.get_secret_value()
+                kwargs["aws_secret_access_key"] = self.aws_secret_access_key.get_secret_value()
+            else:
+                raise ValueError("Credentials access method requires aws_access_key_id and aws_secret_access_key")
+        elif self.access_method == "iam":
+            # For IAM, boto3 will use default credential chain (IAM roles, environment, etc.)
+            pass
+        else:
+            raise ValueError(f"Invalid access_method: {self.access_method}. Must be 'credentials' or 'iam'")
+            
+        return kwargs
 
     @requires_dependencies(
         ["boto3"],
