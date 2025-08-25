@@ -75,6 +75,7 @@ vastdb = ["requirements/connectors/vastdb.txt"]
 vectara = ["requirements/connectors/vectara.txt"]
 weaviate = ["requirements/connectors/weaviate.txt"]
 wikipedia = ["requirements/connectors/wikipedia.txt"]
+yugabytedb = ["requirements/connectors/yugabytedb.txt"]
 zendesk = ["requirements/connectors/zendesk.txt"]
 
 # Embedders
