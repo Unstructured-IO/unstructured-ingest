@@ -189,6 +189,9 @@ class GoogleDriveIndexer(Indexer):
         """
         count = 0
         stack = [folder_id]
+        # Pre-compute lower-case extension set for O(1) lookup
+        valid_exts = set(e.lower() for e in extensions) if extensions else None
+
         while stack:
             current_folder = stack.pop()
             # Always list all items under the current folder.
@@ -212,7 +215,6 @@ class GoogleDriveIndexer(Indexer):
                         if extensions:
                             # Use a case-insensitive comparison for the file extension.
                             file_ext = (item.get("fileExtension") or "").lower()
-                            valid_exts = [e.lower() for e in extensions]
                             if file_ext in valid_exts:
                                 count += 1
                         else:
