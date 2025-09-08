@@ -99,7 +99,6 @@ class MilvusUploadStager(UploadStager):
         except ValueError:
             pass
 
-        # Try fast ISO format parsing before falling back to dateutil
         try:
             dt = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
             return dt.timestamp()
