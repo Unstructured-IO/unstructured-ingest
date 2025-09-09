@@ -62,9 +62,13 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_secret_access_key: SecretStr | None = Field(
         description="aws secret access key", default=None
     )
-    region_name: str | None = Field(
+    region_name: str = Field(
         description="aws region name", 
-        default_factory=lambda: os.getenv("BEDROCK_REGION_NAME")
+        default_factory=lambda: (
+            os.getenv("BEDROCK_REGION_NAME") or 
+            os.getenv("AWS_DEFAULT_REGION") or 
+            "us-west-2"
+        )
     )
     endpoint_url: str | None = Field(description="custom bedrock endpoint url", default=None)
     access_method: str = Field(
@@ -136,10 +140,9 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
             raise self.wrap_error(e=e)
 
     def get_client_kwargs(self) -> dict:
-        kwargs = {}
-        
-        if self.region_name:
-            kwargs["region_name"] = self.region_name
+        kwargs = {
+            "region_name": self.region_name,
+        }
         
         if self.endpoint_url:
             kwargs["endpoint_url"] = self.endpoint_url
