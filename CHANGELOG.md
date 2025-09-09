@@ -1,4 +1,4 @@
-## 1.2.12
+## 1.2.13
 
 * **Fix: IBM watsonx.data S3 bucket authentication fix**
 
