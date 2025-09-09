@@ -147,6 +147,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             "s3.access-key-id": self.access_config.get_secret_value().access_key_id,
             "s3.secret-access-key": self.access_config.get_secret_value().secret_access_key,
             "s3.region": self.object_storage_region,
+            "header.X-Iceberg-Access-Delegation": None,
         }
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
