@@ -1,5 +1,9 @@
 ## 1.2.12
 
+* **Fix: IBM watsonx.data S3 bucket authentication fix**
+
+## 1.2.12
+
 * **Fix: retry with wait when throttling error happens in Sharepoint connector**
 * **Fix: fix Milvus stager to use correct exception**
 * **Fix: confluence integration test to use new link and credential**
