@@ -1,4 +1,2 @@
 s3fs
 fsspec
-boto3
-requests
