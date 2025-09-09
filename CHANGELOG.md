@@ -1,11 +1,6 @@
 ## 1.2.13
 
 * **Feat: Make Bedrock embedding credentials optional and add IAM support**
-  - AWS credentials (`aws_access_key_id`, `aws_secret_access_key`) are now optional, defaulting to `None`
-  - Added `access_method` field supporting "credentials" (explicit keys) and "iam" (AWS credential chain)
-  - Added `endpoint_url` field for custom Bedrock endpoints
-  - Enhanced validation logic for different authentication methods
-  - Maintains full backwards compatibility with existing configurations
 
 ## 1.2.12
 
