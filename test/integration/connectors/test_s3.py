@@ -48,6 +48,18 @@ def anon_connection_config() -> S3ConnectionConfig:
     return S3ConnectionConfig(access_config=S3AccessConfig(), anonymous=True)
 
 
+@pytest.fixture
+def ambient_credentials_config() -> S3ConnectionConfig:
+    """Test fixture for ambient credentials with mock values."""
+    access_config = S3AccessConfig(
+        use_ambient_credentials=True,
+        presigned_url="https://example.com/mock-presigned-url",
+        role_arn="arn:aws:iam::123456789012:role/test-role"
+    )
+    return S3ConnectionConfig(access_config=access_config)
+
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
 async def test_s3_source(anon_connection_config: S3ConnectionConfig):
