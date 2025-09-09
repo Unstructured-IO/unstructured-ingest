@@ -140,10 +140,9 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
             raise self.wrap_error(e=e)
 
     def get_client_kwargs(self) -> dict:
-        kwargs = {}
-        
-        if self.region_name:
-            kwargs["region_name"] = self.region_name
+        kwargs = {
+            "region_name": self.region_name,
+        }
         
         if self.endpoint_url:
             kwargs["endpoint_url"] = self.endpoint_url
