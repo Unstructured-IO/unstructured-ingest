@@ -16,6 +16,8 @@ jobs:
     name: Codeflash / Optimize new Python code
     if: ${{ github.actor != 'codeflash-ai[bot]' }}
     runs-on: ubuntu-latest
+    env:
+      CODEFLASH_API_KEY: ${{ secrets.CODEFLASH_API_KEY }}
     steps:
       - uses: 'actions/checkout@v4'
       - name: Install uv
@@ -32,5 +34,4 @@ jobs:
           uv sync --all-groups --all-extras --upgrade
           uv pip install unstructured
           uv run python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
-          uv pip install codeflash
-          codeflash
+          uv run codeflash
