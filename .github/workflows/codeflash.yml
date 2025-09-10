@@ -33,5 +33,6 @@ jobs:
         run: |
           uv sync --all-groups --all-extras --upgrade
           uv pip install unstructured
+          uv pip install codeflash
           uv run python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
           uv run codeflash
