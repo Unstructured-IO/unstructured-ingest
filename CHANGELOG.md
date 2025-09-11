@@ -1,3 +1,7 @@
+## 1.2.15
+
+* **Fix: Catch databricks client auth errors that were being missed**
+
 ## 1.2.14
 
 * **Fix: IBM watsonx.data S3 bucket authentication fix**
