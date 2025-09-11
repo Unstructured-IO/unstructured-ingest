@@ -76,7 +76,9 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
         if isinstance(e, ValueError):
             error_message = e.args[0]
             message_split = error_message.split(":")
-            if message_split[0].endswith("auth"):
+            if (message_split[0].endswith("auth")) or (
+                "Client authentication failed" in error_message
+            ):
                 return UserAuthError(e)
         if isinstance(e, DatabricksError):
             reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
