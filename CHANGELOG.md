@@ -1,6 +1,10 @@
-## 1.2.15
+## 1.2.16
 
 * **Fix: Catch databricks client auth errors that were being missed**
+
+## 1.2.15
+
+* **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
 
 ## 1.2.14
 
