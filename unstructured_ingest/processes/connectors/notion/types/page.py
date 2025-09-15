@@ -1,5 +1,5 @@
 # https://developers.notion.com/reference/page
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Optional
 
 from unstructured_ingest.processes.connectors.notion.interfaces import FromJSONMixin
@@ -28,18 +28,25 @@ class Page(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
+        data = data.copy()  # Don't modify the original
         created_by = data.pop("created_by")
         last_edited_by = data.pop("last_edited_by")
         icon = data.pop("icon")
         cover = data.pop("cover")
         parent = data.pop("parent")
+
+        # Filter data to only include fields that exist in the dataclass
+        filtered_data = {
+            k: v for k, v in data.items() if k in {field.name for field in fields(cls)}
+        }
+
         page = cls(
             created_by=PartialUser.from_dict(created_by),
             last_edited_by=PartialUser.from_dict(last_edited_by),
             icon=FileObject.from_dict(icon) if icon else None,
             cover=FileObject.from_dict(cover) if cover else None,
             parent=Parent.from_dict(parent),
-            **data,
+            **filtered_data,
         )
 
         return page

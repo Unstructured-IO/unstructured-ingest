@@ -1,3 +1,7 @@
+## 1.2.15
+
+* **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
+
 ## 1.2.14
 
 * **Fix: IBM watsonx.data S3 bucket authentication fix**
