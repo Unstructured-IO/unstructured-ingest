@@ -1,3 +1,11 @@
+## 1.2.14
+
+* **Fix: IBM watsonx.data S3 bucket authentication fix**
+
+## 1.2.13
+
+* **Feat: Make Bedrock embedding credentials optional and add IAM support**
+
 ## 1.2.12
 
 * **Fix: retry with wait when throttling error happens in Sharepoint connector**
