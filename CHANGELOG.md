@@ -1,6 +1,6 @@
 ## 1.2.17-dev0
 
-* **Optimize `parse_date_string`**
+* **Optimize `parse_date_string` for sql connector**
 
 ## 1.2.17
 
