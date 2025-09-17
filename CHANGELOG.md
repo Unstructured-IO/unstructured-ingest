@@ -1,3 +1,7 @@
+## 1.2.17
+
+* **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
+
 ## 1.2.16
 
 * **Fix: Catch databricks client auth errors that were being missed**
