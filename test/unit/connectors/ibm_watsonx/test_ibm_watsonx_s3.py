@@ -243,6 +243,7 @@ def test_ibm_watsonx_connection_config_get_catalog_success(
             "s3.access-key-id": "test_access_key_id",
             "s3.secret-access-key": "test_secret_access_key",
             "s3.region": "test_region",
+            "header.X-Iceberg-Access-Delegation": None,
         }
     )
 
