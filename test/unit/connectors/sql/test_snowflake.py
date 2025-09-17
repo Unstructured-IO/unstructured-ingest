@@ -116,7 +116,7 @@ def test_parse_select_with_vector_columns(snowflake_uploader: SnowflakeUploader)
 
     result = snowflake_uploader._parse_select(columns)
 
-    expected_result = "PARSE_JSON(?)::VECTOR(FLOAT,128),PARSE_JSON(?),?"
+    expected_result = "PARSE_JSON($1)::VECTOR(FLOAT,128),PARSE_JSON($2),$3"
     assert result == expected_result
 
 
@@ -128,7 +128,7 @@ def test_parse_select_with_vector_columns_embedding_dimension_zero(
 
     result = snowflake_uploader._parse_select(columns)
 
-    expected_result = "PARSE_JSON(?),PARSE_JSON(?),?"
+    expected_result = "PARSE_JSON($1),PARSE_JSON($2),$3"
     assert result == expected_result
 
 
@@ -145,5 +145,5 @@ def test_parse_select_with_vector_columns_embedding_dimension_none(
 
     result = snowflake_uploader._parse_select(columns)
 
-    expected_result = "PARSE_JSON(?),PARSE_JSON(?),?"
+    expected_result = "PARSE_JSON($1),PARSE_JSON($2),$3"
     assert result == expected_result
