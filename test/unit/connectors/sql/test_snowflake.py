@@ -110,29 +110,29 @@ def test_embeddings_dimension_non_vector_column(
     mock_cursor.execute.assert_called_once_with("SHOW COLUMNS LIKE 'embeddings' IN test_table")
 
 
-def test_parse_values_with_vector_columns(snowflake_uploader: SnowflakeUploader):
+def test_parse_select_with_vector_columns(snowflake_uploader: SnowflakeUploader):
     snowflake_uploader._embeddings_dimension = 128
     columns = ["embeddings", "languages", "other_column"]
 
-    result = snowflake_uploader._parse_values(columns)
+    result = snowflake_uploader._parse_select(columns)
 
-    expected_result = "PARSE_JSON(?)::VECTOR(FLOAT,128),PARSE_JSON(?),?"
+    expected_result = "PARSE_JSON($1)::VECTOR(FLOAT,128),PARSE_JSON($2),$3"
     assert result == expected_result
 
 
-def test_parse_values_with_vector_columns_embedding_dimension_zero(
+def test_parse_select_with_vector_columns_embedding_dimension_zero(
     snowflake_uploader: SnowflakeUploader,
 ):
     snowflake_uploader._embeddings_dimension = 0
     columns = ["embeddings", "languages", "other_column"]
 
-    result = snowflake_uploader._parse_values(columns)
+    result = snowflake_uploader._parse_select(columns)
 
-    expected_result = "PARSE_JSON(?),PARSE_JSON(?),?"
+    expected_result = "PARSE_JSON($1),PARSE_JSON($2),$3"
     assert result == expected_result
 
 
-def test_parse_values_with_vector_columns_embedding_dimension_none(
+def test_parse_select_with_vector_columns_embedding_dimension_none(
     mocker: MockerFixture, snowflake_uploader: SnowflakeUploader
 ):
     mock_embeddings_dimension = mocker.PropertyMock
@@ -143,7 +143,7 @@ def test_parse_values_with_vector_columns_embedding_dimension_none(
     )
     columns = ["embeddings", "languages", "other_column"]
 
-    result = snowflake_uploader._parse_values(columns)
+    result = snowflake_uploader._parse_select(columns)
 
-    expected_result = "PARSE_JSON(?),PARSE_JSON(?),?"
+    expected_result = "PARSE_JSON($1),PARSE_JSON($2),$3"
     assert result == expected_result
