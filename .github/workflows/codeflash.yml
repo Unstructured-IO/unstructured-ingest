@@ -1,0 +1,39 @@
+name: Codeflash / Optimize new Python code
+
+on:
+ pull_request:
+   paths:
+     - 'unstructured_ingest/**'
+
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+
+jobs:
+ optimize:
+    name: Codeflash / Optimize new Python code
+    if: ${{ github.actor != 'codeflash-ai[bot]' }}
+    runs-on: ubuntu-latest
+    env:
+      CODEFLASH_API_KEY: ${{ secrets.CODEFLASH_API_KEY }}
+      NLTK_DATA: ${{ github.workspace }}/nltk_data
+    steps:
+      - uses: 'actions/checkout@v4'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: 3.12
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Codeflash
+        run: |
+          uv sync --all-groups --all-extras --upgrade
+          uv pip install unstructured
+          uv pip install codeflash
+          uv run python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
+          uv run codeflash
