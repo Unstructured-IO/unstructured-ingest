@@ -1,3 +1,27 @@
+## 1.2.17-dev2
+
+* **Optimize `GoogleDriveIndexer.count_files_recursively`**
+
+## 1.2.17-dev1
+
+* **Optimize `MilvusUploadStager.parse_date_string`**
+
+## 1.2.17-dev0
+
+* **Optimize `parse_date_string` for sql connector**
+
+## 1.2.17
+
+* **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
+
+## 1.2.16
+
+* **Fix: Catch databricks client auth errors that were being missed**
+
+## 1.2.15
+
+* **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
+
 ## 1.2.14
 
 * **Fix: IBM watsonx.data S3 bucket authentication fix**

@@ -64,6 +64,12 @@ def parse_date_string(date_value: Union[str, int]) -> datetime:
         return datetime.fromtimestamp(timestamp)
     except Exception as e:
         logger.debug(f"date {date_value} string not a timestamp: {e}")
+
+    if isinstance(date_value, str):
+        try:
+            return datetime.fromisoformat(date_value)
+        except Exception:
+            pass
     return parser.parse(date_value)
 
 
