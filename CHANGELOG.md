@@ -1,3 +1,7 @@
+## 1.2.17-dev0
+
+* **Optimize `parse_date_string` for sql connector**
+
 ## 1.2.17
 
 * **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
