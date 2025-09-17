@@ -1,3 +1,7 @@
+## 1.2.17-dev2
+
+* **Optimize `GoogleDriveIndexer.count_files_recursively`**
+
 ## 1.2.17-dev1
 
 * **Optimize `MilvusUploadStager.parse_date_string`**
