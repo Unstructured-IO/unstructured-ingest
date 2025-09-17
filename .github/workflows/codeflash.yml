@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CODEFLASH_API_KEY: ${{ secrets.CODEFLASH_API_KEY }}
+      NLTK_DATA: ${{ github.workspace }}/nltk_data
     steps:
       - uses: 'actions/checkout@v4'
       - name: Install uv
