@@ -1,8 +1,8 @@
 ## 1.2.18-dev0
 
-* **Enhancement: `parse_date_string` for sql connector**
-* **Enhancement: `GoogleDriveIndexer.count_files_recursively`**
-* **Enhancement: `MilvusUploadStager.parse_date_string`**
+* **Enhancement: `parse_date_string` for sql connector optimized**
+* **Enhancement: `GoogleDriveIndexer.count_files_recursively` optimized**
+* **Enhancement: `MilvusUploadStager.parse_date_string` optimized**
 
 ## 1.2.17
 
