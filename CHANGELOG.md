@@ -2,6 +2,26 @@
 
 * **Optimize `MilvusUploadStager.parse_date_string`**
 
+## 1.2.17
+
+* **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
+
+## 1.2.16
+
+* **Fix: Catch databricks client auth errors that were being missed**
+
+## 1.2.15
+
+* **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
+
+## 1.2.14
+
+* **Fix: IBM watsonx.data S3 bucket authentication fix**
+
+## 1.2.13
+
+* **Feat: Make Bedrock embedding credentials optional and add IAM support**
+
 ## 1.2.12
 
 * **Fix: retry with wait when throttling error happens in Sharepoint connector**
