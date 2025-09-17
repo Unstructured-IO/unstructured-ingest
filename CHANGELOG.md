@@ -1,10 +1,6 @@
-## 1.2.13-dev1
+## 1.2.17-dev1
 
 * **Optimize `MilvusUploadStager.parse_date_string`**
-
-## 1.2.13-dev0
-
-* **Optimize `parse_date_string`**
 
 ## 1.2.12
 
