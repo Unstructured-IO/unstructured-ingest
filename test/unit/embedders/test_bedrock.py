@@ -1,4 +1,6 @@
+import os
 import random
+from unittest.mock import patch
 
 import faker
 import pytest
@@ -34,3 +36,23 @@ def test_embedder(embedder_config_params: dict):
     embedder_config = BedrockEmbeddingConfig.model_validate(embedder_config_params)
     embedder = BedrockEmbeddingEncoder(config=embedder_config)
     assert embedder
+
+
+def test_inference_profile_default():
+    config = BedrockEmbeddingConfig(aws_access_key_id="test", aws_secret_access_key="test")
+    assert config.inference_profile_id is None
+
+
+@patch.dict(os.environ, {"BEDROCK_INFERENCE_PROFILE_ID": "test-profile"})
+def test_inference_profile_env_var():
+    config = BedrockEmbeddingConfig(aws_access_key_id="test", aws_secret_access_key="test")
+    assert config.inference_profile_id == "test-profile"
+
+
+def test_inference_profile_manual():
+    config = BedrockEmbeddingConfig(
+        aws_access_key_id="test",
+        aws_secret_access_key="test",
+        inference_profile_id="manual-profile"
+    )
+    assert config.inference_profile_id == "manual-profile"
