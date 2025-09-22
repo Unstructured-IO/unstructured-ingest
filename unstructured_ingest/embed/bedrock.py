@@ -27,12 +27,24 @@ if TYPE_CHECKING:
     from botocore.client import BaseClient
 
     class BedrockRuntimeClient(BaseClient):
-        def invoke_model(self, body: str, modelId: str, accept: str, contentType: str) -> dict:
+        def invoke_model(
+            self,
+            body: str,
+            modelId: str,
+            accept: str,
+            contentType: str,
+            inferenceProfileId: str = None,
+        ) -> dict:
             pass
 
     class AsyncBedrockRuntimeClient(BaseClient):
         async def invoke_model(
-            self, body: str, modelId: str, accept: str, contentType: str
+            self,
+            body: str,
+            modelId: str,
+            accept: str,
+            contentType: str,
+            inferenceProfileId: str = None,
         ) -> dict:
             pass
 
@@ -63,10 +75,10 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         description="aws secret access key", default=None
     )
     region_name: str = Field(
-        description="aws region name", 
+        description="aws region name",
         default_factory=lambda: (
-            os.getenv("BEDROCK_REGION_NAME") or 
-            os.getenv("AWS_DEFAULT_REGION") or 
+            os.getenv("BEDROCK_REGION_NAME") or
+            os.getenv("AWS_DEFAULT_REGION") or
             "us-west-2"
         )
     )
@@ -78,6 +90,10 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         default="amazon.titan-embed-text-v1",
         alias="model_name",
         description="AWS Bedrock model name",
+    )
+    inference_profile_id: str | None = Field(
+        description="AWS Bedrock inference profile ID",
+        default_factory=lambda: os.getenv("BEDROCK_INFERENCE_PROFILE_ID"),
     )
 
     def wrap_error(self, e: Exception) -> Exception:
@@ -218,12 +234,18 @@ class BedrockEmbeddingEncoder(BaseEmbeddingEncoder):
         bedrock_client = self.config.get_client()
         # invoke bedrock API
         try:
-            response = bedrock_client.invoke_model(
-                body=json.dumps(body),
-                modelId=self.config.embedder_model_name,
-                accept="application/json",
-                contentType="application/json",
-            )
+            invoke_params = {
+                "body": json.dumps(body),
+                "modelId": self.config.embedder_model_name,
+                "accept": "application/json",
+                "contentType": "application/json",
+            }
+
+            # Add inference profile if configured
+            if self.config.inference_profile_id:
+                invoke_params["inferenceProfileId"] = self.config.inference_profile_id
+
+            response = bedrock_client.invoke_model(**invoke_params)
         except Exception as e:
             raise self.wrap_error(e=e)
 
@@ -264,12 +286,18 @@ class AsyncBedrockEmbeddingEncoder(AsyncBaseEmbeddingEncoder):
             async with self.config.get_async_client() as bedrock_client:
                 # invoke bedrock API
                 try:
-                    response = await bedrock_client.invoke_model(
-                        body=json.dumps(body),
-                        modelId=self.config.embedder_model_name,
-                        accept="application/json",
-                        contentType="application/json",
-                    )
+                    invoke_params = {
+                        "body": json.dumps(body),
+                        "modelId": self.config.embedder_model_name,
+                        "accept": "application/json",
+                        "contentType": "application/json",
+                    }
+
+                    # Add inference profile if configured
+                    if self.config.inference_profile_id:
+                        invoke_params["inferenceProfileId"] = self.config.inference_profile_id
+
+                    response = await bedrock_client.invoke_model(**invoke_params)
                 except Exception as e:
                     raise self.wrap_error(e=e)
                 async with response.get("body") as client_response:

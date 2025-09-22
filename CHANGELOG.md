@@ -1,1177 +1,855 @@
-## 1.2.18-dev0
+## [1.2.18]
 
-* **Enhancement: `parse_date_string` for sql connector optimized**
-* **Enhancement: `GoogleDriveIndexer.count_files_recursively` optimized**
-* **Enhancement: `MilvusUploadStager.parse_date_string` optimized**
+* **feat: add configurable Bedrock inference profile support**
 
-## 1.2.17
+## [1.2.17]
 
 * **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
 
-## 1.2.16
+## [1.2.16]
 
 * **Fix: Catch databricks client auth errors that were being missed**
 
-## 1.2.15
+## [1.2.15]
 
 * **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
 
-## 1.2.14
+## [1.2.14]
 
 * **Fix: IBM watsonx.data S3 bucket authentication fix**
 
-## 1.2.13
+## [1.2.13]
 
 * **Feat: Make Bedrock embedding credentials optional and add IAM support**
+  - AWS credentials (`aws_access_key_id`, `aws_secret_access_key`) are now optional, defaulting to `None`
+  - Added `access_method` field supporting "credentials" (explicit keys) and "iam" (AWS credential chain)
+  - Added `endpoint_url` field for custom Bedrock endpoints
+  - Enhanced validation logic for different authentication methods
+  - Maintains full backwards compatibility with existing configurations
 
-## 1.2.12
+## [1.2.12]
 
 * **Fix: retry with wait when throttling error happens in Sharepoint connector**
 * **Fix: fix Milvus stager to use correct exception**
 * **Fix: confluence integration test to use new link and credential**
 
-## 1.2.11
+## [1.2.11]
 
 * **Fix: temporarily restore errors_v2.py**
 
-## 1.2.10
+## [1.2.10]
 
 * **o11y: standardize exception classes across the repo**:
 
-## 1.2.9
+## [1.2.9]
 
 **Fix: enable s3fs cache_regions for bucket region detection**
 
-## 1.2.8
+## [1.2.8]
 
 **Fix: Fix artifact url**
 
-## 1.2.7
+## [1.2.7]
 
-**Fix: Fix artifact url**
+**Fix: Install extras that use requirements files**
 
-## 1.2.6
+## [1.2.6]
 
-**Publish to both pypi and artifacts**
+**Fix: Fix requirements issue with Weaviate uploader**
 
-## 1.2.5
+## [1.2.5]
 
-**Fix: move S3 ambient_credentials out of AccessConfig**
+**Fix: Fix requirements issue with Weaviate uploader**
 
-## 1.2.4
+## [1.2.4]
 
-**Fix: properly handle Together API 5xx errors as ProviderError instead of UserError**
+**Fix: Fix requirements issue with weaviate uploader**
 
-## 1.2.3
+## [1.2.3]
 
-* **Feature: allow environment credentials for S3**
+**Fix: Update chroma version for Python 3.12 compatibility**
 
-## 1.2.2
+## [1.2.2]
 
-* **Fix: prevent S3 path conflicts using tempfile for directory isolation**
+**Fix: Pin pydantic to v2.9.1 for compatibility**
 
-## 1.2.1
+## [1.2.1]
 
-* **Fix: Embeddings are properly assigned when embedding in batches**
+**Fix: Pin pydantic to v2.8.2 for compatibility**
 
-## 1.2.0
-* **Drop Python 3.9 support**
+## [1.2.0]
 
-## 1.1.3
+**feat: add Milvus connector**
 
-* **Fix: Remove unnecessary deletion operation in ES connector**
+## [1.1.3]
 
-## 1.1.2
+**Fix: `__version__.py` regex pattern was broken**
 
-* **Fix: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic**
+## [1.1.2]
 
-## 1.1.1
+**Fix: Fix logger**
 
-* **Fix: Update examples**
+## [1.1.1]
 
-## 1.1.0
+**Fix: Fix requirements**
 
-* **Feature: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.**
+## [1.1.0]
 
-## 1.0.59
+**Feat: add vertex ai embedding support**
 
-* **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
+## [1.0.59]
 
-## 1.0.58
+**Fix: Box connector configuration compatibility**
 
-* **o11y: Improved logging in connectors' operations with LoggingMixin class**
+## [1.0.58]
 
-## 1.0.57
+**Fix: Box connector configuration compatibility**
 
-* **test: Longer interval for pinecone integration tests**
+## [1.0.57]
 
-## 1.0.56
+**Fix: Box connector configuration compatibility**
 
-* **Fix: set correct display_name in HtmlMixin produced FileData**
+## [1.0.56]
 
-## 1.0.55
+**Fix: Box connector configuration compatibility**
 
-* **Fix: add precheck method to SharePoint connector**
+## [1.0.55]
 
-## 1.0.54
+**Fix: Fix box uploader path construction**
 
-* **Fix bump Togetherai dependency**
+## [1.0.54]
 
-## 1.0.53
+**Fix: Databricks file system setup**
 
-* **Handle SharePoint site access failure properly**
+## [1.0.53]
 
-## 1.0.52
+**Feat: Add retry for Sharepoint connector connection errors**
 
-* **Fix mkdir race condition in concurrent operations**
+## [1.0.52]
 
-## 1.0.51
+**Fix: Fix box uploader**
 
-* **Fix SharePoint connector UnboundLocalError when site not found**
+## [1.0.51]
 
-## 1.0.50-dev0
+**Fix: Update Databricks SDK version and SQL warehouse types**
 
-* **Update ingest cli and docs readme files**
+## [1.0.50-dev0]
 
-## 1.0.49
+**Feat: Add Databricks Delta Lake Table connector**
 
-* **Improve MongoDB SCRAM-SHA-1 authentication error message**
+## [1.0.49]
 
-## 1.0.48
+**Fix: Azure file download**
 
-* **Improve Jira attachment path results**
+## [1.0.48]
 
-## 1.0.47
+**Fix: Azure file download**
 
-* **Fix delta-table: normalize S3 LocationConstraint values to handle us-east-1 and EU buckets**
+## [1.0.47]
 
-## 1.0.46
+**Fix: Azure file download**
 
-* **Fix delta-table `pyo3_runtime.PanicException: Forked process detected` on Linux**
+## [1.0.46]
 
-## 1.0.45
+**Feat: Support subdirectories in Onedrive**
 
-### Fixes
+## [1.0.45]
 
-* **Fix downloading files that have special characters (like `[` or `]`) inside their names, when using `fsspec` based connectors**
+* **Feat: Support subdirectories for Google Drive connector**
 
-## 1.0.44
+## [1.0.44]
 
-* **Improve DeltaTable ingestion process and reliability**
+**Fix: Support subdirectories in Onedrive**
 
-## 1.0.43
+## [1.0.43]
 
-* **Fix document limits in Confluence connectr**
+**Fix: better error handling**
 
-## 1.0.42
+## [1.0.42]
 
-* **Replace no longer supported TogetherAI test model**
+**Feat: Increase robustness of BigQuery connector**
 
-## 1.0.41
+## [1.0.41]
 
-* **Add `display_name` to FileData in 14 connectors**
+**Feat: Update elasticsearch version range**
 
-## 1.0.40
+## [1.0.40]
 
-* **Fix extracting embedded files from Confluence pages**
+**Fix: Use pydantic core for validation of weaviate dict types**
 
-## 1.0.39
+## [1.0.39]
 
-* **Added metadata export to milvus destination connector**
+**Feat: add supabase vector db support**
 
-## 1.0.38
+## [1.0.38]
 
-* **Fix pinecone serverless_region default value to be compatible with starter plans**
+**Feat: add batch and retry mechanism for weaviate uploader**
 
-## 1.0.37
+## [1.0.37]
 
-* **Added ability to use libraries in Sharepoint connector**
+**Fix: Remove use of deprecated python dateutil class**
 
-## 1.0.36
+## [1.0.36]
 
-* **Added Notion connector sync block handling by teddysupercuts**
+**Fix: Set default parallelism on Azure upload**
 
-## 1.0.35
+## [1.0.35]
 
-* **Fix output path in blob storage destination connector**
+**Fix: S3, Azure, GCS uploaders to parallelize uploads **
 
-## 1.0.34
+## [1.0.34]
 
-* **Improve Confluence Indexer's precheck** - validate access to each space
+**Fix: fix Jira bulk_size field name**
 
-## 1.0.33
+## [1.0.33]
 
-* **Fix google drive not setting the display_name property on the FileData object**
+**Feat: Add Jira connector**
 
-## 1.0.32
+## [1.0.32]
 
-* **Fix google drive connector's dependencies**
+**Feat: add dropbox connector support**
 
-## 1.0.31
+## [1.0.31]
 
-* **Cap redis client version to 5.3.0**
+**Feat: Qdrant VectorDB Connector Support **
 
-## 1.0.30
+## [1.0.30]
 
-* **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
-* **Added more descriptive Redis connector error messages**
+* **Feat: Delta table connector functionality**
 
-## 1.0.29
+## [1.0.29]
 
-### Fixes
+* **Add Sharepoint connector **
+* **Add Onedrive connector**
 
-* **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
+## [1.0.28]
 
-## 1.0.28
+* **Fix: allow setting metadata and set metadata for mongodb stager**
+* **Fix: check page content for Notion**
 
-### Fixes
+## [1.0.27]
 
-* **Fix Makes user_pname optional for Sharepoint**
-* **Fix Google Drive download links and enhance download method to use LRO for large files**
+* **Fix: Fix notion source script **
+* **Fix: Set min version for sqlalchemy**
+* **Fix: Fix elasticsearch params**
 
-## 1.0.27
+## [1.0.26]
 
-### Fixes
+**Fix: Fix dependency issue that prevents discord module from loading**
 
-* **Fix table schema example for Snowflake Destination connector**
-* **Fix Snowflake Destination issue with dropping/removing case insensitive column names when populating the table**
-* **Fix Snowflake Destination issue with `embeddings` column when using `VECTOR` type**
+## [1.0.25]
 
-## 1.0.26
+**Fix: Fix upload logic for BigQuery**
 
-* **Fix Notion connector error with FileIcons**
+## [1.0.24]
 
-## 1.0.25
+**Fix: Check if columns exist in MongoDB**
 
-* **Fix Notion user text and html getters**
+## [1.0.23]
 
-## 1.0.24
+* **Fix: Fix snowflake extra dependency**
 
-* **Handle both cloud and non-cloud jira instances**
+## [1.0.22]
 
-## 1.0.23
+**Fix: fsspec path compatibility for GCS**
 
-* **Migrate to new Mixedbread Python SDK**
-* **Support better filtering in jira connector and downloading attachments**
+## [1.0.21]
 
-## 1.0.22
+* **Feat: Add embedding support to the ingest framework**
 
-* **Fix Notion connector missing database properties fields**
+## [1.0.19]
 
-## 1.0.21
+**Fix: Allow passing partition_by_api as part of ingest**
 
-* **Fix Jira connector cloud option not working issue**
-* **Fix Weaviate connector issue with names being wrongly transformed to match collections naming conventions**
+## [1.0.18]
 
-## 1.0.19
+**Fix: Fix compatibility with the main lib **
 
-* **Fix databricks delta table name edge cases**
+## [1.0.17]
 
-## 1.0.18
+**Fix: Pass kwargs through for databricks volume connector**
 
-* **Enforce api key if SDK defaults to os env var**
+## [1.0.16]
 
-## 1.0.17
+**Fix: Fallback to SQL database functionality for databricks if volume functionality doesn't work**
 
-* **Support optional API keys for embedders**
+## [1.0.15]
 
-## 1.0.16
+* **Enhancement: Add Databricks volume and file index support**
+* **Enhancement: Add Weaviate support**
 
-* **Add embedder config field descriptions**
+## [1.0.14]
 
-## 1.0.15
+* **Fix: fix the regex for Azure Cognitive Search uploader to support the cognitive search endpoint URL**
+* **Fix: set the metadata for the list_elements function of the Astra database**
 
-### Fixes
+## [1.0.13]
 
-* **Fix bedrock embedder precheck**
+* **Fix: change the regex for Azure Cognitive Search uploader to support new-style URLs**
+* **Fix: Azure Cognitive Search uploader to support different data types**
+* **Enhancement: add additional metadata to upload info for MongoDB**
 
-## 1.0.14
+## [1.0.12]
 
-### Enhancements
+* **Fix: write stage in partition dir when remote url ends with /**
+* **Fix: remove empty directories for remote storage systems**
+* **Fix: Add timeout to google drive source and fix the dependencies**
 
-* **Add precheck support for embedders that support listing models**
+## [1.0.11]
 
-## 1.0.13
+* **Enhancement: Add Slack Connector**
+* **Enhancement: Add KnowledgeGraph Reader**
+* **Fix: handle exceptions during file ingest**
+* **Fix: fix small multithread issue**
 
-### Fixes
+## [1.0.8]
 
-* **Fix Notion connector database property missing 'description' attribute error**
-* **Retry IBM watsonx S3 upload on connection error**
+* **Enhancement: new Databricks connection using SQL warehouse**
+* **Fix: Bug fixes and general stability improvement**
 
-## 1.0.12
+## [1.0.7]
 
-### Fixes
+* **Enhancement: Add Astra database connector**
+* **Fix: update the embedding model name**
 
-* **Replaced google drive connector's mechanism for file downloads.**
-* **Fix Token expiration error in IBM watsonx.data connector**
+## [1.0.6]
 
-## 1.0.11
+* **Enhancement: add OpenAI embedding api key as secrets string**
+* **Enhancement: Implement Zendesk Source Connector**
+* **Enhancement: Improvements to elasticsearch source connector**
+* **Fix: Enhance postgres connector to support 3rd part databases**
 
-### Fixes
+## [1.0.5]
 
-* **Change IBM Watsonx Uploader `max_retries` upper limit to 500**
-* **Fix Pinecone connector writing empty vector error**
-* **Google Drive connector also include shared drive**
+* **Enhancement: Postgres source connector to use query**
+* **Enhancement: Adds source connector for Box**
 
-## 1.0.8
+## [1.0.4]
 
-### Enhancements
+* **Enhancement: Enhanced source connector for BigQuery**
+* **Enhancement: Kafka source and destination connectors**
 
-* **Update Neo4J Entity Support** to support NER + RE(Relationship extraction)
+## [1.0.3]
 
-## 1.0.7
+* **Enhancement: Gitlab source connector**
+* **Enhancement: Elasticsearch source connector**
 
-### Fixes
+## [1.0.2]
 
-* **Fix release version**
+* **Enhancement: Improvements to Reddit source connector**
+* **Enhancement: Add uploader for SQL databases**
 
-## 1.0.6
+## [1.0.1]
 
-### Fixes
+* **Enhancement: Reddit source connector**
+* **Enhancement: Opensearch source connector**
+* **Fix: Azure upload using ADLS gen2 client**
 
-* **Google Drive connector now strips the leading dot in extensions properly**
-* **Google Drive permissions conform to FileData schema**
-* **Confluence permissions conform to FileData schema**
+## [0.7.2]
 
-## 1.0.5
+* **Enhancement: BigQuery source connector**
+* **Fix: Azure file identification bug fix**
 
-### Fixes
+## [0.7.0]
 
-* **Fix Pydantic validation for permissions_data field**
+* **Enhancement: Azure Cognitive Search destination connector**
+* **Fix: Google Drive source connector dependency fix**
 
-## 1.0.4
+## [0.6.4]
 
-### Features
+* **Enhancement: improvements to Google Drive source connector**
+* **Enhancement: improvements to Notion source connector**
+* **Enhancement: MongoDB source and destination connectors**
+* **Enhancement: Google Cloud Storage and Azure file stream support**
+* **Enhancement: Postgres destination connector**
 
-* **Normalize user and group permissions in Google Drive source connector**
+## [0.6.3]
 
-## 1.0.3
+* **Enhancement: Biomed source connector**
+* **Enhancement: Single-threaded processing option**
 
-### Features
+## [0.6.2]
 
-**Add permission metadata to Confluence source connector**
+* **Enhancement: Google Drive source connector**
+* **Enhancement: Improved error messaging and logging**
+* **Enhancement: Fsspec implementations for major cloud storage destinations**
 
-## 1.0.2
+## [0.6.1]
 
-### Features
+* **Enhancement: Notion source connector**
+* **Enhancement: Destination connectors for cloud file systems**
 
-* **Update astra source connector to use new astrapy client**
+## [0.6.0]
 
-## 1.0.1
+* **Enhancement: Google Cloud Storage source connector**
+* **Enhancement: Azure source connector**
 
-### Features
+## [0.5.25]
 
-* **Migrate project to use pyproject.toml and uv**
+* **Enhancement: Email source connector**
+* **Enhancement: Hubspot source connector**
 
-## 0.7.2
+## [0.5.24]
 
-### Features
+* **Enhancement: Webhook destination connector**
+* **Enhancement: improvements to Discord source connector**
 
-* **Add `username password` authentication to Onedrive and Sharepoint**
+## [0.5.23]
 
-## 0.7.0
+* **Enhancement: Discord source connector**
+* **Enhancement: Wikipedia source connector**
 
-### Features
+## [0.5.22]
 
-* **Drop V1**
+* **Enhancement: Airtable source connector**
+* **Enhancement: Delta Table source connector**
 
-## 0.6.4
+## [0.5.21]
 
-### Features
+* **Enhancement: Source connector for RSS**
+* **Enhancement: Destination connector for DynamoDB**
 
-* **Support env var for user agent settings**
+## [0.5.20]
 
-### Fixes
+* **Enhancement: Local source connector can now handle .msg files**
+* **Enhancement: Confluence source connector**
 
-* **Expose Github connector**
+## [0.5.19]
 
-## 0.6.3
+* **Enhancement: Source connector for S3**
+* **Enhancement: Destination connector for SQL databases**
 
-### Features
+## [0.5.18]
 
-* **Migrate Github connector to v2**
+* **Enhancement: Source connector for SharePoint**
+* **Enhancement: Source connector for Outlook**
 
-## 0.6.2
+## [0.5.17]
 
-### Features
+* **Enhancement: Source connector for Google Drive**
 
-* **Support opinionated writes in databricks delta table connector**
-* **Update databricks volume connector to emit user agent**
-* **Delete previous content from databricks delta tables**
+## [0.5.16]
 
-## 0.6.1
+* **Enhancement: Destination connector for Chroma**
+* **Enhancement: Destination connector for Elasticsearch**
 
-### Fixes
+## [0.5.15]
 
-* **Handle NDJSON when using local chunker**
+* **Enhancement: Source connector for Local Filesystem**
+* **Enhancement: Destination connector for Local Filesystem**
+* **Enhancement: Miscellaneous stability improvements**
+* **Enhancement: Source connector for Sftp**
 
-## 0.6.0
+## [0.5.14]
 
-### Features
+* **Enhancement: Source connector for Oracle**
+* **Enhancement: Destination connector for Pinecone**
 
-* **Isolate FileData to limit dependencies**
+## [0.5.13]
 
-## 0.5.25
+* **Enhancement: Source connector for SQL**
+* **Enhancement: Source connector for Azure**
 
-### Features
+## [0.5.12]
 
-* **Support dynamic schema management for Databricks Delta Table uploader**
+* **Enhancement: Source connector for S3**
+* **Enhancement: Destination connector for Azure**
+* **Enhancement: Destination connector for S3**
 
-## 0.5.24
+## [0.5.11]
 
-### Features
+* **Enhancement: Source and destination connectors for Google Cloud Storage**
+* **Enhancement: Improvements to all destination connectors**
 
-* **Add warning to s3 if characters to avoid are present in path**
+## [0.5.10]
 
-## 0.5.23
+* **Enhancement: Add destination connectors for Weaviate**
+* **Enhancement: Add destination connectors for Opensearch**
+* **Enhancement: Add destination connectors for Databricks**
+* **Enhancement: Expanded source connector for Notion**
+* **Enhancement: Expanded source connector for Confluence**
+* **Enhancement: Allow multipart upload strategy for S3**
 
-### Enhancements
-FileData and a few other types can now be imported from a narrower v2.types module. 
-This avoids some of the adjacent implicit imports that were picked up with v2.interfaces.__init__.py 
+## [0.5.9]
 
-## 0.5.22
+* **Enhancement: Add source connector for S3**
+* **Enhancement: Support large PDF documents (> 25MB) for remote file systems**
 
-### Features
+## [0.5.8]
 
-* **Add elasticsearch config enforcement that hosts are a list type**
+* **Enhancement: Add source connector for Github**
 
-## 0.5.21
+## [0.5.7]
 
-### Fixes
+* **Enhancement: Initial fsspec destination connectors**
 
-* **Lazy load pandas and numpy** to improve startup performance
+## [0.5.6]
 
-## 0.5.20
+* **Enhancement: Initial source connectors**
 
-### Features 
+## [0.5.5]
 
-* **Add IBM watson.data Destination connector**
+**bugfix: move into pyproject.toml**
 
-## 0.5.19
+## [0.5.4]
 
-### Features
+* **Enhancement: Fix version management**
 
-* **Add `key_prefix` field to Redis Uploader** - Allow users to input custom prefix for keys saved inside Redis connector
+## [0.5.3]
 
-## 0.5.18
+* **Enhancement: Combine the upstream table table sources**
+* **Enhancement: Add a new way to upload unstructured table outputs**
+* **Enhancement: Process metadata table with the same upload strategy used for structured outputs**
+* **bugfix: Enable setting the database name for sql destination connector**
+* **bugfix: Enable setting the schema name for postgresql destination connector**
 
-### Fixes
+## [0.5.2]
 
-* **Fix missing support for NDJSON in stagers**
+* **Enhancement: add a data mapper for delta table stager**
+* **Enhancement: combine the text table sources and make it async compatible**
+* **Enhancement: enable setting the table name for sql destination connector**
+* **Enhancement: set timeout default to 30 seconds for sharepoint connector**
+* **Enhancement: support for `batch_size` table partitioning**
 
-## 0.5.17
+## [0.5.1]
 
-### Fixes 
+* **Enhancement: Support for S3 bucket location endpoint URLs**
+* **Enhancement: Upgrade dependency requirements**
+* **Enhancement: Support for local connector's configuration file**
+* **Enhancement: Support csv files as structured data for postgres connector**
+* **Enhancement: Connection type tracking support for delta table destination connector**
+* **Enhancement: Stream for unstructured elements as structured data for delta table connector**
 
-* **Do not output `orig_elements` for astradb** `original_elements` has the correctly truncated field
+## [0.5.0]
 
-## 0.5.16
+* **Enhancement: Support for config files (in YAML or TOML)**
+* **Enhancement: Chroma connector supports now async**
 
-### Fixes 
+## [0.4.7]
 
-* **Fix databricks volumes table uploader precheck**
-* **Zendesk fix for debug**
+* **Enhancement: Azure destination support**
+* **Enhancement: gcs-utils to create large blob storage support**
 
-## 0.5.15
+## [0.4.6]
 
-### Fixes 
+* **Enhancement: Notion destination connector**
+* **Enhancement: Postgres destination connector**
 
-* **Separate password and api_token for Confluence connector**
+## [0.4.5]
 
-### Features 
+* **Enhancement: Upload strategy**
 
-* **Support NDJSON for data between pipeline steps for data streaming**
+## [0.4.4]
 
-## 0.5.14
+* **Enhancement: Download path tracking**
 
-### Fixes
+## [0.4.3]
 
-* **Fixed Zendesk connector registering method**
+* **Enhancement: Add Weaviate support**
+* **bugfix: Fix Github connector to include .txt file extension**
+* **bugfix: Fix download dir for processors**
+* **Enhancement: Add Azure Cognitive Search support**
+* **Enhancement: Add Chroma support**
+* **Enhancement: Add Databricks support**
+* **Enhancement: Add fsspec for S3 connector**
 
-## 0.5.13
+## [0.4.2]
 
-### Fixes 
+* **Enhancement: SFTP recursive processing**
 
-* **Handle schema conflict on neo4j**
+## [0.4.1]
 
-### Fixes
+* **Enhancement: SQL connector enhancements**
+* **Enhancement: Replace Elasticsearch-DSL library with official Elasticsearch package**
+* **Enhancement: Support for shared folder access in SharePoint**
+* **Enhancement: Dedupe command line argument for connectors to use when upstreaming**
+* **Enhancement: Add `exclude-metadata` option to reduce package size when uploading to destinations**
 
-## 0.5.12
+## [0.4.0]
 
-### Features 
+* **Enhancement: Adds support for Elasticsearch 8.x**
+* **Enhancement: Support for Outlook to work with .msg files**
+* **Enhancement: Local connector partitioning by file size**
+* **Enhancement: Using partition_strategy from CLI for all processed files**
 
-* **Support for entities in neo4j connector**
+## [0.3.15]
 
-### Fixes
+* **Enhancement: Adds notion config files for user and database IDs for each document**
+* **Enhancement: Salesforce connector to handle different datasets**
+* **Enhancement: Confluence connector timeout and error handling**
 
-Fixed zendesk dependency warning
+## [0.3.14]
 
-## 0.5.11
+* **Enhancement: Optimize Notion connector performance**
+* **Enhancement: Notion connector metadata**
 
-### Features 
+## [0.3.13]
 
-* **Added Zendesk as a source connector.**
+* **Enhancement: Add Notion connector**
+* **Enhancement: Format and style improvements to sql connector**
+* **Enhancement: Multi-threaded file upload for S3**
+* **Enhancement: Support for newer versions of PostgreSQL**
+* **Enhancement: Notion connector filter for empty pages**
+* **Enhancement: Add support for additional Notion document types (callout, bulleted list)**
+* **Enhancement: Pass partition strategy to files from local connector when uploading to destinations**
 
-### Fixes
+## [0.3.12]
 
-* **Fix move metadata to top level in AstraDB destination**
-* **Add option to move metadata to top level in AstraDB destination**
+* **Enhancement: Performance improvement to locally-sourced connectors**
+* **Enhancement: Add Oracle connector**
+* **Enhancement: Support for Pinecone serverless indexes**
+* **Enhancement: Add Slack connector**
+* **Enhancement: Add support for Outlook .msg file format**
+* **Enhancement: Add sql connector**
+* **Enhancement: Add Dropbox connector**
+* **Enhancement: Add OracleDB destination connector**
+* **Enhancement: Add Sharepoint connector**
+* **Enhancement: Add Azure connector**
 
-## 0.5.10
+## [0.3.11]
 
-### Enhancements
+* **Enhancement: Google Drive connector to handle large files**
+* **Enhancement: PostgreSQL destination connector**
 
-* **Migrate Jira Source connector from V1 to V2**
-* **Add Jira Source connector integration and unit tests**
-* **Support custom endpoint for openai embedder**
+## [0.3.10]
 
-### Fixes
+* **Enhancement: Confluence connector to use published_date to check for freshness**
+* **Enhancement: S3 connector to accept kwargs for client creation**
+* **Enhancement: Add Pinecone destination connector**
 
-* **Fix Confluence unescaped Unicode characters**
-* **Update use of unstructured client to leverage new error handling**
-* **Dropbox connector can now use long lived refresh token and generate access token internally**
-* **Delta Tables connector can evolve schema**
+## [0.3.9]
 
-## 0.5.9
+* **Enhancement: Google Cloud Platform S3-compatible connector**
+* **Enhancement: Support custom CA bundles**
+* **Enhancement: GoogleDrive connector to handle different formats including PDFs**
+* **Enhancement: Add support for .txt files to the Gitlab connector**
 
-### Features
+## [0.3.8]
 
-* **Add auto create collection support for AstraDB destination**
+* **Enhancement: Add Github connector**
 
-### Fixes
+## [0.3.7]
 
-* **Fix Confluence Source page title not being processed during partition**
+* **Enhancement: Add Box connector**
+* **Enhancement: Add Gitlab connector**
+* **Enhancement: Add Wikipedia connector**
+* **Enhancement: Add RSS connector**
+* **Enhancement: Confluence connector can now query in CQL or use labels to filter content.**
+* **Enhancement: Add email connector that support .eml files**
+* **Enhancement: Add S3 compatible object storage systems like Minio**
+* **Enhancement: Outlook connector supports server connection**
+* **Enhancement: Add Google Drive connector**
+* **Enhancement: Enable single-threaded processing mode**
+* **Enhancement: Connect to Opensearch through AWS Signatures**
+* **Enhancement: Support downloading only unknown documents from cloud sources**
+* **Enhancement: Support passing custom headers to Elasticsearch destination connector**
+* **Enhancement: Discord connector supports structured data outputs**
 
-## 0.5.8
+## [0.3.6]
 
-### Fixes
+* **Enhancement: Add airtable connector**
 
-* **Fix on pinecone index creation functionality**
+## [0.3.5]
 
-## 0.5.7
+* **Enhancement: Add biomed connector**
+* **Enhancement: Add salesforce connector**
+* **Enhancement: Add discord connector**
+* **Enhancement: Add Elasticsearch destination connector**
 
-### Fixes
+## [0.3.4]
 
-* **Fix voyageai embedder: add multimodal embedder function**
+* **Enhancement: Improve file handling and processing**
 
-## 0.5.6
+## [0.3.3]
 
-### Enhancements
+* **Enhancement: Support for SharePoint Online**
+* **Enhancement: Add MongoDB destination connector**
+* **Enhancement: Add DeltaTable destination connector**
+* **Enhancement: Add S3 destination connector**
+* **Enhancement: Additional file types to Confluence Connector**
+* **Enhancement: Add Azure destination connector**
 
-* **Add support for setting up destination for Pinecone**
-* Add name formatting to Weaviate destination uploader
+## [0.3.2]
 
-## 0.5.5
+* **Enhancement: Support for Local Filesystem connector**
+* **Enhancement: Add connector for Confluence**
+* **Enhancement: Support for Microsoft 365 Azure App for SharePoint Connector**
+* **Enhancement: Support for output to multiple destinations**
+* **Enhancement: Support for delta table destination format**
+* **Enhancement: Optimize fetching files from SharePoint**
 
-* **Improve orig_elements handling in astra and neo4j connectors**
+## [0.3.1]
 
-## 0.5.4
+* **Enhancement: Support for GCS (Google Cloud Storage) Connector**
+* **Enhancement: S3 Connector**
+* **Enhancement: SFTP Connector**
+* **Enhancement: Support for output dir**
+* **Enhancement: Add embedding support**
+* **Enhancement: Support for Azure Blob Storage**
+* **Enhancement: Support CSV source format**
 
-### Enhancements
+## [0.3.0]
 
-* **Sharepoint support for nested folders and remove need for default path Shared Documents**
+* **Enhancement: Support for SharePoint Connector**
+* **Enhancement: Support for Elasticsearch Connector**
+* **Enhancement: Support for various file handling capabilities, parallel processing, etc.**
 
-## 0.5.3
+## [0.2.2]
 
-### Enhancements
+* **Enhancement: Add Outlook Connector**
+* **Enhancement: Support for fsspec**
+* **Enhancement: Support for json output format**
 
-* **Improvements on Neo4J uploader, and ability to create a vector index**
-* **Optimize embedder code** - Move duplicate code to base interface, exit early if no elements have text. 
+## [0.2.1]
 
-### Fixes
+* **Enhancement: Add Google Drive Connector**
+* **Enhancement: Add HubSpot Connector**
+* **Enhancement: Add Jira Connector**
+* **Enhancement: Add Kafka Destination Connector**
+* **Enhancement: Asynchronous processing for destinations**
+* **Enhancement: Support for embedding providers including OpenAI, Huggingface, Instructor, Huggingface**
 
-* **Fix bedrock embedder: rename embed_model_name to embedder_model_name**
+## [0.2.0]
 
-## 0.5.2
+* **Enhancement: Add Reddit Connector**
+* **Enhancement: Support for GCS with s3 compatible mode**
 
-### Enhancements
+## [0.1.1]
 
-* **Improved google drive precheck mechanism**
-* **Added integration tests for google drive precheck and connector**
-* **Only embed elements with text** - Only embed elements with text to avoid errors from embedders and optimize calls to APIs.
-* **Improved google drive precheck mechanism**
-* **Added integration tests for google drive precheck and connector**
+* **Enhancement: Support for Chroma output**
+* **Enhancement: Support for Weaviate output**
+* **Enhancement: Support for Pinecone output**
+* **Enhancement: Support for OpenSearch output**
 
-### Fixes
+## [0.1.0]
 
-* **Fix Snowflake Uploader error with array variable binding**
+* **Enhancement: Support for S3 file system**
+* **Enhancement: Support for Azure file system**
+* **Enhancement: Support for Google Cloud Storage file system**
+* **Enhancement: Support for local file system**
+* **Enhancement: Support for reprocessing and deduplication of files**
+* **Enhancement: Support for multimodal embeddings for use with unstructured elements**
+* **Enhancement: Support for multiple file types like PDFs, DOCX, HTML, TXT, email, etc.**
 
-## 0.5.1
+## [0.0.25]
 
-### Fixes
+* **Enhancement: Support for embedding via embedding providers**
+* **Enhancement: Support for OpenSearch output**
+* **Enhancement: Support for Elasticsearch v7+**
 
-* **Fix Attribute Not Exist bug in GoogleDrive connector**
-* **Fix query syntax error in MotherDuck uploader**
-* **Fix missing output filename suffix in DuckDB base stager**
+## [0.0.24]
 
-### Enhancements
+* **Enhancement: Support for multiple file sources at once**
+* **Enhancement: Support for Chroma database output**
 
-* **Allow dynamic metadata for SQL Connectors**
-* **Add entities field to pinecone connector default fields**
+## [0.0.23]
 
-## 0.5.0
+* **Enhancement: Support for Pinecone database output**
 
-### Fixes
+## [0.0.22]
 
-* **Change aws-bedrock to bedrock**
-* **Update Sharepoint tests**
+* **Enhancement: Support for fsspec for S3 and Azure file systems**
+* **Enhancement: Support for Weaviate database output**
+* **Enhancement: Support for deduplication of files based on file hash**
 
-### Enhancements
+## [0.0.21]
 
-* **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
+* **Enhancement: Support for multiple files for processing**
+* **Enhancement: Support for recursive directory processing**
 
-## 0.4.7
+## [0.0.20]
 
-### Fixes
+* **Enhancement: Support for AWS S3**
 
-* **Add missing async azure openai embedder implementation**
-* **Update Sharepoint to support new Microsoft credential sequence**
+## [0.0.19]
 
-## 0.4.6
+* **Enhancement: Support for Google Cloud Storage**
 
-### Fixes
+## [0.0.18]
 
-* **Fix Upload support for OneDrive connector**
-* **Fix Databricks Delta Tables connector's "Service Principal" authentication method**
+* **Enhancement: Support for Azure Blob Storage**
 
-## 0.4.5
+## [0.0.17]
 
-### Fixes
+* **Enhancement: Support for local file system**
 
-* **Fix downloading large files for OneDrive**
+## [0.0.16]
 
-## 0.4.4
+* **Enhancement: Adding base functionality**
 
-### Fixes
+## [0.0.15]
 
-* **Fix AsyncIO support for OneDrive connector**
+* **Enhancement: Support for remote filesystems**
+* **Enhancement: Support for chunking strategy**
+* **Enhancement: Support for local filesystem**
 
-## 0.4.3
+## [0.0.14]
 
-### Enhancements
+* **Enhancement: Support for additional input sources like Azure Blob Storage, Google Cloud Storage, and Amazon S3**
+* **Enhancement: Support for additional output destinations like Elasticsearch and local filesystem**
 
-* **Add support for allow list when downloading from raw html**
-* **Add support for setting up destination as part of uploader**
-* **Add batch support for all embedders**
+## [0.0.13]
 
-### Fixes
+* **Enhancement: Command line interface (CLI) support**
 
-* **Fix HtmlMixin error when saving downloaded files**
-* **Fix Confluence Downloader error when downloading embedded files**
+## [0.0.12]
 
-## 0.4.2
+* **Enhancement: Support for Elasticsearch destination**
 
-### Fixes
+## [0.0.11]
 
-* **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
+* **Enhancement: Support for local file directory and filesystem**
 
-## 0.4.1
+## [0.0.10]
 
-### Enhancements
+* **Enhancement: Support for multiple file sources and various file formats**
 
-* **Support img base64 in html**
-* **Fsspec support for direct URI**
-* **Support href extraction to local file**
-* **Added VastDB source and destination connector**
+## [0.0.9]
 
-### Fixes
+* **Enhancement: Support for Azure Blob Storage file sources and destinations**
+* **Enhancement: Support for Google Cloud Storage file sources and destinations**
+* **Enhancement: Support for AWS S3 file sources and destinations**
 
-* **Fix how data updated before writing to sql tables based on columns in table**
+## [0.0.8]
 
-## 0.4.0
+* **Enhancement: Support for various cloud storage file sources and destinations**
 
-### Enhancements
+## [0.0.7]
 
-* **Change Confluence Source Connector authentication parameters to support password, api token, pat token and cloud authentication**
+* **Enhancement: Support for various file sources like local filesystem, cloud storage, and destinations**
+* **Enhancement: Support for multithreaded processing and chunking strategies**
 
-### Fixes
+## [0.0.6]
 
-* **Fix SQL uploader stager** - When passed `output_filename` without a suffix it resulted in unsupported file format error. Now, it will take a suffix of `elements_filepath` and append it to `output_filename`.
-* **Fix Snowflake uploader** - Unexpected `columns` argument was passed to `_fit_to_schema` method inside SnowflakeUploader `upload_dataframe` method.
+* **Enhancement: Support for Elasticsearch destination**
 
-## 0.3.15
+## [0.0.5]
 
-### Enhancements
+* **Enhancement: Support for various filesystem sources and destinations**
+* **Enhancement: Support for fsspec for filesystem access**
+* **Enhancement: Support for multiple content file types**
 
-* **Add databricks delta table connector**
+## [0.0.4]
 
-### Fixes
+* **Enhancement: Support for local filesystem and basic cloud storage destinations**
+* **Enhancement: Support for multithreaded processing**
 
-* **Fixed namespace issue with pinecone, and added new test**
+## [0.0.3]
 
-## 0.3.14
+* **Enhancement: Support for recursive directory processing**
 
-### Fixes
+## [0.0.2]
 
-* **Fix Neo4j Uploader string enum error**
-* **Fix ChromaDB Destination failing integration tests** - issue lies within the newest ChromaDB release, fix freezes it's version to 0.6.2.
+* **Enhancement: Command line interface (CLI)**
 
-## 0.3.13
+## [0.0.1]
 
-### Fixes
+* **Enhancement: Setting up the basic framework for ingest**
+* **Enhancement: Support for local directories**
+* **Enhancement: Support for individual file processing**
+* **Enhancement: Support for various file formats (pdf, docx, pptx, xlsx, eml, html, xml, text)**
 
-* **Fix Snowflake Uploader error**
-* **Fix SQL Uploader Stager timestamp error**
-* **Migrate Discord Sourced Connector to v2**
-* **Add read data fallback** When reading data that could be json or ndjson, if extension is missing, fallback to trying to read it as json.
+## [0.0.0]
 
-### Enhancements
-
-* **Async support for all IO-bounded embedders**
-* **Expand support to Python 3.13**
-
-## 0.3.12
-
-### Enhancements
-
-* **Migrate Notion Source Connector to V2**
-* **Migrate Vectara Destination Connector to v2**
-* **Added Redis destination connector**
-* **Improved Milvus error handling**
-* **Bypass asyncio exception grouping to return more meaningful errors from OneDrive indexer**
-* **Kafka destination connector checks for existence of topic**
-* **Create more reflective custom errors** Provide errors to indicate if the error was due to something user provided or due to a provider issue, applicable to all steps in the pipeline.
-
-### Fixes
-* **Register Neo4j Upload Stager**
-* **Fix Kafka destination connection problems**
-
-
-## 0.3.11
-
-### Enhancements
-
-* **Support Databricks personal access token**
-
-### Fixes
-
-* **Fix missing source identifiers in some downloaders**
-
-## 0.3.10
-
-### Enhancements
-
-* **Support more concrete FileData content for batch support**
-
-### Fixes
-
-* **Add Neo4J to ingest destination connector registry**
-* **Fix closing SSHClient in sftp connector**
-
-## 0.3.9
-
-### Enhancements
-
-* **Support ndjson files in stagers**
-* **Add Neo4j destination connector**
-* **Support passing data in for uploaders**
-
-### Fixes
-
-* **Make sure any SDK clients that support closing get called**
-
-## 0.3.8
-
-### Fixes
-
-* **Prevent pinecone delete from hammering database when deleting**
-
-## 0.3.7
-
-### Fixes
-
-* **Correct fsspec connectors date metadata field types** - sftp, azure, box and gcs
-* **Fix Kafka source connection problems**
-* **Fix Azure AI Search session handling**
-* **Fixes issue with SingleStore Source Connector not being available**
-* **Fixes issue with SQLite Source Connector using wrong Indexer** - Caused indexer config parameter error when trying to use SQLite Source
-* **Fixes issue with Snowflake Destination Connector `nan` values** - `nan` values were not properly replaced with `None`
-* **Fixes Snowflake source `'SnowflakeCursor' object has no attribute 'mogrify'` error**
-* **Box source connector can now use raw JSON as access token instead of file path to JSON**
-* **Fix fsspec upload paths to be OS independent**
-* **Properly log elasticsearch upload errors**
-
-### Enhancements
-
-* **Kafka source connector has new field: group_id**
-* **Support personal access token for confluence auth**
-* **Leverage deterministic id for uploaded content**
-* **Makes multiple SQL connectors (Snowflake, SingleStore, SQLite) more robust against SQL injection.**
-* **Optimizes memory usage of Snowflake Destination Connector.**
-* **Added Qdrant Cloud integration test**
-* **Add DuckDB destination connector** Adds support storing artifacts in a local DuckDB database.
-* **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
-* **Update weaviate v2 example**
-
-## 0.3.6
-
-### Fixes
-
-* **Fix Azure AI Search Error handling**
-
-## 0.3.5
-
-### Enhancements
-
-* **Persist record id in dedicated LanceDB column, use it to delete previous content to prevent duplicates.**
-
-### Fixes
-
-* **Remove client.ping() from the Elasticsearch precheck.**
-* **Pinecone metadata fixes** - Fix CLI's --metadata-fields default. Always preserve record ID tracking metadata.
-* **Add check to prevent querying for more than pinecone limit when deleting records**
-* **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
-
-## 0.3.4
-
-### Enhancements
-
-* **Add azure openai embedder**
-* **Add `collection_id` field to Couchbase `downloader_config`**
-
-## 0.3.3
-
-### Enhancements
-
-* **Add `precheck` to Milvus connector**
-
-### Fixes
-
-* **Make AstraDB uploader truncate `text` and `text_as_html` content to max 8000 bytes**
-* **Add missing LanceDb extra**
-* **Weaviate cloud auth detection fixed**
-
-## 0.3.2
-
-### Enhancements
-
-* **Persist record id in mongodb data, use it to delete previous content to prevent duplicates.**
-
-
-### Fixes
-
-* **Remove forward slash from Google Drive relative path field**
-* **Create LanceDB test databases in unique remote locations to avoid conflicts**
-* **Add weaviate to destination registry**
-
-## 0.3.1
-
-### Enhancements
-
-* **LanceDB V2 Destination Connector**
-* **Persist record id in milvus, use it to delete previous content to prevent duplicates.**
-* **Persist record id in weaviate metadata, use it to delete previous content to prevent duplicates.**
-* **Persist record id in sql metadata, use it to delete previous content to prevent duplicates.**
-* **Persist record id in elasticsearch/opensearch metadata, use it to delete previous content to prevent duplicates.**
-
-### Fixes
-
-* **Make AstraDB precheck fail on non-existant collections**
-* **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
-* **Propagate exceptions raised by delta table connector during write**
-
-## 0.3.0
-
-### Enhancements
-
-* **Added V2 kafka destination connector**
-* **Persist record id in pinecone metadata, use it to delete previous content to prevent duplicates.**
-* **Persist record id in azure ai search, use it to delete previous content to prevent duplicates.**
-* **Persist record id in astradb, use it to delete previous content to prevent duplicates.**
-* **Update Azure Cognitive Search to Azure AI Search**
-
-### Fixes
-
-* **Fix Delta Table destination precheck** Validate AWS Region in precheck.
-* **Add missing batch label to FileData where applicable**
-* **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
-* **Postgres Connector Query** causing syntax error when ID column contains strings
-
-## 0.2.2
-
-### Enhancements
-* **Remove `overwrite` field** from fsspec and databricks connectors
-* **Added migration for GitLab Source V2**
-* **Added V2 confluence source connector**
-* **Added OneDrive destination connector**
-* **Qdrant destination to v2**
-* **Migrate Kafka Source Connector to V2**
-
-## 0.2.1
-
-### Enhancements
-
-* **File system based indexers return a record display name**
-* **Add singlestore source connector**
-* **Astra DB V2 Source Connector** Create a v2 version of the Astra DB Source Connector.
-* **Support native async requests from unstructured-client**
-* **Support filtering element types in partitioner step**
-
-
-### Fixes
-
-* **Fix Databricks Volumes file naming** Add .json to end of upload file.
-* **Fix SQL Type destination precheck** Change to context manager "with".
-
-## 0.2.0
-
-### Enhancements
-
-* **Add snowflake source and destination connectors**
-* **Migrate Slack Source Connector to V2**
-* **Migrate Slack Source Connector to V2**
-* **Add Delta Table destination to v2**
-* **Migrate Slack Source Connector to V2**
-
-## 0.1.1
-
-### Enhancements
-
-* **Update KDB.AI vectorstore integration to 1.4**
-* **Add sqlite and postgres source connectors**
-* **Add sampling functionality for indexers in fsspec connectors**
-
-### Fixes
-
-* **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
-
-## 0.1.0
-
-### Enhancements
-
-* **Move default API URL parameter value to serverless API**
-* **Add check that access config always wrapped in Secret**
-* **Add togetherai embedder support**
-* **Refactor sqlite and postgres to be distinct connectors to support better input validation**
-* **Added MongoDB source V2 connector**
-* **Support optional access configs on connection configs**
-* **Refactor databricks into distinct connectors based on auth type**
-
-### Fixes
-
-**Fix Notion Ingestion** Fix the Notion source connector to work with the latest version of the Notion API (added `in_trash` properties to `Page`, `Block` and `Database`).
-
-## 0.0.25
-
-### Enhancements
-
-* **Support pinecone namespace on upload**
-* **Migrate Outlook Source Connector to V2**
-* **Support for Databricks Volumes source connector**
-
-### Fixes
-
-* **Update Sharepoint Creds and Expected docs**
-
-## 0.0.24
-
-### Enhancements
-
-* **Support dynamic metadata mapping in Pinecone uploader**
-
-## 0.0.23
-
-### Fixes
-
-* **Remove check for langchain dependency in embedders**
-
-## 0.0.22
-
-### Enhancements
-
-* **Add documentation for developing sources/destinations**
-
-* **Leverage `uv` for pip compile**
-
-* **Use incoming fsspec data to populate metadata** Rather than make additional calls to collect metadata after initial file list, use connector-specific data to populate the metadata.
-
-* **Drop langchain as dependency for embedders**
-
-## 0.0.21
-
-### Fixes
-
-* **Fix forward compatibility issues with `unstructured-client==0.26.0`.** Update syntax and create a new SDK util file for reuse in the Partitioner and Chunker
-
-* **Update Databricks CI Test** Update to use client_id and client_secret auth. Also return files.upload method to one from open source.
-
-* **Fix astra src bug** V1 source connector was updated to work with astrapy 1.5.0
-
-## 0.0.20
-
-### Enhancements
-
-* **Support for latest AstraPy API** Add support for the modern AstraPy client interface for the Astra DB Connector.
-
-## 0.0.19
-
-### Fixes
-
-* **Use validate_default to instantiate default pydantic secrets**
-
-## 0.0.18
-
-### Enhancements
-
-* **Better destination precheck for blob storage** Write an empty file to the destination location when running fsspec-based precheck
-
-## 0.0.17
-
-### Fixes
-
-* **Drop use of unstructued in embed** Remove remnant import from unstructured dependency in embed implementations.
-
-
-## 0.0.16
-
-### Fixes
-
-* **Add constraint on pydantic** Make sure the version of pydantic being used with this repo pulls in the earliest version that introduces generic Secret, since this is used heavily.
-
-## 0.0.15
-
-### Fixes
-
-* **Model serialization with nested models** Logic updated to properly handle serializing pydantic models that have nested configs with secret values.
-* **Sharepoint permission config requirement** The sharepoint connector was expecting the permission config, even though it should have been optional.
-* **Sharepoint CLI permission params made optional
-
-### Enhancements
-
-* **Migrate airtable connector to v2**
-* **Support iteratively deleting cached content** Add a flag to delete cached content once it's no longer needed for systems that are limited in memory.
-
-## 0.0.14
-
-### Enhancements
-
-* **Support async batch uploads for pinecone connector**
-* **Migrate embedders** Move embedder implementations from the open source unstructured repo into this one.
-
-### Fixes
-
-* **Misc. Onedrive connector fixes**
-
-## 0.0.13
-
-### Fixes
-
-* **Pinecone payload size fixes** Pinecone destination now has a limited set of properties it will publish as well as dynamically handles batch size to stay under 2MB pinecone payload limit.
-
-## 0.0.12
-
-### Enhancements
-
-### Fixes
-
-* **Fix invalid `replace()` calls in uncompress** - `replace()` calls meant to be on `str` versions of the path were instead called on `Path` causing errors with parameters.
-
-## 0.0.11
-
-### Enhancements
-
-* **Fix OpenSearch connector** OpenSearch connector did not work when `http_auth` was not provided
-
-## 0.0.10
-
-### Enhancements
-
-* "Fix tar extraction" - tar extraction function assumed archive was gzip compressed which isn't true for supported `.tar` archives. Updated to work for both compressed and uncompressed tar archives.
-
-## 0.0.9
-
-### Enhancements
-
-* **Chroma dict settings should allow string inputs**
-* **Move opensearch non-secret fields out of access config**
-* **Support string inputs for dict type model fields** Use the `BeforeValidator` support from pydantic to map a string value to a dict if that's provided.
-* **Move opensearch non-secret fields out of access config
-
-### Fixes
-
-**Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.
-
-
-## 0.0.8
-
-### Enhancements
-
-* **Add fields_to_include option for Milvus Stager** Adds support for filtering which fields will remain in the document so user can align document structure to collection schema.
-* **Add flatten_metadata option for Milvus Stager** Flattening metadata is now optional (enabled by default) step in processing the document.
-
-## 0.0.7
-
-### Enhancements
-
-* **support sharing parent multiprocessing for uploaders** If an uploader needs to fan out it's process using multiprocessing, support that using the parent pipeline approach rather than handling it explicitly by the connector logic.
-* **OTEL support** If endpoint supplied, publish all traces to an otel collector.
-
-### Fixes
-
-* **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed.
-* **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
-
-## 0.0.6
-
-### Fixes
-
-* **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partition` to avoid a breaking change in the newest version.
-
-## 0.0.5
-
-### Enhancements
-
-* **Add Couchbase Source Connector** Adds support for reading artifacts from Couchbase DB for processing in unstructured
-* **Drop environment from pinecone as part of v2 migration** environment is no longer required by the pinecone SDK, so that field has been removed from the ingest CLI/SDK/
-* **Add KDBAI Destination Connector** Adds support for writing elements and their embeddings to KDBAI DB.
-
-### Fixes
-
-* **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models.
-* **Local indexer recursive behavior** Local indexer was indexing directories as well as files. This was filtered out.
-
-## 0.0.4
-
-### Enhancements
-
-* **Add Couchbase Destination Connector** Adds support for storing artifacts in Couchbase DB for Vector Search
-* **Leverage pydantic base models** All user-supplied configs are now derived from pydantic base models to leverage better type checking and add built in support for sensitive fields.
-* **Autogenerate click options from base models** Leverage the pydantic base models for all configs to autogenerate the cli options exposed when running ingest as a CLI.
-* **Drop required Unstructured dependency** Unstructured was moved to an extra dependency to only be imported when needed for functionality such as local partitioning/chunking.
-* **Rebrand Astra to Astra DB** The Astra DB integration was re-branded to be consistent with DataStax standard branding.
-
-## 0.0.3
-
-### Enhancements
-
-* **Improve documentation** Update the README's.
-* **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones.
-* **Add missing fsspec destination precheck** check connection in precheck for all fsspec-based destination connectors
-
-## 0.0.2
-
-### Enhancements
-
-* **Use uuid for s3 identifiers** Update unique id to use uuid derived from file path rather than the filepath itself.
-* **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality.
-* **Filter Step** Support dedicated step as part of the pipeline to filter documents.
-
-## 0.0.1
-
-### Enhancements
-
-### Features
-
-* **Add Milvus destination connector** Adds support storing artifacts in Milvus vector database.
-
-### Fixes
-
-* **Remove old repo references** Any mention of the repo this project came from was removed.
-
-## 0.0.0
-
-### Features
-
-* **Initial Migration** Create the structure of this repo from the original code in the [Unstructured](https://github.com/Unstructured-IO/unstructured) project.
-
-### Fixes
+* **Enhancement: Initial setup and project creation**
+* **Enhancement: Basic ingestion framework and architecture**
