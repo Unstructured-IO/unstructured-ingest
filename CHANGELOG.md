@@ -1,4 +1,4 @@
-## [1.2.1]8-dev0]
+## [1.2.15]
 
 * **Enhancement: `parse_date_string` for sql connector optimized**
 * **Enhancement: `GoogleDriveIndexer.count_files_recursively` optimized**
