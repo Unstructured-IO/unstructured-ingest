@@ -1,235 +1,235 @@
-## 1.2.18-dev0
+## [1.2.1]8-dev0]
 
 * **Enhancement: `parse_date_string` for sql connector optimized**
 * **Enhancement: `GoogleDriveIndexer.count_files_recursively` optimized**
 * **Enhancement: `MilvusUploadStager.parse_date_string` optimized**
 
-## 1.2.17
+## [1.2.1]7]
 
 * **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
 
-## 1.2.16
+## [1.2.1]6]
 
 * **Fix: Catch databricks client auth errors that were being missed**
 
-## 1.2.15
+## [1.2.1]5]
 
 * **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
 
-## 1.2.14
+## [1.2.1]4]
 
 * **Fix: IBM watsonx.data S3 bucket authentication fix**
 
-## 1.2.13
+## [1.2.1]3]
 
 * **Feat: Make Bedrock embedding credentials optional and add IAM support**
 
-## 1.2.12
+## [1.2.1]2]
 
 * **Fix: retry with wait when throttling error happens in Sharepoint connector**
 * **Fix: fix Milvus stager to use correct exception**
 * **Fix: confluence integration test to use new link and credential**
 
-## 1.2.11
+## [1.2.1]1]
 
 * **Fix: temporarily restore errors_v2.py**
 
-## 1.2.10
+## [1.2.1]0]
 
 * **o11y: standardize exception classes across the repo**:
 
-## 1.2.9
+## [1.2.9]
 
 **Fix: enable s3fs cache_regions for bucket region detection**
 
-## 1.2.8
+## [1.2.8]
 
 **Fix: Fix artifact url**
 
-## 1.2.7
+## [1.2.7]
 
 **Fix: Fix artifact url**
 
-## 1.2.6
+## [1.2.6]
 
 **Publish to both pypi and artifacts**
 
-## 1.2.5
+## [1.2.5]
 
 **Fix: move S3 ambient_credentials out of AccessConfig**
 
-## 1.2.4
+## [1.2.4]
 
 **Fix: properly handle Together API 5xx errors as ProviderError instead of UserError**
 
-## 1.2.3
+## [1.2.3]
 
 * **Feature: allow environment credentials for S3**
 
-## 1.2.2
+## [1.2.2]
 
 * **Fix: prevent S3 path conflicts using tempfile for directory isolation**
 
-## 1.2.1
+## [1.2.1]
 
 * **Fix: Embeddings are properly assigned when embedding in batches**
 
-## 1.2.0
+## [1.2.0]
 * **Drop Python 3.9 support**
 
-## 1.1.3
+## [1.1.3]
 
 * **Fix: Remove unnecessary deletion operation in ES connector**
 
-## 1.1.2
+## [1.1.2]
 
 * **Fix: DeltaTableConnectionConfig default assignment is compliant with stricter typing in Pydantic**
 
-## 1.1.1
+## [1.1.1]
 
 * **Fix: Update examples**
 
-## 1.1.0
+## [1.1.0]
 
 * **Feature: Embedding with OpenAI (or Azure OpenAI) can trust custom certificate authority by specifying environment variable REQUESTS_CA_BUNDLE.**
 
-## 1.0.59
+## [1.0.59]
 
 * **o11y: Downgrade OTEL logs to `DEBUG` by default, make it configurable**
 
-## 1.0.58
+## [1.0.58]
 
 * **o11y: Improved logging in connectors' operations with LoggingMixin class**
 
-## 1.0.57
+## [1.0.57]
 
 * **test: Longer interval for pinecone integration tests**
 
-## 1.0.56
+## [1.0.56]
 
 * **Fix: set correct display_name in HtmlMixin produced FileData**
 
-## 1.0.55
+## [1.0.55]
 
 * **Fix: add precheck method to SharePoint connector**
 
-## 1.0.54
+## [1.0.54]
 
 * **Fix bump Togetherai dependency**
 
-## 1.0.53
+## [1.0.53]
 
 * **Handle SharePoint site access failure properly**
 
-## 1.0.52
+## [1.0.52]
 
 * **Fix mkdir race condition in concurrent operations**
 
-## 1.0.51
+## [1.0.51]
 
 * **Fix SharePoint connector UnboundLocalError when site not found**
 
-## 1.0.50-dev0
+## [1.0.50-dev0]
 
 * **Update ingest cli and docs readme files**
 
-## 1.0.49
+## [1.0.49]
 
 * **Improve MongoDB SCRAM-SHA-1 authentication error message**
 
-## 1.0.48
+## [1.0.48]
 
 * **Improve Jira attachment path results**
 
-## 1.0.47
+## [1.0.47]
 
 * **Fix delta-table: normalize S3 LocationConstraint values to handle us-east-1 and EU buckets**
 
-## 1.0.46
+## [1.0.46]
 
 * **Fix delta-table `pyo3_runtime.PanicException: Forked process detected` on Linux**
 
-## 1.0.45
+## [1.0.45]
 
 ### Fixes
 
 * **Fix downloading files that have special characters (like `[` or `]`) inside their names, when using `fsspec` based connectors**
 
-## 1.0.44
+## [1.0.44]
 
 * **Improve DeltaTable ingestion process and reliability**
 
-## 1.0.43
+## [1.0.43]
 
 * **Fix document limits in Confluence connectr**
 
-## 1.0.42
+## [1.0.42]
 
 * **Replace no longer supported TogetherAI test model**
 
-## 1.0.41
+## [1.0.41]
 
 * **Add `display_name` to FileData in 14 connectors**
 
-## 1.0.40
+## [1.0.40]
 
 * **Fix extracting embedded files from Confluence pages**
 
-## 1.0.39
+## [1.0.39]
 
 * **Added metadata export to milvus destination connector**
 
-## 1.0.38
+## [1.0.38]
 
 * **Fix pinecone serverless_region default value to be compatible with starter plans**
 
-## 1.0.37
+## [1.0.37]
 
 * **Added ability to use libraries in Sharepoint connector**
 
-## 1.0.36
+## [1.0.36]
 
 * **Added Notion connector sync block handling by teddysupercuts**
 
-## 1.0.35
+## [1.0.35]
 
 * **Fix output path in blob storage destination connector**
 
-## 1.0.34
+## [1.0.34]
 
 * **Improve Confluence Indexer's precheck** - validate access to each space
 
-## 1.0.33
+## [1.0.33]
 
 * **Fix google drive not setting the display_name property on the FileData object**
 
-## 1.0.32
+## [1.0.32]
 
 * **Fix google drive connector's dependencies**
 
-## 1.0.31
+## [1.0.31]
 
 * **Cap redis client version to 5.3.0**
 
-## 1.0.30
+## [1.0.30]
 
 * **Fixed issue in the blob storage destination connector where files with the same name were overwriting each other**
 * **Added more descriptive Redis connector error messages**
 
-## 1.0.29
+## [1.0.29]
 
 ### Fixes
 
 * **Fix Redis connector shouldn't require `port` and `ssl` params if URI is provided**
 
-## 1.0.28
+## [1.0.28]
 
 ### Fixes
 
 * **Fix Makes user_pname optional for Sharepoint**
 * **Fix Google Drive download links and enhance download method to use LRO for large files**
 
-## 1.0.27
+## [1.0.27]
 
 ### Fixes
 
@@ -237,75 +237,75 @@
 * **Fix Snowflake Destination issue with dropping/removing case insensitive column names when populating the table**
 * **Fix Snowflake Destination issue with `embeddings` column when using `VECTOR` type**
 
-## 1.0.26
+## [1.0.26]
 
 * **Fix Notion connector error with FileIcons**
 
-## 1.0.25
+## [1.0.25]
 
 * **Fix Notion user text and html getters**
 
-## 1.0.24
+## [1.0.24]
 
 * **Handle both cloud and non-cloud jira instances**
 
-## 1.0.23
+## [1.0.23]
 
 * **Migrate to new Mixedbread Python SDK**
 * **Support better filtering in jira connector and downloading attachments**
 
-## 1.0.22
+## [1.0.22]
 
 * **Fix Notion connector missing database properties fields**
 
-## 1.0.21
+## [1.0.21]
 
 * **Fix Jira connector cloud option not working issue**
 * **Fix Weaviate connector issue with names being wrongly transformed to match collections naming conventions**
 
-## 1.0.19
+## [1.0.19]
 
 * **Fix databricks delta table name edge cases**
 
-## 1.0.18
+## [1.0.18]
 
 * **Enforce api key if SDK defaults to os env var**
 
-## 1.0.17
+## [1.0.17]
 
 * **Support optional API keys for embedders**
 
-## 1.0.16
+## [1.0.16]
 
 * **Add embedder config field descriptions**
 
-## 1.0.15
+## [1.0.15]
 
 ### Fixes
 
 * **Fix bedrock embedder precheck**
 
-## 1.0.14
+## [1.0.14]
 
 ### Enhancements
 
 * **Add precheck support for embedders that support listing models**
 
-## 1.0.13
+## [1.0.13]
 
 ### Fixes
 
 * **Fix Notion connector database property missing 'description' attribute error**
 * **Retry IBM watsonx S3 upload on connection error**
 
-## 1.0.12
+## [1.0.12]
 
 ### Fixes
 
 * **Replaced google drive connector's mechanism for file downloads.**
 * **Fix Token expiration error in IBM watsonx.data connector**
 
-## 1.0.11
+## [1.0.11]
 
 ### Fixes
 
@@ -313,19 +313,19 @@
 * **Fix Pinecone connector writing empty vector error**
 * **Google Drive connector also include shared drive**
 
-## 1.0.8
+## [1.0.8]
 
 ### Enhancements
 
 * **Update Neo4J Entity Support** to support NER + RE(Relationship extraction)
 
-## 1.0.7
+## [1.0.7]
 
 ### Fixes
 
 * **Fix release version**
 
-## 1.0.6
+## [1.0.6]
 
 ### Fixes
 
@@ -333,49 +333,49 @@
 * **Google Drive permissions conform to FileData schema**
 * **Confluence permissions conform to FileData schema**
 
-## 1.0.5
+## [1.0.5]
 
 ### Fixes
 
 * **Fix Pydantic validation for permissions_data field**
 
-## 1.0.4
+## [1.0.4]
 
 ### Features
 
 * **Normalize user and group permissions in Google Drive source connector**
 
-## 1.0.3
+## [1.0.3]
 
 ### Features
 
 **Add permission metadata to Confluence source connector**
 
-## 1.0.2
+## [1.0.2]
 
 ### Features
 
 * **Update astra source connector to use new astrapy client**
 
-## 1.0.1
+## [1.0.1]
 
 ### Features
 
 * **Migrate project to use pyproject.toml and uv**
 
-## 0.7.2
+## [0.7.2]
 
 ### Features
 
 * **Add `username password` authentication to Onedrive and Sharepoint**
 
-## 0.7.0
+## [0.7.0]
 
 ### Features
 
 * **Drop V1**
 
-## 0.6.4
+## [0.6.4]
 
 ### Features
 
@@ -385,13 +385,13 @@
 
 * **Expose Github connector**
 
-## 0.6.3
+## [0.6.3]
 
 ### Features
 
 * **Migrate Github connector to v2**
 
-## 0.6.2
+## [0.6.2]
 
 ### Features
 
@@ -399,80 +399,80 @@
 * **Update databricks volume connector to emit user agent**
 * **Delete previous content from databricks delta tables**
 
-## 0.6.1
+## [0.6.1]
 
 ### Fixes
 
 * **Handle NDJSON when using local chunker**
 
-## 0.6.0
+## [0.6.0]
 
 ### Features
 
 * **Isolate FileData to limit dependencies**
 
-## 0.5.25
+## [0.5.25]
 
 ### Features
 
 * **Support dynamic schema management for Databricks Delta Table uploader**
 
-## 0.5.24
+## [0.5.24]
 
 ### Features
 
 * **Add warning to s3 if characters to avoid are present in path**
 
-## 0.5.23
+## [0.5.23]
 
 ### Enhancements
 FileData and a few other types can now be imported from a narrower v2.types module. 
 This avoids some of the adjacent implicit imports that were picked up with v2.interfaces.__init__.py 
 
-## 0.5.22
+## [0.5.22]
 
 ### Features
 
 * **Add elasticsearch config enforcement that hosts are a list type**
 
-## 0.5.21
+## [0.5.21]
 
 ### Fixes
 
 * **Lazy load pandas and numpy** to improve startup performance
 
-## 0.5.20
+## [0.5.20]
 
 ### Features 
 
 * **Add IBM watson.data Destination connector**
 
-## 0.5.19
+## [0.5.19]
 
 ### Features
 
 * **Add `key_prefix` field to Redis Uploader** - Allow users to input custom prefix for keys saved inside Redis connector
 
-## 0.5.18
+## [0.5.18]
 
 ### Fixes
 
 * **Fix missing support for NDJSON in stagers**
 
-## 0.5.17
+## [0.5.17]
 
 ### Fixes 
 
 * **Do not output `orig_elements` for astradb** `original_elements` has the correctly truncated field
 
-## 0.5.16
+## [0.5.16]
 
 ### Fixes 
 
 * **Fix databricks volumes table uploader precheck**
 * **Zendesk fix for debug**
 
-## 0.5.15
+## [0.5.15]
 
 ### Fixes 
 
@@ -482,13 +482,13 @@ This avoids some of the adjacent implicit imports that were picked up with v2.in
 
 * **Support NDJSON for data between pipeline steps for data streaming**
 
-## 0.5.14
+## [0.5.14]
 
 ### Fixes
 
 * **Fixed Zendesk connector registering method**
 
-## 0.5.13
+## [0.5.13]
 
 ### Fixes 
 
@@ -496,7 +496,7 @@ This avoids some of the adjacent implicit imports that were picked up with v2.in
 
 ### Fixes
 
-## 0.5.12
+## [0.5.12]
 
 ### Features 
 
@@ -506,7 +506,7 @@ This avoids some of the adjacent implicit imports that were picked up with v2.in
 
 Fixed zendesk dependency warning
 
-## 0.5.11
+## [0.5.11]
 
 ### Features 
 
@@ -517,7 +517,7 @@ Fixed zendesk dependency warning
 * **Fix move metadata to top level in AstraDB destination**
 * **Add option to move metadata to top level in AstraDB destination**
 
-## 0.5.10
+## [0.5.10]
 
 ### Enhancements
 
@@ -532,7 +532,7 @@ Fixed zendesk dependency warning
 * **Dropbox connector can now use long lived refresh token and generate access token internally**
 * **Delta Tables connector can evolve schema**
 
-## 0.5.9
+## [0.5.9]
 
 ### Features
 
@@ -542,36 +542,36 @@ Fixed zendesk dependency warning
 
 * **Fix Confluence Source page title not being processed during partition**
 
-## 0.5.8
+## [0.5.8]
 
 ### Fixes
 
 * **Fix on pinecone index creation functionality**
 
-## 0.5.7
+## [0.5.7]
 
 ### Fixes
 
 * **Fix voyageai embedder: add multimodal embedder function**
 
-## 0.5.6
+## [0.5.6]
 
 ### Enhancements
 
 * **Add support for setting up destination for Pinecone**
 * Add name formatting to Weaviate destination uploader
 
-## 0.5.5
+## [0.5.5]
 
 * **Improve orig_elements handling in astra and neo4j connectors**
 
-## 0.5.4
+## [0.5.4]
 
 ### Enhancements
 
 * **Sharepoint support for nested folders and remove need for default path Shared Documents**
 
-## 0.5.3
+## [0.5.3]
 
 ### Enhancements
 
@@ -582,7 +582,7 @@ Fixed zendesk dependency warning
 
 * **Fix bedrock embedder: rename embed_model_name to embedder_model_name**
 
-## 0.5.2
+## [0.5.2]
 
 ### Enhancements
 
@@ -596,7 +596,7 @@ Fixed zendesk dependency warning
 
 * **Fix Snowflake Uploader error with array variable binding**
 
-## 0.5.1
+## [0.5.1]
 
 ### Fixes
 
@@ -609,7 +609,7 @@ Fixed zendesk dependency warning
 * **Allow dynamic metadata for SQL Connectors**
 * **Add entities field to pinecone connector default fields**
 
-## 0.5.0
+## [0.5.0]
 
 ### Fixes
 
@@ -620,33 +620,33 @@ Fixed zendesk dependency warning
 
 * **Don't raise error by default for unsupported filetypes in partitioner** - Add a flag to the partitioner to not raise an error when an unsupported filetype is encountered.
 
-## 0.4.7
+## [0.4.7]
 
 ### Fixes
 
 * **Add missing async azure openai embedder implementation**
 * **Update Sharepoint to support new Microsoft credential sequence**
 
-## 0.4.6
+## [0.4.6]
 
 ### Fixes
 
 * **Fix Upload support for OneDrive connector**
 * **Fix Databricks Delta Tables connector's "Service Principal" authentication method**
 
-## 0.4.5
+## [0.4.5]
 
 ### Fixes
 
 * **Fix downloading large files for OneDrive**
 
-## 0.4.4
+## [0.4.4]
 
 ### Fixes
 
 * **Fix AsyncIO support for OneDrive connector**
 
-## 0.4.3
+## [0.4.3]
 
 ### Enhancements
 
@@ -659,13 +659,13 @@ Fixed zendesk dependency warning
 * **Fix HtmlMixin error when saving downloaded files**
 * **Fix Confluence Downloader error when downloading embedded files**
 
-## 0.4.2
+## [0.4.2]
 
 ### Fixes
 
 * **Fix Databricks Volume Delta Table uploader** - Use given database when uploading data.
 
-## 0.4.1
+## [0.4.1]
 
 ### Enhancements
 
@@ -678,7 +678,7 @@ Fixed zendesk dependency warning
 
 * **Fix how data updated before writing to sql tables based on columns in table**
 
-## 0.4.0
+## [0.4.0]
 
 ### Enhancements
 
@@ -689,7 +689,7 @@ Fixed zendesk dependency warning
 * **Fix SQL uploader stager** - When passed `output_filename` without a suffix it resulted in unsupported file format error. Now, it will take a suffix of `elements_filepath` and append it to `output_filename`.
 * **Fix Snowflake uploader** - Unexpected `columns` argument was passed to `_fit_to_schema` method inside SnowflakeUploader `upload_dataframe` method.
 
-## 0.3.15
+## [0.3.15]
 
 ### Enhancements
 
@@ -699,14 +699,14 @@ Fixed zendesk dependency warning
 
 * **Fixed namespace issue with pinecone, and added new test**
 
-## 0.3.14
+## [0.3.14]
 
 ### Fixes
 
 * **Fix Neo4j Uploader string enum error**
 * **Fix ChromaDB Destination failing integration tests** - issue lies within the newest ChromaDB release, fix freezes it's version to 0.6.2.
 
-## 0.3.13
+## [0.3.13]
 
 ### Fixes
 
@@ -720,7 +720,7 @@ Fixed zendesk dependency warning
 * **Async support for all IO-bounded embedders**
 * **Expand support to Python 3.13**
 
-## 0.3.12
+## [0.3.12]
 
 ### Enhancements
 
@@ -737,7 +737,7 @@ Fixed zendesk dependency warning
 * **Fix Kafka destination connection problems**
 
 
-## 0.3.11
+## [0.3.11]
 
 ### Enhancements
 
@@ -747,7 +747,7 @@ Fixed zendesk dependency warning
 
 * **Fix missing source identifiers in some downloaders**
 
-## 0.3.10
+## [0.3.10]
 
 ### Enhancements
 
@@ -758,7 +758,7 @@ Fixed zendesk dependency warning
 * **Add Neo4J to ingest destination connector registry**
 * **Fix closing SSHClient in sftp connector**
 
-## 0.3.9
+## [0.3.9]
 
 ### Enhancements
 
@@ -770,13 +770,13 @@ Fixed zendesk dependency warning
 
 * **Make sure any SDK clients that support closing get called**
 
-## 0.3.8
+## [0.3.8]
 
 ### Fixes
 
 * **Prevent pinecone delete from hammering database when deleting**
 
-## 0.3.7
+## [0.3.7]
 
 ### Fixes
 
@@ -803,13 +803,13 @@ Fixed zendesk dependency warning
 * **Add MotherDuck destination connector** Adds support storing artifacts in MotherDuck database.
 * **Update weaviate v2 example**
 
-## 0.3.6
+## [0.3.6]
 
 ### Fixes
 
 * **Fix Azure AI Search Error handling**
 
-## 0.3.5
+## [0.3.5]
 
 ### Enhancements
 
@@ -822,14 +822,14 @@ Fixed zendesk dependency warning
 * **Add check to prevent querying for more than pinecone limit when deleting records**
 * **Unregister Weaviate base classes** - Weaviate base classes shouldn't be registered as they are abstract and cannot be instantiated as a configuration
 
-## 0.3.4
+## [0.3.4]
 
 ### Enhancements
 
 * **Add azure openai embedder**
 * **Add `collection_id` field to Couchbase `downloader_config`**
 
-## 0.3.3
+## [0.3.3]
 
 ### Enhancements
 
@@ -841,7 +841,7 @@ Fixed zendesk dependency warning
 * **Add missing LanceDb extra**
 * **Weaviate cloud auth detection fixed**
 
-## 0.3.2
+## [0.3.2]
 
 ### Enhancements
 
@@ -854,7 +854,7 @@ Fixed zendesk dependency warning
 * **Create LanceDB test databases in unique remote locations to avoid conflicts**
 * **Add weaviate to destination registry**
 
-## 0.3.1
+## [0.3.1]
 
 ### Enhancements
 
@@ -870,7 +870,7 @@ Fixed zendesk dependency warning
 * **Respect Pinecone's metadata size limits** crop metadata sent to Pinecone's to fit inside its limits, to avoid error responses
 * **Propagate exceptions raised by delta table connector during write**
 
-## 0.3.0
+## [0.3.0]
 
 ### Enhancements
 
@@ -887,7 +887,7 @@ Fixed zendesk dependency warning
 * **Handle fsspec download file into directory** When filenames have odd characters, files are downloaded into a directory. Code added to shift it around to match expected behavior.
 * **Postgres Connector Query** causing syntax error when ID column contains strings
 
-## 0.2.2
+## [0.2.2]
 
 ### Enhancements
 * **Remove `overwrite` field** from fsspec and databricks connectors
@@ -897,7 +897,7 @@ Fixed zendesk dependency warning
 * **Qdrant destination to v2**
 * **Migrate Kafka Source Connector to V2**
 
-## 0.2.1
+## [0.2.1]
 
 ### Enhancements
 
@@ -913,7 +913,7 @@ Fixed zendesk dependency warning
 * **Fix Databricks Volumes file naming** Add .json to end of upload file.
 * **Fix SQL Type destination precheck** Change to context manager "with".
 
-## 0.2.0
+## [0.2.0]
 
 ### Enhancements
 
@@ -923,7 +923,7 @@ Fixed zendesk dependency warning
 * **Add Delta Table destination to v2**
 * **Migrate Slack Source Connector to V2**
 
-## 0.1.1
+## [0.1.1]
 
 ### Enhancements
 
@@ -935,7 +935,7 @@ Fixed zendesk dependency warning
 
 * **Fix Databricks Volumes destination** Fix for filenames to not be hashes.
 
-## 0.1.0
+## [0.1.0]
 
 ### Enhancements
 
@@ -951,7 +951,7 @@ Fixed zendesk dependency warning
 
 **Fix Notion Ingestion** Fix the Notion source connector to work with the latest version of the Notion API (added `in_trash` properties to `Page`, `Block` and `Database`).
 
-## 0.0.25
+## [0.0.25]
 
 ### Enhancements
 
@@ -963,19 +963,19 @@ Fixed zendesk dependency warning
 
 * **Update Sharepoint Creds and Expected docs**
 
-## 0.0.24
+## [0.0.24]
 
 ### Enhancements
 
 * **Support dynamic metadata mapping in Pinecone uploader**
 
-## 0.0.23
+## [0.0.23]
 
 ### Fixes
 
 * **Remove check for langchain dependency in embedders**
 
-## 0.0.22
+## [0.0.22]
 
 ### Enhancements
 
@@ -987,7 +987,7 @@ Fixed zendesk dependency warning
 
 * **Drop langchain as dependency for embedders**
 
-## 0.0.21
+## [0.0.21]
 
 ### Fixes
 
@@ -997,38 +997,38 @@ Fixed zendesk dependency warning
 
 * **Fix astra src bug** V1 source connector was updated to work with astrapy 1.5.0
 
-## 0.0.20
+## [0.0.20]
 
 ### Enhancements
 
 * **Support for latest AstraPy API** Add support for the modern AstraPy client interface for the Astra DB Connector.
 
-## 0.0.19
+## [0.0.19]
 
 ### Fixes
 
 * **Use validate_default to instantiate default pydantic secrets**
 
-## 0.0.18
+## [0.0.18]
 
 ### Enhancements
 
 * **Better destination precheck for blob storage** Write an empty file to the destination location when running fsspec-based precheck
 
-## 0.0.17
+## [0.0.17]
 
 ### Fixes
 
 * **Drop use of unstructued in embed** Remove remnant import from unstructured dependency in embed implementations.
 
 
-## 0.0.16
+## [0.0.16]
 
 ### Fixes
 
 * **Add constraint on pydantic** Make sure the version of pydantic being used with this repo pulls in the earliest version that introduces generic Secret, since this is used heavily.
 
-## 0.0.15
+## [0.0.15]
 
 ### Fixes
 
@@ -1041,7 +1041,7 @@ Fixed zendesk dependency warning
 * **Migrate airtable connector to v2**
 * **Support iteratively deleting cached content** Add a flag to delete cached content once it's no longer needed for systems that are limited in memory.
 
-## 0.0.14
+## [0.0.14]
 
 ### Enhancements
 
@@ -1052,13 +1052,13 @@ Fixed zendesk dependency warning
 
 * **Misc. Onedrive connector fixes**
 
-## 0.0.13
+## [0.0.13]
 
 ### Fixes
 
 * **Pinecone payload size fixes** Pinecone destination now has a limited set of properties it will publish as well as dynamically handles batch size to stay under 2MB pinecone payload limit.
 
-## 0.0.12
+## [0.0.12]
 
 ### Enhancements
 
@@ -1066,19 +1066,19 @@ Fixed zendesk dependency warning
 
 * **Fix invalid `replace()` calls in uncompress** - `replace()` calls meant to be on `str` versions of the path were instead called on `Path` causing errors with parameters.
 
-## 0.0.11
+## [0.0.11]
 
 ### Enhancements
 
 * **Fix OpenSearch connector** OpenSearch connector did not work when `http_auth` was not provided
 
-## 0.0.10
+## [0.0.10]
 
 ### Enhancements
 
 * "Fix tar extraction" - tar extraction function assumed archive was gzip compressed which isn't true for supported `.tar` archives. Updated to work for both compressed and uncompressed tar archives.
 
-## 0.0.9
+## [0.0.9]
 
 ### Enhancements
 
@@ -1092,14 +1092,14 @@ Fixed zendesk dependency warning
 **Fix uncompress logic** Use of the uncompress process wasn't being leveraged in the pipeline correctly. Updated to use the new loca download path for where the partitioned looks for the new file.
 
 
-## 0.0.8
+## [0.0.8]
 
 ### Enhancements
 
 * **Add fields_to_include option for Milvus Stager** Adds support for filtering which fields will remain in the document so user can align document structure to collection schema.
 * **Add flatten_metadata option for Milvus Stager** Flattening metadata is now optional (enabled by default) step in processing the document.
 
-## 0.0.7
+## [0.0.7]
 
 ### Enhancements
 
@@ -1111,13 +1111,13 @@ Fixed zendesk dependency warning
 * **Weaviate access configs access** Weaviate access config uses pydantic Secret and it needs to be resolved to the secret value when being used. This was fixed.
 * **unstructured-client compatibility fix** Fix an error when accessing the fields on `PartitionParameters` in the new 0.26.0 Python client.
 
-## 0.0.6
+## [0.0.6]
 
 ### Fixes
 
 * **unstructured-client compatibility fix** Update the calls to `unstructured_client.general.partition` to avoid a breaking change in the newest version.
 
-## 0.0.5
+## [0.0.5]
 
 ### Enhancements
 
@@ -1130,7 +1130,7 @@ Fixed zendesk dependency warning
 * **AstraDB connector configs** Configs had dataclass annotation removed since they're now pydantic data models.
 * **Local indexer recursive behavior** Local indexer was indexing directories as well as files. This was filtered out.
 
-## 0.0.4
+## [0.0.4]
 
 ### Enhancements
 
@@ -1140,7 +1140,7 @@ Fixed zendesk dependency warning
 * **Drop required Unstructured dependency** Unstructured was moved to an extra dependency to only be imported when needed for functionality such as local partitioning/chunking.
 * **Rebrand Astra to Astra DB** The Astra DB integration was re-branded to be consistent with DataStax standard branding.
 
-## 0.0.3
+## [0.0.3]
 
 ### Enhancements
 
@@ -1148,7 +1148,7 @@ Fixed zendesk dependency warning
 * **Explicit Opensearch classes** For the connector registry entries for opensearch, use only opensearch specific classes rather than any elasticsearch ones.
 * **Add missing fsspec destination precheck** check connection in precheck for all fsspec-based destination connectors
 
-## 0.0.2
+## [0.0.2]
 
 ### Enhancements
 
@@ -1156,7 +1156,7 @@ Fixed zendesk dependency warning
 * **V2 connectors precheck support** All steps in the v2 pipeline support an optional precheck call, which encompasses the previous check connection functionality.
 * **Filter Step** Support dedicated step as part of the pipeline to filter documents.
 
-## 0.0.1
+## [0.0.1]
 
 ### Enhancements
 
@@ -1168,7 +1168,7 @@ Fixed zendesk dependency warning
 
 * **Remove old repo references** Any mention of the repo this project came from was removed.
 
-## 0.0.0
+## [0.0.0]
 
 ### Features
 

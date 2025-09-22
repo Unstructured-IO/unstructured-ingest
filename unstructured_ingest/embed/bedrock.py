@@ -28,13 +28,23 @@ if TYPE_CHECKING:
 
     class BedrockRuntimeClient(BaseClient):
         def invoke_model(
-            self, body: str, modelId: str, accept: str, contentType: str, inferenceProfileId: str = None
+            self,
+            body: str,
+            modelId: str,
+            accept: str,
+            contentType: str,
+            inferenceProfileId: str = None,
         ) -> dict:
             pass
 
     class AsyncBedrockRuntimeClient(BaseClient):
         async def invoke_model(
-            self, body: str, modelId: str, accept: str, contentType: str, inferenceProfileId: str = None
+            self,
+            body: str,
+            modelId: str,
+            accept: str,
+            contentType: str,
+            inferenceProfileId: str = None,
         ) -> dict:
             pass
 
