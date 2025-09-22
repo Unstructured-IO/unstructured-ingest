@@ -1,6 +1,18 @@
-## [1.2.15]
+## [1.2.18]
 
 * **feat: add configurable Bedrock inference profile support**
+
+## [1.2.17]
+
+* **Enhancement: Use a single `executemany` instead of per element `execute` in Snowflake Uploader**
+
+## [1.2.16]
+
+* **Fix: Catch databricks client auth errors that were being missed**
+
+## [1.2.15]
+
+* **Fix: Filter out fields that aren't part of our Page subclass data model. This guards against API changes that are potentially nonbreaking.**
 
 ## [1.2.14]
 
@@ -9,6 +21,11 @@
 ## [1.2.13]
 
 * **Feat: Make Bedrock embedding credentials optional and add IAM support**
+  - AWS credentials (`aws_access_key_id`, `aws_secret_access_key`) are now optional, defaulting to `None`
+  - Added `access_method` field supporting "credentials" (explicit keys) and "iam" (AWS credential chain)
+  - Added `endpoint_url` field for custom Bedrock endpoints
+  - Enhanced validation logic for different authentication methods
+  - Maintains full backwards compatibility with existing configurations
 
 ## [1.2.12]
 
