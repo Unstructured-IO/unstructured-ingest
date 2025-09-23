@@ -1,3 +1,7 @@
+## [1.2.19-dev0]
+
+* **Fix: Configure codeflash.**
+
 ## [1.2.18]
 
 * **feat: add configurable Bedrock inference profile support**
