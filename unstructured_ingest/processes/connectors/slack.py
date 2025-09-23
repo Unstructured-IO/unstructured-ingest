@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, List, Optional
 
 from pydantic import Field, Secret
 
