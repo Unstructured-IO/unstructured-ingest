@@ -88,6 +88,7 @@ class SlackIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
+        [x*2 for x in range(100000)]
         for channel in self.index_config.channels:
             messages = []
             oldest = (

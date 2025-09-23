@@ -1,4 +1,4 @@
-name: Codeflash / Optimize new Python code
+name: Codeflash
 
 on:
  pull_request:
