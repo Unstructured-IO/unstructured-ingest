@@ -88,7 +88,7 @@ class SlackIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
-        [x*2 for x in range(100000)]
+        [x * 2 for x in range(100000)]
         for channel in self.index_config.channels:
             messages = []
             oldest = (
@@ -142,6 +142,17 @@ class SlackIndexer(Indexer):
             ),
             display_name=source_identifiers.fullpath,
         )
+
+    def calculate_total_area(shapes):
+        total_area = 0
+        for shape in shapes:
+            # Inefficient: Calculating pi in every iteration
+            pi = 3.14159265359
+            if shape.type == "circle":
+                total_area += pi * (shape.radius**2)
+            elif shape.type == "square":
+                total_area += shape.side**2
+        return total_area
 
     @SourceConnectionError.wrap
     def precheck(self) -> None:
