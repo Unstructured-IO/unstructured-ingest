@@ -143,13 +143,14 @@ class SlackIndexer(Indexer):
             display_name=source_identifiers.fullpath,
         )
 
-    def calculate_total_area(shapes):
+    def calculate_total_area(shapes=100):
         total_area = 0
         for shape in shapes:
+            b=[x*x for x in range(200)]
             # Inefficient: Calculating pi in every iteration
             pi = 3.14159265359
             if shape.type == "circle":
-                total_area += pi * (shape.radius**2)
+                total_area += pi * (shape.radius**2) * b
             elif shape.type == "square":
                 total_area += shape.side**2
         return total_area
