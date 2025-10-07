@@ -1,3 +1,7 @@
+## [1.2.19]
+
+* **fix: Pinned aibotocore to skip version that's incompatible with recent botocore version**
+
 ## [1.2.18]
 
 * **feat: add configurable Bedrock inference profile support**
