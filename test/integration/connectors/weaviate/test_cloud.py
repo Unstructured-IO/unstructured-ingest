@@ -1,7 +1,7 @@
 import pytest
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
-from unstructured_ingest.error import DestinationConnectionError, ValueError
+from unstructured_ingest.error import DestinationConnectionError, ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.weaviate.cloud import (
     CONNECTOR_TYPE,
     CloudWeaviateAccessConfig,
@@ -13,7 +13,7 @@ from unstructured_ingest.processes.connectors.weaviate.cloud import (
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 def test_weaviate_failing_connection_config():
-    with pytest.raises(ValueError):
+    with pytest.raises(IngestValueError):
         CloudWeaviateConnectionConfig(
             access_config=CloudWeaviateAccessConfig(api_key="my key", password="password"),
             username="username",
