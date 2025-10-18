@@ -1,3 +1,7 @@
+## [1.2.20]
+
+* **fix: Prevent weaviate cloud precheck from passing with invalid config**
+
 ## [1.2.19]
 
 * **fix: Pinned aibotocore to skip version that's incompatible with recent botocore version**

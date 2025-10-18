@@ -223,7 +223,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
             with self.connection_config.get_client():
                 # Connection test successful - client is available but not needed
                 pass
-            
+
             # only if collection name populated should we check that it exists
             if self.upload_config.collection and not self._collection_exists():
                 raise DestinationConnectionError(
