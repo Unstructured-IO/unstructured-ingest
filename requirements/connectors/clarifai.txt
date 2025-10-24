@@ -1,1 +1,1 @@
-clarifai
+clarifai<10.0.0
