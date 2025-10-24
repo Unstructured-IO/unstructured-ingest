@@ -222,7 +222,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
             try:
                 self.connection_config.get_client().files.upload(
                     file_path=output_path,
-                    contents=elements_file,
+                    data=elements_file,
                     overwrite=True,
                 )
             except Exception as e:

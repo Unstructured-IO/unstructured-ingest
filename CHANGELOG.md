@@ -1,6 +1,7 @@
 ## [1.2.21]
 
 * **fix: Enforce minimum version of databricks-sdk (>=0.62.0) for databricks-volumes connector**
+* **fix: Update databricks-volumes connector to use correct API parameter (data instead of contents) for files.upload() method in databricks-sdk >=0.62.0**
 * **fix: Add constraints to prevent platform compatibility issues with tritonclient/perf-analyzer dependencies**
 
 ## [1.2.20]
