@@ -19,7 +19,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
-    WriteError,
+    UnstructuredIngestError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -199,17 +199,24 @@ class ElasticsearchIndexer(Indexer):
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         for batch in batch_generator(ids, self.index_config.batch_size):
+            batch_items = [BatchItem(identifier=b) for b in batch]
+            url = f"{self.connection_config.hosts[0]}/{self.index_config.index_name}"
+            display_name = (
+                f"url={url}, batch_size={len(batch_items)} "
+                f"ids={batch_items[0].identifier}..{batch_items[-1].identifier}"
+            )  # noqa: E501
             # Make sure the hash is always a positive number to create identified
             yield ElasticsearchBatchFileData(
                 connector_type=CONNECTOR_TYPE,
                 metadata=FileDataSourceMetadata(
-                    url=f"{self.connection_config.hosts[0]}/{self.index_config.index_name}",
+                    url=url,
                     date_processed=str(time()),
                 ),
                 additional_metadata=ElastisearchAdditionalMetadata(
                     index_name=self.index_config.index_name,
                 ),
-                batch_items=[BatchItem(identifier=b) for b in batch],
+                batch_items=batch_items,
+                display_name=display_name,
             )
 
 
@@ -329,6 +336,8 @@ class ElasticsearchUploadStager(UploadStager):
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         data = element_dict.copy()
+        # when _op_type is not specified, it defaults to "index":
+        # Overwrites if exists, creates if not.
         resp = {
             "_index": self.upload_stager_config.index_name,
             "_id": get_enhanced_element_id(element_dict=data, file_data=file_data),
@@ -390,23 +399,6 @@ class ElasticsearchUploader(Uploader):
 
         return parallel_bulk
 
-    def delete_by_record_id(self, client, file_data: FileData) -> None:
-        logger.debug(
-            f"deleting any content with metadata {RECORD_ID_LABEL}={file_data.identifier} "
-            f"from {self.upload_config.index_name} index"
-        )
-        delete_resp = client.delete_by_query(
-            index=self.upload_config.index_name,
-            body={"query": {"match": {self.upload_config.record_id_key: file_data.identifier}}},
-        )
-        logger.info(
-            "deleted {} records from index {}".format(
-                delete_resp["deleted"], self.upload_config.index_name
-            )
-        )
-        if failures := delete_resp.get("failures"):
-            raise WriteError(f"failed to delete records: {failures}")
-
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:  # noqa: E501
         from elasticsearch.helpers.errors import BulkIndexError
@@ -422,7 +414,6 @@ class ElasticsearchUploader(Uploader):
         )
 
         with self.connection_config.get_client() as client:
-            self.delete_by_record_id(client=client, file_data=file_data)
             if not client.indices.exists(index=self.upload_config.index_name):
                 logger.warning(
                     f"{(self.__class__.__name__).replace('Uploader', '')} index does not exist: "
@@ -439,6 +430,10 @@ class ElasticsearchUploader(Uploader):
                         thread_count=self.upload_config.num_threads,
                     )
                     collections.deque(iterator, maxlen=0)
+                    logger.info(
+                        f"uploaded batch of {len(batch)} elements to index "
+                        f"{self.upload_config.index_name}"
+                    )
                 except BulkIndexError as e:
                     sanitized_errors = [
                         self._sanitize_bulk_index_error(error) for error in e.errors
@@ -446,10 +441,10 @@ class ElasticsearchUploader(Uploader):
                     logger.error(
                         f"Batch upload failed - {e} - with following errors: {sanitized_errors}"
                     )
-                    raise e
+                    raise DestinationConnectionError(str(e))
                 except Exception as e:
                     logger.error(f"Batch upload failed - {e}")
-                    raise e
+                    raise UnstructuredIngestError(str(e))
 
     def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
         """Remove data uploaded to index from the log, leave only error information.

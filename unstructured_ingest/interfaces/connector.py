@@ -5,6 +5,8 @@ from typing import Any, TypeVar, Union
 from pydantic import BaseModel, Secret, model_validator
 from pydantic.types import _SecretBase
 
+from unstructured_ingest.processes.utils.logging.connector import ConnectorLoggingMixin
+
 
 class AccessConfig(BaseModel):
     """Meant to designate holding any sensitive information associated with other configs
@@ -46,5 +48,9 @@ ConnectionConfigT = TypeVar("ConnectionConfigT", bound=ConnectionConfig)
 
 
 @dataclass
-class BaseConnector(ABC):
+class BaseConnector(ABC, ConnectorLoggingMixin):
     connection_config: ConnectionConfigT
+
+    def __post_init__(self):
+        """Initialize the logging mixin after dataclass initialization."""
+        ConnectorLoggingMixin.__init__(self)

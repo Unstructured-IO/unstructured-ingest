@@ -18,12 +18,14 @@ NONSTANDARD_METADATA_FIELDS = {
     ]
 }
 
+FILEDATA_CHECKS_TYPE = Callable[[FileData], None] | tuple[Callable[[FileData], None], ...]
+
 
 class SourceValidationConfigs(ValidationConfig):
     expected_number_indexed_file_data: Optional[int] = None
     expected_num_files: Optional[int] = None
-    predownload_file_data_check: Optional[Callable[[FileData], None]] = None
-    postdownload_file_data_check: Optional[Callable[[FileData], None]] = None
+    predownload_file_data_check: Optional[FILEDATA_CHECKS_TYPE] = None
+    postdownload_file_data_check: Optional[FILEDATA_CHECKS_TYPE] = None
     exclude_fields: list[str] = Field(
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
@@ -40,9 +42,17 @@ class SourceValidationConfigs(ValidationConfig):
         self, predownload_file_data: FileData, postdownload_file_data: FileData
     ):
         if predownload_file_data_check := self.predownload_file_data_check:
-            predownload_file_data_check(predownload_file_data)
+            if isinstance(predownload_file_data_check, tuple):
+                for check in predownload_file_data_check:
+                    check(predownload_file_data)
+            else:
+                predownload_file_data_check(predownload_file_data)
         if postdownload_file_data_check := self.postdownload_file_data_check:
-            postdownload_file_data_check(postdownload_file_data)
+            if isinstance(postdownload_file_data_check, tuple):
+                for check in postdownload_file_data_check:
+                    check(postdownload_file_data)
+            else:
+                postdownload_file_data_check(postdownload_file_data)
 
     def run_download_dir_validation(self, download_dir: Path):
         if expected_num_files := self.expected_num_files:
@@ -157,11 +167,24 @@ def run_expected_download_files_validation(
 
 
 def run_directory_structure_validation(expected_output_dir: Path, download_files: list[str]):
-    directory_record = expected_output_dir / "directory_structure.json"
-    with directory_record.open("r") as directory_file:
-        directory_file_contents = json.load(directory_file)
-    directory_structure = directory_file_contents["directory_structure"]
-    assert directory_structure == download_files
+    s3_keys_file = expected_output_dir / "expected_s3_keys.json"
+
+    if s3_keys_file.exists():
+        with s3_keys_file.open("r") as f:
+            s3_keys = json.load(f)["s3_keys"]
+
+        expected_filenames = {Path(s3_key).name for s3_key in s3_keys}
+        actual_filenames = {Path(download_file).name for download_file in download_files}
+
+        assert expected_filenames == actual_filenames, (
+            f"Expected filenames: {sorted(expected_filenames)}, "
+            f"Got filenames: {sorted(actual_filenames)}"
+        )
+    else:
+        directory_record = expected_output_dir / "directory_structure.json"
+        with directory_record.open("r") as f:
+            directory_structure = json.load(f)["directory_structure"]
+        assert directory_structure == download_files
 
 
 def update_fixtures(
@@ -329,3 +352,13 @@ async def source_connector_validation(
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
         )
+
+
+def source_filedata_display_name_set_check(file_data: FileData) -> None:
+    """
+    Check if the display_name of the file_data is set.
+    If not, raise an AssertionError.
+    """
+    assert file_data.display_name, (
+        "FileData display_name is not set. This is required for a given connector."
+    )

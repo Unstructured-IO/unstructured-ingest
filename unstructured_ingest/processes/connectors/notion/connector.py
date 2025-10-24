@@ -9,7 +9,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import SourceConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -174,6 +174,7 @@ class NotionIndexer(Indexer):
                 source_identifiers=source_identifiers,
                 metadata=metadata,
                 additional_metadata=additional_metadata,
+                display_name=source_identifiers.fullpath,
             )
         except Exception as e:
             logger.error(f"Error retrieving page {page_id}: {e}")
@@ -210,6 +211,7 @@ class NotionIndexer(Indexer):
                 source_identifiers=source_identifiers,
                 metadata=metadata,
                 additional_metadata=additional_metadata,
+                display_name=source_identifiers.fullpath,
             )
         except Exception as e:
             logger.error(f"Error retrieving database {database_id}: {e}")

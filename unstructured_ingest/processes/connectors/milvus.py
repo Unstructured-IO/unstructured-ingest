@@ -1,13 +1,18 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, WriteError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    KeyError,
+    WriteError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -93,6 +98,13 @@ class MilvusUploadStager(UploadStager):
             return timestamp
         except ValueError:
             pass
+
+        try:
+            dt = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
+            return dt.timestamp()
+        except ValueError:
+            pass
+
         return parser.parse(date_string).timestamp()
 
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:

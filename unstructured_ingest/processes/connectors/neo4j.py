@@ -13,7 +13,11 @@ from pydantic import BaseModel, ConfigDict, Field, Secret, ValidationError, fiel
 
 from unstructured_ingest.data_types.entities import EntitiesData, Entity, EntityRelationship
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    UnstructuredIngestError,
+    ValueError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -374,7 +378,7 @@ class Neo4jUploader(Uploader):
             if e.code == "Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists":
                 logger.info(f"Index on nodes labeled '{label.value}' already exists.")
             else:
-                raise
+                raise UnstructuredIngestError(str(e))
 
     async def _delete_old_data_if_exists(self, file_data: FileData, client: AsyncDriver) -> None:
         logger.info(f"Deleting old data for the record '{file_data.identifier}' (if present).")

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from unstructured_ingest.logger import logger
+from unstructured_ingest.utils.filesystem import mkdir_concurrent_safe
 
 ZIP_FILE_EXT = [".zip"]
 TAR_FILE_EXT = [".tar", ".tar.gz", ".tgz"]
@@ -17,7 +18,7 @@ def uncompress_file(filename: str, path: Optional[str] = None) -> str:
     """
     # Create path if it doesn't already exist
     if path:
-        Path(path).mkdir(parents=True, exist_ok=True)
+        mkdir_concurrent_safe(Path(path))
 
     if any(filename.endswith(ext) for ext in ZIP_FILE_EXT):
         return uncompress_zip_file(zip_filename=filename, path=path)

@@ -13,7 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import SourceConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -122,12 +122,13 @@ class SlackIndexer(Indexer):
         identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
         filename = identifier[:16]
 
+        source_identifiers = SourceIdentifiers(
+            filename=f"{filename}.xml", fullpath=f"{filename}.xml"
+        )
         return FileData(
             identifier=identifier,
             connector_type=CONNECTOR_TYPE,
-            source_identifiers=SourceIdentifiers(
-                filename=f"{filename}.xml", fullpath=f"{filename}.xml"
-            ),
+            source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
                 date_created=ts_oldest,
                 date_modified=ts_newest,
@@ -138,6 +139,7 @@ class SlackIndexer(Indexer):
                     "latest": ts_newest,
                 },
             ),
+            display_name=source_identifiers.fullpath,
         )
 
     @SourceConnectionError.wrap

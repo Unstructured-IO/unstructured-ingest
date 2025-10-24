@@ -34,6 +34,12 @@ tidy-ruff:
 tidy-shell:
 	shfmt -i 2 -l -w ${SHELL_FILES}
 
+## version-sync:                update references to version with most recent version from CHANGELOG.md
+.PHONY: version-sync
+version-sync:
+	scripts/version-sync.sh \
+		-f ${PACKAGE_NAME}/__version__.py release
+
 ###########
 #  CHECK  #
 ###########

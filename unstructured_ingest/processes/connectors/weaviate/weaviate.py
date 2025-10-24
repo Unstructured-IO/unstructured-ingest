@@ -11,7 +11,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, WriteError
+from unstructured_ingest.error import DestinationConnectionError, ValueError, WriteError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -220,7 +220,10 @@ class WeaviateUploader(VectorDBUploader, ABC):
 
     def precheck(self) -> None:
         try:
-            self.connection_config.get_client()
+            with self.connection_config.get_client():
+                # Connection test successful - client is available but not needed
+                pass
+
             # only if collection name populated should we check that it exists
             if self.upload_config.collection and not self._collection_exists():
                 raise DestinationConnectionError(

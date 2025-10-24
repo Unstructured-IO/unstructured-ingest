@@ -16,14 +16,14 @@ from unstructured_ingest.processes.connectors.local import (
 )
 from unstructured_ingest.processes.partitioner import PartitionerConfig
 
-base_path = Path(__file__).parent.parent.parent.parent
+base_path = Path(__file__).parent.parent
 work_dir = base_path / "tmp_ingest" / CONNECTOR_TYPE
 output_path = work_dir / "output"
 
 
 if __name__ == "__main__":
     Pipeline.from_configs(
-        context=ProcessorConfig(work_dir=str(work_dir.resolve())),
+        context=ProcessorConfig(work_dir=str(work_dir.resolve()), verbose=True),
         # You'll need to set GOOGLE_DRIVE_SERVICE_KEY and GOOGLE_DRIVE_DRIVE_ID
         # environment variable to run this example
         source_connection_config=GoogleDriveConnectionConfig(

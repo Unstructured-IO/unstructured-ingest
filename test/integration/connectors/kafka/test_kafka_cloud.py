@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ from test.integration.connectors.utils.constants import (
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -119,6 +121,8 @@ async def test_kafka_source_cloud(kafka_seed_topic_cloud: int):
                 expected_num_files=expected_messages,
                 validate_downloaded_files=True,
                 validate_file_data=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
             ),
         )
 
@@ -160,6 +164,9 @@ async def test_kafka_destination_cloud(upload_file: Path, kafka_seed_topic_cloud
     else:
         uploader.run(path=upload_file, file_data=file_data)
 
+    # Give Kafka Cloud some time to propagate messages
+    time.sleep(4)
+
     conf = {
         "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVER"],
         "sasl.username": os.environ["KAFKA_API_KEY"],
@@ -171,7 +178,8 @@ async def test_kafka_destination_cloud(upload_file: Path, kafka_seed_topic_cloud
         "auto.offset.reset": "earliest",
     }
 
-    all_messages = get_all_messages(conf=conf, topic=TOPIC)
+    # Increase max_empty_messages for cloud Kafka latency
+    all_messages = get_all_messages(conf=conf, topic=TOPIC, max_empty_messages=6)
     with upload_file.open("r") as upload_fs:
         content_to_upload = json.load(upload_fs)
     assert len(all_messages) == len(content_to_upload), (

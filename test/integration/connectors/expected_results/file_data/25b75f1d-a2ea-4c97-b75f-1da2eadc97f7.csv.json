@@ -1,0 +1,28 @@
+{
+  "identifier": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7.csv",
+  "connector_type": "astradb",
+  "source_identifiers": {
+    "filename": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7.csv",
+    "fullpath": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7.csv",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": {
+      "document_id": "25b75f1d-a2ea-4c97-b75f-1da2eadc97f7"
+    },
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1749467347.305853",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "collection_name": "ingest_test_src",
+    "keyspace": null
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/pytest-of-runner/pytest-0/test_astra_search_source0/25b75f1d-a2ea-4c97-b75f-1da2eadc97f7.csv",
+  "display_name": "ingest_test_src-None-[60297eea-73d7-4fca-a97e-ea73d7cfca62..762c0093-2277-4f3e-ac00-932277af3e0e]"
+}

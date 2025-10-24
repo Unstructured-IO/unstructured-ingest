@@ -7,7 +7,7 @@ source and destination connectors.
 
 To manually run the cli:
 ```shell
-PYTHONPATH=. python unstructured_ingest/v2/main.py --help
+PYTHONPATH=. python unstructured_ingest/main.py --help
 ```
 
 The `main.py` file simply wraps the generated Click command created in `cli.py`.

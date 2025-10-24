@@ -15,7 +15,7 @@ from unstructured_ingest.embed.togetherai import (
     TogetherAIEmbeddingConfig,
     TogetherAIEmbeddingEncoder,
 )
-from unstructured_ingest.errors_v2 import UserAuthError
+from unstructured_ingest.error import UserAuthError
 from unstructured_ingest.processes.embedder import Embedder, EmbedderConfig
 
 API_KEY = "TOGETHERAI_API_KEY"
@@ -27,6 +27,10 @@ def get_api_key() -> str:
     return api_key
 
 
+# TODO: re-enable these tests when TogetherAI API is fixed
+
+
+@pytest.mark.skip(reason="TogetherAI API disabled")
 @requires_env(API_KEY)
 def test_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
@@ -40,6 +44,7 @@ def test_togetherai_embedder(embedder_file: Path):
     validate_embedding_output(original_elements=original_elements, output_elements=results)
 
 
+@pytest.mark.skip(reason="TogetherAI API disabled")
 @requires_env(API_KEY)
 def test_raw_togetherai_embedder(embedder_file: Path):
     api_key = get_api_key()
@@ -53,6 +58,7 @@ def test_raw_togetherai_embedder(embedder_file: Path):
     )
 
 
+@pytest.mark.skip(reason="TogetherAI API disabled")
 def test_raw_togetherai_embedder_invalid_credentials():
     embedder = TogetherAIEmbeddingEncoder(config=TogetherAIEmbeddingConfig(api_key="fake_api_key"))
 
@@ -60,6 +66,7 @@ def test_raw_togetherai_embedder_invalid_credentials():
         embedder.get_exemplary_embedding()
 
 
+@pytest.mark.skip(reason="TogetherAI API disabled")
 @requires_env(API_KEY)
 @pytest.mark.asyncio
 async def test_raw_async_togetherai_embedder(embedder_file: Path):

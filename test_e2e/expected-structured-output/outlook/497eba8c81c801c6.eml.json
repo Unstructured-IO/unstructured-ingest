@@ -4,7 +4,11 @@
     "element_id": "e40af23706b4096145f1e4b007719aa5",
     "text": "this is a message for the subfolder1_1",
     "metadata": {
+      "languages": [
+        "eng"
+      ],
       "filename": "497eba8c81c801c6.eml",
+      "filetype": "message/rfc822",
       "email_message_id": "CAL=c59DZsEqq49DgVLQy=6v_WnxmkGfznjOoaGqqJb6VK-Mu=g@mail.gmail.com",
       "sent_from": [
         "Ryan Nikolaidis <ryan@unstructured.io>"
@@ -13,10 +17,6 @@
         "devops@unstructuredio.onmicrosoft.com"
       ],
       "subject": "subfolder1_1",
-      "languages": [
-        "eng"
-      ],
-      "filetype": "message/rfc822",
       "data_source": {
         "url": "https://graph.microsoft.com/v1.0/users/devops@unstructuredio.onmicrosoft.com/mailFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAATaI_sAAA=/childFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAATzq5sAAA=/childFolders/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MAAuAAAAAADc1MfJYetSQ6QZntYrI9k4AQDZYn-lfnvLSqIcW-YsN8ebAAATzq5tAAA=/messages/AAMkAGE2MmEwNzFlLWVjYzAtNDNhZS04ZGM1LTFjYmMzZDhiMmI0MABGAAAAAADc1MfJYetSQ6QZntYrI9k4BwDZYn-lfnvLSqIcW-YsN8ebAAATzq5tAADZYn-lfnvLSqIcW-YsN8ebAAAZT8XfAAA=",
         "version": null,
@@ -27,7 +27,7 @@
         "date_created": "1690248382.0",
         "date_modified": "1690248401.0",
         "permissions_data": null,
-        "filesize_bytes": 9207
+        "filesize_bytes": 9197
       }
     }
   }

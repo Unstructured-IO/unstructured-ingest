@@ -13,9 +13,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import (
-    SourceConnectionError,
-)
+from unstructured_ingest.error import SourceConnectionError, UserAuthError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -113,7 +111,7 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
         except HttpError as exc:
             raise ValueError(f"{exc.reason}")
         except exceptions.DefaultCredentialsError:
-            raise ValueError("The provided API key is invalid.")
+            raise UserAuthError("The provided API key is invalid.")
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):
@@ -191,6 +189,9 @@ class GoogleDriveIndexer(Indexer):
         """
         count = 0
         stack = [folder_id]
+        # Pre-compute lower-case extension set for O(1) lookup
+        valid_exts = set(e.lower() for e in extensions) if extensions else None
+
         while stack:
             current_folder = stack.pop()
             # Always list all items under the current folder.
@@ -214,7 +215,6 @@ class GoogleDriveIndexer(Indexer):
                         if extensions:
                             # Use a case-insensitive comparison for the file extension.
                             file_ext = (item.get("fileExtension") or "").lower()
-                            valid_exts = [e.lower() for e in extensions]
                             if file_ext in valid_exts:
                                 count += 1
                         else:

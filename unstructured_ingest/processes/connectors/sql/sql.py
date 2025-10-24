@@ -64,6 +64,12 @@ def parse_date_string(date_value: Union[str, int]) -> datetime:
         return datetime.fromtimestamp(timestamp)
     except Exception as e:
         logger.debug(f"date {date_value} string not a timestamp: {e}")
+
+    if isinstance(date_value, str):
+        try:
+            return datetime.fromisoformat(date_value)
+        except Exception:
+            pass
     return parser.parse(date_value)
 
 
@@ -130,7 +136,13 @@ class SQLIndexer(Indexer, ABC):
                 (len(ids) + self.index_config.batch_size - 1) // self.index_config.batch_size
             )
         ]
+
         for batch in id_batches:
+            batch_items = [BatchItem(identifier=str(b)) for b in batch]
+            display_name = (
+                f"{self.index_config.table_name}-{self.index_config.id_column}"
+                f"-[{batch_items[0].identifier}..{batch_items[-1].identifier}]"
+            )
             # Make sure the hash is always a positive number to create identified
             yield SqlBatchFileData(
                 connector_type=self.connector_type,
@@ -140,7 +152,8 @@ class SQLIndexer(Indexer, ABC):
                 additional_metadata=SqlAdditionalMetadata(
                     table_name=self.index_config.table_name, id_column=self.index_config.id_column
                 ),
-                batch_items=[BatchItem(identifier=str(b)) for b in batch],
+                batch_items=batch_items,
+                display_name=display_name,
             )
 
 

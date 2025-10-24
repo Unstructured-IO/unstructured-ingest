@@ -14,7 +14,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    ConnectionError,
+    DestinationConnectionError,
+    SourceConnectionError,
+    ValueError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -90,6 +95,22 @@ class MongoDBConnectionConfig(ConnectionConfig):
                 "server_api": ServerApi(version=SERVER_API_VERSION),
             }
         with MongoClient(**client_kwargs) as client:
+            # UnsupportedDigestmodError means that SCRAM-SHA-1 is disabled
+            # It uses md5 which is unavailable on FIPS images
+            try:
+                from hashlib import UnsupportedDigestmodError  # type: ignore[attr-defined]
+            except ImportError:
+                from _hashlib import UnsupportedDigestmodError  # type: ignore[attr-defined]
+
+            # Check if the authentication mechanism is supported
+            try:
+                client.admin.command("ping")
+            except UnsupportedDigestmodError as e:
+                raise ConnectionError(
+                    "Authentication using SCRAM-SHA-1 is disabled. "
+                    "Use SCRAM-SHA-256 instead. "
+                    "See: https://www.mongodb.com/docs/manual/core/security-scram/"
+                ) from e
             yield client
 
 
@@ -117,7 +138,7 @@ class MongoDBIndexer(Indexer):
                 database_names = client.list_database_names()
                 database_name = self.index_config.database
                 if database_name not in database_names:
-                    raise DestinationConnectionError(
+                    raise SourceConnectionError(
                         "database {} does not exist: {}".format(
                             database_name, ", ".join(database_names)
                         )
@@ -149,6 +170,10 @@ class MongoDBIndexer(Indexer):
 
         for id_batch in batch_generator(ids, batch_size=batch_size):
             # Make sure the hash is always a positive number to create identifier
+            display_name = (
+                f"{self.index_config.database}.{self.index_config.collection}, "
+                f"batch {id_batch[0]}-{id_batch[-1]}"
+            )
             metadata = FileDataSourceMetadata(
                 date_processed=str(time()),
                 record_locator={
@@ -164,6 +189,7 @@ class MongoDBIndexer(Indexer):
                 additional_metadata=MongoDBAdditionalMetadata(
                     collection=self.index_config.collection, database=self.index_config.database
                 ),
+                display_name=display_name,
             )
             yield file_data
 
@@ -298,7 +324,7 @@ class MongoDBUploader(Uploader):
                 collection_names = database.list_collection_names()
                 collection_name = self.upload_config.collection
                 if collection_name not in collection_names:
-                    raise SourceConnectionError(
+                    raise DestinationConnectionError(
                         "collection {} does not exist: {}".format(
                             collection_name, ", ".join(collection_names)
                         )

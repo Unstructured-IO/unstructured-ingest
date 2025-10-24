@@ -29,7 +29,7 @@ See the [Quick Start](https://github.com/Unstructured-IO/unstructured#eight_poin
 When testing from a local checkout rather than a pip-installed version of `unstructured`,
 just execute `unstructured_ingest/main.py`, e.g.:
 
-    PYTHONPATH=. ./unstructured_ingest/v2/main.py \
+    PYTHONPATH=. ./unstructured_ingest/main.py \
        s3 \
        --remote-url s3://utic-dev-tech-fixtures/small-pdf-set/ \
        --anonymous \
@@ -38,9 +38,9 @@ just execute `unstructured_ingest/main.py`, e.g.:
 
 ## Adding Source Data Connectors
 
-To add a source connector, refer to [local.py](unstructured_ingest/v2/processes/connectors/local.py) as an example that implements the two relevant abstract base classes with their associated configs.
+To add a source connector, refer to [local.py](unstructured_ingest/processes/connectors/local.py) as an example that implements the two relevant abstract base classes with their associated configs.
 
-If the connector has an available `fsspec` implementation, then refer to [s3.py](unstructured_ingest/v2/processes/connectors/fsspec/s3.py).
+If the connector has an available `fsspec` implementation, then refer to [s3.py](unstructured_ingest/processes/connectors/fsspec/s3.py).
 
 Make sure to update the source registry via `add_source_entry` using a unique key for the source type. This will expose it as an available connector.
 
@@ -56,9 +56,9 @@ Double check that the connector is optimized for the best fan out, check [here](
 
 ## Adding Destination Data Connectors
 
-To add a source connector, refer to [local.py](unstructured_ingest/v2/processes/connectors/local.py) as an example that implements the uploader abstract base classes with the associated configs.
+To add a source connector, refer to [local.py](unstructured_ingest/processes/connectors/local.py) as an example that implements the uploader abstract base classes with the associated configs.
 
-If the connector has an available `fsspec` implementation, then refer to [s3.py](unstructured_ingest/v2/processes/connectors/fsspec/s3.py).
+If the connector has an available `fsspec` implementation, then refer to [s3.py](unstructured_ingest/processes/connectors/fsspec/s3.py).
 
 Make sure to update the destination registry via `add_source_entry` using a unique key for the source type. This will expose it as an available connector.
 
@@ -70,14 +70,14 @@ Double check that the connector is optimized for the best fan out, check [here](
 
 In checklist form, the above steps are summarized as:
 
-- [ ] Create a new file under [connectors/](unstructured_ingest/v2/processes/connectors/) implementing the base classes required depending on if it's a new source or destination connector.
+- [ ] Create a new file under [connectors/](unstructured_ingest/processes/connectors/) implementing the base classes required depending on if it's a new source or destination connector.
   - [ ] If the IngestDoc relies on a connection or session that could be reused, the subclass of `BaseConnectorConfig` implements a session handle to manage connections. The ConnectorConfig subclass should also inherit from `ConfigSessionHandleMixin` and the IngestDoc subclass should also inherit from `IngestDocSessionHandleMixin`. Check [here](https://github.com/Unstructured-IO/unstructured/pull/1058/files#diff-dae96d30f58cffe1b348c036d006b48bdc7e2e47fbd7c8ec1c45d63face1542d) for a detailed example.
   - [ ] Indexer should fetch appropriate metadata from the source that can be used to reference the doc in the pipeline and detect if there are any changes from what might already exist locally.
   - [ ] Add the relevant decorators from `unstructured.ingest.error` on top of relevant methods to handle errors such as a source connection error, destination connection error, or a partition error.
   - [ ] Register the required information via `add_source_entry` or `add_source_entry` to expose the new connectors.
 - [ ] Update the CLI to expose the new connectors via CLI params
-  - [ ] Add a new file under [cmds](unstructured_ingest/v2/cli/cmds)
-  - [ ] Add the command base classes from the file above in the [__init__.py](unstructured_ingest/v2/cli/cmds/__init__.py). This will expose it in the CLI.
+  - [ ] Add a new file under [cmds](unstructured_ingest/cli/cmds)
+  - [ ] Add the command base classes from the file above in the [__init__.py](unstructured_ingest/cli/cmds/__init__.py). This will expose it in the CLI.
 - [ ] Update [unstructured_ingest/cli](unstructured_ingest/cli) with support for the new connector.
 - [ ] Create a folder under [examples/ingest](examples/ingest) that includes at least one well documented script.
 - [ ] Add a script test_unstructured_ingest/[src|dest\/test-ingest-\<the-new-data-source\>.sh. It's json output files should have a total of no more than 100K.

@@ -2,28 +2,32 @@
   "identifier": "10014",
   "connector_type": "jira",
   "source_identifiers": {
-    "filename": "10014.txt",
-    "fullpath": "JCTP3/10014.txt",
-    "rel_path": "JCTP3/10014.txt"
+    "filename": "JCTP3-1.txt",
+    "fullpath": "JCTP3/JCTP3-1.txt",
+    "rel_path": "JCTP3/JCTP3-1.txt"
   },
   "metadata": {
     "url": null,
     "version": null,
     "record_locator": {
       "id": "10014",
-      "key": "JCTP3-1"
+      "key": "JCTP3-1",
+      "full_path": "JCTP3/JCTP3-1.txt"
     },
     "date_created": "2023-08-24T13:38:35.057+0000",
     "date_modified": "2023-08-24T13:39:02.055+0000",
-    "date_processed": "1745877944.5975628",
+    "date_processed": "1751302524.9207869",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
     "id": "10014",
-    "key": "JCTP3-1"
+    "key": "JCTP3-1",
+    "fields": {
+      "attachment": []
+    }
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/n8/rps3wl195pj4p_0vyxqj5jrw0000gn/T/tmphmteub8f/JCTP3/10014.txt",
+  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpnv0jd051/JCTP3/JCTP3-1.txt",
   "display_name": "Jira Connector Test Project 3 - Company Managed Project"
 }

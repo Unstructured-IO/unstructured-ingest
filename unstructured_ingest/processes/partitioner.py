@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
-from unstructured_ingest.errors_v2 import UserError
+from unstructured_ingest.error import UserError
 from unstructured_ingest.interfaces.process import BaseProcess
 from unstructured_ingest.logger import logger
 from unstructured_ingest.unstructured_api import call_api_async

@@ -12,7 +12,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import SourceConnectionError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -149,11 +149,11 @@ class OutlookIndexer(Indexer):
 
     def _message_to_file_data(self, message: "Message") -> FileData:
         fullpath = self._generate_fullpath(message)
-
+        source_identifiers = SourceIdentifiers(filename=fullpath.name, fullpath=str(fullpath))
         return FileData(
             identifier=message.id,
             connector_type=CONNECTOR_TYPE,
-            source_identifiers=SourceIdentifiers(filename=fullpath.name, fullpath=str(fullpath)),
+            source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
                 url=message.resource_url,
                 version=message.change_key,
@@ -178,6 +178,7 @@ class OutlookIndexer(Indexer):
                 "has_attachments": message.has_attachments,
                 "importance": message.importance,
             },
+            display_name=source_identifiers.fullpath,
         )
 
     def _generate_fullpath(self, message: "Message") -> Path:

@@ -22,14 +22,29 @@ from unstructured_ingest.processes.connectors.confluence import (
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
-async def test_confluence_source(temp_dir):
-    # Retrieve environment variables
-    confluence_url = "https://unstructured-ingest-test.atlassian.net"
+@pytest.mark.parametrize(
+    "spaces,max_num_of_spaces,max_num_of_docs_from_each_space,expected_num_files,validate_downloaded_files,validate_file_data,test_id",
+    [
+        (["~712020ee2049b23ac64da1b06405e83e96830f"], 10, 301, 6, True, True, "confluence_small"),
+    ],
+)
+async def test_confluence_source_param(
+    temp_dir,
+    spaces,
+    max_num_of_spaces,
+    max_num_of_docs_from_each_space,
+    expected_num_files,
+    validate_downloaded_files,
+    validate_file_data,
+    test_id,
+):
+    """
+    Integration test for the Confluence source connector using various space and document limits.
+    """
+    confluence_url = "https://unstructured-team-hzkrx37e.atlassian.net"
     user_email = os.environ["CONFLUENCE_USER_EMAIL"]
     api_token = os.environ["CONFLUENCE_API_TOKEN"]
-    spaces = ["testteamsp", "MFS"]
 
-    # Create connection and indexer configurations
     access_config = ConfluenceAccessConfig(api_token=api_token)
     connection_config = ConfluenceConnectionConfig(
         url=confluence_url,
@@ -37,14 +52,12 @@ async def test_confluence_source(temp_dir):
         access_config=access_config,
     )
     index_config = ConfluenceIndexerConfig(
-        max_num_of_spaces=500,
-        max_num_of_docs_from_each_space=100,
+        max_num_of_spaces=max_num_of_spaces,
+        max_num_of_docs_from_each_space=max_num_of_docs_from_each_space,
         spaces=spaces,
     )
-
     download_config = ConfluenceDownloaderConfig(download_dir=temp_dir)
 
-    # Instantiate indexer and downloader
     indexer = ConfluenceIndexer(
         connection_config=connection_config,
         index_config=index_config,
@@ -54,58 +67,13 @@ async def test_confluence_source(temp_dir):
         download_config=download_config,
     )
 
-    # Run the source connector validation
     await source_connector_validation(
         indexer=indexer,
         downloader=downloader,
         configs=SourceValidationConfigs(
-            test_id="confluence",
-            expected_num_files=11,
-            validate_downloaded_files=True,
-        ),
-    )
-
-
-@pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
-@requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
-async def test_confluence_source_large(temp_dir):
-    # Retrieve environment variables
-    confluence_url = "https://unstructured-ingest-test.atlassian.net"
-    user_email = os.environ["CONFLUENCE_USER_EMAIL"]
-    api_token = os.environ["CONFLUENCE_API_TOKEN"]
-    spaces = ["testteamsp1"]
-
-    # Create connection and indexer configurations
-    access_config = ConfluenceAccessConfig(api_token=api_token)
-    connection_config = ConfluenceConnectionConfig(
-        url=confluence_url,
-        username=user_email,
-        access_config=access_config,
-    )
-    index_config = ConfluenceIndexerConfig(
-        max_num_of_spaces=10,
-        max_num_of_docs_from_each_space=250,
-        spaces=spaces,
-    )
-
-    download_config = ConfluenceDownloaderConfig(download_dir=temp_dir)
-
-    # Instantiate indexer and downloader
-    indexer = ConfluenceIndexer(
-        connection_config=connection_config,
-        index_config=index_config,
-    )
-    downloader = ConfluenceDownloader(
-        connection_config=connection_config,
-        download_config=download_config,
-    )
-
-    # Run the source connector validation
-    await source_connector_validation(
-        indexer=indexer,
-        downloader=downloader,
-        configs=SourceValidationConfigs(
-            test_id="confluence_large", expected_num_files=301, validate_file_data=False
+            test_id=test_id,
+            expected_num_files=expected_num_files,
+            validate_downloaded_files=validate_downloaded_files,
+            validate_file_data=validate_file_data,
         ),
     )

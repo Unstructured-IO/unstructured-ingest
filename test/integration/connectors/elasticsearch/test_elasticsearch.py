@@ -20,6 +20,7 @@ from test.integration.connectors.utils.docker import HealthCheck, container_cont
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     source_connector_validation,
+    source_filedata_display_name_set_check,
 )
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
@@ -203,6 +204,9 @@ async def test_elasticsearch_source(source_index: str, movies_dataframe: pd.Data
                 expected_num_files=expected_num_files,
                 expected_number_indexed_file_data=1,
                 validate_downloaded_files=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
+                exclude_fields_extend=["display_name"],  # includes dynamic ids, might change
             ),
         )
 
@@ -276,11 +280,6 @@ async def test_elasticsearch_destination(
     with get_client() as client:
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
 
-    # Rerun and make sure the same documents get updated
-    uploader.run(path=staged_filepath, file_data=file_data)
-    with get_client() as client:
-        validate_count(client=client, expected_count=expected_count, index_name=destination_index)
-
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 def test_elasticsearch_destination_precheck_fail():
@@ -329,3 +328,50 @@ def test_elasticsearch_stager(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+async def test_elasticsearch_upsert_destination(
+    upload_file: Path,
+    destination_index: str,
+    tmp_path: Path,
+):
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data",
+    )
+    connection_config = ElasticsearchConnectionConfig(
+        access_config=ElasticsearchAccessConfig(password=ES_PASSWORD),
+        username=ES_USERNAME,
+        hosts=["http://localhost:9200"],
+    )
+    stager = ElasticsearchUploadStager(
+        upload_stager_config=ElasticsearchUploadStagerConfig(index_name=destination_index)
+    )
+
+    uploader = ElasticsearchUploader(
+        connection_config=connection_config,
+        upload_config=ElasticsearchUploaderConfig(index_name=destination_index),
+    )
+    staged_filepath = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+    uploader.precheck()
+    uploader.run(path=staged_filepath, file_data=file_data)
+
+    # Run validation
+    with staged_filepath.open() as f:
+        staged_elements = json.load(f)
+    expected_count = len(staged_elements)
+    with get_client() as client:
+        validate_count(client=client, expected_count=expected_count, index_name=destination_index)
+
+    # Rerun and make sure the same documents get updated
+    uploader.run(path=staged_filepath, file_data=file_data)
+    with get_client() as client:
+        validate_count(client=client, expected_count=expected_count, index_name=destination_index)

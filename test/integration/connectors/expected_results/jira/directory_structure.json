@@ -1,13 +1,13 @@
 {
   "directory_structure": [
-    "JCTP1/10000.txt",
-    "JCTP1/10001.txt",
-    "JCTP1/10002.txt",
-    "JCTP1/10013.txt",
+    "JCTP1/JCTP1-1.txt",
+    "JCTP1/JCTP1-2.txt",
+    "JCTP1/JCTP1-3.txt",
+    "JCTP1/JCTP1-4.txt",
     "JCTP1/attachments/10000.png",
-    "JCTP2/10003.txt",
-    "JCTP2/10004.txt",
-    "JCTP2/10005.txt",
-    "JCTP3/10014.txt"
+    "JCTP2/JCTP2-1.txt",
+    "JCTP2/JCTP2-2.txt",
+    "JCTP2/JCTP2-3.txt",
+    "JCTP3/JCTP3-1.txt"
   ]
 }

@@ -13,14 +13,14 @@
       "user_pname": null,
       "server_relative_path": "e2e-library-folder/book-war-and-peace-1p.txt"
     },
-    "date_created": "1749124915.0",
-    "date_modified": "1749124915.0",
-    "date_processed": "1749102861.357167",
+    "date_created": "1749099715.0",
+    "date_modified": "1749099715.0",
+    "date_processed": "1749467467.6507068",
     "permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=5d0b5c7c-d0d6-458e-8d93-fae5a66e9bc2&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJuYW1laWQiOiI2YzE2MDc1My05YjYzLTQ3MDktYTE0MC0xN2EyN2QzMDg3YTZAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NDkxMDY0NDgifQ.CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCPbq6rnt_5E-EAUaDTIwLjE5MC4xNTQuMzIqLHlOY2lzRklNQU5Ja1AyKysvbUhwbVJMSVZ0a3phNklzN1hjMXJlYTM0Zlk9MJ0BOAFCEKGlDUQbYACQKB3ieskYW_pKEGhhc2hlZHByb29mdG9rZW56ATG6AWVzaGFyZXBvaW50dGVuYW50c2V0dGluZ3MucmVhZHdyaXRlLmFsbCBhbGxzaXRlcy53cml0ZSBhbGxzaXRlcy5tYW5hZ2UgYWxsZmlsZXMud3JpdGUgYWxscHJvZmlsZXMucmVhZMgBAQ.KmuBtKQ9Kv92y3fHIHJm3eIn3RjcJRm0_kzm7n92-KM&ApiVersion=2.0",
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=5d0b5c7c-d0d6-458e-8d93-fae5a66e9bc2&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJteS1vbmVkcml2ZS1hcHAiLCJuYW1laWQiOiI4MTMyZTAwYS0xYmU0LTRiYTUtYTNjYy1mNmI4MjU0YzkwZjJAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NDk0NzEwNDcifQ.CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCOymxpyK1JM-EAUaDTIwLjE5MC4xMzIuNDAqLHlOY2lzRklNQU5Ja1AyKysvbUhwbVJMSVZ0a3phNklzN1hjMXJlYTM0Zlk9MJ0BOAFCEKGmaPmgIACQPy4Ums9b_4FKEGhhc2hlZHByb29mdG9rZW56ATG6AS5hbGxzaXRlcy53cml0ZSBhbGxmaWxlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkyAEB.zQoIccWBND-kmUIRzahnC5M5PkJr_-u29lnCwfHDcLA&ApiVersion=2.0",
     "eTag": "\"{5D0B5C7C-D0D6-458E-8D93-FAE5A66E9BC2},1\"",
     "id": "0153RHRSD4LQFV3VWQRZCY3E724WTG5G6C",
     "name": "book-war-and-peace-1p.txt",
@@ -29,6 +29,6 @@
     "size": 3045
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/85/f389rtdn2c971nv4r3d31d740000gn/T/tmpa097bu5v/e2e-library-folder/book-war-and-peace-1p.txt",
-  "display_name": null
+  "local_download_path": "/tmp/tmphxsidw1k/e2e-library-folder/book-war-and-peace-1p.txt",
+  "display_name": "e2e-library-folder/book-war-and-peace-1p.txt"
 }
