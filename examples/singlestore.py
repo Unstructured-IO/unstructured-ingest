@@ -1,5 +1,13 @@
 from pathlib import Path
 
+from unstructured_ingest.processes.connectors.singlestore import (
+    CONNECTOR_TYPE,
+    SingleStoreAccessConfig,
+    SingleStoreConnectionConfig,
+    SingleStoreUploaderConfig,
+    SingleStoreUploadStagerConfig,
+)
+
 from unstructured_ingest.interfaces import ProcessorConfig
 from unstructured_ingest.pipeline.pipeline import Pipeline
 from unstructured_ingest.processes.chunker import ChunkerConfig
@@ -7,13 +15,6 @@ from unstructured_ingest.processes.connectors.local import (
     LocalConnectionConfig,
     LocalDownloaderConfig,
     LocalIndexerConfig,
-)
-from unstructured_ingest.processes.connectors.singlestore import (
-    CONNECTOR_TYPE,
-    SingleStoreAccessConfig,
-    SingleStoreConnectionConfig,
-    SingleStoreUploaderConfig,
-    SingleStoreUploadStagerConfig,
 )
 from unstructured_ingest.processes.embedder import EmbedderConfig
 from unstructured_ingest.processes.partitioner import PartitionerConfig

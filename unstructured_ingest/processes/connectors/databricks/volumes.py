@@ -1,3 +1,4 @@
+import io
 import os
 from abc import ABC
 from dataclasses import dataclass
@@ -76,7 +77,9 @@ class DatabricksVolumesConnectionConfig(ConnectionConfig, ABC):
         if isinstance(e, ValueError):
             error_message = e.args[0]
             message_split = error_message.split(":")
-            if message_split[0].endswith("auth"):
+            if (message_split[0].endswith("auth")) or (
+                "Client authentication failed" in error_message
+            ):
                 return UserAuthError(e)
         if isinstance(e, DatabricksError):
             reverse_mapping = {v: k for k, v in STATUS_CODE_MAPPING.items()}
@@ -218,9 +221,12 @@ class DatabricksVolumesUploader(Uploader, ABC):
         output_path = self.get_output_path(file_data=file_data)
         with open(path, "rb") as elements_file:
             try:
+                # Read file bytes and wrap in BytesIO to create BinaryIO object
+                file_bytes = elements_file.read()
+                binary_data = io.BytesIO(file_bytes)
                 self.connection_config.get_client().files.upload(
                     file_path=output_path,
-                    contents=elements_file,
+                    content=binary_data,  # Changed from 'contents' to 'content' in SDK 0.70.0+
                     overwrite=True,
                 )
             except Exception as e:

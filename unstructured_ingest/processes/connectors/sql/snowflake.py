@@ -233,18 +233,19 @@ class SnowflakeUploader(SQLUploader):
             output.append(tuple(parsed))
         return output
 
-    def _parse_values(self, columns: list[str]) -> str:
+    def _parse_select(self, columns: list[str]) -> str:
         embeddings_dimension = self.embeddings_dimension
         parsed_values = []
-        for col in columns:
+        for i, col in enumerate(columns):
+            argument_selector = f"${i + 1}"
             if col in _VECTOR_COLUMNS and embeddings_dimension:
                 parsed_values.append(
-                    f"PARSE_JSON({self.values_delimiter})::VECTOR(FLOAT,{embeddings_dimension})"
+                    f"PARSE_JSON({argument_selector})::VECTOR(FLOAT,{embeddings_dimension})"
                 )
             elif col in _ARRAY_COLUMNS or col in _VECTOR_COLUMNS:
-                parsed_values.append(f"PARSE_JSON({self.values_delimiter})")
+                parsed_values.append(f"PARSE_JSON({argument_selector})")
             else:
-                parsed_values.append(self.values_delimiter)
+                parsed_values.append(argument_selector)
         return ",".join(parsed_values)
 
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
@@ -262,10 +263,11 @@ class SnowflakeUploader(SQLUploader):
         df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
-        stmt = "INSERT INTO {table_name} ({columns}) SELECT {values}".format(
+        stmt = "INSERT INTO {table_name} ({columns}) SELECT {select} FROM VALUES ({values})".format(
             table_name=self.upload_config.table_name,
             columns=",".join(columns),
-            values=self._parse_values(columns),
+            select=self._parse_select(columns),
+            values=",".join([self.values_delimiter for _ in columns]),
         )
         logger.info(
             f"writing a total of {len(df)} elements via"
@@ -276,10 +278,7 @@ class SnowflakeUploader(SQLUploader):
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.connection_config.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                # TODO: executemany break on 'Binding data in type (list) is not supported'
-                for val in values:
-                    logger.debug(f"running query: {stmt}\nwith values: {val}")
-                    cursor.execute(stmt, val)
+                cursor.executemany(stmt, values)
 
 
 snowflake_source_entry = SourceRegistryEntry(

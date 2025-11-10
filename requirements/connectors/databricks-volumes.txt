@@ -1,1 +1,1 @@
-databricks-sdk
+databricks-sdk>=0.70.0
