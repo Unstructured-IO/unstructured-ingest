@@ -1,0 +1,48 @@
+{
+  "identifier": "324354db-0465-56ca-a023-072481f5dd03",
+  "connector_type": "yugabytedb",
+  "source_identifiers": null,
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1749467370.4308963",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "table_name": "cars",
+    "id_column": "car_id"
+  },
+  "reprocess": false,
+  "local_download_path": null,
+  "display_name": "cars-car_id-[1..6]",
+  "batch_items": [
+    {
+      "identifier": "1",
+      "version": null
+    },
+    {
+      "identifier": "2",
+      "version": null
+    },
+    {
+      "identifier": "3",
+      "version": null
+    },
+    {
+      "identifier": "4",
+      "version": null
+    },
+    {
+      "identifier": "5",
+      "version": null
+    },
+    {
+      "identifier": "6",
+      "version": null
+    }
+  ]
+}
