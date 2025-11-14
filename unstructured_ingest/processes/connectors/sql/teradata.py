@@ -16,12 +16,12 @@ Important Teradata-Specific Notes:
    - When creating tables, use quoted identifiers: CREATE TABLE t ("type" VARCHAR(50))
    - The base Unstructured schema uses "type" column for element types (Title, NarrativeText, etc.)
    - Your destination table MUST use quoted "type" to preserve this data
-   
+
 2. SQL SYNTAX DIFFERENCES:
    - Teradata uses TOP instead of LIMIT: SELECT TOP 10 * FROM table
    - Teradata uses DATABASE instead of CURRENT_DATABASE
    - Teradata uses USER instead of CURRENT_USER
-   
+
 3. PARAMETER STYLE:
    - Uses qmark paramstyle: ? placeholders for prepared statements
    - Example: INSERT INTO table VALUES (?, ?, ?)
@@ -38,11 +38,12 @@ Example table schema with quoted "type" column:
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Generator
 
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
+from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -64,8 +65,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-    from teradatasql import TeradataConnection
-    from teradatasql import TeradataCursor
+    from teradatasql import TeradataConnection, TeradataCursor
 
 CONNECTOR_TYPE = "teradata"
 
@@ -178,7 +178,10 @@ class TeradataDownloader(SQLDownloader):
     values_delimiter: str = "?"  # Teradata uses qmark paramstyle
 
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
-        """Execute SELECT query to fetch batch of records.
+        """Execute SELECT query to fetch batch of records with quoted identifiers.
+
+        Teradata requires quoted identifiers for reserved words (year, type, date, etc.).
+        All table names, column names, and field names are quoted to prevent syntax errors.
 
         Args:
             file_data: Batch metadata with table name, ID column, and record IDs
@@ -191,14 +194,18 @@ class TeradataDownloader(SQLDownloader):
         ids = [item.identifier for item in file_data.batch_items]
 
         with self.connection_config.get_cursor() as cursor:
-            # Build field selection
-            fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
+            # Build field selection with quoted identifiers (handles reserved words)
+            if self.download_config.fields:
+                fields = ",".join([f'"{field}"' for field in self.download_config.fields])
+            else:
+                fields = "*"
 
-            # Build parameterized query with ? placeholders
+            # Build parameterized query with quoted identifiers and ? placeholders
             placeholders = ",".join([self.values_delimiter for _ in ids])
-            query = f"SELECT {fields} FROM {table_name} WHERE {id_column} IN ({placeholders})"
+            query = f'SELECT {fields} FROM "{table_name}" WHERE "{id_column}" IN ({placeholders})'
 
             # Execute query with parameter binding
+            logger.debug(f"running query: {query}\nwith values: {ids}")
             cursor.execute(query, ids)
             rows = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
@@ -212,6 +219,7 @@ class TeradataUploadStagerConfig(SQLUploadStagerConfig):
     pass
 
 
+@dataclass
 class TeradataUploadStager(SQLUploadStager):
     """Stages data for upload to Teradata.
 
@@ -222,7 +230,9 @@ class TeradataUploadStager(SQLUploadStager):
     for the teradatasql driver, which is stricter than other DBAPI drivers.
     """
 
-    upload_stager_config: TeradataUploadStagerConfig
+    upload_stager_config: TeradataUploadStagerConfig = field(
+        default_factory=TeradataUploadStagerConfig
+    )
 
     def conform_dataframe(self, df: "DataFrame") -> "DataFrame":
         """Convert DataFrame columns to Teradata-compatible types.
@@ -231,8 +241,9 @@ class TeradataUploadStager(SQLUploadStager):
         driver cannot serialize. The teradatasql driver is stricter about types
         than other DBAPI drivers and will raise TypeError for Python lists/dicts.
 
-        Specifically adds 'languages' to the list of columns that must be
-        JSON-stringified before insertion.
+        This method dynamically detects and converts ALL list/dict columns to JSON,
+        making it future-proof without requiring hardcoded column name maintenance.
+        Similar to the approach used in SQLite and SingleStore connectors.
 
         Args:
             df: DataFrame with unstructured elements
@@ -248,13 +259,16 @@ class TeradataUploadStager(SQLUploadStager):
         # Call parent class method first (handles dates, standard JSON columns, etc.)
         df = super().conform_dataframe(df)
 
-        # TODO: Double check this with other sql connectors
-        # Teradata-specific: Convert 'languages' array to JSON string
-        # teradatasql driver cannot handle Python lists in executemany()
-        if "languages" in df.columns:
-            df["languages"] = df["languages"].apply(
-                lambda x: json.dumps(x) if isinstance(x, (list, dict)) else None
-            )
+        # Teradata-specific: Dynamically convert ALL list/dict columns to JSON strings
+        # teradatasql driver cannot handle Python lists/dicts in executemany()
+        # This approach is future-proof and requires no maintenance for new columns
+        for column in df.columns:
+            # Check if this column contains list/dict values by sampling first non-null value
+            sample = df[column].dropna().head(1)
+            if len(sample) > 0 and isinstance(sample.iloc[0], (list, dict)):
+                df[column] = df[column].apply(
+                    lambda x: json.dumps(x) if isinstance(x, (list, dict)) else x
+                )
 
         return df
 
@@ -326,12 +340,12 @@ class TeradataUploader(SQLUploader):
         df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
-        
+
         # CRITICAL: Quote all column names for Teradata!
         # Teradata has MANY reserved keywords (type, date, user, time, etc.)
         # that cause "Syntax error, expected something like '('" if unquoted
         quoted_columns = [f'"{col}"' for col in columns]
-        
+
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
             table_name=self.upload_config.table_name,
             columns=",".join(quoted_columns),  # Use quoted column names
@@ -366,4 +380,3 @@ teradata_destination_entry = DestinationRegistryEntry(
     upload_stager=TeradataUploadStager,
     upload_stager_config=TeradataUploadStagerConfig,
 )
-
