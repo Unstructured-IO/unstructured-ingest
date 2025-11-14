@@ -164,7 +164,7 @@ class TeradataUploader(SQLUploader):
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
-                cursor.execute(f"SELECT TOP 1 * FROM {self.upload_config.table_name}")
+                cursor.execute(f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"')
                 self._columns = [desc[0] for desc in cursor.description]
         return self._columns
 
