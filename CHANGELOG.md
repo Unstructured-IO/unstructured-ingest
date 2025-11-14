@@ -1,3 +1,9 @@
+## [1.2.21]
+
+* **fix: Enforce minimum version of databricks-sdk (>=0.62.0) for databricks-volumes connector**
+* **fix: Update databricks-volumes connector to use 'content' parameter (changed from 'contents' in SDK 0.70.0+) and wrap file in io.BytesIO for BinaryIO compatibility**
+* **fix: Add constraints to prevent platform compatibility issues with tritonclient/perf-analyzer dependencies**
+
 ## [1.2.20]
 
 * **fix: Prevent weaviate cloud precheck from passing with invalid config**
