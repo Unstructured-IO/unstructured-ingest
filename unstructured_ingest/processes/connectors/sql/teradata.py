@@ -202,7 +202,7 @@ class TeradataUploader(SQLUploader):
         quoted_columns = [f'"{col}"' for col in columns]
 
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
-            table_name=self.upload_config.table_name,
+            table_name=f'"{self.upload_config.table_name}"',
             columns=",".join(quoted_columns),
             values=",".join([self.values_delimiter for _ in columns]),
         )

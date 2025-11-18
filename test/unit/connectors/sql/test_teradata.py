@@ -115,7 +115,7 @@ def test_teradata_downloader_query_db_quotes_identifiers(
     batch_data.additional_metadata.id_column = "id"
     batch_data.batch_items = [mock_item]
 
-    results, columns = teradata_downloader.query_db(batch_data)
+    _, _ = teradata_downloader.query_db(batch_data)
 
     # Verify the SELECT statement quotes all identifiers
     call_args = mock_cursor.execute.call_args[0][0]
@@ -300,13 +300,13 @@ def test_teradata_uploader_upload_dataframe_quotes_column_names(
 
     teradata_uploader.upload_dataframe(df, file_data)
 
-    # Verify the INSERT statement quotes all column names
+    # Verify the INSERT statement quotes all column names AND table name
     call_args = mock_cursor.executemany.call_args[0][0]
     assert '"id"' in call_args
     assert '"text"' in call_args
     assert '"type"' in call_args  # Reserved word must be quoted
     assert '"record_id"' in call_args
-    assert "INSERT INTO test_table" in call_args
+    assert 'INSERT INTO "test_table"' in call_args  # Table name must be quoted too
 
 
 def test_teradata_uploader_values_delimiter_is_qmark(teradata_uploader: TeradataUploader):
