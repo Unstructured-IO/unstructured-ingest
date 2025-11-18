@@ -1,7 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -42,7 +42,7 @@ class TeradataConnectionConfig(SQLConnectionConfig):
     access_config: Secret[TeradataAccessConfig]
     host: str = Field(description="Teradata server hostname or IP address")
     user: str = Field(description="Teradata database username")
-    database: str | None = Field(
+    database: Optional[str] = Field(
         default=None,
         description="Default database/schema to use for queries",
     )
