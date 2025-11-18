@@ -888,8 +888,32 @@
     }
   },
   {
+    "type": "PageNumber",
+    "element_id": "e754a2849dac122e7d2e05447f0da512",
+    "text": "4",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 6,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
     "type": "Title",
-    "element_id": "8fd54b8df6f34c7669517fe8f446d39c",
+    "element_id": "21b4c32e6d360d1d70e59dad888e306d",
     "text": "The low-dose question",
     "metadata": {
       "filetype": "application/pdf",
@@ -913,7 +937,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "649d45c4e2dd97d01b6f7f4a0f2652b8",
+    "element_id": "26e60e901d12cbb5efb851fe945a3f96",
     "text": "Since the 1950s, the Linear No-Threshold (LNT) theory has been used to inform regulatory decisions, positing that any dose of radiation, regardless of the amount or the duration over which it is received, poses a risk. Assuming that LNT is correct, we should expect to see that people living in areas of the world where background doses are higher (e.g. India, Iran and northern Europe) have a higher incidence of cancer. However, despite people living in areas of the world where radiation doses are naturally higher than those that would be received in parts of the evacuation zones around Chernobyl and Fukushima Daiichi, there is no evidence that these populations exhibit any negative health effects. Living nearby a nuclear power plant on average exposes the local population to 0.00009mSv/year, which according to LNT would increase the risk of developing cancer by 0.00000045%. After Chernobyl, the average dose to those evacuated was 30mSv, which would theoretically increase the risk of cancer at some point in their lifetime by 0.15% (on top of the average baseline lifetime risk of cancer, which is 39.5% in the USviii, 50% in the UKix).",
     "metadata": {
       "filetype": "application/pdf",
@@ -937,7 +961,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "3d9de2a61836e41e3c1ae8893d5a1722",
+    "element_id": "31d07d8c2dce96dc1c6daa38f8597ab5",
     "text": "Since the 1980s, there has been considerable scientific debate as to whether the LNT theory is valid, following scientific breakthroughs within, for example, radiobiology and medicine. Indeed, the Chernobyl accident helped illuminate some of the issues associated with LNT. Multiplication of the low doses after the accident (many far too low to be of any health concern) with large populations – using the assumptions made by LNT – led to a large number of predicted cancer deaths, which have not, and likely will not materialize. This practice has been heavily criticized for being inappropriate in making risk assessments by UNSCEAR, the International Commission on Radiation Protection and a large number of independent scientists.",
     "metadata": {
       "filetype": "application/pdf",
@@ -961,7 +985,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "d68745fb9259f0ee01b54db35a99ed8d",
+    "element_id": "4fb06aef292d07a36339c830eb23c8b5",
     "text": "Determining the precise risk (or lack thereof) of the extremely small radiation doses associated with the routine operations of nuclear power plants, the disposal of nuclear waste or even extremely rare nuclear accidents is a purely academic exercise, that tries to determine whether the risk is extremely low, too small to detect, or non- existent. The risks of low-level radiation pale in comparison to other societal risks such as obesity, smoking, and air pollution.",
     "metadata": {
       "filetype": "application/pdf",
@@ -985,7 +1009,7 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "629dfc4049633d8d9662948622e8d7b8",
+    "element_id": "1d9fdadf74d73e63be2e683b0a73d86d",
     "text": "By looking at radiation risks in isolation, we prolong the over-regulation of radiation in nuclear plants, driving up costs, whilst not delivering any additional health benefits, in turn incentivising the use of more harmful energy sources. A recalibration is required, and this can only done by ensuring a holistic approach to risk is taken.",
     "metadata": {
       "filetype": "application/pdf",
@@ -1009,7 +1033,7 @@
   },
   {
     "type": "Image",
-    "element_id": "8f8ae3b8a2b83fbdd13bc12bf68aa108",
+    "element_id": "32259f82b294edd5dd1868734673c0a1",
     "text": "U ER LE E » L",
     "metadata": {
       "filetype": "application/pdf",

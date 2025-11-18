@@ -385,6 +385,30 @@
   },
   {
     "type": "PageNumber",
+    "element_id": "7e1e96312bb39326c5fd3c7e891ce643",
+    "text": "1",
+    "metadata": {
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 3,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/Silent-Giant-(1).pdf",
+        "version": "8570bd087066350a84dd8d0ea86f11c6",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196636.0",
+        "date_modified": "1676196636.0",
+        "permissions_data": null,
+        "filesize_bytes": 6164777
+      }
+    }
+  },
+  {
+    "type": "PageNumber",
     "element_id": "dc3c4d9a725b0ead89311bb08bd251ae",
     "text": "2",
     "metadata": {

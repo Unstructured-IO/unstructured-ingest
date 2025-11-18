@@ -756,35 +756,8 @@
     }
   },
   {
-    "type": "UncategorizedText",
-    "element_id": "f35698f7adf4541a2bb6fe10e1c47ab8",
-    "text": "L",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/2023-Jan-economic-outlook.pdf",
-        "version": "c7eed4fc056b089a98f6a3ad9ec9373e",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/",
-          "metadata": {
-            "ingest-test": "custom metadata"
-          }
-        },
-        "date_created": "1720544414.0",
-        "date_modified": "1720544414.0",
-        "permissions_data": null,
-        "filesize_bytes": 2215938
-      }
-    }
-  },
-  {
     "type": "NarrativeText",
-    "element_id": "59ff5bef6f9522074a0347b3fc30d9ba",
+    "element_id": "cf86df4360039e44a9d36c2156253dca",
     "text": "In the United States, growth is projected to fall from 2.0 percent in 2022 to 1.4 percent in 2023 and 1.0 percent in 2024. With growth rebounding in the second half of 2024, growth in 2024 will be faster than in 2023 on a fourth-quarter-over-fourth-quarter basis, as in most advanced",
     "metadata": {
       "filetype": "application/pdf",
@@ -811,7 +784,7 @@
   },
   {
     "type": "Footer",
-    "element_id": "7e03381d8b00018712cf4714181944d5",
+    "element_id": "8342c28e0cf94f8454bf1c8f4e5b5b8b",
     "text": "International Monetary Fund | January 2023",
     "metadata": {
       "filetype": "application/pdf",
@@ -838,7 +811,7 @@
   },
   {
     "type": "PageNumber",
-    "element_id": "e7ad52a3c6a360dcc012d8904b7d68bb",
+    "element_id": "6ba40e8cf2a64cad3f1484387a1d6e9b",
     "text": "3",
     "metadata": {
       "filetype": "application/pdf",
