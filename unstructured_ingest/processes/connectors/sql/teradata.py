@@ -140,10 +140,8 @@ class TeradataUploadStager(SQLUploadStager):
         df = super().conform_dataframe(df)
 
         # teradatasql driver cannot handle Python lists/dicts, convert to JSON strings
-        # Check a sample of values to detect columns with complex types
+        # Check a sample of values to detect columns with complex types (10 rows)
         for column in df.columns:
-            # Sample up to 10 non-null values to check for lists/dicts
-            # This is much faster than checking every row while still catching mixed types
             sample = df[column].dropna().head(10)
             
             if len(sample) > 0:
