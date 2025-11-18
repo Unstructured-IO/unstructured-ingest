@@ -1,3 +1,6 @@
+
+## [1.2.22]
+test why the tests are failing
 ## [1.2.21]
 
 * **fix: Enforce minimum version of databricks-sdk (>=0.62.0) for databricks-volumes connector**
