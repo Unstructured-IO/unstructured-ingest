@@ -356,6 +356,10 @@ class AstraDBUploaderConfig(UploaderConfig):
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
     )
+    binary_encode_vectors: bool = Field(
+        default=True,
+        description="Upload vectors in a binary format. If set to False, vectors will be a human-readable list of floats. WARNING: Disabling this option may make the upload slower!",
+    )
 
 
 @dataclass
@@ -459,6 +463,7 @@ class AstraDBUploader(Uploader):
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
+    @requires_dependencies(["astrapy"], extras="astradb")
     async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
@@ -471,6 +476,14 @@ class AstraDBUploader(Uploader):
             collection_name=self.upload_config.collection_name,
             keyspace=self.upload_config.keyspace,
         )
+
+        # If we're disabling binary encoded vectors, update the collection settings
+        if not self.upload_config.binary_encode_vectors:
+            from astrapy.api_options import APIOptions, SerdesOptions
+
+            async_astra_collection = async_astra_collection.with_options(
+                api_options=APIOptions(serdes_options=SerdesOptions(binary_encode_vectors=False))
+            )
 
         await self.delete_by_record_id(collection=async_astra_collection, file_data=file_data)
         await asyncio.gather(
