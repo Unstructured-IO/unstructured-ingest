@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import BaseModel, Field, Secret, field_validator
 
@@ -137,6 +137,42 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         from opensearchpy.helpers import scan
 
         return scan
+    
+    def run(self, **kwargs: Any):
+        """Override parent run() to use correct connector_type='opensearch'"""
+        from time import time
+        from unstructured_ingest.data_types.file_data import (
+            BatchItem,
+            FileDataSourceMetadata,
+        )
+        from unstructured_ingest.processes.connectors.elasticsearch.elasticsearch import (
+            ElasticsearchBatchFileData,
+            ElastisearchAdditionalMetadata,
+        )
+        from unstructured_ingest.utils.data_prep import batch_generator
+        
+        all_ids = self._get_doc_ids()
+        ids = list(all_ids)
+        for batch in batch_generator(ids, self.index_config.batch_size):
+            batch_items = [BatchItem(identifier=b) for b in batch]
+            url = f"{self.connection_config.hosts[0]}/{self.index_config.index_name}"
+            display_name = (
+                f"url={url}, batch_size={len(batch_items)} "
+                f"ids={batch_items[0].identifier}..{batch_items[-1].identifier}"
+            )
+            # Use CONNECTOR_TYPE which is "opensearch" for this module
+            yield ElasticsearchBatchFileData(
+                connector_type=CONNECTOR_TYPE,
+                metadata=FileDataSourceMetadata(
+                    url=url,
+                    date_processed=str(time()),
+                ),
+                additional_metadata=ElastisearchAdditionalMetadata(
+                    index_name=self.index_config.index_name,
+                ),
+                batch_items=batch_items,
+                display_name=display_name,
+            )
 
 
 class OpenSearchDownloaderConfig(ElasticsearchDownloaderConfig):
