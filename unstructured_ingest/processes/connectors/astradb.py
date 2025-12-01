@@ -358,7 +358,9 @@ class AstraDBUploaderConfig(UploaderConfig):
     )
     binary_encode_vectors: bool = Field(
         default=True,
-        description="Upload vectors in a binary format. If set to False, vectors will be a human-readable list of floats. WARNING: Disabling this option may make the upload slower!",
+        description="Upload vectors in a binary format. If set to False, "
+        "vectors will be a human-readable list of floats. "
+        "WARNING: Disabling this option may make the upload slower!",
     )
 
 

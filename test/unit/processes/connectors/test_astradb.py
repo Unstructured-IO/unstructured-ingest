@@ -62,7 +62,9 @@ async def test_binary_encode_vectors_false_calls_with_options(
     file_data: FileData,
     mock_get_collection: AsyncMock,
 ):
-    """Test that when binary_encode_vectors=False, with_options is called to disable the encoding."""
+    """
+    Test that when binary_encode_vectors=False, with_options is called to disable the encoding.
+    """
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(
@@ -101,7 +103,10 @@ async def test_binary_encode_vectors_default_does_not_call_with_options(
     file_data: FileData,
     mock_get_collection: AsyncMock,
 ):
-    """Test that when binary_encode_vectors is not set (defaults to True), with_options is NOT called."""
+    """
+    Test that when binary_encode_vectors is not set (defaults to True),
+    with_options is NOT called.
+    """
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
