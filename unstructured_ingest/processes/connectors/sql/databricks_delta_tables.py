@@ -116,6 +116,8 @@ class DatabricksDeltaTablesUploadStagerConfig(SQLUploadStagerConfig):
 
 class DatabricksDeltaTablesUploadStager(SQLUploadStager):
     upload_stager_config: DatabricksDeltaTablesUploadStagerConfig
+    # No override needed - use parent's conform_dataframe
+    # Array handling is done in the uploader's create_statement method
 
 
 class DatabricksDeltaTablesUploaderConfig(SQLUploaderConfig):
@@ -129,10 +131,6 @@ class DatabricksDeltaTablesUploader(SQLUploader):
     upload_config: DatabricksDeltaTablesUploaderConfig
     connection_config: DatabricksDeltaTablesConnectionConfig
     connector_type: str = CONNECTOR_TYPE
-
-    @requires_dependencies(["pandas"], extras="databricks-delta-tables")
-    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
-        super().run(path=path, file_data=file_data, **kwargs)
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:
@@ -169,17 +167,39 @@ class DatabricksDeltaTablesUploader(SQLUploader):
                 )
 
     def create_statement(self, columns: list[str], values: tuple[Any, ...]) -> str:
+        """Build INSERT statement with inline values for Databricks.
+        
+        Databricks SQL connector doesn't support parameter binding for arrays,
+        so we must build SQL with inline values. Handles all types properly.
+        """
         values_list = []
         for v in values:
-            if isinstance(v, dict):
-                values_list.append(json.dumps(v))
+            if v is None:
+                values_list.append("NULL")
+            elif isinstance(v, bool):
+                # Check bool before int (bool is subclass of int in Python)
+                values_list.append("TRUE" if v else "FALSE")
+            elif isinstance(v, (int, float)):
+                values_list.append(str(v))
             elif isinstance(v, list):
+                # Numeric arrays: ARRAY(1.0, 2.0, ...) syntax  
                 if v and isinstance(v[0], (int, float)):
                     values_list.append("ARRAY({})".format(", ".join([str(val) for val in v])))
                 else:
-                    values_list.append("ARRAY({})".format(", ".join([f"'{val}'" for val in v])))
+                    # String/mixed arrays: convert to JSON string
+                    import json
+                    json_str = json.dumps(v)
+                    escaped = json_str.replace("'", "''")
+                    values_list.append(f"'{escaped}'")
+            elif isinstance(v, str):
+                # Escape single quotes by doubling them (SQL standard)
+                escaped = v.replace("'", "''")
+                values_list.append(f"'{escaped}'")
             else:
-                values_list.append(f"'{v}'")
+                # Fallback: convert to string, escape, and quote
+                escaped = str(v).replace("'", "''")
+                values_list.append(f"'{escaped}'")
+        
         statement = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
             table_name=self.upload_config.table_name,
             columns=", ".join(columns),
@@ -187,8 +207,12 @@ class DatabricksDeltaTablesUploader(SQLUploader):
         )
         return statement
 
-    @requires_dependencies(["pandas"], extras="databricks-delta-tables")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
+        """Upload dataframe using manual SQL statement building.
+        
+        Overrides parent to build SQL strings manually since Databricks SQL connector
+        doesn't support parameter binding for arrays.
+        """
         import numpy as np
 
         if self.can_delete():
@@ -199,18 +223,17 @@ class DatabricksDeltaTablesUploader(SQLUploader):
                 f"record id column "
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
+        
+        df = self._fit_to_schema(df=df)
         df.replace({np.nan: None}, inplace=True)
-        self._fit_to_schema(df=df)
 
         columns = list(df.columns)
         logger.info(
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
             f" table named {self.upload_config.table_name}"
-            # f" with batch size {self.upload_config.batch_size}"
         )
-        # TODO: currently variable binding not supporting for list data_types,
-        #  update once that gets resolved in SDK
+        
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             with self.get_cursor() as cursor:
                 values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
