@@ -138,7 +138,6 @@ jobs:
       - name: Test Ingest (unit)
         run: |
           uv sync --group test --frozen
-          uv pip install -e ".[elasticsearch]"
           make unit-test
 
   test_ingest_unit_unstructured:
