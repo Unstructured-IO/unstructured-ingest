@@ -20,7 +20,8 @@ from unstructured_ingest.utils.dep_check import dependency_exists
 # Skip all tests in this module if elasticsearch is not available
 pytestmark = pytest.mark.skipif(
     not dependency_exists("elasticsearch"),
-    reason="elasticsearch is not installed. Install with: pip install 'unstructured-ingest[elasticsearch]'",
+    reason="elasticsearch is not installed. "
+    "Install with: pip install 'unstructured-ingest[elasticsearch]'",
 )
 
 
