@@ -1,3 +1,7 @@
+## [1.2.24]
+
+* **fix: Remove --skip-existing from release.yml**
+
 ## [1.2.23]
 
 * **fix: Improve opensearch with correct connector_type metadata and compatible index validation**
