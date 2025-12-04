@@ -1,11 +1,19 @@
+import collections
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from time import time
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import BaseModel, Field, Secret, field_validator
 
+from unstructured_ingest.data_types.file_data import (
+    BatchItem,
+    FileData,
+    FileDataSourceMetadata,
+)
 from unstructured_ingest.error import (
     DestinationConnectionError,
+    UnstructuredIngestError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -17,6 +25,7 @@ from unstructured_ingest.processes.connector_registry import (
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.elasticsearch.elasticsearch import (
+    ElasticsearchBatchFileData,
     ElasticsearchDownloader,
     ElasticsearchDownloaderConfig,
     ElasticsearchIndexer,
@@ -25,7 +34,9 @@ from unstructured_ingest.processes.connectors.elasticsearch.elasticsearch import
     ElasticsearchUploaderConfig,
     ElasticsearchUploadStager,
     ElasticsearchUploadStagerConfig,
+    ElastisearchAdditionalMetadata,
 )
+from unstructured_ingest.utils.data_prep import batch_generator, generator_batching_wbytes
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -138,6 +149,35 @@ class OpenSearchIndexer(ElasticsearchIndexer):
 
         return scan
 
+    def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
+        """OpenSearch-specific implementation that sets correct connector_type.
+        
+        The parent Elasticsearch class hardcodes connector_type="elasticsearch",
+        so this override ensures OpenSearch data has connector_type="opensearch".
+        """
+        all_ids = self._get_doc_ids()
+        ids = list(all_ids)
+        for batch in batch_generator(ids, self.index_config.batch_size):
+            batch_items = [BatchItem(identifier=b) for b in batch]
+            url = f"{self.connection_config.hosts[0]}/{self.index_config.index_name}"
+            display_name = (
+                f"url={url}, batch_size={len(batch_items)} "
+                f"ids={batch_items[0].identifier}..{batch_items[-1].identifier}"
+            )
+            # Use OpenSearch connector_type instead of Elasticsearch
+            yield ElasticsearchBatchFileData(
+                connector_type=CONNECTOR_TYPE,  # "opensearch" instead of "elasticsearch"
+                metadata=FileDataSourceMetadata(
+                    url=url,
+                    date_processed=str(time()),
+                ),
+                additional_metadata=ElastisearchAdditionalMetadata(
+                    index_name=self.index_config.index_name,
+                ),
+                batch_items=batch_items,
+                display_name=display_name,
+            )
+
 
 class OpenSearchDownloaderConfig(ElasticsearchDownloaderConfig):
     pass
@@ -172,6 +212,57 @@ class OpenSearchUploader(ElasticsearchUploader):
         from opensearchpy.helpers import parallel_bulk
 
         return parallel_bulk
+
+    @requires_dependencies(["opensearchpy"], extras="opensearch")
+    def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        """OpenSearch-specific implementation without index existence check.
+        
+        The index existence check from the parent Elasticsearch class is not compatible
+        with OpenSearch, so this override provides a version without that check.
+        """
+        from opensearchpy.helpers.errors import BulkIndexError
+
+        parallel_bulk = self.load_parallel_bulk()
+        upload_destination = self.connection_config.hosts
+
+        logger.info(
+            f"writing {len(data)} elements via document batches to destination "
+            f"index named {self.upload_config.index_name} at {upload_destination} with "
+            f"batch size (in bytes) {self.upload_config.batch_size_bytes} with "
+            f"{self.upload_config.num_threads} (number of) threads"
+        )
+
+        client = self.connection_config.get_client()
+        try:
+            for batch in generator_batching_wbytes(
+                data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
+            ):
+                try:
+                    iterator = parallel_bulk(
+                        client=client,
+                        actions=batch,
+                        thread_count=self.upload_config.num_threads,
+                    )
+                    collections.deque(iterator, maxlen=0)
+                    logger.info(
+                        f"uploaded batch of {len(batch)} elements to index "
+                        f"{self.upload_config.index_name}"
+                    )
+                except BulkIndexError as e:
+                    sanitized_errors = [
+                        self._sanitize_bulk_index_error(error) for error in e.errors
+                    ]
+                    logger.error(
+                        f"Batch upload failed - {e} - with following errors: {sanitized_errors}"
+                    )
+                    raise DestinationConnectionError(str(e))
+                except Exception as e:
+                    logger.error(f"Batch upload failed - {e}")
+                    raise UnstructuredIngestError(str(e))
+        finally:
+            # Clean up the client connection
+            if hasattr(client, 'close'):
+                client.close()
 
 
 class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
