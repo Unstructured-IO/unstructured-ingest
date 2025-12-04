@@ -1,6 +1,6 @@
 {
   "identifier": "73bd091b-f16a-5d30-b5bf-de62c85ccbe1",
-  "connector_type": "elasticsearch",
+  "connector_type": "opensearch",
   "source_identifiers": null,
   "metadata": {
     "url": "http://localhost:9200/movies",
