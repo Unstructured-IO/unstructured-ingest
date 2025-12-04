@@ -1,6 +1,6 @@
 {
   "identifier": "movies-7",
-  "connector_type": "elasticsearch",
+  "connector_type": "opensearch",
   "source_identifiers": {
     "filename": "movies-7.txt",
     "fullpath": "movies-7.txt",
