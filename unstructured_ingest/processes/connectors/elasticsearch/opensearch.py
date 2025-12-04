@@ -157,11 +157,6 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         return scan
 
     def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
-        """OpenSearch-specific implementation that sets correct connector_type.
-
-        The parent Elasticsearch class hardcodes connector_type="elasticsearch",
-        so this override ensures OpenSearch data has connector_type="opensearch".
-        """
         all_ids = self._get_doc_ids()
         ids = list(all_ids)
         for batch in batch_generator(ids, self.index_config.batch_size):
@@ -171,9 +166,8 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 f"url={url}, batch_size={len(batch_items)} "
                 f"ids={batch_items[0].identifier}..{batch_items[-1].identifier}"
             )
-            # Use OpenSearch connector_type instead of Elasticsearch
             yield ElasticsearchBatchFileData(
-                connector_type=CONNECTOR_TYPE,  # "opensearch" instead of "elasticsearch"
+                connector_type=CONNECTOR_TYPE,
                 metadata=FileDataSourceMetadata(
                     url=url,
                     date_processed=str(time()),
@@ -222,11 +216,7 @@ class OpenSearchUploader(ElasticsearchUploader):
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
-        """OpenSearch-specific implementation without index existence check.
-
-        The index existence check from the parent Elasticsearch class is not compatible
-        with OpenSearch, so this override provides a version without that check.
-        """
+        """OpenSearch-specific implementation without index existence check."""
         from opensearchpy.helpers.errors import BulkIndexError
 
         parallel_bulk = self.load_parallel_bulk()
