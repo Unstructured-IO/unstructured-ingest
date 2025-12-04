@@ -2,6 +2,10 @@
 
 * **fix: Improve opensearch with correct connector_type metadata and compatible index validation**
 
+## [1.2.22]
+
+* **feat: Add option to disable binary encoded vectors in AstraDBUploader**
+
 ## [1.2.21]
 
 * **fix: Enforce minimum version of databricks-sdk (>=0.62.0) for databricks-volumes connector**
