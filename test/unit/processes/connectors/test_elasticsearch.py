@@ -1,8 +1,7 @@
 """Unit tests for Elasticsearch connector."""
 
 from pathlib import Path
-from typing import AsyncIterator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from pydantic import Secret
@@ -288,4 +287,3 @@ async def test_run_async_with_single_field_includes_source(
 
         # Verify we got download responses
         assert len(results) == 3
-

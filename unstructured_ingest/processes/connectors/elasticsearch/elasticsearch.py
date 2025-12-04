@@ -306,7 +306,7 @@ class ElasticsearchDownloader(Downloader):
             "version": True,
             "query": {"ids": {"values": ids}},
         }
-        
+
         # Only add _source if fields are explicitly specified
         # Omitting _source returns all fields (default behavior)
         # This avoids AWS OpenSearch FGAC timeout issues with empty lists
