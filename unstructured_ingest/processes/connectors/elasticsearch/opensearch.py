@@ -64,8 +64,9 @@ class OpenSearchClientInput(BaseModel):
 
 
 class OpenSearchConnectionConfig(ConnectionConfig):
-    hosts: Optional[list[str]] = Field(
-        default=None,
+    hosts: list[str] = Field(
+        ...,
+        min_length=1,
         description="List of the OpenSearch hosts to connect",
         examples=["http://localhost:9200"],
     )
@@ -90,9 +91,15 @@ class OpenSearchConnectionConfig(ConnectionConfig):
     access_config: Secret[OpenSearchAccessConfig]
 
     @field_validator("hosts", mode="before")
-    def to_list(cls, value):
+    @classmethod
+    def validate_hosts(cls, value):
         if isinstance(value, str):
-            return [value]
+            value = [value]
+        if not value:
+            raise ValueError("At least one OpenSearch host must be provided. ")
+        for host in value:
+            if not host or not host.strip():
+                raise ValueError("Host URL cannot be empty")
         return value
 
     def get_client_kwargs(self) -> dict:
@@ -151,7 +158,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
 
     def run(self, **kwargs: Any) -> Generator[ElasticsearchBatchFileData, None, None]:
         """OpenSearch-specific implementation that sets correct connector_type.
-        
+
         The parent Elasticsearch class hardcodes connector_type="elasticsearch",
         so this override ensures OpenSearch data has connector_type="opensearch".
         """
@@ -216,7 +223,7 @@ class OpenSearchUploader(ElasticsearchUploader):
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         """OpenSearch-specific implementation without index existence check.
-        
+
         The index existence check from the parent Elasticsearch class is not compatible
         with OpenSearch, so this override provides a version without that check.
         """
@@ -232,8 +239,7 @@ class OpenSearchUploader(ElasticsearchUploader):
             f"{self.upload_config.num_threads} (number of) threads"
         )
 
-        client = self.connection_config.get_client()
-        try:
+        with self.connection_config.get_client() as client:
             for batch in generator_batching_wbytes(
                 data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
@@ -259,10 +265,6 @@ class OpenSearchUploader(ElasticsearchUploader):
                 except Exception as e:
                     logger.error(f"Batch upload failed - {e}")
                     raise UnstructuredIngestError(str(e))
-        finally:
-            # Clean up the client connection
-            if hasattr(client, 'close'):
-                client.close()
 
 
 class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
