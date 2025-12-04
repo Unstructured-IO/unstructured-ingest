@@ -303,10 +303,15 @@ class ElasticsearchDownloader(Downloader):
         ids: list[str] = [item.identifier for item in elasticsearch_filedata.batch_items]
 
         scan_query = {
-            "_source": self.download_config.fields,
             "version": True,
             "query": {"ids": {"values": ids}},
         }
+        
+        # Only add _source if fields are explicitly specified
+        # Omitting _source returns all fields (default behavior)
+        # This avoids AWS OpenSearch FGAC timeout issues with empty lists
+        if self.download_config.fields:
+            scan_query["_source"] = self.download_config.fields
 
         download_responses = []
         async with AsyncClient(**self.connection_config.get_client_kwargs()) as client:
