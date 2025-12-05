@@ -1,3 +1,7 @@
+## [1.2.25]
+
+* **fix: dont submit fields for Elasticsearch/Opensearch if there are none specified**
+
 ## [1.2.24]
 
 * **fix: Remove --skip-existing from release.yml**

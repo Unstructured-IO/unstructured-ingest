@@ -201,6 +201,45 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
         )
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
+async def test_opensearch_source_empty_fields(source_index: str, movies_dataframe: pd.DataFrame):
+    """Test that empty fields list works without timeout (fixes AWS OpenSearch FGAC issue)."""
+    indexer_config = OpenSearchIndexerConfig(index_name=source_index)
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        connection_config = OpenSearchConnectionConfig(
+            access_config=OpenSearchAccessConfig(password="admin"),
+            username="admin",
+            hosts=["http://localhost:9200"],
+            use_ssl=True,
+        )
+        download_config = OpenSearchDownloaderConfig(
+            download_dir=tempdir_path,
+            fields=[],  # Empty fields should omit _source
+        )
+        indexer = OpenSearchIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        downloader = OpenSearchDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+        expected_num_files = len(movies_dataframe)
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id=CONNECTOR_TYPE,
+                expected_num_files=expected_num_files,
+                expected_number_indexed_file_data=1,
+                validate_downloaded_files=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
+                exclude_fields_extend=["display_name"],
+            ),
+        )
+
+
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_opensearch_source_precheck_fail_no_cluster():
     indexer_config = OpenSearchIndexerConfig(index_name="index")
