@@ -341,7 +341,7 @@ async def test_opensearch_destination(
             future.result()
 
     threaded_precheck()
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
 
     # Run validation
     with staged_filepath.open() as f:
@@ -351,7 +351,7 @@ async def test_opensearch_destination(
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
 
     # Rerun and make sure the same documents get updated
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
     with get_client() as client:
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
 
@@ -537,7 +537,7 @@ async def test_opensearch_destination_with_iam(
     threaded_precheck()
 
     # Upload with IAM auth
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
 
     # Note: Validation against AWS OpenSearch would require async client
     # For now, if upload doesn't raise an exception, it's considered successful
