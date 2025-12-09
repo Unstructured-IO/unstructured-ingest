@@ -1,3 +1,7 @@
+## [1.2.26]
+
+* **Feat: Add AWS IAM authentication and full async support to OpenSearch connector**
+
 ## [1.2.25]
 
 * **fix: dont submit fields for Elasticsearch/Opensearch if there are none specified**

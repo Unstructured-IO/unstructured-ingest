@@ -1,1 +1,3 @@
-opensearch-py
+opensearch-py>=2.4.0
+boto3>=1.26.0
+botocore>=1.29.0
