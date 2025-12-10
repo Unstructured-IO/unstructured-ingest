@@ -474,7 +474,7 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
             indexer=indexer,
             downloader=downloader,
             configs=SourceValidationConfigs(
-                test_id=f"{CONNECTOR_TYPE}_iam",
+                test_id=CONNECTOR_TYPE,  # Reuse opensearch fixtures (same data, different auth)
                 expected_num_files=10,  # Adjust based on source data
                 expected_number_indexed_file_data=1,
                 validate_downloaded_files=True,
