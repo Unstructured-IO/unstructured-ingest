@@ -49,6 +49,10 @@ CONNECTOR_TYPE = "opensearch"
 """Since the actual OpenSearch project is a fork of Elasticsearch, we are relying
 heavily on the Elasticsearch connector code, inheriting the functionality as much as possible."""
 
+# Precompiled regex patterns for AWS OpenSearch hostname detection
+_ES_PATTERN = re.compile(r"\.([a-z]{2}-[a-z]+-\d+)\.es\.amazonaws\.com$")
+_AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}-[a-z]+-\d+)\.aoss\.amazonaws\.com$")
+
 
 class OpenSearchAccessConfig(AccessConfig):
     password: Optional[str] = Field(default=None, description="password when using basic auth")
@@ -94,16 +98,14 @@ def detect_aws_opensearch_config(host: str) -> Optional[Tuple[str, str]]:
 
     # Pattern 1: AWS OpenSearch Service (es)
     # search-{domain}-{id}.{region}.es.amazonaws.com
-    es_pattern = r"\.([a-z]{2}-[a-z]+-\d+)\.es\.amazonaws\.com$"
-    match = re.search(es_pattern, clean_host)
+    match = _ES_PATTERN.search(clean_host)
     if match:
         region = match.group(1)
         return (region, "es")
 
     # Pattern 2: OpenSearch Serverless (aoss)
     # {collection-id}.{region}.aoss.amazonaws.com
-    aoss_pattern = r"^[a-z0-9]+\.([a-z]{2}-[a-z]+-\d+)\.aoss\.amazonaws\.com$"
-    match = re.search(aoss_pattern, clean_host)
+    match = _AOSS_PATTERN.search(clean_host)
     if match:
         region = match.group(1)
         return (region, "aoss")
