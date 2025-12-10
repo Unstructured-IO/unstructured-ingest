@@ -6,12 +6,10 @@
     "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/4"
   },
   "metadata": {
-    "index": "opensearch_e2e_source",
-    "document_id": "4",
-    "make": "Tesla",
-    "model": "Model 3",
-    "year": 2024,
-    "color": "White",
-    "price": 42000
-  }
+    "url": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/4",
+    "date_processed": "IGNORE_THIS_FIELD"
+  },
+  "display_name": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source, batch_size=10 ids=4",
+  "additional_metadata": {},
+  "reprocess": false
 }

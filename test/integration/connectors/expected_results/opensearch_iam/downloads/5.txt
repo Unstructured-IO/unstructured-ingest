@@ -1,0 +1,7 @@
+{
+  "make": "Chevrolet",
+  "model": "Tahoe",
+  "year": 2021,
+  "color": "Grey",
+  "price": 55000
+}

@@ -1,0 +1,7 @@
+{
+  "make": "Nissan",
+  "model": "Altima",
+  "year": 2019,
+  "color": "Red",
+  "price": 18000
+}

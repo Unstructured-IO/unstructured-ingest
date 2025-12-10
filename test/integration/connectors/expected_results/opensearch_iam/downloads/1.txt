@@ -1,0 +1,7 @@
+{
+  "make": "Toyota",
+  "model": "Camry",
+  "year": 2020,
+  "color": "Silver",
+  "price": 24500
+}

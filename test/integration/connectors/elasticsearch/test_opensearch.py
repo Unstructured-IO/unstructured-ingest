@@ -474,11 +474,11 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
             indexer=indexer,
             downloader=downloader,
             configs=SourceValidationConfigs(
-                test_id=CONNECTOR_TYPE,
+                test_id=f"{CONNECTOR_TYPE}_iam",  # Use separate fixtures for IAM
                 expected_num_files=10,  # AWS index has 10 documents
                 expected_number_indexed_file_data=1,
-                validate_downloaded_files=False,  # Don't validate downloads (cloud data differs)
-                validate_file_data=False,  # Don't validate against fixtures (cloud data differs)
+                validate_downloaded_files=True,  # Validate downloads
+                validate_file_data=True,  # Validate file data
                 predownload_file_data_check=source_filedata_display_name_set_check,
                 postdownload_file_data_check=source_filedata_display_name_set_check,
                 exclude_fields_extend=["display_name"],

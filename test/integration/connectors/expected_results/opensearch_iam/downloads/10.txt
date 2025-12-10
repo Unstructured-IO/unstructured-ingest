@@ -1,0 +1,7 @@
+{
+  "make": "Hyundai",
+  "model": "Elantra",
+  "year": 2021,
+  "color": "White",
+  "price": 22000
+}

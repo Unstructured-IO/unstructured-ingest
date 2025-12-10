@@ -1,0 +1,7 @@
+{
+  "make": "Audi",
+  "model": "X5",
+  "year": 2023,
+  "color": "Black",
+  "price": 68000
+}

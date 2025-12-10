@@ -6,12 +6,10 @@
     "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/5"
   },
   "metadata": {
-    "index": "opensearch_e2e_source",
-    "document_id": "5",
-    "make": "Chevrolet",
-    "model": "Tahoe",
-    "year": 2021,
-    "color": "Grey",
-    "price": 55000
-  }
+    "url": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/5",
+    "date_processed": "IGNORE_THIS_FIELD"
+  },
+  "display_name": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source, batch_size=10 ids=5",
+  "additional_metadata": {},
+  "reprocess": false
 }

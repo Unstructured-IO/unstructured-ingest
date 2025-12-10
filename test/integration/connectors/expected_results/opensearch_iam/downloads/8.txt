@@ -1,0 +1,7 @@
+{
+  "make": "Subaru",
+  "model": "Outback",
+  "year": 2022,
+  "color": "Green",
+  "price": 30500
+}

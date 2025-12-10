@@ -6,12 +6,10 @@
     "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/8"
   },
   "metadata": {
-    "index": "opensearch_e2e_source",
-    "document_id": "8",
-    "make": "Subaru",
-    "model": "Outback",
-    "year": 2022,
-    "color": "Green",
-    "price": 30500
-  }
+    "url": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/8",
+    "date_processed": "IGNORE_THIS_FIELD"
+  },
+  "display_name": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source, batch_size=10 ids=8",
+  "additional_metadata": {},
+  "reprocess": false
 }
