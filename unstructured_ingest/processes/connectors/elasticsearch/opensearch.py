@@ -198,6 +198,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         )
         return region, service
 
+    @requires_dependencies(["opensearchpy", "boto3"], extras="opensearch")
     async def _get_async_aws_auth(self):
         """
         Create AWS SigV4 authentication handler for asynchronous clients.
@@ -233,31 +234,10 @@ class OpenSearchConnectionConfig(ConnectionConfig):
 
         return AWSV4SignerAsyncAuth(credentials, aws_region, aws_service)
 
+    @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def get_async_client_kwargs(self) -> dict:
         """
-        Build client kwargs for AsyncOpenSearch with async IAM auth if needed.
-
-        Returns:
-            dict: Configuration for AsyncOpenSearch client with proper async authentication
-        """
-        # Start with base kwargs from connection config
-        client_kwargs = self.get_client_kwargs()
-
-        # If AWS credentials detected, add async auth handler
-        if self._has_aws_credentials():
-            logger.debug("Adding async IAM authentication")
-            client_kwargs["http_auth"] = await self._get_async_aws_auth()
-
-            # Must use AsyncHttpConnection for async client
-            from opensearchpy import AsyncHttpConnection
-
-            client_kwargs["connection_class"] = AsyncHttpConnection
-
-        return client_kwargs
-
-    def get_client_kwargs(self) -> dict:
-        """
-        Build client configuration with intelligent authentication resolution.
+        Build complete client configuration for AsyncOpenSearch with all authentication types.
 
         Authentication priority order (auto-detected):
         1. AWS IAM (if aws_access_key_id + aws_secret_access_key provided)
@@ -265,7 +245,10 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         3. SSL Certificates (if cert files provided)
 
         Returns:
-            dict: Configuration for OpenSearch client
+            dict: Complete configuration for AsyncOpenSearch client
+
+        Raises:
+            ValueError: If no authentication method is configured
         """
         access_config = self.access_config.get_secret_value()
         client_input_kwargs = {}
@@ -291,20 +274,45 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         # 3. Configure Authentication (auto-detect based on credentials provided)
         # Priority order: IAM > Basic > Cert
         if self._has_aws_credentials():
-            # IAM requires async auth - return base kwargs without auth
-            # The async methods will add the async auth handler
-            logger.debug(
-                "Building base client kwargs for IAM (auth will be added by async methods)"
-            )
+            # AWS IAM Authentication with async auth handler
+            logger.info("Using AWS IAM authentication")
+            iam_auth = await self._get_async_aws_auth()
+
+            # Must use AsyncHttpConnection for IAM
+            from opensearchpy import AsyncHttpConnection
+
+            # Skip Pydantic validation for IAM (auth object, not tuple)
+            # Validate non-auth fields only
+            client_input = OpenSearchClientInput(**client_input_kwargs)
+            logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
+
+            client_kwargs = client_input.model_dump()
+            # Add IAM auth after validation
+            client_kwargs["http_auth"] = iam_auth
+            client_kwargs["connection_class"] = AsyncHttpConnection
 
         elif self.username and access_config.password:
-            # PRIORITY 2: Basic HTTP Authentication
+            # Basic HTTP Authentication (works in async)
             logger.info("Using basic HTTP authentication")
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
 
+            # Validate through Pydantic for basic auth
+            client_input = OpenSearchClientInput(**client_input_kwargs)
+            logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
+
+            client_kwargs = client_input.model_dump()
+            if client_input.http_auth is not None:
+                client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()
+
         elif self.client_cert:
-            # PRIORITY 3: Certificate-based authentication
+            # Certificate-based authentication (works in async)
             logger.info("Using certificate-based authentication")
+
+            # Validate through Pydantic
+            client_input = OpenSearchClientInput(**client_input_kwargs)
+            logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
+
+            client_kwargs = client_input.model_dump()
 
         else:
             raise ValueError(
@@ -314,25 +322,10 @@ class OpenSearchConnectionConfig(ConnectionConfig):
                 "or Certificate (client_cert)"
             )
 
-        # Validate and prepare final kwargs
-        client_input = OpenSearchClientInput(**client_input_kwargs)
-        logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
-
-        client_kwargs = client_input.model_dump()
-        if client_input.http_auth is not None:
-            client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()
-
         # Filter out None values
         client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
 
         return client_kwargs
-
-    @DestinationConnectionError.wrap
-    @requires_dependencies(["opensearchpy"], extras="opensearch")
-    def get_client(self) -> "OpenSearch":
-        from opensearchpy import OpenSearch
-
-        return OpenSearch(**self.get_client_kwargs())
 
 
 class OpenSearchIndexerConfig(ElasticsearchIndexerConfig):
@@ -349,6 +342,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         """Always use async for better I/O performance"""
         return True
 
+    @requires_dependencies(["opensearchpy"], extras="opensearch")
     def precheck(self) -> None:
         """Validate connection and index existence (wraps async implementation)"""
         import asyncio
@@ -401,6 +395,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 display_name=display_name,
             )
 
+    @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def _get_doc_ids_async(self) -> set[str]:
         """Fetch document IDs asynchronously using async_scan"""
         from opensearchpy import AsyncOpenSearch
@@ -433,6 +428,7 @@ class OpenSearchDownloader(ElasticsearchDownloader):
     download_config: OpenSearchDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
         """Override to use async client kwargs with IAM auth"""
         from opensearchpy import AsyncOpenSearch
@@ -484,6 +480,7 @@ class OpenSearchUploader(ElasticsearchUploader):
         """Declare this uploader as async-capable"""
         return True
 
+    @requires_dependencies(["opensearchpy"], extras="opensearch")
     def precheck(self) -> None:
         """Validate connection and index existence (wraps async implementation)"""
         import asyncio
