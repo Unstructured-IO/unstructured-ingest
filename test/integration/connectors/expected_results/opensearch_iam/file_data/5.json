@@ -1,0 +1,17 @@
+{
+  "identifier": "5",
+  "connector_type": "opensearch",
+  "source_identifiers": {
+    "filename": "5.txt",
+    "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/5"
+  },
+  "metadata": {
+    "index": "opensearch_e2e_source",
+    "document_id": "5",
+    "make": "Chevrolet",
+    "model": "Tahoe",
+    "year": 2021,
+    "color": "Grey",
+    "price": 55000
+  }
+}

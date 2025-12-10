@@ -1,0 +1,17 @@
+{
+  "identifier": "2",
+  "connector_type": "opensearch",
+  "source_identifiers": {
+    "filename": "2.txt",
+    "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/2"
+  },
+  "metadata": {
+    "index": "opensearch_e2e_source",
+    "document_id": "2",
+    "make": "Honda",
+    "model": "CRV",
+    "year": 2023,
+    "color": "Blue",
+    "price": 31000
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "identifier": "4",
+  "connector_type": "opensearch",
+  "source_identifiers": {
+    "filename": "4.txt",
+    "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/4"
+  },
+  "metadata": {
+    "index": "opensearch_e2e_source",
+    "document_id": "4",
+    "make": "Tesla",
+    "model": "Model 3",
+    "year": 2024,
+    "color": "White",
+    "price": 42000
+  }
+}

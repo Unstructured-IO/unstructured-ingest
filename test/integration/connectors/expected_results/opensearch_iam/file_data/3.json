@@ -1,0 +1,17 @@
+{
+  "identifier": "3",
+  "connector_type": "opensearch",
+  "source_identifiers": {
+    "filename": "3.txt",
+    "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/3"
+  },
+  "metadata": {
+    "index": "opensearch_e2e_source",
+    "document_id": "3",
+    "make": "Ford",
+    "model": "F-150",
+    "year": 2022,
+    "color": "Black",
+    "price": 45000
+  }
+}
