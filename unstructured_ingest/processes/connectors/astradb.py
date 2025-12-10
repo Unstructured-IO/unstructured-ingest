@@ -300,6 +300,11 @@ class AstraDBUploadStagerConfig(UploadStagerConfig):
     flatten_metadata: Optional[bool] = Field(
         default=False, description="Move metadata to top level of the record."
     )
+    astra_generated_embeddings: bool = Field(
+        default=False,
+        description="Select this if you've configured an embedding provider integration for your collection."
+        "Content will be inserted into the $vectorize field and embeddings will be generated externally.",
+    )
 
 
 @dataclass
@@ -330,12 +335,36 @@ class AstraDBUploadStager(UploadStager):
             if metadata:
                 element_dict.update(metadata)
 
-        return {
-            "$vector": element_dict.pop("embeddings", None),
-            "content": element_dict.pop("text", None),
+        content = element_dict.pop("text", None)
+        embeddings = element_dict.pop("embeddings", None)
+
+        result = {
+            "content": content,
             RECORD_ID_LABEL: file_data.identifier,
             "metadata": element_dict,
         }
+
+        # (Austin): We support bring-your-own embeddings XOR Astra-generated embeddings.
+        # Using neither /is/ a valid state, but for now we're enforcing Astra as a vector store.
+        has_unstructured_embeddings = embeddings is not None
+        generate_embeddings = self.upload_stager_config.astra_generated_embeddings
+
+        if not has_unstructured_embeddings and not generate_embeddings:
+            raise ValueError(
+                "No vectors provided. "
+                "Please enable an Unstructured embedding provider or configure Astra to generate embeddings."
+            )
+        elif has_unstructured_embeddings and generate_embeddings:
+            raise ValueError(
+                "Cannot use Unstructured embeddings and Astra-generated embeddings simultaneously. "
+                "Please disable Astra generated embeddings or remove the Unstructured embedder."
+            )
+        elif generate_embeddings:
+            result["$vectorize"] = content
+        elif has_unstructured_embeddings:
+            result["$vector"] = embeddings
+
+        return result
 
 
 class AstraDBUploaderConfig(UploaderConfig):
