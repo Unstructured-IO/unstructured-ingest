@@ -3,13 +3,13 @@
   "connector_type": "opensearch",
   "source_identifiers": {
     "filename": "4.txt",
-    "fullpath": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/4"
+    "fullpath": "***/opensearch_e2e_source/4"
   },
   "metadata": {
-    "url": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source/4",
+    "url": "***/opensearch_e2e_source/4",
     "date_processed": "IGNORE_THIS_FIELD"
   },
-  "display_name": "https://search-unstructured-demo-opensearch-acwkxafxkfpamozibe4tzdx4gu.us-east-2.es.amazonaws.com/opensearch_e2e_source, batch_size=10 ids=4",
+  "display_name": "***/opensearch_e2e_source, batch_size=10 ids=4",
   "additional_metadata": {},
   "reprocess": false
 }
