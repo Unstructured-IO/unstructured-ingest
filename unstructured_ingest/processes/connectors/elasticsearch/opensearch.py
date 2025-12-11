@@ -278,8 +278,9 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             logger.info("Using AWS IAM authentication")
             iam_auth = await self._get_async_aws_auth()
 
-            # Must use AsyncHttpConnection for IAM
-            from opensearchpy import AsyncHttpConnection
+            # Must use http_async.AsyncHttpConnection (not http_aiohttp.AsyncAIOHttpConnection)
+            # Only http_async supports IAM auth handlers
+            from opensearchpy.connection.http_async import AsyncHttpConnection
 
             # Skip Pydantic validation for IAM (auth object, not tuple)
             # Validate non-auth fields only
