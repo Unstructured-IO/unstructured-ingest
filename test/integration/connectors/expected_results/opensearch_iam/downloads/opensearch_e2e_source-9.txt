@@ -1,7 +1,0 @@
-{
-  "make": "Mercedes",
-  "model": "C300",
-  "year": 2024,
-  "color": "Silver",
-  "price": 50000
-}

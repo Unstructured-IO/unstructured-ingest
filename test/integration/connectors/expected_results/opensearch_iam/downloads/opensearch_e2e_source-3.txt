@@ -1,7 +1,0 @@
-{
-  "make": "Ford",
-  "model": "F-150",
-  "year": 2022,
-  "color": "Black",
-  "price": 45000
-}

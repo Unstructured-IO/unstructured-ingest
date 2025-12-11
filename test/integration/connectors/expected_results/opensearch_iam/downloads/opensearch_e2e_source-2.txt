@@ -1,7 +1,0 @@
-{
-  "make": "Honda",
-  "model": "CRV",
-  "year": 2023,
-  "color": "Blue",
-  "price": 31000
-}

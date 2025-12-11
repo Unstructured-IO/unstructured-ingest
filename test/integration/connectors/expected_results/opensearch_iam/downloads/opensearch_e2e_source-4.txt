@@ -1,7 +1,0 @@
-{
-  "make": "Tesla",
-  "model": "Model 3",
-  "year": 2024,
-  "color": "White",
-  "price": 42000
-}
