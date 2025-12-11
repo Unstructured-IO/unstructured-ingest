@@ -357,11 +357,14 @@ class OpenSearchIndexer(ElasticsearchIndexer):
             try:
                 client_kwargs = await self.connection_config.get_async_client_kwargs()
                 async with AsyncOpenSearch(**client_kwargs) as client:
-                    indices = await client.indices.get_alias(index="*")
-                    if self.index_config.index_name not in indices:
-                        index_list = ", ".join(indices.keys())
+                    # Check only the specific index (works with AWS FGAC limited permissions)
+                    # Use get_alias instead of exists to avoid HEAD request issues with IAM
+                    try:
+                        await client.indices.get_alias(index=self.index_config.index_name)
+                    except Exception as alias_error:
                         raise SourceConnectionError(
-                            f"index {self.index_config.index_name} not found: {index_list}"
+                            f"index {self.index_config.index_name} not found or not accessible: "
+                            f"{alias_error}"
                         )
                     logger.info(
                         f"Successfully validated connection to index: "
@@ -498,11 +501,14 @@ class OpenSearchUploader(ElasticsearchUploader):
             try:
                 client_kwargs = await self.connection_config.get_async_client_kwargs()
                 async with AsyncOpenSearch(**client_kwargs) as client:
-                    indices = await client.indices.get_alias(index="*")
-                    if self.upload_config.index_name not in indices:
-                        index_list = ", ".join(indices.keys())
+                    # Check only the specific index (works with AWS FGAC limited permissions)
+                    # Use get_alias instead of exists to avoid HEAD request issues with IAM
+                    try:
+                        await client.indices.get_alias(index=self.upload_config.index_name)
+                    except Exception as alias_error:
                         raise DestinationConnectionError(
-                            f"index {self.upload_config.index_name} not found: {index_list}"
+                            f"index {self.upload_config.index_name} not found or not accessible: "
+                            f"{alias_error}"
                         )
                     logger.info(
                         f"Successfully validated connection to index: "
