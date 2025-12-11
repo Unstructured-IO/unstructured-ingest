@@ -305,6 +305,11 @@ class AstraDBUploadStagerConfig(UploadStagerConfig):
         description="Select this if you've configured an embedding provider integration for your collection."
         "Content will be inserted into the $vectorize field and embeddings will be generated externally.",
     )
+    enable_lexical_search: bool = Field(
+        default=False,
+        description="Select this to insert content into the $lexical field "
+        "for lexicograpical matching",
+    )
 
 
 @dataclass
@@ -363,6 +368,9 @@ class AstraDBUploadStager(UploadStager):
             result["$vectorize"] = content
         elif has_unstructured_embeddings:
             result["$vector"] = embeddings
+
+        if self.upload_stager_config.enable_lexical_search:
+            result["$lexical"] = content
 
         return result
 

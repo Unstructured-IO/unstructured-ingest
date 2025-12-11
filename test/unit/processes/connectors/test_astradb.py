@@ -205,3 +205,66 @@ def test_both_embeddings_and_astra_generated_raises_error(file_data: FileData):
 
     with pytest.raises(ValueError, match="Cannot use Unstructured embeddings and Astra-generated embeddings simultaneously"):
         stager.conform_dict(element_dict.copy(), file_data)
+
+
+def test_enable_lexical_search_adds_lexical_field(file_data: FileData):
+    """
+    Test that when enable_lexical_search=True, the $lexical field is added
+    with the same content as the content field.
+    """
+    stager_config = AstraDBUploadStagerConfig(
+        enable_lexical_search=True, astra_generated_embeddings=True
+    )
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+
+    element_dict = {
+        "text": "test content",
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$lexical" in result
+    assert result["$lexical"] == "test content"
+    assert result["content"] == "test content"
+    assert result["$lexical"] == result["content"]
+
+
+def test_enable_lexical_search_default_does_not_add_lexical_field(file_data: FileData):
+    """
+    Test that when enable_lexical_search is not set (defaults to False),
+    the $lexical field is NOT added.
+    """
+    stager = AstraDBUploadStager()
+
+    element_dict = {
+        "text": "test content",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$lexical" not in result
+    assert result["content"] == "test content"
+
+
+def test_enable_lexical_search_works_with_unstructured_embeddings(file_data: FileData):
+    """
+    Test that enable_lexical_search=True works correctly with unstructured embeddings.
+    """
+    stager_config = AstraDBUploadStagerConfig(enable_lexical_search=True)
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+
+    element_dict = {
+        "text": "test content",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$lexical" in result
+    assert result["$lexical"] == "test content"
+    assert "$vector" in result
+    assert result["$vector"] == [0.1, 0.2, 0.3]
