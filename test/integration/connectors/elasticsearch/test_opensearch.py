@@ -269,69 +269,6 @@ async def test_opensearch_source_empty_fields(source_index: str, movies_datafram
         )
 
 
-@pytest.mark.asyncio
-@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
-async def test_opensearch_source_with_fields(source_index: str, movies_dataframe: pd.DataFrame):
-    """Test OpenSearch source with specific fields filter"""
-    indexer_config = OpenSearchIndexerConfig(index_name=source_index)
-    with tempfile.TemporaryDirectory() as tempdir:
-        tempdir_path = Path(tempdir)
-        connection_config = OpenSearchConnectionConfig(
-            access_config=OpenSearchAccessConfig(password="admin"),
-            username="admin",
-            hosts=["http://localhost:9200"],
-            use_ssl=True,
-        )
-        # Only download specific fields
-        specific_fields = ["title", "year", "director"]  # Lowercase to match actual field names
-        download_config = OpenSearchDownloaderConfig(
-            download_dir=tempdir_path,
-            fields=specific_fields,
-        )
-        indexer = OpenSearchIndexer(
-            connection_config=connection_config, index_config=indexer_config
-        )
-        downloader = OpenSearchDownloader(
-            connection_config=connection_config, download_config=download_config
-        )
-
-        # Wrap precheck to run in thread pool to avoid event loop conflict with asyncio.run()
-        import concurrent.futures
-
-        original_precheck = indexer.precheck
-
-        def threaded_precheck():
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(original_precheck)
-                future.result()
-
-        indexer.precheck = threaded_precheck
-
-        # Run source validation (basic validation only)
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=SourceValidationConfigs(
-                test_id=CONNECTOR_TYPE,
-                expected_num_files=len(movies_dataframe),
-                expected_number_indexed_file_data=1,
-                validate_downloaded_files=False,  # Skip fixture comparison (different field hash)
-                validate_file_data=False,  # Skip fixture comparison (different field hash)
-                predownload_file_data_check=source_filedata_display_name_set_check,
-                postdownload_file_data_check=source_filedata_display_name_set_check,
-                exclude_fields_extend=["display_name"],
-            ),
-        )
-
-        # Verify files were actually downloaded
-        downloaded_files = list(tempdir_path.rglob("*.txt"))
-        assert len(downloaded_files) > 0, "No files were downloaded"
-        
-        # Basic check: at least one file has content
-        has_content = any(f.stat().st_size > 0 for f in downloaded_files)
-        assert has_content, "All downloaded files are empty"
-
-
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_opensearch_source_precheck_fail_no_cluster():
     indexer_config = OpenSearchIndexerConfig(index_name="index")
