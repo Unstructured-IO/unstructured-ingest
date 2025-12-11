@@ -415,9 +415,6 @@ class OpenSearchUploader(ElasticsearchUploader):
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
-            if not await client.indices.exists(index=self.upload_config.index_name):
-                logger.warning(f"Index {self.upload_config.index_name} does not exist")
-
             for batch in generator_batching_wbytes(
                 data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
@@ -450,9 +447,6 @@ class OpenSearchUploader(ElasticsearchUploader):
                         f"{[self._sanitize_bulk_index_error(error) for error in e.errors]}"
                     )
                     raise DestinationConnectionError(str(e))
-                except Exception as e:
-                    logger.error(f"Batch upload failed: {e}", exc_info=True)
-                    raise DestinationConnectionError(f"Upload failed: {e}")
 
 
 class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
