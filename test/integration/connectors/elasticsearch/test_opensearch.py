@@ -478,7 +478,7 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
                 expected_num_files=10,  # AWS index has 10 documents
                 expected_number_indexed_file_data=1,
                 validate_downloaded_files=True,  # Validate downloads
-                validate_file_data=True,  # Validate file data
+                validate_file_data=True,  # Validate file data (now includes batch metadata)
                 predownload_file_data_check=source_filedata_display_name_set_check,
                 postdownload_file_data_check=source_filedata_display_name_set_check,
                 exclude_fields_extend=[

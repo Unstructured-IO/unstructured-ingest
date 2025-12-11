@@ -1,0 +1,63 @@
+{
+  "identifier": "2af294c4-6916-5094-8784-9443c41a6692",
+  "connector_type": "opensearch",
+  "source_identifiers": null,
+  "metadata": {
+    "url": "***/opensearch_e2e_source",
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "IGNORE_THIS_FIELD",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "index_name": "opensearch_e2e_source"
+  },
+  "reprocess": false,
+  "local_download_path": null,
+  "display_name": "***/opensearch_e2e_source, batch_size=10 ids=1..10",
+  "batch_items": [
+    {
+      "identifier": "1",
+      "version": null
+    },
+    {
+      "identifier": "2",
+      "version": null
+    },
+    {
+      "identifier": "3",
+      "version": null
+    },
+    {
+      "identifier": "4",
+      "version": null
+    },
+    {
+      "identifier": "5",
+      "version": null
+    },
+    {
+      "identifier": "6",
+      "version": null
+    },
+    {
+      "identifier": "7",
+      "version": null
+    },
+    {
+      "identifier": "8",
+      "version": null
+    },
+    {
+      "identifier": "9",
+      "version": null
+    },
+    {
+      "identifier": "10",
+      "version": null
+    }
+  ]
+}
