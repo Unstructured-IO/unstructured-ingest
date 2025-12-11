@@ -484,7 +484,11 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
                 exclude_fields_extend=[
                     "display_name",
                     "metadata.url",  # Exclude URL (contains masked host ***)
+                    "metadata.version",  # Exclude version (runtime generated)
+                    "metadata.record_locator",  # Exclude record_locator (runtime generated)
                     "source_identifiers.fullpath",  # Exclude fullpath (contains masked host ***)
+                    "source_identifiers.rel_path",  # Exclude rel_path (runtime generated)
+                    "additional_metadata.index_name",  # Exclude index_name (runtime generated)
                 ],
             ),
         )

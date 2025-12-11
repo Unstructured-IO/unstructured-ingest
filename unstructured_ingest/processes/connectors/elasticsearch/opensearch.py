@@ -339,7 +339,10 @@ class OpenSearchIndexer(ElasticsearchIndexer):
     client: "OpenSearch" = field(init=False)
 
     def is_async(self) -> bool:
-        """Always use async for better I/O performance"""
+        """
+        Signal to pipeline framework to use async execution path.
+        Required: Pipeline checks this to call run_async() instead of run().
+        """
         return True
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
@@ -477,7 +480,10 @@ class OpenSearchUploader(ElasticsearchUploader):
     connector_type: str = CONNECTOR_TYPE
 
     def is_async(self) -> bool:
-        """Declare this uploader as async-capable"""
+        """
+        Signal to pipeline framework to use async execution path.
+        Required: Pipeline checks this to call run_data_async() instead of run_data().
+        """
         return True
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
