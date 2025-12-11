@@ -1,3 +1,7 @@
+## [1.2.26]
+
+* **feat: add astra_generated_embeddings and enable_lexical_search options to AstraDB stager/uploader**
+
 ## [1.2.25]
 
 * **fix: dont submit fields for Elasticsearch/Opensearch if there are none specified**
