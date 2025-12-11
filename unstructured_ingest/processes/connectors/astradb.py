@@ -476,10 +476,10 @@ class AstraDBUploader(Uploader):
         # If there's no embedder, we need to be in Astra generated embeddings mode,
         # and the collection must already exist.
         if vector_length is None:
-            configured_for_astra_embeddings =(
-                collection_exists and
-                "vector" in collection_metadata and
-                "service" in collection_metadata["vector"]
+            configured_for_astra_embeddings = (
+                collection_exists
+                and "vector" in collection_metadata
+                and "service" in collection_metadata["vector"]
             )
 
             if not configured_for_astra_embeddings:

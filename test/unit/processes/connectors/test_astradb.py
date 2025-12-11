@@ -203,7 +203,10 @@ def test_both_embeddings_and_astra_generated_raises_error(file_data: FileData):
         "metadata": {"foo": "bar"},
     }
 
-    with pytest.raises(ValueError, match="Cannot use Unstructured embeddings and Astra-generated embeddings simultaneously"):
+    with pytest.raises(
+        ValueError,
+        match="Cannot use Unstructured embeddings and Astra-generated embeddings simultaneously",
+    ):
         stager.conform_dict(element_dict.copy(), file_data)
 
 
