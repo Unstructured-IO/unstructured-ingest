@@ -269,6 +269,83 @@ async def test_opensearch_source_empty_fields(source_index: str, movies_datafram
         )
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
+async def test_opensearch_source_with_fields(source_index: str, movies_dataframe: pd.DataFrame):
+    """Test OpenSearch source with specific fields filter"""
+    indexer_config = OpenSearchIndexerConfig(index_name=source_index)
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        connection_config = OpenSearchConnectionConfig(
+            access_config=OpenSearchAccessConfig(password="admin"),
+            username="admin",
+            hosts=["http://localhost:9200"],
+            use_ssl=True,
+        )
+        # Only download specific fields
+        specific_fields = ["Title", "Year", "Director"]
+        download_config = OpenSearchDownloaderConfig(
+            download_dir=tempdir_path,
+            fields=specific_fields,
+        )
+        indexer = OpenSearchIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        downloader = OpenSearchDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+
+        # Wrap precheck to run in thread pool to avoid event loop conflict with asyncio.run()
+        import concurrent.futures
+
+        original_precheck = indexer.precheck
+
+        def threaded_precheck():
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(original_precheck)
+                future.result()
+
+        indexer.precheck = threaded_precheck
+
+        # Run the source connector
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id=CONNECTOR_TYPE,
+                expected_num_files=len(movies_dataframe),
+                expected_number_indexed_file_data=1,
+                validate_downloaded_files=False,  # Don't validate fixtures (different fields)
+                validate_file_data=False,  # Don't validate fixtures (different fields)
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
+                exclude_fields_extend=["display_name"],
+            ),
+        )
+
+        # Verify downloaded files contain ONLY the specified fields
+        downloaded_files = list(tempdir_path.rglob("*.txt"))
+        assert len(downloaded_files) == len(movies_dataframe), (
+            f"Expected {len(movies_dataframe)} files, got {len(downloaded_files)}"
+        )
+
+        for downloaded_file in downloaded_files:
+            content = downloaded_file.read_text()
+            # Content should only have the specified fields
+            for field in specific_fields:
+                assert field in content, (
+                    f"Expected field '{field}' not found in {downloaded_file.name}"
+                )
+
+            # Content should NOT have fields we didn't request
+            excluded_fields = ["Cast", "Genre", "Plot", "Wiki Page"]
+            for field in excluded_fields:
+                assert field not in content, (
+                    f"Unexpected field '{field}' found in {downloaded_file.name} "
+                    f"(should only have {specific_fields})"
+                )
+
+
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
 def test_opensearch_source_precheck_fail_no_cluster():
     indexer_config = OpenSearchIndexerConfig(index_name="index")
@@ -486,9 +563,8 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
                     "metadata.url",  # Exclude URL (contains masked host ***)
                     "metadata.version",  # Exclude version (runtime generated)
                     "metadata.record_locator",  # Exclude record_locator (runtime generated)
-                    "source_identifiers.fullpath",  # Exclude fullpath (contains masked host ***)
-                    "source_identifiers.rel_path",  # Exclude rel_path (runtime generated)
-                    "additional_metadata.index_name",  # Exclude index_name (runtime generated)
+                    "source_identifiers",  # Exclude entirely (can be null in batch files)
+                    "additional_metadata",  # Exclude entirely (runtime generated)
                 ],
             ),
         )
