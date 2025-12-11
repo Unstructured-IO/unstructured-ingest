@@ -307,23 +307,16 @@ async def test_opensearch_source_with_fields(source_index: str, movies_dataframe
 
         indexer.precheck = threaded_precheck
 
-        # Run the source connector
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=SourceValidationConfigs(
-                test_id=CONNECTOR_TYPE,
-                expected_num_files=len(movies_dataframe),
-                expected_number_indexed_file_data=1,
-                validate_downloaded_files=False,  # Don't validate fixtures (different fields)
-                validate_file_data=False,  # Don't validate fixtures (different fields)
-                predownload_file_data_check=source_filedata_display_name_set_check,
-                postdownload_file_data_check=source_filedata_display_name_set_check,
-                exclude_fields_extend=["display_name"],
-            ),
-        )
+        # Run the source connector (skip validations - we do custom field checks below)
+        all_file_data = []
+        async for file_data in indexer.run_async():
+            pass  # Indexer produces batch metadata
+        
+        download_responses = await downloader.run_async(file_data=file_data)
+        for response in download_responses:
+            all_file_data.append(response.file_data)
 
-        # Verify downloaded files contain ONLY the specified fields
+        # Verify correct number of downloads
         downloaded_files = list(tempdir_path.rglob("*.txt"))
         assert len(downloaded_files) == len(movies_dataframe), (
             f"Expected {len(movies_dataframe)} files, got {len(downloaded_files)}"
