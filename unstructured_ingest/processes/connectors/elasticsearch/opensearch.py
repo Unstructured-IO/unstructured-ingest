@@ -48,9 +48,9 @@ CONNECTOR_TYPE = "opensearch"
 
 """OpenSearch connector - inherits from Elasticsearch connector (OpenSearch is an ES fork)."""
 
-# Precompiled regex patterns for AWS hostname detection (performance optimization)
-_ES_PATTERN = re.compile(r"\.([a-z]{2}-[a-z]+-\d+)\.es\.amazonaws\.com$")
-_AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}-[a-z]+-\d+)\.aoss\.amazonaws\.com$")
+# Precompiled regex patterns for AWS hostname detection (GovCloud, China, standard)
+_ES_PATTERN = re.compile(r"\.([a-z]{2}(?:-[a-z]+)+-\d+)\.es\.amazonaws\.com$")
+_AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}(?:-[a-z]+)+-\d+)\.aoss\.amazonaws\.com$")
 
 
 class OpenSearchAccessConfig(AccessConfig):
@@ -228,12 +228,9 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             client_kwargs = client_input.model_dump()
 
         else:
-            raise ValueError(
-                "No authentication configured. Must provide one of: "
-                "AWS credentials (aws_access_key_id + aws_secret_access_key), "
-                "Basic auth (username + password), "
-                "or Certificate (client_cert)"
-            )
+            logger.warning("No authentication configured - connecting without credentials")
+            client_input = OpenSearchClientInput(**client_input_kwargs)
+            client_kwargs = client_input.model_dump()
 
         return {k: v for k, v in client_kwargs.items() if v is not None}
 
@@ -264,13 +261,9 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 async with AsyncOpenSearch(
                     **await self.connection_config.get_async_client_kwargs()
                 ) as client:
-                    try:
-                        await client.indices.get_alias(index=self.index_config.index_name)
-                    except Exception as alias_error:
-                        raise SourceConnectionError(
-                            f"index {self.index_config.index_name} not found or not accessible: "
-                            f"{alias_error}"
-                        )
+                    # Use get_alias (GET) instead of exists (HEAD) - HEAD has IAM signing issues
+                    # Also respects AWS FGAC by checking only the specific index
+                    await client.indices.get_alias(index=self.index_config.index_name)
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise SourceConnectionError(f"failed to validate connection: {e}")
@@ -397,13 +390,9 @@ class OpenSearchUploader(ElasticsearchUploader):
                 async with AsyncOpenSearch(
                     **await self.connection_config.get_async_client_kwargs()
                 ) as client:
-                    try:
-                        await client.indices.get_alias(index=self.upload_config.index_name)
-                    except Exception as alias_error:
-                        raise DestinationConnectionError(
-                            f"index {self.upload_config.index_name} not found or not accessible: "
-                            f"{alias_error}"
-                        )
+                    # Use get_alias (GET) instead of exists (HEAD) - HEAD has IAM signing issues
+                    # Also respects AWS FGAC by checking only the specific index
+                    await client.indices.get_alias(index=self.upload_config.index_name)
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -441,13 +430,19 @@ class OpenSearchUploader(ElasticsearchUploader):
                         raise_on_error=False,
                     )
 
-                    logger.info(
-                        f"uploaded batch to {self.upload_config.index_name}: "
-                        f"{success} succeeded, {len(failed) if failed else 0} failed"
-                    )
-
                     if failed:
-                        logger.error(f"Failed items: {failed[:5]}")
+                        logger.error(
+                            f"Batch upload had {len(failed)} failures out of {len(batch)}. "
+                            f"Failed items: {failed[:5]}"
+                        )
+                        raise DestinationConnectionError(
+                            f"Failed to upload {len(failed)} out of {len(batch)} documents"
+                        )
+
+                    logger.info(
+                        f"uploaded batch of {len(batch)} elements to "
+                        f"{self.upload_config.index_name}"
+                    )
 
                 except BulkIndexError as e:
                     logger.error(
