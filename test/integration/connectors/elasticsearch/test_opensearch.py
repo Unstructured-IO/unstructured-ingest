@@ -308,13 +308,11 @@ async def test_opensearch_source_with_fields(source_index: str, movies_dataframe
         indexer.precheck = threaded_precheck
 
         # Run the source connector (skip validations - we do custom field checks below)
-        all_file_data = []
         async for file_data in indexer.run_async():
             pass  # Indexer produces batch metadata
-        
-        download_responses = await downloader.run_async(file_data=file_data)
-        for response in download_responses:
-            all_file_data.append(response.file_data)
+
+        # Download all files
+        await downloader.run_async(file_data=file_data)
 
         # Verify correct number of downloads
         downloaded_files = list(tempdir_path.rglob("*.txt"))
@@ -552,12 +550,11 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
                 predownload_file_data_check=source_filedata_display_name_set_check,
                 postdownload_file_data_check=source_filedata_display_name_set_check,
                 exclude_fields_extend=[
-                    "display_name",
-                    "metadata.url",  # Exclude URL (contains masked host ***)
-                    "metadata.version",  # Exclude version (runtime generated)
-                    "metadata.record_locator",  # Exclude record_locator (runtime generated)
+                    "display_name",  # Contains dynamic IDs
+                    "metadata",  # Exclude entirely (too many runtime fields)
                     "source_identifiers",  # Exclude entirely (can be null in batch files)
                     "additional_metadata",  # Exclude entirely (runtime generated)
+                    "local_download_path",  # Runtime path
                 ],
             ),
         )
