@@ -46,18 +46,15 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "opensearch"
 
-"""Since the actual OpenSearch project is a fork of Elasticsearch, we are relying
-heavily on the Elasticsearch connector code, inheriting the functionality as much as possible."""
+"""OpenSearch connector - inherits from Elasticsearch connector (OpenSearch is an ES fork)."""
 
-# Precompiled regex patterns for AWS OpenSearch hostname detection
+# Precompiled regex patterns for AWS hostname detection (performance optimization)
 _ES_PATTERN = re.compile(r"\.([a-z]{2}-[a-z]+-\d+)\.es\.amazonaws\.com$")
 _AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}-[a-z]+-\d+)\.aoss\.amazonaws\.com$")
 
 
 class OpenSearchAccessConfig(AccessConfig):
     password: Optional[str] = Field(default=None, description="password when using basic auth")
-
-    # AWS IAM Authentication - auto-enabled when credentials are provided
     aws_access_key_id: Optional[str] = Field(
         default=None,
         description="AWS access key ID. When provided (with secret), IAM authentication is used. "
@@ -73,44 +70,18 @@ class OpenSearchAccessConfig(AccessConfig):
 
 
 def detect_aws_opensearch_config(host: str) -> Optional[Tuple[str, str]]:
-    """
-    Auto-detect AWS region and service from OpenSearch hostname.
-
-    Args:
-        host: OpenSearch hostname (e.g., "search-domain.us-west-2.es.amazonaws.com")
-
-    Returns:
-        Tuple of (region, service) if detected, None otherwise
-
-    Examples:
-        >>> detect_aws_opensearch_config("search-my-domain-xyz.us-west-2.es.amazonaws.com")
-        ("us-west-2", "es")
-
-        >>> detect_aws_opensearch_config("abc123.us-east-1.aoss.amazonaws.com")
-        ("us-east-1", "aoss")
-
-        >>> detect_aws_opensearch_config("localhost:9200")
-        None
-    """
-    # Clean the host (remove protocol and port)
+    """Auto-detect AWS region and service from OpenSearch hostname."""
     clean_host = host.replace("https://", "").replace("http://", "")
-    clean_host = clean_host.split(":")[0]  # Remove port if present
+    clean_host = clean_host.split(":")[0]
 
-    # Pattern 1: AWS OpenSearch Service (es)
-    # search-{domain}-{id}.{region}.es.amazonaws.com
     match = _ES_PATTERN.search(clean_host)
     if match:
-        region = match.group(1)
-        return (region, "es")
+        return (match.group(1), "es")
 
-    # Pattern 2: OpenSearch Serverless (aoss)
-    # {collection-id}.{region}.aoss.amazonaws.com
     match = _AOSS_PATTERN.search(clean_host)
     if match:
-        region = match.group(1)
-        return (region, "aoss")
+        return (match.group(1), "aoss")
 
-    # Not an AWS OpenSearch hostname
     return None
 
 
@@ -165,20 +136,12 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         return value
 
     def _has_aws_credentials(self) -> bool:
-        """Check if AWS IAM credentials are provided"""
+        """Check if AWS IAM credentials are provided."""
         access_config = self.access_config.get_secret_value()
         return bool(access_config.aws_access_key_id and access_config.aws_secret_access_key)
 
     def _detect_and_validate_aws_config(self) -> Tuple[str, str]:
-        """
-        Auto-detect AWS region and service from host URL.
-
-        Returns:
-            Tuple of (region, service)
-
-        Raises:
-            ValueError: If IAM is enabled but region/service cannot be detected
-        """
+        """Auto-detect AWS region and service from host URL."""
         if not self.hosts:
             raise ValueError("Host is required for AWS OpenSearch connection")
 
@@ -200,24 +163,13 @@ class OpenSearchConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["opensearchpy", "boto3"], extras="opensearch")
     async def _get_async_aws_auth(self):
-        """
-        Create AWS SigV4 authentication handler for asynchronous clients.
-
-        Returns:
-            AWSV4SignerAsyncAuth: Async auth handler with auto-detected region/service
-
-        Raises:
-            ValueError: If region/service cannot be auto-detected or credentials invalid
-        """
+        """Create AWS SigV4 authentication handler for async clients."""
         import boto3
+        from opensearchpy import AWSV4SignerAsyncAuth
 
         access_config = self.access_config.get_secret_value()
-
-        # Auto-detect AWS region and service from host URL
         aws_region, aws_service = self._detect_and_validate_aws_config()
 
-        # Create boto3 session with explicit credentials
-        logger.debug("Creating AWS session with explicit credentials for async client")
         session = boto3.Session(
             aws_access_key_id=access_config.aws_access_key_id,
             aws_secret_access_key=access_config.aws_secret_access_key,
@@ -228,36 +180,16 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         if not credentials:
             raise ValueError("Failed to obtain AWS credentials from provided keys")
 
-        # Create async auth handler
-        logger.debug(f"Using AWSV4SignerAsyncAuth for region={aws_region}, service={aws_service}")
-        from opensearchpy import AWSV4SignerAsyncAuth
-
         return AWSV4SignerAsyncAuth(credentials, aws_region, aws_service)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def get_async_client_kwargs(self) -> dict:
-        """
-        Build complete client configuration for AsyncOpenSearch with all authentication types.
-
-        Authentication priority order (auto-detected):
-        1. AWS IAM (if aws_access_key_id + aws_secret_access_key provided)
-        2. Basic HTTP Auth (if username + password)
-        3. SSL Certificates (if cert files provided)
-
-        Returns:
-            dict: Complete configuration for AsyncOpenSearch client
-
-        Raises:
-            ValueError: If no authentication method is configured
-        """
+        """Build AsyncOpenSearch client config (auto-detects IAM, basic auth, or cert auth)."""
         access_config = self.access_config.get_secret_value()
         client_input_kwargs = {}
 
-        # 1. Configure hosts
         if self.hosts:
             client_input_kwargs["hosts"] = self.hosts
-
-        # 2. Configure SSL/TLS
         if self.use_ssl:
             client_input_kwargs["use_ssl"] = self.use_ssl
         if self.verify_certs:
@@ -271,48 +203,30 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         if self.client_key:
             client_input_kwargs["client_key"] = str(self.client_key)
 
-        # 3. Configure Authentication (auto-detect based on credentials provided)
-        # Priority order: IAM > Basic > Cert
         if self._has_aws_credentials():
-            # AWS IAM Authentication with async auth handler
             logger.info("Using AWS IAM authentication")
             iam_auth = await self._get_async_aws_auth()
 
-            # Must use http_async.AsyncHttpConnection (not http_aiohttp.AsyncAIOHttpConnection)
-            # Only http_async supports IAM auth handlers
+            # Must use http_async.AsyncHttpConnection for IAM auth handlers
             from opensearchpy.connection.http_async import AsyncHttpConnection
 
-            # Skip Pydantic validation for IAM (auth object, not tuple)
-            # Validate non-auth fields only
             client_input = OpenSearchClientInput(**client_input_kwargs)
-            logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
-
             client_kwargs = client_input.model_dump()
-            # Add IAM auth after validation
             client_kwargs["http_auth"] = iam_auth
             client_kwargs["connection_class"] = AsyncHttpConnection
 
         elif self.username and access_config.password:
-            # Basic HTTP Authentication (works in async)
             logger.info("Using basic HTTP authentication")
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
 
-            # Validate through Pydantic for basic auth
             client_input = OpenSearchClientInput(**client_input_kwargs)
-            logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
-
             client_kwargs = client_input.model_dump()
-            if client_input.http_auth is not None:
+            if client_input.http_auth:
                 client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()
 
         elif self.client_cert:
-            # Certificate-based authentication (works in async)
             logger.info("Using certificate-based authentication")
-
-            # Validate through Pydantic
             client_input = OpenSearchClientInput(**client_input_kwargs)
-            logger.debug(f"opensearch client inputs mapped to: {client_input.model_dump()}")
-
             client_kwargs = client_input.model_dump()
 
         else:
@@ -323,10 +237,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
                 "or Certificate (client_cert)"
             )
 
-        # Filter out None values
-        client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
-
-        return client_kwargs
+        return {k: v for k, v in client_kwargs.items() if v is not None}
 
 
 class OpenSearchIndexerConfig(ElasticsearchIndexerConfig):
@@ -340,25 +251,23 @@ class OpenSearchIndexer(ElasticsearchIndexer):
     client: "OpenSearch" = field(init=False)
 
     def is_async(self) -> bool:
-        """
-        Signal to pipeline framework to use async execution path.
-        Required: Pipeline checks this to call run_async() instead of run().
-        """
+        """Signal pipeline to use async execution."""
         return True
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     def precheck(self) -> None:
-        """Validate connection and index existence (wraps async implementation)"""
+        """Validate connection and index (sync wrapper required by pipeline framework)."""
         import asyncio
 
         async def _async_precheck():
             from opensearchpy import AsyncOpenSearch
 
             try:
-                client_kwargs = await self.connection_config.get_async_client_kwargs()
-                async with AsyncOpenSearch(**client_kwargs) as client:
-                    # Check only the specific index (works with AWS FGAC limited permissions)
-                    # Use get_alias instead of exists to avoid HEAD request issues with IAM
+                async with AsyncOpenSearch(
+                    **await self.connection_config.get_async_client_kwargs()
+                ) as client:
+                    # Use get_alias (GET) instead of exists (HEAD) - HEAD has IAM signing issues
+                    # Also respects AWS FGAC by checking only the specific index
                     try:
                         await client.indices.get_alias(index=self.index_config.index_name)
                     except Exception as alias_error:
@@ -366,20 +275,15 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                             f"index {self.index_config.index_name} not found or not accessible: "
                             f"{alias_error}"
                         )
-                    logger.info(
-                        f"Successfully validated connection to index: "
-                        f"{self.index_config.index_name}"
-                    )
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise SourceConnectionError(f"failed to validate connection: {e}")
 
-        # Run async precheck synchronously
         asyncio.run(_async_precheck())
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, **kwargs: Any) -> AsyncGenerator[ElasticsearchBatchFileData, None]:
-        """Async indexing for all authentication types"""
+        """Async indexing for all authentication types."""
         all_ids = await self._get_doc_ids_async()
         ids = list(all_ids)
         for batch in batch_generator(ids, self.index_config.batch_size):
@@ -404,16 +308,15 @@ class OpenSearchIndexer(ElasticsearchIndexer):
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def _get_doc_ids_async(self) -> set[str]:
-        """Fetch document IDs asynchronously using async_scan"""
+        """Fetch document IDs using async_scan."""
         from opensearchpy import AsyncOpenSearch
         from opensearchpy.helpers import async_scan
 
         scan_query = {"stored_fields": [], "query": {"match_all": {}}}
 
-        # Get async client kwargs with proper authentication
-        client_kwargs = await self.connection_config.get_async_client_kwargs()
-
-        async with AsyncOpenSearch(**client_kwargs) as client:
+        async with AsyncOpenSearch(
+            **await self.connection_config.get_async_client_kwargs()
+        ) as client:
             doc_ids = set()
             async for hit in async_scan(
                 client,
@@ -437,7 +340,7 @@ class OpenSearchDownloader(ElasticsearchDownloader):
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
-        """Override to use async client kwargs with IAM auth"""
+        """Download documents from OpenSearch."""
         from opensearchpy import AsyncOpenSearch
         from opensearchpy.helpers import async_scan
 
@@ -451,14 +354,14 @@ class OpenSearchDownloader(ElasticsearchDownloader):
             "query": {"ids": {"values": ids}},
         }
 
-        # Only add _source if fields are explicitly specified
+        # Only add _source if fields are explicitly specified (avoids AWS FGAC issues)
         if self.download_config.fields:
             scan_query["_source"] = self.download_config.fields
 
         download_responses = []
-        # Use async client kwargs with proper authentication
-        client_kwargs = await self.connection_config.get_async_client_kwargs()
-        async with AsyncOpenSearch(**client_kwargs) as client:
+        async with AsyncOpenSearch(
+            **await self.connection_config.get_async_client_kwargs()
+        ) as client:
             async for result in async_scan(
                 client,
                 query=scan_query,
@@ -484,25 +387,23 @@ class OpenSearchUploader(ElasticsearchUploader):
     connector_type: str = CONNECTOR_TYPE
 
     def is_async(self) -> bool:
-        """
-        Signal to pipeline framework to use async execution path.
-        Required: Pipeline checks this to call run_data_async() instead of run_data().
-        """
+        """Signal pipeline to use async execution."""
         return True
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     def precheck(self) -> None:
-        """Validate connection and index existence (wraps async implementation)"""
+        """Validate connection and index (sync wrapper required by pipeline framework)."""
         import asyncio
 
         async def _async_precheck():
             from opensearchpy import AsyncOpenSearch
 
             try:
-                client_kwargs = await self.connection_config.get_async_client_kwargs()
-                async with AsyncOpenSearch(**client_kwargs) as client:
-                    # Check only the specific index (works with AWS FGAC limited permissions)
-                    # Use get_alias instead of exists to avoid HEAD request issues with IAM
+                async with AsyncOpenSearch(
+                    **await self.connection_config.get_async_client_kwargs()
+                ) as client:
+                    # Use get_alias (GET) instead of exists (HEAD) - HEAD has IAM signing issues
+                    # Also respects AWS FGAC by checking only the specific index
                     try:
                         await client.indices.get_alias(index=self.upload_config.index_name)
                     except Exception as alias_error:
@@ -510,59 +411,36 @@ class OpenSearchUploader(ElasticsearchUploader):
                             f"index {self.upload_config.index_name} not found or not accessible: "
                             f"{alias_error}"
                         )
-                    logger.info(
-                        f"Successfully validated connection to index: "
-                        f"{self.upload_config.index_name}"
-                    )
             except Exception as e:
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-        # Run async precheck synchronously
         asyncio.run(_async_precheck())
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
-        """
-        Upload data to OpenSearch asynchronously using async_bulk.
-
-        Args:
-            data: List of documents to upload
-            file_data: File metadata
-            **kwargs: Additional arguments
-
-        Raises:
-            DestinationConnectionError: If upload fails
-        """
+        """Upload data to OpenSearch using async_bulk."""
         from opensearchpy import AsyncOpenSearch
         from opensearchpy.helpers import async_bulk
         from opensearchpy.helpers.errors import BulkIndexError
 
-        upload_destination = self.connection_config.hosts
         logger.info(
-            f"writing {len(data)} elements asynchronously to "
-            f"index {self.upload_config.index_name} at {upload_destination} with "
-            f"batch size (in bytes) {self.upload_config.batch_size_bytes}"
+            f"writing {len(data)} elements to index {self.upload_config.index_name} "
+            f"at {self.connection_config.hosts} "
+            f"with batch size (bytes) {self.upload_config.batch_size_bytes}"
         )
 
-        # Get async client with proper authentication
-        client_kwargs = await self.connection_config.get_async_client_kwargs()
-
-        async with AsyncOpenSearch(**client_kwargs) as client:
-            # Check if index exists
+        async with AsyncOpenSearch(
+            **await self.connection_config.get_async_client_kwargs()
+        ) as client:
             index_exists = await client.indices.exists(index=self.upload_config.index_name)
             if not index_exists:
-                logger.warning(
-                    f"Index {self.upload_config.index_name} does not exist. "
-                    f"This may cause upload issues."
-                )
+                logger.warning(f"Index {self.upload_config.index_name} does not exist")
 
-            # Upload in batches
             for batch in generator_batching_wbytes(
                 data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
                 try:
-                    # Use async_bulk for non-blocking upload
                     success, failed = await async_bulk(
                         client=client,
                         actions=batch,
@@ -572,13 +450,12 @@ class OpenSearchUploader(ElasticsearchUploader):
                     )
 
                     logger.info(
-                        f"uploaded batch of {len(batch)} elements to index "
-                        f"{self.upload_config.index_name}: "
+                        f"uploaded batch to {self.upload_config.index_name}: "
                         f"{success} succeeded, {len(failed) if failed else 0} failed"
                     )
 
                     if failed:
-                        logger.error(f"Failed items: {failed[:5]}")  # Log first 5 failures
+                        logger.error(f"Failed items: {failed[:5]}")
 
                 except BulkIndexError as e:
                     sanitized_errors = [
