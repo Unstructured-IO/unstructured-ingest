@@ -1,15 +1,15 @@
 {
-  "identifier": "8",
+  "identifier": "opensearch_e2e_source-8",
   "connector_type": "opensearch",
   "source_identifiers": {
-    "filename": "8.txt",
+    "filename": "opensearch_e2e_source-8.txt",
     "fullpath": "***/opensearch_e2e_source/8"
   },
   "metadata": {
     "url": "***/opensearch_e2e_source/8",
     "date_processed": "IGNORE_THIS_FIELD"
   },
-  "display_name": "***/opensearch_e2e_source, batch_size=10 ids=8",
+  "display_name": "***/opensearch_e2e_source, batch_size=10 ids=opensearch_e2e_source-8",
   "additional_metadata": {},
   "reprocess": false
 }
