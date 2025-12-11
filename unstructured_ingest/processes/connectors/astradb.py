@@ -302,8 +302,9 @@ class AstraDBUploadStagerConfig(UploadStagerConfig):
     )
     astra_generated_embeddings: bool = Field(
         default=False,
-        description="Select this if you've configured an embedding provider integration for your collection."
-        "Content will be inserted into the $vectorize field and embeddings will be generated externally.",
+        description="Select this if you've configured an embedding provider integration "
+        "for your collection. Content will be inserted into the $vectorize field and "
+        "embeddings will be generated externally.",
     )
     enable_lexical_search: bool = Field(
         default=False,
@@ -357,7 +358,8 @@ class AstraDBUploadStager(UploadStager):
         if not has_unstructured_embeddings and not generate_embeddings:
             raise ValueError(
                 "No vectors provided. "
-                "Please enable an Unstructured embedding provider or configure Astra to generate embeddings."
+                "Please enable an Unstructured embedding provider or "
+                "configure Astra to generate embeddings."
             )
         elif has_unstructured_embeddings and generate_embeddings:
             raise ValueError(
