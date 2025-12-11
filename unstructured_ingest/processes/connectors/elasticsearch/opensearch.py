@@ -168,7 +168,6 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         from opensearchpy import AWSV4SignerAsyncAuth
 
         access_config = self.access_config.get_secret_value()
-        aws_region, aws_service = self._detect_and_validate_aws_config()
 
         session = boto3.Session(
             aws_access_key_id=access_config.aws_access_key_id,
@@ -180,7 +179,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
         if not credentials:
             raise ValueError("Failed to obtain AWS credentials from provided keys")
 
-        return AWSV4SignerAsyncAuth(credentials, aws_region, aws_service)
+        return AWSV4SignerAsyncAuth(credentials, *self._detect_and_validate_aws_config())
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def get_async_client_kwargs(self) -> dict:
@@ -205,14 +204,13 @@ class OpenSearchConnectionConfig(ConnectionConfig):
 
         if self._has_aws_credentials():
             logger.info("Using AWS IAM authentication")
-            iam_auth = await self._get_async_aws_auth()
 
             # Must use http_async.AsyncHttpConnection for IAM auth handlers
             from opensearchpy.connection.http_async import AsyncHttpConnection
 
             client_input = OpenSearchClientInput(**client_input_kwargs)
             client_kwargs = client_input.model_dump()
-            client_kwargs["http_auth"] = iam_auth
+            client_kwargs["http_auth"] = await self._get_async_aws_auth()
             client_kwargs["connection_class"] = AsyncHttpConnection
 
         elif self.username and access_config.password:
@@ -266,8 +264,6 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 async with AsyncOpenSearch(
                     **await self.connection_config.get_async_client_kwargs()
                 ) as client:
-                    # Use get_alias (GET) instead of exists (HEAD) - HEAD has IAM signing issues
-                    # Also respects AWS FGAC by checking only the specific index
                     try:
                         await client.indices.get_alias(index=self.index_config.index_name)
                     except Exception as alias_error:
@@ -284,8 +280,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, **kwargs: Any) -> AsyncGenerator[ElasticsearchBatchFileData, None]:
         """Async indexing for all authentication types."""
-        all_ids = await self._get_doc_ids_async()
-        ids = list(all_ids)
+        ids = list(await self._get_doc_ids_async())
         for batch in batch_generator(ids, self.index_config.batch_size):
             batch_items = [BatchItem(identifier=b) for b in batch]
             url = f"{self.connection_config.hosts[0]}/{self.index_config.index_name}"
@@ -402,8 +397,6 @@ class OpenSearchUploader(ElasticsearchUploader):
                 async with AsyncOpenSearch(
                     **await self.connection_config.get_async_client_kwargs()
                 ) as client:
-                    # Use get_alias (GET) instead of exists (HEAD) - HEAD has IAM signing issues
-                    # Also respects AWS FGAC by checking only the specific index
                     try:
                         await client.indices.get_alias(index=self.upload_config.index_name)
                     except Exception as alias_error:
@@ -433,8 +426,7 @@ class OpenSearchUploader(ElasticsearchUploader):
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
-            index_exists = await client.indices.exists(index=self.upload_config.index_name)
-            if not index_exists:
+            if not await client.indices.exists(index=self.upload_config.index_name):
                 logger.warning(f"Index {self.upload_config.index_name} does not exist")
 
             for batch in generator_batching_wbytes(
@@ -458,10 +450,10 @@ class OpenSearchUploader(ElasticsearchUploader):
                         logger.error(f"Failed items: {failed[:5]}")
 
                 except BulkIndexError as e:
-                    sanitized_errors = [
-                        self._sanitize_bulk_index_error(error) for error in e.errors
-                    ]
-                    logger.error(f"Batch upload failed: {e} - errors: {sanitized_errors}")
+                    logger.error(
+                        f"Batch upload failed: {e} - errors: "
+                        f"{[self._sanitize_bulk_index_error(error) for error in e.errors]}"
+                    )
                     raise DestinationConnectionError(str(e))
                 except Exception as e:
                     logger.error(f"Batch upload failed: {e}", exc_info=True)
