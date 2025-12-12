@@ -72,7 +72,7 @@ def _run_async_safely(fn: Callable[..., Awaitable[Any]], *args: Any, **kwargs: A
         return asyncio.run(fn(*args, **kwargs))
 
     # Event loop is running - use thread pool to avoid conflicts
-    logger.warning(
+    logger.debug(
         f"Async precheck running in dedicated thread pool to avoid "
         f"conflict with existing event loop: {current_loop}"
     )
@@ -246,7 +246,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             client_input_kwargs["client_key"] = str(self.client_key)
 
         if self._has_aws_credentials():
-            logger.info("Using AWS IAM authentication")
+            logger.debug("Using AWS IAM authentication")
 
             # Must use http_async.AsyncHttpConnection for IAM auth handlers
             from opensearchpy.connection.http_async import AsyncHttpConnection
@@ -257,7 +257,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             client_kwargs["connection_class"] = AsyncHttpConnection
 
         elif self.username and access_config.password:
-            logger.info("Using basic HTTP authentication")
+            logger.debug("Using basic HTTP authentication")
             client_input_kwargs["http_auth"] = (self.username, access_config.password)
 
             client_input = OpenSearchClientInput(**client_input_kwargs)
@@ -266,7 +266,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
                 client_kwargs["http_auth"] = client_input.http_auth.get_secret_value()
 
         elif self.client_cert:
-            logger.info("Using certificate-based authentication")
+            logger.debug("Using certificate-based authentication")
             client_input = OpenSearchClientInput(**client_input_kwargs)
             client_kwargs = client_input.model_dump()
 
@@ -446,7 +446,7 @@ class OpenSearchUploader(ElasticsearchUploader):
         from opensearchpy import AsyncOpenSearch
         from opensearchpy.helpers import async_bulk
 
-        logger.info(
+        logger.debug(
             f"writing {len(data)} elements to index {self.upload_config.index_name} "
             f"at {self.connection_config.hosts} "
             f"with batch size (bytes) {self.upload_config.batch_size_bytes}"
@@ -480,10 +480,12 @@ class OpenSearchUploader(ElasticsearchUploader):
                         f"Failed to upload {len(failed)} out of {len(batch)} documents"
                     )
 
-                logger.info(
+                logger.debug(
                     f"uploaded batch of {len(batch)} elements to "
                     f"{self.upload_config.index_name}"
                 )
+
+        logger.info(f"Upload complete: {len(data)} elements to {self.upload_config.index_name}")
 
 
 class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
