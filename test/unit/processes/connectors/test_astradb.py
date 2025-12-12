@@ -10,6 +10,8 @@ from unstructured_ingest.processes.connectors.astradb import (
     AstraDBConnectionConfig,
     AstraDBUploader,
     AstraDBUploaderConfig,
+    AstraDBUploadStager,
+    AstraDBUploadStagerConfig,
 )
 from unstructured_ingest.utils.dep_check import dependency_exists
 
@@ -126,3 +128,146 @@ async def test_binary_encode_vectors_default_does_not_call_with_options(
 
     mock_get_collection.with_options.assert_not_called()
     mock_get_collection.insert_many.assert_called()
+
+
+def test_astra_generated_embeddings_adds_vectorize_field(file_data: FileData):
+    """
+    Test that when astra_generated_embeddings=True, the $vectorize field is added
+    with the same content as the content field, and $vector is not added.
+    """
+    stager_config = AstraDBUploadStagerConfig(astra_generated_embeddings=True)
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+
+    element_dict = {
+        "text": "test content",
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$vectorize" in result
+    assert result["$vectorize"] == "test content"
+    assert result["content"] == "test content"
+    assert result["$vectorize"] == result["content"]
+    assert "$vector" not in result
+
+
+def test_astra_generated_embeddings_default_does_not_add_vectorize_field(file_data: FileData):
+    """
+    Test that when astra_generated_embeddings is not set (defaults to False),
+    the $vectorize field is NOT added, but $vector is added if embeddings exist.
+    """
+    stager = AstraDBUploadStager()
+
+    element_dict = {
+        "text": "test content",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$vectorize" not in result
+    assert "$vector" in result
+    assert result["$vector"] == [0.1, 0.2, 0.3]
+    assert result["content"] == "test content"
+
+
+def test_no_embeddings_and_no_astra_generated_raises_error(file_data: FileData):
+    """
+    Test that when neither embeddings nor astra_generated_embeddings are provided,
+    a ValueError is raised.
+    """
+    stager = AstraDBUploadStager()
+
+    element_dict = {
+        "text": "test content",
+        "metadata": {"foo": "bar"},
+    }
+
+    with pytest.raises(ValueError, match="No vectors provided"):
+        stager.conform_dict(element_dict.copy(), file_data)
+
+
+def test_both_embeddings_and_astra_generated_raises_error(file_data: FileData):
+    """
+    Test that when both embeddings and astra_generated_embeddings=True are provided,
+    a ValueError is raised.
+    """
+    stager_config = AstraDBUploadStagerConfig(astra_generated_embeddings=True)
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+
+    element_dict = {
+        "text": "test content",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"foo": "bar"},
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="Cannot use Unstructured embeddings and Astra-generated embeddings simultaneously",
+    ):
+        stager.conform_dict(element_dict.copy(), file_data)
+
+
+def test_enable_lexical_search_adds_lexical_field(file_data: FileData):
+    """
+    Test that when enable_lexical_search=True, the $lexical field is added
+    with the same content as the content field.
+    """
+    stager_config = AstraDBUploadStagerConfig(
+        enable_lexical_search=True, astra_generated_embeddings=True
+    )
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+
+    element_dict = {
+        "text": "test content",
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$lexical" in result
+    assert result["$lexical"] == "test content"
+    assert result["content"] == "test content"
+    assert result["$lexical"] == result["content"]
+
+
+def test_enable_lexical_search_default_does_not_add_lexical_field(file_data: FileData):
+    """
+    Test that when enable_lexical_search is not set (defaults to False),
+    the $lexical field is NOT added.
+    """
+    stager = AstraDBUploadStager()
+
+    element_dict = {
+        "text": "test content",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$lexical" not in result
+    assert result["content"] == "test content"
+
+
+def test_enable_lexical_search_works_with_unstructured_embeddings(file_data: FileData):
+    """
+    Test that enable_lexical_search=True works correctly with unstructured embeddings.
+    """
+    stager_config = AstraDBUploadStagerConfig(enable_lexical_search=True)
+    stager = AstraDBUploadStager(upload_stager_config=stager_config)
+
+    element_dict = {
+        "text": "test content",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"foo": "bar"},
+    }
+
+    result = stager.conform_dict(element_dict.copy(), file_data)
+
+    assert "$lexical" in result
+    assert result["$lexical"] == "test content"
+    assert "$vector" in result
+    assert result["$vector"] == [0.1, 0.2, 0.3]
