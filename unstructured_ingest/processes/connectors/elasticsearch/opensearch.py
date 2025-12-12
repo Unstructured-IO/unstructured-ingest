@@ -466,24 +466,24 @@ class OpenSearchUploader(ElasticsearchUploader):
                         max_chunk_bytes=self.upload_config.batch_size_bytes,
                         raise_on_error=False,
                     )
-
-                    if failed:
-                        logger.error(
-                            f"Batch upload had {len(failed)} failures out of {len(batch)}. "
-                            f"Failed items: {failed[:5]}"
-                        )
-                        raise DestinationConnectionError(
-                            f"Failed to upload {len(failed)} out of {len(batch)} documents"
-                        )
-
-                    logger.info(
-                        f"uploaded batch of {len(batch)} elements to "
-                        f"{self.upload_config.index_name}"
-                    )
-
                 except Exception as e:
                     logger.error(f"Unexpected error during batch upload: {e}")
                     raise DestinationConnectionError(str(e))
+
+                # Check for document failures (outside try block to avoid catching our own exception)
+                if failed:
+                    logger.error(
+                        f"Batch upload had {len(failed)} failures out of {len(batch)}. "
+                        f"Failed items: {failed[:5]}"
+                    )
+                    raise DestinationConnectionError(
+                        f"Failed to upload {len(failed)} out of {len(batch)} documents"
+                    )
+
+                logger.info(
+                    f"uploaded batch of {len(batch)} elements to "
+                    f"{self.upload_config.index_name}"
+                )
 
 
 class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
