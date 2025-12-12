@@ -435,8 +435,7 @@ class AstraDBUploader(Uploader):
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    def _fetch_collection_metadata(self, collection_name: str) -> dict | None:
-        """Return the collection metadata, or None if it doesn't exist."""
+    def _collection_exists(self, collection_name: str):
         collection = get_astra_collection(
             connection_config=self.connection_config,
             collection_name=collection_name,
@@ -444,10 +443,11 @@ class AstraDBUploader(Uploader):
         )
 
         try:
-            return collection.options().as_dict()
+            collection.options()
+            return True
         except RuntimeError as e:
             if "not found" in str(e):
-                return None
+                return False
             raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
         except Exception as e:
             logger.error(f"failed to check if astra collection exists : {e}")
@@ -471,27 +471,7 @@ class AstraDBUploader(Uploader):
         collection_name = self.upload_config.collection_name or destination_name
         self.upload_config.collection_name = collection_name
 
-        collection_metadata = self._fetch_collection_metadata(collection_name)
-        collection_exists = collection_metadata is not None
-
-        # We have vector_length when an embedder is configured.
-        # If there's no embedder, we need to be in Astra generated embeddings mode,
-        # and the collection must already exist.
-        if vector_length is None:
-            configured_for_astra_embeddings = (
-                collection_exists
-                and "vector" in collection_metadata
-                and "service" in collection_metadata["vector"]
-            )
-
-            if not configured_for_astra_embeddings:
-                raise ValueError(
-                    "Embedding configuration not found. "
-                    "Please enable an Unstructured embedding provider or "
-                    "configure your AstraDB collection to generate embeddings."
-                )
-
-        if not collection_exists:
+        if not self._collection_exists(collection_name):
             from astrapy.info import CollectionDefinition
 
             astra_db = get_astra_db(
