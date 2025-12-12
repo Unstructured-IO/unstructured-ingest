@@ -352,7 +352,7 @@ class AstraDBUploadStager(UploadStager):
 
         # (Austin): We support bring-your-own embeddings XOR Astra-generated embeddings.
         # Using neither /is/ a valid state, but for now we're enforcing Astra as a vector store.
-        has_unstructured_embeddings = embeddings is not None
+        has_unstructured_embeddings = embeddings is not None and len(embeddings) > 0
         generate_embeddings = self.upload_stager_config.astra_generated_embeddings
 
         if not has_unstructured_embeddings and not generate_embeddings:
