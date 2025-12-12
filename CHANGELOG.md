@@ -1,3 +1,7 @@
+## [1.2.28]
+
+* **fix: Upldate milvus to work with latest pymilvus**
+
 ## [1.2.27]
 
 * **feat: Add AWS IAM authentication and full async support to OpenSearch connector**
