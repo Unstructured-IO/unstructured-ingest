@@ -426,6 +426,19 @@ async def test_opensearch_source_with_iam(aws_credentials: dict):
             connection_config=connection_config, download_config=download_config
         )
 
+        # Wrap precheck to run in thread pool to avoid event loop conflict with asyncio.run()
+        # This extra isolation is required for AWS IAM auth to work correctly
+        import concurrent.futures
+
+        original_precheck = indexer.precheck
+
+        def threaded_precheck():
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(original_precheck)
+                future.result()
+
+        indexer.precheck = threaded_precheck
+
         # Run source validation
         await source_connector_validation(
             indexer=indexer,
@@ -484,7 +497,16 @@ async def test_opensearch_destination_with_iam(
         output_filename=upload_file.name,
     )
 
-    uploader.precheck()
+    # Run precheck in thread pool to avoid event loop conflict with asyncio.run()
+    # This extra isolation is required for AWS IAM auth to work correctly
+    import concurrent.futures
+
+    def threaded_precheck():
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(uploader.precheck)
+            future.result()
+
+    threaded_precheck()
 
     # Upload with IAM auth
     await uploader.run_async(path=staged_filepath, file_data=file_data)

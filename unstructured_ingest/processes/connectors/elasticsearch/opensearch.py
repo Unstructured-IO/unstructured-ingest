@@ -55,34 +55,15 @@ _ES_PATTERN = re.compile(r"\.([a-z]{2}(?:-[a-z]+)+-\d+)\.es\.amazonaws\.com$")
 _AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}(?:-[a-z]+)+-\d+)\.aoss\.amazonaws\.com$")
 
 
-def _run_async_safely(fn: Callable[..., Awaitable[Any]], *args: Any, **kwargs: Any) -> Any:
-    """
-    Run an async function safely, handling existing event loops.
-
-    This mimics the framework's PipelineStep.asyncio_run() behavior:
-    - If no event loop is running, use asyncio.run()
-    - If an event loop is already running, run in a dedicated thread pool
-
-    This prevents "asyncio.run() cannot be called from a running event loop" errors.
-    """
+def _run_coroutine(fn: Callable[..., Awaitable[Any]], *args: Any, **kwargs: Any) -> Any:
+    """Run an async function from sync context, handling existing event loops."""
     try:
-        current_loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
-        # No event loop running - safe to use asyncio.run()
         return asyncio.run(fn(*args, **kwargs))
 
-    # Event loop is running - use thread pool to avoid conflicts
-    logger.debug(
-        f"Async precheck running in dedicated thread pool to avoid "
-        f"conflict with existing event loop: {current_loop}"
-    )
-
-    def wrapped():
-        return asyncio.run(fn(*args, **kwargs))
-
-    with ThreadPoolExecutor(thread_name_prefix="opensearch-precheck") as thread_pool:
-        future = thread_pool.submit(wrapped)
-        return future.result()
+    with ThreadPoolExecutor(thread_name_prefix="opensearch") as pool:
+        return pool.submit(lambda: asyncio.run(fn(*args, **kwargs))).result()
 
 
 class OpenSearchAccessConfig(AccessConfig):
@@ -199,7 +180,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             )
 
         region, service = detected
-        logger.info(
+        logger.debug(
             f"Auto-detected AWS configuration from host: region={region}, service={service}"
         )
         return region, service
@@ -310,7 +291,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise SourceConnectionError(f"failed to validate connection: {e}")
 
-        _run_async_safely(_async_precheck)
+        _run_coroutine(_async_precheck)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, **kwargs: Any) -> AsyncGenerator[ElasticsearchBatchFileData, None]:
@@ -438,7 +419,7 @@ class OpenSearchUploader(ElasticsearchUploader):
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-        _run_async_safely(_async_precheck)
+        _run_coroutine(_async_precheck)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
