@@ -39,6 +39,7 @@ from unstructured_ingest.processes.connectors.elasticsearch.opensearch import (
     OpenSearchUploaderConfig,
     OpenSearchUploadStager,
     OpenSearchUploadStagerConfig,
+    detect_aws_opensearch_config,
 )
 
 SOURCE_INDEX_NAME = "movies"
@@ -618,3 +619,63 @@ def test_opensearch_destination_iam_precheck_fail_invalid_credentials():
     # Should fail with invalid credentials
     with pytest.raises(DestinationConnectionError):
         uploader.precheck()
+
+
+# AWS Hostname Detection Regex Tests
+# These tests verify the regex patterns used to auto-detect AWS region and service
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.parametrize(
+    ("hostname", "expected_region", "expected_service"),
+    [
+        # Standard US regions - OpenSearch Service
+        ("https://search-domain.us-east-1.es.amazonaws.com", "us-east-1", "es"),
+        ("https://search-domain.us-west-2.es.amazonaws.com", "us-west-2", "es"),
+        # EU regions
+        ("https://search-domain.eu-west-1.es.amazonaws.com", "eu-west-1", "es"),
+        ("https://search-domain.eu-central-1.es.amazonaws.com", "eu-central-1", "es"),
+        # Asia Pacific regions
+        ("https://search-domain.ap-southeast-1.es.amazonaws.com", "ap-southeast-1", "es"),
+        ("https://search-domain.ap-northeast-1.es.amazonaws.com", "ap-northeast-1", "es"),
+        # GovCloud regions
+        ("https://search-domain.us-gov-west-1.es.amazonaws.com", "us-gov-west-1", "es"),
+        ("https://search-domain.us-gov-east-1.es.amazonaws.com", "us-gov-east-1", "es"),
+        # China regions
+        ("https://search-domain.cn-north-1.es.amazonaws.com", "cn-north-1", "es"),
+        ("https://search-domain.cn-northwest-1.es.amazonaws.com", "cn-northwest-1", "es"),
+        # OpenSearch Serverless (AOSS)
+        ("https://abc123xyz.us-east-1.aoss.amazonaws.com", "us-east-1", "aoss"),
+        ("https://abc123xyz.eu-west-1.aoss.amazonaws.com", "eu-west-1", "aoss"),
+        ("https://abc123xyz.us-gov-west-1.aoss.amazonaws.com", "us-gov-west-1", "aoss"),
+        # Without https://
+        ("search-domain.us-east-1.es.amazonaws.com", "us-east-1", "es"),
+        # With port
+        ("https://search-domain.us-east-1.es.amazonaws.com:443", "us-east-1", "es"),
+    ],
+)
+def test_detect_aws_opensearch_config_valid(hostname, expected_region, expected_service):
+    """Test AWS hostname regex patterns detect valid AWS OpenSearch hostnames."""
+    result = detect_aws_opensearch_config(hostname)
+    assert result is not None, f"Failed to detect AWS config from {hostname}"
+    region, service = result
+    assert region == expected_region
+    assert service == expected_service
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.parametrize(
+    "hostname",
+    [
+        "https://localhost:9200",
+        "https://my-opensearch.example.com",
+        "https://search-domain.es.amazonaws.com",  # Missing region
+        "https://my-bucket.s3.us-east-1.amazonaws.com",  # S3, not OpenSearch
+        "not-a-valid-url",
+        "",
+    ],
+)
+def test_detect_aws_opensearch_config_invalid(hostname):
+    """Test AWS hostname regex patterns return None for non-AWS hostnames."""
+    result = detect_aws_opensearch_config(hostname)
+    assert result is None, f"Should not detect AWS config from {hostname}"

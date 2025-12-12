@@ -1,8 +1,10 @@
+import asyncio
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Optional, Tuple
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Awaitable, Callable, Optional, Tuple
 
 from pydantic import BaseModel, Field, Secret, field_validator
 
@@ -51,6 +53,36 @@ CONNECTOR_TYPE = "opensearch"
 # Precompiled regex patterns for AWS hostname detection (GovCloud, China, standard)
 _ES_PATTERN = re.compile(r"\.([a-z]{2}(?:-[a-z]+)+-\d+)\.es\.amazonaws\.com$")
 _AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}(?:-[a-z]+)+-\d+)\.aoss\.amazonaws\.com$")
+
+
+def _run_async_safely(fn: Callable[..., Awaitable[Any]], *args: Any, **kwargs: Any) -> Any:
+    """
+    Run an async function safely, handling existing event loops.
+
+    This mimics the framework's PipelineStep.asyncio_run() behavior:
+    - If no event loop is running, use asyncio.run()
+    - If an event loop is already running, run in a dedicated thread pool
+
+    This prevents "asyncio.run() cannot be called from a running event loop" errors.
+    """
+    try:
+        current_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # No event loop running - safe to use asyncio.run()
+        return asyncio.run(fn(*args, **kwargs))
+
+    # Event loop is running - use thread pool to avoid conflicts
+    logger.warning(
+        f"Async precheck running in dedicated thread pool to avoid "
+        f"conflict with existing event loop: {current_loop}"
+    )
+
+    def wrapped():
+        return asyncio.run(fn(*args, **kwargs))
+
+    with ThreadPoolExecutor(thread_name_prefix="opensearch-precheck") as thread_pool:
+        future = thread_pool.submit(wrapped)
+        return future.result()
 
 
 class OpenSearchAccessConfig(AccessConfig):
@@ -138,7 +170,18 @@ class OpenSearchConnectionConfig(ConnectionConfig):
     def _has_aws_credentials(self) -> bool:
         """Check if AWS IAM credentials are provided."""
         access_config = self.access_config.get_secret_value()
-        return bool(access_config.aws_access_key_id and access_config.aws_secret_access_key)
+        has_access_key = access_config.aws_access_key_id is not None
+        has_secret_key = access_config.aws_secret_access_key is not None
+
+        # Validate: Either both credentials or neither - partial credentials are invalid
+        if has_access_key != has_secret_key:  # XOR: exactly one is set
+            raise ValueError(
+                "AWS IAM authentication requires BOTH aws_access_key_id and aws_secret_access_key. "
+                f"Currently provided: aws_access_key_id={'set' if has_access_key else 'not set'}, "
+                f"aws_secret_access_key={'set' if has_secret_key else 'not set'}"
+            )
+
+        return has_access_key and has_secret_key
 
     def _detect_and_validate_aws_config(self) -> Tuple[str, str]:
         """Auto-detect AWS region and service from host URL."""
@@ -252,7 +295,6 @@ class OpenSearchIndexer(ElasticsearchIndexer):
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     def precheck(self) -> None:
         """Validate connection and index (sync wrapper required by pipeline framework)."""
-        import asyncio
 
         async def _async_precheck():
             from opensearchpy import AsyncOpenSearch
@@ -268,7 +310,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise SourceConnectionError(f"failed to validate connection: {e}")
 
-        asyncio.run(_async_precheck())
+        _run_async_safely(_async_precheck)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, **kwargs: Any) -> AsyncGenerator[ElasticsearchBatchFileData, None]:
@@ -381,7 +423,6 @@ class OpenSearchUploader(ElasticsearchUploader):
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     def precheck(self) -> None:
         """Validate connection and index (sync wrapper required by pipeline framework)."""
-        import asyncio
 
         async def _async_precheck():
             from opensearchpy import AsyncOpenSearch
@@ -397,14 +438,13 @@ class OpenSearchUploader(ElasticsearchUploader):
                 logger.error(f"failed to validate connection: {e}", exc_info=True)
                 raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-        asyncio.run(_async_precheck())
+        _run_async_safely(_async_precheck)
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         """Upload data to OpenSearch using async_bulk."""
         from opensearchpy import AsyncOpenSearch
         from opensearchpy.helpers import async_bulk
-        from opensearchpy.helpers.errors import BulkIndexError
 
         logger.info(
             f"writing {len(data)} elements to index {self.upload_config.index_name} "
@@ -441,11 +481,8 @@ class OpenSearchUploader(ElasticsearchUploader):
                         f"{self.upload_config.index_name}"
                     )
 
-                except BulkIndexError as e:
-                    logger.error(
-                        f"Batch upload failed: {e} - errors: "
-                        f"{[self._sanitize_bulk_index_error(error) for error in e.errors]}"
-                    )
+                except Exception as e:
+                    logger.error(f"Unexpected error during batch upload: {e}")
                     raise DestinationConnectionError(str(e))
 
 
