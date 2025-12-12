@@ -1,6 +1,7 @@
 ## [1.2.26]
 
 * **Feat: Add AWS IAM authentication and full async support to OpenSearch connector**
+* **feat: add astra_generated_embeddings and enable_lexical_search options to AstraDB stager/uploader**
 
 ## [1.2.25]
 
