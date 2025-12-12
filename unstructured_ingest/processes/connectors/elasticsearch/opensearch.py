@@ -470,7 +470,7 @@ class OpenSearchUploader(ElasticsearchUploader):
                     logger.error(f"Unexpected error during batch upload: {e}")
                     raise DestinationConnectionError(str(e))
 
-                # Check for document failures (outside try block to avoid catching our own exception)
+                # Check for document failures (outside try to avoid catching our own exception)
                 if failed:
                     logger.error(
                         f"Batch upload had {len(failed)} failures out of {len(batch)}. "
@@ -481,8 +481,7 @@ class OpenSearchUploader(ElasticsearchUploader):
                     )
 
                 logger.debug(
-                    f"uploaded batch of {len(batch)} elements to "
-                    f"{self.upload_config.index_name}"
+                    f"uploaded batch of {len(batch)} elements to {self.upload_config.index_name}"
                 )
 
         logger.info(f"Upload complete: {len(data)} elements to {self.upload_config.index_name}")
