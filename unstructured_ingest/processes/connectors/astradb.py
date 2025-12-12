@@ -309,7 +309,7 @@ class AstraDBUploadStagerConfig(UploadStagerConfig):
     enable_lexical_search: bool = Field(
         default=False,
         description="Select this to insert content into the $lexical field "
-        "for lexicograpical matching",
+        "for lexicographical or hybrid search.",
     )
 
 
