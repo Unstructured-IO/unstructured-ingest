@@ -1,3 +1,7 @@
+## [1.2.28]
+
+* **fix: Limit opensearch-py to below 3.0.0 to prevent grpcio conflicts with milvus and watsonx**
+
 ## [1.2.27]
 
 * **feat: Add AWS IAM authentication and full async support to OpenSearch connector**
