@@ -256,6 +256,12 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             client_input = OpenSearchClientInput(**client_input_kwargs)
             client_kwargs = client_input.model_dump()
 
+        # Retry and timeout configuration for resilience against transient errors
+        client_kwargs["max_retries"] = 3
+        client_kwargs["retry_on_status"] = [429, 502, 503]
+        client_kwargs["retry_on_timeout"] = True
+        client_kwargs["timeout"] = 60
+
         return {k: v for k, v in client_kwargs.items() if v is not None}
 
 
@@ -388,7 +394,12 @@ class OpenSearchDownloader(ElasticsearchDownloader):
 
 
 class OpenSearchUploaderConfig(ElasticsearchUploaderConfig):
-    pass
+    batch_size_bytes: int = Field(
+        default=5_000_000,
+        description="Size limit (in bytes) for each batch of items to be uploaded. "
+        "Default is 5MB, lower than Elasticsearch default to accommodate "
+        "AWS OpenSearch cluster rate limits.",
+    )
 
 
 @dataclass
@@ -439,17 +450,24 @@ class OpenSearchUploader(ElasticsearchUploader):
             for batch in generator_batching_wbytes(
                 data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
-                try:
-                    success, failed = await async_bulk(
-                        client=client,
-                        actions=batch,
-                        chunk_size=len(batch),
-                        max_chunk_bytes=self.upload_config.batch_size_bytes,
-                        raise_on_error=False,
-                    )
-                except Exception as e:
-                    logger.error(f"Unexpected error during batch upload: {e}")
-                    raise DestinationConnectionError(str(e))
+                # Simple retry with delay for rate limiting (429 errors)
+                for attempt in range(2):
+                    try:
+                        success, failed = await async_bulk(
+                            client=client,
+                            actions=batch,
+                            chunk_size=len(batch),
+                            max_chunk_bytes=self.upload_config.batch_size_bytes,
+                            raise_on_error=False,
+                        )
+                        break
+                    except Exception as e:
+                        if attempt == 0 and "429" in str(e):
+                            logger.warning(f"Rate limited, waiting 5s before retry: {e}")
+                            await asyncio.sleep(5)
+                        else:
+                            logger.error(f"Batch upload failed: {e}")
+                            raise DestinationConnectionError(str(e))
 
                 # Check for document failures (outside try to avoid catching our own exception)
                 if failed:

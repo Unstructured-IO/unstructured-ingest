@@ -1,3 +1,7 @@
+## [1.2.29]
+
+* **fix: add simple retry and timeout logic to Opensearch connector**
+
 ## [1.2.28]
 
 * **fix: Limit opensearch-py to below 3.0.0 to prevent grpcio conflicts with milvus and watsonx**
