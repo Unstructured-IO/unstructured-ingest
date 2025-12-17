@@ -649,3 +649,45 @@ def test_detect_aws_opensearch_config_invalid(hostname):
     """Test AWS hostname regex patterns return None for non-AWS hostnames."""
     result = detect_aws_opensearch_config(hostname)
     assert result is None, f"Should not detect AWS config from {hostname}"
+
+
+# OpenSearch Uploader Configuration Tests
+# These tests verify default configuration values for resilience against rate limiting
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_opensearch_uploader_config_batch_size_default():
+    """Test that OpenSearchUploaderConfig has a 5MB default batch size.
+
+    This is lower than the Elasticsearch default (15MB) to accommodate
+    AWS OpenSearch cluster rate limits and prevent 429 errors.
+    """
+    config = OpenSearchUploaderConfig(index_name="test_index")
+    assert config.batch_size_bytes == 5_000_000, (
+        "OpenSearch default batch_size_bytes should be 5MB (5,000,000 bytes)"
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_opensearch_connection_config_retry_settings():
+    """Test that OpenSearchConnectionConfig includes retry and timeout settings.
+
+    These settings provide resilience against transient errors (429 rate limiting,
+    502/503 server errors) when uploading to OpenSearch clusters.
+    """
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="test"),
+        username="test",
+        hosts=["http://localhost:9200"],
+    )
+
+    client_kwargs = await connection_config.get_async_client_kwargs()
+
+    # Verify retry configuration
+    assert client_kwargs.get("max_retries") == 3, "Should retry up to 3 times"
+    assert client_kwargs.get("retry_on_status") == [429, 502, 503], (
+        "Should retry on rate limit (429) and server errors (502, 503)"
+    )
+    assert client_kwargs.get("retry_on_timeout") is True, "Should retry on timeout"
+    assert client_kwargs.get("timeout") == 60, "Should have 60 second timeout"
