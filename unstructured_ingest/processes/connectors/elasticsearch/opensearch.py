@@ -436,6 +436,7 @@ class OpenSearchUploader(ElasticsearchUploader):
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         """Upload data to OpenSearch using async_bulk."""
         from opensearchpy import AsyncOpenSearch
+        from opensearchpy.exceptions import TransportError
         from opensearchpy.helpers import async_bulk
 
         logger.debug(
@@ -450,8 +451,9 @@ class OpenSearchUploader(ElasticsearchUploader):
             for batch in generator_batching_wbytes(
                 data, batch_size_limit_bytes=self.upload_config.batch_size_bytes
             ):
-                # Simple retry with delay for rate limiting (429 errors)
-                for attempt in range(2):
+                # Retry with delay for rate limiting (429 errors)
+                max_attempts = 3
+                for attempt in range(max_attempts):
                     try:
                         success, failed = await async_bulk(
                             client=client,
@@ -462,8 +464,16 @@ class OpenSearchUploader(ElasticsearchUploader):
                         )
                         break
                     except Exception as e:
-                        if attempt == 0 and "429" in str(e):
-                            logger.warning(f"Rate limited, waiting 5s before retry: {e}")
+                        # Check for rate limiting: precise type check, then string fallback
+                        is_rate_limited = (
+                            isinstance(e, TransportError) and e.status_code == 429
+                        ) or "429" in str(e) or "too many requests" in str(e).lower()
+
+                        if attempt < max_attempts - 1 and is_rate_limited:
+                            logger.warning(
+                                f"Rate limited (attempt {attempt + 1}/{max_attempts}), "
+                                f"waiting 5s before retry: {e}"
+                            )
                             await asyncio.sleep(5)
                         else:
                             logger.error(f"Batch upload failed: {e}")
