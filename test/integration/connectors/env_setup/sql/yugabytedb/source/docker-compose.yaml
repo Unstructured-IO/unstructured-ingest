@@ -1,0 +1,17 @@
+services:
+  yugabytedb:
+    image: yugabytedb/yugabyte:latest
+    restart: always
+    container_name: yugabytedb_src
+    command: bin/yugabyted start --daemon=false --initial_scripts_dir=/home/yugabyte/init_scripts
+    ports:
+     - 5433:5433
+    volumes:
+      - ./yugabytedb-schema.sql:/home/yugabyte/init_scripts/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "bin/ysqlsh -h localhost -U yugabyte -d yugabyte -c 'SELECT 1'"]
+      interval: 10s
+      timeout: 60s
+      retries: 10
+      start_period: 20s
+
