@@ -1,3 +1,7 @@
+## [1.2.23]
+
+* **fix: Use Google Drive mimeType to infer export extension**
+
 ## [1.2.22]
 
 * **feat: Add option to disable binary encoded vectors in AstraDBUploader**

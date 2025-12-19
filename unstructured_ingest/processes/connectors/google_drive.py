@@ -491,7 +491,7 @@ def _get_extension(file_data: FileData) -> str:
     """
     Returns the extension for a given source MIME type.
     """
-    source_mime_type = file_data.additional_metadata.get("export_mime_type", "")
+    source_mime_type = file_data.additional_metadata.get("mimeType", "")
     export_mime_type = GOOGLE_EXPORT_MIME_MAP.get(source_mime_type, "")
     if export_mime_type:
         return EXPORT_EXTENSION_MAP.get(export_mime_type, "")
