@@ -2636,7 +2636,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.78"
+version = "0.3.81"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2648,9 +2648,9 @@ dependencies = [
     { name = "typing-extensions", version = "4.13.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/04/0035bd1df8d0fb534afceabe3ba0a87c5af8c5020177650e9aa79aca3495/langchain_core-0.3.78.tar.gz", hash = "sha256:a174a2061f8659b916fd2b1c7d174b3ddd07be7ca45a07aaec442696df5101b6", size = 580473 }
+sdist = { url = "https://files.pythonhosted.org/packages/63/7c/381a347292db3df93601ec8a5ff043a03ca1e2b1b210a94307390b9fbbba/langchain_core-0.3.81.tar.gz", hash = "sha256:0473e7cffbba06017393f2f1ee116da098c298e4ec478ada91d321f42dff921c", size = 594574 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/a7/ff35c108c4863c1bb99724a4253ff2324aea5789d689dd59424c07df1199/langchain_core-0.3.78-py3-none-any.whl", hash = "sha256:dafc4f7e9fd008f680bf0ffe5904dbaa45992abdb92627b68eccb7b4089cbbf0", size = 449610 },
+    { url = "https://files.pythonhosted.org/packages/b8/29/60802a71c4a0b573c0e9ecda1846404b04bdbc9bc805732b39261be4c376/langchain_core-0.3.81-py3-none-any.whl", hash = "sha256:d0f34c88254d78ccb1b9a038f860d13dea90186045026fd8fc3e1265eed73a4e", size = 457175 },
 ]
 
 [[package]]
@@ -6997,6 +6997,8 @@ openai = [
     { name = "tiktoken" },
 ]
 opensearch = [
+    { name = "boto3" },
+    { name = "botocore" },
     { name = "opensearch-py" },
 ]
 org = [
@@ -7089,6 +7091,7 @@ vertexai = [
     { name = "vertexai" },
 ]
 voyageai = [
+    { name = "langchain-core" },
     { name = "voyageai" },
 ]
 weaviate = [
@@ -7169,6 +7172,8 @@ requires-dist = [
     { name = "backoff", marker = "extra == 'notion'" },
     { name = "boto3", marker = "extra == 'bedrock'" },
     { name = "boto3", marker = "extra == 'delta-table'" },
+    { name = "boto3", marker = "extra == 'opensearch'", specifier = ">=1.26.0" },
+    { name = "botocore", marker = "extra == 'opensearch'", specifier = ">=1.29.0" },
     { name = "boxfs", marker = "extra == 'box'" },
     { name = "bs4", marker = "extra == 'biomed'" },
     { name = "bs4", marker = "extra == 'gcs'" },
@@ -7204,6 +7209,7 @@ requires-dist = [
     { name = "ibis", marker = "extra == 'vastdb'" },
     { name = "kdbai-client", marker = "extra == 'kdbai'", specifier = ">=1.4.0" },
     { name = "lancedb", marker = "extra == 'lancedb'" },
+    { name = "langchain-core", marker = "extra == 'voyageai'", specifier = ">=0.3.81,<1.0.0" },
     { name = "mixedbread", marker = "extra == 'mixedbreadai'" },
     { name = "msal", marker = "extra == 'onedrive'" },
     { name = "msal", marker = "extra == 'outlook'" },
@@ -7216,7 +7222,7 @@ requires-dist = [
     { name = "office365-rest-python-client", marker = "extra == 'sharepoint'" },
     { name = "openai", marker = "extra == 'octoai'" },
     { name = "openai", marker = "extra == 'openai'" },
-    { name = "opensearch-py", marker = "extra == 'opensearch'" },
+    { name = "opensearch-py", marker = "extra == 'opensearch'", specifier = ">=2.4.0,<3.0.0" },
     { name = "opentelemetry-sdk" },
     { name = "pandas", marker = "extra == 'airtable'" },
     { name = "pandas", marker = "extra == 'databricks-delta-tables'" },

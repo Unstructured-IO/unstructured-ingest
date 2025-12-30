@@ -1,3 +1,7 @@
+## [1.2.30]
+
+* **fix: Upgrade langchain-core to resolve critical vulnerability CVE-2025-68664
+
 ## [1.2.29]
 
 * **fix: add simple retry and timeout logic to Opensearch connector**
