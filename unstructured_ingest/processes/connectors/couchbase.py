@@ -1,4 +1,5 @@
 import hashlib
+import signal
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -92,21 +93,32 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         from couchbase.cluster import Cluster
         from couchbase.options import ClusterOptions, ClusterTimeoutOptions
 
-        auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
+        def timeout_handler(signum, frame):
+            logger.error(f"Connection timeout after {self.connect_timeout_seconds}s")
+            raise KeyboardInterrupt("Couchbase cluster connection timed out")
 
-        # Configure connection timeouts to prevent indefinite hangs
-        timeout_opts = ClusterTimeoutOptions(
-            connect_timeout=timedelta(seconds=self.connect_timeout_seconds),
-            bootstrap_timeout=timedelta(seconds=self.bootstrap_timeout_seconds)
-        )
-        options = ClusterOptions(auth, timeout_options=timeout_opts)
+        auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
+        options = ClusterOptions(auth)
         options.apply_profile("wan_development")
         cluster = None
+
+        # Set alarm for connection timeout (ClusterTimeoutOptions doesn't work reliably)
+        logger.info(f"Setting connection alarm for {self.connect_timeout_seconds} seconds")
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(self.connect_timeout_seconds)
+        logger.info(f"Alarm set. Attempting connection to {self.connection_string[:30]}...")
+
         try:
             cluster = Cluster(self.connection_string, options)
-            cluster.wait_until_ready(timedelta(seconds=5))
+            logger.info("Cluster object created, waiting for ready...")
+            # Use same timeout for wait_until_ready as our alarm
+            cluster.wait_until_ready(timedelta(seconds=min(5, self.connect_timeout_seconds)))
+            logger.info("Cluster ready!")
+            signal.alarm(0)  # Cancel alarm on success
             yield cluster
         finally:
+            signal.alarm(0)  # Ensure alarm is cancelled
+            signal.signal(signal.SIGALRM, old_handler)  # Restore original handler
             if cluster:
                 cluster.close()
 
