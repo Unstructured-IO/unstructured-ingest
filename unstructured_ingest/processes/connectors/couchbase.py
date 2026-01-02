@@ -1,4 +1,5 @@
 import hashlib
+import signal
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -74,6 +75,14 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     collection: str = Field(
         default="_default", description="The collection to connect to on the Couchbase server"
     )
+    connect_timeout_seconds: int = Field(
+        default=10,
+        description="Timeout in seconds for establishing initial connection to Couchbase cluster"
+    )
+    bootstrap_timeout_seconds: int = Field(
+        default=10,
+        description="Timeout in seconds for bootstrapping connection to Couchbase cluster"
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[CouchbaseAccessConfig]
 
@@ -82,15 +91,32 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["Cluster", None, None]:
         from couchbase.auth import PasswordAuthenticator
         from couchbase.cluster import Cluster
-        from couchbase.options import ClusterOptions
+        from couchbase.options import ClusterOptions, ClusterTimeoutOptions
 
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
-        options = ClusterOptions(auth)
+
+        # Configure custom timeouts only if specified (otherwise use SDK defaults)
+        timeout_kwargs = {}
+        if self.connect_timeout_seconds is not None:
+            timeout_kwargs['connect_timeout'] = timedelta(seconds=self.connect_timeout_seconds)
+        if self.bootstrap_timeout_seconds is not None:
+            timeout_kwargs['bootstrap_timeout'] = timedelta(seconds=self.bootstrap_timeout_seconds)
+
+        if timeout_kwargs:
+            timeout_opts = ClusterTimeoutOptions(**timeout_kwargs)
+            options = ClusterOptions(auth, timeout_options=timeout_opts)
+        else:
+            options = ClusterOptions(auth)
+
         options.apply_profile("wan_development")
+
         cluster = None
         try:
-            cluster = Cluster(self.connection_string, options)
-            cluster.wait_until_ready(timedelta(seconds=5))
+            # Use Cluster.connect() method for timeout options to be respected
+            cluster = Cluster.connect(self.connection_string, options)
+            # Wait for cluster to be ready (uses bootstrap_timeout from options if set)
+            wait_timeout = self.bootstrap_timeout_seconds or 10
+            cluster.wait_until_ready(timedelta(seconds=wait_timeout))
             yield cluster
         finally:
             if cluster:
