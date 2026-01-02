@@ -95,17 +95,24 @@ class CouchbaseConnectionConfig(ConnectionConfig):
 
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
 
-        # Configure connection timeouts
-        timeout_opts = ClusterTimeoutOptions(
-            connect_timeout=timedelta(seconds=self.connect_timeout_seconds),
-            bootstrap_timeout=timedelta(seconds=self.bootstrap_timeout_seconds)
-        )
-        options = ClusterOptions(auth, timeout_options=timeout_opts)
+        # Configure custom timeouts only if specified (otherwise use SDK defaults)
+        timeout_kwargs = {}
+        if self.connect_timeout_seconds is not None:
+            timeout_kwargs['connect_timeout'] = timedelta(seconds=self.connect_timeout_seconds)
+        if self.bootstrap_timeout_seconds is not None:
+            timeout_kwargs['bootstrap_timeout'] = timedelta(seconds=self.bootstrap_timeout_seconds)
+
+        if timeout_kwargs:
+            timeout_opts = ClusterTimeoutOptions(**timeout_kwargs)
+            options = ClusterOptions(auth, timeout_options=timeout_opts)
+        else:
+            options = ClusterOptions(auth)
+
         options.apply_profile("wan_development")
 
         cluster = None
         try:
-            # Use Cluster.connect() method (not constructor) for timeouts to work
+            # Use Cluster.connect() method for timeout options to be respected
             cluster = Cluster.connect(self.connection_string, options)
             yield cluster
         finally:
