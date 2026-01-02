@@ -74,6 +74,14 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     collection: str = Field(
         default="_default", description="The collection to connect to on the Couchbase server"
     )
+    connect_timeout_seconds: int = Field(
+        default=10,
+        description="Timeout in seconds for establishing initial connection to Couchbase cluster"
+    )
+    bootstrap_timeout_seconds: int = Field(
+        default=10,
+        description="Timeout in seconds for bootstrapping connection to Couchbase cluster"
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[CouchbaseAccessConfig]
 
@@ -82,10 +90,16 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["Cluster", None, None]:
         from couchbase.auth import PasswordAuthenticator
         from couchbase.cluster import Cluster
-        from couchbase.options import ClusterOptions
+        from couchbase.options import ClusterOptions, ClusterTimeoutOptions
 
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
-        options = ClusterOptions(auth)
+
+        # Configure connection timeouts to prevent indefinite hangs
+        timeout_opts = ClusterTimeoutOptions(
+            connect_timeout=timedelta(seconds=self.connect_timeout_seconds),
+            bootstrap_timeout=timedelta(seconds=self.bootstrap_timeout_seconds)
+        )
+        options = ClusterOptions(auth, timeout_options=timeout_opts)
         options.apply_profile("wan_development")
         cluster = None
         try:
