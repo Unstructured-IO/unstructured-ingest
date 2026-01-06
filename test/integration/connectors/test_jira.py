@@ -20,7 +20,6 @@ from unstructured_ingest.processes.connectors.jira import (
 )
 
 
-@pytest.mark.skip(reason="Jira test instance unavailable (503 error)")
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("JIRA_INGEST_USER_EMAIL", "JIRA_INGEST_API_TOKEN")
