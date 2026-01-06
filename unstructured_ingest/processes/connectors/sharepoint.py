@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Literal, Optional
 
 from pydantic import Field
 
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from office365.onedrive.driveitems.driveItem import DriveItem
     from office365.onedrive.sites.site import Site
     from office365.runtime.client_request_exception import ClientRequestException
+    from office365.sharepoint.client_context import ClientContext
 
 CONNECTOR_TYPE = "sharepoint"
 LEGACY_DEFAULT_PATH = "Shared Documents"
@@ -46,9 +47,24 @@ class SharepointAccessConfig(OnedriveAccessConfig):
 
 
 class SharepointConnectionConfig(OnedriveConnectionConfig):
+    deployment_type: Literal["online", "onpremise"] = Field(
+        default="online",
+        description="SharePoint deployment type: 'online' for SharePoint Online "
+        "(*.sharepoint.com) or 'onpremise' for on-premise SharePoint servers",
+    )
+    auth_method: Literal["graph_api", "user_credential", "client_credential", "ntlm"] = Field(
+        default="graph_api",
+        description="Authentication method: 'graph_api' for SharePoint Online, "
+        "'user_credential' or 'client_credential' or 'ntlm' for on-premise",
+    )
+    allow_ntlm: bool = Field(
+        default=False,
+        description="Enable NTLM authentication (only for on-premise deployments)",
+    )
     user_pname: Optional[str] = Field(
         default=None,
-        description="User principal name or service account, usually your Azure AD email.",
+        description="User principal name or service account, usually your Azure AD email "
+        "for online, or DOMAIN\\username for on-premise.",
     )
     site: str = Field(
         description="Sharepoint site url. Process either base url e.g \
@@ -85,6 +101,59 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
             site_drive_item = client_site.drive.get().execute_query().root
 
         return site_drive_item
+
+    @requires_dependencies(["office365"], extras="sharepoint")
+    def get_sharepoint_client(self) -> "ClientContext":
+        """
+        Creates ClientContext for on-premise SharePoint.
+        Routes to appropriate auth method based on self.auth_method.
+        """
+        from office365.sharepoint.client_context import ClientContext
+
+        ctx = ClientContext(self.site)
+
+        username = self.user_pname
+        password = self.access_config.get_secret_value().client_cred
+
+        if self.auth_method == "user_credential":
+            # Standard username/password auth
+            ctx = ctx.with_user_credentials(username, password)
+        elif self.auth_method == "client_credential":
+            # App-only auth with client credentials
+            client_id = self.client_id
+            client_secret = self.access_config.get_secret_value().client_cred
+            ctx = ctx.with_client_credentials(client_id, client_secret)
+        elif self.auth_method == "ntlm":
+            # NTLM auth (Windows integrated)
+            if self.allow_ntlm:
+                ctx = ctx.with_user_credentials(username, password, allow_ntlm=True)
+            else:
+                raise UserError(
+                    "NTLM authentication requires allow_ntlm=True to be explicitly set"
+                )
+        else:
+            raise UserError(
+                f"Unsupported auth method '{self.auth_method}' for on-premise SharePoint"
+            )
+
+        return ctx
+
+    @requires_dependencies(["office365"], extras="sharepoint")
+    def get_site(self) -> "Site":
+        """
+        Gets SharePoint site - works for both online and on-premise.
+        Routes based on self.deployment_type.
+        """
+        if self.deployment_type == "onpremise":
+            # On-premise: use ClientContext directly
+            ctx = self.get_sharepoint_client()
+            site = ctx.web.get().execute_query()
+            return site
+        else:
+            # Online: use existing Graph API logic
+            client = self.get_client()
+            site = client.sites.get_by_url(self.site).get().execute_query()
+            return site
 
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
@@ -151,22 +220,29 @@ class SharepointIndexer(OnedriveIndexer):
         """Validate SharePoint connection before indexing."""
         from office365.runtime.client_request_exception import ClientRequestException
 
-        # Validate authentication - this call will raise UserAuthError if invalid
-        self.connection_config.get_token()
-
         try:
-            client = self.connection_config.get_client()
-            client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = self.connection_config._get_drive_item(client_site)
+            if self.connection_config.deployment_type == "onpremise":
+                # On-premise: validate connection using ClientContext
+                ctx = self.connection_config.get_sharepoint_client()
+                site = ctx.web.get().execute_query()
+                logger.info(f"On-premise SharePoint connection validated: {site.url}")
+            else:
+                # Online: validate authentication using Graph API
+                self.connection_config.get_token()
+                client = self.connection_config.get_client()
+                client_site = (
+                    client.sites.get_by_url(self.connection_config.site).get().execute_query()
+                )
+                site_drive_item = self.connection_config._get_drive_item(client_site)
 
-            path = self.index_config.path
-            if not self._is_root_path(path):
-                self._validate_folder_path(site_drive_item, path)
+                path = self.index_config.path
+                if not self._is_root_path(path):
+                    self._validate_folder_path(site_drive_item, path)
 
-            logger.info(
-                f"SharePoint connection validated successfully for site: "
-                f"{self.connection_config.site}"
-            )
+                logger.info(
+                    f"SharePoint Online connection validated successfully for site: "
+                    f"{self.connection_config.site}"
+                )
 
         except ClientRequestException as e:
             logger.error(f"SharePoint precheck failed for site: {self.connection_config.site}")
@@ -181,33 +257,78 @@ class SharepointIndexer(OnedriveIndexer):
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:
         from office365.runtime.client_request_exception import ClientRequestException
 
-        token_resp = await asyncio.to_thread(self.connection_config.get_token)
-        if "error" in token_resp:
-            raise SourceConnectionError(
-                f"[{self.connector_type}]: {token_resp['error']} "
-                f"({token_resp.get('error_description')})"
+        if self.connection_config.deployment_type == "onpremise":
+            # On-premise: use ClientContext and SharePoint REST API
+            ctx = await asyncio.to_thread(self.connection_config.get_sharepoint_client)
+            web = ctx.web.get().execute_query()
+
+            # Get folder path
+            path = self.index_config.path or ""
+            if path and path != LEGACY_DEFAULT_PATH:
+                folder = web.get_folder_by_server_relative_url(path)
+            else:
+                # Default to Shared Documents
+                folder = web.default_document_library().root_folder
+
+            # Get files from folder
+            try:
+                files = folder.files if not self.index_config.recursive else folder.get_files(
+                    recursive=True
+                )
+                files.execute_query()
+
+                for file in files:
+                    # Convert on-premise file to FileData
+                    file_data = FileData(
+                        identifier=file.properties["ServerRelativeUrl"],
+                        connector_type=self.connector_type,
+                        source_identifiers=SourceIdentifiers(
+                            fullpath=file.properties["ServerRelativeUrl"],
+                            filename=file.properties["Name"],
+                        ),
+                        metadata=FileDataSourceMetadata(
+                            date_modified=str(file.properties.get("TimeLastModified")),
+                            date_created=str(file.properties.get("TimeCreated")),
+                            version=str(file.properties.get("UIVersion")),
+                        ),
+                    )
+                    yield file_data
+            except ClientRequestException as e:
+                logger.error(f"Failed to access SharePoint folder: {path}")
+                raise SourceConnectionError(
+                    f"Unable to access SharePoint folder at {path}: {str(e)}"
+                )
+        else:
+            # Online: use existing Graph API logic
+            token_resp = await asyncio.to_thread(self.connection_config.get_token)
+            if "error" in token_resp:
+                raise SourceConnectionError(
+                    f"[{self.connector_type}]: {token_resp['error']} "
+                    f"({token_resp.get('error_description')})"
+                )
+
+            client = await asyncio.to_thread(self.connection_config.get_client)
+            try:
+                client_site = (
+                    client.sites.get_by_url(self.connection_config.site).get().execute_query()
+                )
+                site_drive_item = self.connection_config._get_drive_item(client_site)
+            except ClientRequestException as e:
+                logger.error(f"Failed to access SharePoint site: {self.connection_config.site}")
+                raise SourceConnectionError(
+                    f"Unable to access SharePoint site at {self.connection_config.site}: {str(e)}"
+                )
+
+            path = self.index_config.path
+            target_drive_item = await asyncio.to_thread(
+                self._get_target_drive_item, site_drive_item, path
             )
 
-        client = await asyncio.to_thread(self.connection_config.get_client)
-        try:
-            client_site = client.sites.get_by_url(self.connection_config.site).get().execute_query()
-            site_drive_item = self.connection_config._get_drive_item(client_site)
-        except ClientRequestException as e:
-            logger.error(f"Failed to access SharePoint site: {self.connection_config.site}")
-            raise SourceConnectionError(
-                f"Unable to access SharePoint site at {self.connection_config.site}: {str(e)}"
-            )
-
-        path = self.index_config.path
-        target_drive_item = await asyncio.to_thread(
-            self._get_target_drive_item, site_drive_item, path
-        )
-
-        for drive_item in target_drive_item.get_files(
-            recursive=self.index_config.recursive
-        ).execute_query():
-            file_data = await self.drive_item_to_file_data(drive_item=drive_item)
-            yield file_data
+            for drive_item in target_drive_item.get_files(
+                recursive=self.index_config.recursive
+            ).execute_query():
+                file_data = await self.drive_item_to_file_data(drive_item=drive_item)
+                yield file_data
 
 
 class SharepointDownloaderConfig(OnedriveDownloaderConfig):
@@ -244,29 +365,52 @@ class SharepointDownloader(OnedriveDownloader):
             )
 
         server_relative_path = file_data.source_identifiers.fullpath
-        client = self.connection_config.get_client()
 
-        @retry(
-            stop=stop_after_attempt(self.download_config.max_retries),
-            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
-            retry=retry_if_exception(self.retry_on_status_code),
-            before=before_log(logger, logging.DEBUG),
-            reraise=True,
-        )
-        def _get_item_by_path() -> DriveItem:
-            try:
-                client_site = (
-                    client.sites.get_by_url(self.connection_config.site).get().execute_query()
-                )
-                site_drive_item = self.connection_config._get_drive_item(client_site)
-            except ClientRequestException:
-                logger.info(f"Site not found: {self.connection_config.site}")
-                raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
-            file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
-            return file
+        if self.connection_config.deployment_type == "onpremise":
+            # On-premise: use ClientContext to fetch file
+            @retry(
+                stop=stop_after_attempt(self.download_config.max_retries),
+                wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
+                retry=retry_if_exception(self.retry_on_status_code),
+                before=before_log(logger, logging.DEBUG),
+                reraise=True,
+            )
+            def _get_onpremise_file():
+                try:
+                    ctx = self.connection_config.get_sharepoint_client()
+                    file = ctx.web.get_file_by_server_relative_url(
+                        server_relative_path
+                    ).get().execute_query()
+                    return file
+                except ClientRequestException:
+                    logger.info(f"File not found: {server_relative_path}")
+                    raise NotFoundError(f"File not found: {server_relative_path}")
 
-        # Call the retry-wrapped function
-        file = _get_item_by_path()
+            file = _get_onpremise_file()
+        else:
+            # Online: use Graph API
+            client = self.connection_config.get_client()
+
+            @retry(
+                stop=stop_after_attempt(self.download_config.max_retries),
+                wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
+                retry=retry_if_exception(self.retry_on_status_code),
+                before=before_log(logger, logging.DEBUG),
+                reraise=True,
+            )
+            def _get_item_by_path() -> DriveItem:
+                try:
+                    client_site = (
+                        client.sites.get_by_url(self.connection_config.site).get().execute_query()
+                    )
+                    site_drive_item = self.connection_config._get_drive_item(client_site)
+                except ClientRequestException:
+                    logger.info(f"Site not found: {self.connection_config.site}")
+                    raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
+                file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
+                return file
+
+            file = _get_item_by_path()
 
         if not file:
             raise NotFoundError(f"file not found: {server_relative_path}")
