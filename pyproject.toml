@@ -166,7 +166,7 @@ ci = [
     "lancedb<=0.15.0",
     # TODO: versions higher than this are missing the macos wheel
     "pykx==2.5.3",
-    # TODO: Constraint due to perf-analyzer platform compatibility issues  
+    # TODO: Constraint due to perf-analyzer platform compatibility issues
     "tritonclient<=2.60.0",  # Allow 2.60.0 (was working), prevent 2.61.0 (has perf-analyzer issues)
 ]
 

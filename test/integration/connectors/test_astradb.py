@@ -141,6 +141,61 @@ def collection(upload_file: Path) -> Collection:
         astra_db.drop_collection(collection.name)
 
 
+@pytest.fixture
+def large_upload_collection(tmp_path: Path) -> Collection:
+    """Create a collection for testing large uploads with concurrency limits."""
+    random_id = str(uuid4())[:8]
+    collection_name = f"utic_test_large_{random_id}"
+    # Use a standard embedding dimension (1536 for OpenAI text-embedding-3-small)
+    embedding_dimension = 1536
+    my_client = AstraDBClient()
+    env_data = get_env_data()
+    astra_db = my_client.get_database(
+        api_endpoint=env_data.api_endpoint,
+        token=env_data.token,
+    )
+    collection = astra_db.create_collection(
+        collection_name,
+        definition=CollectionDefinition.builder()
+        .set_vector_dimension(dimension=embedding_dimension)
+        .build(),
+    )
+    try:
+        yield collection
+    finally:
+        astra_db.drop_collection(collection.name)
+
+
+@pytest.fixture
+def large_upload_file(tmp_path: Path, upload_file_ndjson: Path) -> Path:
+    """Create a large upload file by duplicating elements from the test file."""
+    # Read the source file
+    with upload_file_ndjson.open("r") as f:
+        source_elements = [json.loads(line) for line in f if line.strip()]
+
+    if not source_elements:
+        pytest.skip("No elements found in source file")
+
+    # Use the first element as a template
+    template_element = source_elements[0]
+
+    # Create a large file with 1000 elements (enough to test concurrency but not too slow)
+    # With batch_size=20, this creates 50 batches
+    num_elements = 1000
+    large_file = tmp_path / "large_upload.ndjson"
+
+    with large_file.open("w") as f:
+        for i in range(num_elements):
+            # Create a copy with unique element_id
+            new_element = json.loads(json.dumps(template_element))
+            new_element["element_id"] = str(uuid4()).replace("-", "")
+            # Modify text to make each element unique
+            new_element["text"] = f"{template_element.get('text', '')} [duplicate {i}]"
+            f.write(json.dumps(new_element, ensure_ascii=False) + "\n")
+
+    return large_file
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, VECTOR_DB_TAG)
 @requires_env("ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN")
@@ -295,3 +350,89 @@ def test_astra_stager_flatten_metadata(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@requires_env("ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN")
+async def test_astra_large_upload_with_concurrency_limit(
+    large_upload_file: Path,
+    large_upload_collection: Collection,
+    tmp_path: Path,
+):
+    """Test that large uploads work correctly with concurrency limits.
+
+    This test verifies that:
+    1. Large uploads (1000+ elements) complete successfully with concurrency limits
+    2. All elements are uploaded correctly
+    3. The concurrency limit prevents timeouts
+    """
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(
+            fullpath=large_upload_file.name, filename=large_upload_file.name
+        ),
+        connector_type=CONNECTOR_TYPE,
+        identifier="large upload test",
+    )
+    stager = AstraDBUploadStager()
+    env_data = get_env_data()
+
+    # Configure uploader with low concurrency limit to test the fix
+    uploader = AstraDBUploader(
+        connection_config=AstraDBConnectionConfig(
+            access_config=AstraDBAccessConfig(
+                api_endpoint=env_data.api_endpoint, token=env_data.token
+            ),
+        ),
+        upload_config=AstraDBUploaderConfig(
+            collection_name=large_upload_collection.name,
+            batch_size=20,  # Small batch size to create many batches
+            max_concurrent_batches=5,  # Low concurrency limit to prevent timeouts
+        ),
+    )
+
+    # Stage the large file
+    staged_filepath = stager.run(
+        elements_filepath=large_upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=large_upload_file.name,
+    )
+
+    uploader.precheck()
+
+    # Upload with concurrency limit - this should complete without timeout
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
+
+    # Verify all elements were uploaded
+    # The stager outputs ndjson format (one JSON object per line)
+    with staged_filepath.open() as f:
+        staged_elements = [json.loads(line) for line in f if line.strip()]
+
+    expected_count = len(staged_elements)
+    # Use a reasonable upper bound for counting
+    current_count = large_upload_collection.count_documents(
+        filter={}, upper_bound=expected_count * 2
+    )
+
+    assert current_count == expected_count, (
+        f"Expected {expected_count} documents but found {current_count}. "
+        f"This indicates the upload may have failed or been incomplete."
+    )
+
+    # Verify we can query the documents back
+    # Sample a few element_ids from the staged elements to verify they exist
+    sample_elements = staged_elements[:5]
+    for staged_elem in sample_elements:
+        element_id = staged_elem.get("metadata", {}).get("element_id")
+        if element_id:
+            # Query by element_id in metadata
+            results = list(
+                large_upload_collection.find(
+                    filter={"metadata.element_id": {"$eq": element_id}}, limit=1
+                )
+            )
+            assert len(results) == 1, (
+                f"Element with element_id {element_id} not found in collection. "
+                f"Found {len(results)} results."
+            )

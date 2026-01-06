@@ -300,6 +300,17 @@ class AstraDBUploadStagerConfig(UploadStagerConfig):
     flatten_metadata: Optional[bool] = Field(
         default=False, description="Move metadata to top level of the record."
     )
+    astra_generated_embeddings: bool = Field(
+        default=False,
+        description="Select this if you've configured an embedding provider integration "
+        "for your collection. Content will be inserted into the $vectorize field and "
+        "embeddings will be generated externally.",
+    )
+    enable_lexical_search: bool = Field(
+        default=False,
+        description="Select this to insert content into the $lexical field "
+        "for lexicographical or hybrid search.",
+    )
 
 
 @dataclass
@@ -330,12 +341,40 @@ class AstraDBUploadStager(UploadStager):
             if metadata:
                 element_dict.update(metadata)
 
-        return {
-            "$vector": element_dict.pop("embeddings", None),
-            "content": element_dict.pop("text", None),
+        content = element_dict.pop("text", None)
+        embeddings = element_dict.pop("embeddings", None)
+
+        result = {
+            "content": content,
             RECORD_ID_LABEL: file_data.identifier,
             "metadata": element_dict,
         }
+
+        # (Austin): We support bring-your-own embeddings XOR Astra-generated embeddings.
+        # Using neither /is/ a valid state, but for now we're enforcing Astra as a vector store.
+        has_unstructured_embeddings = embeddings is not None and len(embeddings) > 0
+        generate_embeddings = self.upload_stager_config.astra_generated_embeddings
+
+        if not has_unstructured_embeddings and not generate_embeddings:
+            raise ValueError(
+                "No vectors provided. "
+                "Please enable an Unstructured embedding provider or "
+                "configure Astra to generate embeddings."
+            )
+        elif has_unstructured_embeddings and generate_embeddings:
+            raise ValueError(
+                "Cannot use Unstructured embeddings and Astra-generated embeddings simultaneously. "
+                "Please disable Astra generated embeddings or remove the Unstructured embedder."
+            )
+        elif generate_embeddings:
+            result["$vectorize"] = content
+        elif has_unstructured_embeddings:
+            result["$vector"] = embeddings
+
+        if self.upload_stager_config.enable_lexical_search:
+            result["$lexical"] = content
+
+        return result
 
 
 class AstraDBUploaderConfig(UploaderConfig):
@@ -352,9 +391,21 @@ class AstraDBUploaderConfig(UploaderConfig):
         examples=['{"deny": ["metadata"]}'],
     )
     batch_size: int = Field(default=20, description="Number of records per batch")
+    max_concurrent_batches: int = Field(
+        default=10,
+        description="Maximum number of batches to upload concurrently. "
+        "Lower values reduce API load but may be slower. "
+        "Higher values may cause timeouts with very large uploads.",
+    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
+    )
+    binary_encode_vectors: bool = Field(
+        default=True,
+        description="Upload vectors in a binary format. If set to False, "
+        "vectors will be a human-readable list of floats. "
+        "WARNING: Disabling this option may make the upload slower!",
     )
 
 
@@ -417,8 +468,8 @@ class AstraDBUploader(Uploader):
 
     def create_destination(
         self,
-        vector_length: int,
         destination_name: str = "unstructuredautocreated",
+        vector_length: Optional[int] = None,
         similarity_metric: Optional[str] = "cosine",
         **kwargs: Any,
     ) -> bool:
@@ -459,6 +510,7 @@ class AstraDBUploader(Uploader):
             f"deleted {delete_resp.deleted_count} records from collection {collection.name}"
         )
 
+    @requires_dependencies(["astrapy"], extras="astradb")
     async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
             f"writing {len(data)} objects to destination "
@@ -466,17 +518,52 @@ class AstraDBUploader(Uploader):
         )
 
         astra_db_batch_size = self.upload_config.batch_size
+        max_concurrent = self.upload_config.max_concurrent_batches
         async_astra_collection = await get_async_astra_collection(
             connection_config=self.connection_config,
             collection_name=self.upload_config.collection_name,
             keyspace=self.upload_config.keyspace,
         )
 
+        # If we're disabling binary encoded vectors, update the collection settings
+        if not self.upload_config.binary_encode_vectors:
+            from astrapy.api_options import APIOptions, SerdesOptions
+
+            async_astra_collection = async_astra_collection.with_options(
+                api_options=APIOptions(serdes_options=SerdesOptions(binary_encode_vectors=False))
+            )
+
         await self.delete_by_record_id(collection=async_astra_collection, file_data=file_data)
+
+        batches = list(batch_generator(data, astra_db_batch_size))
+        total_batches = len(batches)
+        logger.info(
+            f"Uploading {len(data)} elements in {total_batches} batches "
+            f"(batch_size={astra_db_batch_size}, max_concurrent={max_concurrent})"
+        )
+
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        log_interval = 100
+        async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
+            async with semaphore:
+                try:
+                    await async_astra_collection.insert_many(batch)
+                    if (batch_num + 1) % log_interval == 0 or batch_num == total_batches - 1:
+                        logger.debug(
+                            f"Upload progress: {batch_num + 1}/{total_batches} batches completed "
+                            f"({(batch_num + 1) / total_batches * 100:.1f}%)"
+                        )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}"
+                    )
+                    raise
+
         await asyncio.gather(
             *[
-                async_astra_collection.insert_many(chunk)
-                for chunk in batch_generator(data, astra_db_batch_size)
+                upload_batch_with_semaphore(batch, batch_num)
+                for batch_num, batch in enumerate(batches)
             ]
         )
 

@@ -1,3 +1,43 @@
+## [1.2.31]
+
+* **fix: Add concurrency limit to AstraDB uploader to prevent timeouts
+
+## [1.2.30]
+
+* **fix: Upgrade langchain-core to resolve critical vulnerability CVE-2025-68664
+
+## [1.2.29]
+
+* **fix: add simple retry and timeout logic to Opensearch connector**
+
+## [1.2.28]
+
+* **fix: Limit opensearch-py to below 3.0.0 to prevent grpcio conflicts with milvus and watsonx**
+
+## [1.2.27]
+
+* **feat: Add AWS IAM authentication and full async support to OpenSearch connector**
+
+## [1.2.26]
+
+* **feat: add astra_generated_embeddings and enable_lexical_search options to AstraDB stager/uploader**
+
+## [1.2.25]
+
+* **fix: dont submit fields for Elasticsearch/Opensearch if there are none specified**
+
+## [1.2.24]
+
+* **fix: Remove --skip-existing from release.yml**
+
+## [1.2.23]
+
+* **fix: Improve opensearch with correct connector_type metadata and compatible index validation**
+
+## [1.2.22]
+
+* **feat: Add option to disable binary encoded vectors in AstraDBUploader**
+
 ## [1.2.22]
 
 * **feat: add teradata source and destination

@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import time
 from contextlib import contextmanager
@@ -38,6 +39,7 @@ from unstructured_ingest.processes.connectors.elasticsearch.opensearch import (
     OpenSearchUploaderConfig,
     OpenSearchUploadStager,
     OpenSearchUploadStagerConfig,
+    detect_aws_opensearch_config,
 )
 
 SOURCE_INDEX_NAME = "movies"
@@ -185,7 +187,9 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
         downloader = OpenSearchDownloader(
             connection_config=connection_config, download_config=download_config
         )
+
         expected_num_files = len(movies_dataframe)
+
         await source_connector_validation(
             indexer=indexer,
             downloader=downloader,
@@ -197,6 +201,47 @@ async def test_opensearch_source(source_index: str, movies_dataframe: pd.DataFra
                 predownload_file_data_check=source_filedata_display_name_set_check,
                 postdownload_file_data_check=source_filedata_display_name_set_check,
                 exclude_fields_extend=["display_name"],  # includes dynamic ids, might change
+            ),
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG)
+async def test_opensearch_source_empty_fields(source_index: str, movies_dataframe: pd.DataFrame):
+    """Test that empty fields list works without timeout (fixes AWS OpenSearch FGAC issue)."""
+    indexer_config = OpenSearchIndexerConfig(index_name=source_index)
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        connection_config = OpenSearchConnectionConfig(
+            access_config=OpenSearchAccessConfig(password="admin"),
+            username="admin",
+            hosts=["http://localhost:9200"],
+            use_ssl=True,
+        )
+        download_config = OpenSearchDownloaderConfig(
+            download_dir=tempdir_path,
+            fields=[],  # Empty fields should omit _source
+        )
+        indexer = OpenSearchIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        downloader = OpenSearchDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+
+        expected_num_files = len(movies_dataframe)
+
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id=CONNECTOR_TYPE,
+                expected_num_files=expected_num_files,
+                expected_number_indexed_file_data=1,
+                validate_downloaded_files=True,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
+                exclude_fields_extend=["display_name"],
             ),
         )
 
@@ -263,8 +308,9 @@ async def test_opensearch_destination(
         output_dir=tmp_path,
         output_filename=upload_file.name,
     )
+
     uploader.precheck()
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
 
     # Run validation
     with staged_filepath.open() as f:
@@ -274,7 +320,7 @@ async def test_opensearch_destination(
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
 
     # Rerun and make sure the same documents get updated
-    uploader.run(path=staged_filepath, file_data=file_data)
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
     with get_client() as client:
         validate_count(client=client, expected_count=expected_count, index_name=destination_index)
 
@@ -328,3 +374,320 @@ def test_opensearch_stager(
         stager=stager,
         tmp_dir=tmp_path,
     )
+
+
+# AWS IAM Authentication Tests
+# These tests require AWS credentials to be set in environment variables
+
+
+@pytest.fixture
+def aws_credentials():
+    """Fixture that provides AWS credentials from environment variables."""
+    aws_access_key_id = os.getenv("OPENSEARCH_AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = os.getenv("OPENSEARCH_AWS_SECRET_ACCESS_KEY")
+    aws_host = os.getenv("OPENSEARCH_AWS_HOST")
+
+    if not all([aws_access_key_id, aws_secret_access_key, aws_host]):
+        pytest.skip(
+            "AWS OpenSearch credentials not available. Set OPENSEARCH_AWS_ACCESS_KEY_ID, "
+            "OPENSEARCH_AWS_SECRET_ACCESS_KEY, and OPENSEARCH_AWS_HOST environment variables."
+        )
+
+    return {
+        "aws_access_key_id": aws_access_key_id,
+        "aws_secret_access_key": aws_secret_access_key,
+        "aws_host": aws_host,
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "iam")
+async def test_opensearch_source_with_iam(aws_credentials: dict):
+    """Test OpenSearch source connector with AWS IAM authentication."""
+    indexer_config = OpenSearchIndexerConfig(index_name="opensearch_e2e_source")
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        connection_config = OpenSearchConnectionConfig(
+            access_config=OpenSearchAccessConfig(
+                aws_access_key_id=aws_credentials["aws_access_key_id"],
+                aws_secret_access_key=aws_credentials["aws_secret_access_key"],
+            ),
+            hosts=[aws_credentials["aws_host"]],
+            use_ssl=True,
+            verify_certs=True,
+        )
+        download_config = OpenSearchDownloaderConfig(download_dir=tempdir_path)
+
+        indexer = OpenSearchIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        downloader = OpenSearchDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+
+        # Wrap precheck to run in thread pool to avoid event loop conflict with asyncio.run()
+        # This extra isolation is required for AWS IAM auth to work correctly
+        import concurrent.futures
+
+        original_precheck = indexer.precheck
+
+        def threaded_precheck():
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(original_precheck)
+                future.result()
+
+        indexer.precheck = threaded_precheck
+
+        # Run source validation
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id=f"{CONNECTOR_TYPE}_iam",  # Use separate fixtures for IAM
+                expected_num_files=10,  # AWS index has 10 documents
+                expected_number_indexed_file_data=1,
+                validate_downloaded_files=False,  # Skip fixture validation (focus on IAM auth)
+                validate_file_data=False,  # Skip fixture validation (focus on IAM auth)
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
+                exclude_fields_extend=["display_name"],
+            ),
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG, "aws", "iam")
+async def test_opensearch_destination_with_iam(
+    upload_file: Path,
+    tmp_path: Path,
+    aws_credentials: dict,
+):
+    """Test OpenSearch destination connector with AWS IAM authentication."""
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data iam test",
+    )
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id=aws_credentials["aws_access_key_id"],
+            aws_secret_access_key=aws_credentials["aws_secret_access_key"],
+        ),
+        hosts=[aws_credentials["aws_host"]],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    stager = OpenSearchUploadStager(
+        upload_stager_config=OpenSearchUploadStagerConfig(index_name="opensearch_e2e_dest")
+    )
+
+    uploader = OpenSearchUploader(
+        connection_config=connection_config,
+        upload_config=OpenSearchUploaderConfig(index_name="opensearch_e2e_dest"),
+    )
+
+    # Stage the file
+    staged_filepath = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+
+    # Run precheck in thread pool to avoid event loop conflict with asyncio.run()
+    # This extra isolation is required for AWS IAM auth to work correctly
+    import concurrent.futures
+
+    def threaded_precheck():
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(uploader.precheck)
+            future.result()
+
+    threaded_precheck()
+
+    # Upload with IAM auth
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
+
+    # Note: Validation against AWS OpenSearch would require async client
+    # For now, if upload doesn't raise an exception, it's considered successful
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "iam")
+def test_opensearch_source_iam_precheck_validates_credentials(aws_credentials: dict):
+    """Test that precheck properly validates IAM credentials and connection."""
+    indexer_config = OpenSearchIndexerConfig(index_name="opensearch_e2e_source")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id=aws_credentials["aws_access_key_id"],
+            aws_secret_access_key=aws_credentials["aws_secret_access_key"],
+        ),
+        hosts=[aws_credentials["aws_host"]],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    indexer = OpenSearchIndexer(connection_config=connection_config, index_config=indexer_config)
+
+    # Should succeed with valid credentials
+    indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "iam")
+def test_opensearch_source_iam_precheck_fail_invalid_credentials():
+    """Test that precheck fails with invalid IAM credentials."""
+    indexer_config = OpenSearchIndexerConfig(index_name="opensearch_e2e_source")
+
+    # Skip if no AWS host available
+    aws_host = os.getenv("OPENSEARCH_AWS_HOST")
+    if not aws_host:
+        pytest.skip("OPENSEARCH_AWS_HOST not set")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id="INVALID_KEY",
+            aws_secret_access_key="INVALID_SECRET",
+        ),
+        hosts=[aws_host],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    indexer = OpenSearchIndexer(connection_config=connection_config, index_config=indexer_config)
+
+    # Should fail with invalid credentials
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG, "aws", "iam")
+def test_opensearch_destination_iam_precheck_fail_invalid_credentials():
+    """Test that uploader precheck fails with invalid IAM credentials."""
+    # Skip if no AWS host available
+    aws_host = os.getenv("OPENSEARCH_AWS_HOST")
+    if not aws_host:
+        pytest.skip("OPENSEARCH_AWS_HOST not set")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id="INVALID_KEY",
+            aws_secret_access_key="INVALID_SECRET",
+        ),
+        hosts=[aws_host],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    uploader = OpenSearchUploader(
+        connection_config=connection_config,
+        upload_config=OpenSearchUploaderConfig(index_name="opensearch_e2e_dest"),
+    )
+
+    # Should fail with invalid credentials
+    with pytest.raises(DestinationConnectionError):
+        uploader.precheck()
+
+
+# AWS Hostname Detection Regex Tests
+# These tests verify the regex patterns used to auto-detect AWS region and service
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.parametrize(
+    ("hostname", "expected_region", "expected_service"),
+    [
+        # Standard US regions - OpenSearch Service
+        ("https://search-domain.us-east-1.es.amazonaws.com", "us-east-1", "es"),
+        ("https://search-domain.us-west-2.es.amazonaws.com", "us-west-2", "es"),
+        # EU regions
+        ("https://search-domain.eu-west-1.es.amazonaws.com", "eu-west-1", "es"),
+        ("https://search-domain.eu-central-1.es.amazonaws.com", "eu-central-1", "es"),
+        # Asia Pacific regions
+        ("https://search-domain.ap-southeast-1.es.amazonaws.com", "ap-southeast-1", "es"),
+        ("https://search-domain.ap-northeast-1.es.amazonaws.com", "ap-northeast-1", "es"),
+        # GovCloud regions
+        ("https://search-domain.us-gov-west-1.es.amazonaws.com", "us-gov-west-1", "es"),
+        ("https://search-domain.us-gov-east-1.es.amazonaws.com", "us-gov-east-1", "es"),
+        # China regions
+        ("https://search-domain.cn-north-1.es.amazonaws.com", "cn-north-1", "es"),
+        ("https://search-domain.cn-northwest-1.es.amazonaws.com", "cn-northwest-1", "es"),
+        # OpenSearch Serverless (AOSS)
+        ("https://abc123xyz.us-east-1.aoss.amazonaws.com", "us-east-1", "aoss"),
+        ("https://abc123xyz.eu-west-1.aoss.amazonaws.com", "eu-west-1", "aoss"),
+        ("https://abc123xyz.us-gov-west-1.aoss.amazonaws.com", "us-gov-west-1", "aoss"),
+        # Without https://
+        ("search-domain.us-east-1.es.amazonaws.com", "us-east-1", "es"),
+        # With port
+        ("https://search-domain.us-east-1.es.amazonaws.com:443", "us-east-1", "es"),
+    ],
+)
+def test_detect_aws_opensearch_config_valid(hostname, expected_region, expected_service):
+    """Test AWS hostname regex patterns detect valid AWS OpenSearch hostnames."""
+    result = detect_aws_opensearch_config(hostname)
+    assert result is not None, f"Failed to detect AWS config from {hostname}"
+    region, service = result
+    assert region == expected_region
+    assert service == expected_service
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+@pytest.mark.parametrize(
+    "hostname",
+    [
+        "https://localhost:9200",
+        "https://my-opensearch.example.com",
+        "https://search-domain.es.amazonaws.com",  # Missing region
+        "https://my-bucket.s3.us-east-1.amazonaws.com",  # S3, not OpenSearch
+        "not-a-valid-url",
+        "",
+    ],
+)
+def test_detect_aws_opensearch_config_invalid(hostname):
+    """Test AWS hostname regex patterns return None for non-AWS hostnames."""
+    result = detect_aws_opensearch_config(hostname)
+    assert result is None, f"Should not detect AWS config from {hostname}"
+
+
+# OpenSearch Uploader Configuration Tests
+# These tests verify default configuration values for resilience against rate limiting
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+def test_opensearch_uploader_config_batch_size_default():
+    """Test that OpenSearchUploaderConfig has a 5MB default batch size.
+
+    This is lower than the Elasticsearch default (15MB) to accommodate
+    AWS OpenSearch cluster rate limits and prevent 429 errors.
+    """
+    config = OpenSearchUploaderConfig(index_name="test_index")
+    assert config.batch_size_bytes == 5_000_000, (
+        "OpenSearch default batch_size_bytes should be 5MB (5,000,000 bytes)"
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
+async def test_opensearch_connection_config_retry_settings():
+    """Test that OpenSearchConnectionConfig includes retry and timeout settings.
+
+    These settings provide resilience against transient errors (429 rate limiting,
+    502/503 server errors) when uploading to OpenSearch clusters.
+    """
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="test"),
+        username="test",
+        hosts=["http://localhost:9200"],
+    )
+
+    client_kwargs = await connection_config.get_async_client_kwargs()
+
+    # Verify retry configuration
+    assert client_kwargs.get("max_retries") == 3, "Should retry up to 3 times"
+    assert client_kwargs.get("retry_on_status") == [429, 502, 503], (
+        "Should retry on rate limit (429) and server errors (502, 503)"
+    )
+    assert client_kwargs.get("retry_on_timeout") is True, "Should retry on timeout"
+    assert client_kwargs.get("timeout") == 60, "Should have 60 second timeout"
