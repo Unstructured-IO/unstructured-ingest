@@ -422,7 +422,6 @@ async def test_astra_large_upload_with_concurrency_limit(
 
     # Verify we can query the documents back
     # Sample a few element_ids from the staged elements to verify they exist
-    # The stager puts the original element_dict into metadata, so element_id is at metadata.element_id
     sample_elements = staged_elements[:5]
     for staged_elem in sample_elements:
         element_id = staged_elem.get("metadata", {}).get("element_id")
