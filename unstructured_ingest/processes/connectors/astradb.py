@@ -391,6 +391,12 @@ class AstraDBUploaderConfig(UploaderConfig):
         examples=['{"deny": ["metadata"]}'],
     )
     batch_size: int = Field(default=20, description="Number of records per batch")
+    max_concurrent_batches: int = Field(
+        default=10,
+        description="Maximum number of batches to upload concurrently. "
+        "Lower values reduce API load but may be slower. "
+        "Higher values may cause timeouts with very large uploads.",
+    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
@@ -512,6 +518,7 @@ class AstraDBUploader(Uploader):
         )
 
         astra_db_batch_size = self.upload_config.batch_size
+        max_concurrent = self.upload_config.max_concurrent_batches
         async_astra_collection = await get_async_astra_collection(
             connection_config=self.connection_config,
             collection_name=self.upload_config.collection_name,
@@ -527,10 +534,36 @@ class AstraDBUploader(Uploader):
             )
 
         await self.delete_by_record_id(collection=async_astra_collection, file_data=file_data)
+
+        batches = list(batch_generator(data, astra_db_batch_size))
+        total_batches = len(batches)
+        logger.info(
+            f"Uploading {len(data)} elements in {total_batches} batches "
+            f"(batch_size={astra_db_batch_size}, max_concurrent={max_concurrent})"
+        )
+
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        log_interval = 100
+        async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
+            async with semaphore:
+                try:
+                    await async_astra_collection.insert_many(batch)
+                    if (batch_num + 1) % log_interval == 0 or batch_num == total_batches - 1:
+                        logger.debug(
+                            f"Upload progress: {batch_num + 1}/{total_batches} batches completed "
+                            f"({(batch_num + 1) / total_batches * 100:.1f}%)"
+                        )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}"
+                    )
+                    raise
+
         await asyncio.gather(
             *[
-                async_astra_collection.insert_many(chunk)
-                for chunk in batch_generator(data, astra_db_batch_size)
+                upload_batch_with_semaphore(batch, batch_num)
+                for batch_num, batch in enumerate(batches)
             ]
         )
 
