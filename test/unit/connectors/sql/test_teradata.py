@@ -11,6 +11,8 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataConnectionConfig,
     TeradataDownloader,
     TeradataDownloaderConfig,
+    TeradataIndexer,
+    TeradataIndexerConfig,
     TeradataUploader,
     TeradataUploaderConfig,
     TeradataUploadStager,
@@ -48,6 +50,18 @@ def teradata_downloader(teradata_connection_config: TeradataConnectionConfig):
         download_config=TeradataDownloaderConfig(
             fields=["id", "text", "year"],
             id_column="id",
+        ),
+    )
+
+
+@pytest.fixture
+def teradata_indexer(teradata_connection_config: TeradataConnectionConfig):
+    return TeradataIndexer(
+        connection_config=teradata_connection_config,
+        index_config=TeradataIndexerConfig(
+            table_name="year",  # Reserved word as table name
+            id_column="type",  # Reserved word as column name
+            batch_size=100,
         ),
     )
 
@@ -92,6 +106,22 @@ def test_teradata_connection_config_default_port(teradata_access_config: Teradat
     )
     assert config.dbs_port == 1025
     assert config.database is None
+
+
+def test_teradata_indexer_get_doc_ids_quotes_identifiers(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+):
+    """Test that _get_doc_ids quotes table and column names to handle reserved words."""
+    mock_cursor.fetchall.return_value = [("id1",), ("id2",), ("id3",)]
+
+    teradata_indexer._get_doc_ids()
+
+    # Verify the SELECT statement quotes all identifiers
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'SELECT "type"' in call_args  # Reserved word column quoted
+    assert 'FROM "year"' in call_args  # Reserved word table quoted
 
 
 def test_teradata_downloader_query_db_quotes_identifiers(

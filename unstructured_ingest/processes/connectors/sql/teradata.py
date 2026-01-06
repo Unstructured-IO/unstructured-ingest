@@ -94,6 +94,16 @@ class TeradataIndexer(SQLIndexer):
     index_config: TeradataIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def _get_doc_ids(self) -> list[str]:
+        """Override to quote identifiers for Teradata reserved word handling."""
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                f'SELECT "{self.index_config.id_column}" FROM "{self.index_config.table_name}"'
+            )
+            results = cursor.fetchall()
+            ids = sorted([result[0] for result in results])
+            return ids
+
 
 class TeradataDownloaderConfig(SQLDownloaderConfig):
     pass
