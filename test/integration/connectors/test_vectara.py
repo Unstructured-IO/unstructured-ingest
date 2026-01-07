@@ -47,14 +47,11 @@ def validate_upload(document: dict, expected_data: dict):
     assert part_metadata["page_number"] == page_number
 
 
-@requires_env("VECTARA_OAUTH_CLIENT_ID", "VECTARA_OAUTH_SECRET", "VECTARA_CUSTOMER_ID")
+@requires_env("VECTARA_OAUTH_CLIENT_ID", "VECTARA_OAUTH_SECRET")
 @lru_cache()
 def _get_jwt_token():
     """Connect to the server and get a JWT token."""
-    customer_id = os.environ["VECTARA_CUSTOMER_ID"]
-    token_endpoint = (
-        f"https://vectara-prod-{customer_id}.auth.us-west-2.amazoncognito.com/oauth2/token"
-    )
+    token_endpoint = "https://auth.vectara.com/oauth2/token"
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
     }
