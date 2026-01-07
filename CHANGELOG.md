@@ -1,10 +1,14 @@
+## [1.2.32]
+
+* **feat: add teradata source and destination**
+
 ## [1.2.31]
 
-* **fix: Add concurrency limit to AstraDB uploader to prevent timeouts
+* **fix: Add concurrency limit to AstraDB uploader to prevent timeouts**
 
 ## [1.2.30]
 
-* **fix: Upgrade langchain-core to resolve critical vulnerability CVE-2025-68664
+* **fix: Upgrade langchain-core to resolve critical vulnerability CVE-2025-68664**
 
 ## [1.2.29]
 
