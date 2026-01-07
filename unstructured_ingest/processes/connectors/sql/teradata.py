@@ -62,7 +62,6 @@ class TeradataConnectionConfig(SQLConnectionConfig):
             "user": self.user,
             "password": self.access_config.get_secret_value().password,
             "dbs_port": self.dbs_port,
-            "charset": "UTF8",
         }
         if self.database:
             conn_params["database"] = self.database

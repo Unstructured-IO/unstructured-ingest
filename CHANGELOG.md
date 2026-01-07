@@ -1,3 +1,7 @@
+## [1.2.34]
+
+* **fix: remove teradata charset setting**
+
 ## [1.2.33]
 
 * **fix: update Vectara token endpoint**
