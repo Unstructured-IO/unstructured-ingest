@@ -1,3 +1,7 @@
+## [1.2.33]
+
+* **fix: update Vectara token endpoint**
+
 ## [1.2.32]
 
 * **feat: add teradata source and destination**
