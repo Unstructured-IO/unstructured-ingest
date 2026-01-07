@@ -38,7 +38,7 @@ class VectaraConnectionConfig(ConnectionConfig):
     customer_id: str
     corpus_name: Optional[str] = None
     corpus_key: Optional[str] = None
-    token_url: str = "https://vectara-prod-{}.auth.us-west-2.amazoncognito.com/oauth2/token"
+    token_url: str = "https://auth.vectara.com/oauth2/token"
 
 
 class VectaraUploadStagerConfig(UploadStagerConfig):
