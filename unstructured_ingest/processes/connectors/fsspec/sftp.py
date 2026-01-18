@@ -211,6 +211,11 @@ class SftpUploader(FsspecUploader):
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
                 client.write_bytes(path=upload_path.as_posix(), value=b"")
+                # Best-effort cleanup - don't fail if user lacks delete permissions
+                try:
+                    client.rm(path=upload_path.as_posix())
+                except Exception:
+                    pass
 
             self.log_connection_validated(
                 connector_type=self.connector_type,
