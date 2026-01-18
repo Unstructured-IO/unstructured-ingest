@@ -79,10 +79,13 @@ class SftpConnectionConfig(FsspecConnectionConfig):
     @requires_dependencies(["paramiko", "fsspec"], extras="sftp")
     def get_client(self, protocol: str) -> Generator["SFTPFileSystem", None, None]:
         # The paramiko.SSHClient() client that's opened by the SFTPFileSystem
-        # never gets closed so explicitly adding that as part of this context manager
+        # never gets closed so explicitly adding that as part of this context manager.
+        # skip_instance_cache=True is required to prevent fsspec from returning a cached
+        # instance whose SSH connection was closed by a previous context manager exit.
         from fsspec import get_filesystem_class
 
         client: SFTPFileSystem = get_filesystem_class(protocol)(
+            skip_instance_cache=True,
             **self.get_access_config(),
         )
         yield client
@@ -96,9 +99,41 @@ class SftpIndexer(FsspecIndexer):
     connector_type: str = CONNECTOR_TYPE
 
     def __post_init__(self):
+        super().__post_init__()
         parsed_url = urlparse(self.index_config.remote_url)
         self.connection_config.host = parsed_url.hostname or self.connection_config.host
         self.connection_config.port = parsed_url.port or self.connection_config.port
+
+    def precheck(self) -> None:
+        self.log_operation_start(
+            "Connection validation",
+            protocol=self.index_config.protocol,
+            path=self.index_config.path_without_protocol,
+        )
+
+        try:
+            with self.connection_config.get_client(protocol=self.index_config.protocol) as client:
+                files = client.ls(path=self.index_config.path_without_protocol, detail=True)
+                valid_files = [x.get("name") for x in files if x.get("type") == "file"]
+                if not valid_files:
+                    self.log_operation_complete("Connection validation", count=0)
+                    return
+                file_to_sample = valid_files[0]
+                self.log_debug(f"attempting to make HEAD request for file: {file_to_sample}")
+                client.head(path=file_to_sample)
+
+            self.log_connection_validated(
+                connector_type=self.connector_type,
+                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+            )
+
+        except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
+            )
+            raise self.wrap_error(e=e)
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for file in super().run(**kwargs):
@@ -144,13 +179,17 @@ class SftpDownloader(FsspecDownloader):
     download_config: Optional[SftpDownloaderConfig] = field(default_factory=SftpDownloaderConfig)
 
     def __post_init__(self):
+        super().__post_init__()
         parsed_url = urlparse(self.download_config.remote_url)
         self.connection_config.host = parsed_url.hostname or self.connection_config.host
         self.connection_config.port = parsed_url.port or self.connection_config.port
 
 
 class SftpUploaderConfig(FsspecUploaderConfig):
-    pass
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        parsed_url = urlparse(self.remote_url)
+        self.path_without_protocol = parsed_url.path.lstrip("/")
 
 
 @dataclass
@@ -158,6 +197,33 @@ class SftpUploader(FsspecUploader):
     connector_type: str = CONNECTOR_TYPE
     connection_config: SftpConnectionConfig
     upload_config: SftpUploaderConfig = field(default=None)
+
+    def __post_init__(self):
+        super().__post_init__()
+        parsed_url = urlparse(self.upload_config.remote_url)
+        self.connection_config.host = parsed_url.hostname or self.connection_config.host
+        self.connection_config.port = parsed_url.port or self.connection_config.port
+
+    def precheck(self) -> None:
+        self.log_operation_start("Connection validation", protocol=self.upload_config.protocol)
+
+        try:
+            with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+                upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
+                client.write_bytes(path=upload_path.as_posix(), value=b"")
+
+            self.log_connection_validated(
+                connector_type=self.connector_type,
+                endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+            )
+
+        except Exception as e:
+            self.log_connection_failed(
+                connector_type=self.connector_type,
+                error=e,
+                endpoint=f"{self.upload_config.protocol}://{self.upload_config.path_without_protocol}",
+            )
+            raise self.wrap_error(e=e)
 
 
 sftp_source_entry = SourceRegistryEntry(
