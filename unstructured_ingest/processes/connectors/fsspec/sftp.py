@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -212,10 +213,8 @@ class SftpUploader(FsspecUploader):
                 upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
                 client.write_bytes(path=upload_path.as_posix(), value=b"")
                 # Best-effort cleanup - don't fail if user lacks delete permissions
-                try:
+                with contextlib.suppress(Exception):
                     client.rm(path=upload_path.as_posix())
-                except Exception:
-                    pass
 
             self.log_connection_validated(
                 connector_type=self.connector_type,
