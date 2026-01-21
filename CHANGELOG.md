@@ -1,3 +1,7 @@
+## [1.2.35]
+
+* **fix: improve sftp connector**
+
 ## [1.2.34]
 
 * **fix: remove teradata charset setting**
