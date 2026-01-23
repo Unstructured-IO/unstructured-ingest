@@ -12,27 +12,6 @@ from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
-
-@contextmanager
-def _fips_safe_md5():
-    """Patch hashlib.md5 to use usedforsecurity=False for FIPS-enabled OpenSSL.
-
-    Paramiko uses MD5 solely for logging human-readable host key fingerprints,
-    not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
-    This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
-    """
-    original_md5 = hashlib.md5
-
-    def _patched_md5(data=b"", **kwargs):
-        kwargs.setdefault("usedforsecurity", False)
-        return original_md5(data, **kwargs)
-
-    hashlib.md5 = _patched_md5
-    try:
-        yield
-    finally:
-        hashlib.md5 = original_md5
-
 from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -56,6 +35,27 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
     from fsspec.implementations.sftp import SFTPFileSystem
+
+
+@contextmanager
+def _fips_safe_md5():
+    """Patch hashlib.md5 to use usedforsecurity=False for FIPS-enabled OpenSSL.
+
+    Paramiko uses MD5 solely for logging human-readable host key fingerprints,
+    not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
+    This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
+    """
+    original_md5 = hashlib.md5
+
+    def _patched_md5(data=b"", **kwargs):
+        kwargs.setdefault("usedforsecurity", False)
+        return original_md5(data, **kwargs)
+
+    hashlib.md5 = _patched_md5
+    try:
+        yield
+    finally:
+        hashlib.md5 = original_md5
 
 CONNECTOR_TYPE = "sftp"
 
