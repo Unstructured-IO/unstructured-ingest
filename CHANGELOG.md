@@ -1,3 +1,7 @@
+## [1.2.36]
+
+* **fix: allow sftp via paramiko for kubernetes**
+
 ## [1.2.35]
 
 * **fix: improve sftp connector**
