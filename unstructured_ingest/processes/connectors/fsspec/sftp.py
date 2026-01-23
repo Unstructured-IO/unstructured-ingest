@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -10,6 +11,27 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
 from pydantic import Field, Secret
+
+
+@contextmanager
+def _fips_safe_md5():
+    """Patch hashlib.md5 to use usedforsecurity=False for FIPS-enabled OpenSSL.
+
+    Paramiko uses MD5 solely for logging human-readable host key fingerprints,
+    not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
+    This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
+    """
+    original_md5 = hashlib.md5
+
+    def _patched_md5(data=b"", **kwargs):
+        kwargs.setdefault("usedforsecurity", False)
+        return original_md5(data, **kwargs)
+
+    hashlib.md5 = _patched_md5
+    try:
+        yield
+    finally:
+        hashlib.md5 = original_md5
 
 from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
 from unstructured_ingest.processes.connector_registry import (
@@ -85,10 +107,11 @@ class SftpConnectionConfig(FsspecConnectionConfig):
         # instance whose SSH connection was closed by a previous context manager exit.
         from fsspec import get_filesystem_class
 
-        client: SFTPFileSystem = get_filesystem_class(protocol)(
-            skip_instance_cache=True,
-            **self.get_access_config(),
-        )
+        with _fips_safe_md5():
+            client: SFTPFileSystem = get_filesystem_class(protocol)(
+                skip_instance_cache=True,
+                **self.get_access_config(),
+            )
         yield client
         client.client.close()
 
