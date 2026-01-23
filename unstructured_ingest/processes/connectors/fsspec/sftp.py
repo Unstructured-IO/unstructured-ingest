@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import os
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -36,6 +37,18 @@ if TYPE_CHECKING:
     from fsspec.implementations.sftp import SFTPFileSystem
 
 CONNECTOR_TYPE = "sftp"
+
+# Patch hashlib.md5 for FIPS-enabled OpenSSL (common in Kubernetes).
+# Paramiko uses MD5 solely for logging human-readable host key fingerprints,
+# not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
+# This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
+_original_md5 = hashlib.md5
+
+def _fips_safe_md5(data=b"", **kwargs):
+    kwargs.setdefault("usedforsecurity", False)
+    return _original_md5(data, **kwargs)
+
+hashlib.md5 = _fips_safe_md5
 
 
 class SftpIndexerConfig(FsspecIndexerConfig):
