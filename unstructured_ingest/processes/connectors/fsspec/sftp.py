@@ -36,28 +36,19 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 if TYPE_CHECKING:
     from fsspec.implementations.sftp import SFTPFileSystem
 
-
-@contextmanager
-def _fips_safe_md5():
-    """Patch hashlib.md5 to use usedforsecurity=False for FIPS-enabled OpenSSL.
-
-    Paramiko uses MD5 solely for logging human-readable host key fingerprints,
-    not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
-    This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
-    """
-    original_md5 = hashlib.md5
-
-    def _patched_md5(data=b"", **kwargs):
-        kwargs.setdefault("usedforsecurity", False)
-        return original_md5(data, **kwargs)
-
-    hashlib.md5 = _patched_md5
-    try:
-        yield
-    finally:
-        hashlib.md5 = original_md5
-
 CONNECTOR_TYPE = "sftp"
+
+# Patch hashlib.md5 for FIPS-enabled OpenSSL (common in Kubernetes).
+# Paramiko uses MD5 solely for logging human-readable host key fingerprints,
+# not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
+# This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
+_original_md5 = hashlib.md5
+
+def _fips_safe_md5(data=b"", **kwargs):
+    kwargs.setdefault("usedforsecurity", False)
+    return _original_md5(data, **kwargs)
+
+hashlib.md5 = _fips_safe_md5
 
 
 class SftpIndexerConfig(FsspecIndexerConfig):
@@ -107,11 +98,10 @@ class SftpConnectionConfig(FsspecConnectionConfig):
         # instance whose SSH connection was closed by a previous context manager exit.
         from fsspec import get_filesystem_class
 
-        with _fips_safe_md5():
-            client: SFTPFileSystem = get_filesystem_class(protocol)(
-                skip_instance_cache=True,
-                **self.get_access_config(),
-            )
+        client: SFTPFileSystem = get_filesystem_class(protocol)(
+            skip_instance_cache=True,
+            **self.get_access_config(),
+        )
         yield client
         client.client.close()
 
