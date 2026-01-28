@@ -40,8 +40,8 @@ CONNECTOR_TYPE = "fsspec"
 
 class FileConfig(BaseModel):
     remote_url: str = Field(description="Remote fsspec URL formatted as `protocol://dir/path`")
-    protocol: str = Field(init=False)
-    path_without_protocol: str = Field(init=False)
+    protocol: str = Field(init=False, default="")
+    path_without_protocol: str = Field(init=False, default="")
     supported_protocols: list[str] = Field(
         init=False,
         default_factory=lambda: [
