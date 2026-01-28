@@ -1,3 +1,7 @@
+## [1.2.37]
+
+* **fix: sftp protocol needs default**
+
 ## [1.2.36]
 
 * **fix: allow sftp via paramiko for kubernetes**
