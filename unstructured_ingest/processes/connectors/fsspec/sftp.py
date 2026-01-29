@@ -149,17 +149,6 @@ class SftpIndexer(FsspecIndexer):
             )
             raise self.wrap_error(e=e)
 
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        for file in super().run(**kwargs):
-            new_identifier = (
-                f"sftp://"
-                f"{self.connection_config.host}:"
-                f"{self.connection_config.port}/"
-                f"{file.identifier}"
-            )
-            file.identifier = new_identifier
-            yield file
-
     def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
         path = file_info["name"]
         date_created = str(file_info.get("time").timestamp()) if "time" in file_info else None

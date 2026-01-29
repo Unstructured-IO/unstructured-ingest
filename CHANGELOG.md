@@ -1,3 +1,7 @@
+## [1.2.38]
+
+* **fix: remove sftp indexer run override
+
 ## [1.2.37]
 
 * **fix: sftp protocol needs default**
