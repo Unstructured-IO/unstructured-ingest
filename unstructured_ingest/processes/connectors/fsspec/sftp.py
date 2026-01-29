@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
+from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -148,17 +148,6 @@ class SftpIndexer(FsspecIndexer):
                 endpoint=f"{self.index_config.protocol}://{self.index_config.path_without_protocol}",
             )
             raise self.wrap_error(e=e)
-
-    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
-        for file in super().run(**kwargs):
-            new_identifier = (
-                f"sftp://"
-                f"{self.connection_config.host}:"
-                f"{self.connection_config.port}/"
-                f"{file.identifier}"
-            )
-            file.identifier = new_identifier
-            yield file
 
     def get_metadata(self, file_info: dict) -> FileDataSourceMetadata:
         path = file_info["name"]
