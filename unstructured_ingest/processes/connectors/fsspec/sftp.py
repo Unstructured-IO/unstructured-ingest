@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
+from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
