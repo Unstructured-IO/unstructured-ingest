@@ -19,6 +19,8 @@ from .teradata import CONNECTOR_TYPE as TERADATA_CONNECTOR_TYPE
 from .teradata import teradata_destination_entry, teradata_source_entry
 from .vastdb import CONNECTOR_TYPE as VASTDB_CONNECTOR_TYPE
 from .vastdb import vastdb_destination_entry, vastdb_source_entry
+from .yugabytedb import CONNECTOR_TYPE as YUGABYTE_DB_CONNECTOR_TYPE
+from .yugabytedb import yugabytedb_destination_entry, yugabytedb_source_entry
 
 add_source_entry(source_type=SQLITE_CONNECTOR_TYPE, entry=sqlite_source_entry)
 add_source_entry(source_type=POSTGRES_CONNECTOR_TYPE, entry=postgres_source_entry)
@@ -26,6 +28,7 @@ add_source_entry(source_type=SNOWFLAKE_CONNECTOR_TYPE, entry=snowflake_source_en
 add_source_entry(source_type=SINGLESTORE_CONNECTOR_TYPE, entry=singlestore_source_entry)
 add_source_entry(source_type=TERADATA_CONNECTOR_TYPE, entry=teradata_source_entry)
 add_source_entry(source_type=VASTDB_CONNECTOR_TYPE, entry=vastdb_source_entry)
+add_source_entry(source_type=YUGABYTE_DB_CONNECTOR_TYPE, entry=yugabytedb_source_entry)
 
 add_destination_entry(destination_type=SQLITE_CONNECTOR_TYPE, entry=sqlite_destination_entry)
 add_destination_entry(destination_type=POSTGRES_CONNECTOR_TYPE, entry=postgres_destination_entry)
@@ -39,3 +42,4 @@ add_destination_entry(
 )
 add_destination_entry(destination_type=TERADATA_CONNECTOR_TYPE, entry=teradata_destination_entry)
 add_destination_entry(destination_type=VASTDB_CONNECTOR_TYPE, entry=vastdb_destination_entry)
+add_destination_entry(destination_type=YUGABYTE_DB_CONNECTOR_TYPE, entry=yugabytedb_destination_entry)

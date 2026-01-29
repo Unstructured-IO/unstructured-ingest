@@ -1,0 +1,26 @@
+{
+  "identifier": "cars-4-5fb93ce5",
+  "connector_type": "yugabytedb",
+  "source_identifiers": {
+    "filename": "cars-4-5fb93ce5.csv",
+    "fullpath": "cars-4-5fb93ce5.csv",
+    "rel_path": null
+  },
+  "metadata": {
+    "url": null,
+    "version": null,
+    "record_locator": null,
+    "date_created": null,
+    "date_modified": null,
+    "date_processed": "1749467370.4308963",
+    "permissions_data": null,
+    "filesize_bytes": null
+  },
+  "additional_metadata": {
+    "table_name": "cars",
+    "id_column": "car_id"
+  },
+  "reprocess": false,
+  "local_download_path": "/tmp/tmptf6_mjz9/cars-4-5fb93ce5.csv",
+  "display_name": "cars-car_id-[1..6]"
+}
