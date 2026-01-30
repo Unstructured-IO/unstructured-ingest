@@ -1,12 +1,10 @@
 """Unit tests for fsspec connector base classes."""
 
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
-    FsspecAccessConfig,
     FsspecConnectionConfig,
     FsspecIndexer,
     FsspecIndexerConfig,
