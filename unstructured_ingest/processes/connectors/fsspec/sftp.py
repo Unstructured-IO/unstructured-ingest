@@ -40,15 +40,8 @@ CONNECTOR_TYPE = "sftp"
 
 
 def _strip_leading_slash(path: str) -> str:
-    """Strip exactly one leading slash from a URL path.
-
-    This preserves absolute path indicators in SFTP URLs:
-    - sftp://host/relative → "relative" (relative to home)
-    - sftp://host//absolute → "/absolute" (absolute from root)
-
-    Using path[1:] instead of path.lstrip("/") ensures we only remove
-    one slash, preserving the second slash that indicates an absolute path.
-    """
+    """Strip one leading slash, preserving double-slash absolute path indicators.
+    Example: sftp://host//home → /home (absolute), sftp://host/data → data (relative)."""
     return path[1:] if path.startswith("/") else path
 
 
