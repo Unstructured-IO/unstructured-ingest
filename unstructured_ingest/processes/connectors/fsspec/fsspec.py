@@ -190,7 +190,9 @@ class FsspecIndexer(Indexer):
         # with information that exists in the config
         remote_filepath = remote_filepath or self.index_config.remote_url
         path_without_protocol = remote_filepath.split("://")[1]
-        rel_path = remote_filepath.replace(path_without_protocol, "").lstrip("/")
+        # Use replace(..., 1) to only remove the first occurrence of the prefix,
+        # avoiding corruption when the filename contains the bucket/path name
+        rel_path = remote_filepath.replace(path_without_protocol, "", 1).lstrip("/")
         return FileData(
             identifier=str(uuid5(NAMESPACE_DNS, remote_filepath)),
             connector_type=self.connector_type,
@@ -236,7 +238,9 @@ class FsspecIndexer(Indexer):
 
             # Note: we remove any remaining leading slashes (Box introduces these)
             # to get a valid relative path
-            rel_path = file_path.replace(self.index_config.path_without_protocol, "").lstrip("/")
+            # Use replace(..., 1) to only remove the first occurrence of the prefix,
+            # avoiding corruption when the filename contains the bucket/path name
+            rel_path = file_path.replace(self.index_config.path_without_protocol, "", 1).lstrip("/")
 
             additional_metadata = self.sterilize_info(file_data=file_info)
             additional_metadata["original_file_path"] = file_path
