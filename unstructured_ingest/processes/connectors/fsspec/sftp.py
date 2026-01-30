@@ -38,6 +38,13 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "sftp"
 
+
+def _strip_leading_slash(path: str) -> str:
+    """Strip one leading slash, preserving double-slash absolute path indicators.
+    Example: sftp://host//home → /home (absolute), sftp://host/data → data (relative)."""
+    return path[1:] if path.startswith("/") else path
+
+
 # Patch hashlib.md5 for FIPS-enabled OpenSSL (common in Kubernetes).
 # Paramiko uses MD5 solely for logging human-readable host key fingerprints,
 # not for any cryptographic purpose (SSH security uses Ed25519/SHA-256).
@@ -57,9 +64,10 @@ class SftpIndexerConfig(FsspecIndexerConfig):
         _, ext = os.path.splitext(self.remote_url)
         parsed_url = urlparse(self.remote_url)
         if ext:
-            self.path_without_protocol = Path(parsed_url.path).parent.as_posix().lstrip("/")
+            parent_path = Path(parsed_url.path).parent.as_posix()
+            self.path_without_protocol = _strip_leading_slash(parent_path)
         else:
-            self.path_without_protocol = parsed_url.path.lstrip("/")
+            self.path_without_protocol = _strip_leading_slash(parsed_url.path)
 
 
 class SftpAccessConfig(FsspecAccessConfig):
@@ -192,7 +200,7 @@ class SftpUploaderConfig(FsspecUploaderConfig):
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
         parsed_url = urlparse(self.remote_url)
-        self.path_without_protocol = parsed_url.path.lstrip("/")
+        self.path_without_protocol = _strip_leading_slash(parsed_url.path)
 
 
 @dataclass

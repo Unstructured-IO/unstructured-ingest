@@ -1,3 +1,7 @@
+## [1.2.39]
+
+* **fix: fix leading slash convention for sftp paths
+
 ## [1.2.38]
 
 * **fix: remove sftp indexer run override
