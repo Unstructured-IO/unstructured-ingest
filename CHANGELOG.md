@@ -1,10 +1,14 @@
+## [1.2.40]
+
+* **fix: prevent filename corruption when file/folder names contain the bucket or path prefix**
+
 ## [1.2.39]
 
-* **fix: fix leading slash convention for sftp paths
+* **fix: fix leading slash convention for sftp paths**
 
 ## [1.2.38]
 
-* **fix: remove sftp indexer run override
+* **fix: remove sftp indexer run override**
 
 ## [1.2.37]
 
