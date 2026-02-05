@@ -63,12 +63,36 @@ class GoogleDriveAccessConfig(AccessConfig):
         default=None,
         description="File path to credentials values to use for authentication",
     )
+    oauth_token: Optional[str] = Field(
+        default=None,
+        description="OAuth 2.0 access token for user authentication. "
+        "Obtain via Google OAuth Playground or your OAuth application. "
+        "Tokens typically expire after 1 hour.",
+    )
 
     def model_post_init(self, __context: Any) -> None:
-        if self.service_account_key is None and self.service_account_key_path is None:
+        has_service_account = (
+            self.service_account_key is not None or self.service_account_key_path is not None
+        )
+        has_oauth_token = self.oauth_token is not None
+
+        if not has_service_account and not has_oauth_token:
             raise ValueError(
-                "either service_account_key or service_account_key_path must be provided"
+                "Authentication required: provide either "
+                "service_account_key/service_account_key_path OR oauth_token"
             )
+
+        if has_service_account and has_oauth_token:
+            raise ValueError(
+                "Multiple authentication methods provided. "
+                "Use either service_account_key/service_account_key_path OR oauth_token, not both."
+            )
+
+    def get_auth_type(self) -> str:
+        """Returns the authentication type being used."""
+        if self.oauth_token:
+            return "oauth"
+        return "service_account"
 
     def get_service_account_key(self) -> dict:
         key_data = None
@@ -97,21 +121,45 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["GoogleAPIResource", None, None]:
         from google.auth import exceptions
         from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials as OAuthCredentials
         from googleapiclient.discovery import build
         from googleapiclient.errors import HttpError
 
         access_config = self.access_config.get_secret_value()
-        key_data = access_config.get_service_account_key()
 
         try:
-            creds = service_account.Credentials.from_service_account_info(key_data)
+            if access_config.get_auth_type() == "oauth":
+                # OAuth token authentication
+                creds = OAuthCredentials(token=access_config.oauth_token)
+            else:
+                # Service account authentication
+                key_data = access_config.get_service_account_key()
+                creds = service_account.Credentials.from_service_account_info(key_data)
+
             service = build("drive", "v3", credentials=creds)
             with service.files() as client:
                 yield client
         except HttpError as exc:
+            if exc.resp.status == 401:
+                auth_type = access_config.get_auth_type()
+                if auth_type == "oauth":
+                    raise UserAuthError(
+                        "OAuth token authentication failed. The token may be expired, "
+                        "revoked, or missing required scopes (drive.readonly)."
+                    )
+                else:
+                    raise UserAuthError(
+                        "Service account authentication failed. "
+                        "Check that the credentials are valid and have Drive API access."
+                    )
             raise ValueError(f"{exc.reason}")
         except exceptions.DefaultCredentialsError:
-            raise UserAuthError("The provided API key is invalid.")
+            raise UserAuthError("The provided credentials are invalid.")
+        except exceptions.RefreshError as exc:
+            raise UserAuthError(
+                f"OAuth token error: {exc}. "
+                "The token may have expired. Please provide a fresh OAuth token."
+            )
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):
@@ -755,18 +803,26 @@ class GoogleDriveDownloader(Downloader):
     def _get_credentials(self):
         """
         Retrieves the credentials for Google Drive API access.
+        Supports both service account and OAuth token authentication.
 
         Returns:
             Credentials: The credentials for Google Drive API access.
         """
         from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials as OAuthCredentials
 
         access_config = self.connection_config.access_config.get_secret_value()
-        key_data = access_config.get_service_account_key()
-        creds = service_account.Credentials.from_service_account_info(
-            key_data,
-            scopes=["https://www.googleapis.com/auth/drive.readonly"],
-        )
+
+        if access_config.get_auth_type() == "oauth":
+            # OAuth token - scopes are determined at token creation time
+            creds = OAuthCredentials(token=access_config.oauth_token)
+        else:
+            # Service account with explicit scopes
+            key_data = access_config.get_service_account_key()
+            creds = service_account.Credentials.from_service_account_info(
+                key_data,
+                scopes=["https://www.googleapis.com/auth/drive.readonly"],
+            )
         return creds
 
     def _download_file(self, file_data: FileData) -> Path:
