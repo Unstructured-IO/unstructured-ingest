@@ -78,21 +78,13 @@ class GoogleDriveAccessConfig(AccessConfig):
 
         if not has_service_account and not has_oauth_token:
             raise ValueError(
-                "Authentication required: provide either "
-                "service_account_key/service_account_key_path OR oauth_token"
+                "either service_account_key, service_account_key_path, or oauth_token must be set"
             )
 
         if has_service_account and has_oauth_token:
             raise ValueError(
-                "Multiple authentication methods provided. "
-                "Use either service_account_key/service_account_key_path OR oauth_token, not both."
+                "cannot use both service account and oauth_token authentication"
             )
-
-    def get_auth_type(self) -> str:
-        """Returns the authentication type being used."""
-        if self.oauth_token:
-            return "oauth"
-        return "service_account"
 
     def get_service_account_key(self) -> dict:
         key_data = None
@@ -128,11 +120,9 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
         access_config = self.access_config.get_secret_value()
 
         try:
-            if access_config.get_auth_type() == "oauth":
-                # OAuth token authentication
+            if access_config.oauth_token:
                 creds = OAuthCredentials(token=access_config.oauth_token)
             else:
-                # Service account authentication
                 key_data = access_config.get_service_account_key()
                 creds = service_account.Credentials.from_service_account_info(key_data)
 
@@ -141,25 +131,13 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
                 yield client
         except HttpError as exc:
             if exc.resp.status == 401:
-                auth_type = access_config.get_auth_type()
-                if auth_type == "oauth":
-                    raise UserAuthError(
-                        "OAuth token authentication failed. The token may be expired, "
-                        "revoked, or missing required scopes (drive.readonly)."
-                    )
-                else:
-                    raise UserAuthError(
-                        "Service account authentication failed. "
-                        "Check that the credentials are valid and have Drive API access."
-                    )
+                raise UserAuthError(
+                    "Authentication failed. The credentials may be invalid, expired, "
+                    "or missing required scopes."
+                )
             raise ValueError(f"{exc.reason}")
         except exceptions.DefaultCredentialsError:
             raise UserAuthError("The provided credentials are invalid.")
-        except exceptions.RefreshError as exc:
-            raise UserAuthError(
-                f"OAuth token error: {exc}. "
-                "The token may have expired. Please provide a fresh OAuth token."
-            )
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):
@@ -778,12 +756,19 @@ class GoogleDriveDownloader(Downloader):
         import httpx
         from google.auth.transport.requests import Request
 
-        creds = self._get_credentials()
+        access_config = self.connection_config.access_config.get_secret_value()
 
-        creds.refresh(Request())
+        if access_config.oauth_token:
+            # OAuth tokens are already access tokens, use directly
+            token = access_config.oauth_token
+        else:
+            # Service account credentials need to be refreshed to get access token
+            creds = self._get_credentials()
+            creds.refresh(Request())
+            token = creds.token
 
         headers = {
-            "Authorization": f"Bearer {creds.token}",
+            "Authorization": f"Bearer {token}",
         }
 
         with (
@@ -813,17 +798,14 @@ class GoogleDriveDownloader(Downloader):
 
         access_config = self.connection_config.access_config.get_secret_value()
 
-        if access_config.get_auth_type() == "oauth":
-            # OAuth token - scopes are determined at token creation time
-            creds = OAuthCredentials(token=access_config.oauth_token)
-        else:
-            # Service account with explicit scopes
-            key_data = access_config.get_service_account_key()
-            creds = service_account.Credentials.from_service_account_info(
-                key_data,
-                scopes=["https://www.googleapis.com/auth/drive.readonly"],
-            )
-        return creds
+        if access_config.oauth_token:
+            return OAuthCredentials(token=access_config.oauth_token)
+
+        key_data = access_config.get_service_account_key()
+        return service_account.Credentials.from_service_account_info(
+            key_data,
+            scopes=["https://www.googleapis.com/auth/drive.readonly"],
+        )
 
     def _download_file(self, file_data: FileData) -> Path:
         """Downloads a file from Google Drive using either direct download or export based
