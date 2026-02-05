@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from unstructured_ingest.error import ValueError
@@ -24,8 +26,6 @@ class TestGoogleDriveAccessConfig:
 
     def test_service_account_key_as_json_string(self):
         """Service account key as JSON string should be valid."""
-        import json
-
         key_dict = {"type": "service_account", "project_id": "test"}
         config = GoogleDriveAccessConfig(service_account_key=json.dumps(key_dict))
         assert config.service_account_key == key_dict
@@ -67,7 +67,7 @@ class TestGoogleDriveAccessConfig:
         """get_service_account_key should load from file path."""
         key_data = {"type": "service_account", "project_id": "test", "private_key": "xxx"}
         key_file = tmp_path / "credentials.json"
-        key_file.write_text('{"type": "service_account", "project_id": "test", "private_key": "xxx"}')
+        key_file.write_text(json.dumps(key_data))
 
         config = GoogleDriveAccessConfig(service_account_key_path=key_file)
         result = config.get_service_account_key()
