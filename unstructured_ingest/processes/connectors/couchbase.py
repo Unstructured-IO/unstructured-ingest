@@ -1,11 +1,10 @@
 import hashlib
-import signal
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, List
+from typing import TYPE_CHECKING, Any, Generator, List, Optional
 
 from pydantic import BaseModel, Field, Secret
 
@@ -75,13 +74,19 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     collection: str = Field(
         default="_default", description="The collection to connect to on the Couchbase server"
     )
-    connect_timeout_seconds: int = Field(
-        default=10,
-        description="Timeout in seconds for establishing initial connection to Couchbase cluster"
+    connect_timeout_seconds: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for establishing initial connection to Couchbase cluster. "
+            "If not specified, uses SDK default (2 seconds)."
+        ),
     )
-    bootstrap_timeout_seconds: int = Field(
-        default=10,
-        description="Timeout in seconds for bootstrapping connection to Couchbase cluster"
+    bootstrap_timeout_seconds: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for bootstrapping connection to Couchbase cluster. "
+            "If not specified, uses SDK default (5 seconds)."
+        ),
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[CouchbaseAccessConfig]
@@ -98,9 +103,9 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         # Configure custom timeouts only if specified (otherwise use SDK defaults)
         timeout_kwargs = {}
         if self.connect_timeout_seconds is not None:
-            timeout_kwargs['connect_timeout'] = timedelta(seconds=self.connect_timeout_seconds)
+            timeout_kwargs["connect_timeout"] = timedelta(seconds=self.connect_timeout_seconds)
         if self.bootstrap_timeout_seconds is not None:
-            timeout_kwargs['bootstrap_timeout'] = timedelta(seconds=self.bootstrap_timeout_seconds)
+            timeout_kwargs["bootstrap_timeout"] = timedelta(seconds=self.bootstrap_timeout_seconds)
 
         if timeout_kwargs:
             timeout_opts = ClusterTimeoutOptions(**timeout_kwargs)
