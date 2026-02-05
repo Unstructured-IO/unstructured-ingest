@@ -96,24 +96,19 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["Cluster", None, None]:
         from couchbase.auth import PasswordAuthenticator
         from couchbase.cluster import Cluster
-        from couchbase.options import ClusterOptions, ClusterTimeoutOptions
+        from couchbase.options import ClusterOptions
 
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
 
-        # Configure custom timeouts only if specified (otherwise use SDK defaults)
-        timeout_kwargs = {}
-        if self.connect_timeout_seconds is not None:
-            timeout_kwargs["connect_timeout"] = timedelta(seconds=self.connect_timeout_seconds)
-        if self.bootstrap_timeout_seconds is not None:
-            timeout_kwargs["bootstrap_timeout"] = timedelta(seconds=self.bootstrap_timeout_seconds)
-
-        if timeout_kwargs:
-            timeout_opts = ClusterTimeoutOptions(**timeout_kwargs)
-            options = ClusterOptions(auth, timeout_options=timeout_opts)
-        else:
-            options = ClusterOptions(auth)
-
+        options = ClusterOptions(auth)
+        # Apply WAN profile first to get sensible defaults for remote clusters,
+        # then override with user-configured timeouts so custom values take precedence.
         options.apply_profile("wan_development")
+
+        if self.connect_timeout_seconds is not None:
+            options["connect_timeout"] = timedelta(seconds=self.connect_timeout_seconds)
+        if self.bootstrap_timeout_seconds is not None:
+            options["bootstrap_timeout"] = timedelta(seconds=self.bootstrap_timeout_seconds)
 
         cluster = None
         try:
