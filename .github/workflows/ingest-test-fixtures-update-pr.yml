@@ -90,6 +90,9 @@ jobs:
           pip freeze
           ./test_e2e/test-src.sh
 
+      - name: Clean up root-owned docker binaries
+        run: sudo rm -rf docker/
+
       - name: Save branch name to environment file
         id: branch
         run: |
