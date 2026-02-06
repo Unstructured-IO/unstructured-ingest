@@ -121,6 +121,10 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
 
         try:
             if access_config.oauth_token:
+                logger.warning(
+                    "Using OAuth token authentication. Tokens expire after ~1 hour. "
+                    "For long operations, consider using service account authentication."
+                )
                 creds = OAuthCredentials(token=access_config.oauth_token)
             else:
                 key_data = access_config.get_service_account_key()
@@ -775,6 +779,11 @@ class GoogleDriveDownloader(Downloader):
             httpx.Client(timeout=None, follow_redirects=True) as client,
             client.stream("GET", url, headers=headers) as response,
         ):
+            if response.status_code == 401:
+                raise UserAuthError(
+                    "Authentication failed. The credentials may be invalid, expired, "
+                    "or missing required scopes."
+                )
             if response.status_code != 200:
                 raise SourceConnectionError(
                     f"Failed to stream download from {url}: {response.status_code}"
