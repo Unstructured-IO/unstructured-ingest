@@ -94,7 +94,7 @@ jobs:
         id: branch
         run: |
           original_branch=$(git rev-parse --abbrev-ref HEAD)
-          suffix="|ingest-test-fixtures-update-$(git rev-parse --short HEAD)"
+          suffix="/ingest-test-fixtures-update-$(git rev-parse --short HEAD)"
           branch_name="$original_branch$suffix"
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
