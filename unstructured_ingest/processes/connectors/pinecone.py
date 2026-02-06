@@ -10,8 +10,8 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     DestinationConnectionError,
     NotFoundError,
-    UnstructuredIngestError,
     UserError,
+    WriteError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -366,7 +366,7 @@ class PineconeUploader(VectorDBUploader):
             try:
                 results = [async_result.get() for async_result in async_results]
             except PineconeApiException as api_error:
-                err = UnstructuredIngestError(f"http error: {api_error}")
+                err = WriteError(f"http error: {api_error}")
                 err.status_code = api_error.status
                 raise err from api_error
             logger.debug(f"results: {results}")

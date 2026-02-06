@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pinecone.exceptions import PineconeApiException
 
-from unstructured_ingest.error import UnstructuredIngestError
+from unstructured_ingest.error import WriteError
 from unstructured_ingest.processes.connectors.pinecone import (
     PineconeAccessConfig,
     PineconeConnectionConfig,
@@ -37,7 +37,7 @@ def test_upsert_batches_async_propagates_api_error_status_code(status_code):
 
     with (
         patch.object(PineconeConnectionConfig, "get_index", return_value=mock_index),
-        pytest.raises(UnstructuredIngestError) as exc_info,
+        pytest.raises(WriteError) as exc_info,
     ):
         uploader.upsert_batches_async(
             elements_dict=[{"id": "1", "values": [0.1, 0.2], "metadata": {}}],
