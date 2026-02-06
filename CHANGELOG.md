@@ -1,3 +1,7 @@
+## [1.2.41]
+
+* **feat: add oauth token option to google drive**
+
 ## [1.2.40]
 
 * **fix: prevent filename corruption when file/folder names contain the bucket or path prefix**
