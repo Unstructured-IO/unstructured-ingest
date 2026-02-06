@@ -1,3 +1,7 @@
+## [1.3.1]
+
+* **fix: improve pinecone connector error handling by passing through the status code**
+
 ## [1.3.0]
 
 * **chore: migrate to native uv dependency management** Inline all dependencies from `requirements/*.txt` into `pyproject.toml`, remove `hatch-requirements-txt` plugin, and delete the `requirements/` directory and `scripts/pip-compile.sh`.

@@ -15,10 +15,7 @@ assets_dir = int_test_dir / "assets"
 # - multi_page_image.tif: Too large for hi_res API processing within CI timeout limits
 EXCLUDED_FILES = {"layout-parser-paper.pdf.gz", "multi_page_image.tif"}
 all_partition_files = [
-    path
-    for path in assets_dir.iterdir()
-    if path.is_file()
-    if path.name not in EXCLUDED_FILES
+    path for path in assets_dir.iterdir() if path.is_file() if path.name not in EXCLUDED_FILES
 ]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
