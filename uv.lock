@@ -2625,14 +2625,14 @@ wheels = [
 
 [[package]]
 name = "notion-client"
-version = "2.7.0"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9b/ff/06695dca5d0691346fbd89ba300a2ceeeaf0b0632fe8235b588e83e505a3/notion_client-2.7.0.tar.gz", hash = "sha256:31bde3ae03ede77650cadce136152916efdd86579ff65f49fc6705fbe462e2fb", size = 26384, upload-time = "2025-10-31T12:10:15.264Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/b0/9de5066cf83d73fef0ffd5ecbc0b25159f94f8d88cc012393657d180b37a/notion_client-2.6.0.tar.gz", hash = "sha256:1e3ff65452ed29a2a044ec2236b38a430e09d8e18911c93ae16c6a2ae0744f60", size = 26607, upload-time = "2025-10-23T14:45:17.105Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/6a/9716315432f5aba4c82979f9677aeb101018f0e790835721dc4e01deb933/notion_client-2.7.0-py2.py3-none-any.whl", hash = "sha256:9057a8ac2103ff245556c2a5102bde1d2ccdd3505f66bcc130fc31857731d91e", size = 16999, upload-time = "2025-10-31T12:10:13.835Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/de/12a55f5ce4b1af277f1394938ffc85cdbe368ef7b7bcffce373ef541795d/notion_client-2.6.0-py2.py3-none-any.whl", hash = "sha256:e19a406252015ac1d1c8822da9322ed01a033a3d6602935d483a0cc23db09880", size = 16866, upload-time = "2025-10-23T14:45:15.528Z" },
 ]
 
 [[package]]
@@ -5726,7 +5726,7 @@ requires-dist = [
     { name = "msal", marker = "extra == 'sharepoint'" },
     { name = "neo4j-rust-ext", marker = "extra == 'neo4j'" },
     { name = "networkx", marker = "extra == 'neo4j'" },
-    { name = "notion-client", marker = "extra == 'notion'" },
+    { name = "notion-client", marker = "extra == 'notion'", specifier = "<2.7.0" },
     { name = "office365-rest-python-client", marker = "extra == 'onedrive'" },
     { name = "office365-rest-python-client", marker = "extra == 'outlook'" },
     { name = "office365-rest-python-client", marker = "extra == 'sharepoint'" },

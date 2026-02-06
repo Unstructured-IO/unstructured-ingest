@@ -59,7 +59,7 @@ lancedb = ["lancedb"]
 milvus = ["pymilvus"]
 mongodb = ["pymongo"]
 neo4j = ["neo4j-rust-ext", "cymple", "networkx"]
-notion = ["notion-client", "htmlBuilder", "httpx", "backoff"]
+notion = ["notion-client<2.7.0", "htmlBuilder", "httpx", "backoff"]
 onedrive = ["msal", "Office365-REST-Python-Client", "requests"]
 opensearch = [
     # opensearch-py 3.x adds opensearch-protobufs dependency which pulls in grpcio/protobuf,
