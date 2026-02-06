@@ -10,12 +10,15 @@ from unstructured_ingest.processes.partitioner import Partitioner, PartitionerCo
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"
 
-# TODO: api currently does not support gz files anymore, add back in when that gets fixed
+# Excluded files:
+# - layout-parser-paper.pdf.gz: API does not support gz files
+# - multi_page_image.tif: Too large for hi_res API processing within CI timeout limits
+EXCLUDED_FILES = {"layout-parser-paper.pdf.gz", "multi_page_image.tif"}
 all_partition_files = [
     path
     for path in assets_dir.iterdir()
     if path.is_file()
-    if path.name != "layout-parser-paper.pdf.gz"
+    if path.name not in EXCLUDED_FILES
 ]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]

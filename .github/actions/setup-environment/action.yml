@@ -4,7 +4,7 @@ description: "Sets up the environment for running the tests"
 inputs:
   python-version:
     description: "Python version"
-    default: "3.10"
+    default: "3.12"
 
 
 runs:
@@ -42,7 +42,6 @@ runs:
         --no-extra epub \
         --no-extra image \
         --no-extra md \
-        --no-extra msg \
         --no-extra odt \
         --no-extra org \
         --no-extra pdf \

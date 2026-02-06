@@ -587,9 +587,7 @@ class GoogleDriveDownloader(Downloader):
         @tenacity.retry(
             wait=tenacity.wait_exponential(),
             retry=tenacity.retry_if_exception(
-                lambda e: (
-                    isinstance(e, (HttpError, OperationNotFinished)) and not is_fatal_code(e)
-                )
+                lambda e: isinstance(e, (HttpError, OperationNotFinished)) and not is_fatal_code(e)
             ),
             stop=(tenacity.stop_after_attempt(max_tries) | tenacity.stop_after_delay(max_time)),
         )

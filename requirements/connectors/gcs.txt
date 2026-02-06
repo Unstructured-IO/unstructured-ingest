@@ -1,3 +1,0 @@
-gcsfs
-fsspec
-bs4

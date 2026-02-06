@@ -1,3 +1,0 @@
-pandas
-snowflake-connector-python
-psycopg2-binary

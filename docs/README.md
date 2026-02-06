@@ -85,8 +85,7 @@ In checklist form, the above steps are summarized as:
 - [ ] Add a line to [test_unstructured_ingest/test-ingest.sh](test_unstructured_ingest/test-ingest.sh) invoking the new test script.
 - [ ] Make sure the tests for the connector are running and not skipped by reviewing the logs in CI.
 - [ ] If additional python dependencies are needed for the new connector:
-  - [ ] Add them as an extra to [setup.py](unstructured/setup.py).
-  - [ ] Update the Makefile, adding a target for `install-ingest-<name>` and adding another `pip-compile` line to the `pip-compile` make target. See [this commit](https://github.com/Unstructured-IO/unstructured/commit/ab542ca3c6274f96b431142262d47d727f309e37) for a reference.
+  - [ ] Add them as an optional-dependency extra in `pyproject.toml` under `[project.optional-dependencies]`.
   - [ ] The added dependencies should be imported at runtime when the new connector is invoked, rather than as top-level imports.
   - [ ] Add the decorator `unstructured.utils.requires_dependencies` on top of each class instance or function that uses those connector-specific dependencies e.g. for `GitHubConnector` should look like `@requires_dependencies(dependencies=["github"], extras="github")`
   - [ ] Run `make tidy` and `make check` to ensure linting checks pass.

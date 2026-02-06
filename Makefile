@@ -6,13 +6,13 @@ SHELL_FILES := $(shell find . -name '*.sh' -type f | grep -v venv)
 # INSTALL #
 ###########
 
-.PHONY: install-dependencies
-install-dependencies:
-	@uv sync --all-groups --all-extras
+.PHONY: install
+install:
+	@uv sync --frozen --all-groups --all-extras
 
-.PHONY: upgrade-dependencies
-upgrade-dependencies:
-	@uv sync --all-groups --all-extras --upgrade
+.PHONY: lock
+lock:
+	@uv lock --upgrade
 
 .PHONY: install-docker-compose
 install-docker-compose:
@@ -23,12 +23,9 @@ install-docker-compose:
 ###########
 
 .PHONY: tidy
-tidy: tidy-ruff
-
-.PHONY: tidy-ruff
-tidy-ruff:
-	uv run --frozen ruff format .
-	uv run --frozen ruff check --fix-only --show-fixes .
+tidy:
+	uv run --frozen --no-sync ruff format .
+	uv run --frozen --no-sync ruff check --fix-only --show-fixes .
 
 .PHONY: tidy-shell
 tidy-shell:
@@ -49,7 +46,7 @@ check: check-ruff
 
 .PHONY: check-ruff
 check-ruff:
-	uv run ruff check .
+	uv run --frozen --no-sync ruff check .
 
 .PHONY: check-shell
 check-shell:
@@ -64,59 +61,106 @@ check-version:
 ###########
 #  TEST   #
 ###########
-.PHONY: unit-test
-unit-test:
-	uv run --frozen pytest -sv --cov unstructured_ingest/ test/unit --ignore test/unit/unstructured
 
-.PHONY: unit-test-unstructured
-unit-test-unstructured:
-	uv run --frozen pytest -sv --cov unstructured_ingest/ test/unit/unstructured
+.PHONY: test-unit
+test-unit:
+	uv run --frozen --no-sync pytest -n auto --tb=short --cov unstructured_ingest/ test/unit --ignore test/unit/unstructured
 
-.PHONY: integration-test
-integration-test:
-	uv run --frozen pytest -sv test/integration
+.PHONY: test-unit-unstructured
+test-unit-unstructured:
+	uv run --frozen --no-sync pytest -n auto --tb=short --cov unstructured_ingest/ test/unit/unstructured
 
-.PHONY: integration-test-partitioners
-integration-test-partitioners:
-	uv run --frozen pytest -sv test/integration/partitioners --json-report
+.PHONY: test-integration
+test-integration:
+	uv run --frozen --no-sync pytest --tb=short test/integration
 
-.PHONY: integration-test-chunkers
-integration-test-chunkers:
-	uv run --frozen pytest -sv test/integration/chunkers --json-report
+.PHONY: test-integration-partitioners
+test-integration-partitioners:
+	uv run --frozen --no-sync pytest --tb=short test/integration/partitioners --json-report
 
-.PHONY: integration-test-embedders
-integration-test-embedders:
-	uv run --frozen pytest -sv test/integration/embedders --json-report
+.PHONY: test-integration-chunkers
+test-integration-chunkers:
+	uv run --frozen --no-sync pytest --tb=short test/integration/chunkers --json-report
 
-.PHONY: integration-test-connectors-blob-storage
-integration-test-connectors-blob-storage:
-	uv run --frozen pytest --tags blob_storage -sv test/integration/connectors --json-report
+.PHONY: test-integration-embedders
+test-integration-embedders:
+	uv run --frozen --no-sync pytest --tb=short test/integration/embedders --json-report
 
-.PHONY: integration-test-connectors-sql
-integration-test-connectors-sql:
-	uv run --frozen pytest --tags sql -sv test/integration/connectors --json-report
+.PHONY: test-integration-connectors-blob-storage
+test-integration-connectors-blob-storage:
+	uv run --frozen --no-sync pytest --tb=short --tags blob_storage test/integration/connectors --json-report
 
-.PHONY: integration-test-connectors-nosql
-integration-test-connectors-nosql:
-	uv run --frozen pytest --tags nosql -sv test/integration/connectors --json-report
+.PHONY: test-integration-connectors-sql
+test-integration-connectors-sql:
+	uv run --frozen --no-sync pytest --tb=short --tags sql test/integration/connectors --json-report
 
-.PHONY: integration-test-connectors-vector-db
-integration-test-connectors-vector-db:
-	uv run --frozen pytest --tags vector_db -sv test/integration/connectors --json-report
+.PHONY: test-integration-connectors-nosql
+test-integration-connectors-nosql:
+	uv run --frozen --no-sync pytest --tb=short --tags nosql test/integration/connectors --json-report
 
-.PHONY: integration-test-connectors-graph-db
-integration-test-connectors-graph-db:
-	uv run --frozen pytest --tags graph_db -sv test/integration/connectors --json-report
+.PHONY: test-integration-connectors-vector-db
+test-integration-connectors-vector-db:
+	uv run --frozen --no-sync pytest --tb=short --tags vector_db test/integration/connectors --json-report
 
-.PHONY: integration-test-connectors-uncategorized
-integration-test-connectors-uncategorized:
-	uv run --frozen pytest --tags uncategorized -sv test/integration/connectors --json-report
+.PHONY: test-integration-connectors-graph-db
+test-integration-connectors-graph-db:
+	uv run --frozen --no-sync pytest --tb=short --tags graph_db test/integration/connectors --json-report
+
+.PHONY: test-integration-connectors-uncategorized
+test-integration-connectors-uncategorized:
+	uv run --frozen --no-sync pytest --tb=short --tags uncategorized test/integration/connectors --json-report
 
 .PHONY: parse-skipped-tests
 parse-skipped-tests:
-	uv run python ./scripts/parse_pytest_report.py
+	uv run --frozen --no-sync python ./scripts/parse_pytest_report.py
 
 .PHONY: check-untagged-tests
 check-untagged-tests:
 	./scripts/check_untagged_tests.sh
 
+###########
+# COMPAT  #
+###########
+# Deprecated aliases – remove after one release cycle.
+
+.PHONY: install-dependencies
+install-dependencies: install
+
+.PHONY: upgrade-dependencies
+upgrade-dependencies: lock
+
+.PHONY: unit-test
+unit-test: test-unit
+
+.PHONY: unit-test-unstructured
+unit-test-unstructured: test-unit-unstructured
+
+.PHONY: integration-test
+integration-test: test-integration
+
+.PHONY: integration-test-partitioners
+integration-test-partitioners: test-integration-partitioners
+
+.PHONY: integration-test-chunkers
+integration-test-chunkers: test-integration-chunkers
+
+.PHONY: integration-test-embedders
+integration-test-embedders: test-integration-embedders
+
+.PHONY: integration-test-connectors-blob-storage
+integration-test-connectors-blob-storage: test-integration-connectors-blob-storage
+
+.PHONY: integration-test-connectors-sql
+integration-test-connectors-sql: test-integration-connectors-sql
+
+.PHONY: integration-test-connectors-nosql
+integration-test-connectors-nosql: test-integration-connectors-nosql
+
+.PHONY: integration-test-connectors-vector-db
+integration-test-connectors-vector-db: test-integration-connectors-vector-db
+
+.PHONY: integration-test-connectors-graph-db
+integration-test-connectors-graph-db: test-integration-connectors-graph-db
+
+.PHONY: integration-test-connectors-uncategorized
+integration-test-connectors-uncategorized: test-integration-connectors-uncategorized

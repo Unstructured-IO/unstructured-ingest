@@ -1,5 +1,0 @@
--c ../common/constraints.txt
-
-boto3
-aioboto3
-aiobotocore[boto3]!=2.24.2 # incompatible with recent versions of botocore

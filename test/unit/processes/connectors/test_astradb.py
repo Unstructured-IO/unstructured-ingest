@@ -84,7 +84,7 @@ async def test_binary_encode_vectors_false_calls_with_options(
 
     mock_collection_with_options = AsyncMock()
     mock_collection_with_options.name = "test_collection"
-    mock_get_collection.with_options.return_value = mock_collection_with_options
+    mock_get_collection.with_options = MagicMock(return_value=mock_collection_with_options)
 
     with (
         patch("astrapy.api_options.APIOptions") as mock_api_options,
