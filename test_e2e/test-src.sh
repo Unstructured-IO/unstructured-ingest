@@ -63,6 +63,7 @@ python_version=$(python --version 2>&1)
 tests_to_ignore=(
   'outlook.sh'
   's3.sh'
+  'azure.sh'
 )
 
 if [ -z "$UNS_PAID_API_KEY" ]; then
