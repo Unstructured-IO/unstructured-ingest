@@ -1,7 +1,7 @@
 [project]
 name = "unstructured_ingest"
 description = "Local ETL data pipeline to get data RAG ready"
-requires-python = ">=3.10, <3.13"
+requires-python = ">=3.12, <3.13"
 authors = [{name = "Unstructured Technologies", email = "devops@unstructuredai.io"}]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -11,8 +11,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -31,7 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Connectors
-airtable = ["pandas<3", "pyairtable"]
+airtable = ["pandas", "pyairtable"]
 astradb = ["astrapy>2.0.0"]
 azure-ai-search = ["azure-search-documents"]
 azure = ["adlfs", "fsspec"]
@@ -41,22 +39,22 @@ chroma = ["chromadb"]
 clarifai = ["clarifai"]
 confluence = ["atlassian-python-api", "requests"]
 couchbase = ["couchbase"]
-databricks-delta-tables = ["pandas<3", "databricks-sql-connector"]
+databricks-delta-tables = ["pandas", "databricks-sql-connector"]
 databricks-volumes = ["databricks-sdk>=0.70.0"]
-delta-table = ["pandas<3", "deltalake", "boto3", "tenacity", "pyarrow"]
+delta-table = ["pandas", "deltalake", "boto3", "tenacity", "pyarrow"]
 discord = ["discord.py"]
 dropbox = ["dropboxdrivefs", "fsspec"]
-duckdb = ["pandas<3", "duckdb"]
+duckdb = ["pandas", "duckdb"]
 elasticsearch = ["elasticsearch[async]<9.0.0"]
 gcs = ["gcsfs", "fsspec", "beautifulsoup4"]
 github = ["pygithub>1.58.0", "requests"]
 gitlab = ["python-gitlab"]
 google-drive = ["google-api-python-client", "tenacity"]
 hubspot = ["hubspot-api-client", "urllib3"]
-ibm-watsonx-s3 = ["pyiceberg", "httpx", "pyarrow", "tenacity", "pandas<3"]
+ibm-watsonx-s3 = ["pyiceberg", "httpx", "pyarrow", "tenacity", "pandas"]
 jira = ["atlassian-python-api"]
 kafka = ["confluent-kafka"]
-kdbai = ["pandas<3", "kdbai-client>=1.4.0"]
+kdbai = ["pandas", "kdbai-client>=1.4.0"]
 lancedb = ["lancedb"]
 milvus = ["pymilvus"]
 mongodb = ["pymongo"]
@@ -72,7 +70,7 @@ opensearch = [
 ]
 outlook = ["msal", "Office365-REST-Python-Client"]
 pinecone = ["pinecone"]
-postgres = ["pandas<3", "psycopg2-binary"]
+postgres = ["pandas", "psycopg2-binary"]
 qdrant = ["qdrant-client"]
 reddit = ["praw"]
 redis = ["redis<=5.3.0"]
@@ -80,11 +78,11 @@ s3 = ["s3fs", "fsspec"]
 salesforce = ["simple-salesforce"]
 sftp = ["fsspec", "paramiko"]
 sharepoint = ["msal", "Office365-REST-Python-Client", "requests"]
-singlestore = ["pandas<3", "singlestoredb"]
+singlestore = ["pandas", "singlestoredb"]
 slack = ["slack_sdk[optional]"]
-snowflake = ["pandas<3", "snowflake-connector-python", "psycopg2-binary"]
-teradata = ["pandas<3", "teradatasql"]
-vastdb = ["pandas<3", "pyarrow", "vastdb", "ibis"]
+snowflake = ["pandas", "snowflake-connector-python", "psycopg2-binary"]
+teradata = ["pandas", "teradatasql"]
+vastdb = ["pandas", "pyarrow", "vastdb", "ibis"]
 vectara = ["requests", "aiofiles", "httpx"]
 weaviate = ["weaviate-client"]
 wikipedia = ["wikipedia"]
@@ -109,7 +107,6 @@ docx = ["unstructured[docx]"]
 epub = ["unstructured[epub]"]
 image = ["unstructured[image]"]
 md = ["unstructured[md]"]
-msg = ["unstructured[msg]"]
 odt = ["unstructured[odt]"]
 org = ["unstructured[org]"]
 pdf = ["unstructured[pdf]"]
@@ -147,7 +144,7 @@ test = [
     "universal_pathlib",
     "deepdiff",
     "beautifulsoup4",
-    "pandas<3",
+    "pandas",
     # Connector specific deps
     "cryptography",
     "fsspec",
@@ -157,29 +154,6 @@ test = [
     "networkx",
     "htmlBuilder",
     "office365-rest-python-client",
-]
-# Add constraints needed for CI
-ci = [
-    "grpcio>=1.65.5",
-    # TODO: Pinned in transformers package, remove when that gets updated
-    "tokenizers>=0.19,<0.20",
-    # TODO: Constraint due to aiobotocore, remove when that gets updated:
-    "botocore<1.34.132",
-    # TODO: Constraint due to both 8.5.0 and 8.4.0 being installed during pip-compile
-    "importlib-metadata>=8.5.0",
-    "unstructured-client>=0.25.8",
-    "fsspec==2024.5.0",
-    # python 3.12 support
-    "wrapt>=1.14.0",
-    "numpy<2",
-    # deltalake >=0.23.0 currently has a bug with the version of pyarrow it installs
-    "deltalake<=0.22.0",
-    # TODO: investigate breaking changes introduced in lancedb>0.15.0
-    "lancedb<=0.15.0",
-    # TODO: versions higher than this are missing the macos wheel
-    "pykx==2.5.3",
-    # TODO: Constraint due to perf-analyzer platform compatibility issues
-    "tritonclient<=2.60.0",  # Allow 2.60.0 (was working), prevent 2.61.0 (has perf-analyzer issues)
 ]
 
 [project.scripts]
