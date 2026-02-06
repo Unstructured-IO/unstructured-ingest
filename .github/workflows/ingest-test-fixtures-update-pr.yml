@@ -96,9 +96,8 @@ jobs:
       - name: Save branch name to environment file
         id: branch
         run: |
-          original_branch=$(git rev-parse --abbrev-ref HEAD)
-          suffix="/ingest-test-fixtures-update-$(git rev-parse --short HEAD)"
-          branch_name="$original_branch$suffix"
+          short_sha=$(git rev-parse --short HEAD)
+          branch_name="ingest-test-fixtures-update-${short_sha}"
           echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
 
       - name: Save PR name to environment file
@@ -125,4 +124,4 @@ jobs:
           body: |
             This pull request includes updated ingest test fixtures.
             Please review and merge if appropriate.
-          base: ${{ github.head_ref }}
+          base: ${{ github.ref_name }}
