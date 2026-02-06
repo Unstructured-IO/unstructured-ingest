@@ -33,6 +33,8 @@ image_partition_files = [
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
+# hi_res strategy can be slow for large/image-heavy files; 300s accommodates the
+# full parametrized matrix without flaking on transient API latency spikes.
 @pytest.mark.timeout(300)
 async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")

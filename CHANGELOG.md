@@ -8,6 +8,10 @@
 * **fix: PydanticDeprecatedSince211 warning** Extract `_is_optional_field` helper using `typing.get_origin`/`get_args` instead of raw dunder access on `model_fields`.
 * **fix: astradb unit test** Fix `with_options` mock to use sync `MagicMock` instead of inheriting `AsyncMock`.
 * **fix: test collection** Add `conftest.py` to `test/unit/unstructured/` to skip collection when `unstructured` package is not installed.
+* **fix: revert databricks-volumes `content` back to `contents`** The 1.2.21 change to `content` was incorrect; the Databricks SDK uses `contents` even in `>=0.70.0`.
+* **chore: pin opensearch-py `>=2.4.0,<3.0.0`** opensearch-py 3.x pulls in grpcio/protobuf via opensearch-protobufs, causing version conflicts with pymilvus and pyiceberg.
+* **chore: bump Milvus docker-compose image** `v2.3.19` to `v2.5.26` for integration tests.
+* **chore: remove stale Google Drive e2e workspace native fixtures** Delete `google_workspace_native_doc.json`, `google_workspace_native_sheet.json`, and `heavy_gif_rich_google_workspace_native_slides.json` as they are no longer referenced.
 
 ## [1.2.40]
 
@@ -88,7 +92,7 @@
 ## [1.2.21]
 
 * **fix: Enforce minimum version of databricks-sdk (>=0.62.0) for databricks-volumes connector**
-* **fix: Update databricks-volumes connector to use 'content' parameter (changed from 'contents' in SDK 0.70.0+) and wrap file in io.BytesIO for BinaryIO compatibility**
+* **fix: Update databricks-volumes connector to wrap file in io.BytesIO for BinaryIO compatibility** *(Note: the original entry incorrectly stated a rename to `content`; the SDK parameter is `contents`. Reverted in 1.3.0.)*
 * **fix: Add constraints to prevent platform compatibility issues with tritonclient/perf-analyzer dependencies**
 
 ## [1.2.20]
