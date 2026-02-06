@@ -64,11 +64,11 @@ check-version:
 
 .PHONY: test-unit
 test-unit:
-	uv run --frozen --no-sync pytest -n auto -sv --cov unstructured_ingest/ test/unit --ignore test/unit/unstructured
+	uv run --frozen --no-sync pytest -n auto --cov unstructured_ingest/ test/unit --ignore test/unit/unstructured
 
 .PHONY: test-unit-unstructured
 test-unit-unstructured:
-	uv run --frozen --no-sync pytest -n auto -sv --cov unstructured_ingest/ test/unit/unstructured
+	uv run --frozen --no-sync pytest -n auto --cov unstructured_ingest/ test/unit/unstructured
 
 .PHONY: test-integration
 test-integration:
