@@ -1,8 +1,16 @@
 import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import (
+    NotFoundError,
+    ProviderError,
+    RateLimitError,
+    UserAuthError,
+    WriteError,
+)
 from unstructured_ingest.processes.connectors.pinecone import (
     CONNECTOR_TYPE,
+    PineconeUploader,
     PineconeUploadStager,
     PineconeUploadStagerConfig,
 )
@@ -49,3 +57,46 @@ def test_conform_dict(
         results["metadata"][key] == test_element_dict["metadata"][key] for key in expected_to_exist
     )
     assert all(key not in results["metadata"] for key in not_expected_to_exist)
+
+
+class _FakePineconeApiException(Exception):
+    """Minimal stand-in for pinecone.exceptions.PineconeApiException."""
+
+    def __init__(self, status):
+        self.status = status
+        super().__init__(f"Pinecone API error with status {status}")
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_error_type"),
+    [
+        (401, UserAuthError),
+        (403, UserAuthError),
+        (404, NotFoundError),
+        (429, RateLimitError),
+        (400, WriteError),
+        (409, WriteError),
+        (422, WriteError),
+        (500, ProviderError),
+        (502, ProviderError),
+        (503, ProviderError),
+        (None, WriteError),
+    ],
+)
+def test_map_pinecone_api_error_maps_status_codes(status, expected_error_type):
+    api_error = _FakePineconeApiException(status=status)
+    wrapped = PineconeUploader._map_pinecone_api_error(api_error)
+    assert isinstance(wrapped, expected_error_type), (
+        f"Expected {expected_error_type.__name__} for status {status}, got {type(wrapped).__name__}"
+    )
+    assert "Pinecone API error:" in str(wrapped)
+
+
+def test_map_pinecone_api_error_preserves_cause():
+    """Verify that the original exception is chained via __cause__ when raised."""
+    api_error = _FakePineconeApiException(status=500)
+    wrapped = PineconeUploader._map_pinecone_api_error(api_error)
+    try:
+        raise wrapped from api_error
+    except ProviderError as caught:
+        assert caught.__cause__ is api_error

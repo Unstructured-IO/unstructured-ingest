@@ -10,6 +10,9 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     DestinationConnectionError,
     NotFoundError,
+    ProviderError,
+    RateLimitError,
+    UserAuthError,
     UserError,
     WriteError,
 )
@@ -337,6 +340,28 @@ class PineconeUploader(VectorDBUploader):
             f"from pinecone index"
         )
 
+    @staticmethod
+    def _map_pinecone_api_error(api_error: Exception) -> Exception:
+        """Map a PineconeApiException to the appropriate error type based on HTTP status code."""
+        status_code = getattr(api_error, "status", None)
+        message = f"Pinecone API error: {api_error}"
+
+        if status_code is None:
+            return WriteError(message)
+
+        if status_code in (401, 403):
+            return UserAuthError(message)
+        if status_code == 404:
+            return NotFoundError(message)
+        if status_code == 429:
+            return RateLimitError(message)
+        if 400 <= status_code < 500:
+            return WriteError(message)
+        if status_code >= 500:
+            return ProviderError(message)
+
+        return WriteError(message)
+
     @requires_dependencies(["pinecone"], extras="pinecone")
     def upsert_batches_async(self, elements_dict: list[dict]):
         from pinecone.exceptions import PineconeApiException
@@ -366,9 +391,7 @@ class PineconeUploader(VectorDBUploader):
             try:
                 results = [async_result.get() for async_result in async_results]
             except PineconeApiException as api_error:
-                err = WriteError(f"http error: {api_error}")
-                err.status_code = api_error.status
-                raise err from api_error
+                raise self._map_pinecone_api_error(api_error) from api_error
             logger.debug(f"results: {results}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
