@@ -172,7 +172,9 @@ def validate_collection_vector(
 
     # Wait until we get results with a high enough score (handles eventual consistency)
     while attempts < retries:
-        if top_result and top_result.get("score", 0) >= min_score and top_result.get("text") == text:
+        score_ok = top_result and top_result.get("score", 0) >= min_score
+        text_ok = top_result and top_result.get("text") == text
+        if score_ok and text_ok:
             break
         attempts += 1
         print(
@@ -186,12 +188,15 @@ def validate_collection_vector(
     if not results:
         raise TimeoutError("Timed out waiting for valid results")
     if not top_result or top_result.get("score", 0) < min_score:
+        best_score = top_result.get("score") if top_result else "N/A"
         raise TimeoutError(
-            f"Timed out waiting for score >= {min_score}, best score: {top_result.get('score') if top_result else 'N/A'}"
+            f"Timed out waiting for score >= {min_score}, best score: {best_score}"
         )
 
     print(f"found valid results on attempt {attempts} with score {top_result['score']}")
-    assert top_result["score"] >= min_score, f"score should be >= {min_score}: {top_result['score']}"
+    assert top_result["score"] >= min_score, (
+        f"score should be >= {min_score}: {top_result['score']}"
+    )
     assert top_result["text"] == text, "text detected should be {}, found: {}".format(
         text, top_result["text"]
     )
