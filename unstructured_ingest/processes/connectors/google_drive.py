@@ -569,7 +569,15 @@ class GoogleDriveDownloader(Downloader):
                         status, done = downloader.next_chunk()
                         logger.debug(f"Download progress:{int(status.progress() * 100)}.")
 
-        except (HttpError, ValueError) as error:
+        except HttpError as error:
+            if error.resp.status == 401:
+                raise UserAuthError(
+                    "Authentication failed. The credentials may be invalid, expired, "
+                    "or missing required scopes."
+                )
+            logger.exception(f"Error downloading file {file_id} to {download_path}: {error}")
+            raise SourceConnectionError("Failed to download file") from error
+        except ValueError as error:
             logger.exception(f"Error downloading file {file_id} to {download_path}: {error}")
             raise SourceConnectionError("Failed to download file") from error
 
@@ -710,8 +718,13 @@ class GoogleDriveDownloader(Downloader):
                         status, done = downloader.next_chunk()
                         logger.debug(f"Download progress: {int(status.progress() * 100)}.")
             except HttpError as error:
+                if error.resp.status == 401:
+                    raise UserAuthError(
+                        "Authentication failed. The credentials may be invalid, expired, "
+                        "or missing required scopes."
+                    )
                 if error.resp.status == 403 and "too large" in error.reason.lower():
-                    # Even though we have the LRO threashold, for some smaller files the
+                    # Even though we have the LRO threshold, for some smaller files the
                     # export size might exceed 10MB and we get a 403 error.
                     # In that case, we use LRO as a fallback.
                     self._export_gdrive_file_with_lro(file_id, download_path, mime_type)
