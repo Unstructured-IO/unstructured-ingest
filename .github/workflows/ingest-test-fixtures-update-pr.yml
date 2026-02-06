@@ -8,7 +8,8 @@ env:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
 
@@ -112,7 +113,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GH_CREATE_PR_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           add-paths: |
             test_e2e/expected-structured-output
           commit-message: "Update ingest test fixtures"
