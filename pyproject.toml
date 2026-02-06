@@ -195,11 +195,3 @@ packages = ["/unstructured_ingest"]
 
 [tool.hatch.build.targets.sdist]
 packages = ["/unstructured_ingest"]
-
-[tool.codeflash]
-# All paths are relative to this pyproject.toml's directory.
-module-root = "unstructured_ingest"
-tests-root = "test"
-test-framework = "pytest"
-ignore-paths = []
-formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
