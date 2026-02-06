@@ -5,13 +5,16 @@
 * **chore: drop Python 3.10/3.11 support** Require `>=3.12, <3.13`. Remove `pandas<3` pin (no longer needed with 3.12+). Remove dead `msg` local partition extra (not defined by upstream `unstructured` package).
 * **chore: update Makefile** Add `make lock` (`uv lock --upgrade`), add `make install` and `make tidy` shortcuts, rename test targets to `test-unit`/`test-integration` convention, add `--frozen --no-sync` to all `uv run` commands.
 * **chore: add pytest-xdist** Parallelize unit tests with `-n auto`.
+* **chore: update CI workflows** Fix Python version defaults to 3.12, add `.python-version` file, fix `setup-python` action to use `inputs.python-version`, fix fixture update workflow (branch naming, docker cleanup, permissions, `GITHUB_TOKEN`).
+* **chore: bump Milvus docker-compose image** `v2.3.19` to `v2.5.26` for integration tests.
+* **chore: exclude `multi_page_image.tif` from partitioner integration tests** Too large for hi_res API processing within CI timeout limits.
+* **chore: regenerate stale e2e test fixtures** Update expected output for s3, azure, biomed, and google-drive connectors.
 * **fix: PydanticDeprecatedSince211 warning** Extract `_is_optional_field` helper using `typing.get_origin`/`get_args` instead of raw dunder access on `model_fields`.
 * **fix: astradb unit test** Fix `with_options` mock to use sync `MagicMock` instead of inheriting `AsyncMock`.
 * **fix: test collection** Add `conftest.py` to `test/unit/unstructured/` to skip collection when `unstructured` package is not installed.
-* **fix: revert databricks-volumes `content` back to `contents`** The 1.2.21 change to `content` was incorrect; the Databricks SDK uses `contents` even in `>=0.70.0`.
-* **chore: pin opensearch-py `>=2.4.0,<3.0.0`** opensearch-py 3.x pulls in grpcio/protobuf via opensearch-protobufs, causing version conflicts with pymilvus and pyiceberg.
-* **chore: bump Milvus docker-compose image** `v2.3.19` to `v2.5.26` for integration tests.
-* **chore: remove stale Google Drive e2e workspace native fixtures** Delete `google_workspace_native_doc.json`, `google_workspace_native_sheet.json`, and `heavy_gif_rich_google_workspace_native_slides.json` as they are no longer referenced.
+* **fix: databricks-volumes upload parameter** Revert `content` back to `contents` to match `databricks-sdk>=0.85.0`.
+* **fix: notion connector for notion-client 2.7.0** Replace `super().query()` calls with direct `self.parent.request()` calls, since `DatabasesEndpoint.query()` was removed upstream.
+* **fix: S3 special character test** Exclude `additional_metadata.ChecksumType` from comparison (new AWS S3 metadata field).
 
 ## [1.2.40]
 

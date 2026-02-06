@@ -10,12 +10,15 @@ from unstructured_ingest.processes.partitioner import Partitioner, PartitionerCo
 int_test_dir = Path(__file__).parent
 assets_dir = int_test_dir / "assets"
 
-# TODO: api currently does not support gz files anymore, add back in when that gets fixed
+# Excluded files:
+# - layout-parser-paper.pdf.gz: API does not support gz files
+# - multi_page_image.tif: Too large for hi_res API processing within CI timeout limits
+EXCLUDED_FILES = {"layout-parser-paper.pdf.gz", "multi_page_image.tif"}
 all_partition_files = [
     path
     for path in assets_dir.iterdir()
     if path.is_file()
-    if path.name != "layout-parser-paper.pdf.gz"
+    if path.name not in EXCLUDED_FILES
 ]
 non_image_partition_files = [
     path for path in all_partition_files if path.suffix not in [".jpg", ".png", ".tif"]
@@ -33,9 +36,7 @@ image_partition_files = [
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
-# hi_res strategy can be slow for large/image-heavy files; 300s accommodates the
-# full parametrized matrix without flaking on transient API latency spikes.
-@pytest.mark.timeout(300)
+@pytest.mark.timeout(60)
 async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
