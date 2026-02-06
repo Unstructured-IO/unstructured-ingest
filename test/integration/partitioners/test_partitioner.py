@@ -33,7 +33,7 @@ image_partition_files = [
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(300)
 async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
