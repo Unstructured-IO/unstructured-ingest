@@ -1,8 +1,7 @@
-<<<<<<< yuming/eng-787-unstructuredingesterror-not-throwing-the-correct-error-code
-## [1.2.41]
+## [1.3.1]
 
 * **fix: improve pinecone connector error handling by passing through the status code**
-=======
+
 ## [1.3.0]
 
 * **chore: migrate to native uv dependency management** Inline all dependencies from `requirements/*.txt` into `pyproject.toml`, remove `hatch-requirements-txt` plugin, and delete the `requirements/` directory and `scripts/pip-compile.sh`.
@@ -20,7 +19,6 @@
 * **fix: databricks-volumes upload parameter** Revert `content` back to `contents` to match `databricks-sdk>=0.85.0`.
 * **fix: notion connector for notion-client 2.7.0** Replace `super().query()` calls with direct `self.parent.request()` calls, since `DatabasesEndpoint.query()` was removed upstream.
 * **fix: S3 special character test** Exclude `additional_metadata.ChecksumType` from comparison (new AWS S3 metadata field).
->>>>>>> main
 
 ## [1.2.40]
 
