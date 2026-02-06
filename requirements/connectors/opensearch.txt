@@ -1,6 +1,0 @@
-# opensearch-py 3.x adds opensearch-protobufs dependency which pulls in grpcio/protobuf,
-# causing version conflicts with pymilvus and pyiceberg. Pin to 2.x to avoid this cascade.
-# See: https://pypi.org/project/opensearch-protobufs/
-opensearch-py>=2.4.0,<3.0.0
-boto3>=1.26.0
-botocore>=1.29.0

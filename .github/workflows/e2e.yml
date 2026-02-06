@@ -40,7 +40,7 @@ jobs:
           UNSTRUCTURED_API_KEY: ${{ secrets.UNS_PAID_API_KEY }}
           UNSTRUCTURED_API_URL: "https://api.unstructuredapp.io"
         run: |
-          make integration-test-${{ matrix.test }}
+          make test-integration-${{ matrix.test }}
           make parse-skipped-tests
 
   embedders_int_test:
@@ -65,7 +65,7 @@ jobs:
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
         run: |
-          make integration-test-embedders
+          make test-integration-embedders
           make parse-skipped-tests
 
   blob_storage_connectors_int_test:
@@ -109,7 +109,7 @@ jobs:
         SHAREPOINT_CLIENT_ID: ${{ secrets.SHAREPOINT_CLIENT_ID }}
         SHAREPOINT_CRED: ${{ secrets.SHAREPOINT_CRED }}
       run : |
-        make integration-test-connectors-blob-storage
+        make test-integration-connectors-blob-storage
         make parse-skipped-tests
 
   sql_connectors_int_test:
@@ -146,7 +146,7 @@ jobs:
         DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
         DATABRICKS_ACCESS_TOKEN: ${{ secrets.DATABRICKS_ACCESS_TOKEN }}
       run : |
-        make integration-test-connectors-sql
+        make test-integration-connectors-sql
         make parse-skipped-tests
 
   nosql_connectors_int_test:
@@ -185,7 +185,7 @@ jobs:
         VECTARA_OAUTH_SECRET: ${{secrets.VECTARA_OAUTH_SECRET}}
         VECTARA_CUSTOMER_ID: ${{secrets.VECTARA_CUSTOMER_ID}}
       run : |
-        make integration-test-connectors-nosql
+        make test-integration-connectors-nosql
         make parse-skipped-tests
 
   vector_db_connectors_int_test:
@@ -223,7 +223,7 @@ jobs:
         # Pinecone
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
       run : |
-        make integration-test-connectors-vector-db
+        make test-integration-connectors-vector-db
         make parse-skipped-tests
 
   uncategorized_connectors_int_test:
@@ -266,7 +266,7 @@ jobs:
         # Zendesk 
         ZENDESK_TOKEN: ${{ secrets.ZENDESK_TOKEN }}
       run : |
-        make integration-test-connectors-uncategorized
+        make test-integration-connectors-uncategorized
         make parse-skipped-tests
 
   src_e2e_test:

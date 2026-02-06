@@ -1,2 +1,0 @@
-pandas
-kdbai-client>=1.4.0

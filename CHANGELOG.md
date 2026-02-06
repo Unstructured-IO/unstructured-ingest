@@ -1,3 +1,12 @@
+## [1.3.0]
+
+* **chore: migrate to native uv dependency management** Inline all dependencies from `requirements/*.txt` into `pyproject.toml`, remove `hatch-requirements-txt` plugin, and delete the `requirements/` directory and `scripts/pip-compile.sh`.
+* **chore: clean up dependencies** Bump `certifi>=2026.1.4`, fix `bs4` to `beautifulsoup4`, pin `pandas<3` for Python 3.10 compatibility, fix `pytest_tagging` to `pytest-tagging`.
+* **chore: update Makefile** Add `make lock` (`uv lock --upgrade`), add `make install` and `make tidy` shortcuts, rename test targets to `test-unit`/`test-integration` convention, add `--frozen --no-sync` to all `uv run` commands.
+* **chore: add pytest-xdist** Parallelize unit tests with `-n auto`.
+* **fix: PydanticDeprecatedSince211 warning** Use class-level `model_fields` access instead of instance-level in `ConnectionConfig`.
+* **fix: astradb unit test** Fix `with_options` mock to use sync `MagicMock` instead of inheriting `AsyncMock`.
+
 ## [1.2.40]
 
 * **fix: prevent filename corruption when file/folder names contain the bucket or path prefix**

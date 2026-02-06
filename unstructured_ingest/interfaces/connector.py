@@ -1,11 +1,21 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar, get_args, get_origin, Union
 
 from pydantic import BaseModel, Secret, model_validator
+from pydantic.fields import FieldInfo
 from pydantic.types import _SecretBase
 
 from unstructured_ingest.processes.utils.logging.connector import ConnectorLoggingMixin
+
+
+def _is_optional_field(field: FieldInfo) -> bool:
+    """Check whether a pydantic FieldInfo represents an Optional type."""
+    origin = get_origin(field.annotation)
+    if origin is Union:
+        args = get_args(field.annotation)
+        return type(None) in args
+    return False
 
 
 class AccessConfig(BaseModel):
@@ -27,21 +37,12 @@ class ConnectionConfig(BaseModel):
     @model_validator(mode="after")
     def check_access_config(self):
         access_config = self.access_config
-        if self._is_access_config_optional() and access_config is None:
+        field = self.__class__.model_fields["access_config"]
+        if _is_optional_field(field) and access_config is None:
             return self
         if not isinstance(access_config, _SecretBase):
             raise ValueError("access_config must be an instance of SecretBase")
         return self
-
-    def _is_access_config_optional(self) -> bool:
-        access_config_type = self.model_fields["access_config"].annotation
-        return (
-            hasattr(access_config_type, "__origin__")
-            and hasattr(access_config_type, "__args__")
-            and access_config_type.__origin__ is Union
-            and len(access_config_type.__args__) == 2
-            and type(None) in access_config_type.__args__
-        )
 
 
 ConnectionConfigT = TypeVar("ConnectionConfigT", bound=ConnectionConfig)
