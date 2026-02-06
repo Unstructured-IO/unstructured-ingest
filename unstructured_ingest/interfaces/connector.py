@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, TypeVar, get_args, get_origin, Union
+from typing import Any, TypeVar, Union, get_args, get_origin
 
 from pydantic import BaseModel, Secret, model_validator
 from pydantic.fields import FieldInfo

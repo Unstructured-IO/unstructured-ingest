@@ -55,9 +55,7 @@ class TestFsspecIndexerRelPath:
         indexer = self.create_indexer("s3://my-bucket/", mock_connection_config)
 
         file_path = "my-bucket/documents/report.csv"
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         assert rel_path == "documents/report.csv"
 
@@ -68,9 +66,7 @@ class TestFsspecIndexerRelPath:
         # Filename contains "my-bucket" but path_without_protocol is "my-bucket/"
         # so only one replacement happens (the prefix)
         file_path = "my-bucket/my-bucket_report.csv"
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         assert rel_path == "my-bucket_report.csv"
 
@@ -94,9 +90,9 @@ class TestFsspecIndexerRelPath:
         file_path = "my-bucket/my-bucket_report.csv"
 
         # Demonstrate the bug (what would happen without count=1)
-        buggy_rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, ""
-        ).lstrip("/")
+        buggy_rel_path = file_path.replace(indexer.index_config.path_without_protocol, "").lstrip(
+            "/"
+        )
         assert buggy_rel_path == "/_report.csv".lstrip("/")  # Corrupted!
 
         # The fix: use count=1 to only replace first occurrence
@@ -107,16 +103,12 @@ class TestFsspecIndexerRelPath:
 
     def test_long_bucket_name_in_filename(self, mock_connection_config):
         """Test with realistic long bucket name that appears in filename."""
-        indexer = self.create_indexer(
-            "s3://utic-platform-test-destination", mock_connection_config
-        )
+        indexer = self.create_indexer("s3://utic-platform-test-destination", mock_connection_config)
 
         file_path = "utic-platform-test-destination/utic-platform-test-destination_report.csv"
 
         # Without the fix, this would become "/_report.csv"
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         assert rel_path == "utic-platform-test-destination_report.csv"
 
@@ -127,9 +119,7 @@ class TestFsspecIndexerRelPath:
         # "data" appears in bucket, directory name, and filename
         file_path = "data/data-exports/data-2024.csv"
 
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         # Should only remove the first "data" (the bucket prefix)
         assert rel_path == "data-exports/data-2024.csv"
@@ -144,9 +134,7 @@ class TestFsspecIndexerRelPath:
 
         file_path = "myhost/./config.json"
 
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         assert rel_path == "config.json"
 
@@ -157,9 +145,7 @@ class TestFsspecIndexerRelPath:
         # Directory named "reports" inside bucket "reports"
         file_path = "reports/reports/quarterly/q1.pdf"
 
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         # Should preserve the nested "reports" directory
         assert rel_path == "reports/quarterly/q1.pdf"
@@ -170,9 +156,7 @@ class TestFsspecIndexerRelPath:
 
         file_path = "my-bucket/file.txt"
 
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         assert rel_path == "file.txt"
 
@@ -182,9 +166,7 @@ class TestFsspecIndexerRelPath:
 
         file_path = "bucket/file (copy).txt"
 
-        rel_path = file_path.replace(
-            indexer.index_config.path_without_protocol, "", 1
-        ).lstrip("/")
+        rel_path = file_path.replace(indexer.index_config.path_without_protocol, "", 1).lstrip("/")
 
         assert rel_path == "file (copy).txt"
 

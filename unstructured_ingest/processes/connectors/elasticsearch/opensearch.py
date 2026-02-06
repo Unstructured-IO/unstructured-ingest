@@ -466,8 +466,10 @@ class OpenSearchUploader(ElasticsearchUploader):
                     except Exception as e:
                         # Check for rate limiting: precise type check, then string fallback
                         is_rate_limited = (
-                            isinstance(e, TransportError) and e.status_code == 429
-                        ) or "429" in str(e) or "too many requests" in str(e).lower()
+                            (isinstance(e, TransportError) and e.status_code == 429)
+                            or "429" in str(e)
+                            or "too many requests" in str(e).lower()
+                        )
 
                         if attempt < max_attempts - 1 and is_rate_limited:
                             logger.warning(

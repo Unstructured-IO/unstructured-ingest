@@ -545,6 +545,7 @@ class AstraDBUploader(Uploader):
         semaphore = asyncio.Semaphore(max_concurrent)
 
         log_interval = 100
+
         async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
             async with semaphore:
                 try:
@@ -555,9 +556,7 @@ class AstraDBUploader(Uploader):
                             f"({(batch_num + 1) / total_batches * 100:.1f}%)"
                         )
                 except Exception as e:
-                    logger.error(
-                        f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}"
-                    )
+                    logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
                     raise
 
         await asyncio.gather(
