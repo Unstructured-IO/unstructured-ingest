@@ -102,6 +102,7 @@ async def test_s3_source_special_char(anon_connection_config: S3ConnectionConfig
                     source_filedata_display_name_set_check,
                 ),
                 expected_num_files=2,
+                exclude_fields_extend=["additional_metadata.ChecksumType"],
             ),
         )
 

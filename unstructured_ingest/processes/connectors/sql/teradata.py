@@ -153,12 +153,10 @@ class TeradataUploadStager(SQLUploadStager):
         # Check a sample of values to detect columns with complex types (10 rows)
         for column in df.columns:
             sample = df[column].dropna().head(10)
-            
+
             if len(sample) > 0:
-                has_complex_type = sample.apply(
-                    lambda x: isinstance(x, (list, dict))
-                ).any()
-                
+                has_complex_type = sample.apply(lambda x: isinstance(x, (list, dict))).any()
+
                 if has_complex_type:
                     df[column] = df[column].apply(
                         lambda x: json.dumps(x) if isinstance(x, (list, dict)) else x

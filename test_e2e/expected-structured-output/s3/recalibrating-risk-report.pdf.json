@@ -1,6 +1,6 @@
 [
   {
-    "type": "Header",
+    "type": "Image",
     "element_id": "344500990e3c772ee7e61ef4a44afc0e",
     "text": "ASSOCIATION",
     "metadata": {
@@ -25,8 +25,8 @@
   },
   {
     "type": "Image",
-    "element_id": "8b8ec2308b8c74000b6a9a798841384e",
-    "text": "A 3 \\ \\",
+    "element_id": "1cb3b1ac246b3f141fcf54f6d5d44cc9",
+    "text": "L\\ o)",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -52,6 +52,7 @@
     "element_id": "7137c1e14141fad3ad306fe68918a967",
     "text": "Recalibrating risk",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -76,6 +77,7 @@
     "element_id": "dbdc2d6c6381e4fa1c7b8058bf86abef",
     "text": "Putting nuclear risk in context and perspective",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -96,10 +98,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "UncategorizedText",
     "element_id": "f71e85ddcaf37c2df39af496a16c23ab",
     "text": "© 2021 World Nuclear Association",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -124,6 +127,7 @@
     "element_id": "24a8636658e8d7b70af1f0536d494159",
     "text": "Registered in England and Wales, company number 01215741. This report represents the views of individual experts, but does not necessarily represent those of any of the World Nuclear Association’s individual member organizations.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -148,6 +152,7 @@
     "element_id": "a301376c55ac727652cf954ec5e913d6",
     "text": "Executive Summary",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -172,6 +177,7 @@
     "element_id": "5b2ec7692e73027141163ac9031623f5",
     "text": "Nuclear energy is crucial to meeting the world’s ever-increasing demand for energy, thanks to its ability to supply affordable, reliable, and sustainable electricity and heat. Despite the many benefits of nuclear energy, its deployment is hindered in some parts of the world due to long-standing misconceptions about its risks. Even with its safety record – unmatched by any other energy source – the perception of nuclear power as uniquely dangerous endures.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -196,6 +202,7 @@
     "element_id": "cb2f79944be60fd4447f31653abc1c33",
     "text": "This is reflected in the regulatory burden placed on the nuclear industry, which is geared towards an “as low as possible” approach, demanding radiation levels to be far below the levels where health effects have been observed (and in many cases below natural background radiation). This has resulted in higher costs, without delivering any additional health benefits, and has resulted in policymakers choosing other, more risky energy sources. More often than not, those alternative energy sources have been fossil fuels, greatly exacerbating the well-known risks posed by air pollution and climate change.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -220,6 +227,7 @@
     "element_id": "edd5a77bbaec194649c3e909359778dc",
     "text": "Expanding the use of nuclear energy is essential for solving some of the biggest challenges facing humanity. Nuclear power has already played a major role in avoiding the emission of air pollutants and greenhouse gases, a role that will have to be greatly expanded in the future to ensure global energy supplies are decarbonized by 2050. Nuclear energy will also play a major part in ensuring that the transition to a low-carbon future is done in an equitable fashion, providing people across the world with a high-powered and sustainable future.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -244,6 +252,7 @@
     "element_id": "0176a09ce730c661b03e05b873f406e0",
     "text": "In order to fully unlock the potential of the atom, it is crucial that the gap between perceived and actual risks is addressed. The window of opportunity to act on climate change and other global challenges is closing fast – we must not delay increasing the contribution of nuclear energy on the grounds of myths and misconceptions.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -268,6 +277,7 @@
     "element_id": "f6475defefd93d0b101032386c3904b9",
     "text": "Therefore, World Nuclear Association calls upon policymakers and regulators to adopt an all-hazards approach, where different risks associated with energy producing technologies are placed in perspective and the appropriate context, and examined in line with the latest scientific evidence. Policymakers and regulators must ensure that their decisions regarding radiation protection do not create greater risks elsewhere. This include the recalibration of existing regulations regarding nuclear power and radiation, weighing the cost of regulatory measures against the societal benefits provided by nuclear energy.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -289,8 +299,8 @@
   },
   {
     "type": "Image",
-    "element_id": "0e8aeb80f607db6cdf4f1fbcfc095048",
-    "text": "",
+    "element_id": "fbeaad0c595a51abac64bf99f92ac5c2",
+    "text": "= )",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -312,15 +322,41 @@
     }
   },
   {
-    "type": "PageNumber",
+    "type": "Footer",
     "element_id": "14926217ad635f3b0d8aa6a1c084ffae",
     "text": "1",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
       ],
       "page_number": 3,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Footer",
+    "element_id": "d7d7ca3be3dd09816ae5d0294281e8d9",
+    "text": "2",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
       "data_source": {
         "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
         "version": "e690f37ef36368a509d150f373a0bbe0",
@@ -337,9 +373,10 @@
   },
   {
     "type": "Title",
-    "element_id": "c48c986070dfdd3b79fb5b991bddfa4e",
+    "element_id": "ca878cdd15c9e34463e380dfcb994c2d",
     "text": "Perceived versus actual risk",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -361,9 +398,10 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "50e4f073d0345dfb7577928b3f9038ec",
+    "element_id": "7a6ffe00fc921772e62d72d8b36ae72d",
     "text": "It is widely accepted that humans have skewed perceptions of risks, and the way we respond to them is shaped by these perceptions, rather than the actual threats posed. Approximately 1.35 millioni people die every year because of traffic accidents, in comparison with 257 aviation fatalities in 2019ii, yet more people are nervous about flying, fearing a rare deadly crash, than being in a fatal traffic accident. These numbers tell a powerful and well-established story: evaluations of risk are largely the result of emotions, rather than logic or facts. Although it is hard to recognize and accept that our perceptions may mislead us and curtail effective decision making, this is a well-established characteristic of humanity.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -385,9 +423,86 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "5d3cd3a88e901697e7d6c084f4502836",
-    "text": "Nuclear energy and the risk of radiation is one of the Rank Order most extreme cases in which perceived and actual Laypersons Experts risks have diverged. The fear of radiation, whilst pre- dating the Second World War, was firmly established 1 Nuclear power 20 by the debate on the potential impacts of low-dose 2 Motor vehicles 1 radiation from the fallout from nuclear weapons 3 Handguns 4 testing in the early years of the Cold War. Radiation in many ways became linked with the mental imagery 4 Smoking 2 of nuclear war, playing an important role in increasing public concern about radiation and its health effects. 17 Electric power (non-nuclear) 9 There is a well-established discrepancy between fact-based risk assessments and public perception of different risks. This is very much the case with 22 X-rays 7 nuclear power, and this is clearly highlighted in Figure 1, with laypersons ranking nuclear power as the highest risk out of 30 activities and technologies, 30 Vaccinations 25 with experts ranking nuclear as 20th. In many ways, popular culture’s depiction of radiation has played a role in ensuring that this discrepancy has remained, Figure 1. Ordering of perceived risks for 30 activities and technologies1,iii be it Godzilla, The Incredible Hulk, or The Simpsons, which regularly plays on the notion of radiation from nuclear power plants causing three-eyed fish, something that has been firmly rejected as unscientific.",
+    "element_id": "75f32a291a5cbb11d3183eac5fb426c3",
+    "text": "Nuclear energy and the risk of radiation is one of the most extreme cases in which perceived and actual risks have diverged. The fear of radiation, whilst pre- dating the Second World War, was firmly established by the debate on the potential impacts of low-dose radiation from the fallout from nuclear weapons testing in the early years of the Cold War. Radiation in many ways became linked with the mental imagery of nuclear war, playing an important role in increasing public concern about radiation and its health effects. There is a well-established discrepancy between fact-based risk assessments and public perception of different risks. This is very much the case with nuclear power, and this is clearly highlighted in Figure 1, with laypersons ranking nuclear power as the highest risk out of 30 activities and technologies, with experts ranking nuclear as 20th. In many ways, popular culture’s depiction of radiation has played a role in ensuring that this discrepancy has remained,",
     "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "UncategorizedText",
+    "element_id": "bf248ce5194cc4686f97a2769cd9744a",
+    "text": "Rank Order",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "Table",
+    "element_id": "fe081bc8fc80f0df977f46493f0e9430",
+    "text": "Laypersons Experts 1 Nuclear power 20 2 Motor vehicles 1 3 Handguns 4 4 Smoking 2 17 Electric power (non-nuclear) 9 22 X-rays 7 30 Vaccinations 25",
+    "metadata": {
+      "is_extracted": "partial",
+      "text_as_html": "<table><thead><tr><th colspan=\"2\">ali vrdacr Laypersons</th><th>Experts</th></tr></thead><tbody><tr><td>1</td><td>Nuclear power</td><td>20</td></tr><tr><td></td><td>Motor vehicles</td><td></td></tr><tr><td></td><td>Handguns</td><td></td></tr><tr><td></td><td>Smoking</td><td></td></tr><tr><td>- ~</td><td>Electric power (non-nuclear)</td><td></td></tr><tr><td>«</td><td></td><td></td></tr><tr><td>22</td><td>X-rays</td><td></td></tr><tr><td>30</td><td>Vaccinations</td><td>25</td></tr></tbody></table>",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "FigureCaption",
+    "element_id": "a6b2ef41c3420b21165799903ccece40",
+    "text": "Figure 1. Ordering of perceived risks for 30 activities and technologies1,iii",
+    "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -409,9 +524,35 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "63c522a3b31ef1bc244cb5fc1c65e65f",
+    "element_id": "6a806ec2935a7f5da409a3f892006982",
+    "text": "be it Godzilla, The Incredible Hulk, or The Simpsons, which regularly plays on the notion of radiation from nuclear power plants causing three-eyed fish, something that has been firmly rejected as unscientific.",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 4,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "b794118cfefdf05953a1eab3ecb49928",
     "text": "In reality, radiation is a natural part of life; indeed, we are all exposed to radiation every day, on average receiving 2-3 millisieverts (mSv) per year. Most of this radiation is naturally occurring, with radon gas from the ground being the main source of exposure. The nuclear industry is responsible for a very small part of radiation exposure to the public, as seen in Figure 2. To put this into perspective, eating 10 bananas or two Brazil nuts results in the same radiation dose as living nearby a nuclear power plant for a year. Humans are also naturally radioactive, and the radiation dose from sleeping next to someone else each night for a year is ten times higher than the exposure from living nearby a nuclear power plant for the same time span.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -433,33 +574,10 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "7b61fefbec9a7d2b1a18a2da17e6774f",
+    "element_id": "60d4e572d6bfa2687304ba3b28f12fcf",
     "text": "In fact, scientific consensus is that when it comes to preventing exposure to radiation, nuclear power is much better than other electricity generators. A 2016 reportiii from the United Nations Scientific Committee on the Effects of Atomic Radiation (UNSCEAR) found that coal-generated electricity is responsible for more than half of the total global radiation exposure arising from electricity generation, while nuclear power contributed less than a fifth. Coal miners received high occupational exposure and workers in solar and wind farms received the highest occupational exposure associated with plant construction for the same amount of installed capacity.",
     "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 4,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "PageNumber",
-    "element_id": "d3d726225919d335848941972777d9be",
-    "text": "2",
-    "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -481,9 +599,10 @@
   },
   {
     "type": "Footer",
-    "element_id": "6a271f175ed4a5da6fb53247ddeb7949",
+    "element_id": "9600ead8e685b080a9ae84455b6be4f9",
     "text": "1 The original study was published in 1978, but its findings have been confirmed by numerous studies since.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -505,8 +624,8 @@
   },
   {
     "type": "Image",
-    "element_id": "4c512606895cffb87e7f03e7e45607c4",
-    "text": "Natural    48%  Radon    14%  Buildings & soil    12%  Food & water    10%  Cosmic    4%   Thoron ",
+    "element_id": "695e4e06071f6ed026e30f329659adff",
+    "text": "Natural  Artificial    48%  Radon    11%  Medicine    14%  Buildings & soil    0.4%   Fallout    12%  Food & water    0.4%  Miscellaneous    10%  Cosmic    0.2%  Occupational    4%   Thoron    0.04%  Nuclear discharges ",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -528,154 +647,11 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "7da4c5414e76d77d311e3a0640cb5a5a",
-    "text": "Artificial",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "14239789ab9764680b9ac255202491e9",
-    "text": "11% Medicine",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "d0ef61c4077f96d94ec74a728aef435f",
-    "text": "0.4% Fallout",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "694989aedeae97a3e0f579ea614fa5f0",
-    "text": "0.4% Miscellaneous",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "7542e9d3e363b5f9d01c8a46ca3e4fe4",
-    "text": "0.2% Occupational",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "6277fe5cf37b7a0a3d1ae3f12d019de7",
-    "text": "0.04% Nuclear discharges",
-    "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 5,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "NarrativeText",
-    "element_id": "6b15d0cf314a0ed8a6d51ad9e307ceee",
+    "type": "FigureCaption",
+    "element_id": "9add7e245b0191530386fcf00bb218df",
     "text": "Figure 2. Global average exposure from different sources of radiation",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -697,9 +673,10 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "dc9810037d4a2af5c88b7814b8da1d08",
+    "element_id": "e9a9edcbe70d12be56e6947010012f76",
     "text": "Fossil fuels – currently accounting for around 81% of total energy supplyiv – cause significant levels of emissions in terms of both greenhouse gases and air pollutants. Despite the serious and ongoing health and environmental harms caused by air pollution, it is often considered to be an inevitable consequence of economic development. Air pollution’s contribution to the burden of disease is profound, with an estimated 8.7 million people dying worldwide prematurely in 2018 alonev,vi. Despite this, it fails to induce the same fears and anxieties in people as nuclear energy does.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -721,9 +698,10 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "a68153f8b003e900d68f6a94188cdafa",
+    "element_id": "b8ec2beffbf0ae3c620edbc5288b5e7f",
     "text": "In terms of accidents, hydropower is the deadliest electricity generator, mostly due to collapsing dams and the consequences of flooding. The Banqiao Dam failure in 1975 led to at least 26,000 people drowning, and as many as 150,000 deaths resulting from the secondary effects of the accident. In comparison, radiation exposure following Chernobyl caused 54 deaths2, while no casualties due to radiation are likely to occur from the accident at Fukushima Daiichi.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -745,8 +723,8 @@
   },
   {
     "type": "Image",
-    "element_id": "050f904962e32c7f0ac5fa90e71e8179",
-    "text": "25  24.6  20  18.4  r  a  e  y     e  15  W  T     r  e  p     10  s  e  i  t  i  l  a  t  a  F  5  4.6  2.8  0  Coal  Oil  Bio m ass  Natural gas  0.07  Wind  0.04  Hydropower  0.02  Solar  0.01  Nuclear ",
+    "element_id": "8de807651a4ea47389937d5135671087",
+    "text": "25  24.6  20  18.4  r  a  e  y     e  15  W  T     r  e  p     10  s  e  i  t  i  l  a  t  a  F  5  4.6  2.8  0  Coal  Oil  Biomass  Natural gas  0.07  Wind  0.04  Hydropower  0.02  Solar  0.01  Nuclear ",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -768,10 +746,11 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "c59bfe6169a1a28d6cd44c42fe78afd8",
+    "type": "FigureCaption",
+    "element_id": "85decc7017b908a599eebcfec46c25a4",
     "text": "Figure 3. Comparison of number of fatalities due to electricity generation, including accidents and air pollution3",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -793,9 +772,10 @@
   },
   {
     "type": "NarrativeText",
-    "element_id": "2d7b8607a798df71f1e8368c5bb12a22",
+    "element_id": "e0053334d36d2df420827d43e6be8e24",
     "text": "Contrary to perceptions, nuclear is an incredibly safe source of energy (see Figure 3 for a comparison). What is also clear is that the continued use of alternative energy sources in preference to nuclear energy – in particular fossil fuels – poses a far greater risk to public health by significantly contributing to climate change and air pollution.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -816,10 +796,11 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "009df94136ea3880b863db23337de8be",
+    "type": "Footer",
+    "element_id": "8eab02f7202db06ad0166f65aad7d00e",
     "text": "2 Including 28 firefighters that were exposed to lethal amounts of radiation during the accident night, and 15 fatal cases of thyroid cancer.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -840,10 +821,11 @@
     }
   },
   {
-    "type": "NarrativeText",
-    "element_id": "ac699be5595c9b0cf052d70bfd3abc91",
+    "type": "Footer",
+    "element_id": "c9da6a9df0d7fdf95c4cc726018cd045",
     "text": "3 Sources drawn upon: Markandya, A., & Wilkinson, P. (2007), Sovacool et al. (2016). Data for nuclear accidents modified to reflect the 2012 UNSCEAR report and the 2015 US NRC SOARCA study.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -864,10 +846,11 @@
     }
   },
   {
-    "type": "PageNumber",
-    "element_id": "b8264f0c1a2969c6691fd95a39efcef8",
+    "type": "Footer",
+    "element_id": "1eda7c4d3cbdb8565846b8048819ceeb",
     "text": "3",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -888,10 +871,11 @@
     }
   },
   {
-    "type": "PageNumber",
+    "type": "Footer",
     "element_id": "e754a2849dac122e7d2e05447f0da512",
     "text": "4",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -916,6 +900,7 @@
     "element_id": "21b4c32e6d360d1d70e59dad888e306d",
     "text": "The low-dose question",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -940,6 +925,7 @@
     "element_id": "26e60e901d12cbb5efb851fe945a3f96",
     "text": "Since the 1950s, the Linear No-Threshold (LNT) theory has been used to inform regulatory decisions, positing that any dose of radiation, regardless of the amount or the duration over which it is received, poses a risk. Assuming that LNT is correct, we should expect to see that people living in areas of the world where background doses are higher (e.g. India, Iran and northern Europe) have a higher incidence of cancer. However, despite people living in areas of the world where radiation doses are naturally higher than those that would be received in parts of the evacuation zones around Chernobyl and Fukushima Daiichi, there is no evidence that these populations exhibit any negative health effects. Living nearby a nuclear power plant on average exposes the local population to 0.00009mSv/year, which according to LNT would increase the risk of developing cancer by 0.00000045%. After Chernobyl, the average dose to those evacuated was 30mSv, which would theoretically increase the risk of cancer at some point in their lifetime by 0.15% (on top of the average baseline lifetime risk of cancer, which is 39.5% in the USviii, 50% in the UKix).",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -964,6 +950,7 @@
     "element_id": "31d07d8c2dce96dc1c6daa38f8597ab5",
     "text": "Since the 1980s, there has been considerable scientific debate as to whether the LNT theory is valid, following scientific breakthroughs within, for example, radiobiology and medicine. Indeed, the Chernobyl accident helped illuminate some of the issues associated with LNT. Multiplication of the low doses after the accident (many far too low to be of any health concern) with large populations – using the assumptions made by LNT – led to a large number of predicted cancer deaths, which have not, and likely will not materialize. This practice has been heavily criticized for being inappropriate in making risk assessments by UNSCEAR, the International Commission on Radiation Protection and a large number of independent scientists.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -988,6 +975,7 @@
     "element_id": "4fb06aef292d07a36339c830eb23c8b5",
     "text": "Determining the precise risk (or lack thereof) of the extremely small radiation doses associated with the routine operations of nuclear power plants, the disposal of nuclear waste or even extremely rare nuclear accidents is a purely academic exercise, that tries to determine whether the risk is extremely low, too small to detect, or non- existent. The risks of low-level radiation pale in comparison to other societal risks such as obesity, smoking, and air pollution.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1012,6 +1000,7 @@
     "element_id": "1d9fdadf74d73e63be2e683b0a73d86d",
     "text": "By looking at radiation risks in isolation, we prolong the over-regulation of radiation in nuclear plants, driving up costs, whilst not delivering any additional health benefits, in turn incentivising the use of more harmful energy sources. A recalibration is required, and this can only done by ensuring a holistic approach to risk is taken.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1033,8 +1022,8 @@
   },
   {
     "type": "Image",
-    "element_id": "32259f82b294edd5dd1868734673c0a1",
-    "text": "U ER LE E » L",
+    "element_id": "60f59823edeb5bc5eb721b6faaee05b9",
+    "text": "LE EE % [) » s",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1060,6 +1049,7 @@
     "element_id": "d3b1c14b00a459af4d32459678203328",
     "text": "Adopting an all-hazards approach",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1084,6 +1074,7 @@
     "element_id": "4ab8051907907017f78ae83e1b95dc07",
     "text": "Contemporary debates around nuclear energy often reflect the precautionary principle, a problematic concept applied across a range of regulatory and policy issues. A ‘strong’ interpretation of the precautionary principle, or a ‘as low as possible’ approach to risk, dictates that regulation is required whenever there is a potential adverse health risk, even if the evidence is not certain and regardless of the cost of regulation.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1108,6 +1099,7 @@
     "element_id": "bac4e8745150c829821f40387f9107c6",
     "text": "The overall regulatory philosophy, at least theoretically, used in the nuclear industry is the ALARA (As Low As Reasonably Achievable) principle, where any regulatory action on radiation should account for socio- economic benefits and costs, as opposed to making decisions based on radiation risks alone.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1132,6 +1124,7 @@
     "element_id": "4ea8f70af2d39cae9f63fce0ea7165f1",
     "text": "However, the regulatory process and the policy debate around nuclear more broadly has long departed from the ALARA principle, no longer weighing cost versus benefits, or considering the overall advantages of nuclear energy, but rather looking at radiation in isolation. This has resulted in a subtle shift towards an ‘as low as possible’ mentality. Attempting to reduce radiation far below de facto safe levels has resulted in an escalation of costs and loss of public confidence, and in some cases has deprived communities of the many benefits nuclear energy provides. In practical terms, this has led to the continued use of more harmful energy sources, such as fossil fuels.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1156,6 +1149,7 @@
     "element_id": "17f00667e4e913d53d1deec4900e13f2",
     "text": "If the potential of nuclear energy is to be fully realized, public health and safety approaches must be recalibrated to consider a wider range of factors when considering radiation, adopting an “all-hazards” approach. Such an approach must ensure that risks are placed within a proper perspective and context, rather than looking at them in isolation. We therefore must not look at the costs – be they economic, environmental, or public health – associated with an individual power plant in isolation, but rather the costs associated with it (and its alternatives) at a societal level (Figure 4). This would entail looking at the potential risks arising from the use of nuclear power and comparing these with the risks associated with not adopting nuclear power.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1200,10 +1194,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "FigureCaption",
     "element_id": "a4c9c9c3c416898e4ba9df7c3a3e31ac",
     "text": "Figure 4. The different levels of cost associated with electricity generationx",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1228,6 +1223,7 @@
     "element_id": "4d355be258d489a707dfd634ea0f8810",
     "text": "A more holistic regulatory process would be required, in which regulators move away from being siloed, looking at specific risks in isolation, with little regard for the greater picture. The move towards an all-hazard, holistic approach would require greater coordination between regulators, ensuring that the combined risks of a specific nuclear project are weighed against the risks posed by not advancing said project.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1252,6 +1248,7 @@
     "element_id": "9c79edb1b3d13f851f56559d7d3046a8",
     "text": "Equally, the adoption of an all-hazards approach means regulators should consider declaring when a risk is too low to be a public health concern, in line with what the U.S. Nuclear Regulatory Commission attempted to do with its Below Regulatory Concern policy statements in the 1980s and early 1990s. In the context of nuclear power, this means departing from the notion that LNT instils of no safe level of radiation, and adopting a regulatory framework which notes the impossibility of eradicating risks. Failing to do so will result in excessive regulation that continues to limit the full potential of nuclear power in tackling climate change and sees a continued reliance on objectively more harmful energy sources.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1272,10 +1269,11 @@
     }
   },
   {
-    "type": "PageNumber",
+    "type": "Footer",
     "element_id": "4fa08c2ba2738ea62be41b466b794caa",
     "text": "5",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1296,10 +1294,11 @@
     }
   },
   {
-    "type": "PageNumber",
+    "type": "Footer",
     "element_id": "eeae015ec524f1b1bb0f7ac376a2090b",
     "text": "6",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1324,6 +1323,7 @@
     "element_id": "b9eaa26361e53e6e430494de5febf1b1",
     "text": "Recalibrating the risk conversation",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1348,6 +1348,7 @@
     "element_id": "d4b3fedebdff5b1fbae81fce93b964b2",
     "text": "By looking at radiation risks in isolation, we have created something akin to a “radiation phobia”, that both directly and indirectly harms people around the world. For instance, it is well established that the vast majority of health impacts from Chernobyl and Fukushima Daiichi were not radiological, but rather psychosocial. There has been an observable and dramatic increase in depression, PTSD, substance abuse, and suicides following these events, which can be significantly attributed to the dissonance between the actual and perceived risks of radiation, and the stigmatization they caused.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1372,6 +1373,7 @@
     "element_id": "f71d9a617fd81ca5b4e4fd8070b56548",
     "text": "Similarly, many of the tremendous challenges the global community faces are significantly driven by this “radiation phobia”. Indeed, several of these issues have been considerably exacerbated by the fact that certain risks are given a disproportionate amount of focus, whereas others are de facto ignored. The global conversation around climate change is a prime example of this. The historical use of fossil fuels has contributed significantly to climate change through greenhouse gas emissions, causing unprecedented changes in the liveability of the Earth. By 2025, half of the world’s population will be living in water-stressed areas, as extreme heat and droughts are exacerbating water resources. Between 2030 and 2050, climate change is expected to be the cause of an additional 250,000 deaths per year, arising from malnutrition, malaria, diarrhoea and heat stressx. Yet, despite the huge risks associated with climate change, our addiction to coal, oil, and fossil gas remains, with fossil fuels providing 84% of global primary energy in 2019xii. The continued prioritization of fossil fuels at the expense of nuclear energy results in a considerable increase in the risks posed by climate change.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1393,8 +1395,8 @@
   },
   {
     "type": "Image",
-    "element_id": "b2da14131273a2cbfacffba11596992b",
-    "text": "- A - / = < ot 22 e - < A _ - iy \\",
+    "element_id": "a276b56f53d878afbe140378137c0699",
+    "text": "=] L v M ~ = Mt % ks L ~ L ¢ A S A iy - - ~ A | -",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1417,8 +1419,8 @@
   },
   {
     "type": "Image",
-    "element_id": "7ce1f0be41a4af959d4f8ddf3b4796e4",
-    "text": "L % ew :",
+    "element_id": "b134f8ddfb4d835c022289923edcf493",
+    "text": "- & 3 1",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1444,6 +1446,7 @@
     "element_id": "83578f6774acfda63a6aeaba61c1338b",
     "text": "Equally, it is well established that living without access to electricity results in illness and death around the world, caused by everything from not having access to modern healthcare to household air pollution. As of today, 770 million people around the world do not have access to electricity, with over 75% of that population living in Sub-Saharan Africa. The world's poorest 4 billion people consume a mere 5% of the energy used in developed economies, and we need to find ways of delivering reliable electricity to the entire human population in a fashion that is sustainable. Household and ambient air pollution causes 8.7 million deaths each year, largely because of the continued use of fossil fuels. Widespread electrification is a key tool for delivering a just energy transition. Investment in nuclear, has become an urgent necessity. Discarding it, based on risk perceptions divorced from science, would be to abandon the moral obligation to ensure affordable, reliable, and sustainable energy for every community around the world.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1465,8 +1468,8 @@
   },
   {
     "type": "Image",
-    "element_id": "1fdb81ab48f8953865071cce9019bc8d",
-    "text": "& o b . 3 % % Sy o e , = 4 %",
+    "element_id": "7b29e122c389070d55db37dfca9bd98e",
+    "text": "I k A e e ! S 2 P =% e ok 4 Pt t i y",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1492,6 +1495,7 @@
     "element_id": "868eb20ec9d28b0559f28d7b22f4b3af",
     "text": "Clearly, we have reached a point where we must establish a new conversation about the relative risks of using nuclear, especially when risks created by other energy sources are considered. We cannot address many of the global challenges we face without a significant increase in the use of nuclear energy. The detrimental effects of decades of looking at nuclear risks in isolation highlights just how crucial it is that regulators and policymakers change the way they view nuclear energy, and transition towards an all-hazards approach, ensuring that actions taken to mitigate risks do not result in creating more severe risks.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1516,6 +1520,7 @@
     "element_id": "2b6ea4cb3cdceb2bb69833c7fecedca7",
     "text": "We must begin to holistically look at the severity of the consequences of maintaining the current energy production system, many of which are irreversible. The ways in which we address climate change and other issues of global importance must be sustainable and not create new hazards down the line. The reality is that nuclear has always been and remains an exceptionally safe source of energy, representing the lowest risk, the most sustainable, and the most affordable ways to generate around-the-clock electricity.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1540,6 +1545,7 @@
     "element_id": "a9903d695f11dc8e87d1a35cfd2673c0",
     "text": "Therefore, World Nuclear Association calls upon policymakers and regulators to adopt an all-hazards approach, where different risks associated with energy producing technologies are placed in perspective and the appropriate context, and examined in line with the latest scientific evidence. Policymakers and regulators must ensure that their decisions regarding radiation protection do not create greater risks elsewhere. This include the recalibration of existing regulations regarding nuclear power and radiation, weighing the cost of regulatory measures against the societal benefits provided by nuclear energy.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1561,8 +1567,8 @@
   },
   {
     "type": "Image",
-    "element_id": "be6c1ab5efa44f861106464f85a26c3d",
-    "text": "~— = = — 5 = = =] -",
+    "element_id": "83b25cf24b6394af46a2b75ae34585df",
+    "text": "B = o K |",
     "metadata": {
       "filetype": "application/pdf",
       "languages": [
@@ -1584,10 +1590,11 @@
     }
   },
   {
-    "type": "PageNumber",
+    "type": "Footer",
     "element_id": "81e1362c9dfb3e04603ba076f6384c1b",
     "text": "7",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1608,10 +1615,11 @@
     }
   },
   {
-    "type": "PageNumber",
+    "type": "Footer",
     "element_id": "254ec884050f824b4524f53a2693f685",
     "text": "8",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1636,6 +1644,7 @@
     "element_id": "3d819f053bf67ec228cf8c23aca02ac7",
     "text": "References",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1656,10 +1665,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "6e382e23cb8e18e36222ba04c4939976",
     "text": "i World Health Organization (2020). Road traffic injuries. Available at: https://www.who.int/news-room/fact-sheets/ detail/road-traffic-injuries",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1680,10 +1690,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "bc34ca8db00c9041d25f8d2637983e49",
     "text": "ii BBC (2020). Plane crash fatalities fell more than 50% in 2019. Available at: https://www.bbc.co.uk/news/ business-50953712",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1704,10 +1715,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "13b6e2e3642db53f4adaf487a51b9659",
     "text": "iii Slovic, P., 2010. The Psychology of risk. Saúde e Sociedade, 19(4), pp. 731-747.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1728,10 +1740,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "dc01acc51ef00e1a135b8221bd80be47",
     "text": "iv United Nations Scientific Committee on the Effects of Radiation (2016). Report of the United Nations Scientific Committee on the Effects of Atomic Radiation. Accessed from: https://www.unscear.org/docs/publications/2016/ UNSCEAR_2016_GA-Report-CORR.pdf",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1752,10 +1765,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "2214b4bf8e27e1f3f0b64b986f390f97",
     "text": "v International Energy Agency (2020). Global share of total energy supply by source, 2018. Key World Energy Statistics 2020. Available at: https://www.iea.org/data-and-statistics/charts/global-share-of-total-energy-supply-by- source-2018",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1776,10 +1790,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "76ec3a7eb5a99f1a9a8df141215fc389",
     "text": "vi Vohra, K., Vodonos, A., Schwartz, J., Marais, E., Sulprizio, M., & Mickley, L. (2021). Global mortality from outdoor fine particle pollution generated by fossil fuel combustion: Results from GEOS-Chem. Environmental Research, 195, p. 1-8",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1800,10 +1815,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "9d47b11851a90774a6c355ccd420a7dc",
     "text": "vii World Health Organization. (2016). Updated tables 2016 for ‘Preventing disease through health environments: a global assessment of the burden of disease from environmental risks’. Available at: https://www.who.int/data/gho/ data/themes/public-health-and-environment [Accessed on 8 April 2021]",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1824,10 +1840,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "abe2153b4edbc12de62607f0e4f32a67",
     "text": "viii National Cancer Institute (2020). Cancer statistics. Available at: https://www.cancer.gov/about-cancer/ understanding/statistics",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1848,10 +1865,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "a4b5a502ffcddee4f9729d64d31c7d30",
     "text": "ix Cancer Research UK (n.d.). Cancer risk statistics. Available at: https://www.cancerresearchuk.org/health- professional/cancer-statistics/risk",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1872,10 +1890,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "f3ffba9df574305cd758077a0e442549",
     "text": "x OECD-NEA (2019). The Full Costs of Electricity Provision. Available at: https://www.oecd-nea.org/jcms/pl_14998/ the-full-costs-of-electricity-provision?details=true",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1896,10 +1915,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "83b73583244385a9444242685383ecde",
     "text": "xi World Health Organization (2018). Climate change and health. Available at: https://www.who.int/news-room/fact- sheets/detail/climate-change-and-health",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1920,10 +1940,11 @@
     }
   },
   {
-    "type": "NarrativeText",
+    "type": "ListItem",
     "element_id": "eb29ac6bd81f95cee79ae6e96f6381c5",
     "text": "xii BP, 2020. BP Statistical Review of World Energy, London: BP.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1948,6 +1969,7 @@
     "element_id": "fe54332907fa7d062557c88a034dacde",
     "text": "Photo credits: Front cover & pages 1, 4, 6 left, 7 bottom: Adobe Stock; page 6 right: Getty Images; page 7 top: Uniper.",
     "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1968,10 +1990,61 @@
     }
   },
   {
-    "type": "Image",
-    "element_id": "3679f62fff609b894c69fb2a690e748c",
-    "text": "World Nuclear Association  +44 (0)20 7451 1520  Tower House  www.world-nuclear.org  10 Southampton Street  info@world-nuclear.org  London WC2E 7HA  United Kingdom  World Nuclear Association is the international organization that represents   the global nuclear industry. Its mission is to promote a wider understanding   of nuclear energy among key international influencers by producing   authoritative information, developing common industry positions, and   contributing to the energy debate. ",
+    "type": "NarrativeText",
+    "element_id": "48dae8ac77cc653df8fe46ca706c1931",
+    "text": "World Nuclear Association Tower House 10 Southampton Street London WC2E 7HA United Kingdom",
     "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "7ac9948c40759d5a7c1a2dbe870ca322",
+    "text": "+44 (0)20 7451 1520 www.world-nuclear.org info@world-nuclear.org",
+    "metadata": {
+      "is_extracted": "true",
+      "filetype": "application/pdf",
+      "languages": [
+        "eng"
+      ],
+      "page_number": 12,
+      "data_source": {
+        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
+        "version": "e690f37ef36368a509d150f373a0bbe0",
+        "record_locator": {
+          "protocol": "s3",
+          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
+        },
+        "date_created": "1676196572.0",
+        "date_modified": "1676196572.0",
+        "permissions_data": null,
+        "filesize_bytes": 806335
+      }
+    }
+  },
+  {
+    "type": "NarrativeText",
+    "element_id": "f133df66727c328c27d3b8184204f864",
+    "text": "World Nuclear Association is the international organization that represents the global nuclear industry. Its mission is to promote a wider understanding of nuclear energy among key international influencers by producing authoritative information, developing common industry positions, and contributing to the energy debate.",
+    "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"
@@ -1993,33 +2066,10 @@
   },
   {
     "type": "Footer",
-    "element_id": "ca20d9645ebc5056729bb01ebf56b806",
-    "text": "Recalibrating risk",
+    "element_id": "a637062adfd950e2491a0929d2b4ac1a",
+    "text": "Recalibrating risk © 2021 World Nuclear Association. Registered in England and Wales, company number 01215741",
     "metadata": {
-      "filetype": "application/pdf",
-      "languages": [
-        "eng"
-      ],
-      "page_number": 12,
-      "data_source": {
-        "url": "s3://utic-dev-tech-fixtures/small-pdf-set/recalibrating-risk-report.pdf",
-        "version": "e690f37ef36368a509d150f373a0bbe0",
-        "record_locator": {
-          "protocol": "s3",
-          "remote_file_path": "s3://utic-dev-tech-fixtures/small-pdf-set/"
-        },
-        "date_created": "1676196572.0",
-        "date_modified": "1676196572.0",
-        "permissions_data": null,
-        "filesize_bytes": 806335
-      }
-    }
-  },
-  {
-    "type": "Footer",
-    "element_id": "d782c57875e4c459fcf0092046c5a15c",
-    "text": "© 2021 World Nuclear Association. Registered in England and Wales, company number 01215741",
-    "metadata": {
+      "is_extracted": "true",
       "filetype": "application/pdf",
       "languages": [
         "eng"

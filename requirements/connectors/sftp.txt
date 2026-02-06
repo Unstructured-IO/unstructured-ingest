@@ -1,2 +1,0 @@
-fsspec
-paramiko

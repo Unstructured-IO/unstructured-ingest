@@ -135,16 +135,28 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
         except httpx.TimeoutException as e:
             raise TimeoutError(str(e))
 
-    def query(self, database_id: str, **kwargs: Any) -> Tuple[List[Page], dict]:
-        """Get a list of [Pages](https://developers.notion.com/reference/page) contained in the database.
+    def _query_database(self, database_id: str, **kwargs: Any) -> dict:
+        """Post to the database query endpoint via the parent client's request method."""
+        body = kwargs.get("body", {})
+        if start_cursor := kwargs.get("start_cursor"):
+            body["start_cursor"] = start_cursor
+        return self.parent.request(
+            path=f"databases/{database_id}/query",
+            method="POST",
+            body=body,
+            auth=kwargs.get("auth"),
+        )
 
-        *[🔗 Endpoint documentation](https://developers.notion.com/reference/post-database-query)*
-        """  # noqa: E501
+    def query(self, database_id: str, **kwargs: Any) -> Tuple[List[Page], dict]:
+        """Get a list of Pages contained in the database.
+
+        https://developers.notion.com/reference/post-database-query
+        """
         resp: dict = (
-            self.retry_handler(super().query, database_id=database_id, **kwargs)
-            if (self.retry_handler)
-            else (super().query(database_id=database_id, **kwargs))
-        )  # type: ignore
+            self.retry_handler(self._query_database, database_id=database_id, **kwargs)
+            if self.retry_handler
+            else self._query_database(database_id=database_id, **kwargs)
+        )
         pages = [Page.from_dict(data=p) for p in resp.pop("results")]
         for p in pages:
             p.properties = map_cells(p.properties)
@@ -153,20 +165,25 @@ class DatabasesEndpoint(NotionDatabasesEndpoint):
     def iterate_query(self, database_id: str, **kwargs: Any) -> Generator[List[Page], None, None]:
         next_cursor = None
         while True:
-            response: dict = (
+            resp: dict = (
                 self.retry_handler(
-                    super().query, database_id=database_id, start_cursor=next_cursor, **kwargs
+                    self._query_database,
+                    database_id=database_id,
+                    start_cursor=next_cursor,
+                    **kwargs,
                 )
-                if (self.retry_handler)
-                else (super().query(database_id=database_id, start_cursor=next_cursor, **kwargs))
-            )  # type: ignore
-            pages = [Page.from_dict(data=p) for p in response.pop("results", [])]
+                if self.retry_handler
+                else self._query_database(
+                    database_id=database_id, start_cursor=next_cursor, **kwargs
+                )
+            )
+            pages = [Page.from_dict(data=p) for p in resp.pop("results", [])]
             for p in pages:
                 p.properties = map_cells(p.properties)
             yield pages
 
-            next_cursor = response.get("next_cursor")
-            if not response.get("has_more") or not next_cursor:
+            next_cursor = resp.get("next_cursor")
+            if not resp.get("has_more") or not next_cursor:
                 return
 
 

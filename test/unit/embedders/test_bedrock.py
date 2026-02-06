@@ -53,6 +53,6 @@ def test_inference_profile_manual():
     config = BedrockEmbeddingConfig(
         aws_access_key_id="test",
         aws_secret_access_key="test",
-        inference_profile_id="manual-profile"
+        inference_profile_id="manual-profile",
     )
     assert config.inference_profile_id == "manual-profile"

@@ -77,10 +77,8 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     region_name: str = Field(
         description="aws region name",
         default_factory=lambda: (
-            os.getenv("BEDROCK_REGION_NAME") or
-            os.getenv("AWS_DEFAULT_REGION") or
-            "us-west-2"
-        )
+            os.getenv("BEDROCK_REGION_NAME") or os.getenv("AWS_DEFAULT_REGION") or "us-west-2"
+        ),
     )
     endpoint_url: str | None = Field(description="custom bedrock endpoint url", default=None)
     access_method: str = Field(
@@ -138,7 +136,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
             raise ValueError(
                 f"Invalid access_method: {self.access_method}. Must be 'credentials' or 'iam'"
             )
-            
+
         client = self.get_bedrock_client()
         try:
             model_info = client.list_foundation_models(byOutputModality="EMBEDDING")
@@ -159,10 +157,10 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         kwargs = {
             "region_name": self.region_name,
         }
-        
+
         if self.endpoint_url:
             kwargs["endpoint_url"] = self.endpoint_url
-            
+
         if self.access_method == "credentials":
             if self.aws_access_key_id and self.aws_secret_access_key:
                 kwargs["aws_access_key_id"] = self.aws_access_key_id.get_secret_value()
@@ -178,7 +176,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
             raise ValueError(
                 f"Invalid access_method: {self.access_method}. Must be 'credentials' or 'iam'"
             )
-            
+
         return kwargs
 
     @requires_dependencies(

@@ -17,7 +17,7 @@ jobs:
   lint:
     strategy:
       matrix:
-        python-version: [ "3.10","3.11", "3.12" ]
+        python-version: [ "3.12" ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
     environment: ci
     strategy:
       matrix:
-        python-version: [ "3.10","3.11", "3.12" ]
+        python-version: [ "3.12" ]
     runs-on: ubuntu-latest
     needs: [ lint ]
     steps:
@@ -100,7 +100,7 @@ jobs:
     environment: ci
     strategy:
       matrix:
-        python-version: [ "3.10","3.11", "3.12" ]
+        python-version: [ "3.12" ]
     runs-on: ubuntu-latest
     needs: [ lint ]
     steps:
@@ -119,7 +119,7 @@ jobs:
   test_ingest_unit:
     strategy:
       matrix:
-        python-version: [ "3.10","3.11", "3.12" ]
+        python-version: [ "3.12" ]
     runs-on: ubuntu-latest
     needs: [ lint ]
     steps:
@@ -138,13 +138,12 @@ jobs:
       - name: Test Ingest (unit)
         run: |
           uv sync --group test --frozen
-          make unit-test
+          make test-unit
 
   test_ingest_unit_unstructured:
     strategy:
       matrix:
-        # TODO include 3.13 when unstructured supports it
-        python-version: [ "3.10","3.11", "3.12"]
+        python-version: [ "3.12"]
     runs-on: ubuntu-latest
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
@@ -167,4 +166,4 @@ jobs:
           uv sync --group test --frozen
           uv pip install unstructured
           uv run python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
-          make unit-test-unstructured
+          make test-unit-unstructured
