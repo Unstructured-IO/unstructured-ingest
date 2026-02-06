@@ -366,7 +366,9 @@ class PineconeUploader(VectorDBUploader):
             try:
                 results = [async_result.get() for async_result in async_results]
             except PineconeApiException as api_error:
-                raise UnstructuredIngestError(f"http error: {api_error}") from api_error
+                err = UnstructuredIngestError(f"http error: {api_error}")
+                err.status_code = api_error.status
+                raise err from api_error
             logger.debug(f"results: {results}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
