@@ -1,3 +1,7 @@
+## [1.2.41]
+
+* **fix: apply WAN profile before custom timeouts to preserve user-configured values**
+
 ## [1.2.40]
 
 * **fix: prevent filename corruption when file/folder names contain the bucket or path prefix**
