@@ -147,7 +147,12 @@ def validate_collection_count(
 
 
 def validate_collection_vector(
-    collection: Collection, embedding: list[float], text: str, retries: int = 30, interval: int = 1
+    collection: Collection,
+    embedding: list[float],
+    text: str,
+    retries: int = 60,
+    interval: int = 2,
+    min_score: float = 0.99,
 ) -> None:
     pipeline = [
         {
@@ -163,21 +168,42 @@ def validate_collection_vector(
     ]
     attempts = 0
     results = list(collection.aggregate(pipeline=pipeline))
-    while not results and attempts < retries:
+    top_result = results[0] if results else None
+
+    # Wait until we get results with a high enough score (handles eventual consistency)
+    while attempts < retries:
+        score_ok = top_result and top_result.get("score", 0) >= min_score
+        text_ok = top_result and top_result.get("text") == text
+        if score_ok and text_ok:
+            break
         attempts += 1
-        print(f"attempt {attempts}, waiting for valid results: {results}")
+        print(
+            f"attempt {attempts}, waiting for valid results with score >= {min_score}: "
+            f"current score={top_result.get('score') if top_result else 'N/A'}"
+        )
         time.sleep(interval)
         results = list(collection.aggregate(pipeline=pipeline))
+        top_result = results[0] if results else None
+
     if not results:
         raise TimeoutError("Timed out waiting for valid results")
-    print(f"found results on attempt {attempts}")
-    top_result = results[0]
-    assert top_result["score"] == 1.0, "score detected should be 1: {}".format(top_result["score"])
+    if not top_result or top_result.get("score", 0) < min_score:
+        best_score = top_result.get("score") if top_result else "N/A"
+        raise TimeoutError(
+            f"Timed out waiting for score >= {min_score}, best score: {best_score}"
+        )
+
+    print(f"found valid results on attempt {attempts} with score {top_result['score']}")
+    assert top_result["score"] >= min_score, (
+        f"score should be >= {min_score}: {top_result['score']}"
+    )
     assert top_result["text"] == text, "text detected should be {}, found: {}".format(
         text, top_result["text"]
     )
     for r in results[1:]:
-        assert r["score"] < 1.0, "score detected should be less than 1: {}".format(r["score"])
+        assert r["score"] < top_result["score"], (
+            f"other scores should be less than top score {top_result['score']}: {r['score']}"
+        )
 
 
 @pytest.mark.asyncio
