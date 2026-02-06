@@ -1,3 +1,7 @@
+## [1.2.41]
+
+* **fix: improve pinecone connector error handling by passing through the status code**
+
 ## [1.2.40]
 
 * **fix: prevent filename corruption when file/folder names contain the bucket or path prefix**
