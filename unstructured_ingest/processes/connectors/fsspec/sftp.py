@@ -51,9 +51,11 @@ def _strip_leading_slash(path: str) -> str:
 # This flag tells OpenSSL the MD5 call is non-cryptographic, which is safe.
 _original_md5 = hashlib.md5
 
+
 def _fips_safe_md5(data=b"", **kwargs):
     kwargs.setdefault("usedforsecurity", False)
     return _original_md5(data, **kwargs)
+
 
 hashlib.md5 = _fips_safe_md5
 

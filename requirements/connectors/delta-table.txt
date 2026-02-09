@@ -1,5 +1,0 @@
-pandas
-deltalake
-boto3
-tenacity
-pyarrow

@@ -1,1 +1,0 @@
-elasticsearch[async]<9.0.0

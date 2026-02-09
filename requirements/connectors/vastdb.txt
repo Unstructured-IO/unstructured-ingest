@@ -1,4 +1,0 @@
-pandas
-pyarrow
-vastdb
-ibis
