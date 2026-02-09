@@ -78,14 +78,14 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         default=None,
         description=(
             "Timeout in seconds for establishing initial connection to Couchbase cluster. "
-            "If not specified, uses SDK default (2 seconds)."
+            "If not specified, uses the WAN development profile default."
         ),
     )
     bootstrap_timeout_seconds: Optional[int] = Field(
         default=None,
         description=(
             "Timeout in seconds for bootstrapping connection to Couchbase cluster. "
-            "If not specified, uses SDK default (5 seconds)."
+            "If not specified, uses the WAN development profile default."
         ),
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
