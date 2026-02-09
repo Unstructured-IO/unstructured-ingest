@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, List
+from typing import TYPE_CHECKING, Any, Generator, List, Optional
 
 from pydantic import BaseModel, Field, Secret
 
@@ -74,6 +74,20 @@ class CouchbaseConnectionConfig(ConnectionConfig):
     collection: str = Field(
         default="_default", description="The collection to connect to on the Couchbase server"
     )
+    connect_timeout_seconds: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for establishing initial connection to Couchbase cluster. "
+            "If not specified, uses the WAN development profile default."
+        ),
+    )
+    bootstrap_timeout_seconds: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for bootstrapping connection to Couchbase cluster. "
+            "If not specified, uses the WAN development profile default."
+        ),
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
     access_config: Secret[CouchbaseAccessConfig]
 
@@ -85,12 +99,26 @@ class CouchbaseConnectionConfig(ConnectionConfig):
         from couchbase.options import ClusterOptions
 
         auth = PasswordAuthenticator(self.username, self.access_config.get_secret_value().password)
+
         options = ClusterOptions(auth)
+        # Apply WAN profile first to get sensible defaults for remote clusters,
+        # then override with user-configured timeouts so custom values take precedence.
         options.apply_profile("wan_development")
+
+        if self.connect_timeout_seconds is not None:
+            options["connect_timeout"] = timedelta(seconds=self.connect_timeout_seconds)
+        if self.bootstrap_timeout_seconds is not None:
+            options["bootstrap_timeout"] = timedelta(seconds=self.bootstrap_timeout_seconds)
+
         cluster = None
         try:
-            cluster = Cluster(self.connection_string, options)
-            cluster.wait_until_ready(timedelta(seconds=5))
+            # Use Cluster.connect() method for timeout options to be respected
+            cluster = Cluster.connect(self.connection_string, options)
+            # Wait for cluster to be ready (uses bootstrap_timeout from options if set)
+            wait_timeout = (
+                self.bootstrap_timeout_seconds if self.bootstrap_timeout_seconds is not None else 10
+            )
+            cluster.wait_until_ready(timedelta(seconds=wait_timeout))
             yield cluster
         finally:
             if cluster:
