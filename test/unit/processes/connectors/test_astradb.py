@@ -4,7 +4,7 @@ import pytest
 from pydantic import Secret
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import WriteError
+from unstructured_ingest.error import TimeoutError, WriteError
 from unstructured_ingest.processes.connectors.astradb import (
     CONNECTOR_TYPE,
     AstraDBAccessConfig,
@@ -319,8 +319,6 @@ async def test_timeout_exception_raises_timeout_error(
     not as a WriteError (400).
     """
     from astrapy.exceptions import DataAPITimeoutException
-    from unstructured_ingest.error import TimeoutError
-
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
@@ -353,8 +351,6 @@ async def test_http_4xx_error_raises_write_error(
     Test that DataAPIHttpException with 4xx status code is wrapped as WriteError.
     """
     from astrapy.exceptions import DataAPIHttpException
-    from unittest.mock import MagicMock
-
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
@@ -391,8 +387,6 @@ async def test_http_5xx_error_propagates(
     as a server error, not wrapped as WriteError.
     """
     from astrapy.exceptions import DataAPIHttpException
-    from unittest.mock import MagicMock
-
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
