@@ -63,11 +63,27 @@ class GoogleDriveAccessConfig(AccessConfig):
         default=None,
         description="File path to credentials values to use for authentication",
     )
+    oauth_token: Optional[str] = Field(
+        default=None,
+        description="OAuth 2.0 access token for user authentication. "
+        "Obtain via Google OAuth Playground or your OAuth application. "
+        "Tokens typically expire after 1 hour.",
+    )
 
     def model_post_init(self, __context: Any) -> None:
-        if self.service_account_key is None and self.service_account_key_path is None:
+        has_service_account = (
+            self.service_account_key is not None or self.service_account_key_path is not None
+        )
+        has_oauth_token = self.oauth_token is not None
+
+        if not has_service_account and not has_oauth_token:
             raise ValueError(
-                "either service_account_key or service_account_key_path must be provided"
+                "either service_account_key, service_account_key_path, or oauth_token must be set"
+            )
+
+        if has_service_account and has_oauth_token:
+            raise ValueError(
+                "cannot use both service account and oauth_token authentication"
             )
 
     def get_service_account_key(self) -> dict:
@@ -97,21 +113,35 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
     def get_client(self) -> Generator["GoogleAPIResource", None, None]:
         from google.auth import exceptions
         from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials as OAuthCredentials
         from googleapiclient.discovery import build
         from googleapiclient.errors import HttpError
 
         access_config = self.access_config.get_secret_value()
-        key_data = access_config.get_service_account_key()
 
         try:
-            creds = service_account.Credentials.from_service_account_info(key_data)
+            if access_config.oauth_token:
+                logger.warning(
+                    "Using OAuth token authentication. Tokens expire after ~1 hour. "
+                    "For long operations, consider using service account authentication."
+                )
+                creds = OAuthCredentials(token=access_config.oauth_token)
+            else:
+                key_data = access_config.get_service_account_key()
+                creds = service_account.Credentials.from_service_account_info(key_data)
+
             service = build("drive", "v3", credentials=creds)
             with service.files() as client:
                 yield client
         except HttpError as exc:
+            if exc.resp.status == 401:
+                raise UserAuthError(
+                    "Authentication failed. The credentials may be invalid, expired, "
+                    "or missing required scopes."
+                )
             raise ValueError(f"{exc.reason}")
         except exceptions.DefaultCredentialsError:
-            raise UserAuthError("The provided API key is invalid.")
+            raise UserAuthError("The provided credentials are invalid.")
 
 
 class GoogleDriveIndexerConfig(IndexerConfig):
@@ -539,7 +569,15 @@ class GoogleDriveDownloader(Downloader):
                         status, done = downloader.next_chunk()
                         logger.debug(f"Download progress:{int(status.progress() * 100)}.")
 
-        except (HttpError, ValueError) as error:
+        except HttpError as error:
+            if error.resp.status == 401:
+                raise UserAuthError(
+                    "Authentication failed. The credentials may be invalid, expired, "
+                    "or missing required scopes."
+                )
+            logger.exception(f"Error downloading file {file_id} to {download_path}: {error}")
+            raise SourceConnectionError("Failed to download file") from error
+        except ValueError as error:
             logger.exception(f"Error downloading file {file_id} to {download_path}: {error}")
             raise SourceConnectionError("Failed to download file") from error
 
@@ -678,8 +716,13 @@ class GoogleDriveDownloader(Downloader):
                         status, done = downloader.next_chunk()
                         logger.debug(f"Download progress: {int(status.progress() * 100)}.")
             except HttpError as error:
+                if error.resp.status == 401:
+                    raise UserAuthError(
+                        "Authentication failed. The credentials may be invalid, expired, "
+                        "or missing required scopes."
+                    )
                 if error.resp.status == 403 and "too large" in error.reason.lower():
-                    # Even though we have the LRO threashold, for some smaller files the
+                    # Even though we have the LRO threshold, for some smaller files the
                     # export size might exceed 10MB and we get a 403 error.
                     # In that case, we use LRO as a fallback.
                     self._export_gdrive_file_with_lro(file_id, download_path, mime_type)
@@ -728,18 +771,30 @@ class GoogleDriveDownloader(Downloader):
         import httpx
         from google.auth.transport.requests import Request
 
-        creds = self._get_credentials()
+        access_config = self.connection_config.access_config.get_secret_value()
 
-        creds.refresh(Request())
+        if access_config.oauth_token:
+            # OAuth tokens are already access tokens, use directly
+            token = access_config.oauth_token
+        else:
+            # Service account credentials need to be refreshed to get access token
+            creds = self._get_credentials()
+            creds.refresh(Request())
+            token = creds.token
 
         headers = {
-            "Authorization": f"Bearer {creds.token}",
+            "Authorization": f"Bearer {token}",
         }
 
         with (
             httpx.Client(timeout=None, follow_redirects=True) as client,
             client.stream("GET", url, headers=headers) as response,
         ):
+            if response.status_code == 401:
+                raise UserAuthError(
+                    "Authentication failed. The credentials may be invalid, expired, "
+                    "or missing required scopes."
+                )
             if response.status_code != 200:
                 raise SourceConnectionError(
                     f"Failed to stream download from {url}: {response.status_code}"
@@ -753,19 +808,24 @@ class GoogleDriveDownloader(Downloader):
     def _get_credentials(self):
         """
         Retrieves the credentials for Google Drive API access.
+        Supports both service account and OAuth token authentication.
 
         Returns:
             Credentials: The credentials for Google Drive API access.
         """
         from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials as OAuthCredentials
 
         access_config = self.connection_config.access_config.get_secret_value()
+
+        if access_config.oauth_token:
+            return OAuthCredentials(token=access_config.oauth_token)
+
         key_data = access_config.get_service_account_key()
-        creds = service_account.Credentials.from_service_account_info(
+        return service_account.Credentials.from_service_account_info(
             key_data,
             scopes=["https://www.googleapis.com/auth/drive.readonly"],
         )
-        return creds
 
     def _download_file(self, file_data: FileData) -> Path:
         """Downloads a file from Google Drive using either direct download or export based

@@ -1,3 +1,7 @@
+## [1.3.2]
+
+* **feat: add oauth token option to google drive**
+
 ## [1.3.1]
 
 * **fix: improve pinecone connector error handling by passing through the status code**
