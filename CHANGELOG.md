@@ -1,3 +1,7 @@
+## [1.3.3]
+
+* **fix: use couchbase constructor that respects timeout configurations**
+
 ## [1.3.2]
 
 * **feat: add oauth token option to google drive**
