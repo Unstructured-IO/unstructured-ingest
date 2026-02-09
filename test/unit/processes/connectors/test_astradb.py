@@ -275,15 +275,17 @@ def test_enable_lexical_search_works_with_unstructured_embeddings(file_data: Fil
 
 
 @pytest.mark.asyncio
-async def test_insert_many_failure_raises_write_error(
+async def test_collection_insert_many_exception_raises_write_error(
     connection_config: AstraDBConnectionConfig,
     file_data: FileData,
     mock_get_collection: AsyncMock,
 ):
     """
-    Test that when insert_many fails (e.g., due to collection configuration issues),
-    a WriteError with 400 status code is raised instead of a generic 500 error.
+    Test that when insert_many fails due to collection configuration issues
+    (CollectionInsertManyException), a WriteError with 400 status code is raised.
     """
+    from astrapy.exceptions import CollectionInsertManyException
+
     uploader = AstraDBUploader(
         connection_config=connection_config,
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
@@ -291,15 +293,126 @@ async def test_insert_many_failure_raises_write_error(
 
     # Simulate a collection configuration error (like LEXICAL_NOT_ENABLED_FOR_COLLECTION)
     mock_get_collection.insert_many = AsyncMock(
-        side_effect=Exception(
-            "CollectionInsertManyException(Lexical content can only be added "
-            "and filtering and sort only be used on Collections for which Lexical "
-            "feature is enabled. The Collection default_keyspace.test_collection "
-            "does not have Lexical feature enabled. (LEXICAL_NOT_ENABLED_FOR_COLLECTION))"
+        side_effect=CollectionInsertManyException(
+            text="Lexical content can only be added and filtering and sort only be used "
+            "on Collections for which Lexical feature is enabled.",
+            inserted_ids=[],
+            exceptions=[],
         )
     )
 
-    with pytest.raises(WriteError, match="AstraDB error:"):
+    with pytest.raises(WriteError, match="AstraDB collection error:"):
+        await uploader.run_data(
+            data=[{"$vector": [0.1, 0.2, 0.3], "content": "test", "metadata": {}}],
+            file_data=file_data,
+        )
+
+
+@pytest.mark.asyncio
+async def test_timeout_exception_raises_timeout_error(
+    connection_config: AstraDBConnectionConfig,
+    file_data: FileData,
+    mock_get_collection: AsyncMock,
+):
+    """
+    Test that DataAPITimeoutException is propagated as TimeoutError (408),
+    not as a WriteError (400).
+    """
+    from astrapy.exceptions import DataAPITimeoutException
+    from unstructured_ingest.error import TimeoutError
+
+    uploader = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
+    )
+
+    # Simulate a timeout
+    mock_get_collection.insert_many = AsyncMock(
+        side_effect=DataAPITimeoutException(
+            text="Request timed out",
+            timeout_type="read",
+            endpoint="https://test.astra.datastax.com",
+            raw_payload="{}",
+        )
+    )
+
+    with pytest.raises(TimeoutError, match="AstraDB timeout:"):
+        await uploader.run_data(
+            data=[{"$vector": [0.1, 0.2, 0.3], "content": "test", "metadata": {}}],
+            file_data=file_data,
+        )
+
+
+@pytest.mark.asyncio
+async def test_http_4xx_error_raises_write_error(
+    connection_config: AstraDBConnectionConfig,
+    file_data: FileData,
+    mock_get_collection: AsyncMock,
+):
+    """
+    Test that DataAPIHttpException with 4xx status code is wrapped as WriteError.
+    """
+    from astrapy.exceptions import DataAPIHttpException
+    from unittest.mock import MagicMock
+
+    uploader = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
+    )
+
+    # Create a mock response with 400 status code
+    mock_response = MagicMock()
+    mock_response.status_code = 400
+
+    http_exception = DataAPIHttpException(
+        text="Bad request",
+        httpx_error=Exception("Bad request"),
+        error_descriptors=[],
+    )
+    http_exception.response = mock_response
+
+    mock_get_collection.insert_many = AsyncMock(side_effect=http_exception)
+
+    with pytest.raises(WriteError, match="AstraDB HTTP error:"):
+        await uploader.run_data(
+            data=[{"$vector": [0.1, 0.2, 0.3], "content": "test", "metadata": {}}],
+            file_data=file_data,
+        )
+
+
+@pytest.mark.asyncio
+async def test_http_5xx_error_propagates(
+    connection_config: AstraDBConnectionConfig,
+    file_data: FileData,
+    mock_get_collection: AsyncMock,
+):
+    """
+    Test that DataAPIHttpException with 5xx status code propagates naturally
+    as a server error, not wrapped as WriteError.
+    """
+    from astrapy.exceptions import DataAPIHttpException
+    from unittest.mock import MagicMock
+
+    uploader = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
+    )
+
+    # Create a mock response with 500 status code
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+
+    http_exception = DataAPIHttpException(
+        text="Internal server error",
+        httpx_error=Exception("Internal server error"),
+        error_descriptors=[],
+    )
+    http_exception.response = mock_response
+
+    mock_get_collection.insert_many = AsyncMock(side_effect=http_exception)
+
+    # Should raise the original DataAPIHttpException, not WriteError
+    with pytest.raises(DataAPIHttpException):
         await uploader.run_data(
             data=[{"$vector": [0.1, 0.2, 0.3], "content": "test", "metadata": {}}],
             file_data=file_data,

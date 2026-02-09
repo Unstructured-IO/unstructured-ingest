@@ -22,6 +22,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    TimeoutError,
     WriteError,
 )
 from unstructured_ingest.interfaces import (
@@ -549,6 +550,12 @@ class AstraDBUploader(Uploader):
 
         async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
             async with semaphore:
+                from astrapy.exceptions import (
+                    CollectionInsertManyException,
+                    DataAPIHttpException,
+                    DataAPITimeoutException,
+                )
+
                 try:
                     await async_astra_collection.insert_many(batch)
                     if (batch_num + 1) % log_interval == 0 or batch_num == total_batches - 1:
@@ -556,9 +563,23 @@ class AstraDBUploader(Uploader):
                             f"Upload progress: {batch_num + 1}/{total_batches} batches completed "
                             f"({(batch_num + 1) / total_batches * 100:.1f}%)"
                         )
-                except Exception as e:
+                except CollectionInsertManyException as e:
+                    # Collection configuration/validation errors are client errors
                     logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
-                    raise WriteError(f"AstraDB error: {e}") from e
+                    raise WriteError(f"AstraDB collection error: {e}") from e
+                except DataAPITimeoutException as e:
+                    # Timeout errors should be 408
+                    logger.error(
+                        f"Timeout uploading batch {batch_num + 1}/{total_batches}: {e}"
+                    )
+                    raise TimeoutError(f"AstraDB timeout: {e}") from e
+                except DataAPIHttpException as e:
+                    # Check HTTP status code to determine if it's a client or server error
+                    logger.error(f"HTTP error uploading batch {batch_num + 1}/{total_batches}: {e}")
+                    if hasattr(e, "response") and 400 <= e.response.status_code < 500:
+                        raise WriteError(f"AstraDB HTTP error: {e}") from e
+                    # 5xx errors propagate naturally as server errors
+                    raise
 
         await asyncio.gather(
             *[
