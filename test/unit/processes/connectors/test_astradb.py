@@ -4,6 +4,7 @@ import pytest
 from pydantic import Secret
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import WriteError
 from unstructured_ingest.processes.connectors.astradb import (
     CONNECTOR_TYPE,
     AstraDBAccessConfig,
@@ -271,3 +272,35 @@ def test_enable_lexical_search_works_with_unstructured_embeddings(file_data: Fil
     assert result["$lexical"] == "test content"
     assert "$vector" in result
     assert result["$vector"] == [0.1, 0.2, 0.3]
+
+
+@pytest.mark.asyncio
+async def test_insert_many_failure_raises_write_error(
+    connection_config: AstraDBConnectionConfig,
+    file_data: FileData,
+    mock_get_collection: AsyncMock,
+):
+    """
+    Test that when insert_many fails (e.g., due to collection configuration issues),
+    a WriteError with 400 status code is raised instead of a generic 500 error.
+    """
+    uploader = AstraDBUploader(
+        connection_config=connection_config,
+        upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
+    )
+
+    # Simulate a collection configuration error (like LEXICAL_NOT_ENABLED_FOR_COLLECTION)
+    mock_get_collection.insert_many = AsyncMock(
+        side_effect=Exception(
+            "CollectionInsertManyException(Lexical content can only be added "
+            "and filtering and sort only be used on Collections for which Lexical "
+            "feature is enabled. The Collection default_keyspace.test_collection "
+            "does not have Lexical feature enabled. (LEXICAL_NOT_ENABLED_FOR_COLLECTION))"
+        )
+    )
+
+    with pytest.raises(WriteError, match="AstraDB error:"):
+        await uploader.run_data(
+            data=[{"$vector": [0.1, 0.2, 0.3], "content": "test", "metadata": {}}],
+            file_data=file_data,
+        )

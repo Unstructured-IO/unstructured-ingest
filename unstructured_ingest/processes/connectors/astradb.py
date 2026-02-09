@@ -22,6 +22,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    WriteError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -557,7 +558,7 @@ class AstraDBUploader(Uploader):
                         )
                 except Exception as e:
                     logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
-                    raise
+                    raise WriteError(f"AstraDB error: {e}") from e
 
         await asyncio.gather(
             *[
