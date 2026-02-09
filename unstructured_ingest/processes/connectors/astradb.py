@@ -514,6 +514,12 @@ class AstraDBUploader(Uploader):
 
     @requires_dependencies(["astrapy"], extras="astradb")
     async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        from astrapy.exceptions import (
+            CollectionInsertManyException,
+            DataAPIHttpException,
+            DataAPITimeoutException,
+        )
+
         logger.info(
             f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
@@ -550,12 +556,6 @@ class AstraDBUploader(Uploader):
 
         async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
             async with semaphore:
-                from astrapy.exceptions import (
-                    CollectionInsertManyException,
-                    DataAPIHttpException,
-                    DataAPITimeoutException,
-                )
-
                 try:
                     await async_astra_collection.insert_many(batch)
                     if (batch_num + 1) % log_interval == 0 or batch_num == total_batches - 1:
