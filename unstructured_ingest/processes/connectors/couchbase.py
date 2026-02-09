@@ -115,7 +115,9 @@ class CouchbaseConnectionConfig(ConnectionConfig):
             # Use Cluster.connect() method for timeout options to be respected
             cluster = Cluster.connect(self.connection_string, options)
             # Wait for cluster to be ready (uses bootstrap_timeout from options if set)
-            wait_timeout = self.bootstrap_timeout_seconds or 10
+            wait_timeout = (
+                self.bootstrap_timeout_seconds if self.bootstrap_timeout_seconds is not None else 10
+            )
             cluster.wait_until_ready(timedelta(seconds=wait_timeout))
             yield cluster
         finally:
