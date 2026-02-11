@@ -1,3 +1,9 @@
+## [1.4.0]
+
+* **feat: add Python 3.11 and 3.13 support** Widen `requires-python` from `>=3.12, <3.13` to `>=3.11, <3.14`. Add Python 3.11 and 3.13 classifiers. Expand CI version matrices for lint and test jobs to cover all three versions.
+* **chore: update CI runners** Replace `ubuntu-latest` and `ubuntu-latest-m` runners with `opensource-linux-8core` across all workflows.
+* **fix: e2e `src_api_test` missing matrix** Hardcode `python-version: "3.12"` for the `src_api_test` job which previously referenced an undefined `matrix.python-version`.
+
 ## [1.3.3]
 
 * **fix: use couchbase constructor that respects timeout configurations**

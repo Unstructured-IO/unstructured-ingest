@@ -1,7 +1,7 @@
 [project]
 name = "unstructured_ingest"
 description = "Local ETL data pipeline to get data RAG ready"
-requires-python = ">=3.12, <3.13"
+requires-python = ">=3.11, <3.14"
 authors = [{name = "Unstructured Technologies", email = "devops@unstructuredai.io"}]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -11,7 +11,9 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 readme = "README.md"

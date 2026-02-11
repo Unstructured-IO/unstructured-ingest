@@ -17,8 +17,8 @@ jobs:
   lint:
     strategy:
       matrix:
-        python-version: [ "3.12" ]
-    runs-on: ubuntu-latest
+        python-version: [ "3.11", "3.12", "3.13" ]
+    runs-on: opensource-linux-8core
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -36,14 +36,14 @@ jobs:
           make check-ruff
 
   shellcheck:
-    runs-on: ubuntu-latest
+    runs-on: opensource-linux-8core
     steps:
       - uses: actions/checkout@v4
       - name: ShellCheck
         uses: ludeeus/action-shellcheck@master
 
   shfmt:
-    runs-on: ubuntu-latest
+    runs-on: opensource-linux-8core
     steps:
       - uses: actions/checkout@v4
       - name: setup shfmt
@@ -52,14 +52,14 @@ jobs:
         run: shfmt -i 2 -d .
 
   check-version:
-    runs-on: ubuntu-latest
+    runs-on: opensource-linux-8core
     steps:
       - uses: actions/checkout@v4
       - name: Run check-version
         run: make check-version
 
   changelog:
-    runs-on: ubuntu-latest
+    runs-on: opensource-linux-8core
     steps:
       # need to checkout otherwise paths-filter will fail on merge-queue trigger
       - uses: actions/checkout@v4
@@ -79,8 +79,8 @@ jobs:
     environment: ci
     strategy:
       matrix:
-        python-version: [ "3.12" ]
-    runs-on: ubuntu-latest
+        python-version: [ "3.11", "3.12", "3.13" ]
+    runs-on: opensource-linux-8core
     needs: [ lint ]
     steps:
       - uses: 'actions/checkout@v4'
@@ -100,8 +100,8 @@ jobs:
     environment: ci
     strategy:
       matrix:
-        python-version: [ "3.12" ]
-    runs-on: ubuntu-latest
+        python-version: [ "3.11", "3.12", "3.13" ]
+    runs-on: opensource-linux-8core
     needs: [ lint ]
     steps:
       - uses: 'actions/checkout@v4'
@@ -119,8 +119,8 @@ jobs:
   test_ingest_unit:
     strategy:
       matrix:
-        python-version: [ "3.12" ]
-    runs-on: ubuntu-latest
+        python-version: [ "3.11", "3.12", "3.13" ]
+    runs-on: opensource-linux-8core
     needs: [ lint ]
     steps:
       # actions/checkout MUST come before auth
@@ -143,8 +143,8 @@ jobs:
   test_ingest_unit_unstructured:
     strategy:
       matrix:
-        python-version: [ "3.12"]
-    runs-on: ubuntu-latest
+        python-version: [ "3.11", "3.12", "3.13" ]
+    runs-on: opensource-linux-8core
     env:
       NLTK_DATA: ${{ github.workspace }}/nltk_data
     needs: [ lint ]
