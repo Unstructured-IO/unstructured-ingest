@@ -12,6 +12,8 @@ concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
+permissions:
+  contents: read
 
 jobs:
   check_untagged_tests:
@@ -26,7 +28,7 @@ jobs:
     strategy:
       matrix:
         test: ["partitioners", "chunkers"]
-    runs-on: ubuntu-latest
+    runs-on: opensource-linux-8core
     steps:
       - uses: 'actions/checkout@v4'
 
@@ -44,7 +46,7 @@ jobs:
           make parse-skipped-tests
 
   embedders_int_test:
-    runs-on: ubuntu-latest
+    runs-on: opensource-linux-8core
     steps:
       - uses: 'actions/checkout@v4'
 
@@ -69,7 +71,7 @@ jobs:
           make parse-skipped-tests
 
   blob_storage_connectors_int_test:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -113,7 +115,7 @@ jobs:
         make parse-skipped-tests
 
   sql_connectors_int_test:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -150,7 +152,7 @@ jobs:
         make parse-skipped-tests
 
   nosql_connectors_int_test:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -189,7 +191,7 @@ jobs:
         make parse-skipped-tests
 
   vector_db_connectors_int_test:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -227,7 +229,7 @@ jobs:
         make parse-skipped-tests
 
   uncategorized_connectors_int_test:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
     - uses: 'actions/checkout@v4'
@@ -270,7 +272,7 @@ jobs:
         make parse-skipped-tests
 
   src_e2e_test:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
@@ -339,10 +341,10 @@ jobs:
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: ./.github/actions/setup-environment
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.12"
     - name: Get full Python version
       id: full-python-version
       run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
@@ -357,7 +359,7 @@ jobs:
 
   dest_e2e_test:
     environment: ci
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'

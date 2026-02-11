@@ -22,7 +22,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
   update-fixtures-and-pr:
-    runs-on: ubuntu-latest-m
+    runs-on: opensource-linux-8core
     needs: [setup]
     steps:
       # actions/checkout MUST come before auth

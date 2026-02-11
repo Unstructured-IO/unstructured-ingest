@@ -5,6 +5,10 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+  id-token: write
+
 env:
   PYTHON_VERSION: "3.12"
 

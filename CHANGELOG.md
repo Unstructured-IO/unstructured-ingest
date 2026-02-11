@@ -1,3 +1,11 @@
+## [1.4.0]
+
+* **feat: add Python 3.11 and 3.13 support** Widen `requires-python` from `>=3.12, <3.13` to `>=3.11, <3.14`. Add Python 3.11 and 3.13 classifiers. Expand CI version matrices for lint and test jobs to cover all three versions.
+* **chore: update CI runners** Use `opensource-linux-8core` for test jobs that benefit from parallelism (`test_ingest_unit`, `test_ingest_unit_unstructured`, integration tests, E2E tests); keep `ubuntu-latest` for lightweight jobs (lint, shellcheck, release, etc.).
+* **fix: e2e `src_api_test` missing matrix** Hardcode `python-version: "3.12"` for the `src_api_test` job which previously referenced an undefined `matrix.python-version`.
+* **chore: add workflow permissions** Add explicit least-privilege `permissions` blocks to `unit_tests.yml`, `e2e.yml`, and `release.yml`.
+* **fix: pin ruff via uv override** Override `clarifai`'s hard pin on `ruff==0.11.4` and `psutil==7.0.0` so the lockfile resolves to latest versions.
+
 ## [1.3.3]
 
 * **fix: use couchbase constructor that respects timeout configurations**
