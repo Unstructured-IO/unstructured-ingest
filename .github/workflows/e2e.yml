@@ -12,10 +12,12 @@ concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
+permissions:
+  contents: read
 
 jobs:
   check_untagged_tests:
-    runs-on: opensource-linux-8core
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: run check
@@ -335,7 +337,7 @@ jobs:
         ./test_e2e/test-src.sh
 
   src_api_test:
-    runs-on: opensource-linux-8core
+    runs-on: ubuntu-latest
     steps:
     # actions/checkout MUST come before auth
     - uses: 'actions/checkout@v4'

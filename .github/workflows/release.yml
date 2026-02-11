@@ -5,12 +5,16 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+  id-token: write
+
 env:
   PYTHON_VERSION: "3.12"
 
 jobs:
   release:
-    runs-on: opensource-linux-8core
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
