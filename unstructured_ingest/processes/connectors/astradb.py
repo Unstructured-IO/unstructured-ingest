@@ -559,9 +559,13 @@ class AstraDBUploader(Uploader):
                 batch_progress_str = f"{batch_num + 1}/{total_batches}"
                 batch_progress_percentage = (batch_num + 1) / total_batches * 100
 
+                should_log = (batch_progress_percentage % log_interval == 0 or
+                              batch_num == total_batches - 1)
+
                 try:
                     await async_astra_collection.insert_many(batch)
-                    if batch_progress_percentage % log_interval == 0 or batch_num == total_batches - 1:
+
+                    if should_log:
                         logger.debug(f"Upload progress: {batch_progress_str} batches completed "
                             f"({batch_progress_percentage:.1f}%)")
 
