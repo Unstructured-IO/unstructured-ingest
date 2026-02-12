@@ -1,6 +1,10 @@
-## [1.4.1]
+## [1.4.2]
 
 * **fix: enable sftp to make directories**
+
+## [1.4.1]
+
+* **fix: AstraDB collection errors should return 400 status code**
 
 ## [1.4.0]
 
