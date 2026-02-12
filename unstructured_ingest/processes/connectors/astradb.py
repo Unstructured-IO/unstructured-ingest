@@ -22,6 +22,8 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    TimeoutError,
+    WriteError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -512,6 +514,12 @@ class AstraDBUploader(Uploader):
 
     @requires_dependencies(["astrapy"], extras="astradb")
     async def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        from astrapy.exceptions import (
+            CollectionInsertManyException,
+            DataAPIHttpException,
+            DataAPITimeoutException,
+        )
+
         logger.info(
             f"writing {len(data)} objects to destination "
             f"collection {self.upload_config.collection_name}"
@@ -548,15 +556,41 @@ class AstraDBUploader(Uploader):
 
         async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
             async with semaphore:
+                batch_progress_str = f"{batch_num + 1}/{total_batches}"
+                batch_progress_percentage = (batch_num + 1) / total_batches * 100
+
+                should_log = ((batch_num + 1) % log_interval == 0 or
+                              batch_num == total_batches - 1)
+
                 try:
                     await async_astra_collection.insert_many(batch)
-                    if (batch_num + 1) % log_interval == 0 or batch_num == total_batches - 1:
-                        logger.debug(
-                            f"Upload progress: {batch_num + 1}/{total_batches} batches completed "
-                            f"({(batch_num + 1) / total_batches * 100:.1f}%)"
-                        )
+
+                    if should_log:
+                        logger.debug(f"Upload progress: {batch_progress_str} batches completed "
+                            f"({batch_progress_percentage:.1f}%)")
+
+                except CollectionInsertManyException as e:
+                    logger.error(f"Failed to upload batch {batch_progress_str}: {e}")
+                    raise WriteError(f"AstraDB collection error: {e}") from e
+
+                except DataAPITimeoutException as e:
+                    logger.error(f"Timeout uploading batch {batch_progress_str}: {e}")
+                    raise TimeoutError(f"AstraDB timeout: {e}") from e
+
+                except DataAPIHttpException as e:
+                    logger.error(f"HTTP error uploading batch {batch_progress_str}: {e}")
+                    if (
+                        hasattr(e, "response")
+                        and e.response is not None
+                        and hasattr(e.response, "status_code")
+                        and e.response.status_code is not None
+                        and 400 <= e.response.status_code < 500
+                    ):
+                        raise WriteError(f"AstraDB HTTP error: {e}") from e
+                    raise
+
                 except Exception as e:
-                    logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
+                    logger.error(f"Failed to upload batch {batch_progress_str}: {e}")
                     raise
 
         await asyncio.gather(
