@@ -226,7 +226,7 @@ class DatabricksVolumesUploader(Uploader, ABC):
                 binary_data = io.BytesIO(file_bytes)
                 self.connection_config.get_client().files.upload(
                     file_path=output_path,
-                    contents=binary_data,
+                    content=binary_data,
                     overwrite=True,
                 )
             except Exception as e:

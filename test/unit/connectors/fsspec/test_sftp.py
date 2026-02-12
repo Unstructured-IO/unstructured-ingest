@@ -7,7 +7,6 @@ call (going straight to paramiko), so SftpUploader.run() must call makedirs
 explicitly.
 """
 
-from pathlib import Path
 from unittest import mock
 
 import pytest
