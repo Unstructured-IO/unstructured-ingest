@@ -556,24 +556,25 @@ class AstraDBUploader(Uploader):
 
         async def upload_batch_with_semaphore(batch: tuple[dict, ...], batch_num: int) -> None:
             async with semaphore:
+                batch_progress_str = f"{batch_num + 1}/{total_batches}"
+                batch_progress_percentage = (batch_num + 1) / total_batches * 100
+
                 try:
                     await async_astra_collection.insert_many(batch)
-                    if (batch_num + 1) % log_interval == 0 or batch_num == total_batches - 1:
-                        logger.debug(
-                            f"Upload progress: {batch_num + 1}/{total_batches} batches completed "
-                            f"({(batch_num + 1) / total_batches * 100:.1f}%)"
-                        )
+                    if batch_progress_percentage % log_interval == 0 or batch_num == total_batches - 1:
+                        logger.debug(f"Upload progress: {batch_progress_str} batches completed "
+                            f"({batch_progress_percentage:.1f}%)")
+
                 except CollectionInsertManyException as e:
-                    # Collection configuration/validation errors are client errors
-                    logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
+                    logger.error(f"Failed to upload batch {batch_progress_str}: {e}")
                     raise WriteError(f"AstraDB collection error: {e}") from e
+
                 except DataAPITimeoutException as e:
-                    # Timeout errors should be 408
-                    logger.error(f"Timeout uploading batch {batch_num + 1}/{total_batches}: {e}")
+                    logger.error(f"Timeout uploading batch {batch_progress_str}: {e}")
                     raise TimeoutError(f"AstraDB timeout: {e}") from e
+
                 except DataAPIHttpException as e:
-                    # Check HTTP status code to determine if it's a client or server error
-                    logger.error(f"HTTP error uploading batch {batch_num + 1}/{total_batches}: {e}")
+                    logger.error(f"HTTP error uploading batch {batch_progress_str}: {e}")
                     if (
                         hasattr(e, "response")
                         and e.response is not None
@@ -582,11 +583,10 @@ class AstraDBUploader(Uploader):
                         and 400 <= e.response.status_code < 500
                     ):
                         raise WriteError(f"AstraDB HTTP error: {e}") from e
-                    # 5xx errors or missing status code propagate naturally as server errors
                     raise
+
                 except Exception as e:
-                    # Catch-all handler to preserve error logging context for unexpected errors
-                    logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
+                    logger.error(f"Failed to upload batch {batch_progress_str}: {e}")
                     raise
 
         await asyncio.gather(
