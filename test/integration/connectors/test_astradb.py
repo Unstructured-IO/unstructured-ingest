@@ -301,18 +301,18 @@ def test_astra_create_destination():
     client = AstraDBClient()
     db = client.get_database(api_endpoint=env_data.api_endpoint, token=env_data.token)
     with contextlib.suppress(Exception):
-        # drop collection before trying to create it
         db.drop_collection(formatted_collection_name)
 
-    created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
-    assert created
-    assert uploader.upload_config.collection_name == formatted_collection_name
+    try:
+        created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
+        assert created
+        assert uploader.upload_config.collection_name == formatted_collection_name
 
-    created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
-    assert not created
-
-    # cleanup
-    db.drop_collection(formatted_collection_name)
+        created = uploader.create_destination(destination_name=collection_name, vector_length=3072)
+        assert not created
+    finally:
+        with contextlib.suppress(Exception):
+            db.drop_collection(formatted_collection_name)
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
