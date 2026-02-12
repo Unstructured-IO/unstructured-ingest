@@ -1,3 +1,7 @@
+## [1.4.1]
+
+* **fix: add make directory ability to sftp**
+
 ## [1.4.0]
 
 * **feat: add Python 3.11 and 3.13 support** Widen `requires-python` from `>=3.12, <3.13` to `>=3.11, <3.14`. Add Python 3.11 and 3.13 classifiers. Expand CI version matrices for lint and test jobs to cover all three versions.
