@@ -1,6 +1,6 @@
 ## [1.4.1]
 
-* **fix: add make directory ability to sftp**
+* **fix: enable sftp to make directories**
 
 ## [1.4.0]
 
