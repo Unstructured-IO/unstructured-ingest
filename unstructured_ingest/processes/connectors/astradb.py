@@ -578,10 +578,15 @@ class AstraDBUploader(Uploader):
                         hasattr(e, "response")
                         and e.response is not None
                         and hasattr(e.response, "status_code")
+                        and e.response.status_code is not None
                         and 400 <= e.response.status_code < 500
                     ):
                         raise WriteError(f"AstraDB HTTP error: {e}") from e
                     # 5xx errors or missing status code propagate naturally as server errors
+                    raise
+                except Exception as e:
+                    # Catch-all handler to preserve error logging context for unexpected errors
+                    logger.error(f"Failed to upload batch {batch_num + 1}/{total_batches}: {e}")
                     raise
 
         await asyncio.gather(
