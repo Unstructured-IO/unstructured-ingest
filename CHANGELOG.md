@@ -2,6 +2,10 @@
 
 * **fix: add table precheck to teradata source**
 
+## [1.4.3]
+
+* **fix: enable sftp to make directories**
+
 ## [1.4.2]
 
 * **chore: enable PyPI trusted publishing (OIDC)** Switch `pypa/gh-action-pypi-publish` from API token authentication to OIDC trusted publishing. Pin all GitHub Actions to commit SHAs, add concurrency control, a release-tag version validation step, and conditional Azure Artifacts upload.
