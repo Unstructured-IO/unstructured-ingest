@@ -103,19 +103,16 @@ class TeradataIndexer(SQLIndexer):
             raise SourceConnectionError(f"failed to validate connection: {e}")
 
         table_name = self.index_config.table_name
-        id_column = self.index_config.id_column
         try:
             with self.get_cursor() as cursor:
-                cursor.execute(f'SELECT TOP 1 "{id_column}" FROM "{table_name}"')
+                cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
         except Exception as e:
             logger.error(
-                f"Table '{table_name}' with id column '{id_column}' "
-                f"not found or not accessible: {e}",
+                f"Table '{table_name}' not found or not accessible: {e}",
                 exc_info=True,
             )
             raise SourceConnectionError(
-                f"Table '{table_name}' with id column '{id_column}' "
-                f"not found or not accessible: {e}"
+                f"Table '{table_name}' not found or not accessible: {e}"
             )
 
     def _get_doc_ids(self) -> list[str]:

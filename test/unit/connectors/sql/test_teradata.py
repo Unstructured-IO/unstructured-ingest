@@ -350,13 +350,13 @@ def test_teradata_indexer_precheck_success(
     teradata_indexer: TeradataIndexer,
     mock_get_cursor: MagicMock,
 ):
-    """Test that precheck passes when connection and table/column are valid."""
+    """Test that precheck passes when connection and table are valid."""
     teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
     assert calls[0] == "SELECT 1"
-    assert calls[1] == 'SELECT TOP 1 "type" FROM "year"'
+    assert calls[1] == 'SELECT TOP 1 * FROM "year"'
 
 
 def test_teradata_indexer_precheck_connection_failure(
@@ -389,20 +389,3 @@ def test_teradata_indexer_precheck_table_not_found(
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
-
-
-def test_teradata_indexer_precheck_column_not_found(
-    mock_cursor: MagicMock,
-    teradata_indexer: TeradataIndexer,
-    mock_get_cursor: MagicMock,
-):
-    """Test that precheck raises SourceConnectionError when id column doesn't exist."""
-    mock_cursor.execute.side_effect = [
-        None,  # SELECT 1 succeeds
-        Exception("[Error 5628] Column 'type' not found"),
-    ]
-
-    with pytest.raises(
-        SourceConnectionError, match="id column 'type'.*not found or not accessible"
-    ):
-        teradata_indexer.precheck()
