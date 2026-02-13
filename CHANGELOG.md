@@ -1,3 +1,7 @@
+## [1.4.4]
+
+* **fix: add table precheck to teradata source**
+
 ## [1.4.3]
 
 * **fix: enable sftp to make directories**
