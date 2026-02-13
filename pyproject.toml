@@ -166,9 +166,21 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv]
-# clarifai 12.x pins ruff==0.11.4 and psutil==7.0.0 as hard runtime deps;
-# override to allow latest versions in our lockfile.
-override-dependencies = ["ruff>=0.15.0", "psutil>=7.0.0"]
+# clarifai 12.x pins ruff==0.11.4, psutil==7.0.0, and uv==0.7.12 as hard
+# runtime deps; override to allow latest versions in our lockfile.
+# uv < 0.10 has multiple CVEs — force latest.
+# pykx 2.3.0 declares requires-python>=3.7 but only ships cp311 wheels;
+# force >=2.4.0 which is the first version with cp312 wheels.
+# aiobotocore 2.x requires wrapt<2.0 which conflicts with unstructured>=0.20
+# (wrapt>=2.1.1); aiobotocore 3.x widens to wrapt<3.0. aioboto3 15.5.0
+# exact-pins aiobotocore==2.25.1 but no newer aioboto3 exists yet.
+override-dependencies = [
+    "ruff>=0.15.0",
+    "psutil>=7.0.0",
+    "uv>=0.10.0",
+    "pykx>=2.4.0",
+    "aiobotocore>=3.0.0",
+]
 
 [tool.ruff]
 line-length = 100

@@ -35,7 +35,7 @@ jobs:
 
       - name: Lint
         run: |
-          uv sync --frozen --only-group lint
+          uv sync --locked --only-group lint
           make check-ruff
 
   shellcheck:
@@ -140,7 +140,7 @@ jobs:
 
       - name: Test Ingest (unit)
         run: |
-          uv sync --group test --frozen
+          uv sync --group test --locked
           make test-unit
 
   test_ingest_unit_unstructured:
@@ -166,7 +166,7 @@ jobs:
 
       - name: Test Ingest (unit)
         run: |
-          uv sync --group test --frozen
+          uv sync --group test --locked
           uv pip install unstructured
           uv run python -m nltk.downloader -d $NLTK_DATA punkt_tab averaged_perceptron_tagger_eng
           make test-unit-unstructured
