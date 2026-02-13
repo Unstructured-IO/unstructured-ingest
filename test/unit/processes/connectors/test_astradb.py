@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from pydantic import Secret
 
@@ -294,10 +295,13 @@ async def test_collection_insert_many_exception_raises_write_error(
     # Simulate a collection configuration error (like LEXICAL_NOT_ENABLED_FOR_COLLECTION)
     mock_get_collection.insert_many = AsyncMock(
         side_effect=CollectionInsertManyException(
-            text="Lexical content can only be added and filtering and sort only be used "
-            "on Collections for which Lexical feature is enabled.",
             inserted_ids=[],
-            exceptions=[],
+            exceptions=[
+                Exception(
+                    "Lexical content can only be added and filtering and sort only be used "
+                    "on Collections for which Lexical feature is enabled."
+                ),
+            ],
         )
     )
 
@@ -358,16 +362,18 @@ async def test_http_4xx_error_raises_write_error(
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
     )
 
-    # Create a mock response with 400 status code
-    mock_response = MagicMock()
-    mock_response.status_code = 400
+    # Create an httpx error with 400 status code
+    mock_request = httpx.Request("POST", "https://test.astra.datastax.com")
+    mock_response = httpx.Response(400, request=mock_request)
+    httpx_error = httpx.HTTPStatusError(
+        "Bad request", request=mock_request, response=mock_response
+    )
 
     http_exception = DataAPIHttpException(
         text="Bad request",
-        httpx_error=Exception("Bad request"),
+        httpx_error=httpx_error,
         error_descriptors=[],
     )
-    http_exception.response = mock_response
 
     mock_get_collection.insert_many = AsyncMock(side_effect=http_exception)
 
@@ -395,16 +401,18 @@ async def test_http_5xx_error_propagates(
         upload_config=AstraDBUploaderConfig(collection_name="test_collection"),
     )
 
-    # Create a mock response with 500 status code
-    mock_response = MagicMock()
-    mock_response.status_code = 500
+    # Create an httpx error with 500 status code
+    mock_request = httpx.Request("POST", "https://test.astra.datastax.com")
+    mock_response = httpx.Response(500, request=mock_request)
+    httpx_error = httpx.HTTPStatusError(
+        "Internal server error", request=mock_request, response=mock_response
+    )
 
     http_exception = DataAPIHttpException(
         text="Internal server error",
-        httpx_error=Exception("Internal server error"),
+        httpx_error=httpx_error,
         error_descriptors=[],
     )
-    http_exception.response = mock_response
 
     mock_get_collection.insert_many = AsyncMock(side_effect=http_exception)
 
