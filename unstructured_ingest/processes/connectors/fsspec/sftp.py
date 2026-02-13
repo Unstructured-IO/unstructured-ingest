@@ -245,6 +245,8 @@ class SftpUploader(FsspecUploader):
         try:
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
+                # Create parent directories if they don't exist
+                client.makedirs(upload_path.parent.as_posix(), exist_ok=True)
                 client.write_bytes(path=upload_path.as_posix(), value=b"")
                 # Best-effort cleanup - don't fail if user lacks delete permissions
                 with contextlib.suppress(Exception):
