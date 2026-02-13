@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
+from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -217,12 +217,36 @@ class SftpUploader(FsspecUploader):
         self.connection_config.host = parsed_url.hostname or self.connection_config.host
         self.connection_config.port = parsed_url.port or self.connection_config.port
 
+    def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        path_str = str(path.resolve())
+        upload_path = self.get_upload_path(file_data=file_data)
+        self.log_upload_start(file_path=path_str, destination=upload_path.as_posix())
+        try:
+            with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
+                # fsspec's SFTPFileSystem.put() bypasses the base class's mkdirs
+                # (going straight to paramiko), so we create parent dirs explicitly.
+                client.makedirs(upload_path.parent.as_posix(), exist_ok=True)
+                client.upload(lpath=path_str, rpath=upload_path.as_posix())
+        except Exception as e:
+            self.log_error(
+                "File upload failed",
+                error=e,
+                context={"file_path": path_str, "destination": upload_path.as_posix()},
+            )
+            raise self.wrap_error(e=e)
+        self.log_upload_complete(file_path=path_str, destination=upload_path.as_posix())
+
+    async def run_async(self, path: Path, file_data: FileData, **kwargs: Any) -> None:
+        self.run(path=path, file_data=file_data, **kwargs)
+
     def precheck(self) -> None:
         self.log_operation_start("Connection validation", protocol=self.upload_config.protocol)
 
         try:
             with self.connection_config.get_client(protocol=self.upload_config.protocol) as client:
                 upload_path = Path(self.upload_config.path_without_protocol) / "_empty"
+                # Create parent directories if they don't exist
+                client.makedirs(upload_path.parent.as_posix(), exist_ok=True)
                 client.write_bytes(path=upload_path.as_posix(), value=b"")
                 # Best-effort cleanup - don't fail if user lacks delete permissions
                 with contextlib.suppress(Exception):
