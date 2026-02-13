@@ -36,7 +36,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        uv sync --frozen --all-extras --all-groups  \
+        uv sync --locked --all-extras --all-groups  \
         --no-extra doc \
         --no-extra docx \
         --no-extra epub \
