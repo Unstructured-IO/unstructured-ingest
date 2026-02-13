@@ -1,4 +1,4 @@
-## [1.4.3]
+## [1.4.4]
 
 * **fix: add table precheck to teradata source**
 
