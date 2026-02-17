@@ -57,7 +57,11 @@ class WeaviateConnectionConfig(ConnectionConfig, ABC):
 
 
 class WeaviateUploadStagerConfig(UploadStagerConfig):
-    pass
+    enable_lexical_search: bool = Field(
+        default=False,
+        description="Enable BM25 keyword search. Text fields are indexed "
+        "for lexical search via Weaviate's inverted index with BM25 scoring.",
+    )
 
 
 @dataclass

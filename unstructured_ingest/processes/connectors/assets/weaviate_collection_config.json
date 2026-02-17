@@ -19,5 +19,14 @@
             "tokenization": "word"
         }
     ],
-    "vectorizer": "none"
+    "vectorizer": "none",
+    "invertedIndexConfig": {
+        "bm25": {
+            "b": 0.75,
+            "k1": 1.2
+        },
+        "stopwords": {
+            "preset": "en"
+        }
+    }
 }

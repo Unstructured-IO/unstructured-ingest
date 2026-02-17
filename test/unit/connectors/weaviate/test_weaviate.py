@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,6 +11,7 @@ from unstructured_ingest.processes.connectors.weaviate.weaviate import (
     WeaviateConnectionConfig,
     WeaviateUploader,
     WeaviateUploaderConfig,
+    WeaviateUploadStagerConfig,
 )
 
 
@@ -104,3 +107,57 @@ def test_format_destination_name_success_no_logs(
 def test_format_destination_name_error(uploader: WeaviateUploader, destination_name: str):
     with pytest.raises(ValueError):
         uploader.format_destination_name(destination_name)
+
+
+def test_upload_stager_config_default():
+    """Test that enable_lexical_search defaults to False"""
+    config = WeaviateUploadStagerConfig()
+    assert config.enable_lexical_search is False
+
+
+def test_upload_stager_config_enabled():
+    """Test that enable_lexical_search can be enabled"""
+    config = WeaviateUploadStagerConfig(enable_lexical_search=True)
+    assert config.enable_lexical_search is True
+
+
+def test_collection_config_has_bm25():
+    """Test that the collection config includes BM25 configuration"""
+    # Get the path to the config file
+    weaviate_py = Path(__file__).parents[4] / "unstructured_ingest" / "processes" / "connectors" / "weaviate" / "weaviate.py"
+    connectors_dir = weaviate_py.parents[1]
+    collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
+
+    with collection_config_file.open() as f:
+        collection_config = json.load(f)
+
+    # Verify BM25 configuration exists
+    assert "invertedIndexConfig" in collection_config
+    assert "bm25" in collection_config["invertedIndexConfig"]
+
+    bm25_config = collection_config["invertedIndexConfig"]["bm25"]
+    assert "b" in bm25_config
+    assert "k1" in bm25_config
+    assert bm25_config["b"] == 0.75
+    assert bm25_config["k1"] == 1.2
+
+
+def test_collection_config_text_field_searchable():
+    """Test that the text field is configured for lexical search"""
+    # Get the path to the config file
+    weaviate_py = Path(__file__).parents[4] / "unstructured_ingest" / "processes" / "connectors" / "weaviate" / "weaviate.py"
+    connectors_dir = weaviate_py.parents[1]
+    collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
+
+    with collection_config_file.open() as f:
+        collection_config = json.load(f)
+
+    # Find the text property
+    text_property = next(
+        (prop for prop in collection_config["properties"] if prop["name"] == "text"),
+        None
+    )
+
+    assert text_property is not None
+    assert text_property["indexSearchable"] is True
+    assert text_property["tokenization"] == "word"
