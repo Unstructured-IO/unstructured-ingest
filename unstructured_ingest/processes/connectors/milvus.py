@@ -86,8 +86,13 @@ class MilvusUploadStagerConfig(UploadStagerConfig):
 
     enable_lexical_search: bool = Field(
         default=False,
-        description="Enable BM25 full-text search. Requires Milvus 2.5+ and collection "
-        "schema with BM25 function. See documentation for schema setup."
+        description=(
+            "Indicates that the Milvus collection is configured for BM25 full-text search "
+            "with sparse vectors. Requires Milvus 2.5+ and collection schema with text field "
+            "(enable_analyzer=True), sparse_vector field (SPARSE_FLOAT_VECTOR), and BM25 Function. "
+            "Users must create the collection schema manually before ingestion. "
+            "Use MilvusUploadStager.create_bm25_schema() for schema example."
+        ),
     )
 
 
@@ -169,10 +174,14 @@ class MilvusUploadStager(UploadStager):
         vector_dim: int = 384,
         enable_dynamic_field: bool = True
     ):
-        """Create a Milvus collection schema with BM25 full-text search support.
+        """Example schema helper for Milvus BM25 full-text search configuration.
 
-        This helper creates a schema compatible with Milvus 2.5+ BM25 Function API that
-        automatically generates sparse vectors from text content for lexical search.
+        This helper provides a reference schema for Milvus 2.5+ BM25 Function API.
+        Users must manually create their collection with this schema (or similar)
+        BEFORE running ingestion with enable_lexical_search=True.
+
+        The BM25 Function automatically generates sparse vectors from text content
+        for keyword-based lexical search that can be combined with dense vector search.
 
         Args:
             collection_name: Name for the collection
@@ -186,6 +195,7 @@ class MilvusUploadStager(UploadStager):
             >>> from pymilvus import MilvusClient
             >>> from unstructured_ingest.processes.connectors.milvus import MilvusUploadStager
             >>>
+            >>> # Step 1: Create collection with BM25 schema (BEFORE ingestion)
             >>> client = MilvusClient(uri="http://localhost:19530")
             >>> schema, index_params = MilvusUploadStager.create_bm25_schema(
             ...     collection_name="my_docs",
@@ -197,8 +207,8 @@ class MilvusUploadStager(UploadStager):
             ...     index_params=index_params
             ... )
             >>>
-            >>> # Now ingest with enable_lexical_search=True
-            >>> # BM25 function auto-generates sparse_vector from text field
+            >>> # Step 2: Ingest with enable_lexical_search=True
+            >>> # BM25 function will auto-generate sparse_vector from text field
         """
         from pymilvus import (
             CollectionSchema,
