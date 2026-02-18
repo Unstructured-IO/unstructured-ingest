@@ -31,6 +31,27 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "weaviate"
 
+# Schema Example for BM25 Lexical Search:
+# To enable BM25 keyword search, configure your Weaviate collection with invertedIndexConfig:
+#
+# {
+#   "class": "YourCollection",
+#   "properties": [...],
+#   "vectorizer": "none",
+#   "invertedIndexConfig": {
+#     "bm25": {
+#       "b": 0.75,
+#       "k1": 1.2
+#     },
+#     "stopwords": {
+#       "preset": "en"
+#     }
+#   }
+# }
+#
+# Then set enable_lexical_search=True in WeaviateUploadStagerConfig to indicate the
+# collection is configured for hybrid search (vector + keyword/BM25).
+
 
 class WeaviateAccessConfig(AccessConfig, ABC):
     pass
@@ -59,8 +80,12 @@ class WeaviateConnectionConfig(ConnectionConfig, ABC):
 class WeaviateUploadStagerConfig(UploadStagerConfig):
     enable_lexical_search: bool = Field(
         default=False,
-        description="Enable BM25 keyword search. Text fields are indexed "
-        "for lexical search via Weaviate's inverted index with BM25 scoring.",
+        description=(
+            "Indicates that the Weaviate collection is configured for BM25 keyword search. "
+            "Users must manually configure their collection schema with invertedIndexConfig.bm25 "
+            "settings. See Weaviate documentation for BM25 configuration: "
+            "https://weaviate.io/developers/weaviate/config-refs/schema#invertedindexconfig--bm25"
+        ),
     )
 
 

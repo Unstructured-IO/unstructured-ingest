@@ -157,6 +157,9 @@ test = [
     "htmlBuilder",
     "office365-rest-python-client",
 ]
+dev = [
+    "pytest>=9.0.2",
+]
 
 [project.scripts]
 unstructured-ingest = "unstructured_ingest.main:main"
