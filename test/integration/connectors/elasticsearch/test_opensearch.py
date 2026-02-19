@@ -401,6 +401,26 @@ def aws_credentials():
     }
 
 
+@pytest.fixture
+def aoss_credentials():
+    """Fixture that provides AWS credentials and AOSS host from environment variables."""
+    aws_access_key_id = os.getenv("OPENSEARCH_AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = os.getenv("OPENSEARCH_AWS_SECRET_ACCESS_KEY")
+    aoss_host = os.getenv("OPENSEARCH_AOSS_HOST")
+
+    if not all([aws_access_key_id, aws_secret_access_key, aoss_host]):
+        pytest.skip(
+            "AOSS credentials not available. Set OPENSEARCH_AWS_ACCESS_KEY_ID, "
+            "OPENSEARCH_AWS_SECRET_ACCESS_KEY, and OPENSEARCH_AOSS_HOST environment variables."
+        )
+
+    return {
+        "aws_access_key_id": aws_access_key_id,
+        "aws_secret_access_key": aws_secret_access_key,
+        "aoss_host": aoss_host,
+    }
+
+
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "iam")
 async def test_opensearch_source_with_iam(aws_credentials: dict):
@@ -808,3 +828,170 @@ async def test_opensearch_connection_config_retry_settings():
     )
     assert client_kwargs.get("retry_on_timeout") is True, "Should retry on timeout"
     assert client_kwargs.get("timeout") == 60, "Should have 60 second timeout"
+
+
+# AWS OpenSearch Serverless (AOSS) Integration Tests
+# These tests require OPENSEARCH_AOSS_HOST in addition to the standard AWS credentials.
+# The AOSS collection must have data access policies granting the IAM user
+# aoss:ReadDocument and aoss:WriteDocument permissions.
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "aoss")
+async def test_opensearch_aoss_source(aoss_credentials: dict):
+    """Test OpenSearch source connector against a live AOSS collection.
+
+    Validates the PIT + search_after pagination path, which is required for AOSS
+    (scroll is not supported on serverless).
+    """
+    indexer_config = OpenSearchIndexerConfig(index_name="opensearch_serverless_e2e_source")
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdir_path = Path(tempdir)
+        connection_config = OpenSearchConnectionConfig(
+            access_config=OpenSearchAccessConfig(
+                aws_access_key_id=aoss_credentials["aws_access_key_id"],
+                aws_secret_access_key=aoss_credentials["aws_secret_access_key"],
+            ),
+            hosts=[aoss_credentials["aoss_host"]],
+            use_ssl=True,
+            verify_certs=True,
+        )
+        download_config = OpenSearchDownloaderConfig(download_dir=tempdir_path)
+
+        indexer = OpenSearchIndexer(
+            connection_config=connection_config, index_config=indexer_config
+        )
+        downloader = OpenSearchDownloader(
+            connection_config=connection_config, download_config=download_config
+        )
+
+        import concurrent.futures
+
+        original_precheck = indexer.precheck
+
+        def threaded_precheck():
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(original_precheck)
+                future.result()
+
+        indexer.precheck = threaded_precheck
+
+        await source_connector_validation(
+            indexer=indexer,
+            downloader=downloader,
+            configs=SourceValidationConfigs(
+                test_id=f"{CONNECTOR_TYPE}_aoss",
+                expected_num_files=10,
+                expected_number_indexed_file_data=1,
+                validate_downloaded_files=False,
+                validate_file_data=False,
+                predownload_file_data_check=source_filedata_display_name_set_check,
+                postdownload_file_data_check=source_filedata_display_name_set_check,
+                exclude_fields_extend=["display_name"],
+            ),
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG, "aws", "aoss")
+async def test_opensearch_aoss_destination(
+    upload_file: Path,
+    tmp_path: Path,
+    aoss_credentials: dict,
+):
+    """Test OpenSearch destination connector against a live AOSS collection.
+
+    Validates upload via async_bulk to serverless. Note: AOSS has eventual
+    consistency (10-60s propagation), so we only verify no exceptions are raised.
+    """
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data aoss test",
+    )
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id=aoss_credentials["aws_access_key_id"],
+            aws_secret_access_key=aoss_credentials["aws_secret_access_key"],
+        ),
+        hosts=[aoss_credentials["aoss_host"]],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    stager = OpenSearchUploadStager(
+        upload_stager_config=OpenSearchUploadStagerConfig(
+            index_name="opensearch_serverless_e2e_destination"
+        )
+    )
+
+    uploader = OpenSearchUploader(
+        connection_config=connection_config,
+        upload_config=OpenSearchUploaderConfig(
+            index_name="opensearch_serverless_e2e_destination"
+        ),
+    )
+
+    staged_filepath = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+
+    import concurrent.futures
+
+    def threaded_precheck():
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(uploader.precheck)
+            future.result()
+
+    threaded_precheck()
+
+    await uploader.run_async(path=staged_filepath, file_data=file_data)
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "aoss")
+def test_opensearch_aoss_precheck_validates_connection(aoss_credentials: dict):
+    """Test that indexer precheck succeeds against a live AOSS collection."""
+    indexer_config = OpenSearchIndexerConfig(index_name="opensearch_serverless_e2e_source")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id=aoss_credentials["aws_access_key_id"],
+            aws_secret_access_key=aoss_credentials["aws_secret_access_key"],
+        ),
+        hosts=[aoss_credentials["aoss_host"]],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    indexer = OpenSearchIndexer(connection_config=connection_config, index_config=indexer_config)
+    indexer.precheck()
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, NOSQL_TAG, "aws", "aoss")
+def test_opensearch_aoss_precheck_fail_invalid_credentials():
+    """Test that precheck fails with invalid IAM credentials against AOSS."""
+    aoss_host = os.getenv("OPENSEARCH_AOSS_HOST")
+    if not aoss_host:
+        pytest.skip("OPENSEARCH_AOSS_HOST not set")
+
+    indexer_config = OpenSearchIndexerConfig(index_name="opensearch_serverless_e2e_source")
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(
+            aws_access_key_id="INVALID_KEY",
+            aws_secret_access_key="INVALID_SECRET",
+        ),
+        hosts=[aoss_host],
+        use_ssl=True,
+        verify_certs=True,
+    )
+
+    indexer = OpenSearchIndexer(connection_config=connection_config, index_config=indexer_config)
+
+    with pytest.raises(SourceConnectionError):
+        indexer.precheck()
