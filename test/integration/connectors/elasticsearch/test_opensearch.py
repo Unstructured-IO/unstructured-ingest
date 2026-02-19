@@ -679,6 +679,83 @@ def test_opensearch_uploader_config_batch_size_default():
 
 
 @pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+async def test_opensearch_indexer_pit_fallback_to_scroll():
+    """Test that _get_doc_ids_async falls back to scroll when PIT returns 403.
+
+    Verifies Option B behavior: try PIT first, fall back to scroll on permission error.
+    """
+    from unittest.mock import AsyncMock, patch
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    indexer = OpenSearchIndexer(
+        connection_config=connection_config,
+        index_config=OpenSearchIndexerConfig(index_name="test_index"),
+    )
+
+    expected_ids = {"id1", "id2", "id3"}
+
+    with (
+        patch.object(indexer, "_get_doc_ids_pit", new_callable=AsyncMock) as mock_pit,
+        patch.object(indexer, "_get_doc_ids_scroll", new_callable=AsyncMock) as mock_scroll,
+        patch.object(
+            connection_config, "get_async_client_kwargs", new_callable=AsyncMock
+        ) as mock_kwargs,
+    ):
+        mock_kwargs.return_value = {"hosts": ["http://localhost:9200"]}
+        mock_pit.side_effect = Exception(
+            'AuthorizationException(403, \'{"error":{"type":"security_exception",'
+            '"reason":"no permissions for [indices:data/read/point_in_time/create]"}}\')'
+        )
+        mock_scroll.return_value = expected_ids
+
+        result = await indexer._get_doc_ids_async()
+
+        mock_pit.assert_called_once()
+        mock_scroll.assert_called_once()
+        assert result == expected_ids
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
+async def test_opensearch_indexer_pit_non_403_error_raises():
+    """Test that _get_doc_ids_async re-raises non-403 errors without falling back."""
+    from unittest.mock import AsyncMock, patch
+
+    connection_config = OpenSearchConnectionConfig(
+        access_config=OpenSearchAccessConfig(password="admin"),
+        username="admin",
+        hosts=["http://localhost:9200"],
+        use_ssl=True,
+    )
+    indexer = OpenSearchIndexer(
+        connection_config=connection_config,
+        index_config=OpenSearchIndexerConfig(index_name="test_index"),
+    )
+
+    with (
+        patch.object(indexer, "_get_doc_ids_pit", new_callable=AsyncMock) as mock_pit,
+        patch.object(indexer, "_get_doc_ids_scroll", new_callable=AsyncMock) as mock_scroll,
+        patch.object(
+            connection_config, "get_async_client_kwargs", new_callable=AsyncMock
+        ) as mock_kwargs,
+    ):
+        mock_kwargs.return_value = {"hosts": ["http://localhost:9200"]}
+        mock_pit.side_effect = ConnectionError("cluster unreachable")
+
+        with pytest.raises(ConnectionError, match="cluster unreachable"):
+            await indexer._get_doc_ids_async()
+
+        mock_pit.assert_called_once()
+        mock_scroll.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG)
 async def test_opensearch_connection_config_retry_settings():
     """Test that OpenSearchConnectionConfig includes retry and timeout settings.

@@ -329,46 +329,75 @@ class OpenSearchIndexer(ElasticsearchIndexer):
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def _get_doc_ids_async(self) -> set[str]:
-        """Fetch all document IDs using PIT + search_after pagination.
+        """Fetch all document IDs, trying PIT + search_after first with scroll fallback.
 
-        Uses Point-in-Time search instead of scroll to support both
-        OpenSearch Service and OpenSearch Serverless (AOSS).
+        PIT is required for OpenSearch Serverless (AOSS) and preferred for
+        OpenSearch Service. Falls back to scroll if PIT permissions are unavailable.
         """
         from opensearchpy import AsyncOpenSearch
 
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
-            pit = await client.create_pit(
-                index=self.index_config.index_name, params={"keep_alive": "5m"}
-            )
-            pit_id = pit["pit_id"]
             try:
-                doc_ids: set[str] = set()
-                search_after = None
-                while True:
-                    body: dict[str, Any] = {
-                        "stored_fields": [],
-                        "query": {"match_all": {}},
-                        "pit": {"id": pit_id, "keep_alive": "5m"},
-                        "sort": [{"_id": "asc"}],
-                        "size": 1000,
-                    }
-                    if search_after:
-                        body["search_after"] = search_after
-                    resp = await client.search(body=body)
-                    hits = resp["hits"]["hits"]
-                    if not hits:
-                        break
-                    for hit in hits:
-                        doc_ids.add(hit["_id"])
-                    search_after = hits[-1]["sort"]
-                return doc_ids
-            finally:
-                try:
-                    await client.delete_pit(body={"pit_id": pit_id})
-                except Exception:
-                    logger.warning("Failed to delete PIT, it will expire automatically")
+                return await self._get_doc_ids_pit(client)
+            except Exception as e:
+                if "403" in str(e) or "Forbidden" in str(e):
+                    logger.warning(
+                        "PIT unavailable (missing indices:data/read/point_in_time permissions), "
+                        "falling back to scroll. Note: scroll is not supported on AOSS."
+                    )
+                    return await self._get_doc_ids_scroll(client)
+                raise
+
+    async def _get_doc_ids_pit(self, client: Any) -> set[str]:
+        """Fetch document IDs using PIT + search_after pagination."""
+        pit = await client.create_pit(
+            index=self.index_config.index_name, params={"keep_alive": "5m"}
+        )
+        pit_id = pit["pit_id"]
+        try:
+            doc_ids: set[str] = set()
+            search_after = None
+            while True:
+                body: dict[str, Any] = {
+                    "stored_fields": [],
+                    "query": {"match_all": {}},
+                    "pit": {"id": pit_id, "keep_alive": "5m"},
+                    "sort": [{"_id": "asc"}],
+                    "size": 1000,
+                }
+                if search_after:
+                    body["search_after"] = search_after
+                resp = await client.search(body=body)
+                if "pit_id" in resp:
+                    pit_id = resp["pit_id"]
+                hits = resp["hits"]["hits"]
+                if not hits:
+                    break
+                for hit in hits:
+                    doc_ids.add(hit["_id"])
+                search_after = hits[-1]["sort"]
+            return doc_ids
+        finally:
+            try:
+                await client.delete_pit(body={"pit_id": pit_id})
+            except Exception:
+                logger.warning("Failed to delete PIT, it will expire automatically")
+
+    async def _get_doc_ids_scroll(self, client: Any) -> set[str]:
+        """Fetch document IDs using scroll (fallback when PIT is unavailable)."""
+        from opensearchpy.helpers import async_scan
+
+        doc_ids: set[str] = set()
+        async for hit in async_scan(
+            client,
+            query={"stored_fields": [], "query": {"match_all": {}}},
+            scroll="1m",
+            index=self.index_config.index_name,
+        ):
+            doc_ids.add(hit["_id"])
+        return doc_ids
 
 
 class OpenSearchDownloaderConfig(ElasticsearchDownloaderConfig):
@@ -464,10 +493,10 @@ class OpenSearchUploader(ElasticsearchUploader):
         from opensearchpy.exceptions import TransportError
         from opensearchpy.helpers import async_bulk
 
-        logger.debug(
-            f"writing {len(data)} elements to index {self.upload_config.index_name} "
-            f"at {self.connection_config.hosts} "
-            f"with batch size (bytes) {self.upload_config.batch_size_bytes}"
+        logger.info(
+            f"writing {len(data)} elements via document batches to destination "
+            f"index named {self.upload_config.index_name} at {self.connection_config.hosts} "
+            f"with batch size (in bytes) {self.upload_config.batch_size_bytes}"
         )
 
         async with AsyncOpenSearch(
@@ -516,11 +545,10 @@ class OpenSearchUploader(ElasticsearchUploader):
                         f"Failed to upload {len(failed)} out of {len(batch)} documents"
                     )
 
-                logger.debug(
-                    f"uploaded batch of {len(batch)} elements to {self.upload_config.index_name}"
+                logger.info(
+                    f"uploaded batch of {len(batch)} elements to index "
+                    f"{self.upload_config.index_name}"
                 )
-
-        logger.info(f"Upload complete: {len(data)} elements to {self.upload_config.index_name}")
 
 
 class OpenSearchUploadStagerConfig(ElasticsearchUploadStagerConfig):
