@@ -363,9 +363,12 @@ class OpenSearchIndexer(ElasticsearchIndexer):
             while True:
                 body: dict[str, Any] = {
                     "stored_fields": [],
+                    "_source": False,
+                    "track_total_hits": False,
                     "query": {"match_all": {}},
                     "pit": {"id": pit_id, "keep_alive": "5m"},
-                    # sorting by _shard_doc is not available on all OpenSearch versions. _id works
+                    # _shard_doc is not available on all OpenSearch versions; _id works
+                    # on OpenSearch 2.x, AWS OpenSearch Service, and AOSS.
                     "sort": [{"_id": "asc"}],
                     "size": 1000,
                 }
