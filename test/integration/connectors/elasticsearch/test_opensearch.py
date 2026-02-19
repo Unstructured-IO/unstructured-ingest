@@ -842,7 +842,8 @@ async def test_opensearch_aoss_source(aoss_credentials: dict):
     """Test OpenSearch source connector against a live AOSS collection.
 
     Validates the PIT + search_after pagination path, which is required for AOSS
-    (scroll is not supported on serverless).
+    (scroll is not supported on serverless). Runs indexer and downloader directly
+    rather than through source_connector_validation to avoid fixture dependencies.
     """
     indexer_config = OpenSearchIndexerConfig(index_name="opensearch_serverless_e2e_source")
 
@@ -875,22 +876,19 @@ async def test_opensearch_aoss_source(aoss_credentials: dict):
                 future = executor.submit(original_precheck)
                 future.result()
 
-        indexer.precheck = threaded_precheck
+        threaded_precheck()
 
-        await source_connector_validation(
-            indexer=indexer,
-            downloader=downloader,
-            configs=SourceValidationConfigs(
-                test_id=f"{CONNECTOR_TYPE}_aoss",
-                expected_num_files=1010,
-                expected_number_indexed_file_data=11,
-                validate_downloaded_files=False,
-                validate_file_data=False,
-                predownload_file_data_check=source_filedata_display_name_set_check,
-                postdownload_file_data_check=source_filedata_display_name_set_check,
-                exclude_fields_extend=["display_name"],
-            ),
-        )
+        batch_count = 0
+        total_downloaded = 0
+        async for file_data in indexer.run_async():
+            assert file_data
+            batch_count += 1
+            resp = await downloader.run_async(file_data=file_data)
+            assert resp
+            total_downloaded += len(resp)
+
+        assert batch_count == 11, f"Expected 11 batches, got {batch_count}"
+        assert total_downloaded == 1010, f"Expected 1010 documents, got {total_downloaded}"
 
 
 @pytest.mark.asyncio
@@ -929,9 +927,7 @@ async def test_opensearch_aoss_destination(
 
     uploader = OpenSearchUploader(
         connection_config=connection_config,
-        upload_config=OpenSearchUploaderConfig(
-            index_name="opensearch_serverless_e2e_destination"
-        ),
+        upload_config=OpenSearchUploaderConfig(index_name="opensearch_serverless_e2e_destination"),
     )
 
     staged_filepath = stager.run(
