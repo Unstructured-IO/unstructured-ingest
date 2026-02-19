@@ -1,3 +1,7 @@
+## [1.4.5]
+
+* **fix: add capability to use opensearch serverless**
+
 ## [1.4.4]
 
 * **fix: add table precheck to teradata source**
