@@ -882,8 +882,8 @@ async def test_opensearch_aoss_source(aoss_credentials: dict):
             downloader=downloader,
             configs=SourceValidationConfigs(
                 test_id=f"{CONNECTOR_TYPE}_aoss",
-                expected_num_files=10,
-                expected_number_indexed_file_data=1,
+                expected_num_files=1010,
+                expected_number_indexed_file_data=11,
                 validate_downloaded_files=False,
                 validate_file_data=False,
                 predownload_file_data_check=source_filedata_display_name_set_check,
