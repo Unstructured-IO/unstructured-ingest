@@ -618,10 +618,20 @@ def test_opensearch_destination_iam_precheck_fail_invalid_credentials():
         ("https://abc123xyz.us-east-1.aoss.amazonaws.com", "us-east-1", "aoss"),
         ("https://abc123xyz.eu-west-1.aoss.amazonaws.com", "eu-west-1", "aoss"),
         ("https://abc123xyz.us-gov-west-1.aoss.amazonaws.com", "us-gov-west-1", "aoss"),
+        # FIPS-compliant endpoints
+        ("https://abc123xyz.us-east-1.aoss-fips.amazonaws.com", "us-east-1", "aoss"),
+        ("https://abc123xyz.us-east-2.aoss-fips.amazonaws.com", "us-east-2", "aoss"),
+        ("https://abc123xyz.us-gov-west-1.aoss-fips.amazonaws.com", "us-gov-west-1", "aoss"),
+        ("https://abc123xyz.ca-central-1.aoss-fips.amazonaws.com", "ca-central-1", "aoss"),
+        ("https://search-domain.us-east-1.es-fips.amazonaws.com", "us-east-1", "es"),
+        ("https://search-domain.us-east-2.es-fips.amazonaws.com", "us-east-2", "es"),
+        ("https://search-domain.us-gov-west-1.es-fips.amazonaws.com", "us-gov-west-1", "es"),
+        ("https://search-domain.ca-central-1.es-fips.amazonaws.com", "ca-central-1", "es"),
         # Without https://
         ("search-domain.us-east-1.es.amazonaws.com", "us-east-1", "es"),
         # With port
         ("https://search-domain.us-east-1.es.amazonaws.com:443", "us-east-1", "es"),
+        ("https://abc123xyz.us-east-1.aoss-fips.amazonaws.com:443", "us-east-1", "aoss"),
     ],
 )
 def test_detect_aws_opensearch_config_valid(hostname, expected_region, expected_service):

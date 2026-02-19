@@ -50,9 +50,11 @@ CONNECTOR_TYPE = "opensearch"
 
 """OpenSearch connector - inherits from Elasticsearch connector (OpenSearch is an ES fork)."""
 
-# Precompiled regex patterns for AWS hostname detection (GovCloud, China, standard)
-_ES_PATTERN = re.compile(r"\.([a-z]{2}(?:-[a-z]+)+-\d+)\.es\.amazonaws\.com$")
-_AOSS_PATTERN = re.compile(r"^[a-z0-9]+\.([a-z]{2}(?:-[a-z]+)+-\d+)\.aoss\.amazonaws\.com$")
+# Precompiled regex patterns for AWS hostname detection (GovCloud, China, standard, FIPS)
+_ES_PATTERN = re.compile(r"\.([a-z]{2}(?:-[a-z]+)+-\d+)\.es(?:-fips)?\.amazonaws\.com$")
+_AOSS_PATTERN = re.compile(
+    r"^[a-z0-9]+\.([a-z]{2}(?:-[a-z]+)+-\d+)\.aoss(?:-fips)?\.amazonaws\.com$"
+)
 
 
 def _run_coroutine(fn: Callable[..., Awaitable[Any]], *args: Any, **kwargs: Any) -> Any:
@@ -175,8 +177,9 @@ class OpenSearchConnectionConfig(ConnectionConfig):
             raise ValueError(
                 f"Could not auto-detect AWS region and service from host: {self.hosts[0]}. "
                 f"Ensure your host URL follows AWS OpenSearch format: "
-                f"https://search-domain-xxx.REGION.es.amazonaws.com (for OpenSearch Service) or "
-                f"https://xxx.REGION.aoss.amazonaws.com (for OpenSearch Serverless)"
+                f"https://search-domain-xxx.REGION.es.amazonaws.com (for OpenSearch Service), "
+                f"https://xxx.REGION.aoss.amazonaws.com (for OpenSearch Serverless), or "
+                f"https://xxx.REGION.aoss-fips.amazonaws.com (for Serverless with FIPS)"
             )
 
         region, service = detected
@@ -325,24 +328,46 @@ class OpenSearchIndexer(ElasticsearchIndexer):
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def _get_doc_ids_async(self) -> set[str]:
-        """Fetch document IDs using async_scan."""
-        from opensearchpy import AsyncOpenSearch
-        from opensearchpy.helpers import async_scan
+        """Fetch all document IDs using PIT + search_after pagination.
 
-        scan_query = {"stored_fields": [], "query": {"match_all": {}}}
+        Uses Point-in-Time search instead of scroll to support both
+        OpenSearch Service and OpenSearch Serverless (AOSS).
+        """
+        from opensearchpy import AsyncOpenSearch
 
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
-            doc_ids = set()
-            async for hit in async_scan(
-                client,
-                query=scan_query,
-                scroll="1m",
-                index=self.index_config.index_name,
-            ):
-                doc_ids.add(hit["_id"])
-            return doc_ids
+            pit = await client.create_point_in_time(
+                index=self.index_config.index_name, params={"keep_alive": "5m"}
+            )
+            pit_id = pit["pit_id"]
+            try:
+                doc_ids: set[str] = set()
+                search_after = None
+                while True:
+                    body: dict[str, Any] = {
+                        "stored_fields": [],
+                        "query": {"match_all": {}},
+                        "pit": {"id": pit_id, "keep_alive": "5m"},
+                        "sort": [{"_id": "asc"}],
+                        "size": 1000,
+                    }
+                    if search_after:
+                        body["search_after"] = search_after
+                    resp = await client.search(body=body)
+                    hits = resp["hits"]["hits"]
+                    if not hits:
+                        break
+                    for hit in hits:
+                        doc_ids.add(hit["_id"])
+                    search_after = hits[-1]["sort"]
+                return doc_ids
+            finally:
+                try:
+                    await client.delete_point_in_time(body={"pit_id": pit_id})
+                except Exception:
+                    logger.warning("Failed to delete PIT, it will expire automatically")
 
 
 class OpenSearchDownloaderConfig(ElasticsearchDownloaderConfig):
@@ -357,34 +382,33 @@ class OpenSearchDownloader(ElasticsearchDownloader):
 
     @requires_dependencies(["opensearchpy"], extras="opensearch")
     async def run_async(self, file_data: BatchFileData, **kwargs: Any) -> download_responses:
-        """Download documents from OpenSearch."""
+        """Download documents from OpenSearch.
+
+        Uses a direct search by IDs instead of scroll, since the batch
+        is already bounded by the indexer's batch_size (typically 100).
+        """
         from opensearchpy import AsyncOpenSearch
-        from opensearchpy.helpers import async_scan
 
         elasticsearch_filedata = ElasticsearchBatchFileData.cast(file_data=file_data)
 
         index_name: str = elasticsearch_filedata.additional_metadata.index_name
         ids: list[str] = [item.identifier for item in elasticsearch_filedata.batch_items]
 
-        scan_query = {
+        search_body: dict[str, Any] = {
             "version": True,
             "query": {"ids": {"values": ids}},
+            "size": len(ids),
         }
 
-        # Only add _source if fields are explicitly specified (avoids AWS FGAC issues)
         if self.download_config.fields:
-            scan_query["_source"] = self.download_config.fields
+            search_body["_source"] = self.download_config.fields
 
         download_responses = []
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
-            async for result in async_scan(
-                client,
-                query=scan_query,
-                scroll="1m",
-                index=index_name,
-            ):
+            resp = await client.search(body=search_body, index=index_name)
+            for result in resp["hits"]["hits"]:
                 download_responses.append(
                     self.generate_download_response(
                         result=result, index_name=index_name, file_data=elasticsearch_filedata
