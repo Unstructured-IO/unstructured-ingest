@@ -332,30 +332,31 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         """Fetch all document IDs, trying PIT + search_after first with scroll fallback.
 
         PIT is required for OpenSearch Serverless (AOSS) and preferred for
-        OpenSearch Service. Falls back to scroll if PIT permissions are unavailable.
+        OpenSearch Service. Falls back to scroll if PIT creation fails due to
+        missing permissions (403) or unsupported version (400/404).
         """
         from opensearchpy import AsyncOpenSearch
+        from opensearchpy.exceptions import TransportError
 
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
             try:
-                return await self._get_doc_ids_pit(client)
-            except Exception as e:
-                if "403" in str(e) or "Forbidden" in str(e):
+                pit = await client.create_pit(
+                    index=self.index_config.index_name, params={"keep_alive": "5m"}
+                )
+            except TransportError as e:
+                if e.status_code in (400, 403, 404):
                     logger.warning(
-                        "PIT unavailable (missing indices:data/read/point_in_time permissions), "
+                        f"PIT creation failed (HTTP {e.status_code}), "
                         "falling back to scroll. Note: scroll is not supported on AOSS."
                     )
                     return await self._get_doc_ids_scroll(client)
                 raise
+            return await self._get_doc_ids_pit(client, pit["pit_id"])
 
-    async def _get_doc_ids_pit(self, client: Any) -> set[str]:
-        """Fetch document IDs using PIT + search_after pagination."""
-        pit = await client.create_pit(
-            index=self.index_config.index_name, params={"keep_alive": "5m"}
-        )
-        pit_id = pit["pit_id"]
+    async def _get_doc_ids_pit(self, client: Any, pit_id: str) -> set[str]:
+        """Paginate through all document IDs using an existing PIT context."""
         try:
             doc_ids: set[str] = set()
             search_after = None

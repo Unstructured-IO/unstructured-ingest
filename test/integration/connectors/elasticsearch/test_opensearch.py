@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 from _pytest.fixtures import TopRequest
 from opensearchpy import Document, Keyword, OpenSearch, Text
+from opensearchpy.exceptions import TransportError
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, NOSQL_TAG, SOURCE_TAG
 from test.integration.connectors.utils.docker import HealthCheck, container_context
@@ -680,12 +681,23 @@ def test_opensearch_uploader_config_batch_size_default():
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-async def test_opensearch_indexer_pit_fallback_to_scroll():
-    """Test that _get_doc_ids_async falls back to scroll when PIT returns 403.
+@pytest.mark.parametrize(
+    ("status_code", "error_class"),
+    [
+        (403, "AuthorizationException"),
+        (400, "RequestError"),
+        (404, "NotFoundError"),
+    ],
+)
+async def test_opensearch_indexer_pit_fallback_to_scroll(status_code, error_class):
+    """Test that _get_doc_ids_async falls back to scroll when create_pit fails.
 
-    Verifies Option B behavior: try PIT first, fall back to scroll on permission error.
+    Covers: 403 (missing permissions), 400 (unsupported endpoint), 404 (pre-2.4 OpenSearch).
+    The fallback is scoped to the create_pit call only.
     """
     from unittest.mock import AsyncMock, patch
+
+    from opensearchpy.exceptions import TransportError
 
     connection_config = OpenSearchConnectionConfig(
         access_config=OpenSearchAccessConfig(password="admin"),
@@ -700,31 +712,44 @@ async def test_opensearch_indexer_pit_fallback_to_scroll():
 
     expected_ids = {"id1", "id2", "id3"}
 
-    with (
-        patch.object(indexer, "_get_doc_ids_pit", new_callable=AsyncMock) as mock_pit,
-        patch.object(indexer, "_get_doc_ids_scroll", new_callable=AsyncMock) as mock_scroll,
-        patch.object(
-            connection_config, "get_async_client_kwargs", new_callable=AsyncMock
-        ) as mock_kwargs,
-    ):
-        mock_kwargs.return_value = {"hosts": ["http://localhost:9200"]}
-        mock_pit.side_effect = Exception(
-            'AuthorizationException(403, \'{"error":{"type":"security_exception",'
-            '"reason":"no permissions for [indices:data/read/point_in_time/create]"}}\')'
-        )
-        mock_scroll.return_value = expected_ids
+    mock_client = AsyncMock()
+    mock_client.create_pit = AsyncMock(side_effect=TransportError(status_code, error_class))
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
 
+    with (
+        patch("opensearchpy.AsyncOpenSearch", return_value=mock_client),
+        patch.object(
+            indexer, "_get_doc_ids_scroll", new_callable=AsyncMock, return_value=expected_ids
+        ) as mock_scroll,
+        patch.object(
+            connection_config,
+            "get_async_client_kwargs",
+            new_callable=AsyncMock,
+            return_value={"hosts": ["http://localhost:9200"]},
+        ),
+    ):
         result = await indexer._get_doc_ids_async()
 
-        mock_pit.assert_called_once()
+        mock_client.create_pit.assert_called_once()
         mock_scroll.assert_called_once()
         assert result == expected_ids
 
 
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG)
-async def test_opensearch_indexer_pit_non_403_error_raises():
-    """Test that _get_doc_ids_async re-raises non-403 errors without falling back."""
+@pytest.mark.parametrize(
+    ("exception",),
+    [
+        (TransportError(500, "internal_server_error"),),
+        (ConnectionError("cluster unreachable"),),
+    ],
+)
+async def test_opensearch_indexer_pit_no_fallback_on_other_errors(exception):
+    """Test that _get_doc_ids_async re-raises non-fallback errors without trying scroll.
+
+    Covers: 500 (server error), ConnectionError (network). These should NOT fall back.
+    """
     from unittest.mock import AsyncMock, patch
 
     connection_config = OpenSearchConnectionConfig(
@@ -738,20 +763,25 @@ async def test_opensearch_indexer_pit_non_403_error_raises():
         index_config=OpenSearchIndexerConfig(index_name="test_index"),
     )
 
+    mock_client = AsyncMock()
+    mock_client.create_pit = AsyncMock(side_effect=exception)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
     with (
-        patch.object(indexer, "_get_doc_ids_pit", new_callable=AsyncMock) as mock_pit,
+        patch("opensearchpy.AsyncOpenSearch", return_value=mock_client),
         patch.object(indexer, "_get_doc_ids_scroll", new_callable=AsyncMock) as mock_scroll,
         patch.object(
-            connection_config, "get_async_client_kwargs", new_callable=AsyncMock
-        ) as mock_kwargs,
+            connection_config,
+            "get_async_client_kwargs",
+            new_callable=AsyncMock,
+            return_value={"hosts": ["http://localhost:9200"]},
+        ),
     ):
-        mock_kwargs.return_value = {"hosts": ["http://localhost:9200"]}
-        mock_pit.side_effect = ConnectionError("cluster unreachable")
-
-        with pytest.raises(ConnectionError, match="cluster unreachable"):
+        with pytest.raises(type(exception)):
             await indexer._get_doc_ids_async()
 
-        mock_pit.assert_called_once()
+        mock_client.create_pit.assert_called_once()
         mock_scroll.assert_not_called()
 
 
