@@ -178,6 +178,7 @@ class OpenSearchConnectionConfig(ConnectionConfig):
                 f"Could not auto-detect AWS region and service from host: {self.hosts[0]}. "
                 f"Ensure your host URL follows AWS OpenSearch format: "
                 f"https://search-domain-xxx.REGION.es.amazonaws.com (for OpenSearch Service), "
+                f"https://search-domain-xxx.REGION.es-fips.amazonaws.com (for Service with FIPS), "
                 f"https://xxx.REGION.aoss.amazonaws.com (for OpenSearch Serverless), or "
                 f"https://xxx.REGION.aoss-fips.amazonaws.com (for Serverless with FIPS)"
             )
@@ -338,7 +339,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
         async with AsyncOpenSearch(
             **await self.connection_config.get_async_client_kwargs()
         ) as client:
-            pit = await client.create_point_in_time(
+            pit = await client.create_pit(
                 index=self.index_config.index_name, params={"keep_alive": "5m"}
             )
             pit_id = pit["pit_id"]
@@ -365,7 +366,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 return doc_ids
             finally:
                 try:
-                    await client.delete_point_in_time(body={"pit_id": pit_id})
+                    await client.delete_pit(body={"pit_id": pit_id})
                 except Exception:
                     logger.warning("Failed to delete PIT, it will expire automatically")
 
