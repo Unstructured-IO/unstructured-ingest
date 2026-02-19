@@ -365,7 +365,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                     "stored_fields": [],
                     "query": {"match_all": {}},
                     "pit": {"id": pit_id, "keep_alive": "5m"},
-                    "sort": [{"_id": "asc"}],
+                    "sort": [{"_shard_doc": "asc"}],
                     "size": 1000,
                 }
                 if search_after:
