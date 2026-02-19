@@ -382,7 +382,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
             return doc_ids
         finally:
             try:
-                await client.delete_pit(body={"pit_id": pit_id})
+                await client.delete_pit(body={"pit_id": [pit_id]})
             except Exception:
                 logger.warning("Failed to delete PIT, it will expire automatically")
 
