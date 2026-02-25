@@ -1,3 +1,7 @@
+## [1.4.6]
+
+* **fix: normalize teradata column names to lowercase for Enterprise compatibility**
+
 ## [1.4.5]
 
 * **fix: add capability to use opensearch serverless**
