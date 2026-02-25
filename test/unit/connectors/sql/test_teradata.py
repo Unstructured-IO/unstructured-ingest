@@ -389,3 +389,42 @@ def test_teradata_indexer_precheck_table_not_found(
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
+
+
+def test_teradata_connection_close_called_when_commit_fails(
+    mocker: MockerFixture,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that connection.close() is always called even when commit() raises."""
+    mock_conn = MagicMock()
+    mock_conn.commit.side_effect = Exception("commit failed")
+
+    mock_module = MagicMock()
+    mock_module.connect.return_value = mock_conn
+    mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
+
+    with pytest.raises(Exception, match="commit failed"):
+        with teradata_connection_config.get_connection() as conn:
+            pass
+
+    mock_conn.commit.assert_called_once()
+    mock_conn.close.assert_called_once()
+
+
+def test_teradata_connection_close_called_when_operation_and_commit_both_fail(
+    mocker: MockerFixture,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that connection.close() is called when both the operation and commit() raise."""
+    mock_conn = MagicMock()
+    mock_conn.commit.side_effect = Exception("commit failed")
+
+    mock_module = MagicMock()
+    mock_module.connect.return_value = mock_conn
+    mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
+
+    with pytest.raises(Exception):
+        with teradata_connection_config.get_connection() as conn:
+            raise RuntimeError("operation failed")
+
+    mock_conn.close.assert_called_once()
