@@ -154,7 +154,7 @@ class TeradataDownloader(SQLDownloader):
             logger.debug(f"running query: {query}\nwith values: {ids}")
             cursor.execute(query, ids)
             rows = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
+            columns = [col[0].lower() for col in cursor.description]
             return rows, columns
 
 
@@ -202,7 +202,7 @@ class TeradataUploader(SQLUploader):
         if self._columns is None:
             with self.get_cursor() as cursor:
                 cursor.execute(f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"')
-                self._columns = [desc[0] for desc in cursor.description]
+                self._columns = [desc[0].lower() for desc in cursor.description]
         return self._columns
 
     def delete_by_record_id(self, file_data: FileData) -> None:
