@@ -403,9 +403,8 @@ def test_teradata_connection_close_called_when_commit_fails(
     mock_module.connect.return_value = mock_conn
     mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
 
-    with pytest.raises(Exception, match="commit failed"):
-        with teradata_connection_config.get_connection() as conn:
-            pass
+    with pytest.raises(Exception, match="commit failed"), teradata_connection_config.get_connection():
+        pass
 
     mock_conn.commit.assert_called_once()
     mock_conn.close.assert_called_once()
@@ -423,8 +422,7 @@ def test_teradata_connection_close_called_when_operation_and_commit_both_fail(
     mock_module.connect.return_value = mock_conn
     mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
 
-    with pytest.raises(Exception):
-        with teradata_connection_config.get_connection() as conn:
-            raise RuntimeError("operation failed")
+    with pytest.raises(Exception), teradata_connection_config.get_connection():
+        raise RuntimeError("operation failed")
 
     mock_conn.close.assert_called_once()
