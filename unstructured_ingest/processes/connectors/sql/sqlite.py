@@ -109,7 +109,11 @@ class SQLiteDownloader(SQLDownloader):
         ids = [item.identifier for item in file_data.batch_items]
         with self.connection_config.get_connection() as sqlite_connection:
             cursor = sqlite_connection.cursor()
-            fields = ",".join(list(dict.fromkeys([id_column] + self.download_config.fields))) if self.download_config.fields else "*"
+            fields = (
+                ",".join(list(dict.fromkeys([id_column] + self.download_config.fields)))
+                if self.download_config.fields
+                else "*"
+            )
             values = ",".join(self.values_delimiter for _ in ids)
             query = f"SELECT {fields} FROM {table_name} WHERE {id_column} IN ({values})"
             logger.debug(f"running query: {query}\nwith values: {ids}")

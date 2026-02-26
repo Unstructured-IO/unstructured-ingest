@@ -8,14 +8,14 @@ from pytest_mock import MockerFixture
 from unstructured_ingest.data_types.file_data import BatchItem, FileData, SourceIdentifiers
 from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.processes.connectors.sql.sql import (
+    SqlAdditionalMetadata,
+    SqlBatchFileData,
     SQLConnectionConfig,
     SQLDownloader,
     SQLDownloaderConfig,
     SQLUploader,
     SQLUploaderConfig,
     SQLUploadStager,
-    SqlAdditionalMetadata,
-    SqlBatchFileData,
 )
 
 
@@ -192,6 +192,25 @@ def test_fit_to_schema_not_case_sensitive(mocker: MockerFixture, mock_uploader: 
     assert "col3" not in result.columns
     assert "col1" in result.columns
     assert "col2" in result.columns
+
+
+class TestCanDelete:
+    def test_exact_match(self, mocker: MockerFixture, mock_uploader: SQLUploader):
+        mocker.patch.object(mock_uploader, "get_table_columns", return_value=["record_id", "text"])
+        mock_uploader.upload_config.record_id_key = "record_id"
+        assert mock_uploader.can_delete() is True
+
+    def test_case_insensitive_match(self, mocker: MockerFixture, mock_uploader: SQLUploader):
+        mocker.patch.object(
+            mock_uploader, "get_table_columns", return_value=["RECORD_ID", "TEXT"]
+        )
+        mock_uploader.upload_config.record_id_key = "record_id"
+        assert mock_uploader.can_delete() is True
+
+    def test_no_match(self, mocker: MockerFixture, mock_uploader: SQLUploader):
+        mocker.patch.object(mock_uploader, "get_table_columns", return_value=["id", "text"])
+        mock_uploader.upload_config.record_id_key = "record_id"
+        assert mock_uploader.can_delete() is False
 
 
 class TestResolveColumnName:

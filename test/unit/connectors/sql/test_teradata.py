@@ -17,7 +17,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploader,
     TeradataUploaderConfig,
     TeradataUploadStager,
-    _resolve_column_name,
+    _resolve_db_column_case,
 )
 
 
@@ -505,16 +505,16 @@ def test_teradata_uploader_precheck_table_not_found(
     assert mock_cursor.execute.call_count == 2
 
 
-def test_resolve_column_name_queries_and_caches(
+def test_resolve_db_column_case_queries_and_caches(
     mock_cursor: MagicMock,
     mock_get_cursor: MagicMock,
     teradata_connection_config: TeradataConnectionConfig,
 ):
-    """Test that _resolve_column_name queries on cache miss and returns cached on hit."""
+    """Test that _resolve_db_column_case queries on cache miss and returns cached on hit."""
     mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
     cache: dict = {}
 
-    result = _resolve_column_name(
+    result = _resolve_db_column_case(
         teradata_connection_config.get_cursor,
         "my_table",
         "id",
@@ -524,7 +524,7 @@ def test_resolve_column_name_queries_and_caches(
     assert mock_cursor.execute.call_count == 1
     assert 'SELECT TOP 1 * FROM "my_table"' in mock_cursor.execute.call_args[0][0]
 
-    result2 = _resolve_column_name(
+    result2 = _resolve_db_column_case(
         teradata_connection_config.get_cursor,
         "my_table",
         "text",
@@ -534,16 +534,16 @@ def test_resolve_column_name_queries_and_caches(
     assert mock_cursor.execute.call_count == 1  # no extra query — cache hit
 
 
-def test_resolve_column_name_fallback_on_unknown_column(
+def test_resolve_db_column_case_fallback_on_unknown_column(
     mock_cursor: MagicMock,
     mock_get_cursor: MagicMock,
     teradata_connection_config: TeradataConnectionConfig,
 ):
-    """Test that _resolve_column_name returns the input when column is not in the table."""
+    """Test that _resolve_db_column_case returns the input when column is not in the table."""
     mock_cursor.description = [("ID",), ("TEXT",)]
     cache: dict = {}
 
-    result = _resolve_column_name(
+    result = _resolve_db_column_case(
         teradata_connection_config.get_cursor,
         "my_table",
         "nonexistent",
@@ -717,27 +717,6 @@ def test_downloader_with_uppercase_enterprise_columns(
     assert 'WHERE "ID" IN' in call_args
     assert '"ID"' in call_args and '"TEXT"' in call_args and '"YEAR"' in call_args
     assert columns == ["id", "text", "year"]
-
-
-def test_downloader_generate_download_response_lowercases_id_column(
-    mocker: MockerFixture,
-    mock_cursor: MagicMock,
-    teradata_downloader: TeradataDownloader,
-    mock_get_cursor: MagicMock,
-):
-    """Test that generate_download_response lowercases id_column for DataFrame lookup."""
-    from unstructured_ingest.processes.connectors.sql.sql import SQLDownloader
-
-    mock_super = mocker.patch.object(SQLDownloader, "generate_download_response")
-
-    batch_data = MagicMock()
-    batch_data.additional_metadata.table_name = "elements"
-    batch_data.additional_metadata.id_column = "ID"
-
-    teradata_downloader.generate_download_response(result=MagicMock(), file_data=batch_data)
-
-    assert batch_data.additional_metadata.id_column == "id"
-    mock_super.assert_called_once()
 
 
 def test_teradata_connection_close_called_when_commit_fails(
