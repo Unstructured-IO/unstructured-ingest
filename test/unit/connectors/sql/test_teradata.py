@@ -448,14 +448,20 @@ def test_resolve_column_name_queries_and_caches(
     cache: dict = {}
 
     result = _resolve_column_name(
-        teradata_connection_config.get_cursor, "my_table", "id", cache,
+        teradata_connection_config.get_cursor,
+        "my_table",
+        "id",
+        cache,
     )
     assert result == "ID"
     assert mock_cursor.execute.call_count == 1
     assert 'SELECT TOP 1 * FROM "my_table"' in mock_cursor.execute.call_args[0][0]
 
     result2 = _resolve_column_name(
-        teradata_connection_config.get_cursor, "my_table", "text", cache,
+        teradata_connection_config.get_cursor,
+        "my_table",
+        "text",
+        cache,
     )
     assert result2 == "TEXT"
     assert mock_cursor.execute.call_count == 1  # no extra query — cache hit
@@ -471,7 +477,10 @@ def test_resolve_column_name_fallback_on_unknown_column(
     cache: dict = {}
 
     result = _resolve_column_name(
-        teradata_connection_config.get_cursor, "my_table", "nonexistent", cache,
+        teradata_connection_config.get_cursor,
+        "my_table",
+        "nonexistent",
+        cache,
     )
     assert result == "nonexistent"
 
@@ -619,7 +628,10 @@ def test_downloader_with_uppercase_enterprise_columns(
 ):
     """Test that query_db resolves uppercase column names."""
     teradata_downloader._column_cache["elements"] = {
-        "id": "ID", "text": "TEXT", "year": "YEAR", "record_id": "RECORD_ID",
+        "id": "ID",
+        "text": "TEXT",
+        "year": "YEAR",
+        "record_id": "RECORD_ID",
     }
     mock_cursor.fetchall.return_value = [(1, "text1", 2020)]
     mock_cursor.description = [("ID",), ("TEXT",), ("YEAR",)]
@@ -655,9 +667,7 @@ def test_downloader_generate_download_response_lowercases_id_column(
     batch_data.additional_metadata.table_name = "elements"
     batch_data.additional_metadata.id_column = "ID"
 
-    teradata_downloader.generate_download_response(
-        result=MagicMock(), file_data=batch_data
-    )
+    teradata_downloader.generate_download_response(result=MagicMock(), file_data=batch_data)
 
     assert batch_data.additional_metadata.id_column == "id"
     mock_super.assert_called_once()
@@ -675,7 +685,10 @@ def test_teradata_connection_close_called_when_commit_fails(
     mock_module.connect.return_value = mock_conn
     mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
 
-    with pytest.raises(Exception, match="commit failed"), teradata_connection_config.get_connection():
+    with (
+        pytest.raises(Exception, match="commit failed"),
+        teradata_connection_config.get_connection(),
+    ):
         pass
 
     mock_conn.commit.assert_called_once()

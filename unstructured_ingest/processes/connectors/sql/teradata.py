@@ -48,9 +48,7 @@ def _resolve_column_name(
     if table_name not in cache:
         with get_cursor() as cursor:
             cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
-            cache[table_name] = {
-                desc[0].lower(): desc[0] for desc in cursor.description
-            }
+            cache[table_name] = {desc[0].lower(): desc[0] for desc in cursor.description}
     return cache[table_name].get(column_name.lower(), column_name)
 
 
@@ -133,9 +131,7 @@ class TeradataIndexer(SQLIndexer):
                 f"Table '{table_name}' not found or not accessible: {e}",
                 exc_info=True,
             )
-            raise SourceConnectionError(
-                f"Table '{table_name}' not found or not accessible: {e}"
-            )
+            raise SourceConnectionError(f"Table '{table_name}' not found or not accessible: {e}")
 
     def _get_doc_ids(self) -> list[str]:
         """Override to quote identifiers for Teradata reserved word handling."""
@@ -146,9 +142,7 @@ class TeradataIndexer(SQLIndexer):
             self._column_cache,
         )
         with self.get_cursor() as cursor:
-            cursor.execute(
-                f'SELECT "{id_col}" FROM "{self.index_config.table_name}"'
-            )
+            cursor.execute(f'SELECT "{id_col}" FROM "{self.index_config.table_name}"')
             results = cursor.fetchall()
             ids = sorted([result[0] for result in results])
             return ids
@@ -171,9 +165,14 @@ class TeradataDownloader(SQLDownloader):
         id_column = file_data.additional_metadata.id_column
         ids = [item.identifier for item in file_data.batch_items]
 
-        resolve = lambda col: _resolve_column_name(
-            self.connection_config.get_cursor, table_name, col, self._column_cache,
-        )
+        def resolve(col):
+            return _resolve_column_name(
+                self.connection_config.get_cursor,
+                table_name,
+                col,
+                self._column_cache,
+            )
+
         db_id_col = resolve(id_column)
 
         with self.connection_config.get_cursor() as cursor:
@@ -184,10 +183,7 @@ class TeradataDownloader(SQLDownloader):
                 fields = "*"
 
             placeholders = ",".join([self.values_delimiter for _ in ids])
-            query = (
-                f'SELECT {fields} FROM "{table_name}" '
-                f'WHERE "{db_id_col}" IN ({placeholders})'
-            )
+            query = f'SELECT {fields} FROM "{table_name}" WHERE "{db_id_col}" IN ({placeholders})'
 
             logger.debug(f"running query: {query}\nwith values: {ids}")
             cursor.execute(query, ids)
@@ -264,9 +260,7 @@ class TeradataUploader(SQLUploader):
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
-                cursor.execute(
-                    f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"'
-                )
+                cursor.execute(f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"')
                 self._columns = [desc[0] for desc in cursor.description]
         return self._columns
 
