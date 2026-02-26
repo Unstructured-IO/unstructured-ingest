@@ -6,7 +6,7 @@ from pydantic import Secret
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataAccessConfig,
     TeradataConnectionConfig,
@@ -17,6 +17,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploader,
     TeradataUploaderConfig,
     TeradataUploadStager,
+    _resolve_column_name,
 )
 
 
@@ -390,6 +391,91 @@ def test_teradata_indexer_precheck_table_not_found(
     assert mock_cursor.execute.call_count == 2
 
 
+def test_teradata_uploader_precheck_success(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that uploader precheck passes when connection and table are valid."""
+    teradata_uploader.precheck()
+
+    assert mock_cursor.execute.call_count == 2
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert calls[0] == "SELECT 1"
+    assert calls[1] == 'SELECT TOP 1 * FROM "test_table"'
+
+
+def test_teradata_uploader_precheck_connection_failure(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that uploader precheck raises DestinationConnectionError when connection fails."""
+    mock_cursor.execute.side_effect = Exception("Connection refused")
+
+    with pytest.raises(DestinationConnectionError, match="failed to validate connection"):
+        teradata_uploader.precheck()
+
+    assert mock_cursor.execute.call_count == 1
+
+
+def test_teradata_uploader_precheck_table_not_found(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that uploader precheck raises DestinationConnectionError when table doesn't exist."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        Exception("[Error 3807] Object 'test_table' does not exist"),
+    ]
+
+    with pytest.raises(
+        DestinationConnectionError, match="Table 'test_table'.*not found or not accessible"
+    ):
+        teradata_uploader.precheck()
+
+    assert mock_cursor.execute.call_count == 2
+
+
+def test_resolve_column_name_queries_and_caches(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that _resolve_column_name queries on cache miss and returns cached on hit."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
+    cache: dict = {}
+
+    result = _resolve_column_name(
+        teradata_connection_config.get_cursor, "my_table", "id", cache,
+    )
+    assert result == "ID"
+    assert mock_cursor.execute.call_count == 1
+    assert 'SELECT TOP 1 * FROM "my_table"' in mock_cursor.execute.call_args[0][0]
+
+    result2 = _resolve_column_name(
+        teradata_connection_config.get_cursor, "my_table", "text", cache,
+    )
+    assert result2 == "TEXT"
+    assert mock_cursor.execute.call_count == 1  # no extra query — cache hit
+
+
+def test_resolve_column_name_fallback_on_unknown_column(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that _resolve_column_name returns the input when column is not in the table."""
+    mock_cursor.description = [("ID",), ("TEXT",)]
+    cache: dict = {}
+
+    result = _resolve_column_name(
+        teradata_connection_config.get_cursor, "my_table", "nonexistent", cache,
+    )
+    assert result == "nonexistent"
+
+
 def test_teradata_uploader_get_table_columns_preserves_original_case(
     mock_cursor: MagicMock,
     teradata_uploader: TeradataUploader,
@@ -515,10 +601,9 @@ def test_indexer_with_uppercase_enterprise_columns(
     mock_cursor: MagicMock,
     teradata_indexer: TeradataIndexer,
     mock_get_cursor: MagicMock,
-    teradata_connection_config: TeradataConnectionConfig,
 ):
-    """Test that _get_doc_ids uses resolved uppercase column from connection config."""
-    teradata_connection_config._column_case_maps["year"] = {"type": "TYPE", "id": "ID"}
+    """Test that _get_doc_ids uses resolved uppercase column names."""
+    teradata_indexer._column_cache["year"] = {"type": "TYPE", "id": "ID"}
     mock_cursor.fetchall.return_value = [("id1",), ("id2",)]
 
     teradata_indexer._get_doc_ids()
@@ -531,10 +616,9 @@ def test_downloader_with_uppercase_enterprise_columns(
     mock_cursor: MagicMock,
     teradata_downloader: TeradataDownloader,
     mock_get_cursor: MagicMock,
-    teradata_connection_config: TeradataConnectionConfig,
 ):
-    """Test that query_db resolves uppercase column names from connection config."""
-    teradata_connection_config._column_case_maps["elements"] = {
+    """Test that query_db resolves uppercase column names."""
+    teradata_downloader._column_cache["elements"] = {
         "id": "ID", "text": "TEXT", "year": "YEAR", "record_id": "RECORD_ID",
     }
     mock_cursor.fetchall.return_value = [(1, "text1", 2020)]

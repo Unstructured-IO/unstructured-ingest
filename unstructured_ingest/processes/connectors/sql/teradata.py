@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -239,6 +239,27 @@ class TeradataUploader(SQLUploader):
     connection_config: TeradataConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+
+    def precheck(self) -> None:
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+        table_name = self.upload_config.table_name
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+        except Exception as e:
+            logger.error(
+                f"Table '{table_name}' not found or not accessible: {e}",
+                exc_info=True,
+            )
+            raise DestinationConnectionError(
+                f"Table '{table_name}' not found or not accessible: {e}"
+            )
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
