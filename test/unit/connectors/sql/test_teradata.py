@@ -282,6 +282,7 @@ def test_teradata_uploader_delete_by_record_id_quotes_identifiers(
     mock_get_cursor: MagicMock,
 ):
     """Test that delete_by_record_id quotes table and column names."""
+    mock_cursor.description = [("id",), ("text",), ("type",), ("record_id",)]
     mock_cursor.rowcount = 5
 
     file_data = FileData(
@@ -294,7 +295,7 @@ def test_teradata_uploader_delete_by_record_id_quotes_identifiers(
 
     teradata_uploader.delete_by_record_id(file_data)
 
-    # Verify the DELETE statement quotes identifiers
+    # Last execute call is the DELETE (first is SELECT TOP 1 for column discovery)
     call_args = mock_cursor.execute.call_args[0][0]
     assert 'DELETE FROM "test_table"' in call_args
     assert 'WHERE "record_id" = ?' in call_args
@@ -316,9 +317,8 @@ def test_teradata_uploader_upload_dataframe_quotes_column_names(
         }
     )
 
-    # Mock _fit_to_schema to return the same df
+    teradata_uploader._columns = ["id", "text", "type", "record_id"]
     mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
-    # Mock can_delete to return False
     mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
 
     file_data = FileData(
@@ -331,13 +331,12 @@ def test_teradata_uploader_upload_dataframe_quotes_column_names(
 
     teradata_uploader.upload_dataframe(df, file_data)
 
-    # Verify the INSERT statement quotes all column names AND table name
     call_args = mock_cursor.executemany.call_args[0][0]
     assert '"id"' in call_args
     assert '"text"' in call_args
-    assert '"type"' in call_args  # Reserved word must be quoted
+    assert '"type"' in call_args
     assert '"record_id"' in call_args
-    assert 'INSERT INTO "test_table"' in call_args  # Table name must be quoted too
+    assert 'INSERT INTO "test_table"' in call_args
 
 
 def test_teradata_uploader_values_delimiter_is_qmark(teradata_uploader: TeradataUploader):
@@ -389,6 +388,195 @@ def test_teradata_indexer_precheck_table_not_found(
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
+
+
+def test_teradata_uploader_get_table_columns_preserves_original_case(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that get_table_columns preserves the original case from cursor.description."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
+
+    columns = teradata_uploader.get_table_columns()
+
+    assert columns == ["ID", "TEXT", "TYPE"]
+
+
+def test_teradata_uploader_can_delete_case_insensitive(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that can_delete matches record_id_key case-insensitively against DB columns."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",), ("RECORD_ID",)]
+
+    assert teradata_uploader.can_delete() is True
+
+
+def test_teradata_uploader_can_delete_returns_false_when_missing(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that can_delete returns False when record_id_key is not in table columns."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
+
+    assert teradata_uploader.can_delete() is False
+
+
+def test_teradata_uploader_delete_by_record_id_resolves_column_case(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that delete_by_record_id resolves the column name to actual DB case."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",), ("RECORD_ID",)]
+    mock_cursor.rowcount = 3
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    teradata_uploader.delete_by_record_id(file_data)
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'DELETE FROM "test_table"' in call_args
+    assert 'WHERE "RECORD_ID" = ?' in call_args
+
+
+def test_teradata_uploader_upload_dataframe_uses_db_case_in_sql(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that upload_dataframe uses actual DB column case in quoted SQL identifiers."""
+    df = pd.DataFrame(
+        {
+            "id": [1, 2],
+            "text": ["text1", "text2"],
+            "type": ["Title", "NarrativeText"],
+            "record_id": ["file1", "file1"],
+        }
+    )
+
+    teradata_uploader._columns = ["ID", "TEXT", "TYPE", "RECORD_ID"]
+    mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
+    mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    teradata_uploader.upload_dataframe(df, file_data)
+
+    call_args = mock_cursor.executemany.call_args[0][0]
+    assert '"ID"' in call_args
+    assert '"TEXT"' in call_args
+    assert '"TYPE"' in call_args
+    assert '"RECORD_ID"' in call_args
+    assert 'INSERT INTO "test_table"' in call_args
+
+
+def test_teradata_downloader_query_db_lowercases_uppercase_columns(
+    mock_cursor: MagicMock,
+    teradata_downloader: TeradataDownloader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that query_db normalizes uppercase cursor.description columns to lowercase."""
+    mock_cursor.fetchall.return_value = [
+        (1, "text1", 2020),
+    ]
+    mock_cursor.description = [("ID",), ("TEXT",), ("YEAR",)]
+
+    mock_item = MagicMock()
+    mock_item.identifier = "test_id"
+
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "id"
+    batch_data.batch_items = [mock_item]
+
+    _, columns = teradata_downloader.query_db(batch_data)
+
+    assert columns == ["id", "text", "year"]
+
+
+def test_indexer_with_uppercase_enterprise_columns(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that _get_doc_ids uses resolved uppercase column from connection config."""
+    teradata_connection_config._column_case_maps["year"] = {"type": "TYPE", "id": "ID"}
+    mock_cursor.fetchall.return_value = [("id1",), ("id2",)]
+
+    teradata_indexer._get_doc_ids()
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'SELECT "TYPE" FROM "year"' in call_args
+
+
+def test_downloader_with_uppercase_enterprise_columns(
+    mock_cursor: MagicMock,
+    teradata_downloader: TeradataDownloader,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that query_db resolves uppercase column names from connection config."""
+    teradata_connection_config._column_case_maps["elements"] = {
+        "id": "ID", "text": "TEXT", "year": "YEAR", "record_id": "RECORD_ID",
+    }
+    mock_cursor.fetchall.return_value = [(1, "text1", 2020)]
+    mock_cursor.description = [("ID",), ("TEXT",), ("YEAR",)]
+
+    mock_item = MagicMock()
+    mock_item.identifier = "test_id"
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "id"
+    batch_data.batch_items = [mock_item]
+
+    _, columns = teradata_downloader.query_db(batch_data)
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'FROM "elements"' in call_args
+    assert 'WHERE "ID" IN' in call_args
+    assert '"ID"' in call_args and '"TEXT"' in call_args and '"YEAR"' in call_args
+    assert columns == ["id", "text", "year"]
+
+
+def test_downloader_generate_download_response_lowercases_id_column(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_downloader: TeradataDownloader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that generate_download_response lowercases id_column for DataFrame lookup."""
+    from unstructured_ingest.processes.connectors.sql.sql import SQLDownloader
+
+    mock_super = mocker.patch.object(SQLDownloader, "generate_download_response")
+
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "ID"
+
+    teradata_downloader.generate_download_response(
+        result=MagicMock(), file_data=batch_data
+    )
+
+    assert batch_data.additional_metadata.id_column == "id"
+    mock_super.assert_called_once()
 
 
 def test_teradata_connection_close_called_when_commit_fails(

@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import Field, PrivateAttr, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import SourceConnectionError
@@ -52,6 +52,17 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         description="Teradata database port (default: 1025)",
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
+    _column_case_maps: dict[str, dict[str, str]] = PrivateAttr(default_factory=dict)
+
+    def resolve_column_name(self, table_name: str, column_name: str) -> str:
+        """Resolve a column name to its actual database case via SELECT TOP 1."""
+        if table_name not in self._column_case_maps:
+            with self.get_cursor() as cursor:
+                cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+                self._column_case_maps[table_name] = {
+                    desc[0].lower(): desc[0] for desc in cursor.description
+                }
+        return self._column_case_maps[table_name].get(column_name.lower(), column_name)
 
     @contextmanager
     @requires_dependencies(["teradatasql"], extras="teradata")
@@ -119,9 +130,12 @@ class TeradataIndexer(SQLIndexer):
 
     def _get_doc_ids(self) -> list[str]:
         """Override to quote identifiers for Teradata reserved word handling."""
+        id_col = self.connection_config.resolve_column_name(
+            self.index_config.table_name, self.index_config.id_column
+        )
         with self.get_cursor() as cursor:
             cursor.execute(
-                f'SELECT "{self.index_config.id_column}" FROM "{self.index_config.table_name}"'
+                f'SELECT "{id_col}" FROM "{self.index_config.table_name}"'
             )
             results = cursor.fetchall()
             ids = sorted([result[0] for result in results])
@@ -144,20 +158,33 @@ class TeradataDownloader(SQLDownloader):
         id_column = file_data.additional_metadata.id_column
         ids = [item.identifier for item in file_data.batch_items]
 
+        db_id_col = self.connection_config.resolve_column_name(table_name, id_column)
+
         with self.connection_config.get_cursor() as cursor:
             if self.download_config.fields:
-                fields = ",".join([f'"{field}"' for field in self.download_config.fields])
+                resolved_fields = [
+                    self.connection_config.resolve_column_name(table_name, f)
+                    for f in self.download_config.fields
+                ]
+                fields = ",".join([f'"{f}"' for f in resolved_fields])
             else:
                 fields = "*"
 
             placeholders = ",".join([self.values_delimiter for _ in ids])
-            query = f'SELECT {fields} FROM "{table_name}" WHERE "{id_column}" IN ({placeholders})'
+            query = (
+                f'SELECT {fields} FROM "{table_name}" '
+                f'WHERE "{db_id_col}" IN ({placeholders})'
+            )
 
             logger.debug(f"running query: {query}\nwith values: {ids}")
             cursor.execute(query, ids)
             rows = cursor.fetchall()
             columns = [col[0].lower() for col in cursor.description]
             return rows, columns
+
+    def generate_download_response(self, result, file_data):
+        file_data.additional_metadata.id_column = file_data.additional_metadata.id_column.lower()
+        return super().generate_download_response(result=result, file_data=file_data)
 
 
 class TeradataUploadStagerConfig(SQLUploadStagerConfig):
@@ -203,7 +230,9 @@ class TeradataUploader(SQLUploader):
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
-                cursor.execute(f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"')
+                cursor.execute(
+                    f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"'
+                )
                 self._columns = [desc[0] for desc in cursor.description]
         return self._columns
 
