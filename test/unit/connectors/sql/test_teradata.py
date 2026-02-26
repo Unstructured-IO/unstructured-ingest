@@ -374,6 +374,73 @@ def test_teradata_indexer_precheck_connection_failure(
     assert mock_cursor.execute.call_count == 1
 
 
+def test_teradata_downloader_query_db_includes_id_column_in_fields(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that query_db includes id_column in SELECT even when fields doesn't contain it."""
+    downloader = TeradataDownloader(
+        connection_config=teradata_connection_config,
+        download_config=TeradataDownloaderConfig(
+            fields=["text", "year"],
+            id_column="id",
+        ),
+    )
+
+    mock_cursor.fetchall.return_value = [(1, "text1", 2020)]
+    mock_cursor.description = [("id",), ("text",), ("year",)]
+
+    mock_item = MagicMock()
+    mock_item.identifier = "test_id"
+
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "id"
+    batch_data.batch_items = [mock_item]
+
+    downloader.query_db(batch_data)
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    # id_column should appear in SELECT even though fields was only ["text", "year"]
+    assert '"id"' in call_args
+    assert '"text"' in call_args
+    assert '"year"' in call_args
+
+
+def test_teradata_downloader_query_db_no_duplicate_when_id_in_fields(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that id_column is not duplicated when it's already in fields."""
+    downloader = TeradataDownloader(
+        connection_config=teradata_connection_config,
+        download_config=TeradataDownloaderConfig(
+            fields=["id", "text"],
+            id_column="id",
+        ),
+    )
+
+    mock_cursor.fetchall.return_value = [(1, "text1")]
+    mock_cursor.description = [("id",), ("text",)]
+
+    mock_item = MagicMock()
+    mock_item.identifier = "test_id"
+
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "id"
+    batch_data.batch_items = [mock_item]
+
+    downloader.query_db(batch_data)
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    # "id" should appear exactly once in the SELECT fields
+    select_part = call_args.split("FROM")[0]
+    assert select_part.count('"id"') == 1
+
+
 def test_teradata_indexer_precheck_table_not_found(
     mock_cursor: MagicMock,
     teradata_indexer: TeradataIndexer,

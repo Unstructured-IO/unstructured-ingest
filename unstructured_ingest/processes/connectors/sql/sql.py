@@ -195,12 +195,22 @@ class SQLDownloader(Downloader, ABC):
             )
         return f
 
+    @staticmethod
+    def _resolve_column_name(df: "DataFrame", column_name: str) -> str:
+        if column_name in df.columns:
+            return column_name
+        columns_lower = {col.lower(): col for col in df.columns}
+        if column_name.lower() in columns_lower:
+            return columns_lower[column_name.lower()]
+        return column_name
+
     def generate_download_response(
         self, result: "DataFrame", file_data: SqlBatchFileData
     ) -> DownloadResponse:
         id_column = file_data.additional_metadata.id_column
         table_name = file_data.additional_metadata.table_name
-        record_id = result.iloc[0][id_column]
+        resolved_id_column = self._resolve_column_name(result, id_column)
+        record_id = result.iloc[0][resolved_id_column]
         filename_id = self.get_identifier(table_name=table_name, record_id=record_id)
         filename = f"{filename_id}.csv"
         download_path = self.download_dir / Path(filename)

@@ -1,15 +1,21 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
 from pytest_mock import MockerFixture
 
-from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.data_types.file_data import BatchItem, FileData, SourceIdentifiers
+from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.processes.connectors.sql.sql import (
     SQLConnectionConfig,
+    SQLDownloader,
+    SQLDownloaderConfig,
     SQLUploader,
     SQLUploaderConfig,
     SQLUploadStager,
+    SqlAdditionalMetadata,
+    SqlBatchFileData,
 )
 
 
@@ -186,3 +192,81 @@ def test_fit_to_schema_not_case_sensitive(mocker: MockerFixture, mock_uploader: 
     assert "col3" not in result.columns
     assert "col1" in result.columns
     assert "col2" in result.columns
+
+
+class TestResolveColumnName:
+    def test_exact_match(self):
+        df = pd.DataFrame({"id": [1], "text": ["hello"]})
+        assert SQLDownloader._resolve_column_name(df, "id") == "id"
+
+    def test_case_insensitive_fallback(self):
+        df = pd.DataFrame({"ID": [1], "TEXT": ["hello"]})
+        assert SQLDownloader._resolve_column_name(df, "id") == "ID"
+
+    def test_mixed_case_fallback(self):
+        df = pd.DataFrame({"Id": [1], "Text": ["hello"]})
+        assert SQLDownloader._resolve_column_name(df, "id") == "Id"
+
+    def test_no_match_returns_original(self):
+        df = pd.DataFrame({"foo": [1], "bar": ["hello"]})
+        assert SQLDownloader._resolve_column_name(df, "id") == "id"
+
+    def test_exact_match_preferred_over_case_insensitive(self):
+        df = pd.DataFrame({"id": [1], "ID": [2]})
+        assert SQLDownloader._resolve_column_name(df, "id") == "id"
+
+
+class TestGenerateDownloadResponse:
+    def _make_file_data(self, table_name="test_table", id_column="id"):
+        return SqlBatchFileData(
+            identifier="test",
+            connector_type="test",
+            source_identifiers=SourceIdentifiers(
+                filename="test.csv", fullpath="test.csv"
+            ),
+            additional_metadata=SqlAdditionalMetadata(
+                table_name=table_name, id_column=id_column
+            ),
+            batch_items=[BatchItem(identifier="1")],
+        )
+
+    def _make_downloader(self, tmp_path, mocker):
+        downloader = mocker.MagicMock(spec=SQLDownloader)
+        downloader.download_dir = tmp_path
+        downloader.download_config = SQLDownloaderConfig(fields=["text"])
+        downloader._resolve_column_name = SQLDownloader._resolve_column_name
+        downloader.get_identifier = SQLDownloader.get_identifier.__get__(downloader)
+        downloader.generate_download_response = (
+            SQLDownloader.generate_download_response.__get__(downloader, type(downloader))
+        )
+        return downloader
+
+    def test_matching_case(self, tmp_path, mocker):
+        """generate_download_response works when column case matches id_column."""
+        downloader = self._make_downloader(tmp_path, mocker)
+        file_data = self._make_file_data(id_column="id")
+        result_df = pd.DataFrame({"id": [42], "text": ["hello"]})
+
+        mock_response = MagicMock(spec=DownloadResponse)
+        mocker.patch(
+            "unstructured_ingest.interfaces.Downloader.generate_download_response",
+            return_value=mock_response,
+        )
+
+        response = downloader.generate_download_response(result=result_df, file_data=file_data)
+        assert response == mock_response
+
+    def test_uppercase_columns_lowercase_id_column(self, tmp_path, mocker):
+        """generate_download_response resolves uppercase column to lowercase id_column."""
+        downloader = self._make_downloader(tmp_path, mocker)
+        file_data = self._make_file_data(id_column="id")
+        result_df = pd.DataFrame({"ID": [42], "TEXT": ["hello"]})
+
+        mock_response = MagicMock(spec=DownloadResponse)
+        mocker.patch(
+            "unstructured_ingest.interfaces.Downloader.generate_download_response",
+            return_value=mock_response,
+        )
+
+        response = downloader.generate_download_response(result=result_df, file_data=file_data)
+        assert response == mock_response

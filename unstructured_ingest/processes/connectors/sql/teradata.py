@@ -177,7 +177,8 @@ class TeradataDownloader(SQLDownloader):
 
         with self.connection_config.get_cursor() as cursor:
             if self.download_config.fields:
-                resolved_fields = [resolve(f) for f in self.download_config.fields]
+                all_fields = list(dict.fromkeys([id_column] + self.download_config.fields))
+                resolved_fields = [resolve(f) for f in all_fields]
                 fields = ",".join([f'"{f}"' for f in resolved_fields])
             else:
                 fields = "*"

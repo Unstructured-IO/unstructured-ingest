@@ -104,7 +104,7 @@ class SingleStoreDownloader(SQLDownloader):
         ids = tuple([item.identifier for item in file_data.batch_items])
         with self.connection_config.get_connection() as sqlite_connection:
             cursor = sqlite_connection.cursor()
-            fields = ",".join(self.download_config.fields) if self.download_config.fields else "*"
+            fields = ",".join(list(dict.fromkeys([id_column] + self.download_config.fields))) if self.download_config.fields else "*"
             query = (
                 f"SELECT {fields} FROM {table_name} WHERE {id_column} IN {self.values_delimiter}"
             )
