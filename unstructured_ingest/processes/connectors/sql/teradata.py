@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generator, Optional
 
-from pydantic import Field, PrivateAttr, Secret
+from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import SourceConnectionError
@@ -35,6 +35,25 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "teradata"
 
 
+def _resolve_column_name(
+    get_cursor, table_name: str, column_name: str, cache: dict[str, dict[str, str]]
+) -> str:
+    """Resolve a column name to its actual database case.
+
+    Teradata may store identifiers in uppercase (Enterprise) or lowercase depending
+    on how the table was created. Since we double-quote identifiers for reserved-word
+    safety, the case must match exactly. This does a one-time SELECT TOP 1 per table
+    to discover actual column names from cursor.description.
+    """
+    if table_name not in cache:
+        with get_cursor() as cursor:
+            cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+            cache[table_name] = {
+                desc[0].lower(): desc[0] for desc in cursor.description
+            }
+    return cache[table_name].get(column_name.lower(), column_name)
+
+
 class TeradataAccessConfig(SQLAccessConfig):
     password: str = Field(description="Teradata user password")
 
@@ -52,17 +71,6 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         description="Teradata database port (default: 1025)",
     )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
-    _column_case_maps: dict[str, dict[str, str]] = PrivateAttr(default_factory=dict)
-
-    def resolve_column_name(self, table_name: str, column_name: str) -> str:
-        """Resolve a column name to its actual database case via SELECT TOP 1."""
-        if table_name not in self._column_case_maps:
-            with self.get_cursor() as cursor:
-                cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
-                self._column_case_maps[table_name] = {
-                    desc[0].lower(): desc[0] for desc in cursor.description
-                }
-        return self._column_case_maps[table_name].get(column_name.lower(), column_name)
 
     @contextmanager
     @requires_dependencies(["teradatasql"], extras="teradata")
@@ -106,6 +114,7 @@ class TeradataIndexer(SQLIndexer):
     connection_config: TeradataConnectionConfig
     index_config: TeradataIndexerConfig
     connector_type: str = CONNECTOR_TYPE
+    _column_cache: dict = field(init=False, default_factory=dict)
 
     def precheck(self) -> None:
         try:
@@ -130,8 +139,11 @@ class TeradataIndexer(SQLIndexer):
 
     def _get_doc_ids(self) -> list[str]:
         """Override to quote identifiers for Teradata reserved word handling."""
-        id_col = self.connection_config.resolve_column_name(
-            self.index_config.table_name, self.index_config.id_column
+        id_col = _resolve_column_name(
+            self.connection_config.get_cursor,
+            self.index_config.table_name,
+            self.index_config.id_column,
+            self._column_cache,
         )
         with self.get_cursor() as cursor:
             cursor.execute(
@@ -152,20 +164,21 @@ class TeradataDownloader(SQLDownloader):
     download_config: TeradataDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+    _column_cache: dict = field(init=False, default_factory=dict)
 
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
         ids = [item.identifier for item in file_data.batch_items]
 
-        db_id_col = self.connection_config.resolve_column_name(table_name, id_column)
+        resolve = lambda col: _resolve_column_name(
+            self.connection_config.get_cursor, table_name, col, self._column_cache,
+        )
+        db_id_col = resolve(id_column)
 
         with self.connection_config.get_cursor() as cursor:
             if self.download_config.fields:
-                resolved_fields = [
-                    self.connection_config.resolve_column_name(table_name, f)
-                    for f in self.download_config.fields
-                ]
+                resolved_fields = [resolve(f) for f in self.download_config.fields]
                 fields = ",".join([f'"{f}"' for f in resolved_fields])
             else:
                 fields = "*"
