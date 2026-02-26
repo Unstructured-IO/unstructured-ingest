@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -33,6 +33,23 @@ if TYPE_CHECKING:
     from teradatasql import TeradataConnection, TeradataCursor
 
 CONNECTOR_TYPE = "teradata"
+
+
+def _resolve_column_name(
+    get_cursor, table_name: str, column_name: str, cache: dict[str, dict[str, str]]
+) -> str:
+    """Resolve a column name to its actual database case.
+
+    Teradata may store identifiers in uppercase (Enterprise) or lowercase depending
+    on how the table was created. Since we double-quote identifiers for reserved-word
+    safety, the case must match exactly. This does a one-time SELECT TOP 1 per table
+    to discover actual column names from cursor.description.
+    """
+    if table_name not in cache:
+        with get_cursor() as cursor:
+            cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+            cache[table_name] = {desc[0].lower(): desc[0] for desc in cursor.description}
+    return cache[table_name].get(column_name.lower(), column_name)
 
 
 class TeradataAccessConfig(SQLAccessConfig):
@@ -71,8 +88,10 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         try:
             yield connection
         finally:
-            connection.commit()
-            connection.close()
+            try:
+                connection.commit()
+            finally:
+                connection.close()
 
     @contextmanager
     def get_cursor(self) -> Generator["TeradataCursor", None, None]:
@@ -93,6 +112,7 @@ class TeradataIndexer(SQLIndexer):
     connection_config: TeradataConnectionConfig
     index_config: TeradataIndexerConfig
     connector_type: str = CONNECTOR_TYPE
+    _column_cache: dict = field(init=False, default_factory=dict)
 
     def precheck(self) -> None:
         try:
@@ -111,16 +131,18 @@ class TeradataIndexer(SQLIndexer):
                 f"Table '{table_name}' not found or not accessible: {e}",
                 exc_info=True,
             )
-            raise SourceConnectionError(
-                f"Table '{table_name}' not found or not accessible: {e}"
-            )
+            raise SourceConnectionError(f"Table '{table_name}' not found or not accessible: {e}")
 
     def _get_doc_ids(self) -> list[str]:
         """Override to quote identifiers for Teradata reserved word handling."""
+        id_col = _resolve_column_name(
+            self.connection_config.get_cursor,
+            self.index_config.table_name,
+            self.index_config.id_column,
+            self._column_cache,
+        )
         with self.get_cursor() as cursor:
-            cursor.execute(
-                f'SELECT "{self.index_config.id_column}" FROM "{self.index_config.table_name}"'
-            )
+            cursor.execute(f'SELECT "{id_col}" FROM "{self.index_config.table_name}"')
             results = cursor.fetchall()
             ids = sorted([result[0] for result in results])
             return ids
@@ -136,26 +158,42 @@ class TeradataDownloader(SQLDownloader):
     download_config: TeradataDownloaderConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+    _column_cache: dict = field(init=False, default_factory=dict)
 
     def query_db(self, file_data: SqlBatchFileData) -> tuple[list[tuple], list[str]]:
         table_name = file_data.additional_metadata.table_name
         id_column = file_data.additional_metadata.id_column
         ids = [item.identifier for item in file_data.batch_items]
 
+        def resolve(col):
+            return _resolve_column_name(
+                self.connection_config.get_cursor,
+                table_name,
+                col,
+                self._column_cache,
+            )
+
+        db_id_col = resolve(id_column)
+
         with self.connection_config.get_cursor() as cursor:
             if self.download_config.fields:
-                fields = ",".join([f'"{field}"' for field in self.download_config.fields])
+                resolved_fields = [resolve(f) for f in self.download_config.fields]
+                fields = ",".join([f'"{f}"' for f in resolved_fields])
             else:
                 fields = "*"
 
             placeholders = ",".join([self.values_delimiter for _ in ids])
-            query = f'SELECT {fields} FROM "{table_name}" WHERE "{id_column}" IN ({placeholders})'
+            query = f'SELECT {fields} FROM "{table_name}" WHERE "{db_id_col}" IN ({placeholders})'
 
             logger.debug(f"running query: {query}\nwith values: {ids}")
             cursor.execute(query, ids)
             rows = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
+            columns = [col[0].lower() for col in cursor.description]
             return rows, columns
+
+    def generate_download_response(self, result, file_data):
+        file_data.additional_metadata.id_column = file_data.additional_metadata.id_column.lower()
+        return super().generate_download_response(result=result, file_data=file_data)
 
 
 class TeradataUploadStagerConfig(SQLUploadStagerConfig):
@@ -198,6 +236,27 @@ class TeradataUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
+    def precheck(self) -> None:
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except Exception as e:
+            logger.error(f"failed to validate connection: {e}", exc_info=True)
+            raise DestinationConnectionError(f"failed to validate connection: {e}")
+
+        table_name = self.upload_config.table_name
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+        except Exception as e:
+            logger.error(
+                f"Table '{table_name}' not found or not accessible: {e}",
+                exc_info=True,
+            )
+            raise DestinationConnectionError(
+                f"Table '{table_name}' not found or not accessible: {e}"
+            )
+
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
@@ -205,7 +264,21 @@ class TeradataUploader(SQLUploader):
                 self._columns = [desc[0] for desc in cursor.description]
         return self._columns
 
+    def _get_db_column_name(self, name: str) -> str:
+        """Resolve a column name to its actual database case via case-insensitive lookup."""
+        for col in self.get_table_columns():
+            if col.lower() == name.lower():
+                return col
+        return name
+
+    def can_delete(self) -> bool:
+        return any(
+            col.lower() == self.upload_config.record_id_key.lower()
+            for col in self.get_table_columns()
+        )
+
     def delete_by_record_id(self, file_data: FileData) -> None:
+        record_id_col = self._get_db_column_name(self.upload_config.record_id_key)
         logger.debug(
             f"deleting any content with data "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
@@ -213,7 +286,7 @@ class TeradataUploader(SQLUploader):
         )
         stmt = (
             f'DELETE FROM "{self.upload_config.table_name}" '
-            f'WHERE "{self.upload_config.record_id_key}" = {self.values_delimiter}'
+            f'WHERE "{record_id_col}" = {self.values_delimiter}'
         )
         with self.get_cursor() as cursor:
             cursor.execute(stmt, [file_data.identifier])
@@ -232,11 +305,13 @@ class TeradataUploader(SQLUploader):
                 f"record id column "
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
-        df = self._fit_to_schema(df=df)
+        df = self._fit_to_schema(df=df, case_sensitive=False)
         df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
-        quoted_columns = [f'"{col}"' for col in columns]
+        db_col_map = {col.lower(): col for col in self.get_table_columns()}
+        db_columns = [db_col_map.get(col.lower(), col) for col in columns]
+        quoted_columns = [f'"{col}"' for col in db_columns]
 
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
             table_name=f'"{self.upload_config.table_name}"',

@@ -66,8 +66,10 @@ class PostgresConnectionConfig(SQLConnectionConfig):
         try:
             yield connection
         finally:
-            connection.commit()
-            connection.close()
+            try:
+                connection.commit()
+            finally:
+                connection.close()
 
     @contextmanager
     def get_cursor(self) -> Generator["PostgresCursor", None, None]:

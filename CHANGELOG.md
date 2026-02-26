@@ -1,3 +1,9 @@
+## [1.4.6]
+
+* **fix: SQL connector connection leak when commit() fails** Wrap `commit()`/`close()` in `try/finally` across Teradata, PostgreSQL, Snowflake, SingleStore, and SQLite so `close()` is always called.
+* **fix: Teradata case-insensitive column handling** Resolve column names to actual database case before use in double-quoted SQL identifiers. Handles all uppercase/lowercase combinations between database and user config.
+* **fix: Teradata uploader precheck validates table existence** Catch wrong table names early at precheck time instead of failing mid-pipeline.
+
 ## [1.4.5]
 
 * **fix: add capability to use opensearch serverless**

@@ -6,7 +6,7 @@ from pydantic import Secret
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataAccessConfig,
     TeradataConnectionConfig,
@@ -17,6 +17,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploader,
     TeradataUploaderConfig,
     TeradataUploadStager,
+    _resolve_column_name,
 )
 
 
@@ -282,6 +283,7 @@ def test_teradata_uploader_delete_by_record_id_quotes_identifiers(
     mock_get_cursor: MagicMock,
 ):
     """Test that delete_by_record_id quotes table and column names."""
+    mock_cursor.description = [("id",), ("text",), ("type",), ("record_id",)]
     mock_cursor.rowcount = 5
 
     file_data = FileData(
@@ -294,7 +296,7 @@ def test_teradata_uploader_delete_by_record_id_quotes_identifiers(
 
     teradata_uploader.delete_by_record_id(file_data)
 
-    # Verify the DELETE statement quotes identifiers
+    # Last execute call is the DELETE (first is SELECT TOP 1 for column discovery)
     call_args = mock_cursor.execute.call_args[0][0]
     assert 'DELETE FROM "test_table"' in call_args
     assert 'WHERE "record_id" = ?' in call_args
@@ -316,9 +318,8 @@ def test_teradata_uploader_upload_dataframe_quotes_column_names(
         }
     )
 
-    # Mock _fit_to_schema to return the same df
+    teradata_uploader._columns = ["id", "text", "type", "record_id"]
     mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
-    # Mock can_delete to return False
     mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
 
     file_data = FileData(
@@ -331,13 +332,12 @@ def test_teradata_uploader_upload_dataframe_quotes_column_names(
 
     teradata_uploader.upload_dataframe(df, file_data)
 
-    # Verify the INSERT statement quotes all column names AND table name
     call_args = mock_cursor.executemany.call_args[0][0]
     assert '"id"' in call_args
     assert '"text"' in call_args
-    assert '"type"' in call_args  # Reserved word must be quoted
+    assert '"type"' in call_args
     assert '"record_id"' in call_args
-    assert 'INSERT INTO "test_table"' in call_args  # Table name must be quoted too
+    assert 'INSERT INTO "test_table"' in call_args
 
 
 def test_teradata_uploader_values_delimiter_is_qmark(teradata_uploader: TeradataUploader):
@@ -389,3 +389,325 @@ def test_teradata_indexer_precheck_table_not_found(
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
+
+
+def test_teradata_uploader_precheck_success(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that uploader precheck passes when connection and table are valid."""
+    teradata_uploader.precheck()
+
+    assert mock_cursor.execute.call_count == 2
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert calls[0] == "SELECT 1"
+    assert calls[1] == 'SELECT TOP 1 * FROM "test_table"'
+
+
+def test_teradata_uploader_precheck_connection_failure(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that uploader precheck raises DestinationConnectionError when connection fails."""
+    mock_cursor.execute.side_effect = Exception("Connection refused")
+
+    with pytest.raises(DestinationConnectionError, match="failed to validate connection"):
+        teradata_uploader.precheck()
+
+    assert mock_cursor.execute.call_count == 1
+
+
+def test_teradata_uploader_precheck_table_not_found(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that uploader precheck raises DestinationConnectionError when table doesn't exist."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        Exception("[Error 3807] Object 'test_table' does not exist"),
+    ]
+
+    with pytest.raises(
+        DestinationConnectionError, match="Table 'test_table'.*not found or not accessible"
+    ):
+        teradata_uploader.precheck()
+
+    assert mock_cursor.execute.call_count == 2
+
+
+def test_resolve_column_name_queries_and_caches(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that _resolve_column_name queries on cache miss and returns cached on hit."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
+    cache: dict = {}
+
+    result = _resolve_column_name(
+        teradata_connection_config.get_cursor,
+        "my_table",
+        "id",
+        cache,
+    )
+    assert result == "ID"
+    assert mock_cursor.execute.call_count == 1
+    assert 'SELECT TOP 1 * FROM "my_table"' in mock_cursor.execute.call_args[0][0]
+
+    result2 = _resolve_column_name(
+        teradata_connection_config.get_cursor,
+        "my_table",
+        "text",
+        cache,
+    )
+    assert result2 == "TEXT"
+    assert mock_cursor.execute.call_count == 1  # no extra query — cache hit
+
+
+def test_resolve_column_name_fallback_on_unknown_column(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that _resolve_column_name returns the input when column is not in the table."""
+    mock_cursor.description = [("ID",), ("TEXT",)]
+    cache: dict = {}
+
+    result = _resolve_column_name(
+        teradata_connection_config.get_cursor,
+        "my_table",
+        "nonexistent",
+        cache,
+    )
+    assert result == "nonexistent"
+
+
+def test_teradata_uploader_get_table_columns_preserves_original_case(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that get_table_columns preserves the original case from cursor.description."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
+
+    columns = teradata_uploader.get_table_columns()
+
+    assert columns == ["ID", "TEXT", "TYPE"]
+
+
+def test_teradata_uploader_can_delete_case_insensitive(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that can_delete matches record_id_key case-insensitively against DB columns."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",), ("RECORD_ID",)]
+
+    assert teradata_uploader.can_delete() is True
+
+
+def test_teradata_uploader_can_delete_returns_false_when_missing(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that can_delete returns False when record_id_key is not in table columns."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",)]
+
+    assert teradata_uploader.can_delete() is False
+
+
+def test_teradata_uploader_delete_by_record_id_resolves_column_case(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that delete_by_record_id resolves the column name to actual DB case."""
+    mock_cursor.description = [("ID",), ("TEXT",), ("TYPE",), ("RECORD_ID",)]
+    mock_cursor.rowcount = 3
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    teradata_uploader.delete_by_record_id(file_data)
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'DELETE FROM "test_table"' in call_args
+    assert 'WHERE "RECORD_ID" = ?' in call_args
+
+
+def test_teradata_uploader_upload_dataframe_uses_db_case_in_sql(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that upload_dataframe uses actual DB column case in quoted SQL identifiers."""
+    df = pd.DataFrame(
+        {
+            "id": [1, 2],
+            "text": ["text1", "text2"],
+            "type": ["Title", "NarrativeText"],
+            "record_id": ["file1", "file1"],
+        }
+    )
+
+    teradata_uploader._columns = ["ID", "TEXT", "TYPE", "RECORD_ID"]
+    mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
+    mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    teradata_uploader.upload_dataframe(df, file_data)
+
+    call_args = mock_cursor.executemany.call_args[0][0]
+    assert '"ID"' in call_args
+    assert '"TEXT"' in call_args
+    assert '"TYPE"' in call_args
+    assert '"RECORD_ID"' in call_args
+    assert 'INSERT INTO "test_table"' in call_args
+
+
+def test_teradata_downloader_query_db_lowercases_uppercase_columns(
+    mock_cursor: MagicMock,
+    teradata_downloader: TeradataDownloader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that query_db normalizes uppercase cursor.description columns to lowercase."""
+    mock_cursor.fetchall.return_value = [
+        (1, "text1", 2020),
+    ]
+    mock_cursor.description = [("ID",), ("TEXT",), ("YEAR",)]
+
+    mock_item = MagicMock()
+    mock_item.identifier = "test_id"
+
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "id"
+    batch_data.batch_items = [mock_item]
+
+    _, columns = teradata_downloader.query_db(batch_data)
+
+    assert columns == ["id", "text", "year"]
+
+
+def test_indexer_with_uppercase_enterprise_columns(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+):
+    """Test that _get_doc_ids uses resolved uppercase column names."""
+    teradata_indexer._column_cache["year"] = {"type": "TYPE", "id": "ID"}
+    mock_cursor.fetchall.return_value = [("id1",), ("id2",)]
+
+    teradata_indexer._get_doc_ids()
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'SELECT "TYPE" FROM "year"' in call_args
+
+
+def test_downloader_with_uppercase_enterprise_columns(
+    mock_cursor: MagicMock,
+    teradata_downloader: TeradataDownloader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that query_db resolves uppercase column names."""
+    teradata_downloader._column_cache["elements"] = {
+        "id": "ID",
+        "text": "TEXT",
+        "year": "YEAR",
+        "record_id": "RECORD_ID",
+    }
+    mock_cursor.fetchall.return_value = [(1, "text1", 2020)]
+    mock_cursor.description = [("ID",), ("TEXT",), ("YEAR",)]
+
+    mock_item = MagicMock()
+    mock_item.identifier = "test_id"
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "id"
+    batch_data.batch_items = [mock_item]
+
+    _, columns = teradata_downloader.query_db(batch_data)
+
+    call_args = mock_cursor.execute.call_args[0][0]
+    assert 'FROM "elements"' in call_args
+    assert 'WHERE "ID" IN' in call_args
+    assert '"ID"' in call_args and '"TEXT"' in call_args and '"YEAR"' in call_args
+    assert columns == ["id", "text", "year"]
+
+
+def test_downloader_generate_download_response_lowercases_id_column(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_downloader: TeradataDownloader,
+    mock_get_cursor: MagicMock,
+):
+    """Test that generate_download_response lowercases id_column for DataFrame lookup."""
+    from unstructured_ingest.processes.connectors.sql.sql import SQLDownloader
+
+    mock_super = mocker.patch.object(SQLDownloader, "generate_download_response")
+
+    batch_data = MagicMock()
+    batch_data.additional_metadata.table_name = "elements"
+    batch_data.additional_metadata.id_column = "ID"
+
+    teradata_downloader.generate_download_response(result=MagicMock(), file_data=batch_data)
+
+    assert batch_data.additional_metadata.id_column == "id"
+    mock_super.assert_called_once()
+
+
+def test_teradata_connection_close_called_when_commit_fails(
+    mocker: MockerFixture,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that connection.close() is always called even when commit() raises."""
+    mock_conn = MagicMock()
+    mock_conn.commit.side_effect = Exception("commit failed")
+
+    mock_module = MagicMock()
+    mock_module.connect.return_value = mock_conn
+    mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
+
+    with (
+        pytest.raises(Exception, match="commit failed"),
+        teradata_connection_config.get_connection(),
+    ):
+        pass
+
+    mock_conn.commit.assert_called_once()
+    mock_conn.close.assert_called_once()
+
+
+def test_teradata_connection_close_called_when_operation_and_commit_both_fail(
+    mocker: MockerFixture,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Test that connection.close() is called when both the operation and commit() raise."""
+    mock_conn = MagicMock()
+    mock_conn.commit.side_effect = Exception("commit failed")
+
+    mock_module = MagicMock()
+    mock_module.connect.return_value = mock_conn
+    mocker.patch.dict("sys.modules", {"teradatasql": mock_module})
+
+    with pytest.raises(Exception), teradata_connection_config.get_connection():
+        raise RuntimeError("operation failed")
+
+    mock_conn.close.assert_called_once()
