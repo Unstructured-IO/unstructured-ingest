@@ -156,7 +156,7 @@ class TeradataDownloader(SQLDownloader):
             logger.debug(f"running query: {query}\nwith values: {ids}")
             cursor.execute(query, ids)
             rows = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
+            columns = [col[0].lower() for col in cursor.description]
             return rows, columns
 
 
@@ -207,7 +207,21 @@ class TeradataUploader(SQLUploader):
                 self._columns = [desc[0] for desc in cursor.description]
         return self._columns
 
+    def _get_db_column_name(self, name: str) -> str:
+        """Resolve a column name to its actual database case via case-insensitive lookup."""
+        for col in self.get_table_columns():
+            if col.lower() == name.lower():
+                return col
+        return name
+
+    def can_delete(self) -> bool:
+        return any(
+            col.lower() == self.upload_config.record_id_key.lower()
+            for col in self.get_table_columns()
+        )
+
     def delete_by_record_id(self, file_data: FileData) -> None:
+        record_id_col = self._get_db_column_name(self.upload_config.record_id_key)
         logger.debug(
             f"deleting any content with data "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
@@ -215,7 +229,7 @@ class TeradataUploader(SQLUploader):
         )
         stmt = (
             f'DELETE FROM "{self.upload_config.table_name}" '
-            f'WHERE "{self.upload_config.record_id_key}" = {self.values_delimiter}'
+            f'WHERE "{record_id_col}" = {self.values_delimiter}'
         )
         with self.get_cursor() as cursor:
             cursor.execute(stmt, [file_data.identifier])
@@ -234,11 +248,13 @@ class TeradataUploader(SQLUploader):
                 f"record id column "
                 f"{self.upload_config.record_id_key}, skipping delete"
             )
-        df = self._fit_to_schema(df=df)
+        df = self._fit_to_schema(df=df, case_sensitive=False)
         df.replace({np.nan: None}, inplace=True)
 
         columns = list(df.columns)
-        quoted_columns = [f'"{col}"' for col in columns]
+        db_col_map = {col.lower(): col for col in self.get_table_columns()}
+        db_columns = [db_col_map.get(col.lower(), col) for col in columns]
+        quoted_columns = [f'"{col}"' for col in db_columns]
 
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
             table_name=f'"{self.upload_config.table_name}"',
