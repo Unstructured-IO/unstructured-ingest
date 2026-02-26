@@ -440,7 +440,10 @@ class SQLUploader(Uploader):
         return self._columns
 
     def can_delete(self) -> bool:
-        return self.upload_config.record_id_key in self.get_table_columns()
+        return any(
+            col.lower() == self.upload_config.record_id_key.lower()
+            for col in self.get_table_columns()
+        )
 
     def delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(

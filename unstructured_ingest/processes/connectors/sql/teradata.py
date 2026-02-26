@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "teradata"
 
 
-def _resolve_column_name(
+def _resolve_db_column_case(
     get_cursor, table_name: str, column_name: str, cache: dict[str, dict[str, str]]
 ) -> str:
     """Resolve a column name to its actual database case.
@@ -135,7 +135,7 @@ class TeradataIndexer(SQLIndexer):
 
     def _get_doc_ids(self) -> list[str]:
         """Override to quote identifiers for Teradata reserved word handling."""
-        id_col = _resolve_column_name(
+        id_col = _resolve_db_column_case(
             self.connection_config.get_cursor,
             self.index_config.table_name,
             self.index_config.id_column,
@@ -166,7 +166,7 @@ class TeradataDownloader(SQLDownloader):
         ids = [item.identifier for item in file_data.batch_items]
 
         def resolve(col):
-            return _resolve_column_name(
+            return _resolve_db_column_case(
                 self.connection_config.get_cursor,
                 table_name,
                 col,
@@ -192,9 +192,6 @@ class TeradataDownloader(SQLDownloader):
             columns = [col[0].lower() for col in cursor.description]
             return rows, columns
 
-    def generate_download_response(self, result, file_data):
-        file_data.additional_metadata.id_column = file_data.additional_metadata.id_column.lower()
-        return super().generate_download_response(result=result, file_data=file_data)
 
 
 class TeradataUploadStagerConfig(SQLUploadStagerConfig):
@@ -271,12 +268,6 @@ class TeradataUploader(SQLUploader):
             if col.lower() == name.lower():
                 return col
         return name
-
-    def can_delete(self) -> bool:
-        return any(
-            col.lower() == self.upload_config.record_id_key.lower()
-            for col in self.get_table_columns()
-        )
 
     def delete_by_record_id(self, file_data: FileData) -> None:
         record_id_col = self._get_db_column_name(self.upload_config.record_id_key)
