@@ -195,12 +195,22 @@ class SQLDownloader(Downloader, ABC):
             )
         return f
 
+    @staticmethod
+    def _resolve_column_name(df: "DataFrame", column_name: str) -> str:
+        if column_name in df.columns:
+            return column_name
+        columns_lower = {col.lower(): col for col in df.columns}
+        if column_name.lower() in columns_lower:
+            return columns_lower[column_name.lower()]
+        return column_name
+
     def generate_download_response(
         self, result: "DataFrame", file_data: SqlBatchFileData
     ) -> DownloadResponse:
         id_column = file_data.additional_metadata.id_column
         table_name = file_data.additional_metadata.table_name
-        record_id = result.iloc[0][id_column]
+        resolved_id_column = self._resolve_column_name(result, id_column)
+        record_id = result.iloc[0][resolved_id_column]
         filename_id = self.get_identifier(table_name=table_name, record_id=record_id)
         filename = f"{filename_id}.csv"
         download_path = self.download_dir / Path(filename)
@@ -430,7 +440,10 @@ class SQLUploader(Uploader):
         return self._columns
 
     def can_delete(self) -> bool:
-        return self.upload_config.record_id_key in self.get_table_columns()
+        return any(
+            col.lower() == self.upload_config.record_id_key.lower()
+            for col in self.get_table_columns()
+        )
 
     def delete_by_record_id(self, file_data: FileData) -> None:
         logger.debug(

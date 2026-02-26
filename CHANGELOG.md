@@ -1,3 +1,9 @@
+## [1.4.7]
+
+* **fix: SQL downloader KeyError when `fields` config omits `id_column`** Ensure `id_column` is always included in the SELECT field list across all SQL connectors (Teradata, PostgreSQL, Snowflake, SingleStore, SQLite).
+* **fix: case-insensitive column resolution in SQL download responses** Add `_resolve_column_name` to the base `SQLDownloader` so `generate_download_response` handles databases that return uppercase column names (e.g., Snowflake, Teradata Enterprise).
+* **fix: case-insensitive `can_delete()` in SQL uploader** The base `SQLUploader.can_delete()` now matches `record_id_key` case-insensitively against database column names, fixing silent delete skips on Snowflake and other case-folding databases.
+
 ## [1.4.6]
 
 * **fix: SQL connector connection leak when commit() fails** Wrap `commit()`/`close()` in `try/finally` across Teradata, PostgreSQL, Snowflake, SingleStore, and SQLite so `close()` is always called.

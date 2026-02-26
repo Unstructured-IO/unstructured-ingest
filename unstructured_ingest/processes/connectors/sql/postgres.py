@@ -112,7 +112,10 @@ class PostgresDownloader(SQLDownloader):
 
         with self.connection_config.get_cursor() as cursor:
             fields = (
-                sql.SQL(",").join(sql.Identifier(field) for field in self.download_config.fields)
+                sql.SQL(",").join(
+                    sql.Identifier(field)
+                    for field in list(dict.fromkeys([id_column] + self.download_config.fields))
+                )
                 if self.download_config.fields
                 else sql.SQL("*")
             )
