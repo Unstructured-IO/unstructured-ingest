@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from teradatasql import TeradataConnection, TeradataCursor
 
 CONNECTOR_TYPE = "teradata"
+DEFAULT_TABLE_NAME = "unstructuredautocreated"
 
 
 def _resolve_db_column_case(
@@ -264,7 +265,7 @@ class TeradataUploader(SQLUploader):
         self.create_destination(**kwargs)
 
     def create_destination(
-        self, destination_name: str = "unstructuredautocreated", **kwargs: Any
+        self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
     ) -> bool:
         table_name = self.upload_config.table_name or destination_name
         self.upload_config.table_name = table_name
