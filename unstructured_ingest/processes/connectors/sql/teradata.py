@@ -1,7 +1,8 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Generator, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -25,7 +26,8 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploadStager,
     SQLUploadStagerConfig,
 )
-from unstructured_ingest.utils.data_prep import split_dataframe
+from unstructured_ingest.utils.constants import RECORD_ID_LABEL
+from unstructured_ingest.utils.data_prep import get_enhanced_element_id, split_dataframe
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -195,7 +197,12 @@ class TeradataDownloader(SQLDownloader):
 
 
 class TeradataUploadStagerConfig(SQLUploadStagerConfig):
-    pass
+    metadata_as_json: bool = Field(
+        default=False,
+        description="When True, store metadata as a single JSON column instead of "
+        "flattening into individual columns. Used with the opinionated "
+        "6-column schema.",
+    )
 
 
 @dataclass
@@ -204,11 +211,26 @@ class TeradataUploadStager(SQLUploadStager):
         default_factory=TeradataUploadStagerConfig
     )
 
+    def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
+        if not self.upload_stager_config.metadata_as_json:
+            return super().conform_dict(element_dict=element_dict, file_data=file_data)
+
+        data = element_dict.copy()
+        return {
+            "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
+            RECORD_ID_LABEL: file_data.identifier,
+            "element_id": data.get("element_id", ""),
+            "text": data.get("text"),
+            "type": data.get("type"),
+            "metadata": json.dumps(data.get("metadata", {})),
+        }
+
     def conform_dataframe(self, df: "DataFrame") -> "DataFrame":
+        if self.upload_stager_config.metadata_as_json:
+            return df
+
         df = super().conform_dataframe(df)
 
-        # teradatasql driver cannot handle Python lists/dicts, convert to JSON strings
-        # Check a sample of values to detect columns with complex types (10 rows)
         for column in df.columns:
             sample = df[column].dropna().head(10)
 
@@ -224,7 +246,11 @@ class TeradataUploadStager(SQLUploadStager):
 
 
 class TeradataUploaderConfig(SQLUploaderConfig):
-    pass
+    table_name: Optional[str] = Field(
+        default=None,
+        description="Target table name. When None, an opinionated table is "
+        "auto-created via create_destination().",
+    )
 
 
 @dataclass
@@ -233,6 +259,34 @@ class TeradataUploader(SQLUploader):
     connection_config: TeradataConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+
+    def init(self, **kwargs: Any) -> None:
+        self.create_destination(**kwargs)
+
+    def create_destination(
+        self, destination_name: str = "unstructuredautocreated", **kwargs: Any
+    ) -> bool:
+        table_name = self.upload_config.table_name or destination_name
+        self.upload_config.table_name = table_name
+
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                "SELECT 1 FROM DBC.TablesV WHERE TableName = ? AND TableKind = 'T'",
+                [table_name],
+            )
+            if cursor.fetchone():
+                return False
+
+        connectors_dir = Path(__file__).parents[1]
+        schema_file = connectors_dir / "assets" / "teradata_elements_schema.sql"
+        with schema_file.open() as f:
+            schema_lines = f.readlines()
+        schema_lines[0] = schema_lines[0].replace("elements", table_name)
+        schema_sql = "".join(line.strip() for line in schema_lines)
+        logger.info(f"creating table {table_name} for user")
+        with self.get_cursor() as cursor:
+            cursor.execute(schema_sql)
+        return True
 
     def precheck(self) -> None:
         try:
@@ -243,17 +297,18 @@ class TeradataUploader(SQLUploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
         table_name = self.upload_config.table_name
-        try:
-            with self.get_cursor() as cursor:
-                cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
-        except Exception as e:
-            logger.error(
-                f"Table '{table_name}' not found or not accessible: {e}",
-                exc_info=True,
-            )
-            raise DestinationConnectionError(
-                f"Table '{table_name}' not found or not accessible: {e}"
-            )
+        if table_name:
+            try:
+                with self.get_cursor() as cursor:
+                    cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+            except Exception as e:
+                logger.error(
+                    f"Table '{table_name}' not found or not accessible: {e}",
+                    exc_info=True,
+                )
+                raise DestinationConnectionError(
+                    f"Table '{table_name}' not found or not accessible: {e}"
+                )
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
