@@ -176,6 +176,8 @@ class DropboxIndexer(FsspecIndexer):
         elif server_modified and client_modified and server_modified < client_modified:
             date_created = str(server_modified.timestamp())
             date_modified = str(client_modified.timestamp())
+        elif server_modified and client_modified:
+            date_created = date_modified = str(server_modified.timestamp())
 
         file_size = file_info.get("size") if "size" in file_info else None
 
