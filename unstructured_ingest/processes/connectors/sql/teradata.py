@@ -262,6 +262,8 @@ class TeradataUploader(SQLUploader):
     values_delimiter: str = "?"
 
     def init(self, **kwargs: Any) -> None:
+        # Auto-creation builds the 6-column JSON blob table, so the stager must have
+        # metadata_as_json=True to match. The UI/caller is responsible for setting both.
         self.create_destination(**kwargs)
 
     def create_destination(
