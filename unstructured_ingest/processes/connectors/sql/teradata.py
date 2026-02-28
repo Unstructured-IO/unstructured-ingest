@@ -267,13 +267,20 @@ class TeradataUploader(SQLUploader):
     def create_destination(
         self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
     ) -> bool:
+        """Create a 6-column opinionated table (id, record_id, element_id, text, type, metadata)
+        that stores metadata as a single JSON column instead of flattening into 20+ columns,
+        keeping the schema stable as upstream element fields evolve. Requires the stager to
+        have metadata_as_json=True so that element metadata is serialized before insert."""
         table_name = self.upload_config.table_name or destination_name
         self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
+            cursor.execute("SELECT DATABASE")
+            current_db = cursor.fetchone()[0].strip()
             cursor.execute(
-                "SELECT 1 FROM DBC.TablesV WHERE TableName = ? AND TableKind = 'T'",
-                [table_name],
+                "SELECT 1 FROM DBC.TablesV "
+                "WHERE TableName = ? AND DatabaseName = ? AND TableKind = 'T'",
+                [table_name, current_db],
             )
             if cursor.fetchone():
                 return False

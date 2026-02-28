@@ -896,7 +896,7 @@ def test_teradata_uploader_create_destination_creates_table_when_missing(
     mock_get_cursor: MagicMock,
 ):
     """create_destination creates the table when it doesn't exist in DBC.TablesV."""
-    mock_cursor.fetchone.return_value = None
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
 
     result = teradata_uploader_auto_create.create_destination()
 
@@ -904,7 +904,10 @@ def test_teradata_uploader_create_destination_creates_table_when_missing(
     assert teradata_uploader_auto_create.upload_config.table_name == DEFAULT_TABLE_NAME
 
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
-    assert any("DBC.TablesV" in c for c in calls)
+    assert "SELECT DATABASE" in calls
+    dbc_call = [c for c in calls if "DBC.TablesV" in c]
+    assert len(dbc_call) == 1
+    assert "DatabaseName = ?" in dbc_call[0]
     assert any("CREATE MULTISET TABLE" in c for c in calls)
 
 
@@ -914,7 +917,7 @@ def test_teradata_uploader_create_destination_skips_when_table_exists(
     mock_get_cursor: MagicMock,
 ):
     """create_destination returns False when the table already exists."""
-    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchone.side_effect = [("test_db",), (1,)]
 
     result = teradata_uploader_auto_create.create_destination()
 
@@ -934,7 +937,7 @@ def test_teradata_uploader_create_destination_uses_provided_table_name(
         connection_config=teradata_connection_config,
         upload_config=TeradataUploaderConfig(table_name="my_custom_table"),
     )
-    mock_cursor.fetchone.return_value = None
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
 
     result = uploader.create_destination()
 
@@ -951,7 +954,7 @@ def test_teradata_uploader_create_destination_uses_destination_name_kwarg(
     mock_get_cursor: MagicMock,
 ):
     """create_destination uses destination_name kwarg when table_name is None."""
-    mock_cursor.fetchone.return_value = None
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
 
     result = teradata_uploader_auto_create.create_destination(
         destination_name="workflow_123"
