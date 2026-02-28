@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.processes.connectors.sql.teradata import (
+    DEFAULT_TABLE_NAME,
     TeradataAccessConfig,
     TeradataConnectionConfig,
     TeradataDownloader,
@@ -17,6 +18,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploader,
     TeradataUploaderConfig,
     TeradataUploadStager,
+    TeradataUploadStagerConfig,
     _resolve_db_column_case,
 )
 
@@ -757,3 +759,206 @@ def test_teradata_connection_close_called_when_operation_and_commit_both_fail(
         raise RuntimeError("operation failed")
 
     mock_conn.close.assert_called_once()
+
+
+# --- Opinionated writes (metadata_as_json) tests ---
+
+
+@pytest.fixture
+def teradata_upload_stager_json():
+    return TeradataUploadStager(
+        upload_stager_config=TeradataUploadStagerConfig(metadata_as_json=True)
+    )
+
+
+@pytest.fixture
+def teradata_uploader_auto_create(teradata_connection_config: TeradataConnectionConfig):
+    return TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig(),
+    )
+
+
+def test_teradata_uploader_config_table_name_defaults_to_none():
+    config = TeradataUploaderConfig()
+    assert config.table_name is None
+
+
+def test_teradata_stager_config_metadata_as_json_defaults_to_false():
+    config = TeradataUploadStagerConfig()
+    assert config.metadata_as_json is False
+
+
+def test_teradata_stager_conform_dict_json_mode(
+    teradata_upload_stager_json: TeradataUploadStager,
+):
+    """When metadata_as_json=True, conform_dict produces the 6-column JSON blob shape."""
+    element_dict = {
+        "element_id": "abc123",
+        "text": "Hello world",
+        "type": "NarrativeText",
+        "metadata": {
+            "filename": "test.pdf",
+            "filetype": "application/pdf",
+            "languages": ["en"],
+        },
+    }
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    result = teradata_upload_stager_json.conform_dict(
+        element_dict=element_dict, file_data=file_data
+    )
+
+    assert set(result.keys()) == {"id", "record_id", "element_id", "text", "type", "metadata"}
+    assert result["element_id"] == "abc123"
+    assert result["text"] == "Hello world"
+    assert result["type"] == "NarrativeText"
+    assert result["record_id"] == "test_file.txt"
+    assert isinstance(result["metadata"], str)
+    metadata_parsed = __import__("json").loads(result["metadata"])
+    assert metadata_parsed["filename"] == "test.pdf"
+    assert metadata_parsed["languages"] == ["en"]
+
+
+def test_teradata_stager_conform_dict_flattened_mode(
+    teradata_upload_stager: TeradataUploadStager,
+):
+    """When metadata_as_json=False, conform_dict delegates to base (flattened metadata)."""
+    element_dict = {
+        "element_id": "abc123",
+        "text": "Hello world",
+        "type": "NarrativeText",
+        "metadata": {
+            "filename": "test.pdf",
+            "filetype": "application/pdf",
+            "data_source": {"url": "http://example.com"},
+        },
+    }
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    result = teradata_upload_stager.conform_dict(
+        element_dict=element_dict, file_data=file_data
+    )
+
+    assert "filename" in result
+    assert "filetype" in result
+    assert "url" in result
+    assert "metadata" not in result
+
+
+def test_teradata_stager_conform_dataframe_json_mode_is_passthrough(
+    teradata_upload_stager_json: TeradataUploadStager,
+):
+    """When metadata_as_json=True, conform_dataframe returns the df unchanged."""
+    df = pd.DataFrame(
+        {
+            "id": ["id1"],
+            "record_id": ["rec1"],
+            "element_id": ["el1"],
+            "text": ["Hello"],
+            "type": ["NarrativeText"],
+            "metadata": ['{"filename": "test.pdf"}'],
+        }
+    )
+
+    result = teradata_upload_stager_json.conform_dataframe(df)
+
+    pd.testing.assert_frame_equal(result, df)
+
+
+def test_teradata_uploader_precheck_skips_table_check_when_table_name_is_none(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """When table_name is None, precheck only validates connection, not table existence."""
+    teradata_uploader_auto_create.precheck()
+
+    assert mock_cursor.execute.call_count == 1
+    assert mock_cursor.execute.call_args[0][0] == "SELECT 1"
+
+
+def test_teradata_uploader_create_destination_creates_table_when_missing(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """create_destination creates the table when it doesn't exist in DBC.TablesV."""
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+
+    result = teradata_uploader_auto_create.create_destination()
+
+    assert result is True
+    assert teradata_uploader_auto_create.upload_config.table_name == DEFAULT_TABLE_NAME
+
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert "SELECT DATABASE" in calls
+    dbc_call = [c for c in calls if "DBC.TablesV" in c]
+    assert len(dbc_call) == 1
+    assert "DatabaseName = ?" in dbc_call[0]
+    assert any("CREATE MULTISET TABLE" in c for c in calls)
+
+
+def test_teradata_uploader_create_destination_skips_when_table_exists(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """create_destination returns False when the table already exists."""
+    mock_cursor.fetchone.side_effect = [("test_db",), (1,)]
+
+    result = teradata_uploader_auto_create.create_destination()
+
+    assert result is False
+    assert teradata_uploader_auto_create.upload_config.table_name == DEFAULT_TABLE_NAME
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert not any("CREATE" in c for c in calls)
+
+
+def test_teradata_uploader_create_destination_uses_provided_table_name(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """create_destination prefers upload_config.table_name over the default."""
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig(table_name="my_custom_table"),
+    )
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+
+    result = uploader.create_destination()
+
+    assert result is True
+    assert uploader.upload_config.table_name == "my_custom_table"
+    create_call = [c[0][0] for c in mock_cursor.execute.call_args_list if "CREATE" in c[0][0]]
+    assert len(create_call) == 1
+    assert "my_custom_table" in create_call[0]
+
+
+def test_teradata_uploader_create_destination_uses_destination_name_kwarg(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """create_destination uses destination_name kwarg when table_name is None."""
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+
+    result = teradata_uploader_auto_create.create_destination(
+        destination_name="workflow_123"
+    )
+
+    assert result is True
+    assert teradata_uploader_auto_create.upload_config.table_name == "workflow_123"
