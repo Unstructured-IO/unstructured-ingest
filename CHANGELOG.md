@@ -1,3 +1,7 @@
+## [1.4.9]
+
+* **feat: Teradata auto-creates missing tables with opinionated JSON schema** When a provided table name does not exist, `create_destination()` now creates it automatically instead of failing at precheck.
+
 ## [1.4.8]
 
 * **feat: Teradata opinionated writes with JSON metadata schema** Add auto-table-creation for Teradata destination when `table_name` is not provided. Uses a new 6-column schema (`id`, `record_id`, `element_id`, `text`, `type`, `metadata` as JSON) instead of the flattened 22-column layout. Controlled by `metadata_as_json` flag on the stager config (default `False` for backward compatibility). Follows the same `create_destination()` pattern used by Databricks Volume Delta Tables, Pinecone, AstraDB, and Weaviate.
