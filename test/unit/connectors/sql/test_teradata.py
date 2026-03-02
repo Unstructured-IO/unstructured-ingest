@@ -465,13 +465,11 @@ def test_teradata_uploader_precheck_success(
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Test that uploader precheck passes when connection and table are valid."""
+    """Test that uploader precheck only validates connection, not table existence."""
     teradata_uploader.precheck()
 
-    assert mock_cursor.execute.call_count == 2
-    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
-    assert calls[0] == "SELECT 1"
-    assert calls[1] == 'SELECT TOP 1 * FROM "test_table"'
+    assert mock_cursor.execute.call_count == 1
+    assert mock_cursor.execute.call_args[0][0] == "SELECT 1"
 
 
 def test_teradata_uploader_precheck_connection_failure(
@@ -488,23 +486,17 @@ def test_teradata_uploader_precheck_connection_failure(
     assert mock_cursor.execute.call_count == 1
 
 
-def test_teradata_uploader_precheck_table_not_found(
+def test_teradata_uploader_precheck_does_not_check_table(
     mock_cursor: MagicMock,
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Test that uploader precheck raises DestinationConnectionError when table doesn't exist."""
-    mock_cursor.execute.side_effect = [
-        None,  # SELECT 1 succeeds
-        Exception("[Error 3807] Object 'test_table' does not exist"),
-    ]
+    """Precheck never checks table existence; create_destination handles missing tables."""
+    teradata_uploader.precheck()
 
-    with pytest.raises(
-        DestinationConnectionError, match="Table 'test_table'.*not found or not accessible"
-    ):
-        teradata_uploader.precheck()
-
-    assert mock_cursor.execute.call_count == 2
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert calls == ["SELECT 1"]
+    assert not any("SELECT TOP" in c for c in calls)
 
 
 def test_resolve_db_column_case_queries_and_caches(
@@ -878,12 +870,12 @@ def test_teradata_stager_conform_dataframe_json_mode_is_passthrough(
     pd.testing.assert_frame_equal(result, df)
 
 
-def test_teradata_uploader_precheck_skips_table_check_when_table_name_is_none(
+def test_teradata_uploader_precheck_with_table_name_none(
     mock_cursor: MagicMock,
     teradata_uploader_auto_create: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """When table_name is None, precheck only validates connection, not table existence."""
+    """Precheck validates connection only, regardless of table_name being None."""
     teradata_uploader_auto_create.precheck()
 
     assert mock_cursor.execute.call_count == 1
