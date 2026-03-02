@@ -1,3 +1,7 @@
+## [1.4.10]
+
+* **fix: Teradata opinionated schema CLOB column now uses CHARACTER SET UNICODE** 
+
 ## [1.4.9]
 
 * **feat: Teradata auto-creates missing tables with opinionated JSON schema** When a provided table name does not exist, `create_destination()` now creates it automatically instead of failing at precheck.
