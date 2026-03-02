@@ -306,20 +306,6 @@ class TeradataUploader(SQLUploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-        table_name = self.upload_config.table_name
-        if table_name:
-            try:
-                with self.get_cursor() as cursor:
-                    cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
-            except Exception as e:
-                logger.error(
-                    f"Table '{table_name}' not found or not accessible: {e}",
-                    exc_info=True,
-                )
-                raise DestinationConnectionError(
-                    f"Table '{table_name}' not found or not accessible: {e}"
-                )
-
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
