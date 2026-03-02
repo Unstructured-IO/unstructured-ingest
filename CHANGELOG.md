@@ -1,3 +1,7 @@
+## [1.4.8]
+
+* **feat: Teradata opinionated writes with JSON metadata schema** Add auto-table-creation for Teradata destination when `table_name` is not provided. Uses a new 6-column schema (`id`, `record_id`, `element_id`, `text`, `type`, `metadata` as JSON) instead of the flattened 22-column layout. Controlled by `metadata_as_json` flag on the stager config (default `False` for backward compatibility). Follows the same `create_destination()` pattern used by Databricks Volume Delta Tables, Pinecone, AstraDB, and Weaviate.
+
 ## [1.4.7]
 
 * **fix: SQL downloader KeyError when `fields` config omits `id_column`** Ensure `id_column` is always included in the SELECT field list across all SQL connectors (Teradata, PostgreSQL, Snowflake, SingleStore, SQLite).
