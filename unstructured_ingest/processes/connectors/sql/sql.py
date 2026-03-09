@@ -278,6 +278,11 @@ class SQLUploadStager(UploadStager):
             ("version", "page_number", "regex_metadata"),
         ):
             df[column] = df[column].apply(str)
+        for column in df.columns:
+            if df[column].apply(lambda x: isinstance(x, dict)).any():
+                df[column] = df[column].apply(
+                    lambda x: json.dumps(x) if isinstance(x, dict) else x
+                )
         return df
 
     def write_output(self, output_path: Path, data: list[dict]) -> Path:
