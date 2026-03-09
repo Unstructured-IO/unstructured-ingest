@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -95,6 +96,38 @@ def test_run_output_filename_suffix(
         path=output_dir / expected, data=[{"key": "value"}, {"key": "value2"}]
     )
     assert result.name == expected
+
+
+def test_conform_dataframe_serializes_unknown_dict(mock_instance: SQLUploadStager):
+    entities = {
+        "items": [{"entity": "Alex", "type": "PERSON"}],
+        "relationships": [{"from": "Alex", "relationship": "lives_in", "to": "UK"}],
+    }
+    df = pd.DataFrame(
+        {
+            "text": ["some text"],
+            "entities": [entities],
+        }
+    )
+
+    result = mock_instance.conform_dataframe(df)
+
+    assert isinstance(result["entities"].iloc[0], str)
+    assert json.loads(result["entities"].iloc[0]) == entities
+
+
+def test_conform_dataframe_preserves_unknown_lists(mock_instance: SQLUploadStager):
+    df = pd.DataFrame(
+        {
+            "text": ["some text"],
+            "custom_tags": [["tag_a", "tag_b"]],
+        }
+    )
+
+    result = mock_instance.conform_dataframe(df)
+
+    assert isinstance(result["custom_tags"].iloc[0], list)
+    assert result["custom_tags"].iloc[0] == ["tag_a", "tag_b"]
 
 
 def test_fit_to_schema_drop_columns(mocker: MockerFixture, mock_uploader: SQLUploader):
@@ -201,9 +234,7 @@ class TestCanDelete:
         assert mock_uploader.can_delete() is True
 
     def test_case_insensitive_match(self, mocker: MockerFixture, mock_uploader: SQLUploader):
-        mocker.patch.object(
-            mock_uploader, "get_table_columns", return_value=["RECORD_ID", "TEXT"]
-        )
+        mocker.patch.object(mock_uploader, "get_table_columns", return_value=["RECORD_ID", "TEXT"])
         mock_uploader.upload_config.record_id_key = "record_id"
         assert mock_uploader.can_delete() is True
 
@@ -240,12 +271,8 @@ class TestGenerateDownloadResponse:
         return SqlBatchFileData(
             identifier="test",
             connector_type="test",
-            source_identifiers=SourceIdentifiers(
-                filename="test.csv", fullpath="test.csv"
-            ),
-            additional_metadata=SqlAdditionalMetadata(
-                table_name=table_name, id_column=id_column
-            ),
+            source_identifiers=SourceIdentifiers(filename="test.csv", fullpath="test.csv"),
+            additional_metadata=SqlAdditionalMetadata(table_name=table_name, id_column=id_column),
             batch_items=[BatchItem(identifier="1")],
         )
 
@@ -255,8 +282,8 @@ class TestGenerateDownloadResponse:
         downloader.download_config = SQLDownloaderConfig(fields=["text"])
         downloader._resolve_column_name = SQLDownloader._resolve_column_name
         downloader.get_identifier = SQLDownloader.get_identifier.__get__(downloader)
-        downloader.generate_download_response = (
-            SQLDownloader.generate_download_response.__get__(downloader, type(downloader))
+        downloader.generate_download_response = SQLDownloader.generate_download_response.__get__(
+            downloader, type(downloader)
         )
         return downloader
 
