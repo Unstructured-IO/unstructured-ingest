@@ -1,3 +1,7 @@
+## [1.4.11]
+
+* **fix: Parse `dict` values to JSON strings in SQL stagers**
+
 ## [1.4.10]
 
 * **fix: Teradata opinionated schema CLOB column now uses CHARACTER SET UNICODE** 
