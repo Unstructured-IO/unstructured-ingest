@@ -218,30 +218,25 @@ class AzureAISearchUploader(Uploader):
                 ),
             )
 
-    def can_delete(self) -> bool:
+    def get_index(self):
         with self.connection_config.get_search_index_client() as search_index_client:
-            index = search_index_client.get_index(name=self.connection_config.index)
-        index_fields = index.fields
+            return search_index_client.get_index(name=self.connection_config.index)
+
+    def can_delete(self, index) -> bool:
         record_id_fields = [
-            field for field in index_fields if field.name == self.upload_config.record_id_key
+            field for field in index.fields if field.name == self.upload_config.record_id_key
         ]
         if not record_id_fields:
             return False
-        record_id_field = record_id_fields[0]
-        return record_id_field.filterable
+        return record_id_fields[0].filterable
 
-    def get_index_key(self) -> str:
-        with self.connection_config.get_search_index_client() as search_index_client:
-            index = search_index_client.get_index(name=self.connection_config.index)
-        index_fields = index.fields
-        key_fields = [field for field in index_fields if field.key]
+    def get_index_key(self, index) -> str:
+        key_fields = [field for field in index.fields if field.key]
         if not key_fields:
             raise ValueError("no key field found in index fields")
         return key_fields[0].name
 
-    def get_index_field_names(self) -> set[str]:
-        with self.connection_config.get_search_index_client() as search_index_client:
-            index = search_index_client.get_index(name=self.connection_config.index)
+    def get_index_field_names(self, index) -> set[str]:
         return {field.name for field in index.fields}
 
     def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
@@ -262,13 +257,14 @@ class AzureAISearchUploader(Uploader):
             f" index at {str(self.connection_config.index)}"
             f" with batch size {str(self.upload_config.batch_size)}"
         )
-        if self.can_delete():
-            index_key = self.get_index_key()
+        index = self.get_index()
+        if self.can_delete(index):
+            index_key = self.get_index_key(index)
             self.delete_by_record_id(file_data=file_data, index_key=index_key)
         else:
             logger.warning("criteria for deleting previous content not met, skipping")
 
-        index_field_names = self.get_index_field_names()
+        index_field_names = self.get_index_field_names(index)
         filtered_data = [self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data]
 
         batch_size = self.upload_config.batch_size
