@@ -2,7 +2,9 @@
 name = "unstructured_ingest"
 description = "Local ETL data pipeline to get data RAG ready"
 requires-python = ">=3.11, <3.14"
-authors = [{name = "Unstructured Technologies", email = "devops@unstructuredai.io"}]
+authors = [
+    { name = "Unstructured Technologies", email = "devops@unstructuredai.io" },
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -27,6 +29,7 @@ dependencies = [
     "click",
     "opentelemetry-sdk",
     "certifi>=2026.1.4",
+    "networkx",
 ]
 
 [project.optional-dependencies]
@@ -60,7 +63,7 @@ kdbai = ["pandas", "kdbai-client>=1.4.0"]
 lancedb = ["lancedb"]
 milvus = ["pymilvus"]
 mongodb = ["pymongo"]
-neo4j = ["neo4j-rust-ext", "cymple", "networkx"]
+neo4j = ["neo4j-rust-ext", "cymple"]
 notion = ["notion-client", "htmlBuilder", "httpx", "backoff"]
 onedrive = ["msal", "Office365-REST-Python-Client", "requests"]
 opensearch = [
