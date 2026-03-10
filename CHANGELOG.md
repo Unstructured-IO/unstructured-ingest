@@ -1,4 +1,4 @@
-## [1.4.11]
+## [1.4.12]
 
 * **chore: Move `networkx` from `neo4j` extras to to base dependencies**
 
