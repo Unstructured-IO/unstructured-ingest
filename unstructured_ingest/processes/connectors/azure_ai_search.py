@@ -239,6 +239,14 @@ class AzureAISearchUploader(Uploader):
             raise ValueError("no key field found in index fields")
         return key_fields[0].name
 
+    def get_index_field_names(self) -> set[str]:
+        with self.connection_config.get_search_index_client() as search_index_client:
+            index = search_index_client.get_index(name=self.connection_config.index)
+        return {field.name for field in index.fields}
+
+    def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
+        return {k: v for k, v in doc.items() if k in index_field_names}
+
     def precheck(self) -> None:
         try:
             with self.connection_config.get_search_client() as search_client:
@@ -260,9 +268,12 @@ class AzureAISearchUploader(Uploader):
         else:
             logger.warning("criteria for deleting previous content not met, skipping")
 
+        index_field_names = self.get_index_field_names()
+        filtered_data = [self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data]
+
         batch_size = self.upload_config.batch_size
         with self.connection_config.get_search_client() as search_client:
-            for chunk in batch_generator(data, batch_size):
+            for chunk in batch_generator(filtered_data, batch_size):
                 self.write_dict(elements_dict=chunk, search_client=search_client)  # noqa: E203
 
 
