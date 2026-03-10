@@ -1,3 +1,7 @@
+## [1.4.12]
+
+* **fix(azure-ai-search): drop fields not present in index before upload** Filter document fields against the index schema before uploading to prevent errors when elements contain extra fields that the index doesn't define.
+
 ## [1.4.11]
 
 * **fix: Parse `dict` values to JSON strings in SQL stagers**
