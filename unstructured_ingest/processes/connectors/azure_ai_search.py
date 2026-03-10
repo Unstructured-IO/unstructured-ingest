@@ -265,7 +265,9 @@ class AzureAISearchUploader(Uploader):
             logger.warning("criteria for deleting previous content not met, skipping")
 
         index_field_names = self.get_index_field_names(index)
-        filtered_data = [self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data]
+        filtered_data = [
+            self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data
+        ]
 
         batch_size = self.upload_config.batch_size
         with self.connection_config.get_search_client() as search_client:
