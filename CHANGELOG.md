@@ -1,5 +1,9 @@
 ## [1.4.11]
 
+* **chore: Move `networkx` from `neo4j` extras to to base dependencies**
+
+## [1.4.11]
+
 * **fix: Parse `dict` values to JSON strings in SQL stagers**
 
 ## [1.4.10]
