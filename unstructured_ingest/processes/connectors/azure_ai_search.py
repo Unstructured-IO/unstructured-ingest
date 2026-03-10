@@ -218,10 +218,14 @@ class AzureAISearchUploader(Uploader):
                 ),
             )
 
-    def can_delete(self) -> bool:
+    def get_index_fields(self) -> list[Any]:
         with self.connection_config.get_search_index_client() as search_index_client:
             index = search_index_client.get_index(name=self.connection_config.index)
-        index_fields = index.fields
+        return index.fields
+
+    def can_delete(self, index_fields: list[Any] | None = None) -> bool:
+        if index_fields is None:
+            index_fields = self.get_index_fields()
         record_id_fields = [
             field for field in index_fields if field.name == self.upload_config.record_id_key
         ]
@@ -230,19 +234,18 @@ class AzureAISearchUploader(Uploader):
         record_id_field = record_id_fields[0]
         return record_id_field.filterable
 
-    def get_index_key(self) -> str:
-        with self.connection_config.get_search_index_client() as search_index_client:
-            index = search_index_client.get_index(name=self.connection_config.index)
-        index_fields = index.fields
+    def get_index_key(self, index_fields: list[Any] | None = None) -> str:
+        if index_fields is None:
+            index_fields = self.get_index_fields()
         key_fields = [field for field in index_fields if field.key]
         if not key_fields:
             raise ValueError("no key field found in index fields")
         return key_fields[0].name
 
-    def get_index_field_names(self) -> set[str]:
-        with self.connection_config.get_search_index_client() as search_index_client:
-            index = search_index_client.get_index(name=self.connection_config.index)
-        return {field.name for field in index.fields}
+    def get_index_field_names(self, index_fields: list[Any] | None = None) -> set[str]:
+        if index_fields is None:
+            index_fields = self.get_index_fields()
+        return {field.name for field in index_fields}
 
     def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
         return {k: v for k, v in doc.items() if k in index_field_names}
@@ -262,13 +265,14 @@ class AzureAISearchUploader(Uploader):
             f" index at {str(self.connection_config.index)}"
             f" with batch size {str(self.upload_config.batch_size)}"
         )
-        if self.can_delete():
-            index_key = self.get_index_key()
+        index_fields = self.get_index_fields()
+        if self.can_delete(index_fields=index_fields):
+            index_key = self.get_index_key(index_fields=index_fields)
             self.delete_by_record_id(file_data=file_data, index_key=index_key)
         else:
             logger.warning("criteria for deleting previous content not met, skipping")
 
-        index_field_names = self.get_index_field_names()
+        index_field_names = self.get_index_field_names(index_fields=index_fields)
         filtered_data = [self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data]
 
         batch_size = self.upload_config.batch_size
