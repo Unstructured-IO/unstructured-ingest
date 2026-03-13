@@ -182,6 +182,34 @@ class SnowflakeUploader(SQLUploader):
     values_delimiter: str = "?"
 
     _embeddings_dimension: Optional[int] = None
+    _variant_columns: Optional[list[str]] = None
+
+    @property
+    def variant_columns(self) -> list[str]:
+        """
+        Get all VARIANT-typed columns in the Snowflake table.
+        Used to apply PARSE_JSON() during INSERT for any JSON/dict fields.
+        """
+        if self._variant_columns is None:
+            variant_cols = []
+            with self.connection_config.get_cursor() as cursor:
+                rows = cursor.execute(
+                    f"SHOW COLUMNS IN {self.upload_config.table_name}"
+                ).fetchall()
+            for row in rows:
+                data_type = {}
+                if isinstance(row, dict):
+                    col_name = row.get("column_name", "")
+                    data_type = json.loads(row.get("data_type", "{}"))
+                elif isinstance(row, tuple):
+                    col_name = row[2]
+                    data_type = json.loads(row[3] or "{}")
+                else:
+                    continue
+                if isinstance(data_type, dict) and data_type.get("type") == "VARIANT":
+                    variant_cols.append(col_name.lower())
+            self._variant_columns = variant_cols
+        return self._variant_columns
 
     @property
     def embeddings_dimension(self) -> Optional[int]:
@@ -218,6 +246,7 @@ class SnowflakeUploader(SQLUploader):
     ) -> list[tuple[Any, ...]]:
         import pandas as pd
 
+        variant_cols = self.variant_columns
         output = []
         for row in data:
             parsed = []
@@ -227,13 +256,19 @@ class SnowflakeUploader(SQLUploader):
                         parsed.append(None)
                     else:
                         parsed.append(parse_date_string(value))
-                elif column_name in _ARRAY_COLUMNS or column_name in _VECTOR_COLUMNS:
-                    if not isinstance(value, list) and (
+                elif (
+                    column_name in _ARRAY_COLUMNS
+                    or column_name in _VECTOR_COLUMNS
+                    or column_name.lower() in variant_cols
+                ):
+                    if not isinstance(value, (list, dict)) and (
                         value is None or pd.isna(value)
                     ):  # pandas is nan
                         parsed.append(None)
-                    else:
+                    elif isinstance(value, (list, dict)):
                         parsed.append(json.dumps(value))
+                    else:
+                        parsed.append(value)
                 else:
                     parsed.append(value)
             output.append(tuple(parsed))
@@ -241,6 +276,7 @@ class SnowflakeUploader(SQLUploader):
 
     def _parse_select(self, columns: list[str]) -> str:
         embeddings_dimension = self.embeddings_dimension
+        variant_cols = self.variant_columns
         parsed_values = []
         for i, col in enumerate(columns):
             argument_selector = f"${i + 1}"
@@ -248,7 +284,7 @@ class SnowflakeUploader(SQLUploader):
                 parsed_values.append(
                     f"PARSE_JSON({argument_selector})::VECTOR(FLOAT,{embeddings_dimension})"
                 )
-            elif col in _ARRAY_COLUMNS or col in _VECTOR_COLUMNS:
+            elif col in _ARRAY_COLUMNS or col in _VECTOR_COLUMNS or col.lower() in variant_cols:
                 parsed_values.append(f"PARSE_JSON({argument_selector})")
             else:
                 parsed_values.append(argument_selector)
