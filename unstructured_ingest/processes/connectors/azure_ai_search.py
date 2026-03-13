@@ -265,6 +265,11 @@ class AzureAISearchUploader(Uploader):
             logger.warning("criteria for deleting previous content not met, skipping")
 
         index_field_names = self.get_index_field_names(index)
+        if dropped := (set(data[0].keys()) - index_field_names) if data else set():
+            logger.info(
+                "Following fields will be dropped to match the index schema: "
+                f"{', '.join(sorted(dropped))}"
+            )
         filtered_data = [
             self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data
         ]
