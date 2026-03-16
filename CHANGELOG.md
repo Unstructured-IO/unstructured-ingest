@@ -1,3 +1,7 @@
+## [1.4.13]
+
+* **fix(snowflake): handle VARIANT columns with PARSE_JSON during upload** Detect VARIANT-typed columns via `SHOW COLUMNS` and apply `PARSE_JSON()` in the `INSERT ... SELECT` statement; serialize `dict`/`list` values to JSON strings in `prepare_data` so structured metadata fields are stored correctly in VARIANT columns.
+
 ## [1.4.12]
 
 * **fix(azure-ai-search): drop fields not present in index before upload** Filter document fields against the index schema before uploading to prevent errors when elements contain extra fields that the index doesn't define.
