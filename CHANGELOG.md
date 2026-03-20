@@ -1,3 +1,7 @@
+## [1.4.14]
+
+* **fix(teradata): enable Unicode Pass Through on session to prevent Error 6705 on non-BMP characters**
+
 ## [1.4.13]
 
 * **fix(snowflake): handle VARIANT columns with PARSE_JSON during upload** Detect VARIANT-typed columns via `SHOW COLUMNS` and apply `PARSE_JSON()` in the `INSERT ... SELECT` statement; serialize `dict`/`list` values to JSON strings in `prepare_data` so structured metadata fields are stored correctly in VARIANT columns.
