@@ -88,12 +88,12 @@ class TeradataConnectionConfig(SQLConnectionConfig):
             conn_params["database"] = self.database
 
         connection = connect(**conn_params)
-        cursor = connection.cursor()
         try:
-            cursor.execute("SET SESSION CHARACTER SET UNICODE PASS THROUGH ON")
-        finally:
-            cursor.close()
-        try:
+            cursor = connection.cursor()
+            try:
+                cursor.execute("SET SESSION CHARACTER SET UNICODE PASS THROUGH ON")
+            finally:
+                cursor.close()
             yield connection
         finally:
             try:
