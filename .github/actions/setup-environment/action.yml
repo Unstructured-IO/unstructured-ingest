@@ -21,7 +21,7 @@ runs:
 
     - name: Restore Virtual Environment Cache
       id: cache-restore
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: ${{ steps.cache-key.outputs.cache-key }}
         path: ${{ inputs.work-dir }}/.venv
@@ -53,7 +53,7 @@ runs:
         --no-extra xlsx
 
     - name: Cache Virtual Environment (Final)
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: ${{ steps.cache-key.outputs.cache-key }}
         path: ${{ inputs.work-dir }}/.venv
