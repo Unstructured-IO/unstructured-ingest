@@ -19,7 +19,7 @@ jobs:
   check_untagged_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: run check
         run: |
           make check-untagged-tests
@@ -30,7 +30,7 @@ jobs:
         test: ["partitioners", "chunkers"]
     runs-on: opensource-linux-8core
     steps:
-      - uses: 'actions/checkout@v4'
+      - uses: 'actions/checkout@v6'
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: ./.github/actions/setup-environment
@@ -48,7 +48,7 @@ jobs:
   embedders_int_test:
     runs-on: opensource-linux-8core
     steps:
-      - uses: 'actions/checkout@v4'
+      - uses: 'actions/checkout@v6'
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: ./.github/actions/setup-environment
@@ -74,7 +74,7 @@ jobs:
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
@@ -118,7 +118,7 @@ jobs:
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
@@ -155,7 +155,7 @@ jobs:
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
@@ -195,7 +195,7 @@ jobs:
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
@@ -233,7 +233,7 @@ jobs:
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
@@ -276,7 +276,7 @@ jobs:
     runs-on: opensource-linux-8core
     steps:
     # actions/checkout MUST come before auth
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
@@ -341,7 +341,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # actions/checkout MUST come before auth
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
     - name: Set up Python
       uses: ./.github/actions/setup-environment
       with:
@@ -363,7 +363,7 @@ jobs:
     runs-on: opensource-linux-8core
     steps:
     # actions/checkout MUST come before auth
-    - uses: 'actions/checkout@v4'
+    - uses: 'actions/checkout@v6'
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: ./.github/actions/setup-environment
