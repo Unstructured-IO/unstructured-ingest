@@ -547,3 +547,53 @@ def test_ibm_watsonx_uploader_delete_cannot_delete(
         "Table doesn't contain expected record id column test_record_id_key, skipping delete"
         in caplog.text
     )
+
+
+def test_ibm_watsonx_generate_bearer_token_non_json_response(
+    mocker: MockerFixture,
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    """response.json() failures are caught and re-raised via wrap_error."""
+    mock_response = mocker.MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.side_effect = ValueError("No JSON object could be decoded")
+    mocker.patch("httpx.post", return_value=mock_response)
+    spy_wrap_error = mocker.spy(IbmWatsonxConnectionConfig, "wrap_error")
+
+    with pytest.raises(ValueError):
+        connection_config.generate_bearer_token()
+
+    spy_wrap_error.assert_called_once()
+
+
+def test_ibm_watsonx_connection_config_get_catalog_max_retries_override(
+    mocker: MockerFixture,
+    connection_config: IbmWatsonxConnectionConfig,
+):
+    """max_retries param overrides max_retries_connection; max_retries=1 means a single attempt."""
+    mock_load_catalog = mocker.patch(
+        "pyiceberg.catalog.load_catalog",
+        side_effect=RESTError("Connection error"),
+    )
+    mocker.patch.object(
+        IbmWatsonxConnectionConfig,
+        "bearer_token",
+        new="test_bearer_token",
+    )
+
+    with pytest.raises(ProviderError), connection_config.get_catalog(max_retries=1):
+        pass
+
+    # max_retries_connection fixture is 2, but max_retries=1 overrides to a single attempt
+    assert mock_load_catalog.call_count == 1
+
+
+def test_ibm_watsonx_uploader_precheck_calls_get_catalog_with_max_retries_1(
+    mock_get_catalog: MagicMock,
+    mock_catalog: MagicMock,
+    uploader: IbmWatsonxUploader,
+):
+    """precheck() passes max_retries=1 so connection errors surface immediately."""
+    uploader.precheck()
+
+    mock_get_catalog.assert_called_once_with(uploader.connection_config, max_retries=1)
