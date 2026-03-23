@@ -155,7 +155,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     @contextmanager
-    def get_catalog(self, max_retries: Optional[int] = None) -> Generator["RestCatalog", None, None]:
+    def get_catalog(
+        self, max_retries: Optional[int] = None
+    ) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
         from pyiceberg.exceptions import RESTError
         from tenacity import (

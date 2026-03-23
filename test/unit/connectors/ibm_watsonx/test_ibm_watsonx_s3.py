@@ -581,9 +581,8 @@ def test_ibm_watsonx_connection_config_get_catalog_max_retries_override(
         new="test_bearer_token",
     )
 
-    with pytest.raises(ProviderError):
-        with connection_config.get_catalog(max_retries=1):
-            pass
+    with pytest.raises(ProviderError), connection_config.get_catalog(max_retries=1):
+        pass
 
     # max_retries_connection fixture is 2, but max_retries=1 overrides to a single attempt
     assert mock_load_catalog.call_count == 1
