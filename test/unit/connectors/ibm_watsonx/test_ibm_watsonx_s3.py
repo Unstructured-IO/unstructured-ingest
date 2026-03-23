@@ -553,17 +553,17 @@ def test_ibm_watsonx_generate_bearer_token_non_json_response(
     mocker: MockerFixture,
     connection_config: IbmWatsonxConnectionConfig,
 ):
-    """response.json() failures are caught and re-raised via wrap_error rather than escaping raw."""
+    """response.json() failures are caught and re-raised via wrap_error."""
     mock_response = mocker.MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.side_effect = ValueError("No JSON object could be decoded")
     mocker.patch("httpx.post", return_value=mock_response)
+    spy_wrap_error = mocker.spy(IbmWatsonxConnectionConfig, "wrap_error")
 
     with pytest.raises(ValueError):
         connection_config.generate_bearer_token()
 
-    mock_response.raise_for_status.assert_called_once()
-    mock_response.json.assert_called_once()
+    spy_wrap_error.assert_called_once()
 
 
 def test_ibm_watsonx_connection_config_get_catalog_max_retries_override(
