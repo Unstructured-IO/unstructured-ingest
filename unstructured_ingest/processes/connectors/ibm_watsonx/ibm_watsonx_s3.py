@@ -132,9 +132,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
         try:
             response = httpx.post(DEFAULT_IBM_CLOUD_AUTH_URL, headers=headers, data=data)
             response.raise_for_status()
+            return response.json()
         except Exception as e:
             raise self.wrap_error(e)
-        return response.json()
 
     def get_catalog_config(self) -> dict[str, Any]:
         return {
@@ -155,7 +155,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["pyiceberg"], extras="ibm-watsonx-s3")
     @contextmanager
-    def get_catalog(self) -> Generator["RestCatalog", None, None]:
+    def get_catalog(self, max_retries: Optional[int] = None) -> Generator["RestCatalog", None, None]:
         from pyiceberg.catalog import load_catalog
         from pyiceberg.exceptions import RESTError
         from tenacity import (
@@ -166,9 +166,11 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             wait_exponential,
         )
 
+        retries = max_retries if max_retries is not None else self.max_retries_connection
+
         # Retry connection in case of a connection error
         @retry(
-            stop=stop_after_attempt(self.max_retries_connection),
+            stop=stop_after_attempt(retries),
             wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
             retry=retry_if_exception_type(RESTError),
             before=before_log(logger, logging.DEBUG),
@@ -225,7 +227,9 @@ class IbmWatsonxUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
-        with self.connection_config.get_catalog() as catalog:
+        # Use max_retries=1 (no retries) during precheck so a transient provider error
+        # surfaces quickly rather than blocking for the full exponential-backoff window.
+        with self.connection_config.get_catalog(max_retries=1) as catalog:
             if not catalog.namespace_exists(self.upload_config.namespace):
                 raise UserError(f"Namespace '{self.upload_config.namespace}' does not exist")
             if not catalog.table_exists(self.upload_config.table_identifier):

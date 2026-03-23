@@ -1,3 +1,7 @@
+## [1.4.15]
+
+* **fix(ibm-watsonx-s3): fail fast on precheck and guard bearer token JSON parsing**
+
 ## [1.4.14]
 
 * **fix(teradata): enable Unicode Pass Through on session to prevent Error 6705 on non-BMP characters**
