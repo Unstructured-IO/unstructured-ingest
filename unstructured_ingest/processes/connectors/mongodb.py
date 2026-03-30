@@ -17,8 +17,11 @@ from unstructured_ingest.data_types.file_data import (
 from unstructured_ingest.error import (
     ConnectionError,
     DestinationConnectionError,
+    QuotaError,
     SourceConnectionError,
+    TimeoutError,
     ValueError,
+    WriteError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -341,18 +344,40 @@ class MongoDBUploader(Uploader):
         return self.upload_config.record_id_key in indexed_keys
 
     def delete_by_record_id(self, collection: "Collection", file_data: FileData) -> None:
+        from pymongo.errors import (
+            AutoReconnect,
+            OperationFailure,
+            ServerSelectionTimeoutError,
+        )
+
         logger.debug(
             f"deleting any content with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from collection: {collection.name}"
         )
         query = {self.upload_config.record_id_key: file_data.identifier}
-        delete_results = collection.delete_many(filter=query)
+        try:
+            delete_results = collection.delete_many(filter=query)
+        except OperationFailure as e:
+            if "quota" in str(e).lower():
+                raise QuotaError(f"MongoDB quota exceeded: {e}") from e
+            raise DestinationConnectionError(f"MongoDB operation failed: {e}") from e
+        except ServerSelectionTimeoutError as e:
+            raise TimeoutError(f"MongoDB server unreachable: {e}") from e
+        except AutoReconnect as e:
+            raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
         logger.info(
             f"deleted {delete_results.deleted_count} records from collection {collection.name}"
         )
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        from pymongo.errors import (
+            AutoReconnect,
+            BulkWriteError,
+            OperationFailure,
+            ServerSelectionTimeoutError,
+        )
+
         logger.info(
             f"writing {len(data)} objects to destination "
             f"db, {self.upload_config.database}, "
@@ -363,15 +388,28 @@ class MongoDBUploader(Uploader):
         # is done, setting the record id field in the uploader
         for element in data:
             element[self.upload_config.record_id_key] = file_data.identifier
-        with self.connection_config.get_client() as client:
-            db = client[self.upload_config.database]
-            collection = db[self.upload_config.collection]
-            if self.can_delete(collection=collection):
-                self.delete_by_record_id(file_data=file_data, collection=collection)
-            else:
-                logger.warning("criteria for deleting previous content not met, skipping")
-            for chunk in batch_generator(data, self.upload_config.batch_size):
-                collection.insert_many(chunk)
+        try:
+            with self.connection_config.get_client() as client:
+                db = client[self.upload_config.database]
+                collection = db[self.upload_config.collection]
+                if self.can_delete(collection=collection):
+                    self.delete_by_record_id(file_data=file_data, collection=collection)
+                else:
+                    logger.warning("criteria for deleting previous content not met, skipping")
+                for chunk in batch_generator(data, self.upload_config.batch_size):
+                    collection.insert_many(chunk)
+        except BulkWriteError as e:
+            raise WriteError(f"MongoDB bulk write failed: {e}") from e
+        except OperationFailure as e:
+            if "quota" in str(e).lower():
+                raise QuotaError(f"MongoDB quota exceeded: {e}") from e
+            raise DestinationConnectionError(f"MongoDB operation failed: {e}") from e
+        except ServerSelectionTimeoutError as e:
+            raise TimeoutError(f"MongoDB server unreachable: {e}") from e
+        except AutoReconnect as e:
+            raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
+        except Exception as e:
+            raise DestinationConnectionError(f"MongoDB error: {e}") from e
 
 
 mongodb_destination_entry = DestinationRegistryEntry(
