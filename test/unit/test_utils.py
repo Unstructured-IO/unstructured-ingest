@@ -7,10 +7,10 @@ from typing import Any
 import pytest
 import pytz
 from pydantic import BaseModel, Field, Secret, SecretStr
-from pydantic.types import _SecretBase
 
 from unstructured_ingest.processes.connectors.utils import format_and_truncate_orig_elements
 from unstructured_ingest.utils.pydantic_models import (
+    is_secret_value,
     serialize_base_model,
     serialize_base_model_json,
 )
@@ -151,12 +151,12 @@ model = MockBaseModel(
 
 def test_serialize_base_model():
     serialized_dict = model.model_dump()
-    assert isinstance(serialized_dict["secret_str"], _SecretBase)
-    assert isinstance(serialized_dict["secret_child_base"], _SecretBase)
+    assert is_secret_value(serialized_dict["secret_str"])
+    assert is_secret_value(serialized_dict["secret_child_base"])
 
     serialized_dict_w_secrets = serialize_base_model(model=model)
-    assert not isinstance(serialized_dict_w_secrets["secret_str"], _SecretBase)
-    assert not isinstance(serialized_dict_w_secrets["secret_child_base"], _SecretBase)
+    assert not is_secret_value(serialized_dict_w_secrets["secret_str"])
+    assert not is_secret_value(serialized_dict_w_secrets["secret_child_base"])
 
     expected_dict = {
         "secret_str": "secret string",

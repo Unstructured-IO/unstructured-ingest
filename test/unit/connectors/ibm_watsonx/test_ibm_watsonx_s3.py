@@ -4,6 +4,10 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 from pydantic import Secret
+
+pytest.importorskip("pyarrow")
+pytest.importorskip("pyiceberg")
+
 from pyiceberg.exceptions import CommitFailedException, RESTError
 from pytest_mock import MockerFixture
 

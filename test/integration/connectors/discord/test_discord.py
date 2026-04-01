@@ -1,6 +1,7 @@
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -91,3 +92,16 @@ def test_discord_source_precheck_fail_no_channels():
     indexer = DiscordIndexer(connection_config=connection_config, index_config=indexer_config)
     with pytest.raises(ValueError):
         indexer.precheck()
+
+
+def test_discord_file_data_uses_timezone_aware_utc_timestamp():
+    indexer = DiscordIndexer(
+        connection_config=DiscordConnectionConfig(access_config=DiscordAccessConfig(token="token")),
+        index_config=DiscordIndexerConfig(channels=["123"]),
+    )
+
+    file_data = indexer.get_channel_file_data(channel_id="123")
+
+    assert file_data is not None
+    timestamp = datetime.fromisoformat(file_data.metadata.date_processed)
+    assert timestamp.tzinfo == timezone.utc
