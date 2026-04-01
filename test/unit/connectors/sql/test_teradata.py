@@ -355,6 +355,8 @@ def test_teradata_uploader_values_delimiter_is_qmark(teradata_uploader: Teradata
         ("connection timed out after 10000 ms", "connection timed out"),
         ("Connection refused", "connection refused"),
         ("no route to host", "connection refused"),
+        # Teradata Go driver embeds "[Logon]" phase even on connection errors
+        ("[Logon] dial tcp: connection refused", "connection refused"),
         ("authentication failed for user foo", "invalid credentials"),
         ("Logon failed", "invalid credentials"),
         ("some unknown driver error", None),
