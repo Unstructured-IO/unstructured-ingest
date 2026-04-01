@@ -58,7 +58,11 @@ def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     # Check connection-refused *before* auth keywords — the Teradata Go driver
     # embeds phase labels like ``[Logon]`` in non-auth errors, which would
     # falsely match the authentication regex below.
-    if re.search(r"refused|reset|no route|unreachable", msg, re.IGNORECASE):
+    if re.search(
+        r"refused|connection reset|reset by peer|no route|unreachable",
+        msg,
+        re.IGNORECASE,
+    ):
         return f"{prefix}: connection refused"
     if re.search(r"authentication|logon|password|credential", msg, re.IGNORECASE):
         return f"Failed to authenticate with server {host}: invalid credentials"

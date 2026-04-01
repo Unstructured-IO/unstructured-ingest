@@ -357,8 +357,12 @@ def test_teradata_uploader_values_delimiter_is_qmark(teradata_uploader: Teradata
         ("no route to host", "connection refused"),
         # Teradata Go driver embeds "[Logon]" phase even on connection errors
         ("[Logon] dial tcp: connection refused", "connection refused"),
+        # TCP-level connection reset should still match
+        ("connection reset by peer", "connection refused"),
         ("authentication failed for user foo", "invalid credentials"),
         ("Logon failed", "invalid credentials"),
+        # "password has been reset" must NOT match connection-refused
+        ("password has been reset", "invalid credentials"),
         ("some unknown driver error", None),
     ],
 )
