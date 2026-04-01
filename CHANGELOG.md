@@ -1,3 +1,7 @@
+## [1.4.16]
+
+* **fix(notion): handle icon field in block type deserialization** Skip the `icon` field when deserializing Notion block types (heading, paragraph, numbered_list, quote, table_of_contents, template, todo, toggle) to prevent deserialization errors when blocks contain icon data.
+
 ## [1.4.15]
 
 * **fix(ibm-watsonx-s3): fail fast on precheck and guard bearer token JSON parsing**
