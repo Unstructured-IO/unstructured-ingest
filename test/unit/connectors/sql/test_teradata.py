@@ -19,8 +19,8 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploaderConfig,
     TeradataUploadStager,
     TeradataUploadStagerConfig,
-    _summarize_error,
     _resolve_db_column_case,
+    _summarize_error,
 )
 
 
@@ -390,7 +390,9 @@ def test_teradata_indexer_precheck_connection_failure(
     """Test that precheck raises SourceConnectionError when connection fails."""
     mock_cursor.execute.side_effect = Exception("Connection refused")
 
-    with pytest.raises(SourceConnectionError, match="Failed to connect to server.*connection refused"):
+    with pytest.raises(
+        SourceConnectionError, match="Failed to connect to server.*connection refused"
+    ):
         teradata_indexer.precheck()
 
     # Should have only attempted the connectivity check
@@ -501,7 +503,9 @@ def test_teradata_uploader_precheck_connection_failure(
     """Test that uploader precheck raises DestinationConnectionError when connection fails."""
     mock_cursor.execute.side_effect = Exception("Connection refused")
 
-    with pytest.raises(DestinationConnectionError, match="Failed to connect to server.*connection refused"):
+    with pytest.raises(
+        DestinationConnectionError, match="Failed to connect to server.*connection refused"
+    ):
         teradata_uploader.precheck()
 
     assert mock_cursor.execute.call_count == 1

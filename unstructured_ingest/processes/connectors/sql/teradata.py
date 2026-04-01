@@ -48,14 +48,17 @@ def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     """
     msg = str(raw)
     prefix = f"Failed to connect to server {host}"
+    # When the caller supplies explicit context (e.g. "table not found"), prefer it
+    # over regex matching — raw driver messages may contain table names like
+    # ``password_reset_log`` that would falsely match authentication keywords.
+    if context:
+        return f"{prefix}: {context}"
     if re.search(r"i/o timeout|timed?\s*out", msg, re.IGNORECASE):
         return f"{prefix}: connection timed out"
     if re.search(r"authentication|logon|password|credential", msg, re.IGNORECASE):
         return f"Failed to authenticate with server {host}: invalid credentials"
     if re.search(r"refused|reset|no route|unreachable", msg, re.IGNORECASE):
         return f"{prefix}: connection refused"
-    if context:
-        return f"{prefix}: {context}"
     return prefix
 
 
