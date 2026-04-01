@@ -368,6 +368,19 @@ def test_summarize_error(error_msg: str, expected_suffix: str | None):
         assert expected_suffix in result
 
 
+def test_summarize_error_context_overrides_regex():
+    """Context param takes priority over regex and uses a neutral prefix."""
+    result = _summarize_error(
+        "myhost",
+        Exception("[Error 3807] Object 'password_reset_log' does not exist"),
+        context="table 'password_reset_log' not found or not accessible",
+    )
+    # Must NOT say "Failed to connect" — the connection succeeded
+    assert not result.startswith("Failed to connect")
+    assert "myhost" in result
+    assert "table 'password_reset_log' not found or not accessible" in result
+
+
 def test_teradata_indexer_precheck_success(
     mock_cursor: MagicMock,
     teradata_indexer: TeradataIndexer,

@@ -52,7 +52,7 @@ def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     # over regex matching — raw driver messages may contain table names like
     # ``password_reset_log`` that would falsely match authentication keywords.
     if context:
-        return f"{prefix}: {context}"
+        return f"Server {host}: {context}"
     if re.search(r"i/o timeout|timed?\s*out", msg, re.IGNORECASE):
         return f"{prefix}: connection timed out"
     if re.search(r"authentication|logon|password|credential", msg, re.IGNORECASE):
