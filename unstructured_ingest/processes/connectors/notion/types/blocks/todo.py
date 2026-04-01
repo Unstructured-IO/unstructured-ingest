@@ -1,6 +1,6 @@
 # https://developers.notion.com/reference/block#to-do
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from htmlBuilder.attributes import Checked, Style, Type
 from htmlBuilder.tags import Div, HtmlTag, Input
@@ -14,6 +14,7 @@ class ToDo(BlockBase):
     color: str
     checked: bool = False
     rich_text: List[RichText] = field(default_factory=list)
+    icon: Optional[Any] = None
 
     @staticmethod
     def can_have_children() -> bool:
@@ -22,8 +23,10 @@ class ToDo(BlockBase):
     @classmethod
     def from_dict(cls, data: dict):
         rich_text = data.pop("rich_text", [])
+        icon = data.pop("icon", None)
         todo = cls(**data)
         todo.rich_text = [RichText.from_dict(rt) for rt in rich_text]
+        todo.icon = icon
         return todo
 
     def get_html(self) -> Optional[HtmlTag]:

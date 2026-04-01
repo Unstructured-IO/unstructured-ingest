@@ -1,6 +1,10 @@
-## [1.4.16]
+## [1.4.17]
 
 * **fix(teradata): surface user-friendly error messages on connector precheck failures** Instead of exposing raw Go driver stack traces, precheck errors now show concise messages (e.g. "Failed to connect to server 192.168.1.1: connection timed out").
+
+## [1.4.16]
+
+* **fix(notion): handle icon field in block type deserialization** Skip the `icon` field when deserializing Notion block types (heading, paragraph, numbered_list, quote, table_of_contents, template, todo, toggle) to prevent deserialization errors when blocks contain icon data.
 
 ## [1.4.15]
 
