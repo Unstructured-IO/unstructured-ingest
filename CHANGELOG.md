@@ -1,3 +1,9 @@
+## [Unreleased]
+
+* **feat: add Python 3.14 core support** Widen `requires-python` to `>=3.11, <3.15`, add the Python 3.14 classifier, extend unit-test workflow matrices to include 3.14, and add regression coverage for secret handling plus event-loop bridging.
+* **chore: improve compatibility** Replace Pydantic's private internals with public APIs. Also replace deprecated `asyncio.iscoroutinefunction` with `inspect.iscoroutinefunction`.
+* **chore: temporarily exclude `pyarrow`/`pyiceberg`-backed test and extra slices on Python 3.14** because some of dependencies do not support Python 3.14 yet. Keep the core 3.14 path green while upstream wheel support catches up for `ibm-watsonx-s3`, `delta-table`, and `vastdb`.
+
 ## [1.4.15]
 
 * **fix(ibm-watsonx-s3): fail fast on precheck and guard bearer token JSON parsing**
