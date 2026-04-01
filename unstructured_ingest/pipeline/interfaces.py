@@ -59,8 +59,9 @@ class PipelineStep(ABC):
     def asyncio_run(
         self, fn: Callable[[Any, Any], Awaitable[Any]], *args: Any, **kwargs: Any
     ) -> Any:
-        current_loop = asyncio._get_running_loop()
-        if current_loop is None:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
             return asyncio.run(fn(*args, **kwargs))
         with ThreadPoolExecutor(thread_name_prefix="asyncio") as thread_pool:
             logger.warning(
