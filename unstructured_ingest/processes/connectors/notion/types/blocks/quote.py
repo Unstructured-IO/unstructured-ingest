@@ -1,6 +1,6 @@
 # https://developers.notion.com/reference/block#quote
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from htmlBuilder.attributes import Style
 from htmlBuilder.tags import Div, HtmlTag
@@ -14,6 +14,7 @@ class Quote(BlockBase):
     color: str
     children: List[dict] = field(default_factory=list)
     rich_text: List[RichText] = field(default_factory=list)
+    icon: Optional[Any] = None
 
     @staticmethod
     def can_have_children() -> bool:
@@ -22,8 +23,10 @@ class Quote(BlockBase):
     @classmethod
     def from_dict(cls, data: dict):
         rich_text = data.pop("rich_text", [])
+        icon = data.pop("icon", None)
         quote = cls(**data)
         quote.rich_text = [RichText.from_dict(rt) for rt in rich_text]
+        quote.icon = icon
         return quote
 
     def get_html(self) -> Optional[HtmlTag]:
