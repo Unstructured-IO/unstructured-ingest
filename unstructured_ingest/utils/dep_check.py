@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import asyncio
 import importlib
 from functools import wraps
+from inspect import iscoroutinefunction
 from typing import (
     Callable,
     List,
     Optional,
+    ParamSpec,
     TypeVar,
 )
-
-from typing_extensions import ParamSpec
 
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
@@ -61,7 +60,7 @@ def requires_dependencies(
             run_check()
             return await func(*args, **kwargs)
 
-        if asyncio.iscoroutinefunction(func):
+        if iscoroutinefunction(func):
             return wrapper_async
         return wrapper
 
