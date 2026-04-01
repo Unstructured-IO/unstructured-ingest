@@ -1,7 +1,7 @@
 [project]
 name = "unstructured_ingest"
 description = "Local ETL data pipeline to get data RAG ready"
-requires-python = ">=3.11, <3.14"
+requires-python = ">=3.11, <3.15"
 authors = [{name = "Unstructured Technologies", email = "devops@unstructuredai.io"}]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -14,6 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 readme = "README.md"
@@ -43,7 +44,7 @@ confluence = ["atlassian-python-api", "requests"]
 couchbase = ["couchbase"]
 databricks-delta-tables = ["pandas", "databricks-sql-connector"]
 databricks-volumes = ["databricks-sdk>=0.85.0"]
-delta-table = ["pandas", "deltalake", "boto3", "tenacity", "pyarrow"]
+delta-table = ["pandas", "deltalake", "boto3", "tenacity", "pyarrow; python_version < '3.14'"]
 discord = ["discord.py"]
 dropbox = ["dropboxdrivefs", "fsspec"]
 duckdb = ["pandas", "duckdb"]
@@ -53,7 +54,13 @@ github = ["pygithub>1.58.0", "requests"]
 gitlab = ["python-gitlab"]
 google-drive = ["google-api-python-client", "tenacity"]
 hubspot = ["hubspot-api-client", "urllib3"]
-ibm-watsonx-s3 = ["pyiceberg", "httpx", "pyarrow", "tenacity", "pandas"]
+ibm-watsonx-s3 = [
+    "pyiceberg; python_version < '3.14'",
+    "httpx",
+    "pyarrow; python_version < '3.14'",
+    "tenacity",
+    "pandas",
+]
 jira = ["atlassian-python-api"]
 kafka = ["confluent-kafka"]
 kdbai = ["pandas", "kdbai-client>=1.4.0"]
@@ -84,7 +91,7 @@ singlestore = ["pandas", "singlestoredb"]
 slack = ["slack_sdk[optional]"]
 snowflake = ["pandas", "snowflake-connector-python", "psycopg2-binary"]
 teradata = ["pandas", "teradatasql"]
-vastdb = ["pandas", "pyarrow", "vastdb", "ibis"]
+vastdb = ["pandas", "pyarrow; python_version < '3.14'", "vastdb", "ibis"]
 vectara = ["requests", "aiofiles", "httpx"]
 weaviate = ["weaviate-client"]
 wikipedia = ["wikipedia"]
@@ -151,8 +158,8 @@ test = [
     "cryptography",
     "fsspec",
     "vertexai",
-    "pyiceberg",
-    "pyarrow",
+    "pyiceberg; python_version < '3.14'",
+    "pyarrow; python_version < '3.14'",
     "networkx",
     "htmlBuilder",
     "office365-rest-python-client",
