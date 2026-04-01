@@ -1,20 +1,23 @@
 import json
 from datetime import datetime
-from inspect import isclass
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args, get_origin
 
-from pydantic import BaseModel
-from pydantic.types import _SecretBase
+from pydantic import BaseModel, Secret, SecretStr
+
+
+def is_secret_annotation(value: Any) -> bool:
+    if get_origin(value) is Secret or value is SecretStr:
+        return True
+    return any(is_secret_annotation(arg) for arg in get_args(value))
+
+
+def is_secret_value(value: Any) -> bool:
+    return callable(getattr(value, "get_secret_value", None))
 
 
 def is_secret(value: Any) -> bool:
-    # Case Secret[int]
-    if hasattr(value, "__origin__") and hasattr(value, "__args__"):
-        origin = value.__origin__
-        return isclass(origin) and issubclass(origin, _SecretBase)
-    # Case SecretStr
-    return isclass(value) and issubclass(value, _SecretBase)
+    return is_secret_annotation(value)
 
 
 def serialize_base_model(model: BaseModel) -> dict:
@@ -26,7 +29,7 @@ def serialize_base_model(model: BaseModel) -> dict:
 def serialize_base_dict(model_dict: dict) -> dict:
     model_dict = model_dict.copy()
     for k, v in model_dict.items():
-        if isinstance(v, _SecretBase):
+        if is_secret_value(v):
             secret_value = v.get_secret_value()
             if isinstance(secret_value, BaseModel):
                 model_dict[k] = serialize_base_model(model=secret_value)

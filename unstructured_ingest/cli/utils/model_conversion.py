@@ -22,7 +22,6 @@ from annotated_types import Ge, Gt, Le, Lt, SupportsGe, SupportsGt, SupportsLe, 
 from click import Option
 from pydantic import BaseModel, Secret, SecretStr
 from pydantic.fields import FieldInfo
-from pydantic.types import _SecretBase
 from pydantic_core import PydanticUndefined
 
 from unstructured_ingest.cli.utils.click import (
@@ -31,6 +30,7 @@ from unstructured_ingest.cli.utils.click import (
     PydanticDate,
     PydanticDateTime,
 )
+from unstructured_ingest.utils.pydantic_models import is_secret_annotation
 
 NoneType = type(None)
 
@@ -69,14 +69,16 @@ def is_boolean_flag(field_info: FieldInfo) -> bool:
 
 
 def get_raw_type(val: Any) -> Any:
-    field_args = get_args(val)
-    field_origin = get_origin(val)
-    if field_origin is Union and len(field_args) == 2 and NoneType in field_args:
-        field_type = next(field_arg for field_arg in field_args if field_arg is not None)
-        return field_type
-    if field_origin is Secret and len(field_args) == 1:
-        field_type = next(field_arg for field_arg in field_args if field_arg is not None)
-        return field_type
+    while True:
+        field_args = get_args(val)
+        field_origin = get_origin(val)
+        if field_origin is Union and len(field_args) == 2 and NoneType in field_args:
+            val = next(field_arg for field_arg in field_args if field_arg is not None)
+            continue
+        if field_origin is Secret and len(field_args) == 1:
+            val = next(field_arg for field_arg in field_args if field_arg is not None)
+            continue
+        break
     if val is SecretStr:
         return str
     return val
@@ -195,15 +197,12 @@ def post_check(options: list[Option], name: str):
 
 
 def is_secret(value: Any) -> bool:
-    # Case Secret[int]
-    if hasattr(value, "__origin__") and hasattr(value, "__args__"):
-        origin = value.__origin__
-        return is_subclass(origin, _SecretBase)
-    # Case SecretStr
-    return is_subclass(value, _SecretBase)
+    return is_secret_annotation(value)
 
 
-def options_from_base_model(model: Union[BaseModel, Type[BaseModel]]) -> list[Option]:
+def options_from_base_model(
+    model: Union[BaseModel, Type[BaseModel]], sensitive: bool = False
+) -> list[Option]:
     options = []
     model_fields = model.model_fields
     for field_name, field_info in model_fields.items():
@@ -211,11 +210,16 @@ def options_from_base_model(model: Union[BaseModel, Type[BaseModel]]) -> list[Op
             continue
         option_name = get_option_name(field_name=field_name, field_info=field_info)
         raw_annotation = get_raw_type(field_info.annotation)
+        field_is_sensitive = sensitive or is_secret(field_info.annotation)
         if is_subclass(raw_annotation, BaseModel):
-            options.extend(options_from_base_model(model=raw_annotation))
+            options.extend(
+                options_from_base_model(model=raw_annotation, sensitive=field_is_sensitive)
+            )
         else:
-            if is_secret(field_info.annotation):
-                field_info.description = f"[sensitive] {field_info.description}"
+            if field_is_sensitive:
+                description = field_info.description or ""
+                if not description.startswith("[sensitive]"):
+                    field_info.description = f"[sensitive] {description}"
             options.append(get_option_from_field(option_name=option_name, field_info=field_info))
 
     post_check(options=options, name=model.__name__)

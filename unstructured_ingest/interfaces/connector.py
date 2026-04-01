@@ -4,9 +4,9 @@ from typing import Any, TypeVar, Union, get_args, get_origin
 
 from pydantic import BaseModel, Secret, model_validator
 from pydantic.fields import FieldInfo
-from pydantic.types import _SecretBase
 
 from unstructured_ingest.processes.utils.logging.connector import ConnectorLoggingMixin
+from unstructured_ingest.utils.pydantic_models import is_secret_value
 
 
 def _is_optional_field(field: FieldInfo) -> bool:
@@ -40,8 +40,8 @@ class ConnectionConfig(BaseModel):
         field = self.__class__.model_fields["access_config"]
         if _is_optional_field(field) and access_config is None:
             return self
-        if not isinstance(access_config, _SecretBase):
-            raise ValueError("access_config must be an instance of SecretBase")
+        if not is_secret_value(access_config):
+            raise ValueError("access_config must be a Secret-wrapped value")
         return self
 
 
