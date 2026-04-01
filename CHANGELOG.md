@@ -1,3 +1,7 @@
+## [1.4.16]
+
+* **fix(teradata): surface user-friendly error messages on connector precheck failures** Instead of exposing raw Go driver stack traces, precheck errors now show concise messages (e.g. "Failed to connect to server 192.168.1.1: connection timed out").
+
 ## [1.4.15]
 
 * **fix(ibm-watsonx-s3): fail fast on precheck and guard bearer token JSON parsing**

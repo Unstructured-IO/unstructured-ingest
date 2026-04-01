@@ -19,6 +19,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploaderConfig,
     TeradataUploadStager,
     TeradataUploadStagerConfig,
+    _summarize_error,
     _resolve_db_column_case,
 )
 
@@ -347,6 +348,26 @@ def test_teradata_uploader_values_delimiter_is_qmark(teradata_uploader: Teradata
     assert teradata_uploader.values_delimiter == "?"
 
 
+@pytest.mark.parametrize(
+    ("error_msg", "expected_suffix"),
+    [
+        ("dial tcp 192.168.1.1:1025: i/o timeout", "connection timed out"),
+        ("connection timed out after 10000 ms", "connection timed out"),
+        ("Connection refused", "connection refused"),
+        ("no route to host", "connection refused"),
+        ("authentication failed for user foo", "invalid credentials"),
+        ("Logon failed", "invalid credentials"),
+        ("some unknown driver error", None),
+    ],
+)
+def test_summarize_error(error_msg: str, expected_suffix: str | None):
+    result = _summarize_error("myhost", Exception(error_msg))
+    assert result.startswith("Failed to connect") or result.startswith("Failed to authenticate")
+    assert "myhost" in result
+    if expected_suffix:
+        assert expected_suffix in result
+
+
 def test_teradata_indexer_precheck_success(
     mock_cursor: MagicMock,
     teradata_indexer: TeradataIndexer,
@@ -369,7 +390,7 @@ def test_teradata_indexer_precheck_connection_failure(
     """Test that precheck raises SourceConnectionError when connection fails."""
     mock_cursor.execute.side_effect = Exception("Connection refused")
 
-    with pytest.raises(SourceConnectionError, match="failed to validate connection"):
+    with pytest.raises(SourceConnectionError, match="Failed to connect to server.*connection refused"):
         teradata_indexer.precheck()
 
     # Should have only attempted the connectivity check
@@ -454,7 +475,7 @@ def test_teradata_indexer_precheck_table_not_found(
         Exception("[Error 3807] Object 'year' does not exist"),
     ]
 
-    with pytest.raises(SourceConnectionError, match="Table 'year'.*not found or not accessible"):
+    with pytest.raises(SourceConnectionError, match="table 'year'.*not found or not accessible"):
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
@@ -480,7 +501,7 @@ def test_teradata_uploader_precheck_connection_failure(
     """Test that uploader precheck raises DestinationConnectionError when connection fails."""
     mock_cursor.execute.side_effect = Exception("Connection refused")
 
-    with pytest.raises(DestinationConnectionError, match="failed to validate connection"):
+    with pytest.raises(DestinationConnectionError, match="Failed to connect to server.*connection refused"):
         teradata_uploader.precheck()
 
     assert mock_cursor.execute.call_count == 1

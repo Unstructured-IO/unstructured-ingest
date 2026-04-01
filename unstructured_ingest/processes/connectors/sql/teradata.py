@@ -1,4 +1,5 @@
 import json
+import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,6 +37,26 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "teradata"
 DEFAULT_TABLE_NAME = "unstructuredautocreated"
+
+
+def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
+    """Distill a verbose Teradata driver exception into a one-line user message.
+
+    The Go-based driver emits multi-frame stack traces that are useful in logs
+    but overwhelming in UI.  We keep the full text in the logger call and only
+    surface a short summary for the raised error.
+    """
+    msg = str(raw)
+    prefix = f"Failed to connect to server {host}"
+    if re.search(r"i/o timeout|timed?\s*out", msg, re.IGNORECASE):
+        return f"{prefix}: connection timed out"
+    if re.search(r"authentication|logon|password|credential", msg, re.IGNORECASE):
+        return f"Failed to authenticate with server {host}: invalid credentials"
+    if re.search(r"refused|reset|no route|unreachable", msg, re.IGNORECASE):
+        return f"{prefix}: connection refused"
+    if context:
+        return f"{prefix}: {context}"
+    return prefix
 
 
 def _resolve_db_column_case(
@@ -128,7 +149,9 @@ class TeradataIndexer(SQLIndexer):
                 cursor.execute("SELECT 1")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            raise SourceConnectionError(
+                _summarize_error(self.connection_config.host, e)
+            )
 
         table_name = self.index_config.table_name
         try:
@@ -139,7 +162,13 @@ class TeradataIndexer(SQLIndexer):
                 f"Table '{table_name}' not found or not accessible: {e}",
                 exc_info=True,
             )
-            raise SourceConnectionError(f"Table '{table_name}' not found or not accessible: {e}")
+            raise SourceConnectionError(
+                _summarize_error(
+                    self.connection_config.host,
+                    e,
+                    context=f"table '{table_name}' not found or not accessible",
+                )
+            )
 
     def _get_doc_ids(self) -> list[str]:
         """Override to quote identifiers for Teradata reserved word handling."""
@@ -309,7 +338,9 @@ class TeradataUploader(SQLUploader):
                 cursor.execute("SELECT 1")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            raise DestinationConnectionError(
+                _summarize_error(self.connection_config.host, e)
+            )
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
