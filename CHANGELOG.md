@@ -2,7 +2,15 @@
 
 * **feat: add Python 3.14 core support** Widen `requires-python` to `>=3.11, <3.15`, add the Python 3.14 classifier, extend unit-test workflow matrices to include 3.14, and add regression coverage for secret handling plus event-loop bridging.
 * **chore: improve compatibility** Replace Pydantic's private internals with public APIs. Also replace deprecated `asyncio.iscoroutinefunction` with `inspect.iscoroutinefunction`.
-* **chore: temporarily exclude `pyarrow`/`pyiceberg`-backed test and extra slices on Python 3.14** because some of dependencies do not support Python 3.14 yet. Keep the core 3.14 path green while upstream wheel support catches up for `ibm-watsonx-s3`, `delta-table`, and `vastdb`.
+* **chore: temporarily exclude `pyiceberg`-backed test and extra slices on Python 3.14** because some of dependencies do not support Python 3.14 yet. Keep the core 3.14 path green while upstream wheel support catches up for `ibm-watsonx-s3`, `delta-table`, and `vastdb`.
+
+## [1.4.17]
+
+* **fix(teradata): surface user-friendly error messages on connector precheck failures** Instead of exposing raw Go driver stack traces, precheck errors now show concise messages (e.g. "Failed to connect to server 192.168.1.1: connection timed out").
+
+## [1.4.16]
+
+* **fix(notion): handle icon field in block type deserialization** Skip the `icon` field when deserializing Notion block types (heading, paragraph, numbered_list, quote, table_of_contents, template, todo, toggle) to prevent deserialization errors when blocks contain icon data.
 
 ## [1.4.15]
 
