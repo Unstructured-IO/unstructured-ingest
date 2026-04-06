@@ -1,3 +1,9 @@
+## [1.4.19]
+
+### Security
+
+- **fix(deps):** loosen langchain-core pin from `<1.0.0` to `<2.0.0` to resolve CVE-2026-34070 (High) and CVE-2026-26013 (Low)
+
 ## [1.4.18]
 
 ### Security
