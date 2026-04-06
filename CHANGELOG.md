@@ -1,5 +1,11 @@
 ## [1.4.19]
 
+### Security
+
+- **fix(deps):** loosen langchain-core pin from `<1.0.0` to `<2.0.0` to resolve CVE-2026-34070 (High) and CVE-2026-26013 (Low)
+
+### Fixes
+
 * **fix(teradata): reject dashes in destination table names** Add validation to prevent dashes in Teradata table names at both the Pydantic model level and the `create_destination` path, surfacing a clear error message instead of a cryptic database failure.
 
 ## [1.4.18]
