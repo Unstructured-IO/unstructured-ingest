@@ -1,3 +1,7 @@
+## [1.4.19]
+
+* **fix(teradata): reject dashes in destination table names** Add validation to prevent dashes in Teradata table names at both the Pydantic model level and the `create_destination` path, surfacing a clear error message instead of a cryptic database failure.
+
 ## [1.4.18]
 
 ### Security

@@ -322,6 +322,11 @@ class TeradataUploader(SQLUploader):
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
         table_name = self.upload_config.table_name or destination_name
+        if "-" in table_name:
+            raise DestinationConnectionError(
+                f"Teradata table names cannot contain dashes: '{table_name}'. "
+                "Use underscores instead."
+            )
         self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
