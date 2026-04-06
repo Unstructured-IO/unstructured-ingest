@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, field_validator
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
@@ -159,9 +159,7 @@ class TeradataIndexer(SQLIndexer):
                 cursor.execute("SELECT 1")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(
-                _summarize_error(self.connection_config.host, e)
-            )
+            raise SourceConnectionError(_summarize_error(self.connection_config.host, e))
 
         table_name = self.index_config.table_name
         try:
@@ -240,7 +238,6 @@ class TeradataDownloader(SQLDownloader):
             return rows, columns
 
 
-
 class TeradataUploadStagerConfig(SQLUploadStagerConfig):
     metadata_as_json: bool = Field(
         default=False,
@@ -297,6 +294,15 @@ class TeradataUploaderConfig(SQLUploaderConfig):
         "auto-created via create_destination().",
     )
 
+    @field_validator("table_name")
+    @classmethod
+    def table_name_must_not_contain_dashes(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and "-" in v:
+            raise ValueError(
+                f"Teradata table names cannot contain dashes: '{v}'. Use underscores instead."
+            )
+        return v
+
 
 @dataclass
 class TeradataUploader(SQLUploader):
@@ -310,9 +316,7 @@ class TeradataUploader(SQLUploader):
         # metadata_as_json=True to match. The UI/caller is responsible for setting both.
         self.create_destination(**kwargs)
 
-    def create_destination(
-        self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
-    ) -> bool:
+    def create_destination(self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any) -> bool:
         """Create a 6-column opinionated table (id, record_id, element_id, text, type, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
@@ -343,14 +347,18 @@ class TeradataUploader(SQLUploader):
         return True
 
     def precheck(self) -> None:
+        table_name = self.upload_config.table_name
+        if table_name and "-" in table_name:
+            raise DestinationConnectionError(
+                f"Teradata table names cannot contain dashes: '{table_name}'. "
+                "Use underscores instead."
+            )
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(
-                _summarize_error(self.connection_config.host, e)
-            )
+            raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
