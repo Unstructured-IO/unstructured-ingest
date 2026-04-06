@@ -261,12 +261,14 @@ class TeradataUploadStager(SQLUploadStager):
             return super().conform_dict(element_dict=element_dict, file_data=file_data)
 
         data = element_dict.copy()
+        embeddings = data.get("embeddings")
         return {
             "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             RECORD_ID_LABEL: file_data.identifier,
             "element_id": data.get("element_id", ""),
             "text": data.get("text"),
             "type": data.get("type"),
+            "embeddings": json.dumps(embeddings) if embeddings is not None else None,
             "metadata": json.dumps(data.get("metadata", {})),
         }
 
@@ -313,7 +315,7 @@ class TeradataUploader(SQLUploader):
     def create_destination(
         self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
     ) -> bool:
-        """Create a 6-column opinionated table (id, record_id, element_id, text, type, metadata)
+        """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
