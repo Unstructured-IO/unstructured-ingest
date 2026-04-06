@@ -1,3 +1,9 @@
+## [1.4.20]
+
+### Fixes
+
+- **fix(teradata):** add embeddings column to destination schema and stager, use native VECTOR type for embeddings column
+
 ## [1.4.19]
 
 ### Security
