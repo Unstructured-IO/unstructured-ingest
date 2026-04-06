@@ -268,7 +268,7 @@ class TeradataUploadStager(SQLUploadStager):
             "element_id": data.get("element_id", ""),
             "text": data.get("text"),
             "type": data.get("type"),
-            "embeddings": json.dumps(embeddings) if embeddings is not None else None,
+            "embeddings": ",".join(str(v) for v in embeddings) if embeddings is not None else None,
             "metadata": json.dumps(data.get("metadata", {})),
         }
 
@@ -278,7 +278,16 @@ class TeradataUploadStager(SQLUploadStager):
 
         df = super().conform_dataframe(df)
 
+        # Embeddings must be comma-separated floats for the Teradata VECTOR type,
+        # not JSON arrays.  Handle this before the generic list/dict serialiser.
+        if "embeddings" in df.columns:
+            df["embeddings"] = df["embeddings"].apply(
+                lambda x: ",".join(str(v) for v in x) if isinstance(x, list) else x
+            )
+
         for column in df.columns:
+            if column == "embeddings":
+                continue
             sample = df[column].dropna().head(10)
 
             if len(sample) > 0:

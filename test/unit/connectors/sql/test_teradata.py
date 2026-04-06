@@ -212,6 +212,28 @@ def test_teradata_upload_stager_converts_lists_to_json(
     assert result["id"].iloc[0] == 1
 
 
+def test_teradata_upload_stager_conform_dataframe_embeddings_as_csv(
+    teradata_upload_stager: TeradataUploadStager,
+):
+    """Test that conform_dataframe converts embeddings lists to comma-separated floats."""
+    df = pd.DataFrame(
+        {
+            "text": ["text1", "text2"],
+            "embeddings": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+            "languages": [["en"], ["fr"]],
+            "id": [1, 2],
+        }
+    )
+
+    result = teradata_upload_stager.conform_dataframe(df)
+
+    # embeddings should be comma-separated floats, not JSON
+    assert result["embeddings"].iloc[0] == "0.1,0.2,0.3"
+    assert result["embeddings"].iloc[1] == "0.4,0.5,0.6"
+    # other list columns should still be JSON
+    assert result["languages"].iloc[0] == '["en"]'
+
+
 def test_teradata_upload_stager_converts_dicts_to_json(
     teradata_upload_stager: TeradataUploadStager,
 ):
@@ -710,7 +732,7 @@ def test_teradata_upload_stager_conform_dict_includes_embeddings():
     result = stager.conform_dict(element_dict=element_dict, file_data=file_data)
 
     assert "embeddings" in result
-    assert result["embeddings"] == "[0.1, 0.2, 0.3]"
+    assert result["embeddings"] == "0.1,0.2,0.3"
     assert result["text"] == "hello world"
     assert result["type"] == "NarrativeText"
 
