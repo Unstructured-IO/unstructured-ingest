@@ -543,6 +543,19 @@ def test_teradata_uploader_precheck_does_not_check_table(
     assert not any("SELECT TOP" in c for c in calls)
 
 
+def test_teradata_uploader_precheck_rejects_dashes_in_table_name(
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig.model_construct(
+            table_name="my-bad-table", record_id_key="record_id"
+        ),
+    )
+    with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
+        uploader.precheck()
+
+
 def test_resolve_db_column_case_queries_and_caches(
     mock_cursor: MagicMock,
     mock_get_cursor: MagicMock,
@@ -820,6 +833,16 @@ def test_teradata_uploader_config_table_name_defaults_to_none():
     assert config.table_name is None
 
 
+def test_teradata_uploader_config_rejects_dashes_in_table_name():
+    with pytest.raises(ValueError, match="cannot contain dashes"):
+        TeradataUploaderConfig(table_name="my-table-name")
+
+
+def test_teradata_uploader_config_accepts_underscored_table_name():
+    config = TeradataUploaderConfig(table_name="my_table_name")
+    assert config.table_name == "my_table_name"
+
+
 def test_teradata_stager_config_metadata_as_json_defaults_to_false():
     config = TeradataUploadStagerConfig()
     assert config.metadata_as_json is False
@@ -884,9 +907,7 @@ def test_teradata_stager_conform_dict_flattened_mode(
         ),
     )
 
-    result = teradata_upload_stager.conform_dict(
-        element_dict=element_dict, file_data=file_data
-    )
+    result = teradata_upload_stager.conform_dict(element_dict=element_dict, file_data=file_data)
 
     assert "filename" in result
     assert "filetype" in result
@@ -992,9 +1013,16 @@ def test_teradata_uploader_create_destination_uses_destination_name_kwarg(
     """create_destination uses destination_name kwarg when table_name is None."""
     mock_cursor.fetchone.side_effect = [("test_db",), None]
 
-    result = teradata_uploader_auto_create.create_destination(
-        destination_name="workflow_123"
-    )
+    result = teradata_uploader_auto_create.create_destination(destination_name="workflow_123")
 
     assert result is True
     assert teradata_uploader_auto_create.upload_config.table_name == "workflow_123"
+
+
+def test_teradata_uploader_create_destination_rejects_dashes_in_destination_name(
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """create_destination raises when destination_name contains dashes."""
+    with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
+        teradata_uploader_auto_create.create_destination(destination_name="my-bad-table")
