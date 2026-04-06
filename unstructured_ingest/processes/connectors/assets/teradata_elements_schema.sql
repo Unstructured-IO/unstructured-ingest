@@ -5,7 +5,7 @@ CREATE MULTISET TABLE "elements"
     "element_id" VARCHAR(256) NOT NULL,
     "text"       CLOB CHARACTER SET UNICODE,
     "type"       VARCHAR(256),
-    "embeddings" VECTOR,
+    "embeddings" VECTOR32,
     "metadata"   JSON
 )
 PRIMARY INDEX ("id");

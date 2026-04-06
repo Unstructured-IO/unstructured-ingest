@@ -278,7 +278,7 @@ class TeradataUploadStager(SQLUploadStager):
 
         df = super().conform_dataframe(df)
 
-        # Embeddings must be comma-separated floats for the Teradata VECTOR type,
+        # Embeddings must be comma-separated floats for the Teradata VECTOR32 type,
         # not JSON arrays.  Handle this before the generic list/dict serialiser.
         if "embeddings" in df.columns:
             df["embeddings"] = df["embeddings"].apply(

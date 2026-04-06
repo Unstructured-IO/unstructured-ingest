@@ -2,7 +2,7 @@
 
 ### Fixes
 
-- **fix(teradata):** add embeddings column to destination schema and stager, use native VECTOR type for embeddings column
+- **fix(teradata):** add embeddings column to destination schema and stager, use native VECTOR32 type (32-bit float) for embeddings column
 
 ## [1.4.19]
 
