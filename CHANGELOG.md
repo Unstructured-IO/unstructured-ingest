@@ -3,6 +3,7 @@
 ### Fixes
 
 - **fix(teradata):** add embeddings column to destination schema and stager, use native VECTOR32 type (32-bit float) for embeddings column
+* **fix(teradata): reject dashes in destination table names** Add validation to prevent dashes in Teradata table names at both the Pydantic model level and the `create_destination` path, surfacing a clear error message instead of a cryptic database failure.
 
 ## [1.4.19]
 
