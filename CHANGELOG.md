@@ -4,6 +4,25 @@
 * **chore: improve compatibility** Replace Pydantic's private internals with public APIs. Also replace deprecated `asyncio.iscoroutinefunction` with `inspect.iscoroutinefunction`.
 * **chore: temporarily exclude `pyiceberg`-backed test and extra slices on Python 3.14** because some of dependencies do not support Python 3.14 yet. Keep the core 3.14 path green while upstream wheel support catches up for `ibm-watsonx-s3`, `delta-table`, and `vastdb`.
 
+## [1.4.20]
+
+### Fixes
+
+- **fix(teradata):** add embeddings column to destination schema and stager, use native VECTOR32 type (32-bit float) for embeddings column
+* **fix(teradata): reject dashes in destination table names** Add validation to prevent dashes in Teradata table names at both the Pydantic model level and the `create_destination` path, surfacing a clear error message instead of a cryptic database failure.
+
+## [1.4.19]
+
+### Security
+
+- **fix(deps):** loosen langchain-core pin from `<1.0.0` to `<2.0.0` to resolve CVE-2026-34070 (High) and CVE-2026-26013 (Low)
+
+## [1.4.18]
+
+### Security
+
+- **security:** fix(deps): upgrade vulnerable transitive dependencies [security]
+
 ## [1.4.17]
 
 * **fix(teradata): surface user-friendly error messages on connector precheck failures** Instead of exposing raw Go driver stack traces, precheck errors now show concise messages (e.g. "Failed to connect to server 192.168.1.1: connection timed out").

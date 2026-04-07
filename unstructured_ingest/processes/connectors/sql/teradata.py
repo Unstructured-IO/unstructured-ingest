@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, field_validator
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
@@ -159,9 +159,7 @@ class TeradataIndexer(SQLIndexer):
                 cursor.execute("SELECT 1")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(
-                _summarize_error(self.connection_config.host, e)
-            )
+            raise SourceConnectionError(_summarize_error(self.connection_config.host, e))
 
         table_name = self.index_config.table_name
         try:
@@ -240,7 +238,6 @@ class TeradataDownloader(SQLDownloader):
             return rows, columns
 
 
-
 class TeradataUploadStagerConfig(SQLUploadStagerConfig):
     metadata_as_json: bool = Field(
         default=False,
@@ -261,12 +258,14 @@ class TeradataUploadStager(SQLUploadStager):
             return super().conform_dict(element_dict=element_dict, file_data=file_data)
 
         data = element_dict.copy()
+        embeddings = data.get("embeddings")
         return {
             "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             RECORD_ID_LABEL: file_data.identifier,
             "element_id": data.get("element_id", ""),
             "text": data.get("text"),
             "type": data.get("type"),
+            "embeddings": ",".join(str(v) for v in embeddings) if embeddings is not None else None,
             "metadata": json.dumps(data.get("metadata", {})),
         }
 
@@ -276,7 +275,16 @@ class TeradataUploadStager(SQLUploadStager):
 
         df = super().conform_dataframe(df)
 
+        # Embeddings must be comma-separated floats for the Teradata VECTOR32 type,
+        # not JSON arrays.  Handle this before the generic list/dict serialiser.
+        if "embeddings" in df.columns:
+            df["embeddings"] = df["embeddings"].apply(
+                lambda x: ",".join(str(v) for v in x) if isinstance(x, list) else x
+            )
+
         for column in df.columns:
+            if column == "embeddings":
+                continue
             sample = df[column].dropna().head(10)
 
             if len(sample) > 0:
@@ -297,6 +305,15 @@ class TeradataUploaderConfig(SQLUploaderConfig):
         "auto-created via create_destination().",
     )
 
+    @field_validator("table_name")
+    @classmethod
+    def table_name_must_not_contain_dashes(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and "-" in v:
+            raise ValueError(
+                f"Teradata table names cannot contain dashes: '{v}'. Use underscores instead."
+            )
+        return v
+
 
 @dataclass
 class TeradataUploader(SQLUploader):
@@ -313,11 +330,16 @@ class TeradataUploader(SQLUploader):
     def create_destination(
         self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
     ) -> bool:
-        """Create a 6-column opinionated table (id, record_id, element_id, text, type, metadata)
+        """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
         table_name = self.upload_config.table_name or destination_name
+        if "-" in table_name:
+            raise DestinationConnectionError(
+                f"Teradata table names cannot contain dashes: '{table_name}'. "
+                "Use underscores instead."
+            )
         self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
@@ -343,14 +365,18 @@ class TeradataUploader(SQLUploader):
         return True
 
     def precheck(self) -> None:
+        table_name = self.upload_config.table_name
+        if table_name and "-" in table_name:
+            raise DestinationConnectionError(
+                f"Teradata table names cannot contain dashes: '{table_name}'. "
+                "Use underscores instead."
+            )
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(
-                _summarize_error(self.connection_config.host, e)
-            )
+            raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:

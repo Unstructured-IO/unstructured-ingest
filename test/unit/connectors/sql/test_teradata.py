@@ -212,6 +212,28 @@ def test_teradata_upload_stager_converts_lists_to_json(
     assert result["id"].iloc[0] == 1
 
 
+def test_teradata_upload_stager_conform_dataframe_embeddings_as_csv(
+    teradata_upload_stager: TeradataUploadStager,
+):
+    """Test that conform_dataframe converts embeddings lists to comma-separated floats."""
+    df = pd.DataFrame(
+        {
+            "text": ["text1", "text2"],
+            "embeddings": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+            "languages": [["en"], ["fr"]],
+            "id": [1, 2],
+        }
+    )
+
+    result = teradata_upload_stager.conform_dataframe(df)
+
+    # embeddings should be comma-separated floats, not JSON
+    assert result["embeddings"].iloc[0] == "0.1,0.2,0.3"
+    assert result["embeddings"].iloc[1] == "0.4,0.5,0.6"
+    # other list columns should still be JSON
+    assert result["languages"].iloc[0] == '["en"]'
+
+
 def test_teradata_upload_stager_converts_dicts_to_json(
     teradata_upload_stager: TeradataUploadStager,
 ):
@@ -543,6 +565,19 @@ def test_teradata_uploader_precheck_does_not_check_table(
     assert not any("SELECT TOP" in c for c in calls)
 
 
+def test_teradata_uploader_precheck_rejects_dashes_in_table_name(
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig.model_construct(
+            table_name="my-bad-table", record_id_key="record_id"
+        ),
+    )
+    with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
+        uploader.precheck()
+
+
 def test_resolve_db_column_case_queries_and_caches(
     mock_cursor: MagicMock,
     mock_get_cursor: MagicMock,
@@ -687,6 +722,59 @@ def test_teradata_uploader_upload_dataframe_uses_db_case_in_sql(
     assert 'INSERT INTO "test_table"' in call_args
 
 
+def test_teradata_upload_stager_conform_dict_includes_embeddings():
+    """Test that conform_dict includes embeddings when metadata_as_json=True."""
+    stager = TeradataUploadStager(
+        upload_stager_config=TeradataUploadStagerConfig(metadata_as_json=True),
+    )
+    element_dict = {
+        "element_id": "abc123",
+        "text": "hello world",
+        "type": "NarrativeText",
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"page_number": 1},
+    }
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    result = stager.conform_dict(element_dict=element_dict, file_data=file_data)
+
+    assert "embeddings" in result
+    assert result["embeddings"] == "0.1,0.2,0.3"
+    assert result["text"] == "hello world"
+    assert result["type"] == "NarrativeText"
+
+
+def test_teradata_upload_stager_conform_dict_embeddings_null_when_absent():
+    """Test that conform_dict sets embeddings to None when not present in element."""
+    stager = TeradataUploadStager(
+        upload_stager_config=TeradataUploadStagerConfig(metadata_as_json=True),
+    )
+    element_dict = {
+        "element_id": "abc123",
+        "text": "hello world",
+        "type": "NarrativeText",
+        "metadata": {"page_number": 1},
+    }
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    result = stager.conform_dict(element_dict=element_dict, file_data=file_data)
+
+    assert "embeddings" in result
+    assert result["embeddings"] is None
+
+
 def test_teradata_downloader_query_db_lowercases_uppercase_columns(
     mock_cursor: MagicMock,
     teradata_downloader: TeradataDownloader,
@@ -820,6 +908,16 @@ def test_teradata_uploader_config_table_name_defaults_to_none():
     assert config.table_name is None
 
 
+def test_teradata_uploader_config_rejects_dashes_in_table_name():
+    with pytest.raises(ValueError, match="cannot contain dashes"):
+        TeradataUploaderConfig(table_name="my-table-name")
+
+
+def test_teradata_uploader_config_accepts_underscored_table_name():
+    config = TeradataUploaderConfig(table_name="my_table_name")
+    assert config.table_name == "my_table_name"
+
+
 def test_teradata_stager_config_metadata_as_json_defaults_to_false():
     config = TeradataUploadStagerConfig()
     assert config.metadata_as_json is False
@@ -828,7 +926,7 @@ def test_teradata_stager_config_metadata_as_json_defaults_to_false():
 def test_teradata_stager_conform_dict_json_mode(
     teradata_upload_stager_json: TeradataUploadStager,
 ):
-    """When metadata_as_json=True, conform_dict produces the 6-column JSON blob shape."""
+    """When metadata_as_json=True, conform_dict produces the opinionated column shape."""
     element_dict = {
         "element_id": "abc123",
         "text": "Hello world",
@@ -851,7 +949,9 @@ def test_teradata_stager_conform_dict_json_mode(
         element_dict=element_dict, file_data=file_data
     )
 
-    assert set(result.keys()) == {"id", "record_id", "element_id", "text", "type", "metadata"}
+    assert set(result.keys()) == {
+        "id", "record_id", "element_id", "text", "type", "embeddings", "metadata",
+    }
     assert result["element_id"] == "abc123"
     assert result["text"] == "Hello world"
     assert result["type"] == "NarrativeText"
@@ -884,9 +984,7 @@ def test_teradata_stager_conform_dict_flattened_mode(
         ),
     )
 
-    result = teradata_upload_stager.conform_dict(
-        element_dict=element_dict, file_data=file_data
-    )
+    result = teradata_upload_stager.conform_dict(element_dict=element_dict, file_data=file_data)
 
     assert "filename" in result
     assert "filetype" in result
@@ -992,9 +1090,16 @@ def test_teradata_uploader_create_destination_uses_destination_name_kwarg(
     """create_destination uses destination_name kwarg when table_name is None."""
     mock_cursor.fetchone.side_effect = [("test_db",), None]
 
-    result = teradata_uploader_auto_create.create_destination(
-        destination_name="workflow_123"
-    )
+    result = teradata_uploader_auto_create.create_destination(destination_name="workflow_123")
 
     assert result is True
     assert teradata_uploader_auto_create.upload_config.table_name == "workflow_123"
+
+
+def test_teradata_uploader_create_destination_rejects_dashes_in_destination_name(
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """create_destination raises when destination_name contains dashes."""
+    with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
+        teradata_uploader_auto_create.create_destination(destination_name="my-bad-table")

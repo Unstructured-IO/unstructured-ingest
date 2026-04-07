@@ -105,7 +105,7 @@ octoai = ["openai", "tiktoken"]
 openai = ["openai", "tiktoken"]
 togetherai = ["together"]
 vertexai = ["vertexai"]
-voyageai = ["voyageai", "langchain-core>=0.3.81,<1.0.0"]
+voyageai = ["voyageai", "langchain-core>=1.2.22,<2.0.0"]
 
 # Remote
 remote = ["unstructured-client>=0.30.0"]
