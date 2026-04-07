@@ -258,12 +258,14 @@ class TeradataUploadStager(SQLUploadStager):
             return super().conform_dict(element_dict=element_dict, file_data=file_data)
 
         data = element_dict.copy()
+        embeddings = data.get("embeddings")
         return {
             "id": get_enhanced_element_id(element_dict=data, file_data=file_data),
             RECORD_ID_LABEL: file_data.identifier,
             "element_id": data.get("element_id", ""),
             "text": data.get("text"),
             "type": data.get("type"),
+            "embeddings": ",".join(str(v) for v in embeddings) if embeddings is not None else None,
             "metadata": json.dumps(data.get("metadata", {})),
         }
 
@@ -273,7 +275,16 @@ class TeradataUploadStager(SQLUploadStager):
 
         df = super().conform_dataframe(df)
 
+        # Embeddings must be comma-separated floats for the Teradata VECTOR32 type,
+        # not JSON arrays.  Handle this before the generic list/dict serialiser.
+        if "embeddings" in df.columns:
+            df["embeddings"] = df["embeddings"].apply(
+                lambda x: ",".join(str(v) for v in x) if isinstance(x, list) else x
+            )
+
         for column in df.columns:
+            if column == "embeddings":
+                continue
             sample = df[column].dropna().head(10)
 
             if len(sample) > 0:
@@ -316,8 +327,10 @@ class TeradataUploader(SQLUploader):
         # metadata_as_json=True to match. The UI/caller is responsible for setting both.
         self.create_destination(**kwargs)
 
-    def create_destination(self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any) -> bool:
-        """Create a 6-column opinionated table (id, record_id, element_id, text, type, metadata)
+    def create_destination(
+        self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
+    ) -> bool:
+        """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
