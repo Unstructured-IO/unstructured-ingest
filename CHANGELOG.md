@@ -1,3 +1,9 @@
+## [1.4.21]
+
+### Fixes
+
+- **fix(teradata):** validate destination table schema in precheck and upload — reject tables missing required columns with a clear error message instead of failing silently at runtime
+
 ## [1.4.20]
 
 ### Fixes

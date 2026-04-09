@@ -9,7 +9,6 @@ from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.processes.connectors.sql.teradata import (
     DEFAULT_TABLE_NAME,
-    REQUIRED_DESTINATION_COLUMNS,
     TeradataAccessConfig,
     TeradataConnectionConfig,
     TeradataDownloader,
