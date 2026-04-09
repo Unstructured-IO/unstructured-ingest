@@ -37,6 +37,10 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "teradata"
 DEFAULT_TABLE_NAME = "unstructuredautocreated"
+# Columns that must exist in the destination table for uploads to succeed.
+# record_id is needed for delete-before-upsert; element_id, text, and type
+# carry the core document content.
+REQUIRED_DESTINATION_COLUMNS = {"id", "record_id", "element_id", "text", "type"}
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -378,6 +382,41 @@ class TeradataUploader(SQLUploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(_summarize_error(self.connection_config.host, e))
 
+        if table_name:
+            self._validate_table_schema(table_name)
+
+    def _validate_table_schema(self, table_name: str) -> None:
+        """Check that an existing table has the required columns for uploads."""
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute(
+                    "SELECT 1 FROM DBC.ColumnsV WHERE TableName = ? LIMIT 1",
+                    [table_name],
+                )
+                if not cursor.fetchone():
+                    # Table doesn't exist yet — create_destination will handle it.
+                    return
+
+                cursor.execute(
+                    "SELECT ColumnName FROM DBC.ColumnsV WHERE TableName = ?",
+                    [table_name],
+                )
+                existing = {row[0].strip().lower() for row in cursor.fetchall()}
+        except Exception:
+            # If we can't query DBC metadata, skip validation — the upload
+            # will fail with its own error if the schema is truly wrong.
+            return
+
+        missing = REQUIRED_DESTINATION_COLUMNS - existing
+        if missing:
+            raise DestinationConnectionError(
+                f"Table '{table_name}' is missing required columns: "
+                f"{', '.join(sorted(missing))}. "
+                f"Expected columns: {', '.join(sorted(REQUIRED_DESTINATION_COLUMNS))}. "
+                "Drop the table and let the connector recreate it, or "
+                "add the missing columns."
+            )
+
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
             with self.get_cursor() as cursor:
@@ -412,6 +451,20 @@ class TeradataUploader(SQLUploader):
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
 
+        table_name = self.upload_config.table_name
+
+        # Validate schema before attempting any writes.
+        table_columns_lower = {col.lower() for col in self.get_table_columns()}
+        missing = REQUIRED_DESTINATION_COLUMNS - table_columns_lower
+        if missing:
+            raise DestinationConnectionError(
+                f"Table '{table_name}' is missing required columns: "
+                f"{', '.join(sorted(missing))}. "
+                f"Expected columns: {', '.join(sorted(REQUIRED_DESTINATION_COLUMNS))}. "
+                "Drop the table and let the connector recreate it, or "
+                "add the missing columns."
+            )
+
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
         else:
@@ -429,14 +482,14 @@ class TeradataUploader(SQLUploader):
         quoted_columns = [f'"{col}"' for col in db_columns]
 
         stmt = "INSERT INTO {table_name} ({columns}) VALUES({values})".format(
-            table_name=f'"{self.upload_config.table_name}"',
+            table_name=f'"{table_name}"',
             columns=",".join(quoted_columns),
             values=",".join([self.values_delimiter for _ in columns]),
         )
         logger.info(
             f"writing a total of {len(df)} elements via"
             f" document batches to destination"
-            f" table named {self.upload_config.table_name}"
+            f" table named {table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):

@@ -9,6 +9,7 @@ from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
 from unstructured_ingest.processes.connectors.sql.teradata import (
     DEFAULT_TABLE_NAME,
+    REQUIRED_DESTINATION_COLUMNS,
     TeradataAccessConfig,
     TeradataConnectionConfig,
     TeradataDownloader,
@@ -340,10 +341,11 @@ def test_teradata_uploader_upload_dataframe_quotes_column_names(
             "text": ["text1", "text2"],
             "type": ["Title", "NarrativeText"],
             "record_id": ["file1", "file1"],
+            "element_id": ["e1", "e2"],
         }
     )
 
-    teradata_uploader._columns = ["id", "text", "type", "record_id"]
+    teradata_uploader._columns = ["id", "text", "type", "record_id", "element_id"]
     mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
     mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
 
@@ -529,11 +531,16 @@ def test_teradata_uploader_precheck_success(
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Test that uploader precheck only validates connection, not table existence."""
+    """Test that uploader precheck validates connection and schema."""
+    # Table exists with all required columns
+    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchall.return_value = [
+        (col,) for col in ["id", "record_id", "element_id", "text", "type", "metadata"]
+    ]
     teradata_uploader.precheck()
 
-    assert mock_cursor.execute.call_count == 1
-    assert mock_cursor.execute.call_args[0][0] == "SELECT 1"
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert "SELECT 1" in calls
 
 
 def test_teradata_uploader_precheck_connection_failure(
@@ -552,17 +559,21 @@ def test_teradata_uploader_precheck_connection_failure(
     assert mock_cursor.execute.call_count == 1
 
 
-def test_teradata_uploader_precheck_does_not_check_table(
+def test_teradata_uploader_precheck_skips_schema_check_when_table_missing(
     mock_cursor: MagicMock,
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Precheck never checks table existence; create_destination handles missing tables."""
+    """Precheck skips schema validation when the table doesn't exist yet."""
+    # DBC.ColumnsV returns no rows — table doesn't exist
+    mock_cursor.fetchone.return_value = None
     teradata_uploader.precheck()
 
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
-    assert calls == ["SELECT 1"]
-    assert not any("SELECT TOP" in c for c in calls)
+    assert "SELECT 1" in calls
+    assert any("DBC.ColumnsV" in c for c in calls)
+    # Should not query for column names since table doesn't exist
+    assert not any("SELECT ColumnName" in c for c in calls)
 
 
 def test_teradata_uploader_precheck_rejects_dashes_in_table_name(
@@ -697,10 +708,11 @@ def test_teradata_uploader_upload_dataframe_uses_db_case_in_sql(
             "text": ["text1", "text2"],
             "type": ["Title", "NarrativeText"],
             "record_id": ["file1", "file1"],
+            "element_id": ["e1", "e2"],
         }
     )
 
-    teradata_uploader._columns = ["ID", "TEXT", "TYPE", "RECORD_ID"]
+    teradata_uploader._columns = ["ID", "TEXT", "TYPE", "RECORD_ID", "ELEMENT_ID"]
     mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
     mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
 
@@ -1103,3 +1115,89 @@ def test_teradata_uploader_create_destination_rejects_dashes_in_destination_name
     """create_destination raises when destination_name contains dashes."""
     with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
         teradata_uploader_auto_create.create_destination(destination_name="my-bad-table")
+
+
+def test_teradata_uploader_precheck_rejects_missing_columns(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Precheck raises DestinationConnectionError when table is missing required columns."""
+    # Table exists but only has id and text
+    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchall.return_value = [("id",), ("text",)]
+
+    with pytest.raises(DestinationConnectionError, match="missing required columns"):
+        teradata_uploader.precheck()
+
+
+def test_teradata_uploader_precheck_schema_check_skipped_when_table_name_none(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Precheck skips schema validation when table_name is None (auto-create mode)."""
+    teradata_uploader_auto_create.precheck()
+
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert calls == ["SELECT 1"]
+
+
+def test_teradata_uploader_precheck_schema_check_tolerates_extra_columns(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Precheck passes when table has all required columns plus extras."""
+    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchall.return_value = [
+        (col,)
+        for col in ["id", "record_id", "element_id", "text", "type", "metadata", "custom_col"]
+    ]
+    # Should not raise
+    teradata_uploader.precheck()
+
+
+def test_teradata_uploader_precheck_schema_check_case_insensitive(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Precheck schema validation is case-insensitive (Teradata may store uppercase)."""
+    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchall.return_value = [
+        (col,)
+        for col in ["ID", "RECORD_ID", "ELEMENT_ID", "TEXT", "TYPE", "METADATA"]
+    ]
+    # Should not raise
+    teradata_uploader.precheck()
+
+
+def test_teradata_uploader_upload_dataframe_rejects_missing_columns(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """upload_dataframe raises DestinationConnectionError when table schema is incomplete."""
+    # Table only has id and text columns
+    mock_cursor.description = [("id",), ("text",)]
+    mock_cursor.fetchall.return_value = []
+
+    df = pd.DataFrame(
+        {
+            "id": ["1"],
+            "record_id": ["r1"],
+            "element_id": ["e1"],
+            "text": ["hello"],
+            "type": ["NarrativeText"],
+            "metadata": ["{}"],
+        }
+    )
+    file_data = FileData(
+        identifier="test",
+        connector_type="teradata",
+        source_identifiers=SourceIdentifiers(filename="test.txt", fullpath="test.txt"),
+    )
+
+    with pytest.raises(DestinationConnectionError, match="missing required columns"):
+        teradata_uploader.upload_dataframe(df=df, file_data=file_data)
