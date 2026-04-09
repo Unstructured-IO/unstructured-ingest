@@ -389,17 +389,21 @@ class TeradataUploader(SQLUploader):
         """Check that an existing table has the required columns for uploads."""
         try:
             with self.get_cursor() as cursor:
+                cursor.execute("SELECT DATABASE")
+                current_db = cursor.fetchone()[0].strip()
                 cursor.execute(
-                    "SELECT 1 FROM DBC.ColumnsV WHERE TableName = ? LIMIT 1",
-                    [table_name],
+                    "SELECT TOP 1 1 FROM DBC.ColumnsV "
+                    "WHERE TableName = ? AND DatabaseName = ?",
+                    [table_name, current_db],
                 )
                 if not cursor.fetchone():
                     # Table doesn't exist yet — create_destination will handle it.
                     return
 
                 cursor.execute(
-                    "SELECT ColumnName FROM DBC.ColumnsV WHERE TableName = ?",
-                    [table_name],
+                    "SELECT ColumnName FROM DBC.ColumnsV "
+                    "WHERE TableName = ? AND DatabaseName = ?",
+                    [table_name, current_db],
                 )
                 existing = {row[0].strip().lower() for row in cursor.fetchall()}
         except Exception:

@@ -531,8 +531,11 @@ def test_teradata_uploader_precheck_success(
     mock_get_cursor: MagicMock,
 ):
     """Test that uploader precheck validates connection and schema."""
-    # Table exists with all required columns
-    mock_cursor.fetchone.return_value = (1,)
+    # Table exists with all required columns.
+    # fetchone is called three times:
+    #   1. SELECT DATABASE → ("testdb",)
+    #   2. SELECT TOP 1 1 FROM DBC.ColumnsV … → (1,) (table exists)
+    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
     mock_cursor.fetchall.return_value = [
         (col,) for col in ["id", "record_id", "element_id", "text", "type", "metadata"]
     ]
@@ -540,6 +543,7 @@ def test_teradata_uploader_precheck_success(
 
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
     assert "SELECT 1" in calls
+    assert any("DatabaseName" in c for c in calls)
 
 
 def test_teradata_uploader_precheck_connection_failure(
@@ -564,8 +568,10 @@ def test_teradata_uploader_precheck_skips_schema_check_when_table_missing(
     mock_get_cursor: MagicMock,
 ):
     """Precheck skips schema validation when the table doesn't exist yet."""
-    # DBC.ColumnsV returns no rows — table doesn't exist
-    mock_cursor.fetchone.return_value = None
+    # fetchone calls:
+    #   1. SELECT DATABASE → ("testdb",)
+    #   2. DBC.ColumnsV → None (table doesn't exist)
+    mock_cursor.fetchone.side_effect = [("testdb",), None]
     teradata_uploader.precheck()
 
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
@@ -1123,7 +1129,7 @@ def test_teradata_uploader_precheck_rejects_missing_columns(
 ):
     """Precheck raises DestinationConnectionError when table is missing required columns."""
     # Table exists but only has id and text
-    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
     mock_cursor.fetchall.return_value = [("id",), ("text",)]
 
     with pytest.raises(DestinationConnectionError, match="missing required columns"):
@@ -1148,7 +1154,7 @@ def test_teradata_uploader_precheck_schema_check_tolerates_extra_columns(
     mock_get_cursor: MagicMock,
 ):
     """Precheck passes when table has all required columns plus extras."""
-    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
     mock_cursor.fetchall.return_value = [
         (col,)
         for col in ["id", "record_id", "element_id", "text", "type", "metadata", "custom_col"]
@@ -1163,7 +1169,7 @@ def test_teradata_uploader_precheck_schema_check_case_insensitive(
     mock_get_cursor: MagicMock,
 ):
     """Precheck schema validation is case-insensitive (Teradata may store uppercase)."""
-    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
     mock_cursor.fetchall.return_value = [
         (col,)
         for col in ["ID", "RECORD_ID", "ELEMENT_ID", "TEXT", "TYPE", "METADATA"]
