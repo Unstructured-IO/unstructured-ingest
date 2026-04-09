@@ -532,10 +532,9 @@ def test_teradata_uploader_precheck_success(
 ):
     """Test that uploader precheck validates connection and schema."""
     # Table exists with all required columns.
-    # fetchone is called three times:
-    #   1. SELECT DATABASE → ("testdb",)
-    #   2. SELECT TOP 1 1 FROM DBC.ColumnsV … → (1,) (table exists)
-    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
+    # fetchone: SELECT DATABASE → ("testdb",)
+    # fetchall: SELECT ColumnName FROM DBC.ColumnsV → column rows
+    mock_cursor.fetchone.return_value = ("testdb",)
     mock_cursor.fetchall.return_value = [
         (col,) for col in ["id", "record_id", "element_id", "text", "type", "metadata"]
     ]
@@ -568,17 +567,15 @@ def test_teradata_uploader_precheck_skips_schema_check_when_table_missing(
     mock_get_cursor: MagicMock,
 ):
     """Precheck skips schema validation when the table doesn't exist yet."""
-    # fetchone calls:
-    #   1. SELECT DATABASE → ("testdb",)
-    #   2. DBC.ColumnsV → None (table doesn't exist)
-    mock_cursor.fetchone.side_effect = [("testdb",), None]
+    # fetchone: SELECT DATABASE → ("testdb",)
+    # fetchall: DBC.ColumnsV → [] (table doesn't exist)
+    mock_cursor.fetchone.return_value = ("testdb",)
+    mock_cursor.fetchall.return_value = []
     teradata_uploader.precheck()
 
     calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
     assert "SELECT 1" in calls
     assert any("DBC.ColumnsV" in c for c in calls)
-    # Should not query for column names since table doesn't exist
-    assert not any("SELECT ColumnName" in c for c in calls)
 
 
 def test_teradata_uploader_precheck_rejects_dashes_in_table_name(
@@ -1129,7 +1126,7 @@ def test_teradata_uploader_precheck_rejects_missing_columns(
 ):
     """Precheck raises DestinationConnectionError when table is missing required columns."""
     # Table exists but only has id and text
-    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
+    mock_cursor.fetchone.return_value = ("testdb",)
     mock_cursor.fetchall.return_value = [("id",), ("text",)]
 
     with pytest.raises(DestinationConnectionError, match="missing required columns"):
@@ -1154,7 +1151,7 @@ def test_teradata_uploader_precheck_schema_check_tolerates_extra_columns(
     mock_get_cursor: MagicMock,
 ):
     """Precheck passes when table has all required columns plus extras."""
-    mock_cursor.fetchone.side_effect = [("testdb",), (1,)]
+    mock_cursor.fetchone.return_value = ("testdb",)
     mock_cursor.fetchall.return_value = [
         (col,)
         for col in ["id", "record_id", "element_id", "text", "type", "metadata", "custom_col"]

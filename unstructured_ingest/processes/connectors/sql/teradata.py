@@ -392,20 +392,15 @@ class TeradataUploader(SQLUploader):
                 cursor.execute("SELECT DATABASE")
                 current_db = cursor.fetchone()[0].strip()
                 cursor.execute(
-                    "SELECT TOP 1 1 FROM DBC.ColumnsV "
-                    "WHERE TableName = ? AND DatabaseName = ?",
-                    [table_name, current_db],
-                )
-                if not cursor.fetchone():
-                    # Table doesn't exist yet — create_destination will handle it.
-                    return
-
-                cursor.execute(
                     "SELECT ColumnName FROM DBC.ColumnsV "
                     "WHERE TableName = ? AND DatabaseName = ?",
                     [table_name, current_db],
                 )
-                existing = {row[0].strip().lower() for row in cursor.fetchall()}
+                rows = cursor.fetchall()
+                if not rows:
+                    # Table doesn't exist yet — create_destination will handle it.
+                    return
+                existing = {row[0].strip().lower() for row in rows}
         except Exception:
             # If we can't query DBC metadata, skip validation — the upload
             # will fail with its own error if the schema is truly wrong.
