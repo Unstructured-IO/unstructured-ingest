@@ -451,6 +451,9 @@ class TeradataUploader(SQLUploader):
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
 
+        if not self.upload_config.table_name:
+            self.create_destination()
+
         table_name = self.upload_config.table_name
 
         # Validate schema before attempting any writes.

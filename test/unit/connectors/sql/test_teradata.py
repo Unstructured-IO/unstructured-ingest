@@ -1173,6 +1173,54 @@ def test_teradata_uploader_precheck_schema_check_case_insensitive(
     teradata_uploader.precheck()
 
 
+def test_teradata_uploader_upload_dataframe_auto_creates_table_when_name_is_none(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """upload_dataframe calls create_destination when table_name is None."""
+    assert teradata_uploader_auto_create.upload_config.table_name is None
+
+    # create_destination: SELECT DATABASE, DBC.TablesV check (table missing), CREATE TABLE
+    # get_table_columns: SELECT TOP 1 (returns all required columns)
+    # delete_by_record_id: DELETE
+    # upload: INSERT
+    mock_cursor.fetchone.side_effect = [
+        ("test_db",),  # SELECT DATABASE
+        None,  # DBC.TablesV -> table doesn't exist
+        None,  # delete rowcount
+    ]
+    mock_cursor.description = [
+        ("id",), ("record_id",), ("element_id",),
+        ("text",), ("type",), ("metadata",),
+    ]
+    mock_cursor.rowcount = 0
+
+    df = pd.DataFrame(
+        {
+            "id": ["1"],
+            "record_id": ["r1"],
+            "element_id": ["e1"],
+            "text": ["hello"],
+            "type": ["NarrativeText"],
+            "metadata": ["{}"],
+        }
+    )
+    file_data = FileData(
+        identifier="test",
+        connector_type="teradata",
+        source_identifiers=SourceIdentifiers(filename="test.txt", fullpath="test.txt"),
+    )
+
+    teradata_uploader_auto_create.upload_dataframe(df=df, file_data=file_data)
+
+    assert teradata_uploader_auto_create.upload_config.table_name == DEFAULT_TABLE_NAME
+    calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+    assert any("CREATE MULTISET TABLE" in c for c in calls)
+    insert_calls = [call[0][0] for call in mock_cursor.executemany.call_args_list]
+    assert any("INSERT INTO" in c for c in insert_calls)
+
+
 def test_teradata_uploader_upload_dataframe_rejects_missing_columns(
     mock_cursor: MagicMock,
     teradata_uploader: TeradataUploader,
