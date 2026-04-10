@@ -1,3 +1,9 @@
+## [1.4.21]
+
+### Fixes
+
+- **fix(azure): make anonymous access explicit for public containers** Set `anon=True` when Azure source config omits credentials and `anon=False` when explicit credentials are provided, so public-container access no longer depends on the `adlfs` default that changed in `2026.4.0`.
+
 ## [1.4.20]
 
 ### Fixes

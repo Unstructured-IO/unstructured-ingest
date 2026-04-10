@@ -94,8 +94,9 @@ class AzureConnectionConfig(FsspecConnectionConfig):
     def get_access_config(self) -> dict[str, Any]:
         access_config = self.access_config.get_secret_value()
 
-        # adlfs 2026.4.0 changed anonymous access defaults. Make our intended
-        # behavior explicit instead of relying on the library default.
+        # adlfs 2026.4.0 changed anonymous access defaults:
+        # https://github.com/fsspec/adlfs/releases/tag/2026.4.0
+        # Make our intended behavior explicit instead of relying on the library default.
         has_explicit_credentials = bool(
             access_config.connection_string or access_config.account_key or access_config.sas_token
         )
@@ -103,7 +104,9 @@ class AzureConnectionConfig(FsspecConnectionConfig):
         access_configs: dict[str, Any] = (
             {"anon": False} if has_explicit_credentials else {"anon": True}
         )
-        access_configs.update({k: v for k, v in access_config.model_dump().items() if v is not None})
+        access_configs.update(
+            {k: v for k, v in access_config.model_dump().items() if v is not None}
+        )
         return access_configs
 
     @requires_dependencies(["adlfs", "fsspec"], extras="azure")
