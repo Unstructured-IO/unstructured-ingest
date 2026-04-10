@@ -331,9 +331,7 @@ class TeradataUploader(SQLUploader):
         # metadata_as_json=True to match. The UI/caller is responsible for setting both.
         self.create_destination(**kwargs)
 
-    def create_destination(
-        self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
-    ) -> bool:
+    def create_destination(self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any) -> bool:
         """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
@@ -389,17 +387,19 @@ class TeradataUploader(SQLUploader):
         """Check that an existing table has the required columns for uploads."""
         try:
             with self.get_cursor() as cursor:
+                cursor.execute("SELECT DATABASE")
+                current_db = cursor.fetchone()[0].strip()
                 cursor.execute(
-                    "SELECT 1 FROM DBC.ColumnsV WHERE TableName = ? LIMIT 1",
-                    [table_name],
+                    "SELECT TOP 1 1 FROM DBC.ColumnsV WHERE TableName = ? AND DatabaseName = ?",
+                    [table_name, current_db],
                 )
                 if not cursor.fetchone():
                     # Table doesn't exist yet — create_destination will handle it.
                     return
 
                 cursor.execute(
-                    "SELECT ColumnName FROM DBC.ColumnsV WHERE TableName = ?",
-                    [table_name],
+                    "SELECT ColumnName FROM DBC.ColumnsV WHERE TableName = ? AND DatabaseName = ?",
+                    [table_name, current_db],
                 )
                 existing = {row[0].strip().lower() for row in cursor.fetchall()}
         except Exception:
