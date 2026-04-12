@@ -26,7 +26,8 @@
     "name": "fake-email.txt",
     "webUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/Documents/eml/fake-email.txt",
     "cTag": "\"c:{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
-    "size": 830
+    "size": 830,
+    "isAuthoritative": false
   },
   "reprocess": false,
   "local_download_path": "/tmp/tmppx_cse9y/fake-email.txt",
