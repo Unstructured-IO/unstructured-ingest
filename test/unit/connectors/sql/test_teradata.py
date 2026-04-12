@@ -6,7 +6,11 @@ from pydantic import Secret
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    DestinationSchemaError,
+    SourceConnectionError,
+)
 from unstructured_ingest.processes.connectors.sql.teradata import (
     DEFAULT_TABLE_NAME,
     TeradataAccessConfig,
@@ -1124,12 +1128,12 @@ def test_teradata_uploader_precheck_rejects_missing_columns(
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """Precheck raises DestinationConnectionError when table is missing required columns."""
+    """Precheck raises DestinationSchemaError when table is missing required columns."""
     # Table exists but only has id and text
     mock_cursor.fetchone.return_value = ("testdb",)
     mock_cursor.fetchall.return_value = [("id",), ("text",)]
 
-    with pytest.raises(DestinationConnectionError, match="missing required columns"):
+    with pytest.raises(DestinationSchemaError, match="missing required columns"):
         teradata_uploader.precheck()
 
 
@@ -1180,7 +1184,7 @@ def test_teradata_uploader_upload_dataframe_rejects_missing_columns(
     teradata_uploader: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """upload_dataframe raises DestinationConnectionError when table schema is incomplete."""
+    """upload_dataframe raises DestinationSchemaError when table schema is incomplete."""
     # Table only has id and text columns
     mock_cursor.description = [("id",), ("text",)]
     mock_cursor.fetchall.return_value = []
@@ -1201,5 +1205,5 @@ def test_teradata_uploader_upload_dataframe_rejects_missing_columns(
         source_identifiers=SourceIdentifiers(filename="test.txt", fullpath="test.txt"),
     )
 
-    with pytest.raises(DestinationConnectionError, match="missing required columns"):
+    with pytest.raises(DestinationSchemaError, match="missing required columns"):
         teradata_uploader.upload_dataframe(df=df, file_data=file_data)

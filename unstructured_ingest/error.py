@@ -47,6 +47,11 @@ class DestinationConnectionError(ConnectionError):
     status_code: Optional[int] = 400
 
 
+class DestinationSchemaError(UnstructuredIngestError):
+    error_string = "Destination table schema error: {}"
+    status_code: Optional[int] = 400
+
+
 class EmbeddingEncoderConnectionError(ConnectionError):
     error_string = "Error in connecting to the embedding model provider: {}"
     status_code: Optional[int] = 400
@@ -148,6 +153,7 @@ recognized_errors = [
     SourceConnectionError,
     SourceConnectionNetworkError,
     DestinationConnectionError,
+    DestinationSchemaError,
     EmbeddingEncoderConnectionError,
 ]
 

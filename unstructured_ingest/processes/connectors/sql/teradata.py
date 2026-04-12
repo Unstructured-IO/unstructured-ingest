@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret, field_validator
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    DestinationSchemaError,
+    SourceConnectionError,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -408,7 +412,7 @@ class TeradataUploader(SQLUploader):
 
         missing = REQUIRED_DESTINATION_COLUMNS - existing
         if missing:
-            raise DestinationConnectionError(
+            raise DestinationSchemaError(
                 f"Table '{table_name}' is missing required columns: "
                 f"{', '.join(sorted(missing))}. "
                 f"Expected columns: {', '.join(sorted(REQUIRED_DESTINATION_COLUMNS))}. "
@@ -456,7 +460,7 @@ class TeradataUploader(SQLUploader):
         table_columns_lower = {col.lower() for col in self.get_table_columns()}
         missing = REQUIRED_DESTINATION_COLUMNS - table_columns_lower
         if missing:
-            raise DestinationConnectionError(
+            raise DestinationSchemaError(
                 f"Table '{table_name}' is missing required columns: "
                 f"{', '.join(sorted(missing))}. "
                 f"Expected columns: {', '.join(sorted(REQUIRED_DESTINATION_COLUMNS))}. "
