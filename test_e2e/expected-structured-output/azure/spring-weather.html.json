@@ -129,7 +129,7 @@
     }
   },
   {
-    "type": "UncategorizedText",
+    "type": "NarrativeText",
     "element_id": "37843b26c234a9a15523999fe20c424f",
     "text": "Weather.gov > News Around NOAA > Are You Weather-Ready for the Spring?",
     "metadata": {
@@ -2737,7 +2737,7 @@
     }
   },
   {
-    "type": "UncategorizedText",
+    "type": "NarrativeText",
     "element_id": "32930e044c327b706f9c1fa4482e85c4",
     "text": "Privacy Policy Freedom of Information Act (FOIA) About Us Career Opportunities",
     "metadata": {
