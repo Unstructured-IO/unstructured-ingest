@@ -1149,10 +1149,15 @@ def test_teradata_uploader_create_destination_uses_destination_name_kwarg(
     assert teradata_uploader_auto_create.upload_config.table_name == "workflow_123"
 
 
-def test_teradata_uploader_create_destination_rejects_dashes_in_destination_name(
+def test_teradata_uploader_create_destination_sanitizes_dashes_in_destination_name(
+    mock_cursor: MagicMock,
     teradata_uploader_auto_create: TeradataUploader,
     mock_get_cursor: MagicMock,
 ):
-    """create_destination raises when destination_name contains dashes."""
-    with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
-        teradata_uploader_auto_create.create_destination(destination_name="my-bad-table")
+    """create_destination sanitizes dashes in destination_name by replacing with underscores."""
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+
+    result = teradata_uploader_auto_create.create_destination(destination_name="my-bad-table")
+
+    assert result is True
+    assert teradata_uploader_auto_create.upload_config.table_name == "my_bad_table"

@@ -3,6 +3,7 @@
 ### Fixes
 
 - **fix(fixtures): update SharePoint and Notion integration test fixtures** SharePoint API now returns `isAuthoritative` in `additional_metadata`; Notion page/database HTML content updated to reflect current upstream API output.
+- **fix(teradata): sanitize destination table names** Replace invalid characters (including dashes) with underscores in Teradata table names during `create_destination`, preventing cryptic database errors when embedding model names or workflow IDs are used as table name components.
 
 ## [1.4.22]
 
