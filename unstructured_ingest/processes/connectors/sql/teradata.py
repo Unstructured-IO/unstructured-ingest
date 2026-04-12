@@ -4,7 +4,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Generator, Optional
 
 from pydantic import Field, Secret, field_validator
 
@@ -27,6 +27,7 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
+    _sanitize_table_name,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, split_dataframe
@@ -356,6 +357,7 @@ class TeradataUploader(SQLUploader):
     connection_config: TeradataConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+    sanitize_destination_name: ClassVar[bool] = True
 
     def init(self, **kwargs: Any) -> None:
         # Auto-creation builds the 6-column JSON blob table, so the stager must have
@@ -369,12 +371,8 @@ class TeradataUploader(SQLUploader):
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
-        table_name = self.upload_config.table_name or destination_name
-        if "-" in table_name:
-            raise DestinationConnectionError(
-                f"Teradata table names cannot contain dashes: '{table_name}'. "
-                "Use underscores instead."
-            )
+        raw_name = self.upload_config.table_name or destination_name
+        table_name = _sanitize_table_name(raw_name) if self.sanitize_destination_name else raw_name
         self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
