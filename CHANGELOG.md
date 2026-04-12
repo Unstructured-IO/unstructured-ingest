@@ -1,3 +1,9 @@
+## [1.4.22]
+
+### Security
+
+- **security:** fix(deps): upgrade vulnerable transitive dependencies [security]
+
 ## [1.4.21]
 
 ### Fixes
