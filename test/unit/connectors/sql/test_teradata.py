@@ -19,6 +19,7 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploaderConfig,
     TeradataUploadStager,
     TeradataUploadStagerConfig,
+    _build_proxy_params,
     _resolve_db_column_case,
     _summarize_error,
 )
@@ -407,6 +408,58 @@ def test_summarize_error_context_overrides_regex():
     assert not result.startswith("Failed to connect")
     assert "myhost" in result
     assert "table 'password_reset_log' not found or not accessible" in result
+
+
+def test_build_proxy_params_empty(monkeypatch):
+    """No proxy env vars → empty dict."""
+    for var in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(var, raising=False)
+    assert _build_proxy_params() == {}
+
+
+def test_build_proxy_params_https_only(monkeypatch):
+    """HTTPS_PROXY alone is forwarded as https_proxy."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example.com:8080")
+    for var in ("https_proxy", "HTTP_PROXY", "http_proxy", "NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(var, raising=False)
+    params = _build_proxy_params()
+    assert params["https_proxy"] == "http://proxy.example.com:8080"
+    assert "http_proxy" not in params
+    assert "proxy_bypass_hosts" not in params
+
+
+def test_build_proxy_params_lowercase_wins(monkeypatch):
+    """Lowercase env var is used when uppercase is absent."""
+    monkeypatch.delenv("HTTPS_PROXY", raising=False)
+    monkeypatch.setenv("https_proxy", "http://lower.proxy:9000")
+    for var in ("HTTP_PROXY", "http_proxy", "NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(var, raising=False)
+    params = _build_proxy_params()
+    assert params["https_proxy"] == "http://lower.proxy:9000"
+
+
+def test_build_proxy_params_no_proxy_conversion(monkeypatch):
+    """NO_PROXY is converted: commas→pipes, leading dots→wildcards, CIDRs skipped."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy:912")
+    monkeypatch.setenv(
+        "NO_PROXY",
+        "localhost,127.0.0.1,10.0.0.0/8,.svc,.svc.cluster.local,kubernetes.default",
+    )
+    for var in ("https_proxy", "HTTP_PROXY", "http_proxy", "no_proxy"):
+        monkeypatch.delenv(var, raising=False)
+    params = _build_proxy_params()
+    bypass = params["proxy_bypass_hosts"]
+    assert "localhost" in bypass
+    assert "127.0.0.1" in bypass
+    assert "*.svc" in bypass
+    assert "*.svc.cluster.local" in bypass
+    assert "kubernetes.default" in bypass
+    # CIDR entry must be dropped
+    assert "10.0.0.0/8" not in bypass
+    assert "10.0.0.0" not in bypass
+    # Separator must be pipe
+    assert "|" in bypass
+    assert "," not in bypass
 
 
 def test_teradata_indexer_precheck_success(
