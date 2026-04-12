@@ -364,9 +364,7 @@ class TeradataUploader(SQLUploader):
         # metadata_as_json=True to match. The UI/caller is responsible for setting both.
         self.create_destination(**kwargs)
 
-    def create_destination(
-        self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
-    ) -> bool:
+    def create_destination(self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any) -> bool:
         """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
