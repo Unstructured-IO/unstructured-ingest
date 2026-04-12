@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -69,6 +70,39 @@ def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     return prefix
 
 
+def _build_proxy_params() -> dict:
+    """Read standard proxy env vars and translate to teradatasql connection parameters.
+
+    The teradatasql Go driver does not honour HTTP_PROXY/HTTPS_PROXY automatically;
+    they must be passed explicitly as connection-string parameters.
+    NO_PROXY entries that use CIDR notation are skipped (not supported by the driver).
+    """
+    params: dict = {}
+    https_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    http_proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
+    no_proxy = os.environ.get("NO_PROXY") or os.environ.get("no_proxy")
+
+    if https_proxy:
+        params["https_proxy"] = https_proxy
+    if http_proxy:
+        params["http_proxy"] = http_proxy
+    if no_proxy:
+        # Convert comma-separated NO_PROXY to pipe-separated proxy_bypass_hosts.
+        # Leading dots become wildcard prefixes (.svc → *.svc).
+        # CIDR ranges (10.0.0.0/8) are skipped — not supported by teradatasql.
+        entries = [e.strip() for e in no_proxy.split(",") if e.strip()]
+        converted = []
+        for entry in entries:
+            if "/" in entry:
+                continue
+            if entry.startswith("."):
+                entry = "*" + entry
+            converted.append(entry)
+        if converted:
+            params["proxy_bypass_hosts"] = "|".join(converted)
+    return params
+
+
 def _resolve_db_column_case(
     get_cursor, table_name: str, column_name: str, cache: dict[str, dict[str, str]]
 ) -> str:
@@ -117,6 +151,7 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         }
         if self.database:
             conn_params["database"] = self.database
+        conn_params.update(_build_proxy_params())
 
         connection = connect(**conn_params)
         try:
