@@ -1,3 +1,9 @@
+## [1.4.23b1]
+
+### Fixes
+
+- **fix(fixtures): update SharePoint and Notion integration test fixtures** SharePoint API now returns `isAuthoritative` in `additional_metadata`; Notion page/database HTML content updated to reflect current upstream API output.
+
 ## [1.4.22]
 
 ### Fixes
