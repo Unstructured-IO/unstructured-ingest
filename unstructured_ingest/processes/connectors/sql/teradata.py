@@ -343,11 +343,9 @@ class TeradataUploaderConfig(SQLUploaderConfig):
 
     @field_validator("table_name")
     @classmethod
-    def table_name_must_not_contain_dashes(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and "-" in v:
-            raise ValueError(
-                f"Teradata table names cannot contain dashes: '{v}'. Use underscores instead."
-            )
+    def sanitize_table_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            return _sanitize_table_name(v)
         return v
 
 
@@ -398,12 +396,6 @@ class TeradataUploader(SQLUploader):
         return True
 
     def precheck(self) -> None:
-        table_name = self.upload_config.table_name
-        if table_name and "-" in table_name:
-            raise DestinationConnectionError(
-                f"Teradata table names cannot contain dashes: '{table_name}'. "
-                "Use underscores instead."
-            )
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")

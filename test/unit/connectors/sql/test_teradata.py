@@ -618,17 +618,20 @@ def test_teradata_uploader_precheck_does_not_check_table(
     assert not any("SELECT TOP" in c for c in calls)
 
 
-def test_teradata_uploader_precheck_rejects_dashes_in_table_name(
+def test_teradata_uploader_config_sanitizes_dashes_in_table_name_for_precheck(
     teradata_connection_config: TeradataConnectionConfig,
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
 ):
+    """Dashes are sanitized at config construction time, so precheck succeeds."""
     uploader = TeradataUploader(
         connection_config=teradata_connection_config,
-        upload_config=TeradataUploaderConfig.model_construct(
+        upload_config=TeradataUploaderConfig(
             table_name="my-bad-table", record_id_key="record_id"
         ),
     )
-    with pytest.raises(DestinationConnectionError, match="cannot contain dashes"):
-        uploader.precheck()
+    assert uploader.upload_config.table_name == "my_bad_table"
+    uploader.precheck()  # must not raise
 
 
 def test_resolve_db_column_case_queries_and_caches(
@@ -961,9 +964,9 @@ def test_teradata_uploader_config_table_name_defaults_to_none():
     assert config.table_name is None
 
 
-def test_teradata_uploader_config_rejects_dashes_in_table_name():
-    with pytest.raises(ValueError, match="cannot contain dashes"):
-        TeradataUploaderConfig(table_name="my-table-name")
+def test_teradata_uploader_config_sanitizes_dashes_in_table_name():
+    config = TeradataUploaderConfig(table_name="my-table-name")
+    assert config.table_name == "my_table_name"
 
 
 def test_teradata_uploader_config_accepts_underscored_table_name():
@@ -1150,9 +1153,9 @@ def test_teradata_uploader_create_destination_uses_destination_name_kwarg(
 
 
 def test_teradata_uploader_create_destination_sanitizes_dashes_in_destination_name(
-    mock_cursor: MagicMock,
     teradata_uploader_auto_create: TeradataUploader,
     mock_get_cursor: MagicMock,
+    mock_cursor: MagicMock,
 ):
     """create_destination sanitizes dashes in destination_name by replacing with underscores."""
     mock_cursor.fetchone.side_effect = [("test_db",), None]
