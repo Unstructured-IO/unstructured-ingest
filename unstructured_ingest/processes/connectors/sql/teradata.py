@@ -4,7 +4,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -27,7 +27,6 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploaderConfig,
     SQLUploadStager,
     SQLUploadStagerConfig,
-    _sanitize_table_name,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, split_dataframe
@@ -39,6 +38,14 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "teradata"
 DEFAULT_TABLE_NAME = "unstructuredautocreated"
+
+
+def _sanitize_table_name(name: str) -> str:
+    """Replace characters not in [A-Za-z0-9_] with underscores and ensure no leading digit."""
+    sanitized = re.sub(r"[^A-Za-z0-9_]", "_", name)
+    if sanitized and sanitized[0].isdigit():
+        sanitized = f"_{sanitized}"
+    return sanitized
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -348,7 +355,9 @@ class TeradataUploader(SQLUploader):
     connection_config: TeradataConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
-    sanitize_destination_name: ClassVar[bool] = True
+
+    def format_destination_name(self, destination_name: str) -> str:
+        return _sanitize_table_name(destination_name)
 
     def init(self, **kwargs: Any) -> None:
         # Auto-creation builds the 6-column JSON blob table, so the stager must have
@@ -362,12 +371,9 @@ class TeradataUploader(SQLUploader):
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
-        if self.upload_config.table_name:
-            table_name = self.upload_config.table_name
-        else:
-            raw_name = destination_name
-            table_name = _sanitize_table_name(raw_name) if self.sanitize_destination_name else raw_name
-            self.upload_config.table_name = table_name
+        destination_name = self.format_destination_name(destination_name)
+        table_name = self.upload_config.table_name or destination_name
+        self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
             cursor.execute("SELECT DATABASE")

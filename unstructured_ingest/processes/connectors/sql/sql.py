@@ -1,13 +1,12 @@
 import hashlib
 import json
-import re
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from time import time
-from typing import TYPE_CHECKING, Any, ClassVar, Generator, Union
+from typing import TYPE_CHECKING, Any, Generator, Union
 
 from dateutil import parser
 from pydantic import BaseModel, Field, Secret
@@ -329,20 +328,11 @@ class SQLUploaderConfig(UploaderConfig):
     )
 
 
-def _sanitize_table_name(name: str) -> str:
-    """Replace characters not in [A-Za-z0-9_] with underscores and ensure no leading digit."""
-    sanitized = re.sub(r"[^A-Za-z0-9_]", "_", name)
-    if sanitized and sanitized[0].isdigit():
-        sanitized = f"_{sanitized}"
-    return sanitized
-
-
 @dataclass
 class SQLUploader(Uploader):
     upload_config: SQLUploaderConfig
     connection_config: SQLConnectionConfig
     values_delimiter: str = "?"
-    sanitize_destination_name: ClassVar[bool] = False
     _columns: list[str] = field(init=False, default=None)
 
     def precheck(self) -> None:
