@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generator, Optional
 
-from pydantic import Field, Secret, field_validator
+from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
@@ -341,13 +341,6 @@ class TeradataUploaderConfig(SQLUploaderConfig):
         "auto-created via create_destination().",
     )
 
-    @field_validator("table_name")
-    @classmethod
-    def sanitize_table_name(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            return _sanitize_table_name(v)
-        return v
-
 
 @dataclass
 class TeradataUploader(SQLUploader):
@@ -369,9 +362,12 @@ class TeradataUploader(SQLUploader):
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
-        raw_name = self.upload_config.table_name or destination_name
-        table_name = _sanitize_table_name(raw_name) if self.sanitize_destination_name else raw_name
-        self.upload_config.table_name = table_name
+        if self.upload_config.table_name:
+            table_name = self.upload_config.table_name
+        else:
+            raw_name = destination_name
+            table_name = _sanitize_table_name(raw_name) if self.sanitize_destination_name else raw_name
+            self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
             cursor.execute("SELECT DATABASE")

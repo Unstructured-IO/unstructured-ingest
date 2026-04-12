@@ -618,19 +618,19 @@ def test_teradata_uploader_precheck_does_not_check_table(
     assert not any("SELECT TOP" in c for c in calls)
 
 
-def test_teradata_uploader_config_sanitizes_dashes_in_table_name_for_precheck(
+def test_teradata_uploader_config_preserves_user_table_name_for_precheck(
     teradata_connection_config: TeradataConnectionConfig,
     mock_cursor: MagicMock,
     mock_get_cursor: MagicMock,
 ):
-    """Dashes are sanitized at config construction time, so precheck succeeds."""
+    """User-provided table names are not modified; precheck passes them through as-is."""
     uploader = TeradataUploader(
         connection_config=teradata_connection_config,
         upload_config=TeradataUploaderConfig(
             table_name="my-bad-table", record_id_key="record_id"
         ),
     )
-    assert uploader.upload_config.table_name == "my_bad_table"
+    assert uploader.upload_config.table_name == "my-bad-table"
     uploader.precheck()  # must not raise
 
 
@@ -964,9 +964,9 @@ def test_teradata_uploader_config_table_name_defaults_to_none():
     assert config.table_name is None
 
 
-def test_teradata_uploader_config_sanitizes_dashes_in_table_name():
+def test_teradata_uploader_config_preserves_user_table_name_with_dashes():
     config = TeradataUploaderConfig(table_name="my-table-name")
-    assert config.table_name == "my_table_name"
+    assert config.table_name == "my-table-name"
 
 
 def test_teradata_uploader_config_accepts_underscored_table_name():
@@ -1164,3 +1164,20 @@ def test_teradata_uploader_create_destination_sanitizes_dashes_in_destination_na
 
     assert result is True
     assert teradata_uploader_auto_create.upload_config.table_name == "my_bad_table"
+
+
+def test_teradata_uploader_create_destination_preserves_user_table_name_with_dashes(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """create_destination does not modify a table_name the user explicitly provided."""
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig(table_name="my-table"),
+    )
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+
+    uploader.create_destination()
+
+    assert uploader.upload_config.table_name == "my-table"
