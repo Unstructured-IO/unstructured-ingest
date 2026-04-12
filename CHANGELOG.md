@@ -1,3 +1,9 @@
+## [1.4.22]
+
+### Fixes
+
+- **fix(teradata): honour HTTP_PROXY/HTTPS_PROXY for proxy-restricted environments** The teradatasql Go driver does not automatically read standard proxy environment variables. Added `_build_proxy_params()` which reads `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY` at connection time and forwards them as native teradatasql parameters (`https_proxy`, `http_proxy`, `proxy_bypass_hosts`), enabling Teradata connections in environments that require an egress proxy.
+
 ## [1.4.21]
 
 ### Fixes
