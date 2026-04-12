@@ -1,3 +1,9 @@
+## [1.4.24]
+
+### Enhancements
+
+- **refactor(teradata): use format_destination_name pattern for table name sanitization** Replace the `sanitize_destination_name: ClassVar[bool]` flag on the base `SQLUploader` with an overridable `format_destination_name` method on `TeradataUploader`, matching the convention used by AstraDB, Pinecone, and Weaviate connectors. Sanitization logic is now local to the Teradata connector.
+
 ## [1.4.23]
 
 ### Fixes
