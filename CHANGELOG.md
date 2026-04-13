@@ -1,8 +1,27 @@
-## [1.4.22]
+## [1.4.25]
 
 ### Security
 
 - **security:** fix(deps): upgrade vulnerable transitive dependencies [security]
+
+## [1.4.24]
+
+### Enhancements
+
+- **refactor(teradata): use format_destination_name pattern for table name sanitization** Replace the `sanitize_destination_name: ClassVar[bool]` flag on the base `SQLUploader` with an overridable `format_destination_name` method on `TeradataUploader`, matching the convention used by AstraDB, Pinecone, and Weaviate connectors. Sanitization logic is now local to the Teradata connector.
+
+## [1.4.23]
+
+### Fixes
+
+- **fix(fixtures): update SharePoint and Notion integration test fixtures** SharePoint API now returns `isAuthoritative` in `additional_metadata`; Notion page/database HTML content updated to reflect current upstream API output.
+- **fix(teradata): sanitize destination table names** Replace invalid characters (including dashes) with underscores in Teradata table names during `create_destination`, preventing cryptic database errors when embedding model names or workflow IDs are used as table name components.
+
+## [1.4.22]
+
+### Fixes
+
+- **fix(teradata): honour HTTP_PROXY/HTTPS_PROXY for proxy-restricted environments** The teradatasql Go driver does not automatically read standard proxy environment variables. Added `_build_proxy_params()` which reads `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY` at connection time and forwards them as native teradatasql parameters (`https_proxy`, `http_proxy`, `proxy_bypass_hosts`), enabling Teradata connections in environments that require an egress proxy.
 
 ## [1.4.21]
 

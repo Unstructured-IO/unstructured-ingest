@@ -1,11 +1,12 @@
 import json
+import os
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from pydantic import Field, Secret, field_validator
+from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
@@ -39,6 +40,14 @@ CONNECTOR_TYPE = "teradata"
 DEFAULT_TABLE_NAME = "unstructuredautocreated"
 
 
+def _sanitize_table_name(name: str) -> str:
+    """Replace characters not in [A-Za-z0-9_] with underscores and ensure no leading digit."""
+    sanitized = re.sub(r"[^A-Za-z0-9_]", "_", name)
+    if sanitized and sanitized[0].isdigit():
+        sanitized = f"_{sanitized}"
+    return sanitized
+
+
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     """Distill a verbose Teradata driver exception into a one-line user message.
 
@@ -67,6 +76,39 @@ def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
     if re.search(r"authentication|logon|password|credential", msg, re.IGNORECASE):
         return f"Failed to authenticate with server {host}: invalid credentials"
     return prefix
+
+
+def _build_proxy_params() -> dict:
+    """Read standard proxy env vars and translate to teradatasql connection parameters.
+
+    The teradatasql Go driver does not honour HTTP_PROXY/HTTPS_PROXY automatically;
+    they must be passed explicitly as connection-string parameters.
+    NO_PROXY entries that use CIDR notation are skipped (not supported by the driver).
+    """
+    params: dict = {}
+    https_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    http_proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
+    no_proxy = os.environ.get("NO_PROXY") or os.environ.get("no_proxy")
+
+    if https_proxy:
+        params["https_proxy"] = https_proxy
+    if http_proxy:
+        params["http_proxy"] = http_proxy
+    if no_proxy:
+        # Convert comma-separated NO_PROXY to pipe-separated proxy_bypass_hosts.
+        # Leading dots become wildcard prefixes (.svc → *.svc).
+        # CIDR ranges (10.0.0.0/8) are skipped — not supported by teradatasql.
+        entries = [e.strip() for e in no_proxy.split(",") if e.strip()]
+        converted = []
+        for entry in entries:
+            if "/" in entry:
+                continue
+            if entry.startswith("."):
+                entry = "*" + entry
+            converted.append(entry)
+        if converted:
+            params["proxy_bypass_hosts"] = "|".join(converted)
+    return params
 
 
 def _resolve_db_column_case(
@@ -117,6 +159,7 @@ class TeradataConnectionConfig(SQLConnectionConfig):
         }
         if self.database:
             conn_params["database"] = self.database
+        conn_params.update(_build_proxy_params())
 
         connection = connect(**conn_params)
         try:
@@ -305,15 +348,6 @@ class TeradataUploaderConfig(SQLUploaderConfig):
         "auto-created via create_destination().",
     )
 
-    @field_validator("table_name")
-    @classmethod
-    def table_name_must_not_contain_dashes(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and "-" in v:
-            raise ValueError(
-                f"Teradata table names cannot contain dashes: '{v}'. Use underscores instead."
-            )
-        return v
-
 
 @dataclass
 class TeradataUploader(SQLUploader):
@@ -322,24 +356,21 @@ class TeradataUploader(SQLUploader):
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
 
+    def format_destination_name(self, destination_name: str) -> str:
+        return _sanitize_table_name(destination_name)
+
     def init(self, **kwargs: Any) -> None:
         # Auto-creation builds the 6-column JSON blob table, so the stager must have
         # metadata_as_json=True to match. The UI/caller is responsible for setting both.
         self.create_destination(**kwargs)
 
-    def create_destination(
-        self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any
-    ) -> bool:
+    def create_destination(self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any) -> bool:
         """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
         that stores metadata as a single JSON column instead of flattening into 20+ columns,
         keeping the schema stable as upstream element fields evolve. Requires the stager to
         have metadata_as_json=True so that element metadata is serialized before insert."""
+        destination_name = self.format_destination_name(destination_name)
         table_name = self.upload_config.table_name or destination_name
-        if "-" in table_name:
-            raise DestinationConnectionError(
-                f"Teradata table names cannot contain dashes: '{table_name}'. "
-                "Use underscores instead."
-            )
         self.upload_config.table_name = table_name
 
         with self.get_cursor() as cursor:
@@ -365,12 +396,6 @@ class TeradataUploader(SQLUploader):
         return True
 
     def precheck(self) -> None:
-        table_name = self.upload_config.table_name
-        if table_name and "-" in table_name:
-            raise DestinationConnectionError(
-                f"Teradata table names cannot contain dashes: '{table_name}'. "
-                "Use underscores instead."
-            )
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1")
