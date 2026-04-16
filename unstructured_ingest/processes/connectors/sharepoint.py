@@ -194,16 +194,15 @@ class SharepointIndexer(OnedriveIndexer):
 
     def drive_item_to_file_data_sync(self, drive_item: "DriveItem") -> FileData:
         file_data = super().drive_item_to_file_data_sync(drive_item)
-        if self.index_config.include_permissions:
-            try:
-                permissions = drive_item.permissions.get().execute_query()
-                file_data.metadata.permissions_data = self.extract_permissions(
-                    list(permissions)
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Failed to fetch permissions for {drive_item.name}: {e}"
-                )
+        try:
+            permissions = drive_item.permissions.get().execute_query()
+            file_data.metadata.permissions_data = self.extract_permissions(
+                list(permissions)
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to fetch permissions for {drive_item.name}: {e}"
+            )
         return file_data
 
     @requires_dependencies(["office365"], extras="sharepoint")
