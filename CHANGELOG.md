@@ -1,3 +1,9 @@
+## [1.4.26b1]
+
+### Fixes
+
+- **fix(teradata): fix off-by-one in split_dataframe that sent empty executemany batches** The old `num_chunks = len(df) // chunk_size + 1` formula always appended one extra iteration. When a document produced exactly N * batch_size elements, the last chunk was empty, causing teradatasql to send a zero-row parameterized batch to the server which returned Error 3939 (parameter count mismatch). Replace with `range(0, len(df), chunk_size)` which never produces an empty slice. All SQL-based connectors (Teradata, Snowflake, VastDB, Databricks Delta Tables, KDB.AI) share this function and benefit from the fix.
+
 ## [1.4.25]
 
 ### Security
