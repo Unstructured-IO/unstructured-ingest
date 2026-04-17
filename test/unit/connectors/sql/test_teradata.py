@@ -1181,3 +1181,33 @@ def test_teradata_uploader_create_destination_preserves_user_table_name_with_das
     uploader.create_destination()
 
     assert uploader.upload_config.table_name == "my-table"
+
+
+# --- Regression tests for Error 3939 (parameter count mismatch) ---
+
+
+def test_split_dataframe_no_empty_chunk_when_length_is_multiple_of_chunk_size():
+    """split_dataframe must not yield an empty trailing chunk when len(df) % chunk_size == 0.
+
+    The old formula (num_chunks = len(df)//chunk_size + 1) always appended one
+    extra iteration, producing an empty df slice that caused teradatasql to send
+    a zero-row parameterized batch to the server (Error 3939).
+    """
+    from unstructured_ingest.utils.data_prep import split_dataframe
+
+    df = pd.DataFrame({"a": range(100)})
+    chunks = list(split_dataframe(df, chunk_size=100))
+    assert len(chunks) == 1, "exactly one chunk expected for len==chunk_size"
+    assert len(chunks[0]) == 100
+    assert all(len(c) > 0 for c in chunks), "no empty chunks allowed"
+
+
+def test_split_dataframe_no_empty_chunk_for_exact_multiples():
+    """Verify no empty chunks for several exact multiples of chunk_size."""
+    from unstructured_ingest.utils.data_prep import split_dataframe
+
+    for n in (50, 100, 150, 200):
+        df = pd.DataFrame({"x": range(n)})
+        chunks = list(split_dataframe(df, chunk_size=50))
+        assert all(len(c) > 0 for c in chunks), f"empty chunk for n={n}"
+        assert sum(len(c) for c in chunks) == n
