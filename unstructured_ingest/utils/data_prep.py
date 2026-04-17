@@ -20,9 +20,15 @@ IterableT = Iterable[T]
 
 
 def split_dataframe(df: "DataFrame", chunk_size: int = 100) -> Generator["DataFrame", None, None]:
-    num_chunks = len(df) // chunk_size + 1
-    for i in range(num_chunks):
-        yield df[i * chunk_size : (i + 1) * chunk_size]
+    # range(0, len(df), chunk_size) never produces an out-of-bounds slice, so
+    # every yielded chunk has at least one row. The previous num_chunks+1
+    # formula yielded a spurious empty trailing chunk whenever len(df) was an
+    # exact multiple of chunk_size, which caused teradatasql to send an empty
+    # executemany batch to the server and receive Error 3939.
+    if len(df) == 0:
+        return
+    for i in range(0, len(df), chunk_size):
+        yield df[i : i + chunk_size]
 
 
 def batch_generator(iterable: IterableT, batch_size: int = 100) -> IterableT:
