@@ -43,9 +43,6 @@ def test_quote_identifier_rejects_empty_and_whitespace(bad):
 
 
 def test_quote_identifier_never_uses_single_quotes():
-    # If someone "simplifies" this back to f"'{name}'" the Databricks
-    # parser will reject USE CATALOG 'name-with-dashes' at runtime
-    # (SQLSTATE 42602 / INVALID_IDENTIFIER). This is the original regression.
     out = quote_identifier("utic-dev-tech-fixtures")
     assert not out.startswith("'")
     assert not out.endswith("'")
