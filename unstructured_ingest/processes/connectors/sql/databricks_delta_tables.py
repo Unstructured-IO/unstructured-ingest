@@ -22,6 +22,7 @@ from unstructured_ingest.processes.connectors.sql.sql import (
     SQLUploadStagerConfig,
 )
 from unstructured_ingest.utils.data_prep import split_dataframe
+from unstructured_ingest.utils.databricks import quote_identifier
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -31,14 +32,6 @@ if TYPE_CHECKING:
     from pandas import DataFrame
 
 CONNECTOR_TYPE = "databricks_delta_tables"
-
-
-def _quote_identifier(name: str) -> str:
-    """Wrap ``name`` as a Databricks backtick-quoted identifier so hyphens,
-    reserved words, etc. are legal; embedded backticks are doubled."""
-    if name is None:
-        raise ValueError("identifier is required")
-    return "`" + name.replace("`", "``") + "`"
 
 
 class DatabricksDeltaTablesAccessConfig(SQLAccessConfig):
@@ -145,8 +138,8 @@ class DatabricksDeltaTablesUploader(SQLUploader):
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:
         with self.connection_config.get_cursor() as cursor:
-            cursor.execute(f"USE CATALOG {_quote_identifier(self.upload_config.catalog)}")
-            cursor.execute(f"USE DATABASE {_quote_identifier(self.upload_config.database)}")
+            cursor.execute(f"USE CATALOG {quote_identifier(self.upload_config.catalog)}")
+            cursor.execute(f"USE DATABASE {quote_identifier(self.upload_config.database)}")
             yield cursor
 
     def precheck(self) -> None:
@@ -159,7 +152,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
                         self.upload_config.catalog, ", ".join(catalogs)
                     )
                 )
-            cursor.execute(f"USE CATALOG {_quote_identifier(self.upload_config.catalog)}")
+            cursor.execute(f"USE CATALOG {quote_identifier(self.upload_config.catalog)}")
             cursor.execute("SHOW DATABASES")
             databases = [r[0] for r in cursor.fetchall()]
             if self.upload_config.database not in databases:
@@ -168,7 +161,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
                         self.upload_config.database, ", ".join(databases)
                     )
                 )
-            cursor.execute(f"USE DATABASE {_quote_identifier(self.upload_config.database)}")
+            cursor.execute(f"USE DATABASE {quote_identifier(self.upload_config.database)}")
             cursor.execute("SHOW TABLES")
             table_names = [r[1] for r in cursor.fetchall()]
             if self.upload_config.table_name not in table_names:

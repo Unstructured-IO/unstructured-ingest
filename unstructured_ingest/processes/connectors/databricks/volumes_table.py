@@ -23,10 +23,10 @@ from unstructured_ingest.processes.connectors.databricks.volumes import Databric
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
     DatabricksDeltaTablesConnectionConfig,
     DatabricksDeltaTablesUploadStagerConfig,
-    _quote_identifier,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import get_enhanced_element_id, get_json_data, write_data
+from unstructured_ingest.utils.databricks import quote_identifier
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
 
@@ -111,7 +111,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                         self.upload_config.catalog, ", ".join(catalogs)
                     )
                 )
-            cursor.execute(f"USE CATALOG {_quote_identifier(self.upload_config.catalog)}")
+            cursor.execute(f"USE CATALOG {quote_identifier(self.upload_config.catalog)}")
             cursor.execute("SHOW DATABASES")
             databases = [r[0] for r in cursor.fetchall()]
             if self.upload_config.database not in databases:
@@ -129,8 +129,8 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     @contextmanager
     def get_cursor(self, **connect_kwargs) -> Generator[Any, None, None]:
         with self.connection_config.get_cursor(**connect_kwargs) as cursor:
-            catalog_identifier = _quote_identifier(self.upload_config.catalog)
-            database_identifier = _quote_identifier(self.upload_config.database)
+            catalog_identifier = quote_identifier(self.upload_config.catalog)
+            database_identifier = quote_identifier(self.upload_config.database)
             logger.debug(f"executing: USE CATALOG {catalog_identifier}")
             cursor.execute(f"USE CATALOG {catalog_identifier}")
             logger.debug(f"executing: USE DATABASE {database_identifier}")
