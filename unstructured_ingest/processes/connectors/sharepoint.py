@@ -195,13 +195,21 @@ class SharepointIndexer(OnedriveIndexer):
     def drive_item_to_file_data_sync(self, drive_item: "DriveItem") -> FileData:
         file_data = super().drive_item_to_file_data_sync(drive_item)
         try:
+            logger.info(f"Fetching permissions for {drive_item.name}")
             permissions = drive_item.permissions.get().execute_query()
+            logger.info(
+                f"Got {len(list(permissions))} permissions for {drive_item.name}"
+            )
             file_data.metadata.permissions_data = self.extract_permissions(
                 list(permissions)
             )
+            logger.info(
+                f"permissions_data set: {file_data.metadata.permissions_data}"
+            )
         except Exception as e:
-            logger.warning(
-                f"Failed to fetch permissions for {drive_item.name}: {e}"
+            logger.error(
+                f"Failed to fetch permissions for {drive_item.name}: {e}",
+                exc_info=True,
             )
         return file_data
 
