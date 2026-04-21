@@ -1,9 +1,4 @@
-"""Unit tests for databricks quote_identifier helper.
-
-Pure-function tests: no Databricks client, no network, no mocks.
-See CHANGELOG 1.4.28 for the regression these guard against
-(USE CATALOG rejecting single-quoted string literals on DBSQL warehouses).
-"""
+"""Unit tests for databricks quote_identifier helper."""
 
 import pytest
 
