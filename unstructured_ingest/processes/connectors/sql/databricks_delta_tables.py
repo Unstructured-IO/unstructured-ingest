@@ -33,6 +33,12 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "databricks_delta_tables"
 
 
+def _quote_identifier(name: str) -> str:
+    if name is None:
+        raise ValueError("identifier is required")
+    return "`" + name.replace("`", "``") + "`"
+
+
 class DatabricksDeltaTablesAccessConfig(SQLAccessConfig):
     token: Optional[str] = Field(default=None, description="Databricks Personal Access Token")
     client_id: Optional[str] = Field(default=None, description="Client ID of the OAuth app.")
@@ -137,7 +143,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:
         with self.connection_config.get_cursor() as cursor:
-            cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
+            cursor.execute(f"USE CATALOG {_quote_identifier(self.upload_config.catalog)}")
             yield cursor
 
     def precheck(self) -> None:
@@ -150,7 +156,7 @@ class DatabricksDeltaTablesUploader(SQLUploader):
                         self.upload_config.catalog, ", ".join(catalogs)
                     )
                 )
-            cursor.execute(f"USE CATALOG '{self.upload_config.catalog}'")
+            cursor.execute(f"USE CATALOG {_quote_identifier(self.upload_config.catalog)}")
             cursor.execute("SHOW DATABASES")
             databases = [r[0] for r in cursor.fetchall()]
             if self.upload_config.database not in databases:
