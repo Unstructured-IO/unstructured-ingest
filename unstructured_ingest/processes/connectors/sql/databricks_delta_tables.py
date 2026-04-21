@@ -34,6 +34,8 @@ CONNECTOR_TYPE = "databricks_delta_tables"
 
 
 def _quote_identifier(name: str) -> str:
+    """Wrap ``name`` as a Databricks backtick-quoted identifier so hyphens,
+    reserved words, etc. are legal; embedded backticks are doubled."""
     if name is None:
         raise ValueError("identifier is required")
     return "`" + name.replace("`", "``") + "`"
