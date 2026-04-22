@@ -1,3 +1,9 @@
+## [1.4.29]
+
+### Chores
+
+- **chore(tests): temporarily skip Confluence integration test pending account reactivation.**
+
 ## [1.4.28]
 
 ### Fixes
