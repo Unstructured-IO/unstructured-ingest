@@ -1,3 +1,9 @@
+## [1.4.28]
+
+### Fixes
+
+- **fix(databricks): backtick-quote catalog and database in `USE CATALOG` / `USE DATABASE`** Fixes `SQLSTATE 42602 / INVALID_IDENTIFIER` for names with hyphens or other non-word characters.
+
 ## [1.4.27]
 
 ### Fixes
