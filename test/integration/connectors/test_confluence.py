@@ -19,6 +19,10 @@ from unstructured_ingest.processes.connectors.confluence import (
 )
 
 
+@pytest.mark.skip(
+    reason="Temporarily disabled: Confluence test account is inactive. "
+    "Re-enable once credentials are restored."
+)
 @pytest.mark.asyncio
 @pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, UNCATEGORIZED_TAG)
 @requires_env("CONFLUENCE_USER_EMAIL", "CONFLUENCE_API_TOKEN")
