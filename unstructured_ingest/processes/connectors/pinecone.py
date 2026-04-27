@@ -108,6 +108,14 @@ class PineconeUploadStagerConfig(UploadStagerConfig):
             "Pinecone."
         ),
     )
+    additional_metadata_fields: list[str] = Field(
+        default=[],
+        description=(
+            "Additional metadata fields to include beyond the default allowed list. "
+            "Useful for custom enricher-generated keys. "
+            "List values are preserved as-is for native Pinecone $in filtering."
+        ),
+    )
 
 
 class PineconeUploaderConfig(UploaderConfig):
@@ -140,12 +148,15 @@ class PineconeUploadStager(UploadStager):
         data_source = metadata.pop("data_source", {})
         coordinates = metadata.pop("coordinates", {})
         pinecone_metadata = {}
+        allowed = set(self.upload_stager_config.metadata_fields) | set(
+            self.upload_stager_config.additional_metadata_fields
+        )
         for possible_meta in [element_dict, metadata, data_source, coordinates]:
             pinecone_metadata.update(
                 {
                     k: v
                     for k, v in possible_meta.items()
-                    if k in self.upload_stager_config.metadata_fields
+                    if k in allowed
                 }
             )
 
@@ -154,10 +165,16 @@ class PineconeUploadStager(UploadStager):
             separator="-",
             flatten_lists=True,
             remove_none=True,
+            keys_to_omit=list(self.upload_stager_config.additional_metadata_fields),
         )
         metadata_size_bytes = len(json.dumps(metadata).encode())
+        if metadata_size_bytes > MAX_METADATA_BYTES * 0.75:
+            logger.warning(
+                f"Metadata size is {metadata_size_bytes} bytes, approaching the "
+                f"{MAX_METADATA_BYTES} byte limit per vector."
+            )
         if metadata_size_bytes > MAX_METADATA_BYTES:
-            logger.info(
+            logger.error(
                 f"Metadata size is {metadata_size_bytes} bytes, which exceeds the limit of"
                 f" {MAX_METADATA_BYTES} bytes per vector. Dropping the metadata."
             )
