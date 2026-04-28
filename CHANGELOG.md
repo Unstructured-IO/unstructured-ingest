@@ -1,3 +1,9 @@
+## [1.4.30]
+
+### Enhancements
+
+- **feat(sharepoint): pass through ACL permission metadata.** Extract SharePoint permission data from the Graph API and normalize to the standard read/update/delete schema. Permissions are fetched via Graph JSON batching with per-item fallback on batch failure.
+
 ## [1.4.29]
 
 ### Chores
