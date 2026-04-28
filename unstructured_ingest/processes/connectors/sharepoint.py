@@ -41,11 +41,6 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "sharepoint"
 LEGACY_DEFAULT_PATH = "Shared Documents"
 
-# Compatibility: this connector uses the Microsoft Graph API via the third-party
-# Office365-REST-Python-Client library. It requires SharePoint Online (Microsoft 365)
-# with Azure AD OAuth. SharePoint Server on-premises (2016/2019/SE) and SharePoint
-# hosted on AWS/bare-metal are not supported because they do not expose the Graph API.
-#
 # The Graph API does not support $expand=permissions on DriveItem collection
 # endpoints, so permissions must be fetched separately. We use the library's
 # JSON batch support (POST /$batch) to fetch up to 20 permission sets per
