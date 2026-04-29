@@ -185,7 +185,7 @@ class SharepointIndexer(OnedriveIndexer):
         }
 
         for perm in permissions:
-            raw_props = perm.properties
+            raw_props = perm.to_json()
             roles = raw_props.get("roles", [])
 
             operations: set[str] = set()
@@ -212,6 +212,17 @@ class SharepointIndexer(OnedriveIndexer):
         logger.debug(f"normalized permissions generated: {result}")
         return [{k: v} for k, v in result.items()]
 
+    @staticmethod
+    def _pin_permissions(drive_item: DriveItem) -> Any:
+        """Pin the permissions collection into properties so it survives across accesses.
+
+        The property getter creates a fresh empty PermissionCollection each time
+        when the key is absent. Pinning ensures batch/query results are retained.
+        """
+        perms = drive_item.permissions
+        drive_item.properties["permissions"] = perms
+        return perms
+
     def _fetch_permissions_batched(
         self,
         client: Any,
@@ -226,7 +237,7 @@ class SharepointIndexer(OnedriveIndexer):
         from office365.runtime.client_request_exception import ClientRequestException
 
         for drive_item in drive_items:
-            drive_item.permissions.get()
+            self._pin_permissions(drive_item).get()
 
         try:
             client.execute_batch(items_per_batch=PERMISSIONS_BATCH_SIZE)
@@ -241,7 +252,7 @@ class SharepointIndexer(OnedriveIndexer):
                 pending_queries.clear()
             for drive_item in drive_items:
                 try:
-                    drive_item.permissions.get().execute_query()
+                    self._pin_permissions(drive_item).get().execute_query()
                 except ClientRequestException as exc:
                     logger.error(
                         f"failed to fetch permissions for {drive_item.name}: {exc}",

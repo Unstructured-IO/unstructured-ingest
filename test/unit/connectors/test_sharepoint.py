@@ -140,7 +140,7 @@ def test_fetch_file_handles_site_not_found_immediately(
 
 def _make_permission(raw_props: dict) -> Mock:
     perm = Mock()
-    perm.properties = raw_props
+    perm.to_json.return_value = raw_props
     return perm
 
 
@@ -428,7 +428,7 @@ class TestDriveItemToFileDataSync:
     def test_permissions_attached_when_pre_hydrated(self):
         indexer = _make_indexer()
         perm = Mock()
-        perm.properties = {
+        perm.to_json.return_value = {
             "roles": ["read"],
             "grantedToV2": {"user": {"id": "user-1"}},
         }
@@ -473,6 +473,7 @@ class TestFetchPermissionsBatched:
         assert client._queries == []
         for item in items:
             assert item.permissions.get.return_value.execute_query.called
+            assert item.properties["permissions"] is item.permissions
 
     def test_fallback_works_without_internal_query_list(self):
         indexer = _make_indexer()
