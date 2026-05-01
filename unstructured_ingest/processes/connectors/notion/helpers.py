@@ -424,10 +424,13 @@ def get_uuid_from_url(path: str) -> Optional[str]:
     return None
 
 
+_NOTION_DOMAINS = ("www.notion.so", "app.notion.com")
+
+
 def is_page_url(client: Client, url: str):
     parsed_url = urlparse(url)
     path = parsed_url.path.split("/")[-1]
-    if parsed_url.netloc != "www.notion.so":
+    if parsed_url.netloc not in _NOTION_DOMAINS:
         return False
     page_uuid = get_uuid_from_url(path=path)
     if not page_uuid:
@@ -439,7 +442,7 @@ def is_page_url(client: Client, url: str):
 def is_database_url(client: Client, url: str):
     parsed_url = urlparse(url)
     path = parsed_url.path.split("/")[-1]
-    if parsed_url.netloc != "www.notion.so":
+    if parsed_url.netloc not in _NOTION_DOMAINS:
         return False
     database_uuid = get_uuid_from_url(path=path)
     if not database_uuid:
