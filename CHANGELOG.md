@@ -1,3 +1,9 @@
+## [1.5.1]
+
+### Fixes
+
+- **fix(notion): accept app.notion.com URLs after Notion domain migration.** `is_page_url()` and `is_database_url()` now accept both `www.notion.so` and `app.notion.com` domains.
+
 ## [1.5.0]
 
 ### Enhancements
