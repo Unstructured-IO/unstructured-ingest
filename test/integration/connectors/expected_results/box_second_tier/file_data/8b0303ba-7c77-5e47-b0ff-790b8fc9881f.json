@@ -1,0 +1,61 @@
+{
+  "identifier": "8b0303ba-7c77-5e47-b0ff-790b8fc9881f",
+  "connector_type": "box",
+  "source_identifiers": {
+    "filename": "catalog.pdf",
+    "fullpath": "/TestACLs-topfolder/TestACLs-secondtier/catalog.pdf",
+    "rel_path": "catalog.pdf"
+  },
+  "metadata": {
+    "url": "box:///TestACLs-topfolder/TestACLs-secondtier/catalog.pdf",
+    "version": "2216144540657",
+    "record_locator": {
+      "protocol": "box",
+      "remote_file_path": "box://TestACLs-topfolder/TestACLs-secondtier",
+      "file_id": "2216144540657"
+    },
+    "date_created": "1777662782.0",
+    "date_modified": "1777662782.0",
+    "date_processed": "1777665707.7073228",
+    "permissions_data": [
+      {
+        "read": {
+          "users": [
+            "50881967280",
+            "50882409531"
+          ],
+          "groups": []
+        }
+      },
+      {
+        "update": {
+          "users": [
+            "50881967280"
+          ],
+          "groups": []
+        }
+      },
+      {
+        "delete": {
+          "users": [
+            "50881967280"
+          ],
+          "groups": []
+        }
+      }
+    ],
+    "filesize_bytes": 296006
+  },
+  "additional_metadata": {
+    "name": "/TestACLs-topfolder/TestACLs-secondtier/catalog.pdf",
+    "size": 296006,
+    "type": "file",
+    "id": "2216144540657",
+    "modified_at": "2026-05-01T12:13:02-07:00",
+    "created_at": "2026-05-01T12:13:02-07:00",
+    "original_file_path": "/TestACLs-topfolder/TestACLs-secondtier/catalog.pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/gf/qwh2bdg93kb9gzxd_xhb49wc0000gn/T/tmpekwnxs4a/unstructured_uvopv4ry/catalog.pdf",
+  "display_name": "/TestACLs-topfolder/TestACLs-secondtier/catalog.pdf"
+}
