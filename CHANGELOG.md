@@ -2,7 +2,7 @@
 
 ### Fixes
 
-- **fix(azure_ai_search): drop unknown fields at every nesting level of the index schema.** The existing "drop unknown fields" filter only inspected top-level keys, so new nested metadata fields from `unstructured` (e.g. `metadata.table_extraction_method`) reached the service and were rejected with HTTP 400. The filter now recursively walks `index.fields` and prunes any sub-field not declared by the destination schema.
+- **fix(azure_ai_search): recursively drop unknown fields against the index schema.** New nested fields from `unstructured` (e.g. `metadata.table_extraction_method`) were reaching the service and causing HTTP 400s; the filter now recurses through `index.fields`.
 
 ## [1.5.0]
 

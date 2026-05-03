@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "azure_ai_search"
 
-# Azure caps complex-type nesting at 10 levels (https://learn.microsoft.com/en-us/azure/search/search-limits-quotas-capacity).
+# Azure caps complex-type nesting at 10 levels
 _MAX_INDEX_FIELD_DEPTH = 10
 
 # Recursive map of the index schema: leaf scalars / primitive collections are ``None``;
