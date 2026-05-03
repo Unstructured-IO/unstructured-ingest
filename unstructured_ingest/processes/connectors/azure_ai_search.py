@@ -1,7 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, TypeAlias
 
 from pydantic import Field, Secret
 
@@ -27,13 +27,16 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.indexes.models import SearchField, SearchIndex
 
 CONNECTOR_TYPE = "azure_ai_search"
 
-# Azure AI Search caps complex-type nesting at 10 levels; recursing past that is
-# pointless because the destination index could not have declared a deeper schema.
-# https://learn.microsoft.com/en-us/azure/search/search-limits-quotas-capacity
+# Azure caps complex-type nesting at 10 levels (https://learn.microsoft.com/en-us/azure/search/search-limits-quotas-capacity).
 _MAX_INDEX_FIELD_DEPTH = 10
+
+# Recursive map of the index schema: leaf scalars / primitive collections are ``None``;
+# complex / collection-of-complex sub-trees are nested ``FieldTree`` dicts.
+FieldTree: TypeAlias = "dict[str, FieldTree | None]"
 
 
 class AzureAISearchAccessConfig(AccessConfig):
@@ -247,23 +250,16 @@ class AzureAISearchUploader(Uploader):
     def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
         return {k: v for k, v in doc.items() if k in index_field_names}
 
-    def get_index_field_tree(self, index) -> dict[str, Any]:
-        """Walk `index.fields` recursively and return a nested name->sub-tree map.
-
-        Each entry maps a field name to either:
-        - ``None`` for primitive / primitive-collection fields (leaves), or
-        - ``dict[str, ...]`` for ComplexType / Collection(ComplexType) fields.
-
-        The returned tree mirrors the destination index schema at every nesting
-        level it declares, so the same set-difference filter that already runs
-        at the top level can run at every level of the schema.
-        """
+    def get_index_field_tree(self, index: "SearchIndex") -> FieldTree:
+        """Build a nested tree mirroring the destination index schema."""
         return self._build_field_tree(index.fields, depth=0)
 
-    def _build_field_tree(self, fields, depth: int) -> dict[str, Any]:
+    def _build_field_tree(
+        self, fields: "list[SearchField] | None", depth: int
+    ) -> FieldTree:
         if depth >= _MAX_INDEX_FIELD_DEPTH:
             return {}
-        tree: dict[str, Any] = {}
+        tree: FieldTree = {}
         for f in fields or []:
             sub_fields = getattr(f, "fields", None)
             if sub_fields:
@@ -272,25 +268,18 @@ class AzureAISearchUploader(Uploader):
                 tree[f.name] = None
         return tree
 
-    def filter_doc_against_tree(self, doc: dict, tree: dict[str, Any]) -> dict:
-        """Recursively drop fields from ``doc`` that aren't declared in ``tree``.
-
-        - At each dict level, drop keys whose name isn't in the corresponding tree level.
-        - When a known key has a sub-tree (complex type), recurse into the value.
-        - When a known key holds a list of dicts and the schema is a complex collection,
-          recurse into each element.
-        - Leaves (sub-tree is ``None``) pass through unchanged. A leaf value that
-          happens to be a dict (e.g. a stager-stringified blob mapped to ``Edm.String``)
-          is preserved as-is; the SDK will surface any genuine type mismatch.
-        """
-        if not isinstance(doc, dict):
-            return doc
+    def filter_doc_against_tree(
+        self, doc: dict[str, Any], tree: FieldTree
+    ) -> dict[str, Any]:
+        """Drop any field in ``doc`` not declared in ``tree``, recursing into complex types."""
         out: dict[str, Any] = {}
         for key, value in doc.items():
             if key not in tree:
                 continue
             sub_tree = tree[key]
             if sub_tree is None:
+                # Leaf: pass value through; a dict mapped to Edm.String stays as-is and
+                # the SDK surfaces any genuine type mismatch.
                 out[key] = value
             elif isinstance(value, dict):
                 out[key] = self.filter_doc_against_tree(value, sub_tree)
@@ -306,16 +295,10 @@ class AzureAISearchUploader(Uploader):
         return out
 
     def collect_dropped_paths(
-        self, doc: dict, tree: dict[str, Any], prefix: str = ""
+        self, doc: dict[str, Any], tree: FieldTree, prefix: str = ""
     ) -> list[str]:
-        """Return a sorted list of dotted-path keys in ``doc`` that aren't in ``tree``.
-
-        Used to build the same ``"Following fields will be dropped..."`` INFO log
-        the connector has always emitted, just with full dotted paths so nested
-        drops are visible (e.g. ``metadata.table_extraction_method``).
-        """
-        if not isinstance(doc, dict):
-            return []
+        """Return sorted dotted paths in ``doc`` not declared in ``tree``
+        (e.g. ``metadata.table_extraction_method``)."""
         dropped: list[str] = []
         for key, value in doc.items():
             path = f"{prefix}.{key}" if prefix else key

@@ -12,10 +12,8 @@ from unstructured_ingest.processes.connectors.azure_ai_search import (
 
 
 def make_field(name: str, *, sub_fields=None, key: bool = False, filterable: bool = False):
-    """Build a mock SearchField. ``sub_fields`` should be ``None`` for primitive
-    fields (Edm.String, Collection(Edm.String), etc.) and a list of mock fields
-    for ComplexType / Collection(ComplexType) fields.
-    """
+    """Build a mock ``SearchField``; ``sub_fields=None`` for primitives,
+    a list of mock fields for ComplexType."""
     f = MagicMock()
     f.name = name
     f.fields = sub_fields
@@ -35,13 +33,8 @@ def make_index(field_specs: list[tuple[str, bool, bool]]):
 
 
 def make_nested_index(fields_spec):
-    """Build a mock index from a possibly-nested spec.
-
-    ``fields_spec`` is a list of dicts: ``{"name": str, "fields": list | None,
-    "key": bool, "filterable": bool}``. ``fields`` is a child spec list for
-    complex types or ``None`` for primitives. ``key`` and ``filterable`` are
-    optional and default to False.
-    """
+    """Build a mock index from ``[{"name", "fields"?, "key"?, "filterable"?}, ...]``;
+    ``fields`` is a child spec list for complex types or absent/``None`` for primitives."""
 
     def build(spec):
         out = []
@@ -64,12 +57,8 @@ def make_nested_index(fields_spec):
 
 
 def canonical_schema_index():
-    """A mock of the canonical Azure AI Search index schema used by this connector.
-
-    Mirrors the integration-test fixture: top-level (id, record_id, element_id,
-    text, type, metadata, embeddings) with ``metadata`` as a ComplexType whose
-    sub-fields include two further ComplexTypes (``coordinates``, ``data_source``).
-    """
+    """Mock of the canonical Azure AI Search schema used by this connector (mirrors the
+    integration-test fixture, with nested ``metadata.coordinates`` and ``metadata.data_source``)."""
     return make_nested_index(
         [
             {"name": "id", "key": True},
@@ -125,11 +114,6 @@ def make_uploader(**kwargs) -> AzureAISearchUploader:
     )
 
 
-# ---------------------------------------------------------------------------
-# get_index_field_names
-# ---------------------------------------------------------------------------
-
-
 def test_get_index_field_names_returns_set_of_names():
     uploader = make_uploader()
     index = make_index([("id", True, False), ("text", False, False), ("record_id", False, True)])
@@ -140,11 +124,6 @@ def test_get_index_field_names_empty_index():
     uploader = make_uploader()
     index = make_index([])
     assert uploader.get_index_field_names(index) == set()
-
-
-# ---------------------------------------------------------------------------
-# can_delete
-# ---------------------------------------------------------------------------
 
 
 def test_can_delete_true_when_record_id_field_is_filterable():
@@ -165,11 +144,6 @@ def test_can_delete_false_when_record_id_field_missing():
     assert uploader.can_delete(index) is False
 
 
-# ---------------------------------------------------------------------------
-# get_index_key
-# ---------------------------------------------------------------------------
-
-
 def test_get_index_key_returns_key_field_name():
     uploader = make_uploader()
     index = make_index([("id", True, False), ("text", False, False)])
@@ -181,11 +155,6 @@ def test_get_index_key_raises_when_no_key_field():
     index = make_index([("text", False, False)])
     with pytest.raises(IngestValueError):
         uploader.get_index_key(index)
-
-
-# ---------------------------------------------------------------------------
-# filter_doc
-# ---------------------------------------------------------------------------
 
 
 def test_filter_doc_removes_unknown_fields():
@@ -206,11 +175,6 @@ def test_filter_doc_keeps_all_fields_when_all_known():
 def test_filter_doc_empty_doc():
     uploader = make_uploader()
     assert uploader.filter_doc({}, {"id", "text"}) == {}
-
-
-# ---------------------------------------------------------------------------
-# run_data: dropped fields are logged
-# ---------------------------------------------------------------------------
 
 
 def test_run_data_logs_dropped_fields(caplog):
@@ -257,11 +221,6 @@ def test_run_data_no_log_when_no_dropped_fields(caplog):
     assert not any("will be dropped" in record.message for record in caplog.records)
 
 
-# ---------------------------------------------------------------------------
-# get_index_field_tree
-# ---------------------------------------------------------------------------
-
-
 def test_get_index_field_tree_top_level_only_marks_all_leaves():
     uploader = make_uploader()
     index = make_nested_index(
@@ -301,9 +260,8 @@ def test_get_index_field_tree_canonical_schema_mirrors_nesting():
 
 
 def test_get_index_field_tree_collection_of_complex_treated_as_complex():
-    """Collection(ComplexType) fields populate ``.fields`` just like ComplexType,
-    so the tree builder treats them identically (the recursive filter then
-    walks per-item)."""
+    """Collection(ComplexType) populates ``.fields`` like ComplexType;
+    the tree builder treats both identically."""
     uploader = make_uploader()
     index = make_nested_index(
         [
@@ -326,10 +284,8 @@ def test_get_index_field_tree_empty_index():
 
 
 def test_get_index_field_tree_caps_at_max_depth(monkeypatch):
-    """Defensive cap: don't recurse past Azure's 10-level limit. With the cap
-    monkeypatched to 3, four nested complex levels collapse such that the
-    deepest declared sub-tree is clipped to ``{}`` and anything beyond is
-    treated as unknown by the filter."""
+    """Defensive cap: depth ``>= _MAX_INDEX_FIELD_DEPTH`` clips the sub-tree to ``{}``,
+    so anything beyond is treated as unknown by the filter."""
     monkeypatch.setattr(aas_module, "_MAX_INDEX_FIELD_DEPTH", 3)
     uploader = make_uploader()
     index = make_nested_index(
@@ -354,11 +310,6 @@ def test_get_index_field_tree_caps_at_max_depth(monkeypatch):
     assert tree == {"lvl0": {"lvl1": {"lvl2": {}}}}
 
 
-# ---------------------------------------------------------------------------
-# filter_doc_against_tree
-# ---------------------------------------------------------------------------
-
-
 def test_filter_doc_against_tree_no_op_when_doc_matches_schema():
     uploader = make_uploader()
     tree = {"id": None, "text": None, "metadata": {"filename": None, "page_number": None}}
@@ -374,11 +325,8 @@ def test_filter_doc_against_tree_drops_unknown_top_level_key():
 
 
 def test_filter_doc_against_tree_drops_unknown_nested_key_regression_table_extraction_method():
-    """Regression: the bug reported on 2026-05-01. New ``unstructured`` field
-    ``metadata.table_extraction_method`` was being shipped to Azure AI Search
-    even though the index schema doesn't declare it, causing 400 rejections.
-    The recursive filter must drop it before upload.
-    """
+    """Regression (2026-05-01): new ``unstructured`` field ``metadata.table_extraction_method``
+    causes Azure AI Search 400s; the recursive filter must drop it before upload."""
     uploader = make_uploader()
     tree = uploader.get_index_field_tree(canonical_schema_index())
     doc = {
@@ -416,10 +364,8 @@ def test_filter_doc_against_tree_drops_unknown_deeply_nested_key():
 
 
 def test_filter_doc_against_tree_preserves_string_leaves_modeled_as_edm_string():
-    """Sub-trees the stager has json.dumps'd into a string (e.g. record_locator,
-    points) are modeled as Edm.String in the schema, so ``tree[key] is None``.
-    The recursion should pass them through unchanged regardless of value shape.
-    """
+    """Stager-stringified sub-trees (e.g. ``record_locator``, ``points``) are modeled as Edm.String
+    leaves (``tree[key] is None``) and must pass through unchanged."""
     uploader = make_uploader()
     tree = uploader.get_index_field_tree(canonical_schema_index())
     doc = {
@@ -502,19 +448,13 @@ def test_filter_doc_against_tree_empty_doc():
 
 
 def test_filter_doc_against_tree_handles_metadata_modeled_as_edm_string():
-    """Customer schemas that model ``metadata`` as a flat Edm.String column
-    (i.e. JSON blob) end up with ``tree["metadata"] is None``. The recursion
-    must pass the metadata value through verbatim regardless of shape."""
+    """Customer schemas that model ``metadata`` as Edm.String (JSON blob) yield
+    ``tree["metadata"] is None``; the value must pass through verbatim regardless of shape."""
     uploader = make_uploader()
     tree = {"id": None, "metadata": None}
     doc = {"id": "1", "metadata": {"any": "shape", "nested": {"a": 1}}}
     filtered = uploader.filter_doc_against_tree(doc, tree)
     assert filtered == doc
-
-
-# ---------------------------------------------------------------------------
-# collect_dropped_paths
-# ---------------------------------------------------------------------------
 
 
 def test_collect_dropped_paths_empty_when_no_drops():
@@ -551,8 +491,7 @@ def test_collect_dropped_paths_mixes_top_level_and_nested():
 
 
 def test_collect_dropped_paths_dedup_and_sort_across_collection_items():
-    """When the same unknown sub-key appears in multiple list items the path is
-    reported only once, sorted with all other paths."""
+    """Repeated unknown sub-keys across list items are reported once, sorted with the rest."""
     uploader = make_uploader()
     index = make_nested_index(
         [
@@ -574,17 +513,9 @@ def test_collect_dropped_paths_dedup_and_sort_across_collection_items():
     assert uploader.collect_dropped_paths(doc, tree) == ["key_value_pairs.junk"]
 
 
-# ---------------------------------------------------------------------------
-# run_data: end-to-end with a realistic schema
-# ---------------------------------------------------------------------------
-
-
 def test_run_data_strips_nested_unknown_field_before_upload(caplog):
-    """End-to-end: the canonical-schema customer hits ``unstructured``'s new
-    ``metadata.table_extraction_method`` field. ``run_data`` must:
-    - log the dotted path that will be dropped, and
-    - hand ``write_dict`` a doc with that nested key removed.
-    """
+    """End-to-end: ``run_data`` must log the dropped dotted path and hand ``write_dict``
+    a doc with ``metadata.table_extraction_method`` removed."""
     uploader = make_uploader()
     uploader.get_index = MagicMock(return_value=canonical_schema_index())
     uploader.can_delete = MagicMock(return_value=False)
@@ -663,15 +594,9 @@ def test_run_data_no_log_and_passthrough_when_doc_matches_canonical_schema(caplo
     assert list(sent_chunk) == [doc]
 
 
-# ---------------------------------------------------------------------------
-# Backwards compatibility: legacy methods still behave exactly as they did.
-# ---------------------------------------------------------------------------
-
-
 def test_legacy_filter_doc_still_returns_top_level_only_filter():
-    """``filter_doc`` is the old depth-0 filter. It is no longer called from
-    ``run_data`` but must remain available with its original semantics so any
-    existing subclass override or external caller keeps working."""
+    """The legacy depth-0 ``filter_doc`` is no longer called by ``run_data`` but must keep
+    its original semantics for any subclass override or external caller."""
     uploader = make_uploader()
     doc = {"id": "1", "metadata": {"foo": "bar", "table_extraction_method": "tatr"}, "junk": "x"}
     result = uploader.filter_doc(doc, {"id", "metadata"})
