@@ -30,6 +30,11 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "azure_ai_search"
 
+# Azure AI Search caps complex-type nesting at 10 levels; recursing past that is
+# pointless because the destination index could not have declared a deeper schema.
+# https://learn.microsoft.com/en-us/azure/search/search-limits-quotas-capacity
+_MAX_INDEX_FIELD_DEPTH = 10
+
 
 class AzureAISearchAccessConfig(AccessConfig):
     azure_ai_search_key: str = Field(
@@ -242,6 +247,92 @@ class AzureAISearchUploader(Uploader):
     def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
         return {k: v for k, v in doc.items() if k in index_field_names}
 
+    def get_index_field_tree(self, index) -> dict[str, Any]:
+        """Walk `index.fields` recursively and return a nested name->sub-tree map.
+
+        Each entry maps a field name to either:
+        - ``None`` for primitive / primitive-collection fields (leaves), or
+        - ``dict[str, ...]`` for ComplexType / Collection(ComplexType) fields.
+
+        The returned tree mirrors the destination index schema at every nesting
+        level it declares, so the same set-difference filter that already runs
+        at the top level can run at every level of the schema.
+        """
+        return self._build_field_tree(index.fields, depth=0)
+
+    def _build_field_tree(self, fields, depth: int) -> dict[str, Any]:
+        if depth >= _MAX_INDEX_FIELD_DEPTH:
+            return {}
+        tree: dict[str, Any] = {}
+        for f in fields or []:
+            sub_fields = getattr(f, "fields", None)
+            if sub_fields:
+                tree[f.name] = self._build_field_tree(sub_fields, depth + 1)
+            else:
+                tree[f.name] = None
+        return tree
+
+    def filter_doc_against_tree(self, doc: dict, tree: dict[str, Any]) -> dict:
+        """Recursively drop fields from ``doc`` that aren't declared in ``tree``.
+
+        - At each dict level, drop keys whose name isn't in the corresponding tree level.
+        - When a known key has a sub-tree (complex type), recurse into the value.
+        - When a known key holds a list of dicts and the schema is a complex collection,
+          recurse into each element.
+        - Leaves (sub-tree is ``None``) pass through unchanged. A leaf value that
+          happens to be a dict (e.g. a stager-stringified blob mapped to ``Edm.String``)
+          is preserved as-is; the SDK will surface any genuine type mismatch.
+        """
+        if not isinstance(doc, dict):
+            return doc
+        out: dict[str, Any] = {}
+        for key, value in doc.items():
+            if key not in tree:
+                continue
+            sub_tree = tree[key]
+            if sub_tree is None:
+                out[key] = value
+            elif isinstance(value, dict):
+                out[key] = self.filter_doc_against_tree(value, sub_tree)
+            elif isinstance(value, list):
+                out[key] = [
+                    self.filter_doc_against_tree(item, sub_tree)
+                    if isinstance(item, dict)
+                    else item
+                    for item in value
+                ]
+            else:
+                out[key] = value
+        return out
+
+    def collect_dropped_paths(
+        self, doc: dict, tree: dict[str, Any], prefix: str = ""
+    ) -> list[str]:
+        """Return a sorted list of dotted-path keys in ``doc`` that aren't in ``tree``.
+
+        Used to build the same ``"Following fields will be dropped..."`` INFO log
+        the connector has always emitted, just with full dotted paths so nested
+        drops are visible (e.g. ``metadata.table_extraction_method``).
+        """
+        if not isinstance(doc, dict):
+            return []
+        dropped: list[str] = []
+        for key, value in doc.items():
+            path = f"{prefix}.{key}" if prefix else key
+            if key not in tree:
+                dropped.append(path)
+                continue
+            sub_tree = tree[key]
+            if sub_tree is None:
+                continue
+            if isinstance(value, dict):
+                dropped.extend(self.collect_dropped_paths(value, sub_tree, path))
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        dropped.extend(self.collect_dropped_paths(item, sub_tree, path))
+        return sorted(set(dropped))
+
     def precheck(self) -> None:
         try:
             with self.connection_config.get_search_client() as search_client:
@@ -264,14 +355,16 @@ class AzureAISearchUploader(Uploader):
         else:
             logger.warning("criteria for deleting previous content not met, skipping")
 
-        index_field_names = self.get_index_field_names(index)
-        if dropped := (set(data[0].keys()) - index_field_names) if data else set():
-            logger.info(
-                "Following fields will be dropped to match the index schema: "
-                f"{', '.join(sorted(dropped))}"
-            )
+        field_tree = self.get_index_field_tree(index)
+        if data:
+            dropped_paths = self.collect_dropped_paths(data[0], field_tree)
+            if dropped_paths:
+                logger.info(
+                    "Following fields will be dropped to match the index schema: "
+                    f"{', '.join(dropped_paths)}"
+                )
         filtered_data = [
-            self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data
+            self.filter_doc_against_tree(doc=doc, tree=field_tree) for doc in data
         ]
 
         batch_size = self.upload_config.batch_size

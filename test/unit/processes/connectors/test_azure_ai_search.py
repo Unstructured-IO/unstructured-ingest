@@ -4,24 +4,116 @@ from unittest.mock import MagicMock
 import pytest
 
 from unstructured_ingest.error import ValueError as IngestValueError
+from unstructured_ingest.processes.connectors import azure_ai_search as aas_module
 from unstructured_ingest.processes.connectors.azure_ai_search import (
     AzureAISearchUploader,
     AzureAISearchUploaderConfig,
 )
 
 
+def make_field(name: str, *, sub_fields=None, key: bool = False, filterable: bool = False):
+    """Build a mock SearchField. ``sub_fields`` should be ``None`` for primitive
+    fields (Edm.String, Collection(Edm.String), etc.) and a list of mock fields
+    for ComplexType / Collection(ComplexType) fields.
+    """
+    f = MagicMock()
+    f.name = name
+    f.fields = sub_fields
+    f.key = key
+    f.filterable = filterable
+    return f
+
+
 def make_index(field_specs: list[tuple[str, bool, bool]]):
-    """Build a mock index with fields defined by (name, key, filterable) tuples."""
-    fields = []
-    for name, key, filterable in field_specs:
-        f = MagicMock()
-        f.name = name
-        f.key = key
-        f.filterable = filterable
-        fields.append(f)
+    """Build a mock index with top-level-only fields defined by (name, key, filterable)."""
+    fields = [
+        make_field(name, key=key, filterable=filterable) for name, key, filterable in field_specs
+    ]
     index = MagicMock()
     index.fields = fields
     return index
+
+
+def make_nested_index(fields_spec):
+    """Build a mock index from a possibly-nested spec.
+
+    ``fields_spec`` is a list of dicts: ``{"name": str, "fields": list | None,
+    "key": bool, "filterable": bool}``. ``fields`` is a child spec list for
+    complex types or ``None`` for primitives. ``key`` and ``filterable`` are
+    optional and default to False.
+    """
+
+    def build(spec):
+        out = []
+        for entry in spec:
+            sub = entry.get("fields")
+            sub_fields = build(sub) if sub is not None else None
+            out.append(
+                make_field(
+                    entry["name"],
+                    sub_fields=sub_fields,
+                    key=entry.get("key", False),
+                    filterable=entry.get("filterable", False),
+                )
+            )
+        return out
+
+    index = MagicMock()
+    index.fields = build(fields_spec)
+    return index
+
+
+def canonical_schema_index():
+    """A mock of the canonical Azure AI Search index schema used by this connector.
+
+    Mirrors the integration-test fixture: top-level (id, record_id, element_id,
+    text, type, metadata, embeddings) with ``metadata`` as a ComplexType whose
+    sub-fields include two further ComplexTypes (``coordinates``, ``data_source``).
+    """
+    return make_nested_index(
+        [
+            {"name": "id", "key": True},
+            {"name": "record_id", "filterable": True},
+            {"name": "element_id"},
+            {"name": "text"},
+            {"name": "type"},
+            {
+                "name": "metadata",
+                "fields": [
+                    {"name": "filename"},
+                    {"name": "filetype"},
+                    {"name": "last_modified"},
+                    {"name": "languages"},
+                    {"name": "page_number"},
+                    {"name": "links"},
+                    {"name": "regex_metadata"},
+                    {"name": "orig_elements"},
+                    {
+                        "name": "coordinates",
+                        "fields": [
+                            {"name": "system"},
+                            {"name": "layout_width"},
+                            {"name": "layout_height"},
+                            {"name": "points"},
+                        ],
+                    },
+                    {
+                        "name": "data_source",
+                        "fields": [
+                            {"name": "url"},
+                            {"name": "version"},
+                            {"name": "date_created"},
+                            {"name": "date_modified"},
+                            {"name": "date_processed"},
+                            {"name": "permissions_data"},
+                            {"name": "record_locator"},
+                        ],
+                    },
+                ],
+            },
+            {"name": "embeddings"},
+        ]
+    )
 
 
 def make_uploader(**kwargs) -> AzureAISearchUploader:
@@ -163,3 +255,439 @@ def test_run_data_no_log_when_no_dropped_fields(caplog):
         uploader.run_data(data=data, file_data=file_data)
 
     assert not any("will be dropped" in record.message for record in caplog.records)
+
+
+# ---------------------------------------------------------------------------
+# get_index_field_tree
+# ---------------------------------------------------------------------------
+
+
+def test_get_index_field_tree_top_level_only_marks_all_leaves():
+    uploader = make_uploader()
+    index = make_nested_index(
+        [{"name": "id"}, {"name": "text"}, {"name": "record_id"}, {"name": "embeddings"}]
+    )
+    assert uploader.get_index_field_tree(index) == {
+        "id": None,
+        "text": None,
+        "record_id": None,
+        "embeddings": None,
+    }
+
+
+def test_get_index_field_tree_canonical_schema_mirrors_nesting():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+
+    assert set(tree.keys()) == {
+        "id",
+        "record_id",
+        "element_id",
+        "text",
+        "type",
+        "metadata",
+        "embeddings",
+    }
+    assert tree["id"] is None
+    assert tree["embeddings"] is None
+    assert isinstance(tree["metadata"], dict)
+    assert tree["metadata"]["filename"] is None
+    assert tree["metadata"]["languages"] is None
+    assert isinstance(tree["metadata"]["coordinates"], dict)
+    assert tree["metadata"]["coordinates"]["points"] is None
+    assert isinstance(tree["metadata"]["data_source"], dict)
+    assert tree["metadata"]["data_source"]["record_locator"] is None
+    assert tree["metadata"]["data_source"]["url"] is None
+
+
+def test_get_index_field_tree_collection_of_complex_treated_as_complex():
+    """Collection(ComplexType) fields populate ``.fields`` just like ComplexType,
+    so the tree builder treats them identically (the recursive filter then
+    walks per-item)."""
+    uploader = make_uploader()
+    index = make_nested_index(
+        [
+            {"name": "id"},
+            {
+                "name": "key_value_pairs",
+                "fields": [{"name": "key"}, {"name": "value"}, {"name": "confidence"}],
+            },
+        ]
+    )
+    tree = uploader.get_index_field_tree(index)
+    assert tree["id"] is None
+    assert tree["key_value_pairs"] == {"key": None, "value": None, "confidence": None}
+
+
+def test_get_index_field_tree_empty_index():
+    uploader = make_uploader()
+    index = make_nested_index([])
+    assert uploader.get_index_field_tree(index) == {}
+
+
+def test_get_index_field_tree_caps_at_max_depth(monkeypatch):
+    """Defensive cap: don't recurse past Azure's 10-level limit. With the cap
+    monkeypatched to 3, four nested complex levels collapse such that the
+    deepest declared sub-tree is clipped to ``{}`` and anything beyond is
+    treated as unknown by the filter."""
+    monkeypatch.setattr(aas_module, "_MAX_INDEX_FIELD_DEPTH", 3)
+    uploader = make_uploader()
+    index = make_nested_index(
+        [
+            {
+                "name": "lvl0",
+                "fields": [
+                    {
+                        "name": "lvl1",
+                        "fields": [
+                            {
+                                "name": "lvl2",
+                                "fields": [{"name": "lvl3_should_be_clipped"}],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+    )
+    tree = uploader.get_index_field_tree(index)
+    assert tree == {"lvl0": {"lvl1": {"lvl2": {}}}}
+
+
+# ---------------------------------------------------------------------------
+# filter_doc_against_tree
+# ---------------------------------------------------------------------------
+
+
+def test_filter_doc_against_tree_no_op_when_doc_matches_schema():
+    uploader = make_uploader()
+    tree = {"id": None, "text": None, "metadata": {"filename": None, "page_number": None}}
+    doc = {"id": "1", "text": "hello", "metadata": {"filename": "f.pdf", "page_number": "1"}}
+    assert uploader.filter_doc_against_tree(doc, tree) == doc
+
+
+def test_filter_doc_against_tree_drops_unknown_top_level_key():
+    uploader = make_uploader()
+    tree = {"id": None, "text": None}
+    doc = {"id": "1", "text": "hello", "extra": "drop me"}
+    assert uploader.filter_doc_against_tree(doc, tree) == {"id": "1", "text": "hello"}
+
+
+def test_filter_doc_against_tree_drops_unknown_nested_key_regression_table_extraction_method():
+    """Regression: the bug reported on 2026-05-01. New ``unstructured`` field
+    ``metadata.table_extraction_method`` was being shipped to Azure AI Search
+    even though the index schema doesn't declare it, causing 400 rejections.
+    The recursive filter must drop it before upload.
+    """
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {
+        "id": "abc",
+        "record_id": "rec-1",
+        "text": "some text",
+        "metadata": {
+            "filename": "doc.pdf",
+            "filetype": "application/pdf",
+            "table_extraction_method": "tatr",
+        },
+    }
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert "table_extraction_method" not in filtered["metadata"]
+    assert filtered["metadata"] == {"filename": "doc.pdf", "filetype": "application/pdf"}
+    assert filtered["id"] == "abc"
+    assert filtered["record_id"] == "rec-1"
+    assert filtered["text"] == "some text"
+
+
+def test_filter_doc_against_tree_drops_unknown_deeply_nested_key():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {
+        "id": "abc",
+        "metadata": {
+            "data_source": {
+                "url": "s3://bucket/x.pdf",
+                "future_undeclared_field": "hello",
+            },
+        },
+    }
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert filtered["metadata"]["data_source"] == {"url": "s3://bucket/x.pdf"}
+
+
+def test_filter_doc_against_tree_preserves_string_leaves_modeled_as_edm_string():
+    """Sub-trees the stager has json.dumps'd into a string (e.g. record_locator,
+    points) are modeled as Edm.String in the schema, so ``tree[key] is None``.
+    The recursion should pass them through unchanged regardless of value shape.
+    """
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {
+        "metadata": {
+            "data_source": {
+                "record_locator": '{"protocol": "s3", "remote_file_path": "s3://x"}',
+                "permissions_data": '[{"permission": "read"}]',
+            },
+            "coordinates": {"points": "[[0, 0], [1, 1]]"},
+            "regex_metadata": '{"foo": "bar"}',
+        }
+    }
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert filtered["metadata"]["data_source"]["record_locator"] == doc["metadata"][
+        "data_source"
+    ]["record_locator"]
+    assert (
+        filtered["metadata"]["data_source"]["permissions_data"]
+        == doc["metadata"]["data_source"]["permissions_data"]
+    )
+    assert filtered["metadata"]["coordinates"]["points"] == doc["metadata"]["coordinates"]["points"]
+    assert filtered["metadata"]["regex_metadata"] == doc["metadata"]["regex_metadata"]
+
+
+def test_filter_doc_against_tree_passes_primitive_collection_through():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {
+        "embeddings": [0.1, 0.2, 0.3],
+        "metadata": {"languages": ["eng", "fra"], "links": ["{...}", "{...}"]},
+    }
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert filtered["embeddings"] == [0.1, 0.2, 0.3]
+    assert filtered["metadata"]["languages"] == ["eng", "fra"]
+    assert filtered["metadata"]["links"] == ["{...}", "{...}"]
+
+
+def test_filter_doc_against_tree_recurses_into_collection_of_complex():
+    uploader = make_uploader()
+    index = make_nested_index(
+        [
+            {"name": "id"},
+            {
+                "name": "key_value_pairs",
+                "fields": [{"name": "key"}, {"name": "value"}, {"name": "confidence"}],
+            },
+        ]
+    )
+    tree = uploader.get_index_field_tree(index)
+    doc = {
+        "id": "1",
+        "key_value_pairs": [
+            {"key": "k1", "value": "v1", "confidence": 0.9, "extra_pair_field": "drop"},
+            {"key": "k2", "value": "v2", "confidence": 0.8},
+        ],
+    }
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert filtered == {
+        "id": "1",
+        "key_value_pairs": [
+            {"key": "k1", "value": "v1", "confidence": 0.9},
+            {"key": "k2", "value": "v2", "confidence": 0.8},
+        ],
+    }
+
+
+def test_filter_doc_against_tree_sparse_doc_no_fabrication():
+    """Missing optional schema keys should not be invented in the output."""
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {"id": "abc", "metadata": {"filename": "f.pdf"}}
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert filtered == {"id": "abc", "metadata": {"filename": "f.pdf"}}
+
+
+def test_filter_doc_against_tree_empty_doc():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    assert uploader.filter_doc_against_tree({}, tree) == {}
+
+
+def test_filter_doc_against_tree_handles_metadata_modeled_as_edm_string():
+    """Customer schemas that model ``metadata`` as a flat Edm.String column
+    (i.e. JSON blob) end up with ``tree["metadata"] is None``. The recursion
+    must pass the metadata value through verbatim regardless of shape."""
+    uploader = make_uploader()
+    tree = {"id": None, "metadata": None}
+    doc = {"id": "1", "metadata": {"any": "shape", "nested": {"a": 1}}}
+    filtered = uploader.filter_doc_against_tree(doc, tree)
+    assert filtered == doc
+
+
+# ---------------------------------------------------------------------------
+# collect_dropped_paths
+# ---------------------------------------------------------------------------
+
+
+def test_collect_dropped_paths_empty_when_no_drops():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {"id": "1", "metadata": {"filename": "f.pdf"}}
+    assert uploader.collect_dropped_paths(doc, tree) == []
+
+
+def test_collect_dropped_paths_reports_dotted_nested_path():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {"id": "1", "metadata": {"filename": "f.pdf", "table_extraction_method": "tatr"}}
+    assert uploader.collect_dropped_paths(doc, tree) == ["metadata.table_extraction_method"]
+
+
+def test_collect_dropped_paths_mixes_top_level_and_nested():
+    uploader = make_uploader()
+    tree = uploader.get_index_field_tree(canonical_schema_index())
+    doc = {
+        "id": "1",
+        "totally_unknown_top": "x",
+        "metadata": {
+            "filename": "f.pdf",
+            "table_extraction_method": "tatr",
+            "data_source": {"url": "s3://x", "future_field": "y"},
+        },
+    }
+    assert uploader.collect_dropped_paths(doc, tree) == [
+        "metadata.data_source.future_field",
+        "metadata.table_extraction_method",
+        "totally_unknown_top",
+    ]
+
+
+def test_collect_dropped_paths_dedup_and_sort_across_collection_items():
+    """When the same unknown sub-key appears in multiple list items the path is
+    reported only once, sorted with all other paths."""
+    uploader = make_uploader()
+    index = make_nested_index(
+        [
+            {"name": "id"},
+            {
+                "name": "key_value_pairs",
+                "fields": [{"name": "key"}, {"name": "value"}],
+            },
+        ]
+    )
+    tree = uploader.get_index_field_tree(index)
+    doc = {
+        "id": "1",
+        "key_value_pairs": [
+            {"key": "k", "value": "v", "junk": 1},
+            {"key": "k2", "value": "v2", "junk": 2},
+        ],
+    }
+    assert uploader.collect_dropped_paths(doc, tree) == ["key_value_pairs.junk"]
+
+
+# ---------------------------------------------------------------------------
+# run_data: end-to-end with a realistic schema
+# ---------------------------------------------------------------------------
+
+
+def test_run_data_strips_nested_unknown_field_before_upload(caplog):
+    """End-to-end: the canonical-schema customer hits ``unstructured``'s new
+    ``metadata.table_extraction_method`` field. ``run_data`` must:
+    - log the dotted path that will be dropped, and
+    - hand ``write_dict`` a doc with that nested key removed.
+    """
+    uploader = make_uploader()
+    uploader.get_index = MagicMock(return_value=canonical_schema_index())
+    uploader.can_delete = MagicMock(return_value=False)
+    uploader.write_dict = MagicMock()
+
+    search_client_ctx = MagicMock()
+    search_client_ctx.__enter__ = MagicMock(return_value=MagicMock())
+    search_client_ctx.__exit__ = MagicMock(return_value=False)
+    uploader.connection_config.get_search_client.return_value = search_client_ctx
+
+    file_data = MagicMock()
+    data = [
+        {
+            "id": "abc",
+            "record_id": "rec-1",
+            "text": "some text",
+            "metadata": {
+                "filename": "doc.pdf",
+                "table_extraction_method": "tatr",
+                "data_source": {"url": "s3://x.pdf"},
+            },
+        }
+    ]
+
+    with caplog.at_level(logging.INFO):
+        uploader.run_data(data=data, file_data=file_data)
+
+    assert any(
+        "metadata.table_extraction_method" in r.message
+        and "will be dropped" in r.message
+        for r in caplog.records
+    ), "expected the dotted path to appear in the dropped-fields INFO log"
+
+    uploader.write_dict.assert_called_once()
+    sent_chunk = uploader.write_dict.call_args.kwargs["elements_dict"]
+    assert len(sent_chunk) == 1
+    sent_doc = sent_chunk[0]
+    assert "table_extraction_method" not in sent_doc["metadata"]
+    assert sent_doc["metadata"] == {
+        "filename": "doc.pdf",
+        "data_source": {"url": "s3://x.pdf"},
+    }
+    assert sent_doc["id"] == "abc"
+
+
+def test_run_data_no_log_and_passthrough_when_doc_matches_canonical_schema(caplog):
+    uploader = make_uploader()
+    uploader.get_index = MagicMock(return_value=canonical_schema_index())
+    uploader.can_delete = MagicMock(return_value=False)
+    uploader.write_dict = MagicMock()
+
+    search_client_ctx = MagicMock()
+    search_client_ctx.__enter__ = MagicMock(return_value=MagicMock())
+    search_client_ctx.__exit__ = MagicMock(return_value=False)
+    uploader.connection_config.get_search_client.return_value = search_client_ctx
+
+    file_data = MagicMock()
+    doc = {
+        "id": "abc",
+        "record_id": "rec-1",
+        "text": "some text",
+        "metadata": {
+            "filename": "doc.pdf",
+            "page_number": "1",
+            "data_source": {"url": "s3://x.pdf", "version": "1"},
+            "coordinates": {"system": "PixelSpace", "points": "[[0,0],[1,1]]"},
+        },
+        "embeddings": [0.1, 0.2],
+    }
+
+    with caplog.at_level(logging.INFO):
+        uploader.run_data(data=[doc], file_data=file_data)
+
+    assert not any("will be dropped" in r.message for r in caplog.records)
+    sent_chunk = uploader.write_dict.call_args.kwargs["elements_dict"]
+    assert list(sent_chunk) == [doc]
+
+
+# ---------------------------------------------------------------------------
+# Backwards compatibility: legacy methods still behave exactly as they did.
+# ---------------------------------------------------------------------------
+
+
+def test_legacy_filter_doc_still_returns_top_level_only_filter():
+    """``filter_doc`` is the old depth-0 filter. It is no longer called from
+    ``run_data`` but must remain available with its original semantics so any
+    existing subclass override or external caller keeps working."""
+    uploader = make_uploader()
+    doc = {"id": "1", "metadata": {"foo": "bar", "table_extraction_method": "tatr"}, "junk": "x"}
+    result = uploader.filter_doc(doc, {"id", "metadata"})
+    assert result == {"id": "1", "metadata": {"foo": "bar", "table_extraction_method": "tatr"}}
+    assert "junk" not in result
+
+
+def test_legacy_get_index_field_names_still_returns_top_level_set():
+    uploader = make_uploader()
+    tree_index = canonical_schema_index()
+    assert uploader.get_index_field_names(tree_index) == {
+        "id",
+        "record_id",
+        "element_id",
+        "text",
+        "type",
+        "metadata",
+        "embeddings",
+    }
