@@ -1,3 +1,9 @@
+## [1.5.1]
+
+### Fixes
+
+- **fix(azure_ai_search): recursively drop unknown fields against the index schema.** New nested fields from `unstructured` (e.g. `metadata.table_extraction_method`) were reaching the service and causing HTTP 400s; the filter now recurses through `index.fields`.
+
 ## [1.5.0]
 
 ### Enhancements
