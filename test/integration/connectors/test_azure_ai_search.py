@@ -30,7 +30,7 @@ from test.integration.connectors.utils.validation.destination import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import WriteError
+from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.processes.connectors.azure_ai_search import (
     CONNECTOR_TYPE,
     RECORD_ID_LABEL,
@@ -301,7 +301,7 @@ async def test_azure_ai_search_destination_rejects_unknown_nested_fields_when_un
     Bypasses ``filter_doc`` by calling ``write_dict`` directly with a document that
     declares ``metadata.table_extraction_method`` — a field not present in the index's
     complex metadata schema. Azure must reject the upload, and the uploader must
-    surface that as ``WriteError`` mentioning the offending property and complex type.
+    surface that error mentioning the offending property and complex type.
 
     If this test starts passing without raising, Azure has loosened its strict-typing
     rules and the recursive filter may no longer be necessary.
@@ -328,7 +328,7 @@ async def test_azure_ai_search_destination_rejects_unknown_nested_fields_when_un
 
     with (
         uploader.connection_config.get_search_client() as search_client,
-        pytest.raises(WriteError) as excinfo,
+        pytest.raises(DestinationConnectionError) as excinfo,
     ):
         uploader.write_dict(elements_dict=[bad_doc], search_client=search_client)
 
