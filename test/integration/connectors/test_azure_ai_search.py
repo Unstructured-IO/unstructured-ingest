@@ -237,6 +237,62 @@ async def test_azure_ai_search_destination(
         validate_count(search_client=search_client, expected_count=expected_count)
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@requires_env("AZURE_SEARCH_API_KEY")
+async def test_azure_ai_search_destination_drops_unknown_nested_fields(
+    upload_file: Path,
+    index: str,
+    tmp_path: Path,
+):
+    """Regression test for the 400 reported on 2026-05-01: the new ``unstructured`` field
+    ``metadata.table_extraction_method`` was rejected by Azure's strict ComplexType validation.
+
+    Stages real elements, injects an unknown nested field and a stray top-level field, and
+    runs the uploader against a real Azure index. The upload succeeding is itself the
+    assertion: without the recursive filter, ``run_data`` would raise on Azure's 400 long
+    before the document-count check; with the filter in place the unknown fields are pruned
+    pre-upload and every staged element is indexed. Round-tripping a doc to assert the
+    injected fields are absent would not add signal — Azure projects responses over the
+    declared schema, so unknown fields are invisible on read regardless of who dropped them.
+    """
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data nested filter",
+    )
+    stager = AzureAISearchUploadStager(upload_stager_config=AzureAISearchUploadStagerConfig())
+
+    uploader = AzureAISearchUploader(
+        connection_config=AzureAISearchConnectionConfig(
+            access_config=AzureAISearchAccessConfig(key=get_api_key()),
+            endpoint=ENDPOINT,
+            index=index,
+        ),
+        upload_config=AzureAISearchUploaderConfig(),
+    )
+    staged_filepath = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+
+    with staged_filepath.open() as f:
+        staged_elements = json.load(f)
+    assert staged_elements, "expected staged elements for the regression test"
+    for element in staged_elements:
+        element.setdefault("metadata", {})["table_extraction_method"] = "auto"
+        element["future_undeclared_top_level_field"] = "drop me"
+
+    uploader.precheck()
+    uploader.run_data(data=staged_elements, file_data=file_data)
+
+    expected_count = len(staged_elements)
+    with uploader.connection_config.get_search_client() as search_client:
+        validate_count(search_client=search_client, expected_count=expected_count)
+
+
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
 @pytest.mark.parametrize("upload_file_str", ["upload_file_ndjson", "upload_file"])
 def test_azure_ai_search_stager(
