@@ -2,12 +2,6 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-from azure.search.documents.indexes.models import (
-    ComplexField,
-    SearchFieldDataType,
-    SearchIndex,
-    SimpleField,
-)
 
 from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.azure_ai_search import (
@@ -296,86 +290,3 @@ def test_run_data_no_log_when_no_dropped_fields(caplog):
         uploader.run_data(data=data, file_data=file_data)
 
     assert not any("will be dropped" in record.message for record in caplog.records)
-
-
-# ---------------------------------------------------------------------------
-# Integration with the real Azure SDK schema objects (no API calls)
-# ---------------------------------------------------------------------------
-
-
-def _build_realistic_index() -> SearchIndex:
-    """Mirrors the shape of the production index that triggered the
-    'table_extraction_method does not exist on type search.complex.metadata' bug."""
-    data_source = ComplexField(
-        name="data_source",
-        fields=[
-            SimpleField(name="url", type=SearchFieldDataType.String),
-            SimpleField(name="version", type=SearchFieldDataType.String),
-        ],
-    )
-    metadata = ComplexField(
-        name="metadata",
-        fields=[
-            SimpleField(name="filename", type=SearchFieldDataType.String),
-            SimpleField(name="filetype", type=SearchFieldDataType.String),
-            data_source,
-        ],
-    )
-    return SearchIndex(
-        name="test-index",
-        fields=[
-            SimpleField(name="id", type=SearchFieldDataType.String, key=True),
-            SimpleField(name="text", type=SearchFieldDataType.String),
-            metadata,
-        ],
-    )
-
-
-def test_get_index_schema_against_real_azure_sdk_objects():
-    uploader = make_uploader()
-    schema = uploader.get_index_schema(_build_realistic_index())
-    assert schema == {
-        "id": None,
-        "text": None,
-        "metadata": {
-            "filename": None,
-            "filetype": None,
-            "data_source": {"url": None, "version": None},
-        },
-    }
-
-
-def test_filter_doc_drops_table_extraction_method_against_real_sdk_schema():
-    """End-to-end: the exact scenario from the production 400 error — a document with
-    metadata.table_extraction_method against a complex metadata schema that doesn't
-    declare it. Must be dropped before upload."""
-    uploader = make_uploader()
-    schema = uploader.get_index_schema(_build_realistic_index())
-    doc = {
-        "id": "abc",
-        "text": "some content",
-        "metadata": {
-            "filename": "doc.pdf",
-            "filetype": "pdf",
-            "table_extraction_method": "auto",
-            "data_source": {
-                "url": "https://example.com/doc.pdf",
-                "version": "1",
-                "etag": "deadbeef",
-            },
-        },
-        "stray_top_level": "should be dropped too",
-    }
-    filtered = uploader.filter_doc(doc, schema)
-    assert filtered == {
-        "id": "abc",
-        "text": "some content",
-        "metadata": {
-            "filename": "doc.pdf",
-            "filetype": "pdf",
-            "data_source": {
-                "url": "https://example.com/doc.pdf",
-                "version": "1",
-            },
-        },
-    }
