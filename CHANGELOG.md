@@ -1,3 +1,9 @@
+## [1.5.1]
+
+### Fixes
+
+- **fix(azure-ai-search): drop unknown nested fields before upload** The uploader's field filter only checked top-level keys, so sub-fields of complex types (e.g. `metadata.table_extraction_method`) reached Azure and triggered `400 The property '...' does not exist on type 'search.complex.metadata' or is not present in the API version '2025-09-01'`. Replaced the flat field-name set with a nested schema dict and made `filter_doc` recurse into complex types and collections of complex objects so unknown sub-fields are stripped before upload.
+
 ## [1.5.0]
 
 ### Enhancements
