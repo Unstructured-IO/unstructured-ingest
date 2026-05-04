@@ -52,6 +52,88 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "box"
 
 
+def _normalize_collaborations(
+    collabs: list[dict], normalized: dict, total: list, max_perms: int
+) -> None:
+    for collab in collabs:
+        if total[0] >= max_perms:
+            break
+        if collab.get("status") != "accepted":
+            continue
+        accessible_by = collab.get("accessible_by") or {}
+        entity_type = accessible_by.get("type")
+        if entity_type not in ("user", "group"):
+            continue
+        if entity_type == "group" and accessible_by.get("group_type") == "all_users_group":
+            continue
+        entity_id = accessible_by.get("id")
+        if not entity_id:
+            continue
+        operations = BOX_ROLE_MAPPING.get(collab.get("role", ""), [])
+        if not operations:
+            continue
+        type_key = entity_type + "s"
+        for op in operations:
+            normalized[op][type_key].add(entity_id)
+        total[0] += 1
+
+
+def _get_collaborations_for_folder(client, folder_id: str, cache: OrderedDict) -> list[dict]:
+    if folder_id in cache:
+        cache.move_to_end(folder_id)
+        logger.debug(f"Retrieved cached collaborations for folder {folder_id}")
+        return cache[folder_id]
+
+    collabs = []
+    try:
+        for collab in client.folder(folder_id).get_collaborations():
+            collabs.append(collab.response_object)
+    except Exception as e:
+        logger.debug(f"Could not retrieve collaborations for folder {folder_id}: {e}")
+
+    if len(cache) >= 5:
+        cache.popitem(last=False)
+    cache[folder_id] = collabs
+    return collabs
+
+
+def _get_permissions_for_file(
+    client, file_id: str, cache: OrderedDict, max_perms: int = 500
+) -> list[dict]:
+    normalized = {
+        "read": {"users": set(), "groups": set()},
+        "update": {"users": set(), "groups": set()},
+        "delete": {"users": set(), "groups": set()},
+    }
+    total = [0]
+
+    try:
+        file_obj = client.file(file_id).get(fields=["path_collection", "has_collaborations"])
+        path_entries = (
+            file_obj.response_object.get("path_collection", {}).get("entries", [])
+        )
+        for folder_entry in path_entries:
+            folder_id = folder_entry.get("id")
+            if folder_id and folder_id != "0":
+                folder_collabs = _get_collaborations_for_folder(client, folder_id, cache)
+                _normalize_collaborations(folder_collabs, normalized, total, max_perms)
+    except Exception as e:
+        logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
+
+    try:
+        file_collabs = [c.response_object for c in client.file(file_id).get_collaborations()]
+        _normalize_collaborations(file_collabs, normalized, total, max_perms)
+    except Exception as e:
+        logger.debug(f"Could not retrieve collaborations for file {file_id}: {e}")
+
+    for role_dict in normalized.values():
+        for key in role_dict:
+            role_dict[key] = sorted(role_dict[key])
+
+    logger.debug(f"normalized permissions generated for file {file_id}: {normalized}")
+    return [{k: v} for k, v in normalized.items()]
+
+
 class BoxIndexerConfig(FsspecIndexerConfig):
     pass
 
@@ -157,6 +239,26 @@ class BoxIndexer(FsspecIndexer):
             filesize_bytes=file_size,
         )
 
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        client = None
+        cache: OrderedDict = OrderedDict()
+        try:
+            client = self.connection_config.get_box_client()
+        except Exception as e:
+            logger.warning(f"Could not initialize Box client for permissions fetching: {e}")
+
+        for file_data in super().run(**kwargs):
+            if client:
+                file_id = (file_data.metadata.record_locator or {}).get("file_id")
+                if file_id:
+                    try:
+                        file_data.metadata.permissions_data = _get_permissions_for_file(
+                            client, file_id, cache
+                        )
+                    except Exception as e:
+                        logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
+            yield file_data
+
 
 class BoxDownloaderConfig(FsspecDownloaderConfig):
     max_num_metadata_permissions: int = Field(
@@ -170,97 +272,43 @@ class BoxDownloader(FsspecDownloader):
     connection_config: BoxConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[BoxDownloaderConfig] = field(default_factory=BoxDownloaderConfig)
-    _folder_collab_cache: dict = field(default_factory=OrderedDict)
-    _folder_collab_cache_max_size: int = 5
 
     def _get_collaborations_for_folder(self, client, folder_id: str) -> list[dict]:
-        if folder_id in self._folder_collab_cache:
-            self._folder_collab_cache.move_to_end(folder_id)
-            logger.debug(f"Retrieved cached collaborations for folder {folder_id}")
-            return self._folder_collab_cache[folder_id]
+        if not hasattr(self, "_folder_collab_cache"):
+            self._folder_collab_cache = OrderedDict()
+        return _get_collaborations_for_folder(client, folder_id, self._folder_collab_cache)
 
-        collabs = []
-        try:
-            for collab in client.folder(folder_id).get_collaborations():
-                collabs.append(collab.response_object)
-        except Exception as e:
-            logger.debug(f"Could not retrieve collaborations for folder {folder_id}: {e}")
-
-        if len(self._folder_collab_cache) >= self._folder_collab_cache_max_size:
-            self._folder_collab_cache.popitem(last=False)
-        self._folder_collab_cache[folder_id] = collabs
-        return collabs
-
-    def _normalize_collaborations(self, collabs: list[dict], normalized: dict, total: list) -> None:
-        max_perms = self.download_config.max_num_metadata_permissions
-        for collab in collabs:
-            if total[0] >= max_perms:
-                break
-            if collab.get("status") != "accepted":
-                continue
-            accessible_by = collab.get("accessible_by") or {}
-            entity_type = accessible_by.get("type")
-            if entity_type not in ("user", "group"):
-                continue
-            if entity_type == "group" and accessible_by.get("group_type") == "all_users_group":
-                continue
-            entity_id = accessible_by.get("id")
-            if not entity_id:
-                continue
-            operations = BOX_ROLE_MAPPING.get(collab.get("role", ""), [])
-            if not operations:
-                continue
-            type_key = entity_type + "s"
-            for op in operations:
-                normalized[op][type_key].add(entity_id)
-            total[0] += 1
+    def _normalize_collaborations(
+        self, collabs: list[dict], normalized: dict, total: list
+    ) -> None:
+        _normalize_collaborations(
+            collabs, normalized, total, self.download_config.max_num_metadata_permissions
+        )
 
     def get_permissions_for_file(self, client, file_id: str) -> list[dict]:
-        normalized = {
-            "read": {"users": set(), "groups": set()},
-            "update": {"users": set(), "groups": set()},
-            "delete": {"users": set(), "groups": set()},
-        }
-        total = [0]  # mutable counter passed into helper
-
-        try:
-            file_obj = client.file(file_id).get(fields=["path_collection", "has_collaborations"])
-            path_entries = (
-                file_obj.response_object.get("path_collection", {}).get("entries", [])
-            )
-            for folder_entry in path_entries:
-                folder_id = folder_entry.get("id")
-                # skip root "All Files" folder — it never has meaningful collaborations
-                if folder_id and folder_id != "0":
-                    folder_collabs = self._get_collaborations_for_folder(client, folder_id)
-                    self._normalize_collaborations(folder_collabs, normalized, total)
-        except Exception as e:
-            logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
-
-        try:
-            file_collabs = [c.response_object for c in client.file(file_id).get_collaborations()]
-            self._normalize_collaborations(file_collabs, normalized, total)
-        except Exception as e:
-            logger.debug(f"Could not retrieve collaborations for file {file_id}: {e}")
-
-        for role_dict in normalized.values():
-            for key in role_dict:
-                role_dict[key] = sorted(role_dict[key])
-
-        logger.debug(f"normalized permissions generated for file {file_id}: {normalized}")
-        return [{k: v} for k, v in normalized.items()]
+        if not hasattr(self, "_folder_collab_cache"):
+            self._folder_collab_cache = OrderedDict()
+        return _get_permissions_for_file(
+            client,
+            file_id,
+            self._folder_collab_cache,
+            self.download_config.max_num_metadata_permissions,
+        )
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         response = super().run(file_data=file_data, **kwargs)
-        file_id = (file_data.metadata.record_locator or {}).get("file_id")
-        if file_id:
-            try:
-                client = self.connection_config.get_box_client()
-                file_data.metadata.permissions_data = self.get_permissions_for_file(
-                    client, file_id
-                )
-            except Exception as e:
-                logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
+        # permissions_data is set during indexing in BoxIndexer.run(); this fallback handles
+        # standalone downloader usage (e.g., CLI, integration tests without the SND plugin layer)
+        if file_data.metadata.permissions_data is None:
+            file_id = (file_data.metadata.record_locator or {}).get("file_id")
+            if file_id:
+                try:
+                    client = self.connection_config.get_box_client()
+                    file_data.metadata.permissions_data = self.get_permissions_for_file(
+                        client, file_id
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
         return response
 
 
