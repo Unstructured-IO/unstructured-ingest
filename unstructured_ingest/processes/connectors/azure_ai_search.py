@@ -236,11 +236,34 @@ class AzureAISearchUploader(Uploader):
             raise ValueError("no key field found in index fields")
         return key_fields[0].name
 
-    def get_index_field_names(self, index) -> set[str]:
-        return {field.name for field in index.fields}
+    def get_index_schema(self, index) -> dict:
+        """Builds a nested schema dict from an Azure index. Simple fields map to ``None``;
+        complex fields map to a dict of their sub-fields."""
 
-    def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
-        return {k: v for k, v in doc.items() if k in index_field_names}
+        def walk(fields):
+            if fields is None:
+                return None
+            return {f.name: walk(getattr(f, "fields", None)) for f in fields}
+
+        return walk(index.fields) or {}
+
+    def filter_doc(self, doc: dict, schema: dict) -> dict:
+        """Recursively drops fields not present in ``schema``. Recurses into dicts and
+        into lists of dicts when the corresponding schema entry is itself a dict."""
+        out: dict = {}
+        for k, v in doc.items():
+            if k not in schema:
+                continue
+            sub = schema[k]
+            if isinstance(sub, dict) and isinstance(v, dict):
+                out[k] = self.filter_doc(v, sub)
+            elif isinstance(sub, dict) and isinstance(v, list):
+                out[k] = [
+                    self.filter_doc(item, sub) if isinstance(item, dict) else item for item in v
+                ]
+            else:
+                out[k] = v
+        return out
 
     def precheck(self) -> None:
         try:
@@ -264,15 +287,13 @@ class AzureAISearchUploader(Uploader):
         else:
             logger.warning("criteria for deleting previous content not met, skipping")
 
-        index_field_names = self.get_index_field_names(index)
-        if dropped := (set(data[0].keys()) - index_field_names) if data else set():
+        schema = self.get_index_schema(index)
+        if dropped := (set(data[0].keys()) - set(schema.keys())) if data else set():
             logger.info(
                 "Following fields will be dropped to match the index schema: "
                 f"{', '.join(sorted(dropped))}"
             )
-        filtered_data = [
-            self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data
-        ]
+        filtered_data = [self.filter_doc(doc=doc, schema=schema) for doc in data]
 
         batch_size = self.upload_config.batch_size
         with self.connection_config.get_search_client() as search_client:
