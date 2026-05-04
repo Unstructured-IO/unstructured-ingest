@@ -30,6 +30,7 @@ from test.integration.connectors.utils.validation.destination import (
 )
 from test.integration.utils import requires_env
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import WriteError
 from unstructured_ingest.processes.connectors.azure_ai_search import (
     CONNECTOR_TYPE,
     RECORD_ID_LABEL,
@@ -235,6 +236,105 @@ async def test_azure_ai_search_destination(
     uploader.run(path=staged_filepath, file_data=file_data)
     with uploader.connection_config.get_search_client() as search_client:
         validate_count(search_client=search_client, expected_count=expected_count)
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@requires_env("AZURE_SEARCH_API_KEY")
+async def test_azure_ai_search_destination_drops_unknown_nested_fields(
+    upload_file: Path,
+    index: str,
+    tmp_path: Path,
+):
+    """Regression test for error:
+    "The property 'table_extraction_method' does not exist on type
+    'search.complex.metadata' or is not present in the API version '2025-09-01'."
+
+    The uploader must drop nested fields not declared in the index's complex schema
+    (and stray top-level fields) before calling Azure, so the upload still succeeds.
+    """
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath=upload_file.name, filename=upload_file.name),
+        connector_type=CONNECTOR_TYPE,
+        identifier="mock file data nested filter",
+    )
+    stager = AzureAISearchUploadStager(upload_stager_config=AzureAISearchUploadStagerConfig())
+
+    uploader = AzureAISearchUploader(
+        connection_config=AzureAISearchConnectionConfig(
+            access_config=AzureAISearchAccessConfig(key=get_api_key()),
+            endpoint=ENDPOINT,
+            index=index,
+        ),
+        upload_config=AzureAISearchUploaderConfig(),
+    )
+    staged_filepath = stager.run(
+        elements_filepath=upload_file,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=upload_file.name,
+    )
+
+    with staged_filepath.open() as f:
+        staged_elements = json.load(f)
+    assert staged_elements, "expected staged elements for the regression test"
+    for element in staged_elements:
+        element.setdefault("metadata", {})["table_extraction_method"] = "auto"
+        element["unsupported_top_level_field"] = "drop me"
+
+    uploader.precheck()
+    uploader.run_data(data=staged_elements, file_data=file_data)
+
+    expected_count = len(staged_elements)
+    with uploader.connection_config.get_search_client() as search_client:
+        validate_count(search_client=search_client, expected_count=expected_count)
+
+
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+@requires_env("AZURE_SEARCH_API_KEY")
+async def test_azure_ai_search_destination_rejects_unknown_nested_fields_when_unfiltered(
+    index: str,
+):
+    """Azure-side contract test: confirms the upstream cause of the production 400.
+
+    Bypasses ``filter_doc`` by calling ``write_dict`` directly with a document that
+    declares ``metadata.table_extraction_method`` — a field not present in the index's
+    complex metadata schema. Azure must reject the upload, and the uploader must
+    surface that as ``WriteError`` mentioning the offending property and complex type.
+
+    If this test starts passing without raising, Azure has loosened its strict-typing
+    rules and the recursive filter may no longer be necessary.
+    """
+    uploader = AzureAISearchUploader(
+        connection_config=AzureAISearchConnectionConfig(
+            access_config=AzureAISearchAccessConfig(key=get_api_key()),
+            endpoint=ENDPOINT,
+            index=index,
+        ),
+        upload_config=AzureAISearchUploaderConfig(),
+    )
+
+    bad_doc = {
+        "id": "expect-rejection-1",
+        RECORD_ID_LABEL: "regression-azure-strict-typing",
+        "text": "should never be indexed",
+        "metadata": {
+            "filename": "doc.pdf",
+            "filetype": "pdf",
+            "table_extraction_method": "auto",
+        },
+    }
+
+    with (
+        uploader.connection_config.get_search_client() as search_client,
+        pytest.raises(WriteError) as excinfo,
+    ):
+        uploader.write_dict(elements_dict=[bad_doc], search_client=search_client)
+
+    error_message = str(excinfo.value)
+    assert "table_extraction_method" in error_message
+    assert "search.complex.metadata" in error_message
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
