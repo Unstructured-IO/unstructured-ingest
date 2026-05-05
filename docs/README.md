@@ -101,7 +101,7 @@ In checklist form, the above steps are summarized as:
 
 The ingest flow is similar to an ETL pipeline that gets defined at runtime based on user input:
 
-![unstructured ingest diagram](assets/pipeline.png)
+![unstructured ingest diagram](pipeline.png)
 
 
 
@@ -117,7 +117,7 @@ The ingest flow is similar to an ETL pipeline that gets defined at runtime based
 
 
 ### Sequence Diagram
-![unstructured ingest sequence diagram](assets/sequence.png)
+![unstructured ingest sequence diagram](sequence.png)
 
 
 ### Parallel Execution

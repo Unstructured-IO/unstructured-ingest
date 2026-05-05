@@ -349,7 +349,7 @@ If you have any questions post in the public Slack channel `ask-for-help-open-so
 
 Yellow (without the Uncompressing) represents the steps in a source connector. Orange represents a destination connector.
 
-![unstructured_ingest diagram](assets/pipeline.png)
+![unstructured_ingest diagram](pipeline.png)
 
 
 

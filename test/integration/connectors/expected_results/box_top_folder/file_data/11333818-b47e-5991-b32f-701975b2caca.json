@@ -1,0 +1,61 @@
+{
+  "identifier": "11333818-b47e-5991-b32f-701975b2caca",
+  "connector_type": "box",
+  "source_identifiers": {
+    "filename": "Billing issue - Example 1.pdf",
+    "fullpath": "/TestACLs-topfolder/Billing issue - Example 1.pdf",
+    "rel_path": "Billing issue - Example 1.pdf"
+  },
+  "metadata": {
+    "url": "box:///TestACLs-topfolder/Billing issue - Example 1.pdf",
+    "version": "2216145342898",
+    "record_locator": {
+      "protocol": "box",
+      "remote_file_path": "box://TestACLs-topfolder",
+      "file_id": "2216145342898"
+    },
+    "date_created": "1777662769.0",
+    "date_modified": "1777662769.0",
+    "date_processed": "1777665696.530676",
+    "permissions_data": [
+      {
+        "read": {
+          "users": [
+            "50881967280",
+            "50882409531"
+          ],
+          "groups": []
+        }
+      },
+      {
+        "update": {
+          "users": [
+            "50881967280"
+          ],
+          "groups": []
+        }
+      },
+      {
+        "delete": {
+          "users": [
+            "50881967280"
+          ],
+          "groups": []
+        }
+      }
+    ],
+    "filesize_bytes": 142776
+  },
+  "additional_metadata": {
+    "name": "/TestACLs-topfolder/Billing issue - Example 1.pdf",
+    "size": 142776,
+    "type": "file",
+    "id": "2216145342898",
+    "modified_at": "2026-05-01T12:12:49-07:00",
+    "created_at": "2026-05-01T12:12:49-07:00",
+    "original_file_path": "/TestACLs-topfolder/Billing issue - Example 1.pdf"
+  },
+  "reprocess": false,
+  "local_download_path": "/private/var/folders/gf/qwh2bdg93kb9gzxd_xhb49wc0000gn/T/tmpqw6nq7zk/unstructured_aqpewcxk/Billing issue - Example 1.pdf",
+  "display_name": "/TestACLs-topfolder/Billing issue - Example 1.pdf"
+}
