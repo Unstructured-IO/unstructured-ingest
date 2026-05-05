@@ -30,6 +30,10 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         default="text-embedding-ada-002", alias="model_name", description="OpenAI model name"
     )
     base_url: Optional[str] = Field(default=None, description="optional override for the base url")
+    default_headers: Optional[dict[str, SecretStr]] = Field(
+        default=None,
+        description="extra HTTP headers attached to every request (e.g. X-API-Key for custom endpoints)",
+    )
 
     @requires_dependencies(["openai"], extras="openai")
     def wrap_error(self, e: Exception) -> Exception:
@@ -90,18 +94,32 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         from openai import DefaultHttpxClient, OpenAI
 
         client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
-        return OpenAI(
-            api_key=self.api_key.get_secret_value(), http_client=client, base_url=self.base_url
-        )
+        kwargs = {
+            "api_key": self.api_key.get_secret_value(),
+            "http_client": client,
+            "base_url": self.base_url,
+        }
+        if self.default_headers:
+            kwargs["default_headers"] = {
+                k: v.get_secret_value() for k, v in self.default_headers.items()
+            }
+        return OpenAI(**kwargs)
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncOpenAI":
         from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
         client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
-        return AsyncOpenAI(
-            api_key=self.api_key.get_secret_value(), http_client=client, base_url=self.base_url
-        )
+        kwargs = {
+            "api_key": self.api_key.get_secret_value(),
+            "http_client": client,
+            "base_url": self.base_url,
+        }
+        if self.default_headers:
+            kwargs["default_headers"] = {
+                k: v.get_secret_value() for k, v in self.default_headers.items()
+            }
+        return AsyncOpenAI(**kwargs)
 
 
 @dataclass
