@@ -69,7 +69,7 @@ MICROSOFT_ROLE_MAPPING: dict[str, list[str]] = {
 
 
 class SharepointAccessConfig(OnedriveAccessConfig):
-    client_cred: str = Field(description="Microsoft App client secret")
+    pass
 
 
 class SharepointConnectionConfig(OnedriveConnectionConfig):
@@ -317,6 +317,8 @@ class SharepointIndexer(OnedriveIndexer):
     def precheck(self) -> None:
         """Validate SharePoint connection before indexing."""
         from office365.runtime.client_request_exception import ClientRequestException
+
+        self.connection_config._log_oauth_advisory()
 
         # Validate authentication - this call will raise UserAuthError if invalid
         self.connection_config.get_token()

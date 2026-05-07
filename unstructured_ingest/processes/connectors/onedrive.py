@@ -8,7 +8,7 @@ from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
 from dateutil import parser
-from pydantic import Field, Secret
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -54,12 +54,39 @@ MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
-    client_cred: str = Field(description="Microsoft App client secret")
+    client_cred: Optional[str] = Field(default=None, description="Microsoft App client secret")
     password: Optional[str] = Field(description="Service account password", default=None)
+    oauth_token: Optional[str] = Field(
+        default=None,
+        description=(
+            "OAuth 2.0 access token for delegated user authentication. "
+            "Tokens typically expire after ~1 hour; this connector does not "
+            "refresh tokens."
+        ),
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        # Use truthiness so empty strings (e.g. from unset env vars) are treated
+        # consistently with the runtime auth-mode check in get_token below.
+        has_client_cred = bool(self.client_cred)
+        has_oauth_token = bool(self.oauth_token)
+        has_password = bool(self.password)
+
+        if not has_client_cred and not has_oauth_token:
+            raise ValueError("either client_cred or oauth_token must be set")
+
+        if has_oauth_token and (has_client_cred or has_password):
+            raise ValueError("cannot use both oauth_token and client_cred/password authentication")
 
 
 class OnedriveConnectionConfig(ConnectionConfig):
-    client_id: str = Field(description="Microsoft app client ID")
+    client_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "Microsoft app client ID. Required for app-only and password-grant authentication;"
+            " not required when using oauth_token."
+        ),
+    )
     user_pname: str = Field(
         description="User principal name or service account, usually your Azure AD email."
     )
@@ -74,6 +101,25 @@ class OnedriveConnectionConfig(ConnectionConfig):
     )
     access_config: Secret[OnedriveAccessConfig]
 
+    @model_validator(mode="after")
+    def _require_client_id_without_oauth(self) -> "OnedriveConnectionConfig":
+        # client_id lives on ConnectionConfig (above) and oauth_token on AccessConfig,
+        # so this cross-field rule can't live in either model_post_init alone.
+        if not self.access_config.get_secret_value().oauth_token and not self.client_id:
+            raise ValueError("client_id is required when oauth_token is not set")
+        return self
+
+    def _log_oauth_advisory(self) -> None:
+        """Emit a one-shot advisory at precheck time when delegated OAuth is in use.
+
+        Lives on ConnectionConfig so Indexer/Uploader/Downloader prechecks share
+        one source of truth instead of each duplicating the message. Called from
+        precheck (once per step instance) rather than from get_token (called per
+        Graph request) to avoid log spam during normal indexing.
+        """
+        if self.access_config.get_secret_value().oauth_token:
+            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
+
     def get_drive(self) -> "Drive":
         client = self.get_client()
         drive = client.users[self.user_pname].drive
@@ -84,7 +130,14 @@ class OnedriveConnectionConfig(ConnectionConfig):
         from msal import ConfidentialClientApplication
         from requests import post
 
-        if self.access_config.get_secret_value().password:
+        access_config = self.access_config.get_secret_value()
+
+        if access_config.oauth_token:
+            # Delegated user authentication: hand the access token through directly.
+            # Tokens typically expire after ~1 hour; refresh is not handled here.
+            return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
+
+        if access_config.password:
             url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
             headers = {"Content-Type": "application/x-www-form-urlencoded"}
             data = {
@@ -160,6 +213,7 @@ class OnedriveIndexer(Indexer):
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
+        self.connection_config._log_oauth_advisory()
         try:
             token_resp: dict = self.connection_config.get_token()
             if error := token_resp.get("error"):
@@ -358,6 +412,7 @@ class OnedriveUploader(Uploader):
     def precheck(self) -> None:
         from office365.runtime.client_request_exception import ClientRequestException
 
+        self.connection_config._log_oauth_advisory()
         try:
             token_resp: dict = self.connection_config.get_token()
             if error := token_resp.get("error"):

@@ -1,3 +1,9 @@
+## [1.5.2]
+
+### Enhancements
+
+- **feat(microsoft): add delegated `oauth_token` to SharePoint, OneDrive, and Outlook AccessConfigs.** Accepts a user access token directly, bypassing MSAL when present. `client_id` / `client_cred` become optional. Mirrors the Google Drive `oauth_token` pattern; refresh is not handled here.
+
 ## [1.5.1]
 
 ### Fixes
