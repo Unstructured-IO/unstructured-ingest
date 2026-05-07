@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+from pydantic import Secret
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import SourceConnectionError, ValueError
@@ -50,6 +51,43 @@ class TestSharepointAccessConfig:
                 password="user-password",
                 oauth_token="ey.access.token",
             )
+
+    def test_empty_oauth_token_treated_as_missing(self):
+        """An empty-string oauth_token (e.g. unset env var) should not satisfy the auth requirement.
+
+        Validator and runtime both use truthiness; this test pins that consistency.
+        """
+        with pytest.raises(ValueError, match="must be set"):
+            SharepointAccessConfig(oauth_token="")
+
+
+class TestSharepointConnectionConfig:
+    """Tests for SharepointConnectionConfig cross-field auth validation.
+
+    SharepointConnectionConfig inherits the validator from OnedriveConnectionConfig;
+    these tests verify the inheritance carries the cross-field constraint through.
+    """
+
+    def test_client_cred_without_client_id_raises(self):
+        """client_cred-based auth requires client_id; rejecting at config time
+        avoids cryptic AADSTS / MSAL errors at runtime."""
+        with pytest.raises(ValueError, match="client_id is required"):
+            SharepointConnectionConfig(
+                site="https://contoso.sharepoint.com/sites/acme",
+                user_pname="alice@contoso.com",
+                tenant="tenant-id",
+                access_config=Secret(SharepointAccessConfig(client_cred="secret-value")),
+            )
+
+    def test_oauth_token_without_client_id_succeeds(self):
+        """oauth_token auth doesn't need client_id; this is the delegated path."""
+        config = SharepointConnectionConfig(
+            site="https://contoso.sharepoint.com/sites/acme",
+            user_pname="alice@contoso.com",
+            tenant="tenant-id",
+            access_config=Secret(SharepointAccessConfig(oauth_token="ey.access.token")),
+        )
+        assert config.client_id is None
 
 
 @pytest.fixture

@@ -8,7 +8,7 @@ from time import time
 from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
 
 from dateutil import parser
-from pydantic import Field, Secret
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -66,9 +66,11 @@ class OnedriveAccessConfig(AccessConfig):
     )
 
     def model_post_init(self, __context: Any) -> None:
-        has_client_cred = self.client_cred is not None
-        has_oauth_token = self.oauth_token is not None
-        has_password = self.password is not None
+        # Use truthiness so empty strings (e.g. from unset env vars) are treated
+        # consistently with the runtime auth-mode check in get_token below.
+        has_client_cred = bool(self.client_cred)
+        has_oauth_token = bool(self.oauth_token)
+        has_password = bool(self.password)
 
         if not has_client_cred and not has_oauth_token:
             raise ValueError("either client_cred or oauth_token must be set")
@@ -99,6 +101,25 @@ class OnedriveConnectionConfig(ConnectionConfig):
     )
     access_config: Secret[OnedriveAccessConfig]
 
+    @model_validator(mode="after")
+    def _require_client_id_without_oauth(self) -> "OnedriveConnectionConfig":
+        # client_id lives on ConnectionConfig (above) and oauth_token on AccessConfig,
+        # so this cross-field rule can't live in either model_post_init alone.
+        if not self.access_config.get_secret_value().oauth_token and not self.client_id:
+            raise ValueError("client_id is required when oauth_token is not set")
+        return self
+
+    def _log_oauth_advisory(self) -> None:
+        """Emit a one-shot advisory at precheck time when delegated OAuth is in use.
+
+        Lives on ConnectionConfig so Indexer/Uploader/Downloader prechecks share
+        one source of truth instead of each duplicating the message. Called from
+        precheck (once per step instance) rather than from get_token (called per
+        Graph request) to avoid log spam during normal indexing.
+        """
+        if self.access_config.get_secret_value().oauth_token:
+            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
+
     def get_drive(self) -> "Drive":
         client = self.get_client()
         drive = client.users[self.user_pname].drive
@@ -114,7 +135,6 @@ class OnedriveConnectionConfig(ConnectionConfig):
         if access_config.oauth_token:
             # Delegated user authentication: hand the access token through directly.
             # Tokens typically expire after ~1 hour; refresh is not handled here.
-            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
             return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
 
         if access_config.password:
@@ -193,6 +213,7 @@ class OnedriveIndexer(Indexer):
     connector_type: str = CONNECTOR_TYPE
 
     def precheck(self) -> None:
+        self.connection_config._log_oauth_advisory()
         try:
             token_resp: dict = self.connection_config.get_token()
             if error := token_resp.get("error"):
@@ -391,6 +412,7 @@ class OnedriveUploader(Uploader):
     def precheck(self) -> None:
         from office365.runtime.client_request_exception import ClientRequestException
 
+        self.connection_config._log_oauth_advisory()
         try:
             token_resp: dict = self.connection_config.get_token()
             if error := token_resp.get("error"):

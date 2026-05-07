@@ -5,7 +5,7 @@ from datetime import timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Coroutine, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -51,8 +51,10 @@ class OutlookAccessConfig(AccessConfig):
     )
 
     def model_post_init(self, __context: Any) -> None:
-        has_client_cred = self.client_credential is not None
-        has_oauth_token = self.oauth_token is not None
+        # Use truthiness so empty strings (e.g. from unset env vars) are treated
+        # consistently with the runtime auth-mode check in _acquire_token below.
+        has_client_cred = bool(self.client_credential)
+        has_oauth_token = bool(self.oauth_token)
 
         if not has_client_cred and not has_oauth_token:
             raise ValueError("either client_cred or oauth_token must be set")
@@ -78,6 +80,25 @@ class OutlookConnectionConfig(ConnectionConfig):
         description="Authentication token provider for Microsoft apps",
     )
 
+    @model_validator(mode="after")
+    def _require_client_id_without_oauth(self) -> "OutlookConnectionConfig":
+        # client_id lives on ConnectionConfig (above) and oauth_token on AccessConfig,
+        # so this cross-field rule can't live in either model_post_init alone.
+        if not self.access_config.get_secret_value().oauth_token and not self.client_id:
+            raise ValueError("client_id is required when oauth_token is not set")
+        return self
+
+    def _log_oauth_advisory(self) -> None:
+        """Emit a one-shot advisory at precheck time when delegated OAuth is in use.
+
+        Lives on ConnectionConfig so Indexer/Downloader prechecks share one source
+        of truth instead of each duplicating the message. Called from precheck
+        (once per step instance) rather than from _acquire_token (called per Graph
+        request) to avoid log spam during normal indexing.
+        """
+        if self.access_config.get_secret_value().oauth_token:
+            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
+
     @requires_dependencies(["msal"], extras="outlook")
     def _acquire_token(self):
         """Acquire token via MSAL, or hand through a delegated OAuth token."""
@@ -88,7 +109,6 @@ class OutlookConnectionConfig(ConnectionConfig):
         if access_config.oauth_token:
             # Delegated user authentication: hand the access token through directly.
             # Tokens typically expire after ~1 hour; refresh is not handled here.
-            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
             return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
 
         # NOTE: It'd be nice to use `msal.authority.AuthorityBuilder` here paired with AZURE_PUBLIC
@@ -140,6 +160,7 @@ class OutlookIndexer(Indexer):
 
     @SourceConnectionError.wrap
     def precheck(self) -> None:
+        self.connection_config._log_oauth_advisory()
         client = self.connection_config.get_client()
         client.users[self.index_config.user_email].get().execute_query()
 

@@ -318,6 +318,8 @@ class SharepointIndexer(OnedriveIndexer):
         """Validate SharePoint connection before indexing."""
         from office365.runtime.client_request_exception import ClientRequestException
 
+        self.connection_config._log_oauth_advisory()
+
         # Validate authentication - this call will raise UserAuthError if invalid
         self.connection_config.get_token()
 
