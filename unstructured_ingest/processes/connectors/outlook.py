@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Coroutine, Generator
+from typing import TYPE_CHECKING, Any, Coroutine, Generator, Optional
 
 from pydantic import Field, Secret
 
@@ -38,12 +38,39 @@ CONNECTOR_TYPE = "outlook"
 
 
 class OutlookAccessConfig(AccessConfig):
-    client_credential: str = Field(description="Azure AD App client secret", alias="client_cred")
+    client_credential: Optional[str] = Field(
+        default=None, description="Azure AD App client secret", alias="client_cred"
+    )
+    oauth_token: Optional[str] = Field(
+        default=None,
+        description=(
+            "OAuth 2.0 access token for delegated user authentication. "
+            "Tokens typically expire after ~1 hour; this connector does not "
+            "refresh tokens."
+        ),
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        has_client_cred = self.client_credential is not None
+        has_oauth_token = self.oauth_token is not None
+
+        if not has_client_cred and not has_oauth_token:
+            raise ValueError(
+                "either client_cred or oauth_token must be set"
+            )
+
+        if has_client_cred and has_oauth_token:
+            raise ValueError(
+                "cannot use both oauth_token and client_cred authentication"
+            )
 
 
 class OutlookConnectionConfig(ConnectionConfig):
     access_config: Secret[OutlookAccessConfig]
-    client_id: str = Field(description="Azure AD App client ID")
+    client_id: Optional[str] = Field(
+        default=None,
+        description="Azure AD App client ID. Required for app-only authentication; not required when using oauth_token.",
+    )
     tenant: str = Field(
         default="common", description="ID or domain name associated with your Azure AD instance"
     )
@@ -54,8 +81,18 @@ class OutlookConnectionConfig(ConnectionConfig):
 
     @requires_dependencies(["msal"], extras="outlook")
     def _acquire_token(self):
-        """Acquire token via MSAL"""
+        """Acquire token via MSAL, or hand through a delegated OAuth token."""
         from msal import ConfidentialClientApplication
+
+        access_config = self.access_config.get_secret_value()
+
+        if access_config.oauth_token:
+            # Delegated user authentication: hand the access token through directly.
+            # Tokens typically expire after ~1 hour; refresh is not handled here.
+            logger.warning(
+                "Using OAuth token authentication. Tokens expire after ~1 hour."
+            )
+            return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
 
         # NOTE: It'd be nice to use `msal.authority.AuthorityBuilder` here paired with AZURE_PUBLIC
         # constant as default in the future but they do not fit well with `authority_url` right now
@@ -63,7 +100,7 @@ class OutlookConnectionConfig(ConnectionConfig):
         app = ConfidentialClientApplication(
             authority=authority_url,
             client_id=self.client_id,
-            client_credential=self.access_config.get_secret_value().client_credential,
+            client_credential=access_config.client_credential,
         )
         token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
         return token

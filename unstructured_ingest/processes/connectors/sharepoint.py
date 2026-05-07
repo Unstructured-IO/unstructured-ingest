@@ -69,7 +69,7 @@ MICROSOFT_ROLE_MAPPING: dict[str, list[str]] = {
 
 
 class SharepointAccessConfig(OnedriveAccessConfig):
-    client_cred: str = Field(description="Microsoft App client secret")
+    pass
 
 
 class SharepointConnectionConfig(OnedriveConnectionConfig):

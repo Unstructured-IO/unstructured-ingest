@@ -54,12 +54,40 @@ MAX_BYTES_SIZE = 512_000_000
 
 
 class OnedriveAccessConfig(AccessConfig):
-    client_cred: str = Field(description="Microsoft App client secret")
+    client_cred: Optional[str] = Field(
+        default=None, description="Microsoft App client secret"
+    )
     password: Optional[str] = Field(description="Service account password", default=None)
+    oauth_token: Optional[str] = Field(
+        default=None,
+        description=(
+            "OAuth 2.0 access token for delegated user authentication. "
+            "Tokens typically expire after ~1 hour; this connector does not "
+            "refresh tokens."
+        ),
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        has_client_cred = self.client_cred is not None
+        has_oauth_token = self.oauth_token is not None
+        has_password = self.password is not None
+
+        if not has_client_cred and not has_oauth_token:
+            raise ValueError(
+                "either client_cred or oauth_token must be set"
+            )
+
+        if has_oauth_token and (has_client_cred or has_password):
+            raise ValueError(
+                "cannot use both oauth_token and client_cred/password authentication"
+            )
 
 
 class OnedriveConnectionConfig(ConnectionConfig):
-    client_id: str = Field(description="Microsoft app client ID")
+    client_id: Optional[str] = Field(
+        default=None,
+        description="Microsoft app client ID. Required for app-only and password-grant authentication; not required when using oauth_token.",
+    )
     user_pname: str = Field(
         description="User principal name or service account, usually your Azure AD email."
     )
@@ -84,7 +112,17 @@ class OnedriveConnectionConfig(ConnectionConfig):
         from msal import ConfidentialClientApplication
         from requests import post
 
-        if self.access_config.get_secret_value().password:
+        access_config = self.access_config.get_secret_value()
+
+        if access_config.oauth_token:
+            # Delegated user authentication: hand the access token through directly.
+            # Tokens typically expire after ~1 hour; refresh is not handled here.
+            logger.warning(
+                "Using OAuth token authentication. Tokens expire after ~1 hour."
+            )
+            return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
+
+        if access_config.password:
             url = f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
             headers = {"Content-Type": "application/x-www-form-urlencoded"}
             data = {
