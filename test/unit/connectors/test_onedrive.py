@@ -17,9 +17,7 @@ class TestOnedriveAccessConfig:
 
     def test_client_cred_and_password(self):
         """client_cred + password is the password-grant flow and should be valid."""
-        config = OnedriveAccessConfig(
-            client_cred="secret-value", password="user-password"
-        )
+        config = OnedriveAccessConfig(client_cred="secret-value", password="user-password")
         assert config.client_cred == "secret-value"
         assert config.password == "user-password"
         assert config.oauth_token is None

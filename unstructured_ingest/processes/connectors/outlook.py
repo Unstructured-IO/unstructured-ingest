@@ -55,21 +55,20 @@ class OutlookAccessConfig(AccessConfig):
         has_oauth_token = self.oauth_token is not None
 
         if not has_client_cred and not has_oauth_token:
-            raise ValueError(
-                "either client_cred or oauth_token must be set"
-            )
+            raise ValueError("either client_cred or oauth_token must be set")
 
         if has_client_cred and has_oauth_token:
-            raise ValueError(
-                "cannot use both oauth_token and client_cred authentication"
-            )
+            raise ValueError("cannot use both oauth_token and client_cred authentication")
 
 
 class OutlookConnectionConfig(ConnectionConfig):
     access_config: Secret[OutlookAccessConfig]
     client_id: Optional[str] = Field(
         default=None,
-        description="Azure AD App client ID. Required for app-only authentication; not required when using oauth_token.",
+        description=(
+            "Azure AD App client ID. Required for app-only authentication;"
+            " not required when using oauth_token."
+        ),
     )
     tenant: str = Field(
         default="common", description="ID or domain name associated with your Azure AD instance"
@@ -89,9 +88,7 @@ class OutlookConnectionConfig(ConnectionConfig):
         if access_config.oauth_token:
             # Delegated user authentication: hand the access token through directly.
             # Tokens typically expire after ~1 hour; refresh is not handled here.
-            logger.warning(
-                "Using OAuth token authentication. Tokens expire after ~1 hour."
-            )
+            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
             return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
 
         # NOTE: It'd be nice to use `msal.authority.AuthorityBuilder` here paired with AZURE_PUBLIC
