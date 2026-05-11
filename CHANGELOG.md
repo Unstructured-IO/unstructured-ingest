@@ -1,4 +1,4 @@
-## [1.6.0]
+## [1.5.3]
 
 ### Enhancements
 
@@ -7,6 +7,24 @@
 ### Fixes
 
 - **fix(test): strip randomized tempdir prefix from FsspecDownloader fixture paths.** `get_files()` now drops the leading `unstructured_<random>/` segment so `directory_structure.json` captures the logical structure rather than the per-run random suffix injected by `tempfile.mkdtemp`.
+
+## [1.5.2]
+
+### Enhancements
+
+- **feat(microsoft): add delegated `oauth_token` to SharePoint, OneDrive, and Outlook AccessConfigs.** Accepts a user access token directly, bypassing MSAL when present. `client_id` / `client_cred` become optional. Mirrors the Google Drive `oauth_token` pattern; refresh is not handled here.
+
+## [1.5.1]
+
+### Fixes
+
+- **fix(azure_ai_search): recursively drop unknown fields against the index schema.** New nested fields from `unstructured` (e.g. `metadata.table_extraction_method`) were reaching the service and causing HTTP 400s; the filter now recurses through `index.fields`.
+
+## [1.5.0]
+
+### Enhancements
+
+- **feat(sharepoint): pass through ACL permission metadata.** Extract SharePoint permission data from the Graph API and normalize to the standard read/update/delete schema. Permissions are fetched via Graph JSON batching with per-item fallback on batch failure.
 
 ## [1.4.29]
 

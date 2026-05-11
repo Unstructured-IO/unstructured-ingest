@@ -3,9 +3,9 @@ import time
 from dataclasses import dataclass, field
 from datetime import timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Coroutine, Generator
+from typing import TYPE_CHECKING, Any, Coroutine, Generator, Optional
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -38,12 +38,40 @@ CONNECTOR_TYPE = "outlook"
 
 
 class OutlookAccessConfig(AccessConfig):
-    client_credential: str = Field(description="Azure AD App client secret", alias="client_cred")
+    client_credential: Optional[str] = Field(
+        default=None, description="Azure AD App client secret", alias="client_cred"
+    )
+    oauth_token: Optional[str] = Field(
+        default=None,
+        description=(
+            "OAuth 2.0 access token for delegated user authentication. "
+            "Tokens typically expire after ~1 hour; this connector does not "
+            "refresh tokens."
+        ),
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        # Use truthiness so empty strings (e.g. from unset env vars) are treated
+        # consistently with the runtime auth-mode check in _acquire_token below.
+        has_client_cred = bool(self.client_credential)
+        has_oauth_token = bool(self.oauth_token)
+
+        if not has_client_cred and not has_oauth_token:
+            raise ValueError("either client_cred or oauth_token must be set")
+
+        if has_client_cred and has_oauth_token:
+            raise ValueError("cannot use both oauth_token and client_cred authentication")
 
 
 class OutlookConnectionConfig(ConnectionConfig):
     access_config: Secret[OutlookAccessConfig]
-    client_id: str = Field(description="Azure AD App client ID")
+    client_id: Optional[str] = Field(
+        default=None,
+        description=(
+            "Azure AD App client ID. Required for app-only authentication;"
+            " not required when using oauth_token."
+        ),
+    )
     tenant: str = Field(
         default="common", description="ID or domain name associated with your Azure AD instance"
     )
@@ -52,10 +80,36 @@ class OutlookConnectionConfig(ConnectionConfig):
         description="Authentication token provider for Microsoft apps",
     )
 
+    @model_validator(mode="after")
+    def _require_client_id_without_oauth(self) -> "OutlookConnectionConfig":
+        # client_id lives on ConnectionConfig (above) and oauth_token on AccessConfig,
+        # so this cross-field rule can't live in either model_post_init alone.
+        if not self.access_config.get_secret_value().oauth_token and not self.client_id:
+            raise ValueError("client_id is required when oauth_token is not set")
+        return self
+
+    def _log_oauth_advisory(self) -> None:
+        """Emit a one-shot advisory at precheck time when delegated OAuth is in use.
+
+        Lives on ConnectionConfig so Indexer/Downloader prechecks share one source
+        of truth instead of each duplicating the message. Called from precheck
+        (once per step instance) rather than from _acquire_token (called per Graph
+        request) to avoid log spam during normal indexing.
+        """
+        if self.access_config.get_secret_value().oauth_token:
+            logger.warning("Using OAuth token authentication. Tokens expire after ~1 hour.")
+
     @requires_dependencies(["msal"], extras="outlook")
     def _acquire_token(self):
-        """Acquire token via MSAL"""
+        """Acquire token via MSAL, or hand through a delegated OAuth token."""
         from msal import ConfidentialClientApplication
+
+        access_config = self.access_config.get_secret_value()
+
+        if access_config.oauth_token:
+            # Delegated user authentication: hand the access token through directly.
+            # Tokens typically expire after ~1 hour; refresh is not handled here.
+            return {"access_token": access_config.oauth_token, "token_type": "Bearer"}
 
         # NOTE: It'd be nice to use `msal.authority.AuthorityBuilder` here paired with AZURE_PUBLIC
         # constant as default in the future but they do not fit well with `authority_url` right now
@@ -63,7 +117,7 @@ class OutlookConnectionConfig(ConnectionConfig):
         app = ConfidentialClientApplication(
             authority=authority_url,
             client_id=self.client_id,
-            client_credential=self.access_config.get_secret_value().client_credential,
+            client_credential=access_config.client_credential,
         )
         token = app.acquire_token_for_client(scopes=["https://graph.microsoft.com/.default"])
         return token
@@ -106,6 +160,7 @@ class OutlookIndexer(Indexer):
 
     @SourceConnectionError.wrap
     def precheck(self) -> None:
+        self.connection_config._log_oauth_advisory()
         client = self.connection_config.get_client()
         client.users[self.index_config.user_email].get().execute_query()
 

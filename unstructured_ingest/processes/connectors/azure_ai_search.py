@@ -1,7 +1,7 @@
 import json
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, TypeAlias
 
 from pydantic import Field, Secret
 
@@ -27,8 +27,16 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 if TYPE_CHECKING:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.indexes.models import SearchField, SearchIndex
 
 CONNECTOR_TYPE = "azure_ai_search"
+
+# Azure caps complex-type nesting at 10 levels
+_MAX_INDEX_FIELD_DEPTH = 10
+
+# Recursive map of the index schema: leaf scalars / primitive collections are ``None``;
+# complex / collection-of-complex sub-trees are nested ``FieldTree`` dicts.
+FieldTree: TypeAlias = "dict[str, FieldTree | None]"
 
 
 class AzureAISearchAccessConfig(AccessConfig):
@@ -242,6 +250,72 @@ class AzureAISearchUploader(Uploader):
     def filter_doc(self, doc: dict, index_field_names: set[str]) -> dict:
         return {k: v for k, v in doc.items() if k in index_field_names}
 
+    def get_index_field_tree(self, index: "SearchIndex") -> FieldTree:
+        """Build a nested tree mirroring the destination index schema."""
+        return self._build_field_tree(index.fields, depth=0)
+
+    def _build_field_tree(
+        self, fields: "list[SearchField] | None", depth: int
+    ) -> FieldTree:
+        if depth >= _MAX_INDEX_FIELD_DEPTH:
+            return {}
+        tree: FieldTree = {}
+        for f in fields or []:
+            sub_fields = getattr(f, "fields", None)
+            if sub_fields:
+                tree[f.name] = self._build_field_tree(sub_fields, depth + 1)
+            else:
+                tree[f.name] = None
+        return tree
+
+    def filter_doc_against_tree(
+        self, doc: dict[str, Any], tree: FieldTree
+    ) -> dict[str, Any]:
+        """Drop any field in ``doc`` not declared in ``tree``, recursing into complex types."""
+        out: dict[str, Any] = {}
+        for key, value in doc.items():
+            if key not in tree:
+                continue
+            sub_tree = tree[key]
+            if sub_tree is None:
+                # Leaf: pass value through; a dict mapped to Edm.String stays as-is and
+                # the SDK surfaces any genuine type mismatch.
+                out[key] = value
+            elif isinstance(value, dict):
+                out[key] = self.filter_doc_against_tree(value, sub_tree)
+            elif isinstance(value, list):
+                out[key] = [
+                    self.filter_doc_against_tree(item, sub_tree)
+                    if isinstance(item, dict)
+                    else item
+                    for item in value
+                ]
+            else:
+                out[key] = value
+        return out
+
+    def collect_dropped_paths(
+        self, doc: dict[str, Any], tree: FieldTree, prefix: str = ""
+    ) -> list[str]:
+        """Return sorted dotted paths in ``doc`` not declared in ``tree``
+        (e.g. ``metadata.table_extraction_method``)."""
+        dropped: list[str] = []
+        for key, value in doc.items():
+            path = f"{prefix}.{key}" if prefix else key
+            if key not in tree:
+                dropped.append(path)
+                continue
+            sub_tree = tree[key]
+            if sub_tree is None:
+                continue
+            if isinstance(value, dict):
+                dropped.extend(self.collect_dropped_paths(value, sub_tree, path))
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        dropped.extend(self.collect_dropped_paths(item, sub_tree, path))
+        return sorted(set(dropped))
+
     def precheck(self) -> None:
         try:
             with self.connection_config.get_search_client() as search_client:
@@ -264,14 +338,16 @@ class AzureAISearchUploader(Uploader):
         else:
             logger.warning("criteria for deleting previous content not met, skipping")
 
-        index_field_names = self.get_index_field_names(index)
-        if dropped := (set(data[0].keys()) - index_field_names) if data else set():
-            logger.info(
-                "Following fields will be dropped to match the index schema: "
-                f"{', '.join(sorted(dropped))}"
-            )
+        field_tree = self.get_index_field_tree(index)
+        if data:
+            dropped_paths = self.collect_dropped_paths(data[0], field_tree)
+            if dropped_paths:
+                logger.info(
+                    "Following fields will be dropped to match the index schema: "
+                    f"{', '.join(dropped_paths)}"
+                )
         filtered_data = [
-            self.filter_doc(doc=doc, index_field_names=index_field_names) for doc in data
+            self.filter_doc_against_tree(doc=doc, tree=field_tree) for doc in data
         ]
 
         batch_size = self.upload_config.batch_size

@@ -13,14 +13,45 @@
       "user_pname": null,
       "server_relative_path": "Folder1/fake-memo.pdf"
     },
-    "date_created": "1738353979.0",
-    "date_modified": "1738353979.0",
-    "date_processed": "1776016107.091462",
-    "permissions_data": null,
+    "date_created": "1738364779.0",
+    "date_modified": "1738364779.0",
+    "date_processed": "1777426377.3549209",
+    "permissions_data": [
+      {
+        "read": {
+          "users": [
+            "134e790e-20ec-428c-afc7-2544e06a93b9"
+          ],
+          "groups": [
+            "e3638d7e-708b-4619-9e3a-341709490cf8"
+          ]
+        }
+      },
+      {
+        "update": {
+          "users": [
+            "134e790e-20ec-428c-afc7-2544e06a93b9"
+          ],
+          "groups": [
+            "e3638d7e-708b-4619-9e3a-341709490cf8"
+          ]
+        }
+      },
+      {
+        "delete": {
+          "users": [
+            "134e790e-20ec-428c-afc7-2544e06a93b9"
+          ],
+          "groups": [
+            "e3638d7e-708b-4619-9e3a-341709490cf8"
+          ]
+        }
+      }
+    ],
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=dacdc697-3d6c-4b30-8fcf-2a0635bf5c0b&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJuYW1laWQiOiI2YzE2MDc1My05YjYzLTQ3MDktYTE0MC0xN2EyN2QzMDg3YTZAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NzYwMTk2OTQifQ.CkAKDGVudHJhX2NsYWltcxIwQ0xLejc4NEdFQUFhRmpKMlExWkRhMnBIVFVWVFdFRnhhMk5wWmpCQlFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCKjamMm2sYw_EAUaDTQwLjEyNi4yNC4xNTMqLEFkcXFoaFJjNTNCeG9JUkxjNXFFOFBtWjhpcTdXVU9YSmpLTzAxQ0dOOWs9MJ0BOAFCEKIJT7zrMADAWCrgJjLyJQVKEGhhc2hlZHByb29mdG9rZW56ATG6AWVzaGFyZXBvaW50dGVuYW50c2V0dGluZ3MucmVhZHdyaXRlLmFsbCBhbGxzaXRlcy53cml0ZSBhbGxzaXRlcy5tYW5hZ2UgYWxsZmlsZXMud3JpdGUgYWxscHJvZmlsZXMucmVhZMgBAQ.WhAcMFJrQhJoNrDUHyjB6WnztGHwYF4_VJuPZxKH0oA&ApiVersion=2.0",
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=dacdc697-3d6c-4b30-8fcf-2a0635bf5c0b&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJuYW1laWQiOiI2YzE2MDc1My05YjYzLTQ3MDktYTE0MC0xN2EyN2QzMDg3YTZAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3Nzc0Mjk5NjUifQ.CkAKDGVudHJhX2NsYWltcxIwQ0pHOXhjOEdFQUFhRmtSMU0xUnhTVWRYV2pCRE9FMTBSbWxvZFRaZlFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCJq8q_in5pI_EAUaDTIwLjE5MC4xNTQuMzIqLEFkcXFoaFJjNTNCeG9JUkxjNXFFOFBtWjhpcTdXVU9YSmpLTzAxQ0dOOWs9MJ0BOAFCEKIOkK1U4ADQBTCRGCOENldKEGhhc2hlZHByb29mdG9rZW56ATG6AWVzaGFyZXBvaW50dGVuYW50c2V0dGluZ3MucmVhZHdyaXRlLmFsbCBhbGxzaXRlcy53cml0ZSBhbGxzaXRlcy5tYW5hZ2UgYWxsZmlsZXMud3JpdGUgYWxscHJvZmlsZXMucmVhZMgBAQ.Q5E7f-uA9QxzybOqvpjCfJlJsrITs9Es6YVqa0tJR0w&ApiVersion=2.0",
     "eTag": "\"{DACDC697-3D6C-4B30-8FCF-2A0635BF5C0B},1\"",
     "id": "0153RHRSEXY3G5U3B5GBFY7TZKAY236XAL",
     "name": "fake-memo.pdf",
@@ -30,6 +61,6 @@
     "size": 13374
   },
   "reprocess": false,
-  "local_download_path": "/private/var/folders/5k/frv076q97yl0ywybmzydhbsr0000gn/T/tmpqzyeoyg8/Folder1/fake-memo.pdf",
+  "local_download_path": "/private/var/folders/rd/rz43jzn10zq1tyqb026xvfw80000gq/T/tmpq271ug72/Folder1/fake-memo.pdf",
   "display_name": "Folder1/fake-memo.pdf"
 }
