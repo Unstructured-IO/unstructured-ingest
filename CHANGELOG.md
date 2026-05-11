@@ -1,3 +1,13 @@
+## [1.6.0]
+
+### Enhancements
+
+- **feat(box): pass through ACL permission metadata.** Extract Box collaboration data and normalize to the standard read/update/delete schema. Permissions are fetched during indexing with an LRU-cached ancestor folder walk to handle inherited collaborations. Access-only collabs (`is_access_only=true`) are skipped to avoid overgranting; group IDs are stored directly without member expansion (consistent with Confluence). Cap on permissions captured per file is configurable via `BoxIndexerConfig.max_num_metadata_permissions` (default 500).
+
+### Fixes
+
+- **fix(test): strip randomized tempdir prefix from FsspecDownloader fixture paths.** `get_files()` now drops the leading `unstructured_<random>/` segment so `directory_structure.json` captures the logical structure rather than the per-run random suffix injected by `tempfile.mkdtemp`.
+
 ## [1.4.29]
 
 ### Chores
