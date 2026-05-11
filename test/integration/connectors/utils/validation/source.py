@@ -138,12 +138,17 @@ def check_raw_file_contents(
     current_output_dir: Path,
     configs: SourceValidationConfigs,
 ):
-    current_files = get_files(dir_path=current_output_dir)
     found_diff = False
     files = []
-    for current_file in current_files:
-        current_file_path = current_output_dir / current_file
-        expected_file_path = expected_output_dir / current_file
+    for current_file_path in current_output_dir.rglob("*"):
+        if not current_file_path.is_file():
+            continue
+        relative = str(current_file_path.relative_to(current_output_dir))
+        # Strip the unstructured_<random>/ tempdir segment when locating the
+        # corresponding fixture; the on-disk file still lives under the random
+        # subdir so don't strip it from current_file_path.
+        expected_relative = _FSSPEC_TEMP_DIR_PATTERN.sub("", relative)
+        expected_file_path = expected_output_dir / expected_relative
         if configs.detect_diff(expected_file_path, current_file_path):
             found_diff = True
             files.append(str(expected_file_path))
