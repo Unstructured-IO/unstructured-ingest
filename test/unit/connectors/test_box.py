@@ -1,8 +1,6 @@
 from collections import OrderedDict
 from unittest.mock import MagicMock
 
-import pytest
-
 from unstructured_ingest.processes.connectors.fsspec.box import (
     BOX_ROLE_MAPPING,
     _get_permissions_for_file,
@@ -93,7 +91,10 @@ class TestNormalizeCollaborations:
         normalized = self._empty_normalized()
         total = [0]
         _normalize_collaborations(
-            [make_collab("user", "u1", "editor", status="pending")], normalized, total, max_perms=500
+            [make_collab("user", "u1", "editor", status="pending")],
+            normalized,
+            total,
+            max_perms=500,
         )
         assert total[0] == 0
         assert not normalized["read"]["users"]
