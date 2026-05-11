@@ -60,6 +60,10 @@ def _normalize_collaborations(
             break
         if collab.get("status") != "accepted":
             continue
+        # Access-only collabs are hidden, scoped grants (e.g. shared-link backing) and do
+        # not cascade like normal collabs — including them would overgrant siblings.
+        if collab.get("is_access_only"):
+            continue
         accessible_by = collab.get("accessible_by") or {}
         entity_type = accessible_by.get("type")
         if entity_type not in ("user", "group"):
@@ -86,7 +90,9 @@ def _get_collaborations_for_folder(client, folder_id: str, cache: OrderedDict) -
 
     collabs = []
     try:
-        for collab in client.folder(folder_id).get_collaborations():
+        for collab in client.folder(folder_id).get_collaborations(
+            fields=["accessible_by", "role", "status", "is_access_only"]
+        ):
             collabs.append(collab.response_object)
     except Exception as e:
         logger.debug(f"Could not retrieve collaborations for folder {folder_id}: {e}")
@@ -121,7 +127,12 @@ def _get_permissions_for_file(
         logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
 
     try:
-        file_collabs = [c.response_object for c in client.file(file_id).get_collaborations()]
+        file_collabs = [
+            c.response_object
+            for c in client.file(file_id).get_collaborations(
+                fields=["accessible_by", "role", "status", "is_access_only"]
+            )
+        ]
         _normalize_collaborations(file_collabs, normalized, total, max_perms)
     except Exception as e:
         logger.debug(f"Could not retrieve collaborations for file {file_id}: {e}")

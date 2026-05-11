@@ -106,6 +106,16 @@ class TestNormalizeCollaborations:
         assert total[0] == 0
         assert not normalized["read"]["groups"]
 
+    def test_access_only_collab_skipped(self):
+        normalized = self._empty_normalized()
+        total = [0]
+        collab = make_collab("user", "u1", "editor")
+        collab["is_access_only"] = True
+        _normalize_collaborations([collab], normalized, total, max_perms=500)
+        assert total[0] == 0
+        assert not normalized["read"]["users"]
+        assert not normalized["update"]["users"]
+
     def test_unknown_role_produces_no_operations(self):
         normalized = self._empty_normalized()
         total = [0]
