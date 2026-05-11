@@ -135,7 +135,9 @@ def _get_permissions_for_file(
 
 
 class BoxIndexerConfig(FsspecIndexerConfig):
-    pass
+    max_num_metadata_permissions: int = Field(
+        500, description="Approximate maximum number of permissions included in metadata"
+    )
 
 
 class BoxAccessConfig(FsspecAccessConfig):
@@ -253,7 +255,10 @@ class BoxIndexer(FsspecIndexer):
                 if file_id:
                     try:
                         file_data.metadata.permissions_data = _get_permissions_for_file(
-                            client, file_id, cache
+                            client,
+                            file_id,
+                            cache,
+                            self.index_config.max_num_metadata_permissions,
                         )
                     except Exception as e:
                         logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
@@ -261,9 +266,7 @@ class BoxIndexer(FsspecIndexer):
 
 
 class BoxDownloaderConfig(FsspecDownloaderConfig):
-    max_num_metadata_permissions: int = Field(
-        500, description="Approximate maximum number of permissions included in metadata"
-    )
+    pass
 
 
 @dataclass
@@ -272,28 +275,6 @@ class BoxDownloader(FsspecDownloader):
     connection_config: BoxConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[BoxDownloaderConfig] = field(default_factory=BoxDownloaderConfig)
-
-    def _get_collaborations_for_folder(self, client, folder_id: str) -> list[dict]:
-        if not hasattr(self, "_folder_collab_cache"):
-            self._folder_collab_cache = OrderedDict()
-        return _get_collaborations_for_folder(client, folder_id, self._folder_collab_cache)
-
-    def _normalize_collaborations(
-        self, collabs: list[dict], normalized: dict, total: list
-    ) -> None:
-        _normalize_collaborations(
-            collabs, normalized, total, self.download_config.max_num_metadata_permissions
-        )
-
-    def get_permissions_for_file(self, client, file_id: str) -> list[dict]:
-        if not hasattr(self, "_folder_collab_cache"):
-            self._folder_collab_cache = OrderedDict()
-        return _get_permissions_for_file(
-            client,
-            file_id,
-            self._folder_collab_cache,
-            self.download_config.max_num_metadata_permissions,
-        )
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         response = super().run(file_data=file_data, **kwargs)
@@ -304,8 +285,8 @@ class BoxDownloader(FsspecDownloader):
             if file_id:
                 try:
                     client = self.connection_config.get_box_client()
-                    file_data.metadata.permissions_data = self.get_permissions_for_file(
-                        client, file_id
+                    file_data.metadata.permissions_data = _get_permissions_for_file(
+                        client, file_id, OrderedDict()
                     )
                 except Exception as e:
                     logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")

@@ -5,21 +5,9 @@ import pytest
 
 from unstructured_ingest.processes.connectors.fsspec.box import (
     BOX_ROLE_MAPPING,
-    BoxDownloader,
-    BoxDownloaderConfig,
     _get_permissions_for_file,
     _normalize_collaborations,
 )
-
-
-def make_downloader(max_permissions: int = 500) -> BoxDownloader:
-    connection_config = MagicMock()
-    download_config = BoxDownloaderConfig(max_num_metadata_permissions=max_permissions)
-    downloader = BoxDownloader.__new__(BoxDownloader)
-    downloader.connection_config = connection_config
-    downloader.download_config = download_config
-    downloader._folder_collab_cache = OrderedDict()
-    return downloader
 
 
 def make_collab(
