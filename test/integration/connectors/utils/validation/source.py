@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 from typing import Callable, Optional
@@ -86,9 +87,17 @@ class SourceValidationConfigs(ValidationConfig):
         return copied_data
 
 
+# FsspecDownloader writes each file into a fresh tempfile.mkdtemp("unstructured_") subdir
+# to avoid path collisions. Strip that segment so fixtures capture the logical structure
+# rather than a randomized suffix that changes every run.
+_FSSPEC_TEMP_DIR_PATTERN = re.compile(r"^unstructured_[a-zA-Z0-9_-]+/")
+
+
 def get_files(dir_path: Path) -> list[str]:
     return [
-        str(f).replace(str(dir_path), "").lstrip("/") for f in dir_path.rglob("*") if f.is_file()
+        _FSSPEC_TEMP_DIR_PATTERN.sub("", str(f).replace(str(dir_path), "").lstrip("/"))
+        for f in dir_path.rglob("*")
+        if f.is_file()
     ]
 
 
