@@ -43,8 +43,8 @@ class TestBoxRoleMapping:
     def test_co_owner_gets_all_operations(self):
         assert set(BOX_ROLE_MAPPING["co-owner"]) == {"read", "update", "delete"}
 
-    def test_editor_gets_read_and_update(self):
-        assert set(BOX_ROLE_MAPPING["editor"]) == {"read", "update"}
+    def test_editor_gets_all_operations(self):
+        assert set(BOX_ROLE_MAPPING["editor"]) == {"read", "update", "delete"}
 
     def test_read_only_roles(self):
         for role in ("viewer", "previewer", "viewer uploader", "previewer uploader"):

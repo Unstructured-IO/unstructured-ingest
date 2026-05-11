@@ -38,7 +38,7 @@ from unstructured_ingest.utils.dep_check import requires_dependencies
 BOX_ROLE_MAPPING: dict[str, list[str]] = {
     "owner": ["read", "update", "delete"],
     "co-owner": ["read", "update", "delete"],
-    "editor": ["read", "update"],
+    "editor": ["read", "update", "delete"],
     "viewer uploader": ["read"],
     "previewer uploader": ["read"],
     "viewer": ["read"],
