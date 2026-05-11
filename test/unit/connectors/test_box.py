@@ -256,6 +256,34 @@ class TestGetPermissionsForFile:
         # folder f1 should only be fetched once despite two file calls
         assert client.folder.call_count == 1
 
+    def test_folder_collab_transient_failure_not_cached(self):
+        cache = OrderedDict()
+        folder_collab = MagicMock()
+        folder_collab.response_object = make_collab("user", "u1", "viewer")
+
+        folder_mock = MagicMock()
+        folder_mock.get_collaborations.side_effect = [
+            Exception("transient 503"),
+            [folder_collab],
+        ]
+
+        client = MagicMock()
+        file_obj = MagicMock()
+        file_obj.response_object = {"path_collection": {"entries": [{"id": "f1"}]}}
+        client.file.return_value.get.return_value = file_obj
+        client.file.return_value.get_collaborations.return_value = []
+        client.folder.return_value = folder_mock
+
+        first = _get_permissions_for_file(client, "file1", cache)
+        first_read = next(d for d in first if "read" in d)
+        assert "u1" not in first_read["read"]["users"]
+
+        # Second call must retry, not serve a cached empty list from the transient failure.
+        second = _get_permissions_for_file(client, "file2", cache)
+        second_read = next(d for d in second if "read" in d)
+        assert "u1" in second_read["read"]["users"]
+        assert folder_mock.get_collaborations.call_count == 2
+
     def test_api_error_on_path_collection_returns_empty(self):
         cache = OrderedDict()
         client = MagicMock()

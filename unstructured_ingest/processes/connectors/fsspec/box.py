@@ -95,7 +95,11 @@ def _get_collaborations_for_folder(client, folder_id: str, cache: OrderedDict) -
         ):
             collabs.append(collab.response_object)
     except Exception as e:
-        logger.debug(f"Could not retrieve collaborations for folder {folder_id}: {e}")
+        # Don't cache on failure — a transient 503/timeout would otherwise silently
+        # zero out permissions for every descendant file sharing this ancestor for
+        # the rest of the indexer run.
+        logger.warning(f"Could not retrieve collaborations for folder {folder_id}: {e}")
+        return collabs
 
     if len(cache) >= 5:
         cache.popitem(last=False)
