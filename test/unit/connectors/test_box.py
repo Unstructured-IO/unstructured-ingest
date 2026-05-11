@@ -30,12 +30,16 @@ def make_collab(
 
 class TestBoxRoleMapping:
     def test_all_expected_roles_present(self):
-        expected = {"owner", "co-owner", "editor", "viewer uploader", "previewer uploader",
-                    "viewer", "previewer"}
+        expected = {"owner", "co-owner", "editor", "viewer uploader", "viewer"}
         assert set(BOX_ROLE_MAPPING.keys()) == expected
 
     def test_uploader_excluded(self):
         assert "uploader" not in BOX_ROLE_MAPPING
+
+    def test_previewer_roles_excluded(self):
+        # Previewers can render but not download, so they don't get "read".
+        assert "previewer" not in BOX_ROLE_MAPPING
+        assert "previewer uploader" not in BOX_ROLE_MAPPING
 
     def test_owner_gets_all_operations(self):
         assert set(BOX_ROLE_MAPPING["owner"]) == {"read", "update", "delete"}
@@ -47,7 +51,7 @@ class TestBoxRoleMapping:
         assert set(BOX_ROLE_MAPPING["editor"]) == {"read", "update", "delete"}
 
     def test_read_only_roles(self):
-        for role in ("viewer", "previewer", "viewer uploader", "previewer uploader"):
+        for role in ("viewer", "viewer uploader"):
             assert BOX_ROLE_MAPPING[role] == ["read"], f"{role} should map to read only"
 
 

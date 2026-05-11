@@ -40,10 +40,11 @@ BOX_ROLE_MAPPING: dict[str, list[str]] = {
     "co-owner": ["read", "update", "delete"],
     "editor": ["read", "update", "delete"],
     "viewer uploader": ["read"],
-    "previewer uploader": ["read"],
     "viewer": ["read"],
-    "previewer": ["read"],
-    # "uploader" excluded — write-only, cannot view content
+    # "previewer" and "previewer uploader" excluded — Box previewers can render
+    # content in the web UI but cannot download, so granting "read" would
+    # overstate access to downstream ACL consumers expecting download capability.
+    # "uploader" excluded — write-only, cannot view content.
 }
 
 if TYPE_CHECKING:
