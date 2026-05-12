@@ -1,3 +1,9 @@
+## [1.6.3]
+
+### Enhancements
+
+- **feat(embed): add `default_headers` and optional `api_key` on `OpenAIEmbeddingConfig`.** Allows passing custom HTTP headers to every request via `default_headers: dict[str, SecretStr]`, and makes `api_key` optional so OpenAI-compatible gateways that authenticate via a custom header only (no Bearer) can be configured. Header values are typed as `SecretStr` so they are not exposed in logs or serialized output, and unwrapped via `.get_secret_value()` before reaching the OpenAI SDK constructor in both `get_client()` and `get_async_client()`. When `api_key` is unset, the SDK is constructed with the literal placeholder `"ignored"` so the wire shows `Authorization: Bearer ignored`, which header-only gateways disregard.
+
 ## [1.6.2]
 
 ### Fixes
