@@ -301,7 +301,7 @@ class BoxDownloader(FsspecDownloader):
         response = super().run(file_data=file_data, **kwargs)
         # permissions_data is set during indexing in BoxIndexer.run(); this fallback handles
         # standalone downloader usage (e.g., CLI, integration tests without the SND plugin layer).
-        # Memoize the JWT-auth'd client and ancestor cache across files so we don't re-auth per file.
+        # Memoize client and cache across files so we don't re-run JWT auth per file.
         if file_data.metadata.permissions_data is None:
             file_id = (file_data.metadata.record_locator or {}).get("file_id")
             if file_id:
