@@ -118,11 +118,13 @@ def _get_permissions_for_file(
     }
     total = [0]
 
+    # Default True so a failed file.get() doesn't suppress the direct-collab fetch.
+    has_direct_collabs = True
     try:
         file_obj = client.file(file_id).get(fields=["path_collection", "has_collaborations"])
-        path_entries = (
-            file_obj.response_object.get("path_collection", {}).get("entries", [])
-        )
+        response_obj = file_obj.response_object
+        path_entries = response_obj.get("path_collection", {}).get("entries", [])
+        has_direct_collabs = bool(response_obj.get("has_collaborations", True))
         for folder_entry in path_entries:
             folder_id = folder_entry.get("id")
             if folder_id and folder_id != "0":
@@ -131,16 +133,17 @@ def _get_permissions_for_file(
     except Exception as e:
         logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
 
-    try:
-        file_collabs = [
-            c.response_object
-            for c in client.file(file_id).get_collaborations(
-                fields=["accessible_by", "role", "status", "is_access_only"]
-            )
-        ]
-        _normalize_collaborations(file_collabs, normalized, total, max_perms)
-    except Exception as e:
-        logger.debug(f"Could not retrieve collaborations for file {file_id}: {e}")
+    if has_direct_collabs:
+        try:
+            file_collabs = [
+                c.response_object
+                for c in client.file(file_id).get_collaborations(
+                    fields=["accessible_by", "role", "status", "is_access_only"]
+                )
+            ]
+            _normalize_collaborations(file_collabs, normalized, total, max_perms)
+        except Exception as e:
+            logger.debug(f"Could not retrieve collaborations for file {file_id}: {e}")
 
     for role_dict in normalized.values():
         for key in role_dict:
@@ -291,18 +294,22 @@ class BoxDownloader(FsspecDownloader):
     connection_config: BoxConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[BoxDownloaderConfig] = field(default_factory=BoxDownloaderConfig)
+    _box_client: Any = field(default=None, init=False, repr=False)
+    _collab_cache: OrderedDict = field(default_factory=OrderedDict, init=False, repr=False)
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         response = super().run(file_data=file_data, **kwargs)
         # permissions_data is set during indexing in BoxIndexer.run(); this fallback handles
-        # standalone downloader usage (e.g., CLI, integration tests without the SND plugin layer)
+        # standalone downloader usage (e.g., CLI, integration tests without the SND plugin layer).
+        # Memoize the JWT-auth'd client and ancestor cache across files so we don't re-auth per file.
         if file_data.metadata.permissions_data is None:
             file_id = (file_data.metadata.record_locator or {}).get("file_id")
             if file_id:
                 try:
-                    client = self.connection_config.get_box_client()
+                    if self._box_client is None:
+                        self._box_client = self.connection_config.get_box_client()
                     file_data.metadata.permissions_data = _get_permissions_for_file(
-                        client, file_id, OrderedDict()
+                        self._box_client, file_id, self._collab_cache
                     )
                 except Exception as e:
                     logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")

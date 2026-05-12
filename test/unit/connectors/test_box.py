@@ -261,6 +261,20 @@ class TestGetPermissionsForFile:
         # folder f1 should only be fetched once despite two file calls
         assert client.folder.call_count == 1
 
+    def test_has_collaborations_false_skips_file_collab_fetch(self):
+        cache = OrderedDict()
+        client = MagicMock()
+        file_obj = MagicMock()
+        file_obj.response_object = {
+            "path_collection": {"entries": []},
+            "has_collaborations": False,
+        }
+        client.file.return_value.get.return_value = file_obj
+        # Folder walk is empty so no folder calls happen; the only thing under test
+        # is whether the per-file get_collaborations() round-trip is skipped.
+        _get_permissions_for_file(client, "file123", cache)
+        client.file.return_value.get_collaborations.assert_not_called()
+
     def test_folder_collab_transient_failure_not_cached(self):
         cache = OrderedDict()
         folder_collab = MagicMock()
