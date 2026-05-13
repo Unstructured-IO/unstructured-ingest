@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Annotated, Any, Generator, Optional
 
@@ -9,8 +11,9 @@ from dateutil import parser
 from pydantic import Field, Secret
 from pydantic.functional_validators import BeforeValidator
 
-from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
+from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
 from unstructured_ingest.error import ProviderError, UserAuthError, UserError
+from unstructured_ingest.interfaces import DownloadResponse
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -33,14 +36,160 @@ from unstructured_ingest.processes.utils.blob_storage import (
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
+BOX_ROLE_MAPPING: dict[str, list[str]] = {
+    "owner": ["read", "update", "delete"],
+    "co-owner": ["read", "update", "delete"],
+    "editor": ["read", "update", "delete"],
+    "viewer uploader": ["read"],
+    "viewer": ["read"],
+    # "previewer" and "previewer uploader" excluded — Box previewers can render
+    # content in the web UI but cannot download, so granting "read" would
+    # overstate access to downstream ACL consumers expecting download capability.
+    # "uploader" excluded — write-only, cannot view content.
+}
+
 if TYPE_CHECKING:
     from boxfs import BoxFileSystem
 
 CONNECTOR_TYPE = "box"
 
 
+def _normalize_collaborations(
+    collabs: list[dict], normalized: dict, total: list, max_perms: int
+) -> None:
+    for collab in collabs:
+        if total[0] >= max_perms:
+            break
+        if collab.get("status") != "accepted":
+            continue
+        # Access-only collabs are hidden, scoped grants (e.g. shared-link backing) and do
+        # not cascade like normal collabs — including them would overgrant siblings.
+        if collab.get("is_access_only"):
+            continue
+        accessible_by = collab.get("accessible_by") or {}
+        entity_type = accessible_by.get("type")
+        if entity_type not in ("user", "group"):
+            continue
+        if entity_type == "group" and accessible_by.get("group_type") == "all_users_group":
+            continue
+        entity_id = accessible_by.get("id")
+        if not entity_id:
+            continue
+        operations = BOX_ROLE_MAPPING.get(collab.get("role", ""), [])
+        if not operations:
+            continue
+        type_key = entity_type + "s"
+        for op in operations:
+            normalized[op][type_key].add(entity_id)
+        total[0] += 1
+
+
+def _get_collaborations_for_folder(
+    client, folder_id: str, cache: OrderedDict, max_size: int = 128
+) -> list[dict]:
+    if folder_id in cache:
+        cache.move_to_end(folder_id)
+        logger.debug(f"Retrieved cached collaborations for folder {folder_id}")
+        return cache[folder_id]
+
+    collabs = []
+    try:
+        for collab in client.folder(folder_id).get_collaborations(
+            fields=["accessible_by", "role", "status", "is_access_only"]
+        ):
+            collabs.append(collab.response_object)
+    except Exception as e:
+        # Don't cache on failure — a transient 503/timeout would otherwise silently
+        # zero out permissions for every descendant file sharing this ancestor for
+        # the rest of the indexer run.
+        logger.warning(f"Could not retrieve collaborations for folder {folder_id}: {e}")
+        return collabs
+
+    if len(cache) >= max_size:
+        cache.popitem(last=False)
+    cache[folder_id] = collabs
+    return collabs
+
+
+def _get_permissions_for_file(
+    client,
+    file_id: str,
+    cache: OrderedDict,
+    max_perms: int = 500,
+    folder_cache_max_size: int = 128,
+    parent_chain_cache: Optional[dict[str, list[str]]] = None,
+    parent_path: Optional[str] = None,
+) -> list[dict]:
+    normalized = {
+        "read": {"users": set(), "groups": set()},
+        "update": {"users": set(), "groups": set()},
+        "delete": {"users": set(), "groups": set()},
+    }
+    total = [0]
+
+    # Files sharing a parent folder share the same path_collection. Caching by parent path
+    # lets us skip the per-file file.get() round-trip for every file after the first in a
+    # given folder — material savings against Box's 1k-calls/minute Enterprise rate limit.
+    # Default True so a failed file.get() doesn't suppress the direct-collab fetch.
+    has_direct_collabs = True
+    ancestor_folder_ids: Optional[list[str]] = None
+    if (
+        parent_chain_cache is not None
+        and parent_path is not None
+        and parent_path in parent_chain_cache
+    ):
+        ancestor_folder_ids = parent_chain_cache[parent_path]
+
+    if ancestor_folder_ids is None:
+        try:
+            file_obj = client.file(file_id).get(fields=["path_collection", "has_collaborations"])
+            response_obj = file_obj.response_object
+            path_entries = response_obj.get("path_collection", {}).get("entries", [])
+            has_direct_collabs = bool(response_obj.get("has_collaborations", True))
+            ancestor_folder_ids = [
+                entry["id"]
+                for entry in path_entries
+                if entry.get("id") and entry["id"] != "0"
+            ]
+            if parent_chain_cache is not None and parent_path is not None:
+                parent_chain_cache[parent_path] = ancestor_folder_ids
+        except Exception as e:
+            logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
+            ancestor_folder_ids = []
+
+    for folder_id in ancestor_folder_ids:
+        folder_collabs = _get_collaborations_for_folder(
+            client, folder_id, cache, folder_cache_max_size
+        )
+        _normalize_collaborations(folder_collabs, normalized, total, max_perms)
+
+    if has_direct_collabs:
+        try:
+            file_collabs = [
+                c.response_object
+                for c in client.file(file_id).get_collaborations(
+                    fields=["accessible_by", "role", "status", "is_access_only"]
+                )
+            ]
+            _normalize_collaborations(file_collabs, normalized, total, max_perms)
+        except Exception as e:
+            logger.debug(f"Could not retrieve collaborations for file {file_id}: {e}")
+
+    for role_dict in normalized.values():
+        for key in role_dict:
+            role_dict[key] = sorted(role_dict[key])
+
+    logger.debug(f"normalized permissions generated for file {file_id}: {normalized}")
+    return [{k: v} for k, v in normalized.items()]
+
+
 class BoxIndexerConfig(FsspecIndexerConfig):
-    pass
+    max_num_metadata_permissions: int = Field(
+        500, description="Approximate maximum number of permissions included in metadata"
+    )
+    permissions_cache_max_size: int = Field(
+        128, description="Max entries in the ancestor-folder collaborations LRU cache"
+    )
 
 
 class BoxAccessConfig(FsspecAccessConfig):
@@ -95,6 +244,15 @@ class BoxConnectionConfig(FsspecConnectionConfig):
         logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
         return e
 
+    @requires_dependencies(["boxsdk"], extras="box")
+    def get_box_client(self):
+        from boxsdk import Client, JWTAuth
+
+        ac = self.access_config.get_secret_value()
+        oauth = JWTAuth.from_settings_dictionary(ac.box_app_config)
+        oauth.authenticate_instance()
+        return Client(oauth)
+
     @requires_dependencies(["boxfs"], extras="box")
     @contextmanager
     def get_client(self, protocol: str) -> Generator["BoxFileSystem", None, None]:
@@ -135,9 +293,46 @@ class BoxIndexer(FsspecIndexer):
             filesize_bytes=file_size,
         )
 
+    def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
+        client = None
+        cache: OrderedDict = OrderedDict()
+        parent_chain_cache: dict[str, list[str]] = {}
+        try:
+            client = self.connection_config.get_box_client()
+        except Exception as e:
+            logger.warning(f"Could not initialize Box client for permissions fetching: {e}")
+
+        for file_data in super().run(**kwargs):
+            if client:
+                file_id = (file_data.metadata.record_locator or {}).get("file_id")
+                if file_id:
+                    parent_path = (
+                        str(Path(file_data.source_identifiers.fullpath).parent)
+                        if file_data.source_identifiers and file_data.source_identifiers.fullpath
+                        else None
+                    )
+                    try:
+                        file_data.metadata.permissions_data = _get_permissions_for_file(
+                            client,
+                            file_id,
+                            cache,
+                            max_perms=self.index_config.max_num_metadata_permissions,
+                            folder_cache_max_size=self.index_config.permissions_cache_max_size,
+                            parent_chain_cache=parent_chain_cache,
+                            parent_path=parent_path,
+                        )
+                    except Exception as e:
+                        logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
+            yield file_data
+
 
 class BoxDownloaderConfig(FsspecDownloaderConfig):
-    pass
+    max_num_metadata_permissions: int = Field(
+        500, description="Approximate maximum number of permissions included in metadata"
+    )
+    permissions_cache_max_size: int = Field(
+        128, description="Max entries in the ancestor-folder collaborations LRU cache"
+    )
 
 
 @dataclass
@@ -146,6 +341,41 @@ class BoxDownloader(FsspecDownloader):
     connection_config: BoxConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[BoxDownloaderConfig] = field(default_factory=BoxDownloaderConfig)
+    _box_client: Any = field(default=None, init=False, repr=False)
+    _collab_cache: OrderedDict = field(default_factory=OrderedDict, init=False, repr=False)
+    _parent_chain_cache: dict[str, list[str]] = field(
+        default_factory=dict, init=False, repr=False
+    )
+
+    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+        response = super().run(file_data=file_data, **kwargs)
+        # permissions_data is set during indexing in BoxIndexer.run(); this fallback handles
+        # standalone downloader usage (e.g., CLI, integration tests without the SND plugin layer).
+        # Memoize client and caches across files so we don't re-run JWT auth or refetch the
+        # path_collection per file.
+        if file_data.metadata.permissions_data is None:
+            file_id = (file_data.metadata.record_locator or {}).get("file_id")
+            if file_id:
+                parent_path = (
+                    str(Path(file_data.source_identifiers.fullpath).parent)
+                    if file_data.source_identifiers and file_data.source_identifiers.fullpath
+                    else None
+                )
+                try:
+                    if self._box_client is None:
+                        self._box_client = self.connection_config.get_box_client()
+                    file_data.metadata.permissions_data = _get_permissions_for_file(
+                        self._box_client,
+                        file_id,
+                        self._collab_cache,
+                        max_perms=self.download_config.max_num_metadata_permissions,
+                        folder_cache_max_size=self.download_config.permissions_cache_max_size,
+                        parent_chain_cache=self._parent_chain_cache,
+                        parent_path=parent_path,
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
+        return response
 
 
 class BoxUploaderConfig(FsspecUploaderConfig):
