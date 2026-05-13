@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Annotated, Any, Generator, Optional
 
@@ -83,7 +84,9 @@ def _normalize_collaborations(
         total[0] += 1
 
 
-def _get_collaborations_for_folder(client, folder_id: str, cache: OrderedDict) -> list[dict]:
+def _get_collaborations_for_folder(
+    client, folder_id: str, cache: OrderedDict, max_size: int = 128
+) -> list[dict]:
     if folder_id in cache:
         cache.move_to_end(folder_id)
         logger.debug(f"Retrieved cached collaborations for folder {folder_id}")
@@ -102,14 +105,20 @@ def _get_collaborations_for_folder(client, folder_id: str, cache: OrderedDict) -
         logger.warning(f"Could not retrieve collaborations for folder {folder_id}: {e}")
         return collabs
 
-    if len(cache) >= 5:
+    if len(cache) >= max_size:
         cache.popitem(last=False)
     cache[folder_id] = collabs
     return collabs
 
 
 def _get_permissions_for_file(
-    client, file_id: str, cache: OrderedDict, max_perms: int = 500
+    client,
+    file_id: str,
+    cache: OrderedDict,
+    max_perms: int = 500,
+    folder_cache_max_size: int = 128,
+    parent_chain_cache: Optional[dict[str, list[str]]] = None,
+    parent_path: Optional[str] = None,
 ) -> list[dict]:
     normalized = {
         "read": {"users": set(), "groups": set()},
@@ -118,20 +127,41 @@ def _get_permissions_for_file(
     }
     total = [0]
 
+    # Files sharing a parent folder share the same path_collection. Caching by parent path
+    # lets us skip the per-file file.get() round-trip for every file after the first in a
+    # given folder — material savings against Box's 1k-calls/minute Enterprise rate limit.
     # Default True so a failed file.get() doesn't suppress the direct-collab fetch.
     has_direct_collabs = True
-    try:
-        file_obj = client.file(file_id).get(fields=["path_collection", "has_collaborations"])
-        response_obj = file_obj.response_object
-        path_entries = response_obj.get("path_collection", {}).get("entries", [])
-        has_direct_collabs = bool(response_obj.get("has_collaborations", True))
-        for folder_entry in path_entries:
-            folder_id = folder_entry.get("id")
-            if folder_id and folder_id != "0":
-                folder_collabs = _get_collaborations_for_folder(client, folder_id, cache)
-                _normalize_collaborations(folder_collabs, normalized, total, max_perms)
-    except Exception as e:
-        logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
+    ancestor_folder_ids: Optional[list[str]] = None
+    if (
+        parent_chain_cache is not None
+        and parent_path is not None
+        and parent_path in parent_chain_cache
+    ):
+        ancestor_folder_ids = parent_chain_cache[parent_path]
+
+    if ancestor_folder_ids is None:
+        try:
+            file_obj = client.file(file_id).get(fields=["path_collection", "has_collaborations"])
+            response_obj = file_obj.response_object
+            path_entries = response_obj.get("path_collection", {}).get("entries", [])
+            has_direct_collabs = bool(response_obj.get("has_collaborations", True))
+            ancestor_folder_ids = [
+                entry["id"]
+                for entry in path_entries
+                if entry.get("id") and entry["id"] != "0"
+            ]
+            if parent_chain_cache is not None and parent_path is not None:
+                parent_chain_cache[parent_path] = ancestor_folder_ids
+        except Exception as e:
+            logger.debug(f"Could not retrieve path_collection for file {file_id}: {e}")
+            ancestor_folder_ids = []
+
+    for folder_id in ancestor_folder_ids:
+        folder_collabs = _get_collaborations_for_folder(
+            client, folder_id, cache, folder_cache_max_size
+        )
+        _normalize_collaborations(folder_collabs, normalized, total, max_perms)
 
     if has_direct_collabs:
         try:
@@ -156,6 +186,14 @@ def _get_permissions_for_file(
 class BoxIndexerConfig(FsspecIndexerConfig):
     max_num_metadata_permissions: int = Field(
         500, description="Approximate maximum number of permissions included in metadata"
+    )
+    permissions_cache_max_size: int = Field(
+        128,
+        description=(
+            "Max entries in the ancestor-folder collaborations LRU cache. Each entry holds the "
+            "raw collaboration list for one Box folder. Bump higher for wide folder trees to "
+            "avoid evicting entries needed by sibling files in the same branch."
+        ),
     )
 
 
@@ -263,6 +301,7 @@ class BoxIndexer(FsspecIndexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = None
         cache: OrderedDict = OrderedDict()
+        parent_chain_cache: dict[str, list[str]] = {}
         try:
             client = self.connection_config.get_box_client()
         except Exception as e:
@@ -272,12 +311,20 @@ class BoxIndexer(FsspecIndexer):
             if client:
                 file_id = (file_data.metadata.record_locator or {}).get("file_id")
                 if file_id:
+                    parent_path = (
+                        str(Path(file_data.source_identifiers.fullpath).parent)
+                        if file_data.source_identifiers and file_data.source_identifiers.fullpath
+                        else None
+                    )
                     try:
                         file_data.metadata.permissions_data = _get_permissions_for_file(
                             client,
                             file_id,
                             cache,
-                            self.index_config.max_num_metadata_permissions,
+                            max_perms=self.index_config.max_num_metadata_permissions,
+                            folder_cache_max_size=self.index_config.permissions_cache_max_size,
+                            parent_chain_cache=parent_chain_cache,
+                            parent_path=parent_path,
                         )
                     except Exception as e:
                         logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")
@@ -285,7 +332,12 @@ class BoxIndexer(FsspecIndexer):
 
 
 class BoxDownloaderConfig(FsspecDownloaderConfig):
-    pass
+    max_num_metadata_permissions: int = Field(
+        500, description="Approximate maximum number of permissions included in metadata"
+    )
+    permissions_cache_max_size: int = Field(
+        128, description="Max entries in the ancestor-folder collaborations LRU cache"
+    )
 
 
 @dataclass
@@ -296,20 +348,35 @@ class BoxDownloader(FsspecDownloader):
     download_config: Optional[BoxDownloaderConfig] = field(default_factory=BoxDownloaderConfig)
     _box_client: Any = field(default=None, init=False, repr=False)
     _collab_cache: OrderedDict = field(default_factory=OrderedDict, init=False, repr=False)
+    _parent_chain_cache: dict[str, list[str]] = field(
+        default_factory=dict, init=False, repr=False
+    )
 
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         response = super().run(file_data=file_data, **kwargs)
         # permissions_data is set during indexing in BoxIndexer.run(); this fallback handles
         # standalone downloader usage (e.g., CLI, integration tests without the SND plugin layer).
-        # Memoize client and cache across files so we don't re-run JWT auth per file.
+        # Memoize client and caches across files so we don't re-run JWT auth or refetch the
+        # path_collection per file.
         if file_data.metadata.permissions_data is None:
             file_id = (file_data.metadata.record_locator or {}).get("file_id")
             if file_id:
+                parent_path = (
+                    str(Path(file_data.source_identifiers.fullpath).parent)
+                    if file_data.source_identifiers and file_data.source_identifiers.fullpath
+                    else None
+                )
                 try:
                     if self._box_client is None:
                         self._box_client = self.connection_config.get_box_client()
                     file_data.metadata.permissions_data = _get_permissions_for_file(
-                        self._box_client, file_id, self._collab_cache
+                        self._box_client,
+                        file_id,
+                        self._collab_cache,
+                        max_perms=self.download_config.max_num_metadata_permissions,
+                        folder_cache_max_size=self.download_config.permissions_cache_max_size,
+                        parent_chain_cache=self._parent_chain_cache,
+                        parent_path=parent_path,
                     )
                 except Exception as e:
                     logger.warning(f"Could not retrieve permissions for file {file_id}: {e}")

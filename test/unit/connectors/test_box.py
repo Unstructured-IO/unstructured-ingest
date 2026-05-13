@@ -312,3 +312,72 @@ class TestGetPermissionsForFile:
         for entry in result:
             for val in list(entry.values())[0].values():
                 assert val == []
+
+    def test_parent_chain_cache_skips_file_get(self):
+        # When two files share a parent path, only the first should trigger file.get().
+        cache = OrderedDict()
+        parent_chain_cache: dict[str, list[str]] = {}
+        folder_collab = MagicMock()
+        folder_collab.response_object = make_collab("user", "u1", "viewer")
+        client = self._make_client(
+            path_entries=[{"id": "f1"}],
+            folder_collabs_by_id={"f1": [folder_collab]},
+            file_collabs=[],
+        )
+
+        first = _get_permissions_for_file(
+            client,
+            "file1",
+            cache,
+            parent_chain_cache=parent_chain_cache,
+            parent_path="/parent",
+        )
+        second = _get_permissions_for_file(
+            client,
+            "file2",
+            cache,
+            parent_chain_cache=parent_chain_cache,
+            parent_path="/parent",
+        )
+
+        first_read = next(d for d in first if "read" in d)
+        second_read = next(d for d in second if "read" in d)
+        assert "u1" in first_read["read"]["users"]
+        assert "u1" in second_read["read"]["users"]
+        # file.get() runs once (for file1); file2 reuses the cached ancestor chain.
+        assert client.file.return_value.get.call_count == 1
+        assert parent_chain_cache["/parent"] == ["f1"]
+
+    def test_parent_chain_cache_not_populated_on_api_error(self):
+        # If file.get() fails for the first file, we shouldn't cache an empty ancestor list
+        # for that parent — subsequent files should retry.
+        cache = OrderedDict()
+        parent_chain_cache: dict[str, list[str]] = {}
+        client = MagicMock()
+        client.file.return_value.get.side_effect = Exception("transient")
+        client.file.return_value.get_collaborations.return_value = []
+
+        _get_permissions_for_file(
+            client,
+            "file1",
+            cache,
+            parent_chain_cache=parent_chain_cache,
+            parent_path="/parent",
+        )
+        assert "/parent" not in parent_chain_cache
+
+    def test_folder_cache_size_respected(self):
+        # When folder_cache_max_size=1, only one ancestor entry should remain after walking
+        # two distinct ancestors.
+        cache = OrderedDict()
+        folder_collab_a = MagicMock()
+        folder_collab_a.response_object = make_collab("user", "ua", "viewer")
+        folder_collab_b = MagicMock()
+        folder_collab_b.response_object = make_collab("user", "ub", "viewer")
+        client = self._make_client(
+            path_entries=[{"id": "fa"}, {"id": "fb"}],
+            folder_collabs_by_id={"fa": [folder_collab_a], "fb": [folder_collab_b]},
+            file_collabs=[],
+        )
+        _get_permissions_for_file(client, "file1", cache, folder_cache_max_size=1)
+        assert len(cache) == 1
