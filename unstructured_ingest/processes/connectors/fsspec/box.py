@@ -188,12 +188,7 @@ class BoxIndexerConfig(FsspecIndexerConfig):
         500, description="Approximate maximum number of permissions included in metadata"
     )
     permissions_cache_max_size: int = Field(
-        128,
-        description=(
-            "Max entries in the ancestor-folder collaborations LRU cache. Each entry holds the "
-            "raw collaboration list for one Box folder. Bump higher for wide folder trees to "
-            "avoid evicting entries needed by sibling files in the same branch."
-        ),
+        128, description="Max entries in the ancestor-folder collaborations LRU cache"
     )
 
 
