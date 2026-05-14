@@ -69,6 +69,12 @@ class GoogleDriveAccessConfig(AccessConfig):
         "Obtain via Google OAuth Playground or your OAuth application. "
         "Tokens typically expire after 1 hour.",
     )
+    refresh_token: Optional[str] = Field(
+        default=None,
+        description="OAuth 2.0 refresh token for obtaining new access tokens. "
+        "Long-lived; used by the platform to refresh expired access tokens "
+        "before each job run.",
+    )
 
     def model_post_init(self, __context: Any) -> None:
         has_service_account = (

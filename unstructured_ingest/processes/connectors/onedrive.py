@@ -60,9 +60,14 @@ class OnedriveAccessConfig(AccessConfig):
         default=None,
         description=(
             "OAuth 2.0 access token for delegated user authentication. "
-            "Tokens typically expire after ~1 hour; this connector does not "
-            "refresh tokens."
+            "Tokens typically expire after ~1 hour."
         ),
+    )
+    refresh_token: Optional[str] = Field(
+        default=None,
+        description="OAuth 2.0 refresh token for obtaining new access tokens. "
+        "Long-lived; used by the platform to refresh expired access tokens "
+        "before each job run.",
     )
 
     def model_post_init(self, __context: Any) -> None:

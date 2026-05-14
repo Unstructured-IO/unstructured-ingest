@@ -1,3 +1,9 @@
+## [1.6.1]
+
+### Enhancements
+
+- **feat(oauth): add `refresh_token` field to Google Drive, GCS, OneDrive, SharePoint, and Outlook AccessConfigs.** Allows the platform to persist and retrieve OAuth refresh tokens alongside access tokens, enabling automatic token refresh before job dispatch. Dropbox already had this field.
+
 ## [1.6.0]
 
 ### Enhancements
