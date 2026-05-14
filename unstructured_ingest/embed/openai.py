@@ -25,7 +25,14 @@ if TYPE_CHECKING:
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr = Field(description="API key for OpenAI")
+    api_key: Optional[SecretStr] = Field(
+        default=None,
+        description=(
+            "API key for OpenAI. Optional: when unset, the OpenAI SDK is constructed with the "
+            "placeholder 'ignored' so the wire shows Authorization: Bearer ignored, which "
+            "OpenAI-compatible gateways that authenticate via default_headers can disregard."
+        ),
+    )
     embedder_model_name: str = Field(
         default="text-embedding-ada-002", alias="model_name", description="OpenAI model name"
     )
@@ -95,7 +102,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
         client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
         kwargs = {
-            "api_key": self.api_key.get_secret_value(),
+            "api_key": self.api_key.get_secret_value() if self.api_key else "ignored",
             "http_client": client,
             "base_url": self.base_url,
         }
@@ -111,7 +118,7 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
 
         client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
         kwargs = {
-            "api_key": self.api_key.get_secret_value(),
+            "api_key": self.api_key.get_secret_value() if self.api_key else "ignored",
             "http_client": client,
             "base_url": self.base_url,
         }
