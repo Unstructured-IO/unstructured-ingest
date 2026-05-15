@@ -207,7 +207,19 @@ MIME_TYPES_TO_TEST = [
     "application/vnd.google-apps.document",
     "application/vnd.google-apps.spreadsheet",
     "application/vnd.google-apps.presentation",
+    "application/vnd.google-apps.drawing",
 ]
+
+EXPECTED_EXPORT_EXTENSIONS = {
+    "application/vnd.google-apps.document": ".docx",
+    "application/vnd.google-apps.spreadsheet": ".xlsx",
+    "application/vnd.google-apps.presentation": ".pptx",
+    "application/vnd.google-apps.drawing": ".png",
+}
+
+OPTIONAL_NATIVE_MIME_TYPES = {
+    "application/vnd.google-apps.drawing",
+}
 
 
 @pytest.mark.asyncio
@@ -217,7 +229,7 @@ MIME_TYPES_TO_TEST = [
 async def test_google_drive_export_by_type(expected_mime, temp_dir):
     """
     Parametrized test for verifying export of each specific Google-native format
-    using exportLinks or webContentLink.
+    using the Drive API export endpoints.
     """
 
     drive_id = os.environ["GOOGLE_DRIVE_NATIVE_TEST_ID"]
@@ -239,6 +251,8 @@ async def test_google_drive_export_by_type(expected_mime, temp_dir):
 
     # Filter only the target MIME type
     target_files = [f for f in file_datas if f.additional_metadata.get("mimeType") == expected_mime]
+    if not target_files and expected_mime in OPTIONAL_NATIVE_MIME_TYPES:
+        pytest.skip(f"No optional Google-native fixture found with MIME type: {expected_mime}")
     assert target_files, f"No files found with MIME type: {expected_mime}"
 
     for file_data in target_files:
@@ -249,10 +263,8 @@ async def test_google_drive_export_by_type(expected_mime, temp_dir):
         assert out_path.stat().st_size > 0, f"{out_path} is empty"
 
         method = file_data.additional_metadata.get("download_method", "")
-        assert method in {
-            "export_link",
-            "web_content_link",
-        }, f"Unexpected download method: {method}"
+        assert method == "google_workspace_export", f"Unexpected download method: {method}"
+        assert out_path.suffix == EXPECTED_EXPORT_EXTENSIONS[expected_mime]
 
 
 @pytest.mark.asyncio

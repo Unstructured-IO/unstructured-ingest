@@ -1,11 +1,46 @@
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
-from unstructured_ingest.error import ValueError
+from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import SourceConnectionError, ValueError
 from unstructured_ingest.processes.connectors.google_drive import (
+    GOOGLE_EXPORT_MIME_MAP,
     GoogleDriveAccessConfig,
+    GoogleDriveDownloader,
+    GoogleDriveDownloaderConfig,
+    GoogleDriveIndexer,
+    GoogleDriveIndexerConfig,
+    _get_extension,
 )
+
+
+def _make_file_data(mime_type: str, filename: str = "native-file") -> FileData:
+    return FileData(
+        connector_type="google_drive",
+        identifier="file-id",
+        source_identifiers=SourceIdentifiers(filename=filename, fullpath=filename),
+        additional_metadata={"mimeType": mime_type, "size": "0"},
+    )
+
+
+class _FakeGoogleDriveRequest:
+    def __init__(self, response: dict):
+        self.response = response
+
+    def execute(self) -> dict:
+        return self.response
+
+
+class _FakeGoogleDriveFilesClient:
+    def __init__(self, responses: list[dict]):
+        self.responses = responses
+        self.list_calls = []
+
+    def list(self, **kwargs):
+        self.list_calls.append(kwargs)
+        return _FakeGoogleDriveRequest(self.responses.pop(0))
 
 
 class TestGoogleDriveAccessConfig:
@@ -105,3 +140,156 @@ class TestGoogleDriveAccessConfig:
         )
         with pytest.raises(ValueError, match="both provided and have different values"):
             config.get_service_account_key()
+
+
+class TestGoogleDriveNativeExports:
+    @pytest.mark.parametrize(
+        ("source_mime_type", "expected_extension"),
+        [
+            ("application/vnd.google-apps.document", ".docx"),
+            ("application/vnd.google-apps.spreadsheet", ".xlsx"),
+            ("application/vnd.google-apps.presentation", ".pptx"),
+            ("application/vnd.google-apps.drawing", ".png"),
+        ],
+    )
+    def test_get_extension_uses_source_mime_type(self, source_mime_type, expected_extension):
+        file_data = _make_file_data(source_mime_type)
+
+        assert _get_extension(file_data) == expected_extension
+
+    @pytest.mark.parametrize(
+        ("source_mime_type", "expected_extension"),
+        [
+            ("application/vnd.google-apps.document", ".docx"),
+            ("application/vnd.google-apps.spreadsheet", ".xlsx"),
+            ("application/vnd.google-apps.presentation", ".pptx"),
+            ("application/vnd.google-apps.drawing", ".png"),
+        ],
+    )
+    def test_downloader_exports_supported_google_native_files(
+        self, tmp_path, source_mime_type, expected_extension
+    ):
+        file_data = _make_file_data(source_mime_type)
+        downloader = GoogleDriveDownloader(
+            connection_config=MagicMock(),
+            download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
+        )
+        export_calls = []
+        direct_download = MagicMock()
+
+        def export_file(file_id, download_path, mime_type, file_size):
+            export_calls.append(
+                {
+                    "file_id": file_id,
+                    "download_path": download_path,
+                    "mime_type": mime_type,
+                    "file_size": file_size,
+                }
+            )
+            download_path.write_bytes(b"exported")
+
+        downloader._export_gdrive_native_file = export_file
+        downloader._direct_download_file = direct_download
+
+        download_path = downloader._download_file(file_data)
+
+        assert download_path.suffix == expected_extension
+        assert download_path.exists()
+        assert export_calls == [
+            {
+                "file_id": "file-id",
+                "download_path": download_path,
+                "mime_type": GOOGLE_EXPORT_MIME_MAP[source_mime_type],
+                "file_size": 0,
+            }
+        ]
+        direct_download.assert_not_called()
+        assert file_data.additional_metadata["export_mime_type"] == GOOGLE_EXPORT_MIME_MAP[
+            source_mime_type
+        ]
+        assert file_data.additional_metadata["export_extension"] == expected_extension
+        assert file_data.additional_metadata["download_method"] == "google_workspace_export"
+
+    def test_downloader_rejects_unsupported_google_native_files(self, tmp_path):
+        file_data = _make_file_data("application/vnd.google-apps.form")
+        downloader = GoogleDriveDownloader(
+            connection_config=MagicMock(),
+            download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
+        )
+        downloader._export_gdrive_native_file = MagicMock()
+        downloader._direct_download_file = MagicMock()
+
+        with pytest.raises(
+            SourceConnectionError, match="Unsupported Google Drive native MIME type"
+        ):
+            downloader._download_file(file_data)
+
+        downloader._export_gdrive_native_file.assert_not_called()
+        downloader._direct_download_file.assert_not_called()
+
+
+class TestGoogleDriveExtensionFiltering:
+    def test_get_paginated_results_includes_native_mimes_for_export_extensions(self):
+        files_client = MagicMock()
+        files_client.list.return_value.execute.return_value = {"files": []}
+        indexer = GoogleDriveIndexer(
+            connection_config=MagicMock(),
+            index_config=GoogleDriveIndexerConfig(),
+        )
+
+        indexer.get_paginated_results(
+            files_client=files_client,
+            object_id="folder-id",
+            extensions=["docx", ".xlsx", "pptx", "png"],
+        )
+
+        query = files_client.list.call_args.kwargs["q"]
+        assert "fileExtension = 'docx'" in query
+        assert "fileExtension = 'xlsx'" in query
+        assert "fileExtension = 'pptx'" in query
+        assert "fileExtension = 'png'" in query
+        assert "mimeType = 'application/vnd.google-apps.document'" in query
+        assert "mimeType = 'application/vnd.google-apps.spreadsheet'" in query
+        assert "mimeType = 'application/vnd.google-apps.presentation'" in query
+        assert "mimeType = 'application/vnd.google-apps.drawing'" in query
+        assert "mimeType = 'application/vnd.google-apps.folder'" in query
+
+    def test_count_files_recursively_matches_native_mimes_for_export_extensions(self):
+        files_client = _FakeGoogleDriveFilesClient(
+            responses=[
+                {
+                    "files": [
+                        {
+                            "id": "doc",
+                            "mimeType": "application/vnd.google-apps.document",
+                        },
+                        {
+                            "id": "drawing",
+                            "mimeType": "application/vnd.google-apps.drawing",
+                        },
+                        {
+                            "id": "form",
+                            "mimeType": "application/vnd.google-apps.form",
+                        },
+                        {
+                            "id": "binary-docx",
+                            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
+                            "fileExtension": "docx",
+                        },
+                        {
+                            "id": "pdf",
+                            "mimeType": "application/pdf",
+                            "fileExtension": "pdf",
+                        },
+                    ]
+                }
+            ]
+        )
+
+        count = GoogleDriveIndexer.count_files_recursively(
+            files_client=files_client,
+            folder_id="folder-id",
+            extensions=["docx", "png"],
+        )
+
+        assert count == 3
