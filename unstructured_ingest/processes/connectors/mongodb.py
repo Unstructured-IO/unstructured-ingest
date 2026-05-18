@@ -20,6 +20,7 @@ from unstructured_ingest.error import (
     QuotaError,
     SourceConnectionError,
     TimeoutError,
+    UnstructuredIngestError,
     ValueError,
     WriteError,
 )
@@ -414,9 +415,10 @@ class MongoDBUploader(Uploader):
                     logger.warning("criteria for deleting previous content not met, skipping")
                 for chunk in batch_generator(data, self.upload_config.batch_size):
                     collection.insert_many(chunk)
-        except (QuotaError, TimeoutError, WriteError, DestinationConnectionError):
-            # Internal types raised by delete_by_record_id (or future helpers).
-            # Must come before the broad except blocks so they aren't relabeled.
+        except UnstructuredIngestError:
+            # Internal types raised by delete_by_record_id (or future helpers)
+            # propagate unchanged. Placed before the pymongo handlers and the
+            # broad `except Exception` so they aren't reclassified.
             raise
         except BulkWriteError as e:
             raise WriteError(f"MongoDB bulk write failed: {e}") from e
