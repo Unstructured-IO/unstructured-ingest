@@ -1,3 +1,9 @@
+## [1.6.2]
+
+### Fixes
+
+- **fix(google-drive): export Google-native Docs Editors files before download.** Google Docs, Sheets, Slides, and Drawings now use Drive export endpoints instead of raw media downloads, preventing 403 errors for files without binary content. Extension filters now include matching Google-native MIME types for exportable formats, and unsupported Google-native files fail clearly instead of falling through to direct download.
+
 ## [1.6.1]
 
 ### Enhancements
