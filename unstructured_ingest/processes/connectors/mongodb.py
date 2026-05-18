@@ -343,9 +343,21 @@ class MongoDBUploader(Uploader):
             indexed_keys.extend(key_bson.keys())
         return self.upload_config.record_id_key in indexed_keys
 
+    @staticmethod
+    def _is_quota_error(e: Exception) -> bool:
+        # Check the server's structured errmsg field (in OperationFailure.details)
+        # rather than str(e), which often includes the namespace and produced
+        # false positives like "auth failure on database 'quota_db'".
+        details = getattr(e, "details", None) or {}
+        errmsg = str(details.get("errmsg") or "").lower()
+        if not errmsg:
+            errmsg = str(getattr(e, "_message", "") or "").lower()
+        return "quota" in errmsg
+
     def delete_by_record_id(self, collection: "Collection", file_data: FileData) -> None:
         from pymongo.errors import (
             AutoReconnect,
+            NetworkTimeout,
             OperationFailure,
             ServerSelectionTimeoutError,
         )
@@ -359,11 +371,14 @@ class MongoDBUploader(Uploader):
         try:
             delete_results = collection.delete_many(filter=query)
         except OperationFailure as e:
-            if "quota" in str(e).lower():
+            if self._is_quota_error(e):
                 raise QuotaError(f"MongoDB quota exceeded: {e}") from e
             raise DestinationConnectionError(f"MongoDB operation failed: {e}") from e
         except ServerSelectionTimeoutError as e:
             raise TimeoutError(f"MongoDB server unreachable: {e}") from e
+        except NetworkTimeout as e:
+            # Must come before AutoReconnect: NetworkTimeout is a subclass.
+            raise TimeoutError(f"MongoDB network timeout: {e}") from e
         except AutoReconnect as e:
             raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
         logger.info(
@@ -374,6 +389,7 @@ class MongoDBUploader(Uploader):
         from pymongo.errors import (
             AutoReconnect,
             BulkWriteError,
+            NetworkTimeout,
             OperationFailure,
             ServerSelectionTimeoutError,
         )
@@ -398,14 +414,21 @@ class MongoDBUploader(Uploader):
                     logger.warning("criteria for deleting previous content not met, skipping")
                 for chunk in batch_generator(data, self.upload_config.batch_size):
                     collection.insert_many(chunk)
+        except (QuotaError, TimeoutError, WriteError, DestinationConnectionError):
+            # Internal types raised by delete_by_record_id (or future helpers).
+            # Must come before the broad except blocks so they aren't relabeled.
+            raise
         except BulkWriteError as e:
             raise WriteError(f"MongoDB bulk write failed: {e}") from e
         except OperationFailure as e:
-            if "quota" in str(e).lower():
+            if self._is_quota_error(e):
                 raise QuotaError(f"MongoDB quota exceeded: {e}") from e
             raise DestinationConnectionError(f"MongoDB operation failed: {e}") from e
         except ServerSelectionTimeoutError as e:
             raise TimeoutError(f"MongoDB server unreachable: {e}") from e
+        except NetworkTimeout as e:
+            # Must come before AutoReconnect: NetworkTimeout is a subclass.
+            raise TimeoutError(f"MongoDB network timeout: {e}") from e
         except AutoReconnect as e:
             raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
         except Exception as e:
