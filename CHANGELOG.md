@@ -1,3 +1,9 @@
+## [1.6.3]
+
+### Fixes
+
+- **fix(mongodb): map pymongo exceptions to correct error types.** `MongoDBUploader` now classifies `OperationFailure` (quota / authorization) as `QuotaError`, `ServerSelectionTimeoutError` as `TimeoutError`, `BulkWriteError` as `WriteError`, and `AutoReconnect` as `DestinationConnectionError`. Previously these all surfaced as generic `DestinationConnectionError`, which the platform controller classified as `error_type=platform` and counted against the platform-error SLO denominator. Exception ordering is preserved so subclasses are caught before their parents (`BulkWriteError` before `OperationFailure`; `ServerSelectionTimeoutError` before `AutoReconnect`).
+
 ## [1.6.2]
 
 ### Fixes

@@ -1,7 +1,10 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pymongo.errors import (
+
+pytest.importorskip("pymongo")
+
+from pymongo.errors import (  # noqa: E402 - import after importorskip is intentional
     AutoReconnect,
     BulkWriteError,
     OperationFailure,
