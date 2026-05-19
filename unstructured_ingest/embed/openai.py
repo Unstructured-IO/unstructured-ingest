@@ -25,11 +25,22 @@ if TYPE_CHECKING:
 
 
 class OpenAIEmbeddingConfig(EmbeddingConfig):
-    api_key: SecretStr = Field(description="API key for OpenAI")
+    api_key: Optional[SecretStr] = Field(
+        default=None,
+        description=(
+            "API key for OpenAI. Optional: when unset, the OpenAI SDK is constructed with the "
+            "placeholder 'ignored' so the wire shows Authorization: Bearer ignored, which "
+            "OpenAI-compatible gateways that authenticate via default_headers can disregard."
+        ),
+    )
     embedder_model_name: str = Field(
         default="text-embedding-ada-002", alias="model_name", description="OpenAI model name"
     )
     base_url: Optional[str] = Field(default=None, description="optional override for the base url")
+    default_headers: Optional[dict[str, SecretStr]] = Field(
+        default=None,
+        description="extra HTTP headers attached to every request",
+    )
 
     @requires_dependencies(["openai"], extras="openai")
     def wrap_error(self, e: Exception) -> Exception:
@@ -90,18 +101,32 @@ class OpenAIEmbeddingConfig(EmbeddingConfig):
         from openai import DefaultHttpxClient, OpenAI
 
         client = DefaultHttpxClient(verify=ssl_context_with_optional_ca_override())
-        return OpenAI(
-            api_key=self.api_key.get_secret_value(), http_client=client, base_url=self.base_url
-        )
+        kwargs = {
+            "api_key": self.api_key.get_secret_value() if self.api_key else "ignored",
+            "http_client": client,
+            "base_url": self.base_url,
+        }
+        if self.default_headers:
+            kwargs["default_headers"] = {
+                k: v.get_secret_value() for k, v in self.default_headers.items()
+            }
+        return OpenAI(**kwargs)
 
     @requires_dependencies(["openai"], extras="openai")
     def get_async_client(self) -> "AsyncOpenAI":
         from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
         client = DefaultAsyncHttpxClient(verify=ssl_context_with_optional_ca_override())
-        return AsyncOpenAI(
-            api_key=self.api_key.get_secret_value(), http_client=client, base_url=self.base_url
-        )
+        kwargs = {
+            "api_key": self.api_key.get_secret_value() if self.api_key else "ignored",
+            "http_client": client,
+            "base_url": self.base_url,
+        }
+        if self.default_headers:
+            kwargs["default_headers"] = {
+                k: v.get_secret_value() for k, v in self.default_headers.items()
+            }
+        return AsyncOpenAI(**kwargs)
 
 
 @dataclass

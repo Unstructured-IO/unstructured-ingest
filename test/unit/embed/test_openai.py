@@ -1,4 +1,19 @@
+import sys
+from unittest.mock import MagicMock
+
+import pytest
+from pydantic import SecretStr
+
 from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+
+
+@pytest.fixture
+def fake_openai(monkeypatch):
+    """Inject a stub `openai` module so get_client / get_async_client can be exercised
+    without the real `openai` extra installed in the unit-test environment."""
+    stub = MagicMock()
+    monkeypatch.setitem(sys.modules, "openai", stub)
+    return stub
 
 
 def test_embed_documents_does_not_break_element_to_dict(mocker):
@@ -26,3 +41,64 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     assert elements[0]["text"] == "This is sentence 1"
     assert elements[1]["text"] == "This is sentence 2"
     assert mock_client.embeddings.create.call_count == 2
+
+
+def test_get_client_without_default_headers(fake_openai):
+    """default_headers=None must not pass the kwarg to the OpenAI constructor."""
+    config = OpenAIEmbeddingConfig(api_key="key")
+    config.get_client()
+    _, kwargs = fake_openai.OpenAI.call_args
+    assert "default_headers" not in kwargs
+
+
+def test_get_client_with_default_headers_extracts_secrets(fake_openai):
+    """default_headers values are unwrapped from SecretStr before reaching the SDK."""
+    config = OpenAIEmbeddingConfig(
+        api_key="key",
+        default_headers={"X-Custom": SecretStr("token123"), "X-Other": SecretStr("abc")},
+    )
+    config.get_client()
+    _, kwargs = fake_openai.OpenAI.call_args
+    assert kwargs["default_headers"] == {"X-Custom": "token123", "X-Other": "abc"}
+
+
+def test_get_async_client_without_default_headers(fake_openai):
+    """default_headers=None must not pass the kwarg to AsyncOpenAI."""
+    config = OpenAIEmbeddingConfig(api_key="key")
+    config.get_async_client()
+    _, kwargs = fake_openai.AsyncOpenAI.call_args
+    assert "default_headers" not in kwargs
+
+
+def test_get_async_client_with_default_headers_extracts_secrets(fake_openai):
+    """default_headers values are unwrapped from SecretStr in async client path."""
+    config = OpenAIEmbeddingConfig(
+        api_key="key",
+        default_headers={"Authorization": SecretStr("Bearer tok")},
+    )
+    config.get_async_client()
+    _, kwargs = fake_openai.AsyncOpenAI.call_args
+    assert kwargs["default_headers"] == {"Authorization": "Bearer tok"}
+
+
+def test_get_client_without_api_key_uses_placeholder(fake_openai):
+    """When api_key is None, the SDK is constructed with the literal 'ignored' placeholder
+    so header-only OpenAI-compatible gateways can authenticate via default_headers alone."""
+    config = OpenAIEmbeddingConfig(
+        default_headers={"X-Custom-Token": SecretStr("tenant-key")},
+    )
+    config.get_client()
+    _, kwargs = fake_openai.OpenAI.call_args
+    assert kwargs["api_key"] == "ignored"
+    assert kwargs["default_headers"] == {"X-Custom-Token": "tenant-key"}
+
+
+def test_get_async_client_without_api_key_uses_placeholder(fake_openai):
+    """Async path mirrors sync: api_key=None plus default_headers triggers the placeholder."""
+    config = OpenAIEmbeddingConfig(
+        default_headers={"X-Custom-Token": SecretStr("tenant-key")},
+    )
+    config.get_async_client()
+    _, kwargs = fake_openai.AsyncOpenAI.call_args
+    assert kwargs["api_key"] == "ignored"
+    assert kwargs["default_headers"] == {"X-Custom-Token": "tenant-key"}
