@@ -17,8 +17,12 @@ from unstructured_ingest.data_types.file_data import (
 from unstructured_ingest.error import (
     ConnectionError,
     DestinationConnectionError,
+    QuotaError,
     SourceConnectionError,
+    TimeoutError,
+    UnstructuredIngestError,
     ValueError,
+    WriteError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -340,19 +344,58 @@ class MongoDBUploader(Uploader):
             indexed_keys.extend(key_bson.keys())
         return self.upload_config.record_id_key in indexed_keys
 
+    @staticmethod
+    def _is_quota_error(e: Exception) -> bool:
+        # Check the server's structured errmsg field (in OperationFailure.details)
+        # rather than str(e), which often includes the namespace and produced
+        # false positives like "auth failure on database 'quota_db'".
+        details = getattr(e, "details", None) or {}
+        errmsg = str(details.get("errmsg") or "").lower()
+        if not errmsg:
+            errmsg = str(getattr(e, "_message", "") or "").lower()
+        return "quota" in errmsg
+
     def delete_by_record_id(self, collection: "Collection", file_data: FileData) -> None:
+        from pymongo.errors import (
+            AutoReconnect,
+            NetworkTimeout,
+            OperationFailure,
+            ServerSelectionTimeoutError,
+        )
+
         logger.debug(
             f"deleting any content with metadata "
             f"{self.upload_config.record_id_key}={file_data.identifier} "
             f"from collection: {collection.name}"
         )
         query = {self.upload_config.record_id_key: file_data.identifier}
-        delete_results = collection.delete_many(filter=query)
+        try:
+            delete_results = collection.delete_many(filter=query)
+        except OperationFailure as e:
+            if self._is_quota_error(e):
+                raise QuotaError(f"MongoDB quota exceeded: {e}") from e
+            raise DestinationConnectionError(f"MongoDB operation failed: {e}") from e
+        except ServerSelectionTimeoutError as e:
+            raise TimeoutError(f"MongoDB server unreachable: {e}") from e
+        except NetworkTimeout as e:
+            # Must come before AutoReconnect: NetworkTimeout is a subclass.
+            raise TimeoutError(f"MongoDB network timeout: {e}") from e
+        except AutoReconnect as e:
+            raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
         logger.info(
             f"deleted {delete_results.deleted_count} records from collection {collection.name}"
         )
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        from pymongo.errors import (
+            AutoReconnect,
+            BulkWriteError,
+            NetworkTimeout,
+            OperationFailure,
+            PyMongoError,
+            ServerSelectionTimeoutError,
+        )
+
         logger.info(
             f"writing {len(data)} objects to destination "
             f"db, {self.upload_config.database}, "
@@ -363,15 +406,39 @@ class MongoDBUploader(Uploader):
         # is done, setting the record id field in the uploader
         for element in data:
             element[self.upload_config.record_id_key] = file_data.identifier
-        with self.connection_config.get_client() as client:
-            db = client[self.upload_config.database]
-            collection = db[self.upload_config.collection]
-            if self.can_delete(collection=collection):
-                self.delete_by_record_id(file_data=file_data, collection=collection)
-            else:
-                logger.warning("criteria for deleting previous content not met, skipping")
-            for chunk in batch_generator(data, self.upload_config.batch_size):
-                collection.insert_many(chunk)
+        try:
+            with self.connection_config.get_client() as client:
+                db = client[self.upload_config.database]
+                collection = db[self.upload_config.collection]
+                if self.can_delete(collection=collection):
+                    self.delete_by_record_id(file_data=file_data, collection=collection)
+                else:
+                    logger.warning("criteria for deleting previous content not met, skipping")
+                for chunk in batch_generator(data, self.upload_config.batch_size):
+                    collection.insert_many(chunk)
+        except UnstructuredIngestError:
+            # Internal types raised by delete_by_record_id (or future helpers)
+            # propagate unchanged.
+            raise
+        except BulkWriteError as e:
+            raise WriteError(f"MongoDB bulk write failed: {e}") from e
+        except OperationFailure as e:
+            if self._is_quota_error(e):
+                raise QuotaError(f"MongoDB quota exceeded: {e}") from e
+            raise DestinationConnectionError(f"MongoDB operation failed: {e}") from e
+        except ServerSelectionTimeoutError as e:
+            raise TimeoutError(f"MongoDB server unreachable: {e}") from e
+        except NetworkTimeout as e:
+            # Must come before AutoReconnect: NetworkTimeout is a subclass.
+            raise TimeoutError(f"MongoDB network timeout: {e}") from e
+        except AutoReconnect as e:
+            raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
+        except PyMongoError as e:
+            # Any other pymongo exception we haven't enumerated. Non-pymongo
+            # exceptions (KeyError, TypeError, ValueError from config/input
+            # validation) deliberately propagate unchanged - those are not
+            # destination connection problems and shouldn't be relabeled.
+            raise DestinationConnectionError(f"MongoDB error: {e}") from e
 
 
 mongodb_destination_entry = DestinationRegistryEntry(
