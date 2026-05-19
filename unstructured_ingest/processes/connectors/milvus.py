@@ -84,6 +84,17 @@ class MilvusUploadStagerConfig(UploadStagerConfig):
     flatten_metadata: bool = True
     """If set - flatten "metadata" key and put contents directly into data"""
 
+    enable_lexical_search: bool = Field(
+        default=False,
+        description=(
+            "Indicates that the Milvus collection is configured for BM25 full-text search "
+            "with sparse vectors. Requires Milvus 2.5+ and collection schema with text field "
+            "(enable_analyzer=True), sparse_vector field (SPARSE_FLOAT_VECTOR), and BM25 Function. "
+            "Users must create the collection schema manually before ingestion. "
+            "Use MilvusUploadStager.create_bm25_schema() for schema example."
+        ),
+    )
+
 
 @dataclass
 class MilvusUploadStager(UploadStager):
@@ -155,6 +166,103 @@ class MilvusUploadStager(UploadStager):
                 working_data[json_dumps_field] = json.dumps(working_data[json_dumps_field])
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
+
+    @staticmethod
+    @requires_dependencies(["pymilvus"], extras="milvus")
+    def create_bm25_schema(
+        collection_name: str,
+        vector_dim: int = 384,
+        enable_dynamic_field: bool = True
+    ):
+        """Example schema helper for Milvus BM25 full-text search configuration.
+
+        This helper provides a reference schema for Milvus 2.5+ BM25 Function API.
+        Users must manually create their collection with this schema (or similar)
+        BEFORE running ingestion with enable_lexical_search=True.
+
+        The BM25 Function automatically generates sparse vectors from text content
+        for keyword-based lexical search that can be combined with dense vector search.
+
+        Args:
+            collection_name: Name for the collection
+            vector_dim: Dimension of dense embedding vectors (default: 384)
+            enable_dynamic_field: Allow dynamic fields in documents (default: True)
+
+        Returns:
+            tuple: (schema, index_params) ready for MilvusClient.create_collection()
+
+        Example:
+            >>> from pymilvus import MilvusClient
+            >>> from unstructured_ingest.processes.connectors.milvus import MilvusUploadStager
+            >>>
+            >>> # Step 1: Create collection with BM25 schema (BEFORE ingestion)
+            >>> client = MilvusClient(uri="http://localhost:19530")
+            >>> schema, index_params = MilvusUploadStager.create_bm25_schema(
+            ...     collection_name="my_docs",
+            ...     vector_dim=384
+            ... )
+            >>> client.create_collection(
+            ...     collection_name="my_docs",
+            ...     schema=schema,
+            ...     index_params=index_params
+            ... )
+            >>>
+            >>> # Step 2: Ingest with enable_lexical_search=True
+            >>> # BM25 function will auto-generate sparse_vector from text field
+        """
+        from pymilvus import (
+            CollectionSchema,
+            DataType,
+            FieldSchema,
+            Function,
+            FunctionType,
+        )
+
+        fields = [
+            FieldSchema(
+                name="id",
+                dtype=DataType.INT64,
+                is_primary=True,
+                auto_id=True
+            ),
+            FieldSchema(
+                name="text",
+                dtype=DataType.VARCHAR,
+                max_length=65535,
+                enable_analyzer=True  # Required for BM25
+            ),
+            FieldSchema(
+                name="sparse_vector",
+                dtype=DataType.SPARSE_FLOAT_VECTOR
+            ),
+            FieldSchema(
+                name="embedding",
+                dtype=DataType.FLOAT_VECTOR,
+                dim=vector_dim
+            ),
+        ]
+
+        # BM25 function auto-generates sparse_vector from text
+        bm25_function = Function(
+            name="bm25_fn",
+            function_type=FunctionType.BM25,
+            input_field_names=["text"],
+            output_field_names=["sparse_vector"]
+        )
+
+        schema = CollectionSchema(
+            fields=fields,
+            enable_dynamic_field=enable_dynamic_field,
+            functions=[bm25_function]
+        )
+
+        # Index params for both dense and sparse vectors
+        index_params = {
+            "embedding": {"index_type": "AUTOINDEX", "metric_type": "COSINE"},
+            "sparse_vector": {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "BM25"}
+        }
+
+        return schema, index_params
 
 
 class MilvusUploaderConfig(UploaderConfig):
