@@ -145,6 +145,19 @@ class TestRunDataErrorHandling:
         with pytest.raises(QuotaError):
             uploader.run_data(data=[{"key": "value"}], file_data=file_data)
 
+    def test_non_pymongo_exception_propagates_unchanged(self):
+        # KeyError/TypeError/ValueError from config or input-shape problems
+        # should not be relabeled as DestinationConnectionError. The narrowed
+        # `except PyMongoError` lets them propagate so they're classified by
+        # whatever caller-side logic exists upstream.
+        uploader = _make_uploader()
+        file_data = MagicMock()
+        file_data.identifier = "test_id"
+        _mock_client(uploader, KeyError("missing config key"))
+
+        with pytest.raises(KeyError):
+            uploader.run_data(data=[{"key": "value"}], file_data=file_data)
+
     def test_delete_quota_error_not_relabeled_by_run_data_catch_all(self):
         # When can_delete() is True, run_data calls delete_by_record_id inside
         # its try block. If delete raises QuotaError, run_data's catch-all

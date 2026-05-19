@@ -392,6 +392,7 @@ class MongoDBUploader(Uploader):
             BulkWriteError,
             NetworkTimeout,
             OperationFailure,
+            PyMongoError,
             ServerSelectionTimeoutError,
         )
 
@@ -417,8 +418,7 @@ class MongoDBUploader(Uploader):
                     collection.insert_many(chunk)
         except UnstructuredIngestError:
             # Internal types raised by delete_by_record_id (or future helpers)
-            # propagate unchanged. Placed before the pymongo handlers and the
-            # broad `except Exception` so they aren't reclassified.
+            # propagate unchanged.
             raise
         except BulkWriteError as e:
             raise WriteError(f"MongoDB bulk write failed: {e}") from e
@@ -433,7 +433,11 @@ class MongoDBUploader(Uploader):
             raise TimeoutError(f"MongoDB network timeout: {e}") from e
         except AutoReconnect as e:
             raise DestinationConnectionError(f"MongoDB connection lost: {e}") from e
-        except Exception as e:
+        except PyMongoError as e:
+            # Any other pymongo exception we haven't enumerated. Non-pymongo
+            # exceptions (KeyError, TypeError, ValueError from config/input
+            # validation) deliberately propagate unchanged - those are not
+            # destination connection problems and shouldn't be relabeled.
             raise DestinationConnectionError(f"MongoDB error: {e}") from e
 
 
