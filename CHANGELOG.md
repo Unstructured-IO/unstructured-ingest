@@ -1,3 +1,9 @@
+## [1.6.3]
+
+### Enhancements
+
+- **feat(schema): add `denied_permissions_data` field to `FileDataSourceMetadata`.** Mirrors the shape of `permissions_data` (list of normalized read/update/delete dicts) but holds explicit DENY ACL entries from sources that expose them. The new field is optional and defaults to `None`; existing connectors (Drive, SharePoint, Box, Confluence) leave it unset because their source APIs don't expose deny semantics. Needed by the upcoming FileNet connector ACL passthrough, which is the first source with first-class DENY entries.
+
 ## [1.6.2]
 
 ### Fixes
