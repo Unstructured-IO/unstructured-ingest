@@ -8,10 +8,18 @@ from unstructured_ingest.data_types.file_data import (
     SourceIdentifiers,
 )
 from unstructured_ingest.processes.connectors.slack import (
+    SlackAccessConfig,
     SlackDownloader,
     SlackIndexer,
     SlackIndexerConfig,
 )
+
+
+def test_slack_access_config_accepts_refresh_token():
+    config = SlackAccessConfig(token="xoxb-slack-token", refresh_token="xoxe-slack-refresh-token")
+
+    assert config.token == "xoxb-slack-token"
+    assert config.refresh_token == "xoxe-slack-refresh-token"
 
 
 def test_slack_indexer_emits_file_data_for_message_files():
@@ -74,7 +82,10 @@ async def test_slack_downloader_downloads_file_attachment(tmp_path, mocker):
     file_data = FileData(
         identifier="F123",
         connector_type="slack",
-        source_identifiers=SourceIdentifiers(filename="F123-report.pdf", fullpath="F123-report.pdf"),
+        source_identifiers=SourceIdentifiers(
+            filename="F123-report.pdf",
+            fullpath="F123-report.pdf",
+        ),
         metadata=FileDataSourceMetadata(
             record_locator={
                 "type": "file",

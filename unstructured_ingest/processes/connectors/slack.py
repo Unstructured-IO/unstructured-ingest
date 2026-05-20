@@ -1,5 +1,5 @@
-import hashlib
 import asyncio
+import hashlib
 import re
 import time
 import urllib.request
@@ -51,6 +51,7 @@ class SlackAccessConfig(AccessConfig):
         description="Bot token used to access Slack API, must have channels:history scope for the"
         " bot user."
     )
+    refresh_token: Optional[str] = Field(default=None, description="Slack OAuth refresh token.")
 
 
 class SlackConnectionConfig(ConnectionConfig):
@@ -175,7 +176,9 @@ class SlackIndexer(Indexer):
                     connector_type=CONNECTOR_TYPE,
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
-                        date_created=str(slack_file.get("created")) if slack_file.get("created") else None,
+                        date_created=(
+                            str(slack_file.get("created")) if slack_file.get("created") else None
+                        ),
                         date_modified=message_ts,
                         date_processed=str(time.time()),
                         record_locator={
@@ -218,7 +221,10 @@ class SlackDownloader(Downloader):
             )
             raise ValueError("Generated invalid download path.")
 
-        if file_data.metadata.record_locator and file_data.metadata.record_locator.get("type") == "file":
+        if (
+            file_data.metadata.record_locator
+            and file_data.metadata.record_locator.get("type") == "file"
+        ):
             await self._download_file(file_data, download_path)
         else:
             await self._download_conversation(file_data, download_path)
