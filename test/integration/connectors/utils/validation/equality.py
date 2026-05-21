@@ -47,6 +47,49 @@ def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool
     return expected_soup.text == current_soup.text
 
 
+def unordered_table_html_equality_check(
+    expected_filepath: Path, current_filepath: Path
+) -> bool:
+    # Equality check for HTML files whose first <table> holds rows in an
+    # arbitrary order. Header (first <tr>) is compared positionally; remaining
+    # data rows are compared as a multiset of their text content. Used for
+    # connectors whose upstream API doesn't guarantee stable row ordering
+    # (e.g. Notion's database query response).
+    with expected_filepath.open() as expected_f:
+        expected_soup = BeautifulSoup(expected_f, "html.parser")
+    with current_filepath.open() as current_f:
+        current_soup = BeautifulSoup(current_f, "html.parser")
+
+    def split_rows(soup: BeautifulSoup) -> tuple[str, list[str]]:
+        rows = soup.find_all("tr")
+        if not rows:
+            return "", []
+        header = rows[0].get_text(" ", strip=True)
+        data = sorted(r.get_text(" ", strip=True) for r in rows[1:])
+        return header, data
+
+    expected_header, expected_data = split_rows(expected_soup)
+    current_header, current_data = split_rows(current_soup)
+
+    if expected_header != current_header:
+        print("table header differs:")
+        print(f"  expected: {expected_header}")
+        print(f"  current:  {current_header}")
+        return False
+    if expected_data != current_data:
+        expected_counts = {r: expected_data.count(r) for r in set(expected_data)}
+        current_counts = {r: current_data.count(r) for r in set(current_data)}
+        only_in_expected = [r for r in expected_counts if expected_counts[r] != current_counts.get(r, 0)]
+        only_in_current = [r for r in current_counts if current_counts[r] != expected_counts.get(r, 0)]
+        print("table rows differ (order-insensitive):")
+        for row in only_in_expected:
+            print(f"  only in expected (x{expected_counts[row]}): {row}")
+        for row in only_in_current:
+            print(f"  only in current  (x{current_counts[row]}): {row}")
+        return False
+    return True
+
+
 def txt_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:
     with expected_filepath.open() as expected_f:
         expected_text_lines = expected_f.readlines()
