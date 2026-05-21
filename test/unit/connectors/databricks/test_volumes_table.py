@@ -1,13 +1,22 @@
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
+from pydantic import Secret
+from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.databricks.volumes_table import (
     DatabricksVolumeDeltaTableStager,
     DatabricksVolumeDeltaTableStagerConfig,
+    DatabricksVolumeDeltaTableUploader,
     DatabricksVolumeDeltaTableUploaderConfig,
+)
+from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
+    DatabricksDeltaTablesAccessConfig,
+    DatabricksDeltaTablesConnectionConfig,
 )
 
 
@@ -192,3 +201,179 @@ def test_flatten_metadata_defaults_false_for_workflow_db_backcompat(config_cls):
     kwargs = {"catalog": "c", "volume": "v"} if "Uploader" in config_cls.__name__ else {}
     config = config_cls.model_validate(kwargs)
     assert config.flatten_metadata is False
+
+
+def _make_uploader(
+    flatten_metadata: bool, table_name: str = "elements"
+) -> DatabricksVolumeDeltaTableUploader:
+    return DatabricksVolumeDeltaTableUploader(
+        connection_config=DatabricksDeltaTablesConnectionConfig(
+            access_config=Secret(DatabricksDeltaTablesAccessConfig(token="tok")),
+            server_hostname="example.databricks.com",
+            http_path="/sql/1.0/warehouses/xxx",
+        ),
+        upload_config=DatabricksVolumeDeltaTableUploaderConfig(
+            catalog="cat",
+            databricks_schema="sch",
+            volume="vol",
+            database="db",
+            table_name=table_name,
+            flatten_metadata=flatten_metadata,
+        ),
+    )
+
+
+@pytest.fixture
+def mock_cursor(mocker: MockerFixture) -> MagicMock:
+    return mocker.MagicMock()
+
+
+@pytest.fixture
+def mock_get_cursor(mocker: MockerFixture, mock_cursor: MagicMock) -> MagicMock:
+    mock = mocker.patch(
+        "unstructured_ingest.processes.connectors.sql.databricks_delta_tables"
+        ".DatabricksDeltaTablesConnectionConfig.get_cursor",
+        autospec=True,
+    )
+    mock.return_value.__enter__.return_value = mock_cursor
+    return mock
+
+
+def _executed_sql(mock_cursor: MagicMock) -> list[str]:
+    return [c.args[0] for c in mock_cursor.execute.call_args_list]
+
+
+def _insert_sql(mock_cursor: MagicMock) -> str:
+    return next(sql for sql in _executed_sql(mock_cursor) if sql.startswith("INSERT"))
+
+
+def test_create_destination_flatten_true_missing_table_raises(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """PLU-161 case E: with flatten_metadata=true, missing table is a hard fail —
+    auto-create is disabled to prevent silent data loss."""
+    uploader = _make_uploader(flatten_metadata=True, table_name="missing_table")
+    mock_cursor.fetchall.return_value = []  # SHOW TABLES → no rows
+
+    with pytest.raises(IngestValueError, match="auto-create is disabled"):
+        uploader.create_destination()
+
+    assert not any("CREATE TABLE" in sql for sql in _executed_sql(mock_cursor))
+
+
+def test_create_destination_flatten_false_missing_table_autocreates(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """PLU-161 case C: backcompat — flatten=false still auto-creates from the
+    asset schema when the destination table is missing."""
+    uploader = _make_uploader(flatten_metadata=False, table_name="new_table")
+    mock_cursor.fetchall.return_value = []  # SHOW TABLES → no rows
+
+    assert uploader.create_destination() is True
+
+    create_sqls = [sql for sql in _executed_sql(mock_cursor) if "CREATE TABLE" in sql]
+    assert len(create_sqls) == 1
+    assert "new_table" in create_sqls[0]
+
+
+@pytest.mark.parametrize("flatten_metadata", [True, False])
+def test_create_destination_existing_table_returns_false(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock, flatten_metadata: bool
+):
+    """When the table already exists, create_destination is a no-op regardless of
+    the flag — neither branch should attempt a CREATE TABLE."""
+    uploader = _make_uploader(flatten_metadata=flatten_metadata, table_name="elements")
+    # `SHOW TABLES` rows are `(database, tableName, isTemporary)`; r[1] is the name.
+    mock_cursor.fetchall.return_value = [("sch", "elements", False)]
+
+    assert uploader.create_destination() is False
+    assert not any("CREATE TABLE" in sql for sql in _executed_sql(mock_cursor))
+
+
+def _staged_elements(tmp_path: Path, row: dict) -> Path:
+    path = tmp_path / "staged.json"
+    path.write_text(json.dumps([row]))
+    return path
+
+
+def test_run_flatten_true_select_uses_raw_columns(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """Under flatten_metadata=true the SELECT clause references columns directly —
+    no PARSE_JSON wrapping, and no `metadata` column."""
+    uploader = _make_uploader(flatten_metadata=True)
+    # Pre-populate the columns cache: same keys as incoming, no record_id → can_delete=false
+    uploader._columns = {
+        "element_id": "string",
+        "text": "string",
+        "filename": "string",
+        "data_source_url": "string",
+    }
+    path = _staged_elements(
+        tmp_path,
+        {
+            "element_id": "el-1",
+            "text": "hello",
+            "filename": "x.pdf",
+            "data_source_url": "s3://bucket/x.pdf",
+        },
+    )
+
+    uploader.run(path=path, file_data=_file_data())
+
+    insert_sql = _insert_sql(mock_cursor)
+    assert "PARSE_JSON" not in insert_sql
+    assert "metadata" not in insert_sql
+    for col in ("element_id", "text", "filename", "data_source_url"):
+        assert col in insert_sql
+
+
+def test_run_flatten_false_select_wraps_metadata_in_parse_json(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """Regression guard for the today-default path: flatten_metadata=false must
+    still wrap the `metadata` column with PARSE_JSON so the VARIANT cast works."""
+    uploader = _make_uploader(flatten_metadata=False)
+    uploader._columns = {"element_id": "string", "text": "string", "metadata": "variant"}
+    path = _staged_elements(
+        tmp_path,
+        {"element_id": "el-1", "text": "hello", "metadata": json.dumps({"filename": "x.pdf"})},
+    )
+
+    uploader.run(path=path, file_data=_file_data())
+
+    insert_sql = _insert_sql(mock_cursor)
+    assert "PARSE_JSON(metadata)" in insert_sql
+
+
+def test_run_flatten_true_drops_unknown_columns_and_logs(
+    tmp_path: Path,
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Under flatten_metadata=true, incoming columns not present in the destination
+    table are dropped from the INSERT and surfaced in a single info log line."""
+    uploader = _make_uploader(flatten_metadata=True)
+    uploader._columns = {"element_id": "string", "text": "string", "filename": "string"}
+    path = _staged_elements(
+        tmp_path,
+        {
+            "element_id": "el-1",
+            "text": "hello",
+            "filename": "x.pdf",
+            "unknown_col": "drop me",
+            "another_extra": 42,
+        },
+    )
+
+    with caplog.at_level("INFO", logger="unstructured_ingest"):
+        uploader.run(path=path, file_data=_file_data())
+
+    insert_sql = _insert_sql(mock_cursor)
+    assert "unknown_col" not in insert_sql
+    assert "another_extra" not in insert_sql
+    drop_lines = [r for r in caplog.records if "dropped" in r.message.lower()]
+    assert len(drop_lines) == 1
+    assert "unknown_col" in drop_lines[0].message
+    assert "another_extra" in drop_lines[0].message
