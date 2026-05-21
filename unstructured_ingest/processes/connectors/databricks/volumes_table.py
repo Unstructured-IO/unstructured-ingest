@@ -23,9 +23,6 @@ from unstructured_ingest.processes.connectors.databricks.volumes import Databric
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
     DatabricksDeltaTablesConnectionConfig,
 )
-
-# Reuse the SQL connector's canonical datetime field set + parser so the flatten
-# path doesn't drift from the rest of ingest when new datetime fields land.
 from unstructured_ingest.processes.connectors.sql.sql import (
     _DATE_COLUMNS,
     parse_date_string,
@@ -64,14 +61,13 @@ class DatabricksVolumeDeltaTableStagerConfig(UploadStagerConfig):
 
 
 def _coerce_flattened_datetimes(row: dict[str, Any]) -> None:
-    """Convert stringified-epoch values on known datetime keys to ISO format in-place.
+    """Convert stringified-epoch datetime fields to ISO format in-place.
 
-    After flattening, datetime metadata fields (e.g. `metadata_data_source_date_processed`)
-    arrive as stringified unix epochs like `"1779329564.5102773"`. Databricks's implicit
-    string → TIMESTAMP cast rejects those (`CAST_INVALID_INPUT`). Run them through the
-    same `parse_date_string` the SQL connector uses, then emit ISO format which
-    Databricks coerces natively. Malformed values pass through unchanged — same as the
-    non-flatten path.
+    Element metadata datetime fields (e.g. `*_date_processed`) arrive as stringified
+    unix epochs like `"1779329564.5102773"`, which Databricks's implicit string →
+    `TIMESTAMP` cast rejects with `CAST_INVALID_INPUT`. Emit ISO format instead so
+    `TIMESTAMP` columns coerce natively. Unparseable values are left alone for the
+    table to reject.
     """
     suffixes = tuple(f"_{col}" for col in _DATE_COLUMNS)
     for key, value in list(row.items()):
