@@ -75,7 +75,7 @@ def _coerce_flattened_datetimes(row: dict[str, Any]) -> None:
     """
     suffixes = tuple(f"_{col}" for col in _DATE_COLUMNS)
     for key, value in list(row.items()):
-        if value is None or not isinstance(value, (str, int)):
+        if value is None or not isinstance(value, (str, int, float)):
             continue
         if key not in _DATE_COLUMNS and not key.endswith(suffixes):
             continue

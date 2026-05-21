@@ -137,6 +137,21 @@ def test_stager_flatten_coerces_epoch_string_datetime(tmp_path: Path):
         _dt.fromisoformat(row[key])
 
 
+def test_stager_flatten_coerces_float_epoch_datetime(tmp_path: Path):
+    """JSON-parsed numeric epochs (no quotes) arrive as Python floats; coercion
+    must still pick them up."""
+    elements = [
+        {
+            "element_id": "el-1",
+            "text": "hello",
+            "metadata": {"data_source": {"date_processed": 1779329564.5102773}},
+        }
+    ]
+    [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
+    assert isinstance(row["data_source_date_processed"], str)
+    assert row["data_source_date_processed"].startswith("20")
+
+
 def test_stager_flatten_leaves_malformed_datetime_alone(tmp_path: Path):
     """Unparseable datetime values pass through unchanged so the destination table
     can reject them — matches the non-flatten path's behavior."""
