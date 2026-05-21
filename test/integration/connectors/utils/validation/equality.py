@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -77,15 +78,15 @@ def unordered_table_html_equality_check(
         print(f"  current:  {current_header}")
         return False
     if expected_data != current_data:
-        expected_counts = {r: expected_data.count(r) for r in set(expected_data)}
-        current_counts = {r: current_data.count(r) for r in set(current_data)}
-        only_in_expected = [r for r in expected_counts if expected_counts[r] != current_counts.get(r, 0)]
-        only_in_current = [r for r in current_counts if current_counts[r] != expected_counts.get(r, 0)]
+        expected_counts = Counter(expected_data)
+        current_counts = Counter(current_data)
+        only_in_expected = expected_counts - current_counts
+        only_in_current = current_counts - expected_counts
         print("table rows differ (order-insensitive):")
-        for row in only_in_expected:
-            print(f"  only in expected (x{expected_counts[row]}): {row}")
-        for row in only_in_current:
-            print(f"  only in current  (x{current_counts[row]}): {row}")
+        for row, n in only_in_expected.items():
+            print(f"  only in expected (x{n}): {row}")
+        for row, n in only_in_current.items():
+            print(f"  only in current  (x{n}): {row}")
         return False
     return True
 

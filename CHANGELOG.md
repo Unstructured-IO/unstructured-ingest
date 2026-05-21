@@ -1,3 +1,9 @@
+## [1.6.3]
+
+### Fixes
+
+- **fix(notion): make `test_notion_source_database` row-order insensitive.** The integration test compared the downloaded HTML byte-for-byte, but Notion's database query endpoint doesn't guarantee a stable row order — every prior fixture refresh was just reshuffling the same rows. Compare table rows as a multiset of their text content and print the symmetric difference on mismatch so real regressions aren't silent.
+
 ## [1.6.2]
 
 ### Fixes
