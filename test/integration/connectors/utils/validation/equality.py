@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -45,6 +46,49 @@ def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool
     with current_filepath.open() as current_f:
         current_soup = BeautifulSoup(current_f, "html.parser")
     return expected_soup.text == current_soup.text
+
+
+def unordered_table_html_equality_check(
+    expected_filepath: Path, current_filepath: Path
+) -> bool:
+    # Equality check for HTML files whose first <table> holds rows in an
+    # arbitrary order. Header (first <tr>) is compared positionally; remaining
+    # data rows are compared as a multiset of their text content. Used for
+    # connectors whose upstream API doesn't guarantee stable row ordering
+    # (e.g. Notion's database query response).
+    with expected_filepath.open() as expected_f:
+        expected_soup = BeautifulSoup(expected_f, "html.parser")
+    with current_filepath.open() as current_f:
+        current_soup = BeautifulSoup(current_f, "html.parser")
+
+    def split_rows(soup: BeautifulSoup) -> tuple[str, list[str]]:
+        rows = soup.find_all("tr")
+        if not rows:
+            return "", []
+        header = rows[0].get_text(" ", strip=True)
+        data = sorted(r.get_text(" ", strip=True) for r in rows[1:])
+        return header, data
+
+    expected_header, expected_data = split_rows(expected_soup)
+    current_header, current_data = split_rows(current_soup)
+
+    if expected_header != current_header:
+        print("table header differs:")
+        print(f"  expected: {expected_header}")
+        print(f"  current:  {current_header}")
+        return False
+    if expected_data != current_data:
+        expected_counts = Counter(expected_data)
+        current_counts = Counter(current_data)
+        only_in_expected = expected_counts - current_counts
+        only_in_current = current_counts - expected_counts
+        print("table rows differ (order-insensitive):")
+        for row, n in only_in_expected.items():
+            print(f"  only in expected (x{n}): {row}")
+        for row, n in only_in_current.items():
+            print(f"  only in current  (x{n}): {row}")
+        return False
+    return True
 
 
 def txt_equality_check(expected_filepath: Path, current_filepath: Path) -> bool:

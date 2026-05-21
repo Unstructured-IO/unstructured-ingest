@@ -1,3 +1,9 @@
+## [1.6.2-dev]
+
+### Fixes
+
+- **test(notion): make `test_notion_source_database` row-order insensitive.** Test-only change; no published behavior.
+
 ## [1.6.2]
 
 ### Fixes
