@@ -1,3 +1,9 @@
+## [1.7.0]
+
+### Enhancements
+
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off, so existing connectors are byte-identical. When set, the stager recursively flattens the element metadata into top-level `metadata_*` columns (stops at lists, preserves the `metadata_` prefix) using the existing `flatten_dict` helper, and the uploader skips auto-create and intersects incoming columns with the user-managed table schema, dropping unknowns with a log line. Known datetime fields (`*_date_created`, `*_date_modified`, `*_date_processed`, `*_last_modified`) are coerced from stringified epoch to ISO format so Databricks's implicit string → `TIMESTAMP` cast succeeds; the field set is imported from the SQL connector so this stays in sync as new datetime fields land.
+
 ## [1.6.2]
 
 ### Fixes
