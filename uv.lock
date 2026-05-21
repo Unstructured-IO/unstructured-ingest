@@ -7008,6 +7008,7 @@ biomed = [
 ]
 box = [
     { name = "boxfs" },
+    { name = "boxsdk" },
     { name = "fsspec" },
 ]
 chroma = [
@@ -7317,6 +7318,7 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'opensearch'", specifier = ">=1.26.0" },
     { name = "botocore", marker = "extra == 'opensearch'", specifier = ">=1.29.0" },
     { name = "boxfs", marker = "extra == 'box'" },
+    { name = "boxsdk", marker = "extra == 'box'" },
     { name = "certifi", specifier = ">=2026.1.4" },
     { name = "chromadb", marker = "extra == 'chroma'" },
     { name = "clarifai", marker = "extra == 'clarifai'" },

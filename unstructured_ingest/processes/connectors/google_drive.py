@@ -32,6 +32,8 @@ if TYPE_CHECKING:
     from googleapiclient.discovery import Resource as GoogleAPIResource
 
 CONNECTOR_TYPE = "google_drive"
+GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
+GOOGLE_DRIVE_NATIVE_MIME_PREFIX = "application/vnd.google-apps."
 
 
 # Maps Google-native Drive MIME types → export MIME types
@@ -39,6 +41,7 @@ GOOGLE_EXPORT_MIME_MAP = {
     "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
     "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
     "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # noqa: E501
+    "application/vnd.google-apps.drawing": "image/png",
 }
 
 # Maps export MIME types → file extensions
@@ -48,11 +51,51 @@ EXPORT_EXTENSION_MAP = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
     "application/pdf": ".pdf",
     "text/html": ".html",
+    "image/png": ".png",
 }
 
 # LRO Export Size Threshold is 10MB in real but the exported file might be slightly larger
 # than the original Google Workspace file - thus the threshold is set to 9MB
 LRO_EXPORT_SIZE_THRESHOLD = 9 * 1024 * 1024  # 9MB
+
+
+def _normalized_extensions(extensions: Optional[list[str]]) -> set[str]:
+    return {extension.lower().lstrip(".") for extension in extensions or []}
+
+
+def _native_mime_types_for_extensions(extensions: Optional[list[str]]) -> set[str]:
+    extensions_set = _normalized_extensions(extensions)
+    native_mime_types = set()
+    for native_mime_type, export_mime_type in GOOGLE_EXPORT_MIME_MAP.items():
+        export_extension = EXPORT_EXTENSION_MAP.get(export_mime_type, "").lstrip(".").lower()
+        if export_extension in extensions_set:
+            native_mime_types.add(native_mime_type)
+    return native_mime_types
+
+
+def _matches_extension_or_native_export(record: dict, extensions: Optional[list[str]]) -> bool:
+    extensions_set = _normalized_extensions(extensions)
+    if not extensions_set:
+        return True
+
+    file_ext = (record.get("fileExtension") or "").lower().lstrip(".")
+    if file_ext in extensions_set:
+        return True
+
+    return record.get("mimeType") in _native_mime_types_for_extensions(extensions)
+
+
+def _build_extension_query_filter(extensions: list[str]) -> str:
+    extension_clauses = [
+        f"fileExtension = '{extension}'" for extension in sorted(_normalized_extensions(extensions))
+    ]
+    native_mime_clauses = [
+        f"mimeType = '{mime_type}'"
+        for mime_type in sorted(_native_mime_types_for_extensions(extensions))
+    ]
+    clauses = extension_clauses + native_mime_clauses
+    clauses.append(f"mimeType = '{GOOGLE_DRIVE_FOLDER_MIME_TYPE}'")
+    return " or ".join(clauses)
 
 
 class GoogleDriveAccessConfig(AccessConfig):
@@ -68,6 +111,12 @@ class GoogleDriveAccessConfig(AccessConfig):
         description="OAuth 2.0 access token for user authentication. "
         "Obtain via Google OAuth Playground or your OAuth application. "
         "Tokens typically expire after 1 hour.",
+    )
+    refresh_token: Optional[str] = Field(
+        default=None,
+        description="OAuth 2.0 refresh token for obtaining new access tokens. "
+        "Long-lived; used by the platform to refresh expired access tokens "
+        "before each job run.",
     )
 
     def model_post_init(self, __context: Any) -> None:
@@ -238,16 +287,11 @@ class GoogleDriveIndexer(Indexer):
                     pageSize=1000,
                 ).execute()
                 for item in response.get("files", []):
-                    if item.get("mimeType") == "application/vnd.google-apps.folder":
+                    if item.get("mimeType") == GOOGLE_DRIVE_FOLDER_MIME_TYPE:
                         # Always traverse sub-folders regardless of extension filter.
                         stack.append(item["id"])
                     else:
-                        if extensions:
-                            # Use a case-insensitive comparison for the file extension.
-                            file_ext = (item.get("fileExtension") or "").lower()
-                            if file_ext in valid_exts:
-                                count += 1
-                        else:
+                        if not valid_exts or _matches_extension_or_native_export(item, extensions):
                             count += 1
                 page_token = response.get("nextPageToken")
                 if not page_token:
@@ -331,7 +375,7 @@ class GoogleDriveIndexer(Indexer):
 
     @staticmethod
     def is_dir(record: dict) -> bool:
-        return record.get("mimeType") == "application/vnd.google-apps.folder"
+        return record.get("mimeType") == GOOGLE_DRIVE_FOLDER_MIME_TYPE
 
     @staticmethod
     def map_file_data(root_info: dict) -> FileData:
@@ -389,8 +433,7 @@ class GoogleDriveIndexer(Indexer):
         q = f"'{object_id}' in parents"
         # Filter by extension but still include any directories
         if extensions:
-            ext_filter = " or ".join([f"fileExtension = '{e}'" for e in extensions])
-            q = f"{q} and ({ext_filter} or mimeType = 'application/vnd.google-apps.folder')"
+            q = f"{q} and ({_build_extension_query_filter(extensions)})"
         logger.debug(f"query used when indexing: {q}")
         logger.debug("response fields limited to: {}".format(", ".join(self.fields)))
         done = False
@@ -521,7 +564,7 @@ def _get_extension(file_data: FileData) -> str:
     """
     Returns the extension for a given source MIME type.
     """
-    source_mime_type = file_data.additional_metadata.get("export_mime_type", "")
+    source_mime_type = file_data.additional_metadata.get("mimeType", "")
     export_mime_type = GOOGLE_EXPORT_MIME_MAP.get(source_mime_type, "")
     if export_mime_type:
         return EXPORT_EXTENSION_MAP.get(export_mime_type, "")
@@ -855,6 +898,10 @@ class GoogleDriveDownloader(Downloader):
         if mime_type in GOOGLE_EXPORT_MIME_MAP:
             # For Google Workspace files, use export functionality
             ext = _get_extension(file_data)
+            if not ext:
+                raise SourceConnectionError(
+                    f"Unsupported Google Drive export MIME type for file {file_id}: {mime_type}"
+                )
             download_path = download_path.with_suffix(ext)
             download_path.parent.mkdir(parents=True, exist_ok=True)
             export_mime = GOOGLE_EXPORT_MIME_MAP[mime_type]
@@ -870,6 +917,11 @@ class GoogleDriveDownloader(Downloader):
                     "export_extension": ext,
                     "download_method": "google_workspace_export",
                 }
+            )
+        elif mime_type.startswith(GOOGLE_DRIVE_NATIVE_MIME_PREFIX):
+            raise SourceConnectionError(
+                f"Unsupported Google Drive native MIME type for file {file_id}: {mime_type}. "
+                "Docs Editors files must be exported before download."
             )
         else:
             # For other files, use direct download

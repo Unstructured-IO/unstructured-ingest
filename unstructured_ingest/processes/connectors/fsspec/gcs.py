@@ -72,6 +72,12 @@ class GcsAccessConfig(FsspecAccessConfig):
         default=None, description=service_account_key_description
     )
     token: Union[str, dict, None] = Field(init=False, default=None)
+    refresh_token: Optional[str] = Field(
+        default=None,
+        description="OAuth 2.0 refresh token for obtaining new access tokens. "
+        "Long-lived; used by the platform to refresh expired access tokens "
+        "before each job run.",
+    )
 
     def model_post_init(self, __context: Any) -> None:
         ALLOWED_AUTH_VALUES = "google_default", "cache", "anon", "browser", "cloud"
