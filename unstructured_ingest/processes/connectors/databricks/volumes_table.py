@@ -44,9 +44,9 @@ if TYPE_CHECKING:
 
 FLATTEN_METADATA_DESCRIPTION = (
     "If true, recursively flatten the element metadata into top-level columns "
-    "(stops at lists, preserves the `metadata_` prefix). The destination table "
-    "must already exist with the desired schema — the connector will not "
-    "auto-create. Unknown incoming fields are dropped; missing columns stay null."
+    "(stops at lists). The destination table must already exist with the "
+    "desired schema — the connector will not auto-create. Unknown incoming "
+    "fields are dropped; missing columns stay null."
 )
 
 
@@ -63,17 +63,17 @@ class DatabricksVolumeDeltaTableStagerConfig(UploadStagerConfig):
 def _coerce_flattened_datetimes(row: dict[str, Any]) -> None:
     """Convert stringified-epoch datetime fields to ISO format in-place.
 
-    Element metadata datetime fields (e.g. `*_date_processed`) arrive as stringified
-    unix epochs like `"1779329564.5102773"`, which Databricks's implicit string →
-    `TIMESTAMP` cast rejects with `CAST_INVALID_INPUT`. Emit ISO format instead so
-    `TIMESTAMP` columns coerce natively. Unparseable values are left alone for the
-    table to reject.
+    Element metadata datetime fields (e.g. `date_processed`, `data_source_date_processed`)
+    arrive as stringified unix epochs like `"1779329564.5102773"`, which Databricks's
+    implicit string → `TIMESTAMP` cast rejects with `CAST_INVALID_INPUT`. Emit ISO
+    format instead so `TIMESTAMP` columns coerce natively. Unparseable values are
+    left alone for the table to reject.
     """
     suffixes = tuple(f"_{col}" for col in _DATE_COLUMNS)
     for key, value in list(row.items()):
         if value is None or not isinstance(value, (str, int)):
             continue
-        if not key.endswith(suffixes):
+        if key not in _DATE_COLUMNS and not key.endswith(suffixes):
             continue
         with suppress(Exception):
             row[key] = parse_date_string(value).isoformat(sep=" ")
@@ -108,7 +108,6 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
                 element.update(
                     flatten_dict(
                         metadata,
-                        parent_key="metadata",
                         separator="_",
                         flatten_lists=False,
                     )

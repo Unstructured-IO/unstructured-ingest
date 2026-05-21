@@ -64,21 +64,21 @@ def test_stager_blob_mode_is_default(tmp_path: Path):
     assert "metadata" in row
     assert isinstance(row["metadata"], str)
     assert json.loads(row["metadata"]) == _baseline_metadata()
-    assert not any(k.startswith("metadata_") for k in row)
 
 
-def test_stager_flatten_preserves_metadata_prefix(tmp_path: Path):
+def test_stager_flatten_drops_metadata_prefix(tmp_path: Path):
     elements = [{"element_id": "el-1", "text": "hello", "metadata": _baseline_metadata()}]
     [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
 
     assert "metadata" not in row
-    assert row["metadata_filename"] == "example.pdf"
-    assert row["metadata_filetype"] == "application/pdf"
-    assert row["metadata_page_number"] == 1
-    assert row["metadata_data_source_url"] == "s3://bucket/example.pdf"
-    assert row["metadata_data_source_version"] == "abc123"
-    assert row["metadata_data_source_record_locator_protocol"] == "s3"
-    assert row["metadata_data_source_record_locator_remote_file_path"] == "s3://bucket/"
+    assert row["filename"] == "example.pdf"
+    assert row["filetype"] == "application/pdf"
+    assert row["page_number"] == 1
+    assert row["data_source_url"] == "s3://bucket/example.pdf"
+    assert row["data_source_version"] == "abc123"
+    assert row["data_source_record_locator_protocol"] == "s3"
+    assert row["data_source_record_locator_remote_file_path"] == "s3://bucket/"
+    assert not any(k.startswith("metadata_") for k in row)
 
 
 def test_stager_flatten_stops_at_lists(tmp_path: Path):
@@ -94,20 +94,25 @@ def test_stager_flatten_stops_at_lists(tmp_path: Path):
     ]
     [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
 
-    assert row["metadata_languages"] == ["eng", "fra"]
-    assert row["metadata_sent_to"] == ["a@example.com", "b@example.com"]
-    assert "metadata_languages_0" not in row
-    assert "metadata_sent_to_0" not in row
+    assert row["languages"] == ["eng", "fra"]
+    assert row["sent_to"] == ["a@example.com", "b@example.com"]
+    assert "languages_0" not in row
+    assert "sent_to_0" not in row
 
 
 def test_stager_flatten_coerces_epoch_string_datetime(tmp_path: Path):
     """Stringified unix epochs in known datetime fields get coerced to ISO format so
-    Databricks's implicit string -> TIMESTAMP cast succeeds (PLU-161 case I)."""
+    Databricks's implicit string -> TIMESTAMP cast succeeds (PLU-161 case I).
+
+    Covers both top-level (`date_processed` injected by the pipeline at element root)
+    and nested (`data_source_*`) datetime keys.
+    """
     elements = [
         {
             "element_id": "el-1",
             "text": "hello",
             "metadata": {
+                "date_processed": "1779329600.0",
                 "data_source": {
                     "date_created": "1779329000.0",
                     "date_modified": "1779329500.0",
@@ -119,9 +124,10 @@ def test_stager_flatten_coerces_epoch_string_datetime(tmp_path: Path):
     [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
 
     for key in (
-        "metadata_data_source_date_created",
-        "metadata_data_source_date_modified",
-        "metadata_data_source_date_processed",
+        "date_processed",
+        "data_source_date_created",
+        "data_source_date_modified",
+        "data_source_date_processed",
     ):
         assert isinstance(row[key], str)
         assert row[key].startswith("20"), f"{key} not in ISO format: {row[key]!r}"
@@ -142,7 +148,7 @@ def test_stager_flatten_leaves_malformed_datetime_alone(tmp_path: Path):
         }
     ]
     [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
-    assert row["metadata_data_source_date_created"] == "not-a-date"
+    assert row["data_source_date_created"] == "not-a-date"
 
 
 def test_stager_blob_mode_does_not_coerce_datetime(tmp_path: Path):
