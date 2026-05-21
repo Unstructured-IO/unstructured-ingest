@@ -42,22 +42,26 @@ if TYPE_CHECKING:
     pass
 
 
-FLATTEN_METADATA_DESCRIPTION = (
-    "If true, recursively flatten the element metadata into top-level columns "
-    "(stops at lists). The destination table must already exist with the "
-    "desired schema — the connector will not auto-create. Unknown incoming "
-    "fields are dropped; missing columns stay null."
-)
-
-
 class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMixin):
     database: str = Field(description="Database name", default="default")
     table_name: Optional[str] = Field(description="Table name", default=None)
-    flatten_metadata: bool = Field(default=False, description=FLATTEN_METADATA_DESCRIPTION)
+    flatten_metadata: bool = Field(
+        default=False,
+        description=(
+            "Flatten metadata into top-level columns. Destination table must already "
+            "exist (no auto-create); unknown incoming fields are dropped."
+        ),
+    )
 
 
 class DatabricksVolumeDeltaTableStagerConfig(UploadStagerConfig):
-    flatten_metadata: bool = Field(default=False, description=FLATTEN_METADATA_DESCRIPTION)
+    flatten_metadata: bool = Field(
+        default=False,
+        description=(
+            "Flatten metadata into top-level columns. Destination table must already "
+            "exist (no auto-create); unknown incoming fields are dropped."
+        ),
+    )
 
 
 def _coerce_flattened_datetimes(row: dict[str, Any]) -> None:
