@@ -1,6 +1,6 @@
 import json
 import os
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -22,6 +22,13 @@ from unstructured_ingest.processes.connector_registry import (
 from unstructured_ingest.processes.connectors.databricks.volumes import DatabricksPathMixin
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
     DatabricksDeltaTablesConnectionConfig,
+)
+
+# Reuse the SQL connector's canonical datetime field set + parser so the flatten
+# path doesn't drift from the rest of ingest when new datetime fields land.
+from unstructured_ingest.processes.connectors.sql.sql import (
+    _DATE_COLUMNS,
+    parse_date_string,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import (
@@ -54,6 +61,26 @@ class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMix
 
 class DatabricksVolumeDeltaTableStagerConfig(UploadStagerConfig):
     flatten_metadata: bool = Field(default=False, description=FLATTEN_METADATA_DESCRIPTION)
+
+
+def _coerce_flattened_datetimes(row: dict[str, Any]) -> None:
+    """Convert stringified-epoch values on known datetime keys to ISO format in-place.
+
+    After flattening, datetime metadata fields (e.g. `metadata_data_source_date_processed`)
+    arrive as stringified unix epochs like `"1779329564.5102773"`. Databricks's implicit
+    string → TIMESTAMP cast rejects those (`CAST_INVALID_INPUT`). Run them through the
+    same `parse_date_string` the SQL connector uses, then emit ISO format which
+    Databricks coerces natively. Malformed values pass through unchanged — same as the
+    non-flatten path.
+    """
+    suffixes = tuple(f"_{col}" for col in _DATE_COLUMNS)
+    for key, value in list(row.items()):
+        if value is None or not isinstance(value, (str, int)):
+            continue
+        if not key.endswith(suffixes):
+            continue
+        with suppress(Exception):
+            row[key] = parse_date_string(value).isoformat(sep=" ")
 
 
 @dataclass
@@ -90,6 +117,7 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
                         flatten_lists=False,
                     )
                 )
+                _coerce_flattened_datetimes(element)
             else:
                 element["metadata"] = json.dumps(metadata)
         write_data(path=final_output_path, data=data, indent=None)
