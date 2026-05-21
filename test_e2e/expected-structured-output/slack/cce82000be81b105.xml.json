@@ -20,6 +20,7 @@
         "date_created": "1719844959.236409",
         "date_modified": "1719845122.687169",
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 333
       }
     }
@@ -45,6 +46,7 @@
         "date_created": "1719844959.236409",
         "date_modified": "1719845122.687169",
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 333
       }
     }
@@ -70,6 +72,7 @@
         "date_created": "1719844959.236409",
         "date_modified": "1719845122.687169",
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 333
       }
     }
@@ -95,6 +98,7 @@
         "date_created": "1719844959.236409",
         "date_modified": "1719845122.687169",
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 333
       }
     }

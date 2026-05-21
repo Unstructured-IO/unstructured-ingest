@@ -51,7 +51,8 @@
               "groups": []
             }
           }
-        ]
+        ],
+        "denied_permissions_data": null
       }
     }
   }

@@ -21,6 +21,7 @@
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 1281
       }
     }
@@ -47,6 +48,7 @@
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 1281
       }
     }
@@ -73,6 +75,7 @@
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 1281
       }
     }
@@ -99,6 +102,7 @@
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 1281
       }
     }
@@ -125,6 +129,7 @@
         "date_created": null,
         "date_modified": null,
         "permissions_data": null,
+        "denied_permissions_data": null,
         "filesize_bytes": 1281
       }
     }

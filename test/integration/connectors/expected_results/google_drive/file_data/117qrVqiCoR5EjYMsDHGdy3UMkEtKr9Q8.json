@@ -57,6 +57,7 @@
         "pendingOwner": false
       }
     ],
+    "denied_permissions_data": null,
     "filesize_bytes": null
   },
   "additional_metadata": {
