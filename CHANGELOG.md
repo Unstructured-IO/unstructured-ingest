@@ -1,3 +1,13 @@
+## [1.6.3]
+
+### Enhancements
+
+- **feat(slack): support file attachments and OAuth refresh tokens.** Slack indexing now emits file attachment records, downloading uses Slack private file URLs with bearer authentication, and `SlackAccessConfig` accepts `refresh_token` so platform plugin schemas can expose OAuth token rotation settings.
+
+### Fixes
+
+- **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials and use a bounded timeout for private file reads.
+
 ## [1.6.2]
 
 ### Fixes

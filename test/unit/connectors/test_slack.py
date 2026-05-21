@@ -7,7 +7,9 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.slack import (
+    PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
     SlackAccessConfig,
     SlackDownloader,
     SlackIndexer,
@@ -108,3 +110,45 @@ async def test_slack_downloader_downloads_file_attachment(tmp_path, mocker):
     request = urlopen.call_args.args[0]
     assert request.full_url == "https://files.slack.com/report.pdf"
     assert request.headers["Authorization"] == "Bearer xoxb-slack-token"
+    assert urlopen.call_args.kwargs["timeout"] == PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS
+
+
+@pytest.mark.asyncio
+async def test_slack_downloader_rejects_non_slack_private_download_url(tmp_path, mocker):
+    async_client = Mock()
+    async_client.files_info = mocker.AsyncMock(
+        return_value={
+            "ok": True,
+            "file": {
+                "id": "F123",
+                "name": "report.pdf",
+                "url_private_download": "https://example.com/report.pdf",
+            },
+        }
+    )
+    connection_config = Mock()
+    connection_config.get_async_client.return_value = async_client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxb-slack-token"
+    downloader = SlackDownloader(connection_config=connection_config)
+    file_data = FileData(
+        identifier="F123",
+        connector_type="slack",
+        source_identifiers=SourceIdentifiers(
+            filename="F123-report.pdf",
+            fullpath="F123-report.pdf",
+        ),
+        metadata=FileDataSourceMetadata(
+            record_locator={
+                "type": "file",
+                "channel": "C123",
+                "message_ts": "1710000000.000100",
+                "file_id": "F123",
+            }
+        ),
+    )
+    urlopen = mocker.patch("urllib.request.urlopen")
+
+    with pytest.raises(IngestValueError, match="files.slack.com"):
+        await downloader._download_file(file_data, tmp_path / "F123-report.pdf")
+
+    urlopen.assert_not_called()

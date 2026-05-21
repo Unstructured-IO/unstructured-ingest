@@ -1,7 +1,9 @@
 import asyncio
+import builtins
 import hashlib
 import re
 import time
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -37,6 +39,8 @@ if TYPE_CHECKING:
 # NOTE: Pagination limit set to the upper end of the recommended range
 # https://api.slack.com/apis/pagination#facts
 PAGINATION_LIMIT = 200
+PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS = 60
+SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 
 CONNECTOR_TYPE = "slack"
 
@@ -44,6 +48,27 @@ CONNECTOR_TYPE = "slack"
 def _safe_slack_filename(filename: str) -> str:
     sanitized = re.sub(r"[/\\]+", "_", filename).strip()
     return sanitized or "slack-file"
+
+
+def _validate_private_download_url(download_url: str) -> str:
+    parsed_url = urllib.parse.urlparse(download_url)
+    hostname = parsed_url.hostname.lower() if parsed_url.hostname else None
+
+    if parsed_url.scheme != "https" or hostname != SLACK_PRIVATE_FILE_HOST:
+        raise ValueError("Slack file download URL must be an HTTPS files.slack.com URL.")
+
+    if parsed_url.username or parsed_url.password:
+        raise ValueError("Slack file download URL must not include credentials.")
+
+    try:
+        port = parsed_url.port
+    except builtins.ValueError as exc:
+        raise ValueError("Slack file download URL has an invalid port.") from exc
+
+    if port not in (None, 443):
+        raise ValueError("Slack file download URL must use the default HTTPS port.")
+
+    return download_url
 
 
 class SlackAccessConfig(AccessConfig):
@@ -296,6 +321,7 @@ class SlackDownloader(Downloader):
         )
         if not download_url:
             raise ValueError("Slack file is missing url_private_download.")
+        download_url = _validate_private_download_url(download_url)
 
         token = self.connection_config.access_config.get_secret_value().token
         request = urllib.request.Request(
@@ -308,7 +334,10 @@ class SlackDownloader(Downloader):
 
     @staticmethod
     def _read_private_file(request: urllib.request.Request) -> bytes:
-        with urllib.request.urlopen(request) as response:
+        with urllib.request.urlopen(
+            request,
+            timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
+        ) as response:
             return response.read()
 
     def _conversation_to_xml(self, conversation: list[list[dict]]) -> ET.ElementTree:
