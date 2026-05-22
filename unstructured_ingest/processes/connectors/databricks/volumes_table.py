@@ -1,6 +1,6 @@
 import json
 import os
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Optional
@@ -22,10 +22,6 @@ from unstructured_ingest.processes.connector_registry import (
 from unstructured_ingest.processes.connectors.databricks.volumes import DatabricksPathMixin
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
     DatabricksDeltaTablesConnectionConfig,
-)
-from unstructured_ingest.processes.connectors.sql.sql import (
-    _DATE_COLUMNS,
-    parse_date_string,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import (
@@ -64,25 +60,6 @@ class DatabricksVolumeDeltaTableStagerConfig(UploadStagerConfig):
     )
 
 
-def _coerce_flattened_datetimes(row: dict[str, Any]) -> None:
-    """Convert stringified-epoch datetime fields to ISO format in-place.
-
-    Element metadata datetime fields (e.g. `date_processed`, `data_source_date_processed`)
-    arrive as stringified unix epochs like `"1779329564.5102773"`, which Databricks's
-    implicit string → `TIMESTAMP` cast rejects with `CAST_INVALID_INPUT`. Emit ISO
-    format instead so `TIMESTAMP` columns coerce natively. Unparseable values are
-    left alone for the table to reject.
-    """
-    suffixes = tuple(f"_{col}" for col in _DATE_COLUMNS)
-    for key, value in list(row.items()):
-        if value is None or not isinstance(value, (str, int, float)):
-            continue
-        if key not in _DATE_COLUMNS and not key.endswith(suffixes):
-            continue
-        with suppress(Exception):
-            row[key] = parse_date_string(value).isoformat(sep=" ")
-
-
 @dataclass
 class DatabricksVolumeDeltaTableStager(UploadStager):
     upload_stager_config: DatabricksVolumeDeltaTableStagerConfig = field(
@@ -116,7 +93,6 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
                         flatten_lists=False,
                     )
                 )
-                _coerce_flattened_datetimes(element)
             else:
                 element["metadata"] = json.dumps(metadata)
         write_data(path=final_output_path, data=data, indent=None)
