@@ -1,3 +1,9 @@
+## [1.6.3]
+
+### Fixes
+
+- **fix(google-drive): skip non-downloadable files at crawl and download time.** Google Drive shortcuts, Forms, Maps, Sites, Jamboard, Fusion Tables, and `inode/x-empty` (zero-byte) files are now filtered out during indexing and silently skipped by the downloader instead of failing after 3 retries. Exportable native types (Docs, Sheets, Slides, Drawings) are unaffected.
+
 ## [1.6.2]
 
 ### Fixes

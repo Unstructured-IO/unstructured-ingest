@@ -105,9 +105,7 @@ def _should_skip_file(record: dict) -> bool:
     if mime in GOOGLE_DRIVE_SKIP_MIME_TYPES:
         return True
     size = int(record.get("size", -1))
-    if mime == "inode/x-empty" or (size == 0 and not mime):
-        return True
-    return False
+    return mime == "inode/x-empty" or (size == 0 and not mime)
 
 
 def _build_extension_query_filter(extensions: list[str]) -> str:
