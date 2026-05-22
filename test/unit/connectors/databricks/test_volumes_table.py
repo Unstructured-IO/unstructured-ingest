@@ -226,25 +226,24 @@ def _insert_sql(mock_cursor: MagicMock) -> str:
     return next(sql for sql in _executed_sql(mock_cursor) if sql.startswith("INSERT"))
 
 
-def test_create_destination_flatten_true_missing_table_raises(
+def test_create_destination_flatten_true_is_noop(
     mock_cursor: MagicMock, mock_get_cursor: MagicMock
 ):
-    """PLU-161 case E: with flatten_metadata=true, missing table is a hard fail —
-    auto-create is disabled to prevent silent data loss."""
+    """Under flatten_metadata=true the user manages the destination table; precheck
+    validates existence, so create_destination is a no-op and must not touch the
+    warehouse (no SHOW TABLES, no CREATE TABLE)."""
     uploader = _make_uploader(flatten_metadata=True, table_name="missing_table")
-    mock_cursor.fetchall.return_value = []  # SHOW TABLES → no rows
 
-    with pytest.raises(IngestValueError, match="auto-create is disabled"):
-        uploader.create_destination()
+    assert uploader.create_destination() is False
 
-    assert not any("CREATE TABLE" in sql for sql in _executed_sql(mock_cursor))
+    assert _executed_sql(mock_cursor) == []
 
 
 def test_create_destination_flatten_false_missing_table_autocreates(
     mock_cursor: MagicMock, mock_get_cursor: MagicMock
 ):
-    """PLU-161 case C: backcompat — flatten=false still auto-creates from the
-    asset schema when the destination table is missing."""
+    """flatten=false still auto-creates from the asset schema when the destination
+    table is missing."""
     uploader = _make_uploader(flatten_metadata=False, table_name="new_table")
     mock_cursor.fetchall.return_value = []  # SHOW TABLES → no rows
 
@@ -255,18 +254,68 @@ def test_create_destination_flatten_false_missing_table_autocreates(
     assert "new_table" in create_sqls[0]
 
 
-@pytest.mark.parametrize("flatten_metadata", [True, False])
-def test_create_destination_existing_table_returns_false(
-    mock_cursor: MagicMock, mock_get_cursor: MagicMock, flatten_metadata: bool
+def test_create_destination_flatten_false_existing_table_returns_false(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock
 ):
-    """When the table already exists, create_destination is a no-op regardless of
-    the flag — neither branch should attempt a CREATE TABLE."""
-    uploader = _make_uploader(flatten_metadata=flatten_metadata, table_name="elements")
+    """flatten=false with an existing table is a no-op — SHOW TABLES finds the
+    name and we return False without issuing a CREATE."""
+    uploader = _make_uploader(flatten_metadata=False, table_name="elements")
     # `SHOW TABLES` rows are `(database, tableName, isTemporary)`; r[1] is the name.
     mock_cursor.fetchall.return_value = [("sch", "elements", False)]
 
     assert uploader.create_destination() is False
     assert not any("CREATE TABLE" in sql for sql in _executed_sql(mock_cursor))
+
+
+def _precheck_fetchall(*, catalogs, databases, tables):
+    """SHOW CATALOGS / SHOW DATABASES / SHOW TABLES are the only fetchall calls in
+    precheck, in that order. SHOW TABLES rows are (database, tableName, isTemporary)."""
+    return [
+        [(c,) for c in catalogs],
+        [(d,) for d in databases],
+        [("db", t, False) for t in tables],
+    ]
+
+
+def test_precheck_flatten_true_missing_table_raises(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """With flatten_metadata=true, precheck must fail fast when the destination table
+    is missing — otherwise the per-document INSERT is the first thing that notices."""
+    uploader = _make_uploader(flatten_metadata=True, table_name="missing_table")
+    mock_cursor.fetchall.side_effect = _precheck_fetchall(
+        catalogs=["cat"], databases=["db"], tables=["other_table"]
+    )
+
+    with pytest.raises(IngestValueError, match="auto-create is disabled"):
+        uploader.precheck()
+
+
+def test_precheck_flatten_true_existing_table_passes(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    uploader = _make_uploader(flatten_metadata=True, table_name="elements")
+    mock_cursor.fetchall.side_effect = _precheck_fetchall(
+        catalogs=["cat"], databases=["db"], tables=["elements"]
+    )
+
+    uploader.precheck()
+
+
+def test_precheck_flatten_false_skips_table_check(
+    mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """Backcompat: flatten=false leaves table existence to create_destination /
+    auto-create, so precheck must not fail when the table is missing."""
+    uploader = _make_uploader(flatten_metadata=False, table_name="missing_table")
+    mock_cursor.fetchall.side_effect = [
+        [("cat",)],  # SHOW CATALOGS
+        [("db",)],  # SHOW DATABASES
+    ]
+
+    uploader.precheck()
+
+    assert not any(sql == "SHOW TABLES" for sql in _executed_sql(mock_cursor))
 
 
 def _staged_elements(tmp_path: Path, row: dict) -> Path:

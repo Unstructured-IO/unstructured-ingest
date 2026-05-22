@@ -114,6 +114,9 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     ) -> bool:
         table_name = self.upload_config.table_name or destination_name
         self.upload_config.table_name = table_name
+        if self.upload_config.flatten_metadata:
+            # User manages the table under flatten mode; precheck validates existence.
+            return False
         connectors_dir = Path(__file__).parents[1]
         collection_config_file = connectors_dir / "assets" / "databricks_delta_table_schema.sql"
         with self.get_cursor() as cursor:
@@ -121,12 +124,6 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
             table_names = [r[1] for r in cursor.fetchall()]
             if table_name in table_names:
                 return False
-            if self.upload_config.flatten_metadata:
-                raise ValueError(
-                    f"Table {table_name!r} does not exist. With flatten_metadata=true, "
-                    "the destination table must be pre-created — auto-create is disabled "
-                    "to prevent silent data loss."
-                )
             with collection_config_file.open() as schema_file:
                 data_lines = schema_file.readlines()
             data_lines[0] = data_lines[0].replace("elements", table_name)
@@ -154,6 +151,17 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                         self.upload_config.database, ", ".join(databases)
                     )
                 )
+            if self.upload_config.flatten_metadata:
+                cursor.execute(f"USE DATABASE {quote_identifier(self.upload_config.database)}")
+                cursor.execute("SHOW TABLES")
+                table_names = [r[1] for r in cursor.fetchall()]
+                table_name = self.upload_config.table_name or "unstructuredautocreated"
+                if table_name not in table_names:
+                    raise ValueError(
+                        f"Table {table_name!r} does not exist. With flatten_metadata=true, "
+                        "the destination table must be pre-created — auto-create is "
+                        "disabled to prevent silent data loss."
+                    )
 
     def get_output_path(self, file_data: FileData, suffix: str = ".json") -> str:
         filename = Path(file_data.source_identifiers.filename)
