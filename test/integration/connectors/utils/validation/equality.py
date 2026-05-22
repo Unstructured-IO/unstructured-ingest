@@ -51,10 +51,10 @@ def html_equality_check(expected_filepath: Path, current_filepath: Path) -> bool
 def unordered_table_html_equality_check(
     expected_filepath: Path, current_filepath: Path
 ) -> bool:
-    # Equality check for HTML files whose first <table> holds rows in an
-    # arbitrary order. Header (first <tr>) is compared positionally; remaining
-    # data rows are compared as a multiset of their text content. Used for
-    # connectors whose upstream API doesn't guarantee stable row ordering
+    # Equality check for HTML files whose rows arrive in arbitrary order.
+    # The first <tr> in the document is compared positionally as a header;
+    # remaining <tr>s are compared as a multiset of their text content. Used
+    # for connectors whose upstream API doesn't guarantee stable row ordering
     # (e.g. Notion's database query response).
     with expected_filepath.open() as expected_f:
         expected_soup = BeautifulSoup(expected_f, "html.parser")
