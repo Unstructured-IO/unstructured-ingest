@@ -1,3 +1,5 @@
+import importlib.util
+
 import pytest
 from pydantic import SecretStr, ValidationError
 
@@ -35,6 +37,10 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     assert mock_client.embeddings.create.call_count == 2
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("openai") is None,
+    reason="openai extra not installed",
+)
 class TestCustomOpenAICompatibleEmbeddingConfig:
     @pytest.mark.parametrize("get_client_method", ["get_client", "get_async_client"])
     def test_without_api_key_omits_authorization(self, get_client_method):
