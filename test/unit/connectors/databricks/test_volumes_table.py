@@ -109,6 +109,67 @@ def test_stager_flatten_stops_at_lists(tmp_path: Path):
     assert "sent_to_0" not in row
 
 
+def test_stager_flatten_passes_datetime_strings_through_unchanged(tmp_path: Path):
+    """Datetime fields flow into the flattened row as their JSON-native string form —
+    no ISO coercion. Customers declare these columns as STRING in their Delta table."""
+    elements = [
+        {
+            "element_id": "el-1",
+            "text": "hello",
+            "metadata": {
+                "date_processed": "1779329600.0",
+                "data_source": {
+                    "date_created": "1779329000.0",
+                    "date_modified": "1779329500.0",
+                    "date_processed": "1779329564.5102773",
+                },
+            },
+        }
+    ]
+    [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
+
+    assert row["date_processed"] == "1779329600.0"
+    assert row["data_source_date_created"] == "1779329000.0"
+    assert row["data_source_date_modified"] == "1779329500.0"
+    assert row["data_source_date_processed"] == "1779329564.5102773"
+
+
+def test_stager_flatten_passes_float_epoch_through_unchanged(tmp_path: Path):
+    """JSON-parsed numeric epochs arrive as Python floats and must pass through
+    untouched — neither converted to ISO strings nor stringified."""
+    elements = [
+        {
+            "element_id": "el-1",
+            "text": "hello",
+            "metadata": {"data_source": {"date_processed": 1779329564.5102773}},
+        }
+    ]
+    [row] = _run_stager(tmp_path, elements, flatten_metadata=True)
+
+    assert row["data_source_date_processed"] == 1779329564.5102773
+    assert isinstance(row["data_source_date_processed"], float)
+
+
+def test_stager_blob_mode_preserves_datetime_strings(tmp_path: Path):
+    """The non-flatten path is unchanged — datetime fields stay as strings inside
+    the JSON blob with byte-identical values."""
+    elements = [
+        {
+            "element_id": "el-1",
+            "text": "hello",
+            "metadata": {
+                "date_processed": "1779329600.0",
+                "data_source": {"date_processed": "1779329564.5102773"},
+            },
+        }
+    ]
+    [row] = _run_stager(tmp_path, elements, flatten_metadata=False)
+
+    decoded = json.loads(row["metadata"])
+    assert decoded["date_processed"] == "1779329600.0"
+    assert decoded["data_source"]["date_processed"] == "1779329564.5102773"
+
+
 @pytest.mark.parametrize(
     "config_cls",
     [DatabricksVolumeDeltaTableUploaderConfig, DatabricksVolumeDeltaTableStagerConfig],
