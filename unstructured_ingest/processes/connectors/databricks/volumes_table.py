@@ -159,8 +159,7 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                 if table_name not in table_names:
                     raise ValueError(
                         f"Table {table_name!r} does not exist. With flatten_metadata=true, "
-                        "the destination table must be pre-created — auto-create is "
-                        "disabled to prevent silent data loss."
+                        "the destination table must be pre-created."
                     )
 
     def get_output_path(self, file_data: FileData, suffix: str = ".json") -> str:

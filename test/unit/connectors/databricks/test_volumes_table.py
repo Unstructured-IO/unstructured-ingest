@@ -287,7 +287,7 @@ def test_precheck_flatten_true_missing_table_raises(
         catalogs=["cat"], databases=["db"], tables=["other_table"]
     )
 
-    with pytest.raises(IngestValueError, match="auto-create is disabled"):
+    with pytest.raises(IngestValueError, match="must be pre-created"):
         uploader.precheck()
 
 
