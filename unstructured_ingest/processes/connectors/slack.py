@@ -2,6 +2,7 @@ import asyncio
 import builtins
 import hashlib
 import re
+import shutil
 import time
 import urllib.parse
 import urllib.request
@@ -69,6 +70,13 @@ def _validate_private_download_url(download_url: str) -> str:
         raise ValueError("Slack file download URL must use the default HTTPS port.")
 
     return download_url
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102, ANN001
+        raise ValueError(
+            "Slack file download redirected; refusing to forward bearer authorization."
+        )
 
 
 class SlackAccessConfig(AccessConfig):
@@ -329,16 +337,16 @@ class SlackDownloader(Downloader):
             headers={"Authorization": f"Bearer {token}"},
         )
         download_path.parent.mkdir(exist_ok=True, parents=True)
-        content = await asyncio.to_thread(self._read_private_file, request)
-        download_path.write_bytes(content)
+        await asyncio.to_thread(self._download_private_file, request, download_path)
 
     @staticmethod
-    def _read_private_file(request: urllib.request.Request) -> bytes:
-        with urllib.request.urlopen(
+    def _download_private_file(request: urllib.request.Request, download_path: Path) -> None:
+        opener = urllib.request.build_opener(_NoRedirectHandler)
+        with opener.open(
             request,
             timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
-        ) as response:
-            return response.read()
+        ) as response, download_path.open("wb") as output_file:
+            shutil.copyfileobj(response, output_file)
 
     def _conversation_to_xml(self, conversation: list[list[dict]]) -> ET.ElementTree:
         root = ET.Element("messages")

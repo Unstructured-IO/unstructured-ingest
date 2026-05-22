@@ -14,6 +14,7 @@ from unstructured_ingest.processes.connectors.slack import (
     SlackDownloader,
     SlackIndexer,
     SlackIndexerConfig,
+    _NoRedirectHandler,
 )
 
 
@@ -100,17 +101,28 @@ async def test_slack_downloader_downloads_file_attachment(tmp_path, mocker):
     response = Mock()
     response.__enter__ = Mock(return_value=response)
     response.__exit__ = Mock(return_value=None)
-    response.read.return_value = b"pdf bytes"
-    urlopen = mocker.patch("urllib.request.urlopen", return_value=response)
+    response.read.side_effect = [b"pdf ", b"bytes", b""]
+    opener = Mock()
+    opener.open.return_value = response
+    build_opener = mocker.patch("urllib.request.build_opener", return_value=opener)
 
     await downloader._download_file(file_data, tmp_path / "F123-report.pdf")
 
     assert (tmp_path / "F123-report.pdf").read_bytes() == b"pdf bytes"
-    urlopen.assert_called_once()
-    request = urlopen.call_args.args[0]
+    build_opener.assert_called_once_with(_NoRedirectHandler)
+    opener.open.assert_called_once()
+    request = opener.open.call_args.args[0]
     assert request.full_url == "https://files.slack.com/report.pdf"
     assert request.headers["Authorization"] == "Bearer xoxb-slack-token"
-    assert urlopen.call_args.kwargs["timeout"] == PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS
+    assert opener.open.call_args.kwargs["timeout"] == PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS
+    assert response.read.call_count > 1
+
+
+def test_slack_private_file_download_rejects_redirects():
+    handler = _NoRedirectHandler()
+
+    with pytest.raises(IngestValueError, match="redirected"):
+        handler.redirect_request(None, None, 302, "Found", {}, "https://example.com/report.pdf")
 
 
 @pytest.mark.asyncio
@@ -146,9 +158,9 @@ async def test_slack_downloader_rejects_non_slack_private_download_url(tmp_path,
             }
         ),
     )
-    urlopen = mocker.patch("urllib.request.urlopen")
+    build_opener = mocker.patch("urllib.request.build_opener")
 
     with pytest.raises(IngestValueError, match="files.slack.com"):
         await downloader._download_file(file_data, tmp_path / "F123-report.pdf")
 
-    urlopen.assert_not_called()
+    build_opener.assert_not_called()
