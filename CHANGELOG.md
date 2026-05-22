@@ -1,3 +1,9 @@
+## [1.6.3]
+
+### Enhancements
+
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off. When set, the stager flattens element metadata into top-level columns matching Milvus's unprefixed naming, and the uploader skips auto-create against the user-managed table, dropping unknown incoming columns with a log line.
+
 ## [1.6.2]
 
 ### Fixes
