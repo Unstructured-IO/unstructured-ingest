@@ -193,9 +193,31 @@ class BoxIndexerConfig(FsspecIndexerConfig):
 
 
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Annotated[dict, BeforeValidator(conform_string_to_dict)] = Field(
-        description="Box app credentials as a JSON string."
+    box_app_config: Optional[
+        Annotated[dict, BeforeValidator(conform_string_to_dict)]
+    ] = Field(
+        default=None,
+        description="Box app credentials as a JSON string.",
     )
+    access_token: Optional[str] = Field(
+        default=None, description="Box OAuth 2.0 access token."
+    )
+    refresh_token: Optional[str] = Field(
+        default=None, description="Box OAuth 2.0 refresh token."
+    )
+
+    def model_post_init(self, __context: Any) -> None:
+        has_jwt = self.box_app_config is not None
+        has_oauth = self.access_token is not None
+        if not has_jwt and not has_oauth:
+            raise ValueError(
+                "BoxAccessConfig requires either box_app_config or access_token."
+            )
+        if has_jwt and (self.access_token is not None or self.refresh_token is not None):
+            raise ValueError(
+                "BoxAccessConfig must use exactly one auth method: "
+                "either box_app_config or access_token/refresh_token."
+            )
 
 
 class BoxConnectionConfig(FsspecConnectionConfig):
@@ -203,27 +225,37 @@ class BoxConnectionConfig(FsspecConnectionConfig):
     access_config: Secret[BoxAccessConfig]
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
-    def get_access_config(self) -> dict[str, Any]:
+    @requires_dependencies(["boxsdk"], extras="box")
+    def _build_oauth_from_access_token(self, access_token: str):
+        from boxsdk import OAuth2
+
+        return OAuth2(
+            client_id="",
+            client_secret="",
+            access_token=access_token,
+        )
+
+    @requires_dependencies(["boxsdk"], extras="box")
+    def _build_jwt(self, ac: BoxAccessConfig):
         from boxsdk import JWTAuth
 
-        ac = self.access_config.get_secret_value()
-        settings_dict = ac.box_app_config
-
-        # Create and authenticate the JWTAuth object
-        oauth = JWTAuth.from_settings_dictionary(settings_dict)
+        oauth = JWTAuth.from_settings_dictionary(ac.box_app_config)
         oauth.authenticate_instance()
+        return oauth
 
-        # if not oauth.access_token:
-        #     raise SourceConnectionError("Authentication failed: No access token generated.")
+    def get_access_config(self) -> dict[str, Any]:
+        ac = self.access_config.get_secret_value()
 
-        # Prepare the access configuration with the authenticated oauth
-        access_kwargs_with_oauth: dict[str, Any] = {
-            "oauth": oauth,
-        }
+        if ac.access_token is not None:
+            oauth = self._build_oauth_from_access_token(ac.access_token)
+        else:
+            oauth = self._build_jwt(ac)
+
+        access_kwargs_with_oauth: dict[str, Any] = {"oauth": oauth}
         access_config: dict[str, Any] = ac.model_dump()
-        access_config.pop("box_app_config", None)
+        for k in ("box_app_config", "access_token", "refresh_token"):
+            access_config.pop(k, None)
         access_kwargs_with_oauth.update(access_config)
-
         return access_kwargs_with_oauth
 
     def wrap_error(self, e: Exception) -> Exception:
