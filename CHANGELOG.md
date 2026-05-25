@@ -3,6 +3,7 @@
 ### Enhancements
 
 - **feat(embed): add `CustomOpenAICompatibleEmbeddingConfig` subclass.** New optional config for OpenAI-compatible gateways (vLLM, NIM, Ollama, LiteLLM, etc.) that authenticate via custom HTTP headers. Adds optional `api_key: SecretStr | None` and `default_headers: dict[str, SecretStr] | None` on the subclass. When `api_key` is unset, no `Authorization` header is emitted to the gateway. Existing `OpenAIEmbeddingConfig` / `AzureOpenAIEmbeddingConfig` surfaces are unchanged.
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off. When set, the stager flattens element metadata into top-level columns matching Milvus's unprefixed naming, and the uploader skips auto-create against the user-managed table, dropping unknown incoming columns with a log line.
 
 ## [1.6.2]
 
