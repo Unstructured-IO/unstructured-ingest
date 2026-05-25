@@ -1,4 +1,4 @@
-## [1.6.3]
+## [1.6.4]
 
 ### Enhancements
 
@@ -6,7 +6,13 @@
 
 ### Fixes
 
-- **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials and use a bounded timeout for private file reads.
+- **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
+
+## [1.6.3]
+
+### Enhancements
+
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off. When set, the stager flattens element metadata into top-level columns matching Milvus's unprefixed naming, and the uploader skips auto-create against the user-managed table, dropping unknown incoming columns with a log line.
 
 ## [1.6.2]
 
