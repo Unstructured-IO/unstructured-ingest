@@ -13,7 +13,6 @@
 ### Fixes
 
 - **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
-
 ## [1.6.3]
 
 ### Enhancements
