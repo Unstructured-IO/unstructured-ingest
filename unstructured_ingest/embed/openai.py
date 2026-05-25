@@ -151,15 +151,9 @@ class CustomOpenAICompatibleEmbeddingConfig(OpenAIEmbeddingConfig):
             if self.default_headers
             else None
         )
-        if self.api_key is None:
-            return OpenAI(
-                api_key=lambda: "",
-                base_url=self.base_url,
-                default_headers=headers,
-                http_client=http_client,
-            )
+        api_key = (lambda: "") if self.api_key is None else self.api_key.get_secret_value()
         return OpenAI(
-            api_key=self.api_key.get_secret_value(),
+            api_key=api_key,
             base_url=self.base_url,
             default_headers=headers,
             http_client=http_client,
@@ -175,19 +169,12 @@ class CustomOpenAICompatibleEmbeddingConfig(OpenAIEmbeddingConfig):
             if self.default_headers
             else None
         )
-        if self.api_key is None:
+        async def _empty() -> str:
+            return ""
 
-            async def _empty() -> str:
-                return ""
-
-            return AsyncOpenAI(
-                api_key=_empty,
-                base_url=self.base_url,
-                default_headers=headers,
-                http_client=http_client,
-            )
+        api_key = _empty if self.api_key is None else self.api_key.get_secret_value()
         return AsyncOpenAI(
-            api_key=self.api_key.get_secret_value(),
+            api_key=api_key,
             base_url=self.base_url,
             default_headers=headers,
             http_client=http_client,
