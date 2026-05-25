@@ -1,3 +1,9 @@
+## [1.6.7]
+
+### Enhancements
+
+- **feat(box): OAuth 2.0 access token support on the Box source.** `BoxAccessConfig` now accepts `access_token` (with optional `refresh_token`) alongside the existing `box_app_config` JWT field, and a validator enforces exactly one auth method. When `access_token` is set, `BoxConnectionConfig.get_access_config()` returns a `boxsdk.OAuth2` client. `refresh_token` is stored as a carrier for external refresh flows (e.g. orchestrator-side rotation) and is not consumed in-process.
+
 ## [1.6.6]
 
 ### Enhancements
