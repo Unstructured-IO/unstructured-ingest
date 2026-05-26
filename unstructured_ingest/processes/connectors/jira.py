@@ -111,10 +111,22 @@ class JiraAccessConfig(AccessConfig):
         description="Jira Personal Access Token",
         default=None,
     )
+    oauth_token: Optional[str] = Field(
+        description="Atlassian OAuth 2.0 access token",
+        default=None,
+    )
+    refresh_token: Optional[str] = Field(
+        description="Atlassian OAuth 2.0 refresh token",
+        default=None,
+    )
 
 
 class JiraConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Jira instance")
+    cloud_id: Optional[str] = Field(
+        description="Atlassian Cloud ID for OAuth 2.0 API gateway requests",
+        default=None,
+    )
     username: Optional[str] = Field(
         description="Username or email for authentication",
         default=None,
@@ -126,20 +138,32 @@ class JiraConnectionConfig(ConnectionConfig):
         access_configs = self.access_config.get_secret_value()
         basic_auth = self.username and access_configs.password
         pat_auth = access_configs.token
-        if self.cloud and not basic_auth:
+        oauth_auth = bool(access_configs.oauth_token)
+        if self.cloud and not (basic_auth or oauth_auth):
             raise ValueError(
-                "cloud authentication requires username and API token (--password), "
+                "cloud authentication requires username and API token (--password) or oauth_token, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
-        if basic_auth and pat_auth:
+        auth_methods = [bool(basic_auth), bool(pat_auth), oauth_auth]
+        if sum(auth_methods) > 1:
             raise ValueError(
-                "both password and token provided, only one allowed, "
+                "basic auth, pat token, and oauth token are mutually exclusive, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
-        if not (basic_auth or pat_auth):
+        if oauth_auth and not self.cloud_id:
+            raise ValueError("cloud_id is required when using oauth_token")
+        if not any(auth_methods):
             raise ValueError(
                 "no form of auth provided, see: https://atlassian-python-api.readthedocs.io/"
             )
+
+    def api_url(self) -> str:
+        if self.access_config.get_secret_value().oauth_token:
+            return f"https://api.atlassian.com/ex/jira/{self.cloud_id}"
+        return self.url
+
+    def issue_url(self, issue_key: str) -> str:
+        return f"{self.url.rstrip('/')}/browse/{issue_key}"
 
     @requires_dependencies(["atlassian"], extras="jira")
     @contextmanager
@@ -148,12 +172,16 @@ class JiraConnectionConfig(ConnectionConfig):
 
         access_configs = self.access_config.get_secret_value()
         with Jira(
-            url=self.url,
-            username=self.username,
-            password=access_configs.password,
+            url=self.api_url(),
+            username=None if access_configs.oauth_token else self.username,
+            password=None if access_configs.oauth_token else access_configs.password,
             token=access_configs.token,
-            cloud=self.cloud,
+            cloud=self.cloud or bool(access_configs.oauth_token),
         ) as client:
+            if access_configs.oauth_token:
+                client._session.headers.update(
+                    {"Authorization": f"Bearer {access_configs.oauth_token}"}
+                )
             yield client
 
 
@@ -203,7 +231,7 @@ class JiraIndexer(Indexer):
                     yield JiraIssueMetadata.model_validate(issue)
 
     def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id", "status", "attachment"]  # Add attachment field
+        fields = ["key", "id", "status", "attachment", "updated"]  # Add attachment field
         jql = "project in ({})".format(", ".join(self.index_config.projects))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
@@ -214,6 +242,7 @@ class JiraIndexer(Indexer):
     ) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
             fields = ["key", "id", "attachment"]  # Add attachment field
+            fields.append("updated")
             if self.index_config.status_filters:
                 jql = "status in ({}) ORDER BY id".format(
                     ", ".join([f'"{s}"' for s in self.index_config.status_filters])
@@ -242,7 +271,7 @@ class JiraIndexer(Indexer):
         return jql
 
     def _get_issues_by_keys(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id", "attachment"]  # Add attachment field
+        fields = ["key", "id", "attachment", "updated"]  # Add attachment field
         jql = "key in ({})".format(", ".join(self.index_config.issues))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
@@ -251,10 +280,15 @@ class JiraIndexer(Indexer):
     def _create_file_data_from_issue(self, issue: JiraIssueMetadata) -> FileData:
         # Construct relative path and filename first
         filename = f"{issue.key}.txt"
-        relative_path = str(Path(issue.get_project_id()) / filename)
+        path_parts = [issue.get_project_id(), filename]
+        if self.connection_config.cloud_id:
+            path_parts.insert(0, self.connection_config.cloud_id)
+        relative_path = str(Path(*path_parts))
 
         # Build metadata with attachments included in record_locator
         record_locator = {"id": issue.id, "key": issue.key, "full_path": relative_path}
+        if self.connection_config.cloud_id:
+            record_locator["cloud_id"] = self.connection_config.cloud_id
 
         # Add attachments to record_locator if they exist
         attachments = issue.get_attachments()
@@ -271,6 +305,8 @@ class JiraIndexer(Indexer):
 
         metadata = FileDataSourceMetadata(
             date_processed=str(time()),
+            url=self.connection_config.issue_url(issue.key),
+            version=issue.fields.get("updated") if issue.fields else None,
             record_locator=record_locator,
         )
 
@@ -410,7 +446,8 @@ class JiraDownloader(Downloader):
     def update_file_data(self, file_data: FileData, issue: dict) -> None:
         file_data.metadata.date_created = issue["fields"]["created"]
         file_data.metadata.date_modified = issue["fields"]["updated"]
-        file_data.display_name = issue["fields"]["project"]["name"]
+        file_data.metadata.version = issue["fields"]["updated"]
+        file_data.display_name = f"{issue['key']}: {issue['fields']['summary']}"
 
     def get_issue(self, issue_key: str) -> dict:
         try:

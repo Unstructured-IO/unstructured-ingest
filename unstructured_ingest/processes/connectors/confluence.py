@@ -56,10 +56,22 @@ class ConfluenceAccessConfig(AccessConfig):
         description="Confluence Personal Access Token",
         default=None,
     )
+    oauth_token: Optional[str] = Field(
+        description="Atlassian OAuth 2.0 access token",
+        default=None,
+    )
+    refresh_token: Optional[str] = Field(
+        description="Atlassian OAuth 2.0 refresh token",
+        default=None,
+    )
 
 
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
+    cloud_id: Optional[str] = Field(
+        description="Atlassian Cloud ID for OAuth 2.0 API gateway requests",
+        default=None,
+    )
     username: Optional[str] = Field(
         description="Username or email for authentication",
         default=None,
@@ -78,17 +90,21 @@ class ConfluenceConnectionConfig(ConnectionConfig):
             )
         basic_auth = bool(self.username and (access_configs.password or access_configs.api_token))
         pat_auth = access_configs.token
-        if self.cloud and not basic_auth:
+        oauth_auth = bool(access_configs.oauth_token)
+        if self.cloud and not (basic_auth or oauth_auth):
             raise ValueError(
-                "cloud authentication requires username and API token (--password), "
+                "cloud authentication requires username and API token (--password) or oauth_token, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
-        if basic_auth and pat_auth:
+        auth_methods = [basic_auth, bool(pat_auth), oauth_auth]
+        if sum(bool(method) for method in auth_methods) > 1:
             raise ValueError(
-                "both password and token provided, only one allowed, "
+                "basic auth, pat token, and oauth token are mutually exclusive, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
-        if not (basic_auth or pat_auth):
+        if oauth_auth and not self.cloud_id:
+            raise ValueError("cloud_id is required when using oauth_token")
+        if not any(auth_methods):
             raise ValueError(
                 "no form of auth provided, see: https://atlassian-python-api.readthedocs.io/"
             )
@@ -101,6 +117,14 @@ class ConfluenceConnectionConfig(ConnectionConfig):
             return access_configs.password
         return access_configs.api_token
 
+    def api_url(self) -> str:
+        if self.access_config.get_secret_value().oauth_token:
+            return f"https://api.atlassian.com/ex/confluence/{self.cloud_id}/wiki"
+        return self.url
+
+    def page_url(self, page_id: str) -> str:
+        return f"{self.url.rstrip('/')}/pages/{page_id}"
+
     @requires_dependencies(["atlassian"], extras="confluence")
     @contextmanager
     def get_client(self) -> Generator["Confluence", None, None]:
@@ -108,12 +132,16 @@ class ConfluenceConnectionConfig(ConnectionConfig):
 
         access_configs = self.access_config.get_secret_value()
         with Confluence(
-            url=self.url,
-            username=self.username,
-            password=self.password_or_api_token(),
+            url=self.api_url(),
+            username=None if access_configs.oauth_token else self.username,
+            password=None if access_configs.oauth_token else self.password_or_api_token(),
             token=access_configs.token,
-            cloud=self.cloud,
+            cloud=self.cloud or bool(access_configs.oauth_token),
         ) as client:
+            if access_configs.oauth_token:
+                client._session.headers.update(
+                    {"Authorization": f"Bearer {access_configs.oauth_token}"}
+                )
             yield client
 
 
@@ -212,21 +240,37 @@ class ConfluenceIndexer(Indexer):
                 # Build metadata
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
-                    url=f"{self.connection_config.url}/pages/{doc_id}",
+                    url=self.connection_config.page_url(doc_id),
                     record_locator={
                         "space_id": space_key,
                         "document_id": doc_id,
+                        **(
+                            {"cloud_id": self.connection_config.cloud_id}
+                            if self.connection_config.cloud_id
+                            else {}
+                        ),
                     },
                 )
                 additional_metadata = {
                     "space_key": space_key,
                     "space_id": space_id,  # diff from record_locator space_id (which is space_key)
                     "document_id": doc_id,
+                    **(
+                        {
+                            "cloud_id": self.connection_config.cloud_id,
+                            "site_url": self.connection_config.url,
+                        }
+                        if self.connection_config.cloud_id
+                        else {}
+                    ),
                 }
 
                 # Construct relative path and filename
                 filename = f"{doc_id}.html"
-                relative_path = str(Path(space_key) / filename)
+                path_parts = [space_key, filename]
+                if self.connection_config.cloud_id:
+                    path_parts.insert(0, self.connection_config.cloud_id)
+                relative_path = str(Path(*path_parts))
 
                 source_identifiers = SourceIdentifiers(
                     filename=filename,
