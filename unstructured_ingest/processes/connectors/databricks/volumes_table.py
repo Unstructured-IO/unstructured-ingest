@@ -22,10 +22,14 @@ from unstructured_ingest.processes.connector_registry import (
 from unstructured_ingest.processes.connectors.databricks.volumes import DatabricksPathMixin
 from unstructured_ingest.processes.connectors.sql.databricks_delta_tables import (
     DatabricksDeltaTablesConnectionConfig,
-    DatabricksDeltaTablesUploadStagerConfig,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
-from unstructured_ingest.utils.data_prep import get_enhanced_element_id, get_json_data, write_data
+from unstructured_ingest.utils.data_prep import (
+    flatten_dict,
+    get_enhanced_element_id,
+    get_json_data,
+    write_data,
+)
 from unstructured_ingest.utils.databricks import quote_identifier
 
 CONNECTOR_TYPE = "databricks_volume_delta_tables"
@@ -37,10 +41,23 @@ if TYPE_CHECKING:
 class DatabricksVolumeDeltaTableUploaderConfig(UploaderConfig, DatabricksPathMixin):
     database: str = Field(description="Database name", default="default")
     table_name: Optional[str] = Field(description="Table name", default=None)
+    flatten_metadata: bool = Field(
+        default=False,
+        description=(
+            "Flatten metadata into top-level columns. Destination table must already "
+            "exist (no auto-create); unknown incoming fields are dropped."
+        ),
+    )
 
 
 class DatabricksVolumeDeltaTableStagerConfig(UploadStagerConfig):
-    pass
+    flatten_metadata: bool = Field(
+        default=False,
+        description=(
+            "Flatten metadata into top-level columns. Destination table must already "
+            "exist (no auto-create); unknown incoming fields are dropped."
+        ),
+    )
 
 
 @dataclass
@@ -63,10 +80,21 @@ class DatabricksVolumeDeltaTableStager(UploadStager):
         output_path = output_dir / output_filename
         final_output_path = output_path.with_suffix(".json")
         data = get_json_data(path=elements_filepath)
+        flatten = self.upload_stager_config.flatten_metadata
         for element in data:
             element["id"] = get_enhanced_element_id(element_dict=element, file_data=file_data)
             element[RECORD_ID_LABEL] = file_data.identifier
-            element["metadata"] = json.dumps(element.get("metadata", {}))
+            metadata = element.pop("metadata", {})
+            if flatten:
+                element.update(
+                    flatten_dict(
+                        metadata,
+                        separator="_",
+                        flatten_lists=False,
+                    )
+                )
+            else:
+                element["metadata"] = json.dumps(metadata)
         write_data(path=final_output_path, data=data, indent=None)
         return final_output_path
 
@@ -86,6 +114,9 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
     ) -> bool:
         table_name = self.upload_config.table_name or destination_name
         self.upload_config.table_name = table_name
+        if self.upload_config.flatten_metadata:
+            # User manages the table under flatten mode; precheck validates existence.
+            return False
         connectors_dir = Path(__file__).parents[1]
         collection_config_file = connectors_dir / "assets" / "databricks_delta_table_schema.sql"
         with self.get_cursor() as cursor:
@@ -120,6 +151,16 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                         self.upload_config.database, ", ".join(databases)
                     )
                 )
+            if self.upload_config.flatten_metadata:
+                cursor.execute(f"USE DATABASE {quote_identifier(self.upload_config.database)}")
+                cursor.execute("SHOW TABLES")
+                table_names = [r[1] for r in cursor.fetchall()]
+                table_name = self.upload_config.table_name or "unstructuredautocreated"
+                if table_name not in table_names:
+                    raise ValueError(
+                        f"Table {table_name!r} does not exist. With flatten_metadata=true, "
+                        "the destination table must be pre-created."
+                    )
 
     def get_output_path(self, file_data: FileData, suffix: str = ".json") -> str:
         filename = Path(file_data.source_identifiers.filename)
@@ -173,8 +214,20 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                 f"migrating content from {catalog_path} to table {self.upload_config.table_name}"
             )
             data = get_json_data(path=path)
-            columns = data[0].keys()
-            select_columns = ["PARSE_JSON(metadata)" if c == "metadata" else c for c in columns]
+            json_columns = list(data[0].keys())
+            if self.upload_config.flatten_metadata:
+                table_columns = set(self.get_table_columns().keys())
+                columns = [c for c in json_columns if c in table_columns]
+                dropped = [c for c in json_columns if c not in table_columns]
+                if dropped:
+                    logger.info(
+                        "Following columns from incoming data will be dropped to match "
+                        f"the table's schema: {', '.join(sorted(dropped))}"
+                    )
+                select_columns = list(columns)
+            else:
+                columns = json_columns
+                select_columns = ["PARSE_JSON(metadata)" if c == "metadata" else c for c in columns]
             column_str = ", ".join(columns)
             select_column_str = ", ".join(select_columns)
             sql_statment = f"INSERT INTO `{self.upload_config.table_name}` ({column_str}) SELECT {select_column_str} FROM json.`{catalog_path}`"  # noqa: E501
@@ -186,5 +239,5 @@ databricks_volumes_delta_tables_destination_entry = DestinationRegistryEntry(
     uploader=DatabricksVolumeDeltaTableUploader,
     uploader_config=DatabricksVolumeDeltaTableUploaderConfig,
     upload_stager=DatabricksVolumeDeltaTableStager,
-    upload_stager_config=DatabricksDeltaTablesUploadStagerConfig,
+    upload_stager_config=DatabricksVolumeDeltaTableStagerConfig,
 )
