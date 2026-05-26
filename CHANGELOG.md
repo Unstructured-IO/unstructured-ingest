@@ -1,4 +1,8 @@
-## [1.6.6-dev]
+## [1.6.6]
+
+### Enhancements
+
+- **feat(embed): add `CustomOpenAICompatibleEmbeddingConfig` subclass.** New optional config for OpenAI-compatible gateways (vLLM, NIM, Ollama, LiteLLM, etc.) that authenticate via custom HTTP headers. Adds optional `api_key: SecretStr | None` and `default_headers: dict[str, SecretStr] | None` on the subclass. When `api_key` is unset, no `Authorization` header is emitted to the gateway. Existing `OpenAIEmbeddingConfig` / `AzureOpenAIEmbeddingConfig` surfaces are unchanged.
 
 ### Fixes
 
@@ -19,7 +23,6 @@
 ### Fixes
 
 - **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
-
 ## [1.6.3]
 
 ### Enhancements
