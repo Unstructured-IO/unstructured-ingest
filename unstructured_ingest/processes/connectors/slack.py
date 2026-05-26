@@ -1,5 +1,11 @@
+import asyncio
+import builtins
 import hashlib
+import re
+import shutil
 import time
+import urllib.parse
+import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -34,8 +40,43 @@ if TYPE_CHECKING:
 # NOTE: Pagination limit set to the upper end of the recommended range
 # https://api.slack.com/apis/pagination#facts
 PAGINATION_LIMIT = 200
+PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS = 60
+SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 
 CONNECTOR_TYPE = "slack"
+
+
+def _safe_slack_filename(filename: str) -> str:
+    sanitized = re.sub(r"[/\\]+", "_", filename).strip()
+    return sanitized or "slack-file"
+
+
+def _validate_private_download_url(download_url: str) -> str:
+    parsed_url = urllib.parse.urlparse(download_url)
+    hostname = parsed_url.hostname.lower() if parsed_url.hostname else None
+
+    if parsed_url.scheme != "https" or hostname != SLACK_PRIVATE_FILE_HOST:
+        raise ValueError("Slack file download URL must be an HTTPS files.slack.com URL.")
+
+    if parsed_url.username or parsed_url.password:
+        raise ValueError("Slack file download URL must not include credentials.")
+
+    try:
+        port = parsed_url.port
+    except builtins.ValueError as exc:
+        raise ValueError("Slack file download URL has an invalid port.") from exc
+
+    if port not in (None, 443):
+        raise ValueError("Slack file download URL must use the default HTTPS port.")
+
+    return download_url
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102, ANN001
+        raise ValueError(
+            "Slack file download redirected; refusing to forward bearer authorization."
+        )
 
 
 class SlackAccessConfig(AccessConfig):
@@ -43,6 +84,7 @@ class SlackAccessConfig(AccessConfig):
         description="Bot token used to access Slack API, must have channels:history scope for the"
         " bot user."
     )
+    refresh_token: Optional[str] = Field(default=None, description="Slack OAuth refresh token.")
 
 
 class SlackConnectionConfig(ConnectionConfig):
@@ -109,6 +151,8 @@ class SlackIndexer(Indexer):
                 messages = conversation_history.get("messages", [])
                 if messages:
                     yield self._messages_to_file_data(messages, channel)
+                    for file_data in self._message_files_to_file_data(messages, channel):
+                        yield file_data
 
     def _messages_to_file_data(
         self,
@@ -142,6 +186,44 @@ class SlackIndexer(Indexer):
             display_name=source_identifiers.fullpath,
         )
 
+    def _message_files_to_file_data(
+        self,
+        messages: list[dict],
+        channel: str,
+    ) -> Generator[FileData, None, None]:
+        for message in messages:
+            message_ts = message.get("ts")
+            for slack_file in message.get("files", []) or []:
+                file_id = slack_file.get("id")
+                if not file_id or not message_ts:
+                    continue
+
+                filename = _safe_slack_filename(
+                    f"{file_id}-{slack_file.get('name') or slack_file.get('title') or file_id}"
+                )
+                identifier_base = f"{channel}-{message_ts}-{file_id}"
+                identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
+                source_identifiers = SourceIdentifiers(filename=filename, fullpath=filename)
+                yield FileData(
+                    identifier=identifier,
+                    connector_type=CONNECTOR_TYPE,
+                    source_identifiers=source_identifiers,
+                    metadata=FileDataSourceMetadata(
+                        date_created=(
+                            str(slack_file.get("created")) if slack_file.get("created") else None
+                        ),
+                        date_modified=message_ts,
+                        date_processed=str(time.time()),
+                        record_locator={
+                            "type": "file",
+                            "channel": channel,
+                            "message_ts": message_ts,
+                            "file_id": file_id,
+                        },
+                    ),
+                    display_name=source_identifiers.fullpath,
+                )
+
     @SourceConnectionError.wrap
     def precheck(self) -> None:
         client = self.connection_config.get_client()
@@ -172,7 +254,13 @@ class SlackDownloader(Downloader):
             )
             raise ValueError("Generated invalid download path.")
 
-        await self._download_conversation(file_data, download_path)
+        if (
+            file_data.metadata.record_locator
+            and file_data.metadata.record_locator.get("type") == "file"
+        ):
+            await self._download_file(file_data, download_path)
+        else:
+            await self._download_conversation(file_data, download_path)
         return self.generate_download_response(file_data, download_path)
 
     def is_async(self):
@@ -223,6 +311,42 @@ class SlackDownloader(Downloader):
         conversation_xml = self._conversation_to_xml(conversation)
         download_path.parent.mkdir(exist_ok=True, parents=True)
         conversation_xml.write(download_path, encoding="utf-8", xml_declaration=True)
+
+    async def _download_file(self, file_data: FileData, download_path: Path) -> None:
+        record_locator = file_data.metadata.record_locator
+        if record_locator is None or "file_id" not in record_locator:
+            logger.error(f"Invalid file record locator in metadata: {record_locator}.")
+            raise ValueError("Invalid file record locator.")
+
+        client = self.connection_config.get_async_client()
+        file_info = await client.files_info(file=record_locator["file_id"])
+        if not file_info.get("ok", True):
+            raise ValueError(f"Slack files.info failed: {file_info.get('error')}")
+
+        slack_file = file_info.get("file", {})
+        download_url = slack_file.get("url_private_download") or record_locator.get(
+            "url_private_download"
+        )
+        if not download_url:
+            raise ValueError("Slack file is missing url_private_download.")
+        download_url = _validate_private_download_url(download_url)
+
+        token = self.connection_config.access_config.get_secret_value().token
+        request = urllib.request.Request(
+            download_url,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        download_path.parent.mkdir(exist_ok=True, parents=True)
+        await asyncio.to_thread(self._download_private_file, request, download_path)
+
+    @staticmethod
+    def _download_private_file(request: urllib.request.Request, download_path: Path) -> None:
+        opener = urllib.request.build_opener(_NoRedirectHandler)
+        with opener.open(
+            request,
+            timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
+        ) as response, download_path.open("wb") as output_file:
+            shutil.copyfileobj(response, output_file)
 
     def _conversation_to_xml(self, conversation: list[list[dict]]) -> ET.ElementTree:
         root = ET.Element("messages")

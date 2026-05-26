@@ -1,8 +1,18 @@
-## [1.6.3]
+## [1.6.4]
+
+### Enhancements
+
+- **feat(slack): support file attachments and OAuth refresh tokens.** Slack indexing now emits file attachment records, downloading uses Slack private file URLs with bearer authentication, and `SlackAccessConfig` accepts `refresh_token` so platform plugin schemas can expose OAuth token rotation settings.
 
 ### Fixes
 
-- **fix(google-drive): skip non-downloadable files at crawl and download time.** Google Drive shortcuts, Forms, Maps, Sites, Jamboard, Fusion Tables, and `inode/x-empty` (zero-byte) files are now filtered out during indexing and silently skipped by the downloader instead of failing after 3 retries. Exportable native types (Docs, Sheets, Slides, Drawings) are unaffected.
+- **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
+
+## [1.6.3]
+
+### Enhancements
+
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off. When set, the stager flattens element metadata into top-level columns matching Milvus's unprefixed naming, and the uploader skips auto-create against the user-managed table, dropping unknown incoming columns with a log line.
 
 ## [1.6.2]
 
