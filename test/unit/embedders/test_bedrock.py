@@ -86,7 +86,7 @@ def test_missing_access_method_rejects_ambiguous_shapes():
 def test_assume_role_requires_role_fields():
     config = BedrockEmbeddingConfig(access_method="assume_role", region_name="us-west-2")
 
-    with pytest.raises(ValueError, match="AssumeRole access method requires"):
+    with pytest.raises(ValueError, match="Bedrock assume_role auth requires"):
         config.run_precheck()
 
 
@@ -106,5 +106,5 @@ def test_assume_role_ignores_stale_static_credentials():
 def test_credentials_requires_static_keys():
     config = BedrockEmbeddingConfig(access_method="credentials", region_name="us-west-2")
 
-    with pytest.raises(ValueError, match="Credentials access method requires"):
+    with pytest.raises(ValueError, match="Bedrock credentials auth requires"):
         config.get_client_kwargs()
