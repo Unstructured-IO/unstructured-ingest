@@ -56,3 +56,55 @@ def test_inference_profile_manual():
         inference_profile_id="manual-profile",
     )
     assert config.inference_profile_id == "manual-profile"
+
+
+def test_iam_access_method_uses_ambient_credentials():
+    config = BedrockEmbeddingConfig(access_method="iam", region_name="us-west-2")
+
+    assert config.get_client_kwargs() == {"region_name": "us-west-2"}
+
+
+def test_missing_access_method_without_fields_uses_ambient_credentials():
+    config = BedrockEmbeddingConfig(region_name="us-west-2")
+
+    assert config.get_client_kwargs() == {"region_name": "us-west-2"}
+
+
+def test_missing_access_method_rejects_ambiguous_shapes():
+    config = BedrockEmbeddingConfig(
+        role_arn="arn:aws:iam::123456789012:role/bedrock-access",
+        external_id="external-id",
+        aws_access_key_id="access-key",
+        aws_secret_access_key="secret-key",
+        region_name="us-west-2",
+    )
+
+    with pytest.raises(ValueError, match="access_method is required"):
+        config.get_client_kwargs()
+
+
+def test_assume_role_requires_role_fields():
+    config = BedrockEmbeddingConfig(access_method="assume_role", region_name="us-west-2")
+
+    with pytest.raises(ValueError, match="AssumeRole access method requires"):
+        config.run_precheck()
+
+
+def test_assume_role_ignores_stale_static_credentials():
+    config = BedrockEmbeddingConfig(
+        access_method="assume_role",
+        role_arn="arn:aws:iam::123456789012:role/bedrock-access",
+        external_id="external-id",
+        aws_access_key_id="stale",
+        aws_secret_access_key="stale",
+        region_name="us-west-2",
+    )
+
+    assert config.get_client_kwargs() == {"region_name": "us-west-2"}
+
+
+def test_credentials_requires_static_keys():
+    config = BedrockEmbeddingConfig(access_method="credentials", region_name="us-west-2")
+
+    with pytest.raises(ValueError, match="Credentials access method requires"):
+        config.get_client_kwargs()

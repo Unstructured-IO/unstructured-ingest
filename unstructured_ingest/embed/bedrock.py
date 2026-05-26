@@ -3,7 +3,7 @@ import json
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, AsyncIterable
+from typing import TYPE_CHECKING, AsyncIterable, Literal
 
 from pydantic import Field, SecretStr
 
@@ -81,9 +81,15 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         ),
     )
     endpoint_url: str | None = Field(description="custom bedrock endpoint url", default=None)
-    access_method: str = Field(
-        description="authentication method", default="credentials"
-    )  # "credentials" or "iam"
+    access_method: Literal["credentials", "iam", "assume_role"] | None = Field(
+        description="authentication method", default=None
+    )
+    role_arn: str | None = Field(
+        description="IAM role ARN for cross-account Bedrock access", default=None
+    )
+    external_id: SecretStr | None = Field(
+        description="External ID for cross-account Bedrock role assumption", default=None
+    )
     embedder_model_name: str = Field(
         default="amazon.titan-embed-text-v1",
         alias="model_name",
@@ -124,18 +130,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
 
     def run_precheck(self) -> None:
         # Validate access method and credentials configuration
-        if self.access_method == "credentials":
-            if not (self.aws_access_key_id and self.aws_secret_access_key):
-                raise ValueError(
-                    "Credentials access method requires aws_access_key_id and aws_secret_access_key"
-                )
-        elif self.access_method == "iam":
-            # For IAM, credentials are handled by AWS SDK
-            pass
-        else:
-            raise ValueError(
-                f"Invalid access_method: {self.access_method}. Must be 'credentials' or 'iam'"
-            )
+        self._effective_access_method()
 
         client = self.get_bedrock_client()
         try:
@@ -161,7 +156,9 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         if self.endpoint_url:
             kwargs["endpoint_url"] = self.endpoint_url
 
-        if self.access_method == "credentials":
+        method = self._effective_access_method()
+
+        if method == "credentials":
             if self.aws_access_key_id and self.aws_secret_access_key:
                 kwargs["aws_access_key_id"] = self.aws_access_key_id.get_secret_value()
                 kwargs["aws_secret_access_key"] = self.aws_secret_access_key.get_secret_value()
@@ -169,14 +166,76 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
                 raise ValueError(
                     "Credentials access method requires aws_access_key_id and aws_secret_access_key"
                 )
-        elif self.access_method == "iam":
+        elif method == "iam":
             # For IAM, boto3 will use default credential chain (IAM roles, environment, etc.)
             pass
+        elif method == "assume_role":
+            if not (self.role_arn and self.external_id):
+                raise ValueError(
+                    "AssumeRole access method requires role_arn and external_id"
+                )
         else:
             raise ValueError(
-                f"Invalid access_method: {self.access_method}. Must be 'credentials' or 'iam'"
+                f"Invalid access_method: {self.access_method}. Must be "
+                "'credentials', 'iam', or 'assume_role'"
             )
 
+        return kwargs
+
+    def _effective_access_method(self) -> Literal["credentials", "iam", "assume_role"]:
+        if self.access_method is not None:
+            method = self.access_method
+        else:
+            has_credentials = bool(self.aws_access_key_id) and bool(self.aws_secret_access_key)
+            has_partial_credentials = bool(self.aws_access_key_id) != bool(
+                self.aws_secret_access_key
+            )
+            has_role = bool(self.role_arn) and bool(self.external_id)
+            has_partial_role = bool(self.role_arn) != bool(self.external_id)
+            if has_partial_credentials:
+                raise ValueError(
+                    "Credentials auth requires aws_access_key_id and aws_secret_access_key"
+                )
+            if has_partial_role:
+                raise ValueError("AssumeRole auth requires role_arn and external_id")
+            if has_credentials and has_role:
+                raise ValueError("access_method is required when multiple Bedrock auth shapes exist")
+            if has_credentials:
+                method = "credentials"
+            elif has_role:
+                method = "assume_role"
+            else:
+                method = "iam"
+
+        if method == "credentials" and not (self.aws_access_key_id and self.aws_secret_access_key):
+            raise ValueError(
+                "Credentials access method requires aws_access_key_id and aws_secret_access_key"
+            )
+        if method == "assume_role" and not (self.role_arn and self.external_id):
+            raise ValueError("AssumeRole access method requires role_arn and external_id")
+        return method
+
+    def _external_id_secret(self) -> str:
+        if self.external_id is None:
+            raise ValueError("AssumeRole access method requires external_id")
+        return self.external_id.get_secret_value()
+
+    def _assume_role_client_kwargs(self) -> dict:
+        from utic_aws_auth.aws.sts import assume_role, build_session_name
+
+        creds = assume_role(
+            role_arn=self.role_arn,
+            external_id=self._external_id_secret(),
+            session_name=build_session_name(),
+        )
+        kwargs = {
+            "region_name": self.region_name,
+            "aws_access_key_id": creds["access_key"],
+            "aws_secret_access_key": creds["secret_key"],
+            "aws_session_token": creds["token"],
+        }
+        if self.endpoint_url:
+            kwargs["endpoint_url"] = self.endpoint_url
         return kwargs
 
     @requires_dependencies(
@@ -185,6 +244,15 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     )
     def get_bedrock_client(self) -> "BedrockClient":
         import boto3
+
+        if self._effective_access_method() == "assume_role":
+            from utic_aws_auth.aws.sts import create_role_arn_session
+
+            session = create_role_arn_session(
+                role_arn=self.role_arn,
+                external_id=self._external_id_secret(),
+            )
+            return session.client(service_name="bedrock", **self.get_client_kwargs())
 
         bedrock_client = boto3.client(service_name="bedrock", **self.get_client_kwargs())
 
@@ -196,6 +264,15 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     )
     def get_client(self) -> "BedrockRuntimeClient":
         import boto3
+
+        if self._effective_access_method() == "assume_role":
+            from utic_aws_auth.aws.sts import create_role_arn_session
+
+            session = create_role_arn_session(
+                role_arn=self.role_arn,
+                external_id=self._external_id_secret(),
+            )
+            return session.client(service_name="bedrock-runtime", **self.get_client_kwargs())
 
         bedrock_client = boto3.client(service_name="bedrock-runtime", **self.get_client_kwargs())
 
@@ -210,7 +287,12 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         import aioboto3
 
         session = aioboto3.Session()
-        async with session.client("bedrock-runtime", **self.get_client_kwargs()) as aws_bedrock:
+        client_kwargs = (
+            self._assume_role_client_kwargs()
+            if self._effective_access_method() == "assume_role"
+            else self.get_client_kwargs()
+        )
+        async with session.client("bedrock-runtime", **client_kwargs) as aws_bedrock:
             yield aws_bedrock
 
 

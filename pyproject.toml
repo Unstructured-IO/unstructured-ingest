@@ -91,7 +91,7 @@ wikipedia = ["wikipedia"]
 zendesk = ["httpx", "aiofiles", "beautifulsoup4"]
 
 # Embedders
-bedrock = ["boto3", "aioboto3", "aiobotocore[boto3]!=2.24.2"]
+bedrock = ["boto3", "aioboto3", "aiobotocore[boto3]!=2.24.2", "utic-aws-auth>=0.1.0,<1.0.0"]
 huggingface = ["sentence-transformers"]
 mixedbreadai = ["mixedbread"]
 octoai = ["openai", "tiktoken"]
