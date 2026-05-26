@@ -19,7 +19,6 @@ from unstructured_ingest.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
-    DownloadResponse,
     Indexer,
     IndexerConfig,
     download_responses,
