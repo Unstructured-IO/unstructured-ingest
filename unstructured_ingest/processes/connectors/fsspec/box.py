@@ -285,11 +285,13 @@ class BoxConnectionConfig(FsspecConnectionConfig):
 
     @requires_dependencies(["boxsdk"], extras="box")
     def get_box_client(self):
-        from boxsdk import Client, JWTAuth
+        from boxsdk import Client
 
         ac = self.access_config.get_secret_value()
-        oauth = JWTAuth.from_settings_dictionary(ac.box_app_config)
-        oauth.authenticate_instance()
+        if ac.access_token is not None:
+            oauth = self._build_oauth_from_access_token(ac.access_token)
+        else:
+            oauth = self._build_jwt(ac)
         return Client(oauth)
 
     @requires_dependencies(["boxfs"], extras="box")
