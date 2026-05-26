@@ -6,6 +6,7 @@ import pytest
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.error import SourceConnectionError, ValueError
 from unstructured_ingest.processes.connectors.google_drive import (
+    GOOGLE_DRIVE_SKIP_MIME_TYPES,
     GOOGLE_EXPORT_MIME_MAP,
     GoogleDriveAccessConfig,
     GoogleDriveDownloader,
@@ -13,6 +14,7 @@ from unstructured_ingest.processes.connectors.google_drive import (
     GoogleDriveIndexer,
     GoogleDriveIndexerConfig,
     _get_extension,
+    _should_skip_file,
 )
 
 
@@ -210,8 +212,25 @@ class TestGoogleDriveNativeExports:
         assert file_data.additional_metadata["export_extension"] == expected_extension
         assert file_data.additional_metadata["download_method"] == "google_workspace_export"
 
-    def test_downloader_rejects_unsupported_google_native_files(self, tmp_path):
-        file_data = _make_file_data("application/vnd.google-apps.form")
+    @pytest.mark.parametrize("mime_type", sorted(GOOGLE_DRIVE_SKIP_MIME_TYPES))
+    def test_downloader_skips_non_downloadable_native_files(self, tmp_path, mime_type):
+        file_data = _make_file_data(mime_type)
+        downloader = GoogleDriveDownloader(
+            connection_config=MagicMock(),
+            download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
+        )
+        downloader._export_gdrive_native_file = MagicMock()
+        downloader._direct_download_file = MagicMock()
+
+        result = downloader._download_file(file_data)
+
+        assert result is None
+        downloader._export_gdrive_native_file.assert_not_called()
+        downloader._direct_download_file.assert_not_called()
+
+    def test_downloader_rejects_unknown_native_mime_types(self, tmp_path):
+        """Native types not in skip list and not exportable should still raise."""
+        file_data = _make_file_data("application/vnd.google-apps.unknown_future_type")
         downloader = GoogleDriveDownloader(
             connection_config=MagicMock(),
             download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
@@ -226,6 +245,114 @@ class TestGoogleDriveNativeExports:
 
         downloader._export_gdrive_native_file.assert_not_called()
         downloader._direct_download_file.assert_not_called()
+
+
+class TestGoogleDriveSkipFiles:
+    """Tests for _should_skip_file and downloader skip behavior for non-downloadable files."""
+
+    @pytest.mark.parametrize("mime_type", sorted(GOOGLE_DRIVE_SKIP_MIME_TYPES))
+    def test_should_skip_file_returns_true_for_skip_mimes(self, mime_type):
+        assert _should_skip_file({"mimeType": mime_type}) is True
+
+    def test_should_skip_file_returns_true_for_inode_x_empty(self):
+        assert _should_skip_file({"mimeType": "inode/x-empty", "size": "0"}) is True
+
+    def test_should_skip_file_returns_true_for_zero_size_no_mime(self):
+        assert _should_skip_file({"mimeType": "", "size": "0"}) is True
+
+    def test_should_skip_file_returns_false_for_normal_file(self):
+        assert _should_skip_file({"mimeType": "application/pdf", "size": "1024"}) is False
+
+    def test_should_skip_file_returns_false_for_exportable_native(self):
+        assert (
+            _should_skip_file({"mimeType": "application/vnd.google-apps.document", "size": "0"})
+            is False
+        )
+
+    def test_downloader_skips_inode_x_empty(self, tmp_path):
+        file_data = _make_file_data("inode/x-empty")
+        downloader = GoogleDriveDownloader(
+            connection_config=MagicMock(),
+            download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
+        )
+        downloader._export_gdrive_native_file = MagicMock()
+        downloader._direct_download_file = MagicMock()
+
+        result = downloader._download_file(file_data)
+
+        assert result is None
+        downloader._export_gdrive_native_file.assert_not_called()
+        downloader._direct_download_file.assert_not_called()
+
+    def test_downloader_run_returns_empty_list_for_skipped_file(self, tmp_path):
+        file_data = _make_file_data("application/vnd.google-apps.shortcut")
+        downloader = GoogleDriveDownloader(
+            connection_config=MagicMock(),
+            download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
+        )
+        downloader._export_gdrive_native_file = MagicMock()
+        downloader._direct_download_file = MagicMock()
+
+        result = downloader.run(file_data)
+
+        assert result == []
+
+    def test_indexer_filters_skip_mime_types_from_paginated_results(self):
+        files_client = MagicMock()
+        files_client.list.return_value.execute.return_value = {
+            "files": [
+                {"id": "pdf-1", "name": "doc.pdf", "mimeType": "application/pdf"},
+                {
+                    "id": "shortcut-1",
+                    "name": "alias",
+                    "mimeType": "application/vnd.google-apps.shortcut",
+                },
+                {"id": "form-1", "name": "survey", "mimeType": "application/vnd.google-apps.form"},
+                {"id": "pdf-2", "name": "doc2.pdf", "mimeType": "application/pdf"},
+                {"id": "empty-1", "name": "empty", "mimeType": "inode/x-empty", "size": "0"},
+            ]
+        }
+        indexer = GoogleDriveIndexer(
+            connection_config=MagicMock(),
+            index_config=GoogleDriveIndexerConfig(),
+        )
+
+        results = indexer.get_paginated_results(
+            files_client=files_client,
+            object_id="folder-id",
+        )
+
+        result_ids = [r["id"] for r in results]
+        assert result_ids == ["pdf-1", "pdf-2"]
+
+    def test_count_files_recursively_excludes_skip_mimes(self):
+        files_client = _FakeGoogleDriveFilesClient(
+            responses=[
+                {
+                    "files": [
+                        {"id": "pdf-1", "mimeType": "application/pdf", "fileExtension": "pdf"},
+                        {
+                            "id": "shortcut",
+                            "mimeType": "application/vnd.google-apps.shortcut",
+                        },
+                        {"id": "form", "mimeType": "application/vnd.google-apps.form"},
+                        {"id": "empty", "mimeType": "inode/x-empty", "size": "0"},
+                        {
+                            "id": "doc",
+                            "mimeType": "application/vnd.google-apps.document",
+                        },
+                    ]
+                }
+            ]
+        )
+
+        count = GoogleDriveIndexer.count_files_recursively(
+            files_client=files_client,
+            folder_id="folder-id",
+        )
+
+        # pdf-1 + doc = 2; shortcut, form, empty are all skipped
+        assert count == 2
 
 
 class TestGoogleDriveExtensionFiltering:
