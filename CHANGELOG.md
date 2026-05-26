@@ -1,8 +1,30 @@
-## [1.6.2-dev]
+## [1.6.6-dev]
 
 ### Fixes
 
 - **test(notion): make `test_notion_source_database` row-order insensitive.** Test-only change; no published behavior.
+
+## [1.6.5]
+
+### Fixes
+
+- **fix(google-drive): skip non-downloadable native files during indexing and download.** Google Drive shortcuts, forms, maps, sites, fusiontables, and jams are now silently filtered out during indexing rather than failing at download time. Empty placeholder files (`inode/x-empty` or zero-byte with no MIME type) are also skipped. The downloader returns `None` for these files instead of raising `SourceConnectionError`, and `count_files_recursively` excludes them from file counts.
+
+## [1.6.4]
+
+### Enhancements
+
+- **feat(slack): support file attachments and OAuth refresh tokens.** Slack indexing now emits file attachment records, downloading uses Slack private file URLs with bearer authentication, and `SlackAccessConfig` accepts `refresh_token` so platform plugin schemas can expose OAuth token rotation settings.
+
+### Fixes
+
+- **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
+
+## [1.6.3]
+
+### Enhancements
+
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off. When set, the stager flattens element metadata into top-level columns matching Milvus's unprefixed naming, and the uploader skips auto-create against the user-managed table, dropping unknown incoming columns with a log line.
 
 ## [1.6.2]
 
