@@ -284,7 +284,7 @@ class TestGoogleDriveSkipFiles:
         downloader._export_gdrive_native_file.assert_not_called()
         downloader._direct_download_file.assert_not_called()
 
-    def test_downloader_run_returns_none_for_skipped_file(self, tmp_path):
+    def test_downloader_run_returns_empty_list_for_skipped_file(self, tmp_path):
         file_data = _make_file_data("application/vnd.google-apps.shortcut")
         downloader = GoogleDriveDownloader(
             connection_config=MagicMock(),
@@ -295,7 +295,7 @@ class TestGoogleDriveSkipFiles:
 
         result = downloader.run(file_data)
 
-        assert result is None
+        assert result == []
 
     def test_indexer_filters_skip_mime_types_from_paginated_results(self):
         files_client = MagicMock()

@@ -1,3 +1,9 @@
+## [1.6.5]
+
+### Fixes
+
+- **fix(google-drive): skip non-downloadable native files during indexing and download.** Google Drive shortcuts, forms, maps, sites, fusiontables, and jams are now silently filtered out during indexing rather than failing at download time. Empty placeholder files (`inode/x-empty` or zero-byte with no MIME type) are also skipped. The downloader returns `None` for these files instead of raising `SourceConnectionError`, and `count_files_recursively` excludes them from file counts.
+
 ## [1.6.4]
 
 ### Enhancements

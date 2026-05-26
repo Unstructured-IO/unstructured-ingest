@@ -22,6 +22,7 @@ from unstructured_ingest.interfaces import (
     DownloadResponse,
     Indexer,
     IndexerConfig,
+    download_responses,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
@@ -976,7 +977,7 @@ class GoogleDriveDownloader(Downloader):
 
         return download_path
 
-    def run(self, file_data: FileData, **kwargs: Any) -> Optional[DownloadResponse]:
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         mime_type = file_data.additional_metadata.get("mimeType", "")
 
         logger.debug(
@@ -985,7 +986,7 @@ class GoogleDriveDownloader(Downloader):
 
         download_path = self._download_file(file_data)
         if download_path is None:
-            return None
+            return []
 
         file_data.local_download_path = str(download_path.resolve())
 
