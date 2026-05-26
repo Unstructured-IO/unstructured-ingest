@@ -92,6 +92,20 @@ class ProviderError(UnstructuredIngestError):
     status_code: Optional[int] = 500
 
 
+class NonRetryableProviderError(ProviderError):
+    """Provider-side error known to be permanent for this input.
+
+    Raised when retrying is pointless — the error is deterministic for the
+    current request and would produce the same failure on every attempt.
+    Status code 422 lets the plugin layer skip the retry ladder and surface
+    the original error (rather than letting subsequent retries overwrite the
+    root cause).
+    """
+
+    error_string = "Non-retryable provider error: {}"
+    status_code: Optional[int] = 422
+
+
 class ValueError(UnstructuredIngestError):
     error_string = "Value error: {}"
 
@@ -149,6 +163,7 @@ recognized_errors = [
     SourceConnectionNetworkError,
     DestinationConnectionError,
     EmbeddingEncoderConnectionError,
+    NonRetryableProviderError,
 ]
 
 

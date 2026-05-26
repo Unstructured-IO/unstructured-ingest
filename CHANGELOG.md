@@ -1,3 +1,9 @@
+## [1.6.7]
+
+### Fixes
+
+- **fix(teradata): surface user-fault Teradata errors instead of generic driver wrappers.** Adds a `_raise_classified_teradata_error` helper that inspects `[Error NNNN]` codes in driver exceptions and re-raises recognised user-fault codes (3807 object missing, 3523 / 5612 / 5315 no privilege, 3706 / 3707 SQL syntax) as `UserError` with the original Teradata message preserved via `"Teradata reported: …"`. Wraps `cursor.execute` in `TeradataUploader.get_table_columns`, `delete_by_record_id`, `upload_dataframe`, `create_destination`, and the `TeradataIndexer.precheck` table probe. Unrecognised codes fall through to the existing `DestinationConnectionError` / `SourceConnectionError` wrapping so retry behaviour is preserved. Adds `NonRetryableProviderError(ProviderError, status_code=422)` to `unstructured_ingest.error` for plugin layers that want to skip retry on terminal provider errors. (PLU-377)
+
 ## [1.6.6]
 
 ### Enhancements

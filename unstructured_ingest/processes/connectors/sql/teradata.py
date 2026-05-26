@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Any, Generator, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    UserError,
+)
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -46,6 +50,61 @@ def _sanitize_table_name(name: str) -> str:
     if sanitized and sanitized[0].isdigit():
         sanitized = f"_{sanitized}"
     return sanitized
+
+
+_TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
+
+# Teradata server error codes mapped to typed exceptions. UserError covers the
+# customer-fixable cases (missing object, missing privilege, SQL syntax); these
+# never benefit from retry. Codes not listed here fall through unchanged so the
+# existing retry / wrapping behaviour is preserved.
+_USER_FAULT_TERADATA_CODES: dict[int, str] = {
+    3807: "object does not exist",
+    3523: "user does not have the required privilege",
+    3706: "SQL syntax error",
+    3707: "SQL syntax error",
+    5612: "user does not have any access to the object",
+    5315: "user does not have any access to the database",
+}
+
+
+def _extract_teradata_error_code(exc: BaseException) -> Optional[int]:
+    """Return the first ``[Error NNNN]`` code in the driver exception, or None."""
+    match = _TERADATA_ERROR_CODE_RE.search(str(exc))
+    return int(match.group(1)) if match else None
+
+
+def _raise_classified_teradata_error(
+    exc: BaseException,
+    *,
+    host: str,
+    table: Optional[str] = None,
+    direction: str = "destination",
+) -> None:
+    """Re-raise a Teradata driver exception as a typed unstructured-ingest error.
+
+    Classification rules:
+      * Server-side codes listed in ``_USER_FAULT_TERADATA_CODES`` → ``UserError``
+        (with the raw TD message preserved via ``"Teradata reported: …"``).
+      * Anything else → ``DestinationConnectionError``/``SourceConnectionError``
+        with the existing one-line ``_summarize_error`` message.
+
+    Always raises; never returns. Original exception is chained via ``from exc``
+    so the full driver traceback remains available in logs.
+    """
+    code = _extract_teradata_error_code(exc)
+    if code in _USER_FAULT_TERADATA_CODES:
+        descriptor = _USER_FAULT_TERADATA_CODES[code]
+        target = f" for '{table}'" if table else ""
+        raise UserError(
+            f"Teradata error {code} ({descriptor}){target}. "
+            f"Teradata reported: {exc}"
+        ) from exc
+
+    conn_error_cls = (
+        DestinationConnectionError if direction == "destination" else SourceConnectionError
+    )
+    raise conn_error_cls(_summarize_error(host, exc)) from exc
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -213,12 +272,15 @@ class TeradataIndexer(SQLIndexer):
                 f"Table '{table_name}' not found or not accessible: {e}",
                 exc_info=True,
             )
-            raise SourceConnectionError(
-                _summarize_error(
-                    self.connection_config.host,
-                    e,
-                    context=f"table '{table_name}' not found or not accessible",
-                )
+            # If Teradata returned a recognised user-fault code (3807 missing object,
+            # 5612/5315 no privilege, etc.) raise UserError so the platform can
+            # surface the actionable message; otherwise preserve the existing
+            # SourceConnectionError shape that the source side has historically used.
+            _raise_classified_teradata_error(
+                e,
+                host=self.connection_config.host,
+                table=table_name,
+                direction="source",
             )
 
     def _get_doc_ids(self) -> list[str]:
@@ -391,8 +453,17 @@ class TeradataUploader(SQLUploader):
         schema_lines[0] = schema_lines[0].replace("elements", table_name)
         schema_sql = "".join(line.strip() for line in schema_lines)
         logger.info(f"creating table {table_name} for user")
-        with self.get_cursor() as cursor:
-            cursor.execute(schema_sql)
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute(schema_sql)
+        except Exception as e:
+            logger.error(
+                f"failed to create destination table '{table_name}': {e}",
+                exc_info=True,
+            )
+            _raise_classified_teradata_error(
+                e, host=self.connection_config.host, table=table_name
+            )
         return True
 
     def precheck(self) -> None:
@@ -405,9 +476,19 @@ class TeradataUploader(SQLUploader):
 
     def get_table_columns(self) -> list[str]:
         if self._columns is None:
-            with self.get_cursor() as cursor:
-                cursor.execute(f'SELECT TOP 1 * FROM "{self.upload_config.table_name}"')
-                self._columns = [desc[0] for desc in cursor.description]
+            table_name = self.upload_config.table_name
+            try:
+                with self.get_cursor() as cursor:
+                    cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
+                    self._columns = [desc[0] for desc in cursor.description]
+            except Exception as e:
+                logger.error(
+                    f"failed to read schema for table '{table_name}': {e}",
+                    exc_info=True,
+                )
+                _raise_classified_teradata_error(
+                    e, host=self.connection_config.host, table=table_name
+                )
         return self._columns
 
     def _get_db_column_name(self, name: str) -> str:
@@ -428,11 +509,25 @@ class TeradataUploader(SQLUploader):
             f'DELETE FROM "{self.upload_config.table_name}" '
             f'WHERE "{record_id_col}" = {self.values_delimiter}'
         )
-        with self.get_cursor() as cursor:
-            cursor.execute(stmt, [file_data.identifier])
-            rowcount = cursor.rowcount
-            if rowcount > 0:
-                logger.info(f"deleted {rowcount} rows from table {self.upload_config.table_name}")
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute(stmt, [file_data.identifier])
+                rowcount = cursor.rowcount
+                if rowcount > 0:
+                    logger.info(
+                        f"deleted {rowcount} rows from table {self.upload_config.table_name}"
+                    )
+        except Exception as e:
+            logger.error(
+                f"failed to delete record_id={file_data.identifier} from "
+                f"'{self.upload_config.table_name}': {e}",
+                exc_info=True,
+            )
+            _raise_classified_teradata_error(
+                e,
+                host=self.connection_config.host,
+                table=self.upload_config.table_name,
+            )
 
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
@@ -465,10 +560,23 @@ class TeradataUploader(SQLUploader):
             f" with batch size {self.upload_config.batch_size}"
         )
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
-            with self.get_cursor() as cursor:
-                values = self.prepare_data(columns, tuple(rows.itertuples(index=False, name=None)))
-                logger.debug(f"running query: {stmt}")
-                cursor.executemany(stmt, values)
+            try:
+                with self.get_cursor() as cursor:
+                    values = self.prepare_data(
+                        columns, tuple(rows.itertuples(index=False, name=None))
+                    )
+                    logger.debug(f"running query: {stmt}")
+                    cursor.executemany(stmt, values)
+            except Exception as e:
+                logger.error(
+                    f"failed to insert batch into '{self.upload_config.table_name}': {e}",
+                    exc_info=True,
+                )
+                _raise_classified_teradata_error(
+                    e,
+                    host=self.connection_config.host,
+                    table=self.upload_config.table_name,
+                )
 
 
 teradata_source_entry = SourceRegistryEntry(
