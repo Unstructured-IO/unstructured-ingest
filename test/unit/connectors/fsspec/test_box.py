@@ -49,6 +49,15 @@ class TestBoxAccessConfigValidation:
                 refresh_token="long-lived-rt",
             )
 
+    def test_model_validate_accepts_explicit_null_box_app_config(self):
+        """The platform serializes optional fields as JSON null. The BeforeValidator
+        on box_app_config must pass None through rather than raising."""
+        ac = BoxAccessConfig.model_validate(
+            {"box_app_config": None, "access_token": "ya29.access", "refresh_token": "rt"},
+        )
+        assert ac.box_app_config is None
+        assert ac.access_token == "ya29.access"
+
 
 class TestBoxConnectionConfigGetAccessConfig:
     def test_access_token_branch_returns_oauth_kwarg(self):

@@ -192,9 +192,16 @@ class BoxIndexerConfig(FsspecIndexerConfig):
     )
 
 
+def _conform_optional_box_app_config(value: Any) -> Optional[dict]:
+    if value is None:
+        return None
+    return conform_string_to_dict(value)
+
+
 class BoxAccessConfig(FsspecAccessConfig):
-    box_app_config: Optional[
-        Annotated[dict, BeforeValidator(conform_string_to_dict)]
+    box_app_config: Annotated[
+        Optional[dict],
+        BeforeValidator(_conform_optional_box_app_config),
     ] = Field(
         default=None,
         description="Box app credentials as a JSON string.",
