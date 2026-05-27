@@ -63,6 +63,8 @@ _USER_FAULT_TERADATA_CODES: dict[int, str] = {
     3523: "user does not have the required privilege",
     3706: "SQL syntax error",
     3707: "SQL syntax error",
+    3753: "floating-point overflow during implicit conversion (column type does not match the value)",
+    3754: "implicit type conversion failed (column type does not match the value)",
     5612: "user does not have any access to the object",
     5315: "user does not have any access to the database",
 }

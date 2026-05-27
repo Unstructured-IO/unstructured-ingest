@@ -1268,6 +1268,8 @@ def test_extract_teradata_error_code(message: str, expected_code: int | None):
         (3523, "user does not have the required privilege"),
         (3706, "SQL syntax error"),
         (3707, "SQL syntax error"),
+        (3753, "floating-point overflow during implicit conversion"),
+        (3754, "implicit type conversion failed"),
         (5612, "user does not have any access to the object"),
         (5315, "user does not have any access to the database"),
     ],
@@ -1325,6 +1327,35 @@ def test_teradata_uploader_get_table_columns_missing_table_raises_user_error(
 
     with pytest.raises(UserError, match="3807.*'test_table'"):
         teradata_uploader.get_table_columns()
+
+
+def test_teradata_uploader_delete_by_record_id_type_mismatch_raises_user_error(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Reproduces the production scenario: customer created abc_123 with record_id
+    BIGINT instead of VARCHAR. Connector sends a string identifier, Teradata returns
+    [Error 3754]. Without this mapping the customer sees 'Failed to connect…' (wrong);
+    with it they see the actual type-mismatch message."""
+    mocker.patch.object(
+        teradata_uploader, "_get_db_column_name", return_value="record_id"
+    )
+    mock_cursor.execute.side_effect = Exception(
+        "[Error 3754] Precision error in FLOAT type constant or during implicit conversions."
+    )
+
+    file_data = FileData(
+        identifier="1xdNXwlv2yuGJyUMzQgmtdlAOesAP673T",  # Google Drive file id (string)
+        connector_type="google_drive",
+        source_identifiers=SourceIdentifiers(
+            filename="report.pdf", fullpath="ofc_data1/report.pdf"
+        ),
+    )
+
+    with pytest.raises(UserError, match="3754.*implicit type conversion failed.*'test_table'"):
+        teradata_uploader.delete_by_record_id(file_data)
 
 
 def test_teradata_uploader_delete_by_record_id_missing_table_raises_user_error(
