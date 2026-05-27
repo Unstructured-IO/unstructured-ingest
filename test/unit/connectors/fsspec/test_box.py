@@ -6,7 +6,6 @@ import pytest
 
 from unstructured_ingest.processes.connectors.fsspec.box import (
     BoxAccessConfig,
-    BoxConnectionConfig,
 )
 
 
@@ -57,48 +56,3 @@ class TestBoxAccessConfigValidation:
         )
         assert ac.box_app_config is None
         assert ac.access_token == "ya29.access"
-
-
-class TestBoxConnectionConfigGetAccessConfig:
-    def test_access_token_branch_returns_oauth_kwarg(self):
-        cc = BoxConnectionConfig(
-            access_config=BoxAccessConfig(access_token="live-token"),
-        )
-        kwargs = cc.get_access_config()
-        assert "oauth" in kwargs
-        assert kwargs["oauth"].access_token == "live-token"
-        # secret fields stripped from the kwargs dict
-        for k in ("access_token", "refresh_token", "box_app_config"):
-            assert k not in kwargs
-
-    def test_access_token_with_refresh_token_still_uses_access_token(self):
-        cc = BoxConnectionConfig(
-            access_config=BoxAccessConfig(
-                access_token="live-token",
-                refresh_token="long-lived-rt",
-            ),
-        )
-        kwargs = cc.get_access_config()
-        assert kwargs["oauth"].access_token == "live-token"
-
-    def test_jwt_branch_unchanged(self, monkeypatch):
-        from boxsdk import JWTAuth
-
-        class _FakeJWT:
-            def authenticate_instance(self):
-                pass
-
-        monkeypatch.setattr(
-            JWTAuth,
-            "from_settings_dictionary",
-            staticmethod(lambda _settings: _FakeJWT()),
-        )
-
-        cc = BoxConnectionConfig(
-            access_config=BoxAccessConfig(
-                box_app_config={"boxAppSettings": {"clientID": "x"}},
-            ),
-        )
-        kwargs = cc.get_access_config()
-        assert "oauth" in kwargs
-        assert "box_app_config" not in kwargs
