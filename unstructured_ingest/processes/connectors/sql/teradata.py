@@ -4,7 +4,8 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Generator, Literal, Mapping, Optional
 
 from pydantic import Field, Secret
 
@@ -55,25 +56,49 @@ def _sanitize_table_name(name: str) -> str:
 _TERADATA_ERROR_CODE_RE = re.compile(r"\[Error (\d+)\]")
 
 # Teradata server error codes mapped to typed exceptions. UserError covers the
-# customer-fixable cases (missing object, missing privilege, SQL syntax); these
-# never benefit from retry. Codes not listed here fall through unchanged so the
-# existing retry / wrapping behaviour is preserved.
-_USER_FAULT_TERADATA_CODES: dict[int, str] = {
-    3807: "object does not exist",
+# customer-fixable cases (missing object, missing privilege, SQL syntax, schema
+# mismatch); these never benefit from retry. Codes not listed here fall through
+# unchanged so the existing retry / wrapping behaviour is preserved.
+#
+# 3807 is overloaded: Teradata returns it for both "object does not exist" and
+# "user has no privilege on the object" (existence is hidden from unprivileged
+# users). The descriptor reflects both possibilities.
+#
+# 3753/3754 are implicit-conversion failures — most often hit when a table is
+# pre-created with the wrong column type for the value being inserted/queried,
+# but can also fire on arbitrary expression-level conversions; the descriptor
+# stays generic.
+_USER_FAULT_TERADATA_CODES: Mapping[int, str] = MappingProxyType({
+    3807: "object does not exist or user has no privilege on it",
     3523: "user does not have the required privilege",
     3706: "SQL syntax error",
     3707: "SQL syntax error",
-    3753: "floating-point overflow during implicit conversion (column type does not match the value)",
-    3754: "implicit type conversion failed (column type does not match the value)",
+    3753: "floating-point overflow during implicit conversion",
+    3754: "implicit type conversion failed",
     5612: "user does not have any access to the object",
     5315: "user does not have any access to the database",
-}
+})
+
+
+def _is_teradata_driver_error(exc: BaseException) -> bool:
+    """True if exc comes from the teradatasql driver package.
+
+    Module name check avoids importing teradatasql at module load time
+    (it's an optional dependency).
+    """
+    module = type(exc).__module__
+    return module == "teradatasql" or module.startswith("teradatasql.")
 
 
 def _extract_teradata_error_code(exc: BaseException) -> Optional[int]:
-    """Return the first ``[Error NNNN]`` code in the driver exception, or None."""
-    match = _TERADATA_ERROR_CODE_RE.search(str(exc))
-    return int(match.group(1)) if match else None
+    """Return the most specific ``[Error NNNN]`` code in the driver exception, or None.
+
+    Teradata error messages may chain multiple ``[Error N]`` tags from different
+    layers (driver wrapper, server response, etc.). We return the LAST match,
+    which in practice is the innermost / most specific server-side code.
+    """
+    matches = _TERADATA_ERROR_CODE_RE.findall(str(exc))
+    return int(matches[-1]) if matches else None
 
 
 def _raise_classified_teradata_error(
@@ -81,15 +106,20 @@ def _raise_classified_teradata_error(
     *,
     host: str,
     table: Optional[str] = None,
-    direction: str = "destination",
+    direction: Literal["source", "destination"] = "destination",
+    fallback_context: str = "",
 ) -> None:
     """Re-raise a Teradata driver exception as a typed unstructured-ingest error.
 
     Classification rules:
       * Server-side codes listed in ``_USER_FAULT_TERADATA_CODES`` → ``UserError``
-        (with the raw TD message preserved via ``"Teradata reported: …"``).
-      * Anything else → ``DestinationConnectionError``/``SourceConnectionError``
-        with the existing one-line ``_summarize_error`` message.
+        (status_code 422, with the raw TD message preserved via
+        ``"Teradata reported: …"``).
+      * Anything else → ``DestinationConnectionError`` / ``SourceConnectionError``
+        with the existing one-line ``_summarize_error`` message. The optional
+        ``fallback_context`` is forwarded so callers can preserve historical
+        per-site message shapes (e.g. the indexer's
+        ``"table 'X' not found or not accessible"``).
 
     Always raises; never returns. Original exception is chained via ``from exc``
     so the full driver traceback remains available in logs.
@@ -106,7 +136,9 @@ def _raise_classified_teradata_error(
     conn_error_cls = (
         DestinationConnectionError if direction == "destination" else SourceConnectionError
     )
-    raise conn_error_cls(_summarize_error(host, exc)) from exc
+    raise conn_error_cls(
+        _summarize_error(host, exc, context=fallback_context)
+    ) from exc
 
 
 def _summarize_error(host: str, raw: Exception, context: str = "") -> str:
@@ -274,15 +306,19 @@ class TeradataIndexer(SQLIndexer):
                 f"Table '{table_name}' not found or not accessible: {e}",
                 exc_info=True,
             )
+            if not _is_teradata_driver_error(e):
+                raise
             # If Teradata returned a recognised user-fault code (3807 missing object,
             # 5612/5315 no privilege, etc.) raise UserError so the platform can
             # surface the actionable message; otherwise preserve the existing
-            # SourceConnectionError shape that the source side has historically used.
+            # SourceConnectionError shape with the historical "table 'X' not found"
+            # context the source side has always emitted.
             _raise_classified_teradata_error(
                 e,
                 host=self.connection_config.host,
                 table=table_name,
                 direction="source",
+                fallback_context=f"table '{table_name}' not found or not accessible",
             )
 
     def _get_doc_ids(self) -> list[str]:
@@ -459,6 +495,8 @@ class TeradataUploader(SQLUploader):
             with self.get_cursor() as cursor:
                 cursor.execute(schema_sql)
         except Exception as e:
+            if not _is_teradata_driver_error(e):
+                raise
             logger.error(
                 f"failed to create destination table '{table_name}': {e}",
                 exc_info=True,
@@ -484,6 +522,8 @@ class TeradataUploader(SQLUploader):
                     cursor.execute(f'SELECT TOP 1 * FROM "{table_name}"')
                     self._columns = [desc[0] for desc in cursor.description]
             except Exception as e:
+                if not _is_teradata_driver_error(e):
+                    raise
                 logger.error(
                     f"failed to read schema for table '{table_name}': {e}",
                     exc_info=True,
@@ -520,6 +560,8 @@ class TeradataUploader(SQLUploader):
                         f"deleted {rowcount} rows from table {self.upload_config.table_name}"
                     )
         except Exception as e:
+            if not _is_teradata_driver_error(e):
+                raise
             logger.error(
                 f"failed to delete record_id={file_data.identifier} from "
                 f"'{self.upload_config.table_name}': {e}",
@@ -561,6 +603,12 @@ class TeradataUploader(SQLUploader):
             f" table named {self.upload_config.table_name}"
             f" with batch size {self.upload_config.batch_size}"
         )
+        # Each batch is committed independently via get_cursor's teardown. If a
+        # later batch fails after earlier batches have committed, those rows
+        # remain in the destination — the etl-api retry layer will reprocess
+        # the whole record, so as long as record_id_key is present on the table
+        # (can_delete() returns True) the DELETE-then-INSERT cycle scrubs them.
+        # If can_delete() is False, partial-write rows will accumulate on retry.
         for rows in split_dataframe(df=df, chunk_size=self.upload_config.batch_size):
             try:
                 with self.get_cursor() as cursor:
@@ -570,6 +618,8 @@ class TeradataUploader(SQLUploader):
                     logger.debug(f"running query: {stmt}")
                     cursor.executemany(stmt, values)
             except Exception as e:
+                if not _is_teradata_driver_error(e):
+                    raise
                 logger.error(
                     f"failed to insert batch into '{self.upload_config.table_name}': {e}",
                     exc_info=True,

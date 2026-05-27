@@ -53,8 +53,11 @@ class EmbeddingEncoderConnectionError(ConnectionError):
 
 
 class UserError(UnstructuredIngestError):
+    # 422 (Unprocessable Entity) is the correct HTTP semantic for "your input
+    # is invalid". The prior 401 (Unauthorized) was wrong: 401 specifically
+    # means unauthenticated, which is what UserAuthError covers below.
     error_string = "User error: {}"
-    status_code: Optional[int] = 401
+    status_code: Optional[int] = 422
 
 
 class UserAuthError(UserError):
@@ -90,20 +93,6 @@ class WriteError(UnstructuredIngestError):
 class ProviderError(UnstructuredIngestError):
     error_string = "Provider error: {}"
     status_code: Optional[int] = 500
-
-
-class NonRetryableProviderError(ProviderError):
-    """Provider-side error known to be permanent for this input.
-
-    Raised when retrying is pointless — the error is deterministic for the
-    current request and would produce the same failure on every attempt.
-    Status code 422 lets the plugin layer skip the retry ladder and surface
-    the original error (rather than letting subsequent retries overwrite the
-    root cause).
-    """
-
-    error_string = "Non-retryable provider error: {}"
-    status_code: Optional[int] = 422
 
 
 class ValueError(UnstructuredIngestError):
@@ -163,7 +152,6 @@ recognized_errors = [
     SourceConnectionNetworkError,
     DestinationConnectionError,
     EmbeddingEncoderConnectionError,
-    NonRetryableProviderError,
 ]
 
 
