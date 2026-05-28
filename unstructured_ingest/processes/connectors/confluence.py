@@ -166,19 +166,33 @@ class ConfluenceIndexer(Indexer):
         *,
         keys: Optional[List[str]] = None,
         limit: Optional[int] = None,
+        space_type: Optional[str] = None,
     ) -> List[dict]:
         params: dict = {
             "limit": min(limit or self.index_config.max_num_of_spaces, CONFLUENCE_SPACE_PAGE_SIZE),
         }
         if keys:
             params["keys"] = keys
+        if space_type:
+            params["type"] = space_type
+            params["status"] = "current"
         response = client.get("api/v2/spaces", params=params)
         return response.get("results", [])
 
+    @staticmethod
+    def _space_matches_key(space: dict, space_key: str) -> bool:
+        return space.get("key") == space_key or space.get("alias") == space_key
+
     def _get_space_by_key(self, client: "Confluence", space_key: str) -> dict:
         for space in self._list_spaces(client, keys=[space_key], limit=1):
-            if space.get("key") == space_key:
+            if self._space_matches_key(space, space_key):
                 return space
+        if space_key.startswith("~"):
+            # Personal space aliases are not reliably returned by the v2 keys
+            # filter, so fall back to scanning current personal spaces.
+            for space in self._list_spaces(client, space_type="personal"):
+                if self._space_matches_key(space, space_key):
+                    return space
         raise UserError(f"Failed to find '{space_key}' space")
 
     def precheck(self) -> bool:

@@ -151,6 +151,34 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
     assert file_data.additional_metadata["site_url"] == "https://example.atlassian.net/wiki"
 
 
+def test_get_space_by_key_falls_back_to_personal_space_alias(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(spaces=["~user-personal-space"]),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {"results": []},
+        {"results": [{"id": 987, "key": "generated-key", "alias": "~user-personal-space"}]},
+    ]
+
+    assert indexer._get_space_by_key(mock_client, "~user-personal-space") == {
+        "id": 987,
+        "key": "generated-key",
+        "alias": "~user-personal-space",
+    }
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/spaces", params={"limit": 1, "keys": ["~user-personal-space"]}),
+            mock.call(
+                "api/v2/spaces",
+                params={"limit": 250, "type": "personal", "status": "current"},
+            ),
+        ],
+        any_order=False,
+    )
+
+
 def test_precheck_with_spaces_uses_v2_spaces(monkeypatch, connection_config):
     """Test that precheck uses the Confluence v2 spaces API for selected spaces."""
     spaces = ["A", "B", "C"]
