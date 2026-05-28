@@ -2,10 +2,17 @@ from unittest import mock
 
 import pytest
 
+from unstructured_ingest.data_types.file_data import (
+    FileData,
+    FileDataSourceMetadata,
+    SourceIdentifiers,
+)
 from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.confluence import (
     ConfluenceAccessConfig,
     ConfluenceConnectionConfig,
+    ConfluenceDownloader,
+    ConfluenceDownloaderConfig,
     ConfluenceIndexer,
     ConfluenceIndexerConfig,
 )
@@ -206,6 +213,48 @@ def test_get_docs_ids_within_one_space_uses_v2_pages(connection_config):
         "api/v2/pages",
         params={"space-id": 987, "limit": 2},
     )
+
+
+def test_downloader_uses_v2_page_api(tmp_path, connection_config):
+    downloader = ConfluenceDownloader(
+        connection_config=connection_config,
+        download_config=ConfluenceDownloaderConfig(download_dir=tmp_path),
+    )
+    file_data = FileData(
+        identifier="123",
+        connector_type="confluence",
+        source_identifiers=SourceIdentifiers(
+            filename="123.html",
+            fullpath="SPACE/123.html",
+            rel_path="SPACE/123.html",
+        ),
+        metadata=FileDataSourceMetadata(url="https://dummy/pages/123"),
+        additional_metadata={"space_id": 987},
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {
+        "id": "123",
+        "title": "Test Page",
+        "createdAt": "2026-05-28T10:00:00Z",
+        "version": {"createdAt": "2026-05-28T11:00:00Z", "number": 7},
+        "body": {"view": {"value": "<p>Hello</p>"}},
+    }
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        with mock.patch.object(downloader, "_get_permissions_for_space", return_value=None):
+            response = downloader.run(file_data)
+
+    mock_client.get.assert_called_once_with(
+        "api/v2/pages/123",
+        params={"body-format": "view", "include-version": "true"},
+    )
+    assert response["path"] == tmp_path / "SPACE/123.html"
+    assert response["file_data"].metadata.date_created == "2026-05-28T10:00:00Z"
+    assert response["file_data"].metadata.date_modified == "2026-05-28T11:00:00Z"
+    assert response["file_data"].metadata.version == "7"
+    assert response["file_data"].display_name == "Test Page"
+    assert (tmp_path / "SPACE/123.html").read_text(encoding="utf8")
 
 
 def test_precheck_with_spaces_uses_v2_spaces(monkeypatch, connection_config):

@@ -532,9 +532,12 @@ class ConfluenceDownloader(Downloader):
         doc_id = file_data.identifier
         try:
             with self.connection_config.get_client() as client:
-                page = client.get_page_by_id(
-                    page_id=doc_id,
-                    expand="history.lastUpdated,version,body.view",
+                page = client.get(
+                    f"api/v2/pages/{doc_id}",
+                    params={
+                        "body-format": "view",
+                        "include-version": "true",
+                    },
                 )
         except Exception as e:
             logger.exception(f"Failed to retrieve page with ID {doc_id}: {e}")
@@ -570,8 +573,8 @@ class ConfluenceDownloader(Downloader):
                 file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
-        file_data.metadata.date_created = page["history"]["createdDate"]
-        file_data.metadata.date_modified = page["version"]["when"]
+        file_data.metadata.date_created = page["createdAt"]
+        file_data.metadata.date_modified = page["version"]["createdAt"]
         file_data.metadata.version = str(page["version"]["number"])
         file_data.display_name = title
 
