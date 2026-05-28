@@ -89,6 +89,24 @@ class WeaviateUploadStager(UploadStager):
         """
         data = element_dict.copy()
         working_data = data.copy()
+
+        if self.upload_stager_config.flatten_metadata:
+            # Pure flatten: no opinionated transforms. The user owns the schema
+            # and is responsible for declaring data types compatible with the
+            # raw flattened values (e.g. OBJECT_ARRAY for list[dict] fields
+            # like links / permissions_data / regex_metadata_<pattern>).
+            metadata = working_data.pop("metadata", {})
+            working_data.update(
+                flatten_dict(
+                    metadata,
+                    separator="_",
+                    flatten_lists=False,
+                    remove_none=True,
+                )
+            )
+            working_data[RECORD_ID_LABEL] = file_data.identifier
+            return working_data
+
         # Dict as string formatting
         if (
             record_locator := working_data.get("metadata", {})
@@ -164,17 +182,6 @@ class WeaviateUploadStager(UploadStager):
 
         if regex_metadata := working_data.get("metadata", {}).get("regex_metadata"):
             working_data["metadata"]["regex_metadata"] = str(json.dumps(regex_metadata))
-
-        if self.upload_stager_config.flatten_metadata:
-            metadata = working_data.pop("metadata", {})
-            working_data.update(
-                flatten_dict(
-                    metadata,
-                    separator="_",
-                    flatten_lists=False,
-                    remove_none=True,
-                )
-            )
 
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
@@ -259,10 +266,6 @@ class WeaviateUploader(VectorDBUploader, ABC):
         # query semantics see an explicit null instead of an absent property.
         return {k: properties.get(k, None) for k in schema_props}
 
-    @staticmethod
-    def _has_nested_object_properties(properties) -> bool:
-        return any(getattr(p, "nested_properties", None) for p in properties)
-
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as weaviate_client:
@@ -280,14 +283,12 @@ class WeaviateUploader(VectorDBUploader, ABC):
                     )
 
                 if self.upload_config.flatten_metadata and self.upload_config.collection:
+                    # Schema-shape (e.g. OBJECT / OBJECT_ARRAY for nested fields like
+                    # permissions_data / links / regex_metadata_<pattern>) is the user's
+                    # call. We only enforce that record_id is declared so re-run
+                    # delete-by-record-id can find prior writes to remove.
                     collection = weaviate_client.collections.get(self.upload_config.collection)
                     config = collection.config.get()
-                    if self._has_nested_object_properties(config.properties):
-                        raise DestinationConnectionError(
-                            f"Collection {self.upload_config.collection!r} has nested object "
-                            "properties, which are incompatible with flatten_metadata=true. "
-                            "Pre-create the collection with a flat property schema."
-                        )
                     schema_props = {p.name for p in config.properties}
                     if self.upload_config.record_id_key not in schema_props:
                         raise DestinationConnectionError(
@@ -403,11 +404,10 @@ class WeaviateUploader(VectorDBUploader, ABC):
             with self.upload_config.get_batch_client(client=weaviate_client) as batch_client:
                 for e in data:
                     vector = e.pop("embeddings", None)
-                    properties = (
-                        self.conform_to_schema(e, schema_props)
-                        if schema_props is not None
-                        else e
-                    )
+                    if schema_props is not None:
+                        properties = self.conform_to_schema(e, schema_props)
+                    else:
+                        properties = e
                     batch_client.add_object(
                         collection=self.upload_config.collection,
                         properties=properties,
