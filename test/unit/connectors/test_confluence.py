@@ -136,8 +136,10 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
         index_config=ConfluenceIndexerConfig(spaces=["ENG"]),
     )
     mock_client = mock.MagicMock()
-    mock_client.get.return_value = {"results": [{"id": 987, "key": "ENG"}]}
-    mock_client.get_all_pages_from_space.return_value = [{"id": "456"}]
+    mock_client.get.side_effect = [
+        {"results": [{"id": 987, "key": "ENG"}]},
+        {"results": [{"id": "456"}]},
+    ]
 
     with mock.patch.object(type(config), "get_client", mock.MagicMock()):
         type(config).get_client.return_value.__enter__.return_value = mock_client
@@ -149,6 +151,13 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
     assert file_data.metadata.url == "https://example.atlassian.net/wiki/pages/456"
     assert file_data.metadata.record_locator["cloud_id"] == "cloud-123"
     assert file_data.additional_metadata["site_url"] == "https://example.atlassian.net/wiki"
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/spaces", params={"limit": 1, "keys": ["ENG"]}),
+            mock.call("api/v2/pages", params={"space-id": 987, "limit": 100}),
+        ],
+        any_order=False,
+    )
 
 
 def test_get_space_by_key_falls_back_to_personal_space_alias(connection_config):
@@ -176,6 +185,26 @@ def test_get_space_by_key_falls_back_to_personal_space_alias(connection_config):
             ),
         ],
         any_order=False,
+    )
+
+
+def test_get_docs_ids_within_one_space_uses_v2_pages(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(max_num_of_docs_from_each_space=2),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.return_value = {"results": [{"id": "1"}, {"id": "2"}, {"id": "3"}]}
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+
+        doc_ids = indexer._get_docs_ids_within_one_space(987)
+
+    assert doc_ids == [{"space_id": 987, "doc_id": "1"}, {"space_id": 987, "doc_id": "2"}]
+    mock_client.get.assert_called_once_with(
+        "api/v2/pages",
+        params={"space-id": 987, "limit": 2},
     )
 
 

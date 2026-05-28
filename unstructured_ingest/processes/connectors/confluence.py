@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 
 CONNECTOR_TYPE = "confluence"
 CONFLUENCE_SPACE_PAGE_SIZE = 250
+CONFLUENCE_PAGE_PAGE_SIZE = 250
 
 
 class ConfluenceAccessConfig(AccessConfig):
@@ -249,20 +250,21 @@ class ConfluenceIndexer(Indexer):
             space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces]
             return space_ids_and_keys
 
-    def _get_docs_ids_within_one_space(self, space_key: str) -> List[dict]:
+    def _get_docs_ids_within_one_space(self, space_id: int) -> List[dict]:
         with self.connection_config.get_client() as client:
-            pages = client.get_all_pages_from_space(
-                space=space_key,
-                start=0,
-                expand=None,
-                content_type="page",  # blogpost and comment types not currently supported
-                status=None,
+            response = client.get(
+                "api/v2/pages",
+                params={
+                    "space-id": space_id,
+                    "limit": min(
+                        self.index_config.max_num_of_docs_from_each_space,
+                        CONFLUENCE_PAGE_PAGE_SIZE,
+                    ),
+                },
             )
-        # Limit the number of documents to max_num_of_docs_from_each_space
-        # Note: this is needed because the limit field in client.get_all_pages_from_space does
-        # not seem to work as expected
+        pages = response.get("results", [])
         limited_pages = pages[: self.index_config.max_num_of_docs_from_each_space]
-        doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in limited_pages]
+        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in limited_pages]
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
@@ -270,7 +272,7 @@ class ConfluenceIndexer(Indexer):
 
         space_ids_and_keys = self._get_space_ids_and_keys()
         for space_key, space_id in space_ids_and_keys:
-            doc_ids = self._get_docs_ids_within_one_space(space_key)
+            doc_ids = self._get_docs_ids_within_one_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
