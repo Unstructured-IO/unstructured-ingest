@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from bs4.element import Tag
 
 CONNECTOR_TYPE = "confluence"
+CONFLUENCE_SPACE_PAGE_SIZE = 250
 
 
 class ConfluenceAccessConfig(AccessConfig):
@@ -159,6 +160,27 @@ class ConfluenceIndexer(Indexer):
     index_config: ConfluenceIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    def _list_spaces(
+        self,
+        client: "Confluence",
+        *,
+        keys: Optional[List[str]] = None,
+        limit: Optional[int] = None,
+    ) -> List[dict]:
+        params: dict = {
+            "limit": min(limit or self.index_config.max_num_of_spaces, CONFLUENCE_SPACE_PAGE_SIZE),
+        }
+        if keys:
+            params["keys"] = keys
+        response = client.get("api/v2/spaces", params=params)
+        return response.get("results", [])
+
+    def _get_space_by_key(self, client: "Confluence", space_key: str) -> dict:
+        for space in self._list_spaces(client, keys=[space_key], limit=1):
+            if space.get("key") == space_key:
+                return space
+        raise UserError(f"Failed to find '{space_key}' space")
+
     def precheck(self) -> bool:
         try:
             self.connection_config.get_client()
@@ -169,7 +191,7 @@ class ConfluenceIndexer(Indexer):
         with self.connection_config.get_client() as client:
             # opportunistically check the first space in list of all spaces
             try:
-                client.get_all_spaces(limit=1)
+                self._list_spaces(client, limit=1)
             except Exception as e:
                 logger.exception(f"Failed to connect to find any Confluence space: {e}")
                 raise UserError(f"Failed to connect to find any Confluence space: {e}")
@@ -182,7 +204,7 @@ class ConfluenceIndexer(Indexer):
             if self.index_config.spaces:
                 for space_key in self.index_config.spaces:
                     try:
-                        client.get_space(space_key)
+                        self._get_space_by_key(client, space_key)
                     except Exception as e:
                         logger.exception(f"Failed to connect to Confluence: {e}")
                         errors.append(f"Failed to connect to '{space_key}' space, cause: '{e}'")
@@ -204,13 +226,13 @@ class ConfluenceIndexer(Indexer):
             with self.connection_config.get_client() as client:
                 space_ids_and_keys = []
                 for space_key in spaces:
-                    space = client.get_space(space_key)
+                    space = self._get_space_by_key(client, space_key)
                     space_ids_and_keys.append((space_key, space["id"]))
                 return space_ids_and_keys
         else:
             with self.connection_config.get_client() as client:
-                all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
-            space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces["results"]]
+                all_spaces = self._list_spaces(client)
+            space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces]
             return space_ids_and_keys
 
     def _get_docs_ids_within_one_space(self, space_key: str) -> List[dict]:
