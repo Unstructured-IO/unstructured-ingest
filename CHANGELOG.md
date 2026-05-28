@@ -1,3 +1,9 @@
+## [1.6.8]
+
+### Enhancements
+
+- **feat(weaviate): add `flatten_metadata` option to the Weaviate uploader.** Opt-in, default off. When set, the stager runs a pure flatten over element metadata (recursive dict flatten with `flatten_lists=False`, no opinionated coercion); the uploader queries the destination collection's schema, drops incoming fields not declared in the schema, and fills declared-but-absent fields with null. The destination collection must be pre-created — `create_destination` is a no-op in this mode and `precheck` enforces collection existence plus a `record_id` property for re-run dedup. Schema-shape (e.g. `OBJECT_ARRAY` with `nested_properties` for `links` / `permissions_data` / `regex_metadata_<pattern>`) is the user's call.
+
 ## [1.6.7]
 
 ### Enhancements
