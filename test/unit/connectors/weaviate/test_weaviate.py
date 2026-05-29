@@ -677,6 +677,7 @@ def test_delete_by_record_id_loops_until_no_more_results(
     """The delete loop re-runs until a response with failed=0 AND
     successful=0 is observed (Weaviate's QUERY_MAXIMUM_RESULTS limit
     means a single delete may not clear everything)."""
+    pytest.importorskip("weaviate")
     uploader.upload_config = WeaviateUploaderConfig(collection="MyColl")
     mock_client = MagicMock()
     delete_mock = mock_client.collections.get.return_value.data.delete_many
@@ -695,6 +696,7 @@ def test_delete_by_record_id_raises_on_failure_response(
 ):
     """A response with failed > 0 raises immediately, preserving the
     original record id in the message for debugging."""
+    pytest.importorskip("weaviate")
     uploader.upload_config = WeaviateUploaderConfig(collection="MyColl")
     mock_client = MagicMock()
     delete_mock = mock_client.collections.get.return_value.data.delete_many
