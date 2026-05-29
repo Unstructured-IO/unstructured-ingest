@@ -91,10 +91,9 @@ class WeaviateUploadStager(UploadStager):
         working_data = data.copy()
 
         if self.upload_stager_config.flatten_metadata:
-            # Pure flatten: no opinionated transforms. The user owns the schema
-            # and is responsible for declaring data types compatible with the
-            # raw flattened values (e.g. OBJECT_ARRAY for list[dict] fields
-            # like links / permissions_data / regex_metadata_<pattern>).
+            # Pure flatten: no opinionated transforms. User owns the schema and
+            # declares types matching raw values (e.g. OBJECT_ARRAY for list[dict]
+            # fields like links, permissions_data, regex_metadata_<pattern>).
             metadata = working_data.pop("metadata", {})
             working_data.update(
                 flatten_dict(
@@ -262,8 +261,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
 
     @staticmethod
     def conform_to_schema(properties: dict, schema_props: set[str]) -> dict:
-        # Drop unknown keys; fill missing schema keys with None so downstream
-        # query semantics see an explicit null instead of an absent property.
+        """Drop unknown keys; fill missing schema keys with None for explicit-null queries."""
         return {k: properties.get(k) for k in schema_props}
 
     def precheck(self) -> None:
@@ -274,31 +272,25 @@ class WeaviateUploader(VectorDBUploader, ABC):
 
         try:
             with self.connection_config.get_client() as weaviate_client:
-                if self.upload_config.collection and not weaviate_client.collections.exists(
-                    name=self.upload_config.collection
-                ):
-                    if self.upload_config.flatten_metadata:
-                        raise DestinationConnectionError(
-                            f"Collection {self.upload_config.collection!r} does not exist. "
-                            "With flatten_metadata=true, the destination collection must "
-                            "be pre-created."
-                        )
-                    raise DestinationConnectionError(
-                        f"collection '{self.upload_config.collection}' does not exist"
-                    )
+                if not self.upload_config.collection:
+                    return
 
-                if self.upload_config.flatten_metadata and self.upload_config.collection:
-                    # Schema-shape (e.g. OBJECT / OBJECT_ARRAY for nested fields like
-                    # permissions_data / links / regex_metadata_<pattern>) is the user's
-                    # call. We only enforce that record_id is declared so re-run
-                    # delete-by-record-id can find prior writes to remove.
+                if not weaviate_client.collections.exists(name=self.upload_config.collection):
+                    msg = f"collection '{self.upload_config.collection}' does not exist"
+                    if self.upload_config.flatten_metadata:
+                        msg += " (must be pre-created when flatten_metadata=true)"
+                    raise DestinationConnectionError(msg)
+
+                if self.upload_config.flatten_metadata:
+                    # Schema shape (OBJECT_ARRAY for nested fields, etc.) is the
+                    # user's call; we only enforce that record_id is declared so
+                    # re-run delete-by-record_id can find prior writes.
                     collection = weaviate_client.collections.get(self.upload_config.collection)
-                    config = collection.config.get()
-                    schema_props = {p.name for p in config.properties}
+                    schema_props = {p.name for p in collection.config.get().properties}
                     if self.upload_config.record_id_key not in schema_props:
                         raise DestinationConnectionError(
-                            f"Collection {self.upload_config.collection!r} is missing required "
-                            f"property {self.upload_config.record_id_key!r}; "
+                            f"Collection {self.upload_config.collection!r} is missing "
+                            f"required property {self.upload_config.record_id_key!r}; "
                             "delete-by-record_id will not work."
                         )
         except DestinationConnectionError:
