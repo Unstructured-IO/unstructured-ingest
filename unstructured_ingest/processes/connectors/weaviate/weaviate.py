@@ -246,7 +246,7 @@ class WeaviateUploaderConfig(UploaderConfig):
 class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
-    _schema_property_names: Optional[set[str]] = None
+    _schema_property_names: Optional[set[str]] = field(init=False, repr=False, default=None)
 
     def _collection_exists(self, collection_name: Optional[str] = None):
         collection_name = collection_name or self.upload_config.collection
@@ -264,11 +264,16 @@ class WeaviateUploader(VectorDBUploader, ABC):
     def conform_to_schema(properties: dict, schema_props: set[str]) -> dict:
         # Drop unknown keys; fill missing schema keys with None so downstream
         # query semantics see an explicit null instead of an absent property.
-        return {k: properties.get(k, None) for k in schema_props}
+        return {k: properties.get(k) for k in schema_props}
 
     def precheck(self) -> None:
         try:
             with self.connection_config.get_client() as weaviate_client:
+                if self.upload_config.flatten_metadata and not self.upload_config.collection:
+                    raise DestinationConnectionError(
+                        "flatten_metadata=true requires an explicit collection name."
+                    )
+
                 if self.upload_config.collection and not weaviate_client.collections.exists(
                     name=self.upload_config.collection
                 ):

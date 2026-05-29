@@ -615,22 +615,37 @@ def test_precheck_default_mode_collection_exists_passes(
     mock_client.collections.get.assert_not_called()
 
 
-@pytest.mark.parametrize("flatten_metadata", [True, False])
-def test_precheck_collection_none_skips_validation(
+def test_precheck_default_mode_collection_none_skips_validation(
     uploader: WeaviateUploader,
     connection_config: WeaviateConnectionConfigTest,
-    flatten_metadata: bool,
 ):
-    """If no collection name is set, precheck silently passes — the missing
-    name is a config error caught later in run_data."""
+    """In default mode, if no collection name is set precheck silently passes —
+    the missing name is resolved later in create_destination (fallback to
+    'Unstructuredautocreated')."""
     uploader.upload_config = WeaviateUploaderConfig(
-        collection=None, flatten_metadata=flatten_metadata
+        collection=None, flatten_metadata=False
     )
     mock_client = MagicMock()
     connection_config.set_mock_client(mock_client)
 
     uploader.precheck()
     mock_client.collections.exists.assert_not_called()
+
+
+def test_precheck_flatten_mode_collection_none_raises(
+    uploader: WeaviateUploader,
+    connection_config: WeaviateConnectionConfigTest,
+):
+    """Flatten mode requires an explicit collection name because there is no
+    auto-create fallback — fail early with a clear message."""
+    uploader.upload_config = WeaviateUploaderConfig(
+        collection=None, flatten_metadata=True
+    )
+    mock_client = MagicMock()
+    connection_config.set_mock_client(mock_client)
+
+    with pytest.raises(DestinationConnectionError, match="requires an explicit collection name"):
+        uploader.precheck()
 
 
 def test_precheck_wraps_unexpected_exception_in_destination_error(
