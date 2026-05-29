@@ -267,13 +267,13 @@ class WeaviateUploader(VectorDBUploader, ABC):
         return {k: properties.get(k) for k in schema_props}
 
     def precheck(self) -> None:
+        if self.upload_config.flatten_metadata and not self.upload_config.collection:
+            raise DestinationConnectionError(
+                "flatten_metadata=true requires an explicit collection name."
+            )
+
         try:
             with self.connection_config.get_client() as weaviate_client:
-                if self.upload_config.flatten_metadata and not self.upload_config.collection:
-                    raise DestinationConnectionError(
-                        "flatten_metadata=true requires an explicit collection name."
-                    )
-
                 if self.upload_config.collection and not weaviate_client.collections.exists(
                     name=self.upload_config.collection
                 ):

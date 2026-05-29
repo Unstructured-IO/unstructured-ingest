@@ -637,7 +637,8 @@ def test_precheck_flatten_mode_collection_none_raises(
     connection_config: WeaviateConnectionConfigTest,
 ):
     """Flatten mode requires an explicit collection name because there is no
-    auto-create fallback — fail early with a clear message."""
+    auto-create fallback — fail early with a clear message, before even
+    opening a client connection."""
     uploader.upload_config = WeaviateUploaderConfig(
         collection=None, flatten_metadata=True
     )
@@ -646,6 +647,8 @@ def test_precheck_flatten_mode_collection_none_raises(
 
     with pytest.raises(DestinationConnectionError, match="requires an explicit collection name"):
         uploader.precheck()
+    # Config validation fires before the client is opened.
+    mock_client.collections.exists.assert_not_called()
 
 
 def test_precheck_wraps_unexpected_exception_in_destination_error(
