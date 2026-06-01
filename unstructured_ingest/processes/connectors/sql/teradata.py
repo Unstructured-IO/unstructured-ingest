@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Generator, Literal, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Generator, Literal, Mapping, NoReturn, Optional
 
 from pydantic import Field, Secret
 
@@ -108,7 +108,7 @@ def _raise_classified_teradata_error(
     table: Optional[str] = None,
     direction: Literal["source", "destination"] = "destination",
     fallback_context: str = "",
-) -> None:
+) -> NoReturn:
     """Re-raise a Teradata driver exception as a typed unstructured-ingest error.
 
     Classification rules:
