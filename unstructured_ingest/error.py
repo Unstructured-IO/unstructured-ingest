@@ -53,8 +53,11 @@ class EmbeddingEncoderConnectionError(ConnectionError):
 
 
 class UserError(UnstructuredIngestError):
+    # 422 (Unprocessable Entity) is the correct HTTP semantic for "your input
+    # is invalid". The prior 401 (Unauthorized) was wrong: 401 specifically
+    # means unauthenticated, which is what UserAuthError covers below.
     error_string = "User error: {}"
-    status_code: Optional[int] = 401
+    status_code: Optional[int] = 422
 
 
 class UserAuthError(UserError):

@@ -6,12 +6,18 @@
 
 ## [1.6.8]
 
+### BREAKING
+
+- **`UserError.status_code` changed from `401` to `422`.** `401` is HTTP "Unauthorized" (unauthenticated) — that's what `UserAuthError` covers. `UserError` is for invalid user input / config, which is HTTP `422` (Unprocessable Entity). Subclasses that override `status_code` (`UserAuthError=401`, `RateLimitError=429`) are unaffected. `QuotaError` inherits without override and now reports `422` — callers matching on `status_code == 401` for quota errors must update.
+
 ### Enhancements
 
 - **feat(stager): add `should_include` filter hook to `UploadStager` base class.** New predicate defaults to `True`, preserving behavior across every existing connector. Subclasses override `should_include(element_dict)` to drop elements their destination cannot accept, replacing the prior pattern of duplicating `stream_update` and `process_whole` just to insert a one-line filter.
 
 ### Fixes
 
+- **fix(teradata): classify driver errors and surface user-fault TD messages.** Adds `_raise_classified_teradata_error` that inspects `[Error NNNN]` codes in `teradatasql` exceptions and re-raises recognised user-fault codes (`3807` object-missing-or-no-privilege, `3523` / `5612` / `5315` no privilege, `3706` / `3707` SQL syntax, `3753` / `3754` implicit type conversion) as `UserError` with the original Teradata message preserved via `"Teradata reported: …"`. Wraps `cursor.execute` in `TeradataUploader.get_table_columns`, `delete_by_record_id`, `upload_dataframe`, `create_destination`, and the `TeradataIndexer.precheck` table probe. Non-`teradatasql` exceptions (e.g. `MemoryError`, `OSError`) re-raise unchanged; unrecognised TD codes fall through to the existing `DestinationConnectionError` / `SourceConnectionError` wrapping so retry behaviour is preserved. (PLU-377)
+  - **Source-side behavior change:** The classification applies to both directions. `TeradataIndexer.precheck` previously always raised `SourceConnectionError` when its table probe failed; it now raises `UserError` for codes in the recognised map (3807, 3523, 5612, 5315, etc.) and `SourceConnectionError` only for unrecognised codes / network failures. Source-side callers that catch `SourceConnectionError` will no longer catch those cases.
 - **fix(milvus): drop elements without embeddings before insert.** Empty-text elements (e.g., page-boundary `UncategorizedText` produced by the partitioner) are skipped by the embedder and arrive without an `embeddings` key. Milvus rejected these inserts with `Insert missed an field 'embeddings' to collection without set nullable==true or set default_value`, failing the entire workflow. `MilvusUploadStager` now overrides `should_include` to filter these elements out before they reach the uploader.
 
 ## [1.6.7]
