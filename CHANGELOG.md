@@ -1,3 +1,9 @@
+## [1.6.9]
+
+### Enhancements
+
+- **feat(weaviate): add `flatten_metadata` option to the Weaviate uploader.** Opt-in, default off. When set, the stager flattens element `metadata` into top-level properties (lists pass through unmodified) and skips all default-mode coercions (date reformatting, JSON-stringification of `record_locator` / `coordinates.points` / `links` / `permissions_data` / `regex_metadata`, string casting of `version` / `page_number`). The uploader requires an explicit pre-created collection — `create_destination` no-ops, and `precheck` validates collection existence and the presence of `record_id_key` so re-run delete-by-record-id continues to work. Per-element, properties not declared on the user's schema are dropped and missing schema properties are filled with `None`. Default behavior (`flatten_metadata=False`) is unchanged.
+
 ## [1.6.8]
 
 ### Enhancements
