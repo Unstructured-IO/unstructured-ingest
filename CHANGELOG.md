@@ -2,7 +2,11 @@
 
 ### Enhancements
 
-- **feat(weaviate): add `flatten_metadata` option to the Weaviate uploader.** Opt-in, default off. When set, the stager runs a pure flatten over element metadata (recursive dict flatten with `flatten_lists=False`, no opinionated coercion); the uploader queries the destination collection's schema, drops incoming fields not declared in the schema, and fills declared-but-absent fields with null. The destination collection must be pre-created — `create_destination` is a no-op in this mode and `precheck` enforces collection existence plus a `record_id` property for re-run dedup. Schema-shape (e.g. `OBJECT_ARRAY` with `nested_properties` for `links` / `permissions_data` / `regex_metadata_<pattern>`) is the user's call.
+- **feat(stager): add `should_include` filter hook to `UploadStager` base class.** New predicate defaults to `True`, preserving behavior across every existing connector. Subclasses override `should_include(element_dict)` to drop elements their destination cannot accept, replacing the prior pattern of duplicating `stream_update` and `process_whole` just to insert a one-line filter.
+
+### Fixes
+
+- **fix(milvus): drop elements without embeddings before insert.** Empty-text elements (e.g., page-boundary `UncategorizedText` produced by the partitioner) are skipped by the embedder and arrive without an `embeddings` key. Milvus rejected these inserts with `Insert missed an field 'embeddings' to collection without set nullable==true or set default_value`, failing the entire workflow. `MilvusUploadStager` now overrides `should_include` to filter these elements out before they reach the uploader.
 
 ## [1.6.7]
 
