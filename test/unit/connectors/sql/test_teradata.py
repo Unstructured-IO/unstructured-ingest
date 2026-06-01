@@ -6,7 +6,11 @@ from pydantic import Secret
 from pytest_mock import MockerFixture
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    UserError,
+)
 from unstructured_ingest.processes.connectors.sql.teradata import (
     DEFAULT_TABLE_NAME,
     TeradataAccessConfig,
@@ -20,9 +24,24 @@ from unstructured_ingest.processes.connectors.sql.teradata import (
     TeradataUploadStager,
     TeradataUploadStagerConfig,
     _build_proxy_params,
+    _extract_teradata_error_code,
+    _is_teradata_driver_error,
+    _raise_classified_teradata_error,
     _resolve_db_column_case,
     _summarize_error,
 )
+
+
+# --- Test helper -------------------------------------------------------------
+# Many tests below need to raise an exception that the new
+# `_is_teradata_driver_error` filter accepts. Real `teradatasql.OperationalError`
+# isn't importable without the (optional) teradatasql package installed in the
+# test env, so we forge a stand-in by overriding ``__module__``.
+class _FakeTeradataDriverError(Exception):
+    """Stand-in for a teradatasql driver exception (same module signature)."""
+
+
+_FakeTeradataDriverError.__module__ = "teradatasql"
 
 
 @pytest.fixture
@@ -560,21 +579,40 @@ def test_teradata_downloader_query_db_no_duplicate_when_id_in_fields(
     assert select_part.count('"id"') == 1
 
 
-def test_teradata_indexer_precheck_table_not_found(
+def test_teradata_indexer_precheck_table_not_found_raises_user_error(
     mock_cursor: MagicMock,
     teradata_indexer: TeradataIndexer,
     mock_get_cursor: MagicMock,
 ):
-    """Test that precheck raises SourceConnectionError when table doesn't exist."""
+    """When Teradata returns [Error 3807] the indexer precheck raises a UserError
+    that names the table and forwards the raw TD message — so the customer can
+    self-serve the fix instead of seeing 'Failed to connect…'."""
     mock_cursor.execute.side_effect = [
         None,  # SELECT 1 succeeds
-        Exception("[Error 3807] Object 'year' does not exist"),
+        _FakeTeradataDriverError("[Error 3807] Object 'year' does not exist"),
     ]
 
-    with pytest.raises(SourceConnectionError, match="table 'year'.*not found or not accessible"):
+    with pytest.raises(UserError, match=r"3807.*does not exist or user has no privilege.*'year'"):
         teradata_indexer.precheck()
 
     assert mock_cursor.execute.call_count == 2
+
+
+def test_teradata_indexer_precheck_table_unknown_error_falls_back_to_source_error(
+    mock_cursor: MagicMock,
+    teradata_indexer: TeradataIndexer,
+    mock_get_cursor: MagicMock,
+):
+    """A table-probe failure with a teradatasql-shaped exception but no recognised
+    TD error code falls back to SourceConnectionError AND preserves the historical
+    "table 'X' not found or not accessible" context message."""
+    mock_cursor.execute.side_effect = [
+        None,  # SELECT 1 succeeds
+        _FakeTeradataDriverError("some unexpected driver error without a [Error N] tag"),
+    ]
+
+    with pytest.raises(SourceConnectionError, match=r"table 'year'.*not found or not accessible"):
+        teradata_indexer.precheck()
 
 
 def test_teradata_uploader_precheck_success(
@@ -1211,3 +1249,276 @@ def test_split_dataframe_no_empty_chunk_for_exact_multiples():
         chunks = list(split_dataframe(df, chunk_size=50))
         assert all(len(c) > 0 for c in chunks), f"empty chunk for n={n}"
         assert sum(len(c) for c in chunks) == n
+
+
+# ─── Teradata error-code classification ──────────────────────────────────────
+#
+# The legacy SQL connector used to swallow Teradata driver exceptions into a
+# generic "Failed to connect" / "Unexpected job failure" wrapper, hiding the
+# actual server message. These tests cover the new typed-error mapping so a
+# customer config mistake (missing table, missing privilege, bad SQL) surfaces
+# as a UserError carrying the raw TD message — matching the PLU-337 pattern
+# already in place for the teradata_vector_v2 connector.
+#
+# (See _FakeTeradataDriverError near the top of this file for why we forge a
+# module-name signature instead of importing teradatasql.OperationalError.)
+
+
+def test_is_teradata_driver_error_module_check():
+    """Module-name filter accepts teradatasql exceptions and rejects others."""
+    assert _is_teradata_driver_error(_FakeTeradataDriverError("x")) is True
+    assert _is_teradata_driver_error(MemoryError("oom")) is False
+    assert _is_teradata_driver_error(OSError("io")) is False
+    assert _is_teradata_driver_error(Exception("generic")) is False
+
+
+@pytest.mark.parametrize(
+    ("message", "expected_code"),
+    [
+        ("[Error 3807] Object 'abc_123' does not exist", 3807),
+        ("[Version 20.0.0.54] [Session 11529] [Teradata Database] [Error 3807] x", 3807),
+        ("[Error 3523] User does not have CREATE TABLE privilege", 3523),
+        ("dial tcp 10.0.0.1:1025: i/o timeout", None),
+        ("", None),
+    ],
+)
+def test_extract_teradata_error_code(message: str, expected_code: int | None):
+    assert _extract_teradata_error_code(Exception(message)) == expected_code
+
+
+@pytest.mark.parametrize(
+    ("code", "fragment"),
+    [
+        (3807, "does not exist or user has no privilege"),
+        (3523, "user does not have the required privilege"),
+        (3706, "SQL syntax error"),
+        (3707, "SQL syntax error"),
+        (3753, "floating-point overflow during implicit conversion"),
+        (3754, "implicit type conversion failed"),
+        (5612, "user does not have any access to the object"),
+        (5315, "user does not have any access to the database"),
+    ],
+)
+def test_classified_teradata_error_user_fault_codes_raise_user_error(
+    code: int, fragment: str
+):
+    """Recognised user-fault codes → UserError with the descriptor and raw message."""
+    exc = _FakeTeradataDriverError(f"[Error {code}] something bad happened")
+    with pytest.raises(UserError) as excinfo:
+        _raise_classified_teradata_error(exc, host="td.example.com", table="my_table")
+    msg = str(excinfo.value)
+    assert str(code) in msg
+    assert fragment in msg
+    assert "'my_table'" in msg
+    assert "Teradata reported" in msg
+    # Original exception is chained so the driver traceback survives in logs.
+    assert excinfo.value.__cause__ is exc
+
+
+def test_classified_teradata_error_extract_picks_last_code_in_chain():
+    """When a driver message chains multiple [Error N] tags, the LAST (most
+    specific / innermost) is what gets classified."""
+    exc = _FakeTeradataDriverError("[Error 9999] outer wrapper; caused by [Error 3754] inner")
+    assert _extract_teradata_error_code(exc) == 3754
+
+
+def test_classified_teradata_error_unknown_code_destination_fallback():
+    """Unknown code on a destination path → DestinationConnectionError preserved."""
+    exc = _FakeTeradataDriverError("[Error 9999] something we don't classify yet")
+    with pytest.raises(DestinationConnectionError):
+        _raise_classified_teradata_error(exc, host="td.example.com", table="t")
+
+
+def test_classified_teradata_error_unknown_code_source_fallback():
+    """Unknown code on a source path → SourceConnectionError preserved."""
+    exc = _FakeTeradataDriverError("connection reset by peer")
+    with pytest.raises(SourceConnectionError):
+        _raise_classified_teradata_error(
+            exc, host="td.example.com", table="t", direction="source"
+        )
+
+
+def test_classified_teradata_error_no_code_falls_back():
+    """Driver exception without an [Error NNNN] tag (network blip etc.) falls back."""
+    exc = _FakeTeradataDriverError("dial tcp 10.0.0.1:1025: i/o timeout")
+    with pytest.raises(DestinationConnectionError):
+        _raise_classified_teradata_error(exc, host="td.example.com")
+
+
+def test_classified_teradata_error_rejects_invalid_direction():
+    """Runtime check on direction prevents Literal-only typos (e.g.
+    direction='DESTINATION' uppercase) from silently falling into the wrong path."""
+    exc = _FakeTeradataDriverError("[Error 9999]")
+    with pytest.raises(AssertionError, match="direction must be"):
+        _raise_classified_teradata_error(
+            exc, host="td.example.com", direction="DESTINATION"  # type: ignore[arg-type]
+        )
+
+
+def test_classified_teradata_error_fallback_context_is_forwarded():
+    """fallback_context flows into _summarize_error so callers can preserve
+    historical per-site messages (e.g. the indexer's 'table X not found')."""
+    exc = _FakeTeradataDriverError("[Error 9999] unknown code")
+    with pytest.raises(SourceConnectionError, match=r"table 'year'.*not found or not accessible"):
+        _raise_classified_teradata_error(
+            exc,
+            host="td.example.com",
+            table="year",
+            direction="source",
+            fallback_context="table 'year' not found or not accessible",
+        )
+
+
+def test_teradata_uploader_get_table_columns_missing_table_raises_user_error(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """get_table_columns translates Teradata 3807 into a UserError instead of
+    letting the bare driver exception bubble through the etl-api retry wrapper."""
+    mock_cursor.execute.side_effect = _FakeTeradataDriverError(
+        "[Error 3807] Object 'test_table' does not exist"
+    )
+    teradata_uploader._columns = None
+
+    with pytest.raises(UserError, match="3807.*'test_table'"):
+        teradata_uploader.get_table_columns()
+
+
+def test_teradata_uploader_get_table_columns_non_teradata_error_is_reraised(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Non-teradata exceptions (e.g. OSError, MemoryError) must bubble up
+    unchanged — only teradatasql driver errors get reclassified."""
+    mock_cursor.execute.side_effect = MemoryError("simulated OOM during fetch")
+    teradata_uploader._columns = None
+
+    with pytest.raises(MemoryError):
+        teradata_uploader.get_table_columns()
+
+
+def test_teradata_uploader_delete_by_record_id_type_mismatch_raises_user_error(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """Reproduces the production scenario: customer created abc_123 with record_id
+    BIGINT instead of VARCHAR. Connector sends a string identifier, Teradata returns
+    [Error 3754]. Without this mapping the customer sees 'Failed to connect…' (wrong);
+    with it they see the actual type-mismatch message."""
+    mocker.patch.object(
+        teradata_uploader, "_get_db_column_name", return_value="record_id"
+    )
+    mock_cursor.execute.side_effect = _FakeTeradataDriverError(
+        "[Error 3754] Precision error in FLOAT type constant or during implicit conversions."
+    )
+
+    file_data = FileData(
+        identifier="1xdNXwlv2yuGJyUMzQgmtdlAOesAP673T",  # Google Drive file id (string)
+        connector_type="google_drive",
+        source_identifiers=SourceIdentifiers(
+            filename="report.pdf", fullpath="ofc_data1/report.pdf"
+        ),
+    )
+
+    with pytest.raises(UserError, match="3754.*implicit type conversion failed.*'test_table'"):
+        teradata_uploader.delete_by_record_id(file_data)
+
+
+def test_teradata_uploader_delete_by_record_id_missing_table_raises_user_error(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """delete_by_record_id surfaces a 3807 as UserError, not a swallowed driver error."""
+    # Skip the get_table_columns lookup that delete_by_record_id makes first.
+    mocker.patch.object(
+        teradata_uploader, "_get_db_column_name", return_value="record_id"
+    )
+    mock_cursor.execute.side_effect = _FakeTeradataDriverError(
+        "[Error 3807] Object 'test_table' does not exist"
+    )
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    with pytest.raises(UserError, match="3807.*'test_table'"):
+        teradata_uploader.delete_by_record_id(file_data)
+
+
+def test_teradata_uploader_upload_dataframe_no_privilege_raises_user_error(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """An INSERT that hits 3523 (no INSERT privilege) surfaces as UserError so the
+    customer-visible message points at the privilege issue rather than retrying
+    3 times into a generic 'Unexpected job failure'."""
+    df = pd.DataFrame({"id": [1], "text": ["hi"], "record_id": ["f1"]})
+    teradata_uploader._columns = ["id", "text", "record_id"]
+    mocker.patch.object(teradata_uploader, "_fit_to_schema", return_value=df)
+    mocker.patch.object(teradata_uploader, "can_delete", return_value=False)
+    mock_cursor.executemany.side_effect = _FakeTeradataDriverError(
+        "[Error 3523] User test_user does not have INSERT privilege on test_table"
+    )
+
+    file_data = FileData(
+        identifier="test_file.txt",
+        connector_type="local",
+        source_identifiers=SourceIdentifiers(
+            filename="test_file.txt", fullpath="/path/to/test_file.txt"
+        ),
+    )
+
+    with pytest.raises(UserError, match="3523.*does not have the required privilege"):
+        teradata_uploader.upload_dataframe(df, file_data)
+
+
+def test_teradata_uploader_create_destination_no_privilege_raises_user_error(
+    mock_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+    mock_get_cursor: MagicMock,
+):
+    """When a customer's user lacks CREATE TABLE privilege, auto-creation surfaces
+    the privilege error as UserError instead of a bare driver exception.
+
+    Note: this test deliberately creates an uploader with table_name=None so that
+    create_destination()'s ``table_name = self.upload_config.table_name or
+    destination_name`` resolves to ``destination_name`` (the production code path
+    for opinionated writes). The shared fixture sets table_name='test_table' which
+    would short-circuit destination_name."""
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig(table_name=None, record_id_key="record_id"),
+    )
+    # cursor.execute side_effects, in call order:
+    #   1. SELECT DATABASE             → None (sets up fetchone for current_db)
+    #   2. SELECT 1 FROM DBC.TablesV   → None (table-exists check)
+    #   3. CREATE MULTISET TABLE ...   → raises driver error
+    # cursor.fetchone side_effects:
+    #   1. ('test_db',)  → current_db
+    #   2. None          → "table doesn't exist", proceed to CREATE
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+    mock_cursor.execute.side_effect = [
+        None,
+        None,
+        _FakeTeradataDriverError(
+            "[Error 3523] User test_user does not have CREATE TABLE privilege"
+        ),
+    ]
+
+    with pytest.raises(
+        UserError,
+        match=r"3523.*does not have the required privilege.*brand_new_table",
+    ):
+        uploader.create_destination(destination_name="brand_new_table")
