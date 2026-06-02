@@ -405,3 +405,61 @@ def test_run_flatten_true_drops_unknown_columns_and_logs(
     assert len(drop_lines) == 1
     assert "unknown_col" in drop_lines[0].message
     assert "another_extra" in drop_lines[0].message
+
+
+def _file_data_rel(relative_path: str, filename: str) -> FileData:
+    return FileData(
+        identifier=relative_path,
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(
+            filename=filename,
+            fullpath=relative_path,
+            rel_path=relative_path,
+        ),
+    )
+
+
+def test_get_output_path_same_basename_different_folders_do_not_collide():
+    """Two source files that share a basename but live in different folders must map
+    to distinct volume paths — otherwise their staged files overwrite each other and
+    the per-file table load races on a single shared path."""
+    uploader = _make_uploader(flatten_metadata=True)
+
+    path_a = uploader.get_output_path(file_data=_file_data_rel("folderA/report.pdf", "report.pdf"))
+    path_b = uploader.get_output_path(file_data=_file_data_rel("folderB/report.pdf", "report.pdf"))
+
+    assert path_a != path_b
+    assert path_a == "/Volumes/cat/default/vol/folderA/report.pdf.json"
+    assert path_b == "/Volumes/cat/default/vol/folderB/report.pdf.json"
+
+
+def test_get_output_path_prefers_relative_path_over_filename():
+    uploader = _make_uploader(flatten_metadata=True)
+
+    path = uploader.get_output_path(file_data=_file_data_rel("nested/dir/report.pdf", "report.pdf"))
+
+    assert path == "/Volumes/cat/default/vol/nested/dir/report.pdf.json"
+
+
+def test_get_output_path_falls_back_to_filename_without_relative_path():
+    uploader = _make_uploader(flatten_metadata=True)
+    file_data = FileData(
+        identifier="doc",
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(filename="report.pdf", fullpath=""),
+    )
+
+    path = uploader.get_output_path(file_data=file_data)
+
+    assert path == "/Volumes/cat/default/vol/report.pdf.json"
+
+
+def test_get_output_path_does_not_double_json_suffix():
+    """A source file already ending in .json keeps a single suffix."""
+    uploader = _make_uploader(flatten_metadata=True)
+
+    path = uploader.get_output_path(
+        file_data=_file_data_rel("folderA/already.json", "already.json")
+    )
+
+    assert path == "/Volumes/cat/default/vol/folderA/already.json"

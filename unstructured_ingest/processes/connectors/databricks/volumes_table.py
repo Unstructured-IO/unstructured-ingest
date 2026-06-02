@@ -163,9 +163,18 @@ class DatabricksVolumeDeltaTableUploader(Uploader):
                     )
 
     def get_output_path(self, file_data: FileData, suffix: str = ".json") -> str:
-        filename = Path(file_data.source_identifiers.filename)
-        adjusted_filename = filename if filename.suffix == suffix else f"{filename}{suffix}"
-        return os.path.join(self.upload_config.path, f"{adjusted_filename}")
+        # Use the full relative path rather than the bare filename so that source
+        # files sharing a basename across different folders map to distinct volume
+        # paths instead of overwriting each other.
+        source_identifiers = file_data.source_identifiers
+        name = (
+            source_identifiers.relative_path.lstrip("/")
+            if source_identifiers.relative_path
+            else source_identifiers.filename
+        )
+        name_path = Path(name)
+        adjusted_name = name_path if name_path.suffix == suffix else f"{name}{suffix}"
+        return os.path.join(self.upload_config.path, f"{adjusted_name}")
 
     @contextmanager
     def get_cursor(self, **connect_kwargs) -> Generator[Any, None, None]:
