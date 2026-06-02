@@ -463,3 +463,37 @@ def test_get_output_path_does_not_double_json_suffix():
     )
 
     assert path == "/Volumes/cat/default/vol/folderA/already.json"
+
+
+def test_run_deletes_by_record_identifier_independent_of_volume_path(
+    tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock
+):
+    """Re-sync deletes key on file_data.identifier (the record_id column), not on the
+    staging volume path. The relative-path change to get_output_path must not shift
+    which rows a delete targets — otherwise rows could be orphaned on re-sync."""
+    uploader = _make_uploader(flatten_metadata=True)
+    # record_id column present → can_delete() is True, so run() deletes before insert.
+    uploader._columns = {"element_id": "string", "text": "string", "record_id": "string"}
+    file_data = FileData(
+        identifier="record-identity-123",
+        connector_type="databricks_volume_delta_tables",
+        source_identifiers=SourceIdentifiers(
+            filename="report.pdf",
+            fullpath="folderA/report.pdf",
+            rel_path="folderA/report.pdf",
+        ),
+    )
+    path = _staged_elements(
+        tmp_path, {"element_id": "el-1", "text": "hello", "record_id": "record-identity-123"}
+    )
+
+    uploader.run(path=path, file_data=file_data)
+
+    delete_sql = next(
+        s for s in _executed_sql(mock_cursor) if s.strip().upper().startswith("DELETE")
+    )
+    # Deletes by the deterministic identifier...
+    assert "record_id = 'record-identity-123'" in delete_sql
+    # ...and not by anything derived from the (now relative) volume staging path.
+    assert "folderA" not in delete_sql
+    assert "report.pdf" not in delete_sql
