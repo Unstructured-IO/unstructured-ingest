@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, AsyncIterable, Literal
 
 from pydantic import Field, SecretStr
-from utic_aws_auth.aws.bedrock import (
+from utic_auth.aws.bedrock import (
     bedrock_async_client_kwargs_from_provider_connection,
     bedrock_client_kwargs_from_provider_connection,
     bedrock_provider_connection_from_auth_fields,
