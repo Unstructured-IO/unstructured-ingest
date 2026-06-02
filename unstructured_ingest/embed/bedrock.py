@@ -9,9 +9,9 @@ from pydantic import Field, SecretStr
 from utic_auth.aws.bedrock import (
     bedrock_async_client_kwargs_from_provider_connection,
     bedrock_client_kwargs_from_provider_connection,
-    bedrock_provider_connection_from_auth_fields,
     create_bedrock_client_from_provider_connection,
 )
+from utic_types import bedrock_provider_connection_config
 
 from unstructured_ingest.embed.interfaces import (
     EMBEDDINGS_KEY,
@@ -160,7 +160,7 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
         )
 
     def _provider_connection(self) -> dict:
-        return bedrock_provider_connection_from_auth_fields(
+        return bedrock_provider_connection_config(
             region=self.region_name,
             access_key_id=self.aws_access_key_id,
             secret_access_key=self.aws_secret_access_key,
