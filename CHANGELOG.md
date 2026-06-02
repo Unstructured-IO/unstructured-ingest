@@ -1,3 +1,9 @@
+## [1.6.10]
+
+### Fixes
+
+- **fix(databricks-delta-tables): stage each source file at its full relative path.** The `databricks_volume_delta_tables` uploader keyed the staging volume path on the source filename alone, so distinct source files sharing a basename across different folders overwrote each other on the volume — leading to dropped or duplicated rows and intermittent load failures under concurrency. It now uses the full relative path (falling back to the filename), matching the Databricks Volumes and object-store destinations. (PLU-392)
+
 ## [1.6.9]
 
 ### Enhancements
