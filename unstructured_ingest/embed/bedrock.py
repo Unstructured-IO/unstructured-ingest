@@ -80,6 +80,9 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
     aws_secret_access_key: SecretStr | None = Field(
         description="aws secret access key", default=None
     )
+    aws_session_token: SecretStr | None = Field(
+        description="aws session token", default=None
+    )
     region_name: str = Field(
         description="aws region name",
         default_factory=lambda: (
@@ -159,12 +162,31 @@ class BedrockEmbeddingConfig(EmbeddingConfig):
             endpoint_url=self.endpoint_url,
         )
 
+    def _selected_access_method(self) -> Literal["credentials", "iam", "assume_role"] | None:
+        if self.access_method is not None:
+            return self.access_method
+        if not any(
+            (
+                self.aws_access_key_id,
+                self.aws_secret_access_key,
+                self.aws_session_token,
+                self.role_arn,
+                self.external_id,
+            )
+        ):
+            # Preserve the legacy embedder behavior where omitted credentials
+            # mean "use the deployment's ambient AWS identity".
+            return "iam"
+        return None
+
     def _provider_connection(self) -> dict:
+
         return bedrock_provider_connection_config(
             region=self.region_name,
             access_key_id=self.aws_access_key_id,
             secret_access_key=self.aws_secret_access_key,
-            access_method=self.access_method,
+            session_token=self.aws_session_token,
+            access_method=self._selected_access_method(),
             role_arn=self.role_arn,
             external_id=self.external_id,
         )

@@ -70,6 +70,17 @@ def test_missing_access_method_without_fields_uses_ambient_credentials():
     assert config.get_client_kwargs() == {"region_name": "us-west-2"}
 
 
+def test_credentials_include_session_token():
+    config = BedrockEmbeddingConfig(
+        region_name="us-west-2",
+        aws_access_key_id="access-key",
+        aws_secret_access_key="secret-key",
+        aws_session_token="session-token",
+    )
+
+    assert config.get_client_kwargs()["aws_session_token"] == "session-token"
+
+
 def test_missing_access_method_rejects_ambiguous_shapes():
     config = BedrockEmbeddingConfig(
         role_arn="arn:aws:iam::123456789012:role/bedrock-access",
