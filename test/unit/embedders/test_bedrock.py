@@ -111,7 +111,8 @@ def test_assume_role_ignores_stale_static_credentials():
         region_name="us-west-2",
     )
 
-    assert config.get_client_kwargs() == {"region_name": "us-west-2"}
+    with pytest.raises(ValueError, match="requires a client factory"):
+        config.get_client_kwargs()
 
 
 def test_credentials_requires_static_keys():

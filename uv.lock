@@ -4913,6 +4913,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings"
+version = "2.14.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/07/60/1d1e59c9c90d54591469ada7d268251f71c24bdb765f1a8a832cee8c6653/pydantic_settings-2.14.1.tar.gz", hash = "sha256:e874d3bec7e787b0c9958277956ed9b4dd5de6a80e162188fdaff7c5e26fd5fa", size = 235551, upload-time = "2026-05-08T13:40:06.542Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ae/8d/f1af3832f5e6eb13ba94ee809e72b8ecb5eef226d27ee0bef7d963d943c7/pydantic_settings-2.14.1-py3-none-any.whl", hash = "sha256:6e3c7edfd8277687cdc598f56e5cff0e9bfff0910a3749deaa8d4401c3a2b9de", size = 60964, upload-time = "2026-05-08T13:40:04.958Z" },
+]
+
+[[package]]
 name = "pygithub"
 version = "2.8.1"
 source = { registry = "https://pypi.org/simple" }
@@ -5478,6 +5492,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/52/a9/0c0db8d37b2b8a645666f7fd8accea4c6224e013c42b1d5c17c93590cd06/python_pptx-1.0.2.tar.gz", hash = "sha256:479a8af0eaf0f0d76b6f00b0887732874ad2e3188230315290cd1f9dd9cc7095", size = 10109297, upload-time = "2024-08-07T17:33:37.772Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/4f/00be2196329ebbff56ce564aa94efb0fbc828d00de250b1980de1a34ab49/python_pptx-1.0.2-py3-none-any.whl", hash = "sha256:160838e0b8565a8b1f67947675886e9fea18aa5e795db7ae531606d68e785cba", size = 472788, upload-time = "2024-08-07T17:33:28.192Z" },
+]
+
+[[package]]
+name = "python-slugify"
+version = "8.0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "text-unidecode" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/87/c7/5e1547c44e31da50a460df93af11a535ace568ef89d7a811069ead340c4a/python-slugify-8.0.4.tar.gz", hash = "sha256:59202371d1d05b54a9e7720c5e038f928f45daaffe41dd10822f3907b937c856", size = 10921, upload-time = "2024-02-08T18:32:45.488Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a4/62/02da182e544a51a5c3ccf4b03ab79df279f9c60c5e82d5e8bec7ca26ac11/python_slugify-8.0.4-py2.py3-none-any.whl", hash = "sha256:276540b79961052b66b7d116620b36518847f52d5fd9e3a70164fc8c50faa6b8", size = 10051, upload-time = "2024-02-08T18:32:43.911Z" },
 ]
 
 [[package]]
@@ -6383,6 +6409,15 @@ wheels = [
 ]
 
 [[package]]
+name = "text-unidecode"
+version = "1.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/e2/e9a00f0ccb71718418230718b3d900e71a5d16e701a3dae079a21e9cd8f8/text-unidecode-1.3.tar.gz", hash = "sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93", size = 76885, upload-time = "2019-08-30T21:36:45.405Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/a5/c0b6468d3824fe3fde30dbb5e1f687b291608f9473681bbf7dabbf5a87d7/text_unidecode-1.3-py2.py3-none-any.whl", hash = "sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8", size = 78154, upload-time = "2019-08-30T21:37:03.543Z" },
+]
+
+[[package]]
 name = "threadpoolctl"
 version = "3.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -7001,6 +7036,8 @@ bedrock = [
     { name = "aioboto3" },
     { name = "aiobotocore" },
     { name = "boto3" },
+    { name = "utic-auth", extra = ["aws"] },
+    { name = "utic-types" },
 ]
 biomed = [
     { name = "beautifulsoup4" },
@@ -7430,6 +7467,8 @@ requires-dist = [
     { name = "unstructured", extras = ["xlsx"], marker = "extra == 'xlsx'" },
     { name = "unstructured-client", marker = "extra == 'remote'", specifier = ">=0.30.0" },
     { name = "urllib3", marker = "extra == 'hubspot'" },
+    { name = "utic-auth", extras = ["aws"], marker = "extra == 'bedrock'", specifier = "==0.1.0.dev202606051418" },
+    { name = "utic-types", marker = "extra == 'bedrock'", specifier = "==1.4.0.dev202606051418" },
     { name = "vastdb", marker = "extra == 'vastdb'" },
     { name = "vertexai", marker = "extra == 'vertexai'" },
     { name = "voyageai", marker = "extra == 'voyageai'" },
@@ -7512,6 +7551,53 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+]
+
+[[package]]
+name = "utic-auth"
+version = "0.1.0.dev202606051418"
+source = { registry = "https://pkgs.dev.azure.com/unstructured/_packaging/unstructured/pypi/simple/" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://pkgs.dev.azure.com/unstructured/_packaging/aa52cea6-240c-4a8e-8608-5e743a9d3711/pypi/download/utic-auth/0.1.dev202606051418/utic_auth-0.1.0.dev202606051418.tar.gz", hash = "sha256:ffac044dc21195c7a3ea013d984871d47b133f4c313d8e7b97e5b544617214f6" }
+wheels = [
+    { url = "https://pkgs.dev.azure.com/unstructured/_packaging/aa52cea6-240c-4a8e-8608-5e743a9d3711/pypi/download/utic-auth/0.1.dev202606051418/utic_auth-0.1.0.dev202606051418-py3-none-any.whl", hash = "sha256:82fb95d8349fb00e67d4c6cb73fe54d1f882abb24e355a9e49f8ffff6d354bef" },
+]
+
+[package.optional-dependencies]
+aws = [
+    { name = "boto3" },
+    { name = "botocore" },
+]
+
+[[package]]
+name = "utic-model-registry-schema"
+version = "2.3.1"
+source = { registry = "https://pkgs.dev.azure.com/unstructured/_packaging/unstructured/pypi/simple/" }
+dependencies = [
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "python-slugify" },
+]
+wheels = [
+    { url = "https://pkgs.dev.azure.com/unstructured/_packaging/aa52cea6-240c-4a8e-8608-5e743a9d3711/pypi/download/utic-model-registry-schema/2.3.1/utic_model_registry_schema-2.3.1-py3-none-any.whl", hash = "sha256:5e16eab3b915cc51734b4fdd0a0b00cb8f25db0220c6d7a835eeea6a1e52b669" },
+]
+
+[[package]]
+name = "utic-types"
+version = "1.4.0.dev202606051418"
+source = { registry = "https://pkgs.dev.azure.com/unstructured/_packaging/unstructured/pypi/simple/" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "python-dotenv" },
+    { name = "unstructured-ingest" },
+    { name = "utic-model-registry-schema" },
+]
+sdist = { url = "https://pkgs.dev.azure.com/unstructured/_packaging/aa52cea6-240c-4a8e-8608-5e743a9d3711/pypi/download/utic-types/1.4.dev202606051418/utic_types-1.4.0.dev202606051418.tar.gz", hash = "sha256:b3b2d64264828bf9294a5a114fb205a4c722f2b1874658201bf6e39f3b72cd20" }
+wheels = [
+    { url = "https://pkgs.dev.azure.com/unstructured/_packaging/aa52cea6-240c-4a8e-8608-5e743a9d3711/pypi/download/utic-types/1.4.dev202606051418/utic_types-1.4.0.dev202606051418-py3-none-any.whl", hash = "sha256:f2fc47fa516e0aabaef3ab08c2b74577f9f21dacfcdca0789a6df9433a7f8377" },
 ]
 
 [[package]]
