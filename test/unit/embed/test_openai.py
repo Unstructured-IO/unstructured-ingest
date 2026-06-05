@@ -1,4 +1,13 @@
-from unstructured_ingest.embed.openai import OpenAIEmbeddingConfig, OpenAIEmbeddingEncoder
+import importlib.util
+
+import pytest
+from pydantic import SecretStr, ValidationError
+
+from unstructured_ingest.embed.openai import (
+    CustomOpenAICompatibleEmbeddingConfig,
+    OpenAIEmbeddingConfig,
+    OpenAIEmbeddingEncoder,
+)
 
 
 def test_embed_documents_does_not_break_element_to_dict(mocker):
@@ -26,3 +35,59 @@ def test_embed_documents_does_not_break_element_to_dict(mocker):
     assert elements[0]["text"] == "This is sentence 1"
     assert elements[1]["text"] == "This is sentence 2"
     assert mock_client.embeddings.create.call_count == 2
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("openai") is None,
+    reason="openai extra not installed",
+)
+class TestCustomOpenAICompatibleEmbeddingConfig:
+    @pytest.mark.parametrize("get_client_method", ["get_client", "get_async_client"])
+    def test_without_api_key_omits_authorization(self, get_client_method):
+        config = CustomOpenAICompatibleEmbeddingConfig(base_url="http://fake/v1")
+        client = getattr(config, get_client_method)()
+        assert not client.auth_headers
+
+    @pytest.mark.parametrize("get_client_method", ["get_client", "get_async_client"])
+    def test_with_api_key_emits_bearer(self, get_client_method):
+        config = CustomOpenAICompatibleEmbeddingConfig(
+            api_key=SecretStr("testkey"), base_url="http://fake/v1"
+        )
+        client = getattr(config, get_client_method)()
+        assert client.auth_headers == {"Authorization": "Bearer testkey"}
+
+    @pytest.mark.parametrize("get_client_method", ["get_client", "get_async_client"])
+    def test_default_headers_plaintext_on_wire(self, get_client_method):
+        config = CustomOpenAICompatibleEmbeddingConfig(
+            base_url="http://fake/v1",
+            default_headers={"X-Custom": SecretStr("tok")},
+        )
+        client = getattr(config, get_client_method)()
+        assert client.default_headers.get("X-Custom") == "tok"
+
+    def test_rejects_authorization_in_default_headers(self):
+        for key in ["Authorization", "authorization", "AUTHORIZATION", "aUtHoRiZaTiOn"]:
+            with pytest.raises(ValidationError):
+                CustomOpenAICompatibleEmbeddingConfig(
+                    base_url="http://fake/v1",
+                    default_headers={key: SecretStr("bad")},
+                )
+
+    def test_empty_dict_default_headers(self, mocker):
+        mock_openai = mocker.patch("openai.OpenAI")
+        mocker.patch("openai.DefaultHttpxClient")
+        config = CustomOpenAICompatibleEmbeddingConfig(
+            api_key=SecretStr("k"), base_url="http://fake/v1", default_headers={}
+        )
+        config.get_client()
+        assert mock_openai.call_args.kwargs.get("default_headers") is None
+
+    def test_json_round_trip(self):
+        config = CustomOpenAICompatibleEmbeddingConfig(
+            base_url="http://fake/v1",
+            default_headers={"X-Custom": SecretStr("tok")},
+        )
+        json_str = config.model_dump_json()
+        rehydrated = CustomOpenAICompatibleEmbeddingConfig.model_validate_json(json_str)
+        client = rehydrated.get_client()
+        assert client.default_headers.get("X-Custom") == "tok"

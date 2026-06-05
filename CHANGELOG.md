@@ -1,3 +1,53 @@
+## [1.6.10]
+
+### Fixes
+
+- **fix(databricks-delta-tables): stage each source file at its full relative path.** The `databricks_volume_delta_tables` uploader keyed the staging volume path on the source filename alone, so distinct source files sharing a basename across different folders overwrote each other on the volume — leading to dropped or duplicated rows and intermittent load failures under concurrency. It now uses the full relative path (falling back to the filename), matching the Databricks Volumes and object-store destinations. (PLU-392)
+
+## [1.6.9]
+
+### Enhancements
+
+- **feat(weaviate): add `flatten_metadata` option to the Weaviate uploader.** Opt-in, default off. When set, the stager flattens element `metadata` into top-level properties (lists pass through unmodified) and skips all default-mode coercions (date reformatting, JSON-stringification of `record_locator` / `coordinates.points` / `links` / `permissions_data` / `regex_metadata`, string casting of `version` / `page_number`). The uploader requires an explicit pre-created collection — `create_destination` no-ops, and `precheck` validates collection existence and the presence of `record_id_key` so re-run delete-by-record-id continues to work. Per-element, properties not declared on the user's schema are dropped and missing schema properties are filled with `None`. Default behavior (`flatten_metadata=False`) is unchanged.
+
+## [1.6.8]
+
+### BREAKING
+
+- **`UserError.status_code` changed from `401` to `422`.** `401` is HTTP "Unauthorized" (unauthenticated) — that's what `UserAuthError` covers. `UserError` is for invalid user input / config, which is HTTP `422` (Unprocessable Entity). Subclasses that override `status_code` (`UserAuthError=401`, `RateLimitError=429`) are unaffected. `QuotaError` inherits without override and now reports `422` — callers matching on `status_code == 401` for quota errors must update.
+
+### Enhancements
+
+- **feat(stager): add `should_include` filter hook to `UploadStager` base class.** New predicate defaults to `True`, preserving behavior across every existing connector. Subclasses override `should_include(element_dict)` to drop elements their destination cannot accept, replacing the prior pattern of duplicating `stream_update` and `process_whole` just to insert a one-line filter.
+
+### Fixes
+
+- **fix(teradata): classify driver errors and surface user-fault TD messages.** Adds `_raise_classified_teradata_error` that inspects `[Error NNNN]` codes in `teradatasql` exceptions and re-raises recognised user-fault codes (`3807` object-missing-or-no-privilege, `3523` / `5612` / `5315` no privilege, `3706` / `3707` SQL syntax, `3753` / `3754` implicit type conversion) as `UserError` with the original Teradata message preserved via `"Teradata reported: …"`. Wraps `cursor.execute` in `TeradataUploader.get_table_columns`, `delete_by_record_id`, `upload_dataframe`, `create_destination`, and the `TeradataIndexer.precheck` table probe. Non-`teradatasql` exceptions (e.g. `MemoryError`, `OSError`) re-raise unchanged; unrecognised TD codes fall through to the existing `DestinationConnectionError` / `SourceConnectionError` wrapping so retry behaviour is preserved. (PLU-377)
+  - **Source-side behavior change:** The classification applies to both directions. `TeradataIndexer.precheck` previously always raised `SourceConnectionError` when its table probe failed; it now raises `UserError` for codes in the recognised map (3807, 3523, 5612, 5315, etc.) and `SourceConnectionError` only for unrecognised codes / network failures. Source-side callers that catch `SourceConnectionError` will no longer catch those cases.
+- **fix(milvus): drop elements without embeddings before insert.** Empty-text elements (e.g., page-boundary `UncategorizedText` produced by the partitioner) are skipped by the embedder and arrive without an `embeddings` key. Milvus rejected these inserts with `Insert missed an field 'embeddings' to collection without set nullable==true or set default_value`, failing the entire workflow. `MilvusUploadStager` now overrides `should_include` to filter these elements out before they reach the uploader.
+
+## [1.6.7]
+
+### Enhancements
+
+- **feat(box): OAuth 2.0 access token support on the Box source.** `BoxAccessConfig` now accepts `access_token` (with optional `refresh_token`) alongside the existing `box_app_config` field, and a validator enforces exactly one auth method. When `access_token` is set, `BoxConnectionConfig.get_access_config()` returns a `boxsdk.OAuth2` client. `refresh_token` is stored as a carrier for external refresh flows (e.g. orchestrator-side rotation) and is not consumed in-process.
+
+## [1.6.6]
+
+### Enhancements
+
+- **feat(embed): add `CustomOpenAICompatibleEmbeddingConfig` subclass.** New optional config for OpenAI-compatible gateways (vLLM, NIM, Ollama, LiteLLM, etc.) that authenticate via custom HTTP headers. Adds optional `api_key: SecretStr | None` and `default_headers: dict[str, SecretStr] | None` on the subclass. When `api_key` is unset, no `Authorization` header is emitted to the gateway. Existing `OpenAIEmbeddingConfig` / `AzureOpenAIEmbeddingConfig` surfaces are unchanged.
+
+### Fixes
+
+- **test(notion): make `test_notion_source_database` row-order insensitive.** Test-only change; no published behavior.
+
+## [1.6.5]
+
+### Fixes
+
+- **fix(google-drive): skip non-downloadable native files during indexing and download.** Google Drive shortcuts, forms, maps, sites, fusiontables, and jams are now silently filtered out during indexing rather than failing at download time. Empty placeholder files (`inode/x-empty` or zero-byte with no MIME type) are also skipped. The downloader returns `None` for these files instead of raising `SourceConnectionError`, and `count_files_recursively` excludes them from file counts.
+
 ## [1.6.4]
 
 ### Enhancements
@@ -7,7 +57,6 @@
 ### Fixes
 
 - **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
-
 ## [1.6.3]
 
 ### Enhancements
