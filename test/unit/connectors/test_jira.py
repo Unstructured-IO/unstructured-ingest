@@ -5,9 +5,9 @@ from unstructured_ingest.processes.connectors.jira import (
     JiraAccessConfig,
     JiraConnectionConfig,
     JiraDownloader,
-    JiraIssueMetadata,
     JiraIndexer,
     JiraIndexerConfig,
+    JiraIssueMetadata,
 )
 
 

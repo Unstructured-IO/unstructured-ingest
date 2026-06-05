@@ -116,7 +116,10 @@ class JiraAccessConfig(AccessConfig):
         default=None,
     )
     refresh_token: Optional[str] = Field(
-        description="Atlassian OAuth 2.0 refresh token",
+        description=(
+            "Atlassian OAuth 2.0 refresh token. Used by the platform to refresh expired "
+            "access tokens before each job run."
+        ),
         default=None,
     )
 

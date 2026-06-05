@@ -195,6 +195,33 @@ def test_get_space_by_key_falls_back_to_personal_space_alias(connection_config):
     )
 
 
+def test_list_spaces_paginates_until_configured_limit(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(max_num_of_spaces=251),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {
+            "results": [{"id": i, "key": f"SPACE-{i}"} for i in range(250)],
+            "_links": {"next": "/wiki/api/v2/spaces?cursor=next"},
+        },
+        {"results": [{"id": 250, "key": "SPACE-250"}]},
+    ]
+
+    spaces = indexer._list_spaces(mock_client)
+
+    assert len(spaces) == 251
+    assert spaces[-1] == {"id": 250, "key": "SPACE-250"}
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/spaces", params={"limit": 250}),
+            mock.call("api/v2/spaces?cursor=next", params=None),
+        ],
+        any_order=False,
+    )
+
+
 def test_get_docs_ids_within_one_space_uses_v2_pages(connection_config):
     indexer = ConfluenceIndexer(
         connection_config=connection_config,
@@ -212,6 +239,36 @@ def test_get_docs_ids_within_one_space_uses_v2_pages(connection_config):
     mock_client.get.assert_called_once_with(
         "api/v2/pages",
         params={"space-id": 987, "limit": 2},
+    )
+
+
+def test_get_docs_ids_within_one_space_paginates_until_configured_limit(connection_config):
+    indexer = ConfluenceIndexer(
+        connection_config=connection_config,
+        index_config=ConfluenceIndexerConfig(max_num_of_docs_from_each_space=251),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get.side_effect = [
+        {
+            "results": [{"id": str(i)} for i in range(250)],
+            "_links": {"next": "/wiki/api/v2/pages?cursor=next"},
+        },
+        {"results": [{"id": "250"}]},
+    ]
+
+    with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+
+        doc_ids = indexer._get_docs_ids_within_one_space(987)
+
+    assert len(doc_ids) == 251
+    assert doc_ids[-1] == {"space_id": 987, "doc_id": "250"}
+    mock_client.get.assert_has_calls(
+        [
+            mock.call("api/v2/pages", params={"space-id": 987, "limit": 250}),
+            mock.call("api/v2/pages?cursor=next", params=None),
+        ],
+        any_order=False,
     )
 
 

@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
@@ -63,7 +64,10 @@ class ConfluenceAccessConfig(AccessConfig):
         default=None,
     )
     refresh_token: Optional[str] = Field(
-        description="Atlassian OAuth 2.0 refresh token",
+        description=(
+            "Atlassian OAuth 2.0 refresh token. Used by the platform to refresh expired "
+            "access tokens before each job run."
+        ),
         default=None,
     )
 
@@ -161,6 +165,41 @@ class ConfluenceIndexer(Indexer):
     index_config: ConfluenceIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @staticmethod
+    def _get_next_page_path(response: dict) -> Optional[str]:
+        next_link = response.get("_links", {}).get("next")
+        if not next_link:
+            return None
+
+        parsed_next_link = urlparse(next_link)
+        next_path = parsed_next_link.path or next_link
+        if "/wiki/" in next_path:
+            next_path = next_path.split("/wiki/", maxsplit=1)[1]
+        else:
+            next_path = next_path.lstrip("/")
+        if parsed_next_link.query:
+            next_path = f"{next_path}?{parsed_next_link.query}"
+        return next_path
+
+    def _paginate_v2_results(
+        self,
+        client: "Confluence",
+        *,
+        path: str,
+        params: dict,
+        limit: int,
+    ) -> List[dict]:
+        results: List[dict] = []
+        next_path: Optional[str] = path
+        next_params: Optional[dict] = params
+        while next_path and len(results) < limit:
+            response = client.get(next_path, params=next_params)
+            remaining = limit - len(results)
+            results.extend(response.get("results", [])[:remaining])
+            next_path = self._get_next_page_path(response)
+            next_params = None
+        return results
+
     def _list_spaces(
         self,
         client: "Confluence",
@@ -169,16 +208,21 @@ class ConfluenceIndexer(Indexer):
         limit: Optional[int] = None,
         space_type: Optional[str] = None,
     ) -> List[dict]:
+        target_limit = limit or self.index_config.max_num_of_spaces
         params: dict = {
-            "limit": min(limit or self.index_config.max_num_of_spaces, CONFLUENCE_SPACE_PAGE_SIZE),
+            "limit": min(target_limit, CONFLUENCE_SPACE_PAGE_SIZE),
         }
         if keys:
             params["keys"] = keys
         if space_type:
             params["type"] = space_type
             params["status"] = "current"
-        response = client.get("api/v2/spaces", params=params)
-        return response.get("results", [])
+        return self._paginate_v2_results(
+            client,
+            path="api/v2/spaces",
+            params=params,
+            limit=target_limit,
+        )
 
     @staticmethod
     def _space_matches_key(space: dict, space_key: str) -> bool:
@@ -252,8 +296,9 @@ class ConfluenceIndexer(Indexer):
 
     def _get_docs_ids_within_one_space(self, space_id: int) -> List[dict]:
         with self.connection_config.get_client() as client:
-            response = client.get(
-                "api/v2/pages",
+            pages = self._paginate_v2_results(
+                client,
+                path="api/v2/pages",
                 params={
                     "space-id": space_id,
                     "limit": min(
@@ -261,10 +306,9 @@ class ConfluenceIndexer(Indexer):
                         CONFLUENCE_PAGE_PAGE_SIZE,
                     ),
                 },
+                limit=self.index_config.max_num_of_docs_from_each_space,
             )
-        pages = response.get("results", [])
-        limited_pages = pages[: self.index_config.max_num_of_docs_from_each_space]
-        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in limited_pages]
+        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
