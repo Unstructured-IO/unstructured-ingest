@@ -86,14 +86,20 @@ def google_drive_folder_with_trashed_file(google_drive_connection_config):
     creds = service_account.Credentials.from_service_account_info(access_config.service_account_key)
     service = build("drive", "v3", credentials=creds)
 
+    # Nest the fixture folder under the env-provided drive id so it inherits
+    # that parent's storage quota. Service accounts have no My Drive quota of
+    # their own, so a parentless folder.create raises storageQuotaExceeded.
+    parent_id = google_drive_connection_config.drive_id
     folder = (
         service.files()
         .create(
             body={
                 "name": f"utic-trashed-fixture-{uuid.uuid4()}",
                 "mimeType": "application/vnd.google-apps.folder",
+                "parents": [parent_id],
             },
             fields="id",
+            supportsAllDrives=True,
         )
         .execute()
     )
@@ -107,6 +113,7 @@ def google_drive_folder_with_trashed_file(google_drive_connection_config):
                 body={"name": name, "parents": [folder_id], "mimeType": "text/plain"},
                 media_body=media,
                 fields="id",
+                supportsAllDrives=True,
             )
             .execute()
         )
@@ -114,13 +121,15 @@ def google_drive_folder_with_trashed_file(google_drive_connection_config):
 
     live_id = _upload("live.txt")
     trashed_id = _upload("trashed.txt")
-    service.files().update(fileId=trashed_id, body={"trashed": True}).execute()
+    service.files().update(
+        fileId=trashed_id, body={"trashed": True}, supportsAllDrives=True
+    ).execute()
 
     try:
         yield {"folder_id": folder_id, "live_id": live_id, "trashed_id": trashed_id}
     finally:
         # Permanently delete fixture folder (and its children, trashed or not).
-        service.files().delete(fileId=folder_id).execute()
+        service.files().delete(fileId=folder_id, supportsAllDrives=True).execute()
 
 
 @pytest.mark.tags("google-drive", "integration")
