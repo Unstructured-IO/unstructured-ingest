@@ -297,7 +297,9 @@ class GoogleDriveIndexer(Indexer):
         while stack:
             current_folder = stack.pop()
             # Always list all items under the current folder.
-            query = f"'{current_folder}' in parents"
+            # `trashed = false` excludes items the user has moved to Drive's trash;
+            # without it, files.list returns trashed items in shared-drive corpora.
+            query = f"'{current_folder}' in parents and trashed = false"
             page_token = None
             while True:
                 response = files_client.list(
@@ -371,7 +373,7 @@ class GoogleDriveIndexer(Indexer):
                         spaces="drive",
                         fields="files(id)",
                         pageSize=1,
-                        q=f"'{self.connection_config.drive_id}' in parents",
+                        q=f"'{self.connection_config.drive_id}' in parents and trashed = false",
                     ).execute()
                     if not response.get("files"):
                         logger.warning(
@@ -454,7 +456,9 @@ class GoogleDriveIndexer(Indexer):
         previous_path: Optional[str] = None,
     ) -> list[dict]:
         fields_input = "nextPageToken, files({})".format(",".join(self.fields))
-        q = f"'{object_id}' in parents"
+        # `trashed = false` excludes items the user has moved to Drive's trash;
+        # without it, files.list returns trashed items in shared-drive corpora.
+        q = f"'{object_id}' in parents and trashed = false"
         # Filter by extension but still include any directories
         if extensions:
             q = f"{q} and ({_build_extension_query_filter(extensions)})"
