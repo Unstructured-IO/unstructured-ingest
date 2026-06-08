@@ -1,8 +1,14 @@
-## [1.6.11]
+## [1.6.12]
 
 ### Enhancements
 
 - **feat(atlassian): support OAuth-backed Jira and Confluence cloud sources.** Jira and Confluence source configs accept Atlassian OAuth access tokens for API gateway requests with cloud IDs, while refresh tokens are carried for platform-side rotation before job dispatch. Confluence v2 indexing now paginates space and page discovery up to the configured limits so large tenants are not truncated.
+
+## [1.6.11]
+
+### Fixes
+
+- **fix(google-drive): exclude trashed items from indexer queries.** The Google Drive connector's `files.list` calls filtered by parent id only, so items the user had moved to Drive's trash were pulled and ingested like live content — "delete in Drive UI" did not remove the file from the corpus on the next ingest. Each list-query call site (`count_files_recursively`, the non-recursive precheck empty-folder probe, and `get_paginated_results`) now appends `and trashed = false`, matching the Drive v3 query semantics that exclude trash explicitly.
 
 ## [1.6.10]
 
