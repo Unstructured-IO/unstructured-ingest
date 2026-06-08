@@ -9,6 +9,7 @@ from unstructured_ingest.processes.connectors.google_drive import (
     GOOGLE_DRIVE_SKIP_MIME_TYPES,
     GOOGLE_EXPORT_MIME_MAP,
     GoogleDriveAccessConfig,
+    GoogleDriveConnectionConfig,
     GoogleDriveDownloader,
     GoogleDriveDownloaderConfig,
     GoogleDriveIndexer,
@@ -206,9 +207,10 @@ class TestGoogleDriveNativeExports:
             }
         ]
         direct_download.assert_not_called()
-        assert file_data.additional_metadata["export_mime_type"] == GOOGLE_EXPORT_MIME_MAP[
-            source_mime_type
-        ]
+        assert (
+            file_data.additional_metadata["export_mime_type"]
+            == GOOGLE_EXPORT_MIME_MAP[source_mime_type]
+        )
         assert file_data.additional_metadata["export_extension"] == expected_extension
         assert file_data.additional_metadata["download_method"] == "google_workspace_export"
 
@@ -353,6 +355,95 @@ class TestGoogleDriveSkipFiles:
 
         # pdf-1 + doc = 2; shortcut, form, empty are all skipped
         assert count == 2
+
+
+class TestGoogleDriveExcludesTrashed:
+    """The indexer must filter out trashed Drive items by passing `trashed = false`
+    in its `files.list` queries. Without it, Drive returns trashed items in
+    shared-drive corpora and the bug fires."""
+
+    def test_get_paginated_results_query_excludes_trashed(self):
+        files_client = MagicMock()
+        files_client.list.return_value.execute.return_value = {"files": []}
+        indexer = GoogleDriveIndexer(
+            connection_config=MagicMock(),
+            index_config=GoogleDriveIndexerConfig(),
+        )
+
+        indexer.get_paginated_results(files_client=files_client, object_id="folder-id")
+
+        query = files_client.list.call_args.kwargs["q"]
+        assert "trashed = false" in query
+
+    def test_get_paginated_results_query_excludes_trashed_with_extensions(self):
+        files_client = MagicMock()
+        files_client.list.return_value.execute.return_value = {"files": []}
+        indexer = GoogleDriveIndexer(
+            connection_config=MagicMock(),
+            index_config=GoogleDriveIndexerConfig(),
+        )
+
+        indexer.get_paginated_results(
+            files_client=files_client,
+            object_id="folder-id",
+            extensions=["pdf"],
+        )
+
+        query = files_client.list.call_args.kwargs["q"]
+        assert "trashed = false" in query
+
+    def test_count_files_recursively_query_excludes_trashed(self):
+        files_client = _FakeGoogleDriveFilesClient(responses=[{"files": []}])
+
+        GoogleDriveIndexer.count_files_recursively(
+            files_client=files_client,
+            folder_id="folder-id",
+        )
+
+        assert len(files_client.list_calls) == 1
+        assert "trashed = false" in files_client.list_calls[0]["q"]
+
+    def test_precheck_non_recursive_empty_folder_query_excludes_trashed(self, monkeypatch):
+        connection_config = GoogleDriveConnectionConfig(
+            drive_id="drive-id",
+            access_config=GoogleDriveAccessConfig(oauth_token="t"),
+        )
+        indexer = GoogleDriveIndexer(
+            connection_config=connection_config,
+            index_config=GoogleDriveIndexerConfig(recursive=False),
+        )
+
+        files_client = MagicMock()
+        files_client.list.return_value.execute.return_value = {"files": []}
+
+        class _FakeClientCtx:
+            def __enter__(self_inner):
+                return files_client
+
+            def __exit__(self_inner, *args):
+                return False
+
+        monkeypatch.setattr(
+            GoogleDriveConnectionConfig, "get_client", lambda self: _FakeClientCtx()
+        )
+        monkeypatch.setattr(
+            GoogleDriveIndexer, "verify_drive_api_enabled", staticmethod(lambda client: None)
+        )
+        monkeypatch.setattr(
+            indexer,
+            "get_root_info",
+            lambda files_client, object_id: {
+                "id": object_id,
+                "name": "root",
+                "mimeType": "application/vnd.google-apps.folder",
+            },
+        )
+
+        indexer.precheck()
+
+        # First list call after the precheck path enters the non-recursive branch.
+        empty_folder_call = files_client.list.call_args
+        assert "trashed = false" in empty_folder_call.kwargs["q"]
 
 
 class TestGoogleDriveExtensionFiltering:

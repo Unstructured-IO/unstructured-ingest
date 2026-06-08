@@ -1,3 +1,9 @@
+## [1.6.11]
+
+### Fixes
+
+- **fix(google-drive): exclude trashed items from indexer queries.** The Google Drive connector's `files.list` calls filtered by parent id only, so items the user had moved to Drive's trash were pulled and ingested like live content — "delete in Drive UI" did not remove the file from the corpus on the next ingest. Each list-query call site (`count_files_recursively`, the non-recursive precheck empty-folder probe, and `get_paginated_results`) now appends `and trashed = false`, matching the Drive v3 query semantics that exclude trash explicitly.
+
 ## [1.6.10]
 
 ### Fixes
