@@ -1,3 +1,9 @@
+## [1.6.12]
+
+### Enhancements
+
+- **feat(atlassian): support OAuth-backed Jira and Confluence cloud sources.** Jira and Confluence source configs accept Atlassian OAuth access tokens for API gateway requests with cloud IDs, while refresh tokens are carried for platform-side rotation before job dispatch. Confluence v2 indexing now paginates space and page discovery up to the configured limits so large tenants are not truncated.
+
 ## [1.6.11]
 
 ### Fixes
