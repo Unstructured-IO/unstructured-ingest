@@ -13,23 +13,48 @@
       "user_pname": "devops@unstructuredio.onmicrosoft.com",
       "server_relative_path": "eml/fake-email.txt"
     },
-    "date_created": "1738191393.0",
-    "date_modified": "1738191393.0",
-    "date_processed": "1749467372.213391",
-    "permissions_data": null,
+    "date_created": "1738220193.0",
+    "date_modified": "1738220193.0",
+    "date_processed": "1781214510.287487",
+    "permissions_data": [
+      {
+        "read": {
+          "users": [
+            "134e790e-20ec-428c-afc7-2544e06a93b9"
+          ],
+          "groups": []
+        }
+      },
+      {
+        "update": {
+          "users": [
+            "134e790e-20ec-428c-afc7-2544e06a93b9"
+          ],
+          "groups": []
+        }
+      },
+      {
+        "delete": {
+          "users": [
+            "134e790e-20ec-428c-afc7-2544e06a93b9"
+          ],
+          "groups": []
+        }
+      }
+    ],
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/_layouts/15/download.aspx?UniqueId=f80bdaaf-8ecd-49b7-978d-26206b489151&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJjODE1ZWNjMy0zZThiLTQ3MWEtYmIwNC03MTg0ODY1ZDNmNGQiLCJhcHBfZGlzcGxheW5hbWUiOiJ1bnN0cnVjdHVyZWQtdGVzdC1pbmdlc3QiLCJuYW1laWQiOiI5MWRlYWU1Ni1jMzhkLTRhNTUtYmFkOC1lNGQyMWJkZGYwZDhAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLW15LnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3NDk0NzA5NzIifQ.CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCIL5l8qE1JM-EAUaDTIwLjE5MC4xNTMuMzIqLHhjU3VyNHBDa040c1E5NXZsbm8yTmozVWU1SWMzRE1mck1SUnRNdDNJNFU9MK8BOAFCEKGmaOciEACQKB3mJWxMWzxKEGhhc2hlZHByb29mdG9rZW56ATG6ATthbGxzaXRlcy5yZWFkIGFsbGZpbGVzLndyaXRlIGFsbGZpbGVzLnJlYWQgYWxscHJvZmlsZXMucmVhZMgBAQ.4dRlVanMBfxEvOhtWdbo9Fa5btHoBhMDJsSIJovHUyI&ApiVersion=2.0",
+    "@microsoft.graph.downloadUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/_layouts/15/download.aspx?UniqueId=f80bdaaf-8ecd-49b7-978d-26206b489151&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJjODE1ZWNjMy0zZThiLTQ3MWEtYmIwNC03MTg0ODY1ZDNmNGQiLCJhcHBfZGlzcGxheW5hbWUiOiJ1bnN0cnVjdHVyZWQtdGVzdC1pbmdlc3QiLCJuYW1laWQiOiI5MWRlYWU1Ni1jMzhkLTRhNTUtYmFkOC1lNGQyMWJkZGYwZDhAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLW15LnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3ODEyMTgxMDkifQ.CkAKDGVudHJhX2NsYWltcxIwQ0lIWXJORUdFQUFhRmxCaFkyMURkV3BqVG10TGRUWkZRM3BVZUhNdFFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCKip89Smg6Q_EAUaDTQwLjEyNi4yNi4xNjAqLHhjU3VyNHBDa040c1E5NXZsbm8yTmozVWU1SWMzRE1mck1SUnRNdDNJNFU9MK8BOAFCEKIcrVUvYADQkdf3qopJAdNKEGhhc2hlZHByb29mdG9rZW56ATG6ATthbGxzaXRlcy5yZWFkIGFsbGZpbGVzLndyaXRlIGFsbGZpbGVzLnJlYWQgYWxscHJvZmlsZXMucmVhZMgBAQ.YGMlAs6B94_K3dMpGzMHglYGhdkGoI1SlLQV-pLhdw8&ApiVersion=2.0",
     "eTag": "\"{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
     "id": "01FKMPQP5P3IF7RTMOW5EZPDJGEBVUREKR",
     "name": "fake-email.txt",
     "webUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/Documents/eml/fake-email.txt",
     "cTag": "\"c:{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
-    "size": 830,
-    "isAuthoritative": false
+    "isAuthoritative": false,
+    "size": 830
   },
   "reprocess": false,
-  "local_download_path": "/tmp/tmppx_cse9y/fake-email.txt",
+  "local_download_path": "/private/var/folders/0h/18r8xv9j73z139hgkmdkvn5c0000gn/T/tmpqkub5qaw/fake-email.txt",
   "display_name": "eml/fake-email.txt"
 }

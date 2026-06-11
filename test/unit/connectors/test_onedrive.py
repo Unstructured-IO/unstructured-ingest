@@ -453,9 +453,11 @@ class TestFetchPermissionsRaw:
         indexer = _make_indexer()
         items = [_make_drive_item("f.docx")]
         body = _batch_response(status_code=401)
-        with patch("requests.post", return_value=body):
-            with pytest.raises(UserAuthError, match="Unauthorized"):
-                indexer._fetch_permissions_raw(items, access_token="bad-token")
+        with (
+            patch("requests.post", return_value=body),
+            pytest.raises(UserAuthError, match="Unauthorized"),
+        ):
+            indexer._fetch_permissions_raw(items, access_token="bad-token")
 
     def test_envelope_500_degrades_gracefully(self):
         indexer = _make_indexer()
