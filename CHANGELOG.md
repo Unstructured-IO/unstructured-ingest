@@ -6,7 +6,7 @@
 
 ### Enhancements
 
-- **feat(onedrive): expose document ACLs in `permissions_data`.** OneDrive previously always returned `permissions_data: null` because the indexer never populated it. The OneDrive base now performs the same chunked Graph `/$batch` permission fetch as SharePoint (with `tenacity`-backed retry on transient `429` / `503` / network errors, and a refresh-and-retry-once on envelope `401` so crawls that outlive the original access-token TTL don't fail mid-stream) and writes the canonical `read` / `update` / `delete` buckets (matching the Google Drive / Confluence schema) into `metadata.permissions_data`. Empty fetches and per-item failures degrade to the previous `null`-equivalent behavior so existing pipelines see no regression. The shared permission machinery now lives on `OnedriveIndexer`; `SharepointIndexer` inherits it. `tenacity` is added to the `onedrive` and `sharepoint` extras.
+- **feat(onedrive): expose document ACLs in `permissions_data`.** OneDrive previously always returned `permissions_data: null` because the indexer never populated it. The OneDrive base now performs the same chunked Graph `/$batch` permission fetch as SharePoint (with `tenacity`-backed retry on transient `429` / `503` / network errors) and writes the canonical `read` / `update` / `delete` buckets (matching the Google Drive / Confluence schema) into `metadata.permissions_data`. Empty fetches and per-item failures degrade to the previous `null`-equivalent behavior so existing pipelines see no regression. The shared permission machinery now lives on `OnedriveIndexer`; `SharepointIndexer` inherits it. `tenacity` is added to the `onedrive` and `sharepoint` extras.
 
 ## [1.6.12]
 

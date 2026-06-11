@@ -476,10 +476,6 @@ class OnedriveIndexer(Indexer):
         have a mutable-default-arg singleton that collapses all Permission
         identities to whichever user was deserialized last in the process.
 
-        On envelope 401 the access token is refreshed via
-        connection_config.get_token() and the batch is retried once, so crawls
-        that outlive the original token TTL don't fail mid-stream.
-
         Returns {drive_item.id: [raw_permission_dict, ...]}. Failed sub-requests
         and exhausted retries (network / 429 / 503) degrade to empty lists.
         """
@@ -507,6 +503,10 @@ class OnedriveIndexer(Indexer):
                 for idx, di in enumerate(drive_items)
             ]
         }
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
 
         @retry(
             stop=stop_after_attempt(5),
@@ -514,11 +514,7 @@ class OnedriveIndexer(Indexer):
             retry=retry_if_exception_type(_RetriableBatchError),
             reraise=True,
         )
-        def _post(token: str):
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            }
+        def _post():
             try:
                 r = requests.post(
                     "https://graph.microsoft.com/v1.0/$batch",
@@ -533,7 +529,7 @@ class OnedriveIndexer(Indexer):
             return r
 
         try:
-            resp = _post(access_token)
+            resp = _post()
         except _RetriableBatchError as exc:
             logger.warning(
                 f"giving up after retries on Graph $batch: {exc}; "
@@ -542,32 +538,10 @@ class OnedriveIndexer(Indexer):
             return {di.id: [] for di in drive_items}
 
         if resp.status_code == 401:
-            # token may have expired mid-crawl; refresh and retry once before
-            # treating as a real auth failure
-            logger.info(
-                "Graph $batch returned 401; refreshing access token and retrying once"
+            raise UserAuthError(
+                "Unauthorized fetching permissions. Check credentials and required "
+                "Graph scope (Files.Read.All / Sites.Read.All)"
             )
-            refresh_resp = self.connection_config.get_token()
-            if "error" in refresh_resp:
-                raise UserAuthError(
-                    f"Token refresh after 401 failed: {refresh_resp['error']} "
-                    f"({refresh_resp.get('error_description')})"
-                )
-            try:
-                resp = _post(refresh_resp["access_token"])
-            except _RetriableBatchError as exc:
-                logger.warning(
-                    f"giving up after retries on Graph $batch (post-refresh): {exc}; "
-                    f"skipping permissions for {len(drive_items)} items"
-                )
-                return {di.id: [] for di in drive_items}
-            if resp.status_code == 401:
-                raise UserAuthError(
-                    "Unauthorized fetching permissions even after token refresh. "
-                    "Check credentials and required Graph scope "
-                    "(Files.Read.All / Sites.Read.All)"
-                )
-
         if resp.status_code >= 400:
             logger.warning(
                 f"Graph $batch returned {resp.status_code}; "

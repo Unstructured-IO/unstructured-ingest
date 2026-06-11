@@ -449,71 +449,13 @@ class TestFetchPermissionsRaw:
         assert result["item-f0.docx"][0]["grantedToV2"]["user"]["id"] == "a"
         assert result["item-f1.docx"] == []
 
-    def test_envelope_401_refreshes_and_retries_succeeds(self):
-        # crawl outlived the access-token TTL; refresh + retry must succeed
-        # without surfacing a UserAuthError to the caller
+    def test_envelope_401_raises_user_auth_error(self):
         indexer = _make_indexer()
-        indexer.connection_config.get_token.return_value = {"access_token": "fresh-tok"}
-        items = [_make_drive_item("f.docx")]
-
-        expired_resp = _batch_response(status_code=401)
-        success_resp = _batch_response(
-            responses=[
-                {
-                    "id": "0",
-                    "status": 200,
-                    "body": {
-                        "value": [
-                            {"roles": ["read"], "grantedToV2": {"user": {"id": "u-1"}}}
-                        ]
-                    },
-                }
-            ]
-        )
-        with patch("requests.post", side_effect=[expired_resp, success_resp]) as mock_post:
-            result = indexer._fetch_permissions_raw(items, access_token="stale-tok")
-
-        assert mock_post.call_count == 2
-        assert (
-            mock_post.call_args_list[0][1]["headers"]["Authorization"]
-            == "Bearer stale-tok"
-        )
-        assert (
-            mock_post.call_args_list[1][1]["headers"]["Authorization"]
-            == "Bearer fresh-tok"
-        )
-        indexer.connection_config.get_token.assert_called_once()
-        assert result["item-f.docx"][0]["grantedToV2"]["user"]["id"] == "u-1"
-
-    def test_envelope_401_twice_raises_user_auth_error(self):
-        # if the refreshed token also gets 401, credentials are genuinely bad
-        indexer = _make_indexer()
-        indexer.connection_config.get_token.return_value = {"access_token": "fresh-tok"}
         items = [_make_drive_item("f.docx")]
         body = _batch_response(status_code=401)
-
-        with patch("requests.post", return_value=body) as mock_post:
-            with pytest.raises(UserAuthError, match="even after token refresh"):
-                indexer._fetch_permissions_raw(items, access_token="stale-tok")
-
-        assert mock_post.call_count == 2
-
-    def test_envelope_401_with_failed_refresh_raises_user_auth_error(self):
-        # 401 + token-refresh itself errors -> raise without ever retrying the post
-        indexer = _make_indexer()
-        indexer.connection_config.get_token.return_value = {
-            "error": "invalid_client",
-            "error_description": "AADSTS7000215: invalid client secret",
-        }
-        items = [_make_drive_item("f.docx")]
-
-        with patch(
-            "requests.post", return_value=_batch_response(status_code=401)
-        ) as mock_post:
-            with pytest.raises(UserAuthError, match="Token refresh after 401 failed"):
-                indexer._fetch_permissions_raw(items, access_token="stale-tok")
-
-        assert mock_post.call_count == 1
+        with patch("requests.post", return_value=body):
+            with pytest.raises(UserAuthError, match="Unauthorized"):
+                indexer._fetch_permissions_raw(items, access_token="bad-token")
 
     def test_envelope_500_degrades_gracefully(self):
         indexer = _make_indexer()
