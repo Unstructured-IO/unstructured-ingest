@@ -52,6 +52,31 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "onedrive"
 MAX_BYTES_SIZE = 512_000_000
 
+# https://graph.microsoft.com/v1.0/$batch hard limit
+PERMISSIONS_BATCH_SIZE = 20
+
+# https://learn.microsoft.com/en-us/graph/api/resources/permission
+MICROSOFT_ROLE_MAPPING: dict[str, list[str]] = {
+    "owner": ["read", "update", "delete"],
+    "write": ["read", "update"],
+    "read": ["read"],
+    "member": ["read", "update"],
+    "sp.full control": ["read", "update", "delete"],
+    "sp.manage lists": ["read", "update", "delete"],
+    "sp.manage hierarchy": ["read", "update", "delete"],
+    "sp.approve": ["read", "update"],
+    "sp.edit": ["read", "update"],
+    "sp.contribute": ["read", "update"],
+    "sp.view only": ["read"],
+    "sp.restricted read": ["read"],
+    "sp.limited access": [],
+    "sp.restricted interfaces for translation": [],
+}
+
+
+class _RetriableBatchError(Exception):
+    """Marker exception for transient Graph $batch failures (network, 429, 503)."""
+
 
 class OnedriveAccessConfig(AccessConfig):
     client_cred: Optional[str] = Field(default=None, description="Microsoft App client secret")
@@ -268,7 +293,11 @@ class OnedriveIndexer(Indexer):
     async def get_properties(self, drive_item: "DriveItem") -> dict:
         return await asyncio.to_thread(self.get_properties_sync, drive_item)
 
-    def drive_item_to_file_data_sync(self, drive_item: "DriveItem") -> FileData:
+    def drive_item_to_file_data_sync(
+        self,
+        drive_item: "DriveItem",
+        raw_permissions: Optional[list[dict[str, Any]]] = None,
+    ) -> FileData:
         file_path = drive_item.parent_reference.path.split(":")[-1]
         file_path = file_path[1:] if file_path and file_path[0] == "/" else file_path
         filename = drive_item.name
@@ -282,7 +311,7 @@ class OnedriveIndexer(Indexer):
         date_created_at = (
             parser.parse(str(drive_item.created_datetime)) if drive_item.created_datetime else None
         )
-        return FileData(
+        file_data = FileData(
             identifier=drive_item.id,
             connector_type=self.connector_type,
             source_identifiers=SourceIdentifiers(
@@ -302,10 +331,240 @@ class OnedriveIndexer(Indexer):
             additional_metadata=self.get_properties_sync(drive_item=drive_item),
             display_name=server_path,
         )
+        if raw_permissions:
+            file_data.metadata.permissions_data = self.extract_permissions(raw_permissions)
+        return file_data
 
-    async def drive_item_to_file_data(self, drive_item: "DriveItem") -> FileData:
+    async def drive_item_to_file_data(
+        self,
+        drive_item: "DriveItem",
+        raw_permissions: Optional[list[dict[str, Any]]] = None,
+    ) -> FileData:
         # Offload the file data creation if it's not guaranteed async
-        return await asyncio.to_thread(self.drive_item_to_file_data_sync, drive_item)
+        return await asyncio.to_thread(
+            self.drive_item_to_file_data_sync, drive_item, raw_permissions
+        )
+
+    @staticmethod
+    def _extract_identity_ids_from_raw(
+        raw_props: dict[str, Any],
+    ) -> tuple[set[str], set[str]]:
+        """Extract Azure AD user/group IDs from a raw Graph permission dict.
+
+        Operates on raw JSON dicts returned directly from Graph $batch rather
+        than office365 typed accessors. The office365 SDK's IdentitySet /
+        SharePointIdentitySet declare their child Identity instances as mutable
+        default arguments, so all in-process Permission objects share the same
+        Identity singletons and every typed read collapses to whichever user
+        was deserialized last. Reading raw dicts side-steps that bug entirely.
+
+        Excludes SharePoint site groups (numeric IDs, not resolvable via Graph).
+        """
+        user_ids: set[str] = set()
+        group_ids: set[str] = set()
+
+        for key in ("grantedToV2", "grantedTo"):
+            identity_set = raw_props.get(key)
+            if not identity_set:
+                continue
+
+            user = identity_set.get("user")
+            if user and user.get("id"):
+                user_ids.add(user["id"])
+
+            group = identity_set.get("group")
+            if group and group.get("id"):
+                group_ids.add(group["id"])
+
+            # v2 supersedes v1 entirely, even when v2 has only unresolvable
+            # siteGroup entries and no extractable Azure AD identities.
+            break
+
+        for key in ("grantedToIdentitiesV2", "grantedToIdentities"):
+            identities = raw_props.get(key)
+            if not identities:
+                continue
+            for identity_set in identities:
+                user = identity_set.get("user")
+                if user and user.get("id"):
+                    user_ids.add(user["id"])
+                group = identity_set.get("group")
+                if group and group.get("id"):
+                    group_ids.add(group["id"])
+            break
+
+        return user_ids, group_ids
+
+    def extract_permissions(
+        self,
+        raw_permissions: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Normalize Graph permission dicts to the canonical read/update/delete schema.
+
+        Input is a list of raw permission JSON dicts (as returned by Graph's
+        permissions endpoint), not office365 Permission objects. Output matches
+        the schema used by Google Drive and Confluence connectors.
+        """
+        if not raw_permissions:
+            logger.debug("no permissions found")
+            return [{}]
+
+        normalized: dict[str, dict[str, set[str]]] = {
+            "read": {"users": set(), "groups": set()},
+            "update": {"users": set(), "groups": set()},
+            "delete": {"users": set(), "groups": set()},
+        }
+
+        for raw_props in raw_permissions:
+            roles = raw_props.get("roles", [])
+
+            operations: set[str] = set()
+            for role in roles:
+                mapped = MICROSOFT_ROLE_MAPPING.get(role.lower(), [])
+                operations.update(mapped)
+                if not mapped and role.lower() not in MICROSOFT_ROLE_MAPPING:
+                    logger.debug(f"unmapped Microsoft permission role: {role}")
+
+            if not operations:
+                continue
+
+            user_ids, group_ids = self._extract_identity_ids_from_raw(raw_props)
+
+            for op in operations:
+                normalized[op]["users"].update(user_ids)
+                normalized[op]["groups"].update(group_ids)
+
+        # turn sets into sorted lists for consistency and json serialization
+        result: dict[str, dict[str, list[str]]] = {}
+        for op, principals in normalized.items():
+            result[op] = {k: sorted(v) for k, v in principals.items()}
+
+        logger.debug(f"normalized permissions generated: {result}")
+        return [{k: v} for k, v in result.items()]
+
+    @staticmethod
+    def _parse_batch_response(
+        payload: dict[str, Any],
+        drive_items: list["DriveItem"],
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Map Graph $batch sub-responses to {drive_item.id: raw_permission_dicts}."""
+        by_id: dict[str, list[dict[str, Any]]] = {di.id: [] for di in drive_items}
+        for sub in payload.get("responses", []):
+            sub_id = sub.get("id")
+            # Builtin ValueError is shadowed in this module; use explicit
+            # isdigit() check instead of try/except int(...).
+            if not (isinstance(sub_id, str) and sub_id.isdigit()):
+                continue
+            idx = int(sub_id)
+            if idx >= len(drive_items):
+                continue
+            di = drive_items[idx]
+            status = sub.get("status")
+            if status == 200:
+                by_id[di.id] = sub.get("body", {}).get("value", [])
+            elif status in (401, 403):
+                logger.error(
+                    f"forbidden fetching permissions for {di.name} (status {status})"
+                )
+            elif status == 404:
+                logger.warning(f"permissions not found for {di.name}")
+            else:
+                logger.warning(
+                    f"unexpected status {status} fetching permissions for {di.name}: "
+                    f"{sub.get('body')}"
+                )
+        return by_id
+
+    @requires_dependencies(["requests", "tenacity"], extras="onedrive")
+    def _fetch_permissions_raw(
+        self,
+        drive_items: list["DriveItem"],
+        access_token: str,
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Fetch raw permission JSON for a batch of drive items via Graph /$batch.
+
+        Calls Graph directly with `requests` rather than going through the
+        office365 SDK, which has a process-global mutable-singleton bug in
+        IdentitySet/SharePointIdentitySet that corrupts every permission's
+        user/group identity to the last one deserialized in the process.
+
+        Returns {drive_item.id: [raw_permission_dict, ...]}. Items whose batch
+        sub-request failed get an empty list (graceful degrade); transient
+        envelope failures (network errors, 429, 503) are retried with
+        exponential backoff and on final failure the entire chunk degrades to
+        empty lists.
+        """
+        import requests
+        from tenacity import (
+            retry,
+            retry_if_exception_type,
+            stop_after_attempt,
+            wait_exponential,
+        )
+
+        if not drive_items:
+            return {}
+
+        body = {
+            "requests": [
+                {
+                    "id": str(idx),
+                    "method": "GET",
+                    "url": (
+                        f"/drives/{di.parent_reference.driveId}"
+                        f"/items/{di.id}/permissions"
+                    ),
+                }
+                for idx, di in enumerate(drive_items)
+            ]
+        }
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+        @retry(
+            stop=stop_after_attempt(5),
+            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=30),
+            retry=retry_if_exception_type(_RetriableBatchError),
+            reraise=True,
+        )
+        def _post():
+            try:
+                r = requests.post(
+                    "https://graph.microsoft.com/v1.0/$batch",
+                    headers=headers,
+                    json=body,
+                    timeout=60,
+                )
+            except requests.exceptions.RequestException as exc:
+                raise _RetriableBatchError(f"network error: {exc}") from exc
+            if r.status_code in (429, 503):
+                raise _RetriableBatchError(f"throttled with status {r.status_code}")
+            return r
+
+        try:
+            resp = _post()
+        except _RetriableBatchError as exc:
+            logger.warning(
+                f"giving up after retries on Graph $batch: {exc}; "
+                f"skipping permissions for {len(drive_items)} items"
+            )
+            return {di.id: [] for di in drive_items}
+
+        if resp.status_code == 401:
+            raise UserAuthError(
+                "Unauthorized fetching permissions. Check credentials and required "
+                "Graph scope (Files.Read.All / Sites.Read.All)"
+            )
+        if resp.status_code >= 400:
+            logger.warning(
+                f"Graph $batch returned {resp.status_code}; "
+                f"skipping permissions for {len(drive_items)} items: {resp.text[:200]}"
+            )
+            return {di.id: [] for di in drive_items}
+
+        return self._parse_batch_response(resp.json(), drive_items)
 
     def is_async(self) -> bool:
         return True
@@ -318,13 +577,21 @@ class OnedriveIndexer(Indexer):
                 f"({token_resp.get('error_description')})"
             )
 
+        access_token = token_resp["access_token"]
         client = await asyncio.to_thread(self.connection_config.get_client)
         root = await self.get_root(client=client)
         drive_items = await self.list_objects(folder=root, recursive=self.index_config.recursive)
 
-        for drive_item in drive_items:
-            file_data = await self.drive_item_to_file_data(drive_item=drive_item)
-            yield file_data
+        for i in range(0, len(drive_items), PERMISSIONS_BATCH_SIZE):
+            chunk = drive_items[i : i + PERMISSIONS_BATCH_SIZE]
+            perms_by_id = await asyncio.to_thread(
+                self._fetch_permissions_raw, chunk, access_token
+            )
+            for drive_item in chunk:
+                yield await self.drive_item_to_file_data(
+                    drive_item=drive_item,
+                    raw_permissions=perms_by_id.get(drive_item.id, []),
+                )
 
 
 class OnedriveDownloaderConfig(DownloaderConfig):
