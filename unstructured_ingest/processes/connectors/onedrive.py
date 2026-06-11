@@ -351,14 +351,8 @@ class OnedriveIndexer(Indexer):
     ) -> tuple[set[str], set[str]]:
         """Extract Azure AD user/group IDs from a raw Graph permission dict.
 
-        Operates on raw JSON dicts returned directly from Graph $batch rather
-        than office365 typed accessors. The office365 SDK's IdentitySet /
-        SharePointIdentitySet declare their child Identity instances as mutable
-        default arguments, so all in-process Permission objects share the same
-        Identity singletons and every typed read collapses to whichever user
-        was deserialized last. Reading raw dicts side-steps that bug entirely.
-
-        Excludes SharePoint site groups (numeric IDs, not resolvable via Graph).
+        SharePoint siteGroup entries (numeric IDs) are excluded — not resolvable
+        via Graph.
         """
         user_ids: set[str] = set()
         group_ids: set[str] = set()
@@ -399,12 +393,8 @@ class OnedriveIndexer(Indexer):
         self,
         raw_permissions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        """Normalize Graph permission dicts to the canonical read/update/delete schema.
-
-        Input is a list of raw permission JSON dicts (as returned by Graph's
-        permissions endpoint), not office365 Permission objects. Output matches
-        the schema used by Google Drive and Confluence connectors.
-        """
+        """Normalize raw Graph permission dicts to the read/update/delete schema
+        shared with Google Drive and Confluence connectors."""
         if not raw_permissions:
             logger.debug("no permissions found")
             return [{}]
@@ -434,7 +424,6 @@ class OnedriveIndexer(Indexer):
                 normalized[op]["users"].update(user_ids)
                 normalized[op]["groups"].update(group_ids)
 
-        # turn sets into sorted lists for consistency and json serialization
         result: dict[str, dict[str, list[str]]] = {}
         for op, principals in normalized.items():
             result[op] = {k: sorted(v) for k, v in principals.items()}
@@ -483,16 +472,12 @@ class OnedriveIndexer(Indexer):
     ) -> dict[str, list[dict[str, Any]]]:
         """Fetch raw permission JSON for a batch of drive items via Graph /$batch.
 
-        Calls Graph directly with `requests` rather than going through the
-        office365 SDK, which has a process-global mutable-singleton bug in
-        IdentitySet/SharePointIdentitySet that corrupts every permission's
-        user/group identity to the last one deserialized in the process.
+        Bypasses the office365 SDK because its IdentitySet/SharePointIdentitySet
+        have a mutable-default-arg singleton that collapses all Permission
+        identities to whichever user was deserialized last in the process.
 
-        Returns {drive_item.id: [raw_permission_dict, ...]}. Items whose batch
-        sub-request failed get an empty list (graceful degrade); transient
-        envelope failures (network errors, 429, 503) are retried with
-        exponential backoff and on final failure the entire chunk degrades to
-        empty lists.
+        Returns {drive_item.id: [raw_permission_dict, ...]}. Failed sub-requests
+        and exhausted retries (network / 429 / 503) degrade to empty lists.
         """
         import requests
         from tenacity import (

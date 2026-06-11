@@ -16,34 +16,27 @@ from unstructured_ingest.processes.connectors.onedrive import (
 
 
 class TestOnedriveAccessConfig:
-    """Tests for OnedriveAccessConfig authentication validation."""
-
     def test_client_cred_only(self):
-        """Client credential alone should be valid (app-only authentication)."""
         config = OnedriveAccessConfig(client_cred="secret-value")
         assert config.client_cred == "secret-value"
         assert config.oauth_token is None
 
     def test_client_cred_and_password(self):
-        """client_cred + password is the password-grant flow and should be valid."""
         config = OnedriveAccessConfig(client_cred="secret-value", password="user-password")
         assert config.client_cred == "secret-value"
         assert config.password == "user-password"
         assert config.oauth_token is None
 
     def test_oauth_token_only(self):
-        """OAuth token alone should be valid (delegated authentication)."""
         config = OnedriveAccessConfig(oauth_token="ey.access.token")
         assert config.oauth_token == "ey.access.token"
         assert config.client_cred is None
 
     def test_no_auth_raises_error(self):
-        """No authentication provided should raise ValueError."""
         with pytest.raises(ValueError, match="must be set"):
             OnedriveAccessConfig()
 
     def test_oauth_and_client_cred_raises_error(self):
-        """Both oauth_token and client_cred provided should raise ValueError."""
         with pytest.raises(ValueError, match="cannot use both"):
             OnedriveAccessConfig(
                 client_cred="secret-value",
@@ -51,7 +44,6 @@ class TestOnedriveAccessConfig:
             )
 
     def test_oauth_and_password_raises_error(self):
-        """oauth_token combined with password should raise ValueError."""
         with pytest.raises(ValueError, match="cannot use both"):
             OnedriveAccessConfig(
                 password="user-password",
@@ -59,20 +51,15 @@ class TestOnedriveAccessConfig:
             )
 
     def test_empty_oauth_token_treated_as_missing(self):
-        """An empty-string oauth_token (e.g. unset env var) should not satisfy the auth requirement.
-
-        Validator and runtime both use truthiness; this test pins that consistency.
-        """
+        # validator and runtime both use truthiness; pin that consistency
         with pytest.raises(ValueError, match="must be set"):
             OnedriveAccessConfig(oauth_token="")
 
 
 class TestOnedriveConnectionConfig:
-    """Tests for OnedriveConnectionConfig cross-field auth validation."""
-
     def test_client_cred_without_client_id_raises(self):
-        """client_cred-based auth requires client_id; rejecting at config time
-        avoids cryptic AADSTS / MSAL errors at runtime."""
+        # client_cred auth needs client_id; reject at config time so users
+        # don't hit cryptic AADSTS / MSAL errors at runtime
         with pytest.raises(ValueError, match="client_id is required"):
             OnedriveConnectionConfig(
                 user_pname="alice@contoso.com",
@@ -81,18 +68,12 @@ class TestOnedriveConnectionConfig:
             )
 
     def test_oauth_token_without_client_id_succeeds(self):
-        """oauth_token auth doesn't need client_id; this is the delegated path."""
         config = OnedriveConnectionConfig(
             user_pname="alice@contoso.com",
             tenant="tenant-id",
             access_config=Secret(OnedriveAccessConfig(oauth_token="ey.access.token")),
         )
         assert config.client_id is None
-
-
-# ---------------------------------------------------------------------------
-# Permission extraction
-# ---------------------------------------------------------------------------
 
 
 class TestExtractIdentityIdsFromRaw:
@@ -161,8 +142,7 @@ class TestExtractIdentityIdsFromRaw:
         assert groups == set()
 
     def test_v2_sitegroup_does_not_fall_through_to_v1(self):
-        """When grantedToV2 exists but contains only a siteGroup, we should not
-        fall through to grantedTo because v2 supersedes v1 entirely."""
+        # v2 supersedes v1 entirely; siteGroup-only v2 must not fall through
         raw = {
             "grantedToV2": {
                 "siteGroup": {"id": "3", "displayName": "Owners"},
@@ -176,7 +156,6 @@ class TestExtractIdentityIdsFromRaw:
         assert groups == set()
 
     def test_site_group_numeric_ids_ignored(self):
-        """siteGroup entries lack Azure AD mapping and sit under a different key."""
         raw = {
             "grantedToV2": {
                 "siteGroup": {"id": "3", "displayName": "Owners"},
@@ -339,11 +318,6 @@ class TestExtractPermissions:
             assert isinstance(val["groups"], list)
 
 
-# ---------------------------------------------------------------------------
-# DriveItem -> FileData with permissions kwarg
-# ---------------------------------------------------------------------------
-
-
 def _make_drive_item(name: str = "test.docx") -> Mock:
     drive_item = Mock()
     drive_item.name = name
@@ -389,18 +363,12 @@ class TestDriveItemToFileDataSync:
         assert file_data.metadata.permissions_data is None
 
     def test_permissions_none_when_empty_list_passed(self):
-        """Empty raw_permissions (e.g. from a 403 fall-back) should leave the
-        field as None, matching the previous behavior of suppressing the
-        all-empty {users:[],groups:[]} placeholder."""
+        # empty list (e.g. 403 fall-back) leaves the field as None rather than
+        # writing an all-empty placeholder
         indexer = _make_indexer()
         drive_item = _make_drive_item()
         file_data = indexer.drive_item_to_file_data_sync(drive_item, raw_permissions=[])
         assert file_data.metadata.permissions_data is None
-
-
-# ---------------------------------------------------------------------------
-# Graph /$batch raw fetch
-# ---------------------------------------------------------------------------
 
 
 def _batch_response(status_code: int = 200, responses: list[dict[str, Any]] | None = None) -> Mock:
@@ -544,28 +512,14 @@ class TestFetchPermissionsRaw:
         assert result == {"item-f.docx": []}
 
 
-# ---------------------------------------------------------------------------
-# Singleton-bleed regression: this is THE test that would have caught the bug
-# ---------------------------------------------------------------------------
-
-
 class TestSingletonBleedRegression:
-    """Regression test for the office365-rest-python-client mutable-default-arg
-    bug in IdentitySet/SharePointIdentitySet.
-
-    Demonstrates:
-      1. The SDK's typed accessors DO collapse all permissions to the last user
-         deserialized (proves the bug exists).
-      2. Our raw-JSON path through _extract_identity_ids_from_raw + _parse_batch_response
-         is unaffected (proves the fix works).
-
-    If anyone refactors back to typed accessors (perm.granted_to_v2.user.id,
-    Permission.to_json(), etc.) this test fails loudly.
-    """
+    """Pins the office365-rest-python-client IdentitySet mutable-default-arg
+    bug and our raw-JSON workaround. Fails loudly if anyone reverts to typed
+    accessors (perm.granted_to_v2.user.id, Permission.to_json(), etc.)."""
 
     def test_office365_sdk_typed_accessor_is_corrupted(self):
-        """Sanity-pin the upstream bug. If this ever passes (returns distinct IDs)
-        the upstream has been fixed and we can simplify our workaround."""
+        # If this ever passes with distinct IDs, upstream has been fixed and
+        # the raw-JSON workaround in onedrive.py can be removed.
         try:
             from office365.graph_client import GraphClient
             from office365.onedrive.driveitems.driveItem import DriveItem
@@ -584,23 +538,18 @@ class TestSingletonBleedRegression:
                 {"id": f"p{i}", "roles": ["read"], "grantedToV2": {"user": {"id": uid}}},
             )
 
-        # All three Permission objects share the same Identity singleton, so
-        # every typed read returns the LAST user written.
+        # all three Permission objects share the Identity singleton, so every
+        # typed read collapses to the last user written
         seen = {p.granted_to_v2.user.id for p in di.permissions}
-        # If office365 ever fixes the bug, this set will become {"alice", "bob", "carol"}
-        # and we should remove the workaround. Until then, expect collapse.
         assert len(seen) == 1, (
             "Upstream office365 IdentitySet may have been fixed; "
             "consider removing the raw-JSON workaround in onedrive.py"
         )
 
     def test_raw_json_path_preserves_distinct_users(self):
-        """The fix: parsing raw $batch response dicts directly never touches
-        the office365 singletons, so all three users round-trip cleanly."""
         indexer = _make_indexer()
         items = [_make_drive_item(f"f{i}.docx") for i in range(3)]
 
-        # Simulate Graph $batch returning three items with three different users
         batch_payload = {
             "responses": [
                 {
@@ -617,22 +566,15 @@ class TestSingletonBleedRegression:
         }
 
         by_id = indexer._parse_batch_response(batch_payload, items)
-        # Each item maps to its own raw permission dict — no bleed.
         seen_ids = [
             by_id[di.id][0]["grantedToV2"]["user"]["id"] for di in items
         ]
         assert seen_ids == ["alice", "bob", "carol"]
 
         # And running them through extract_permissions yields three distinct users
-        # in the read bucket.
         merged_raw_perms = [p for di in items for p in by_id[di.id]]
         result = indexer.extract_permissions(merged_raw_perms)
         assert sorted(result[0]["read"]["users"]) == ["alice", "bob", "carol"]
-
-
-# ---------------------------------------------------------------------------
-# Role mapping
-# ---------------------------------------------------------------------------
 
 
 class TestRoleMapping:
