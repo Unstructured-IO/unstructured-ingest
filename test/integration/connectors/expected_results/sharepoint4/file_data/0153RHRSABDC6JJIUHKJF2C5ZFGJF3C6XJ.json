@@ -45,7 +45,7 @@
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=94bc1801-87a2-4b52-a177-25324bb17ae9&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJhNmY1NjcwNS1hZjI5LTQ2YzctOTBiYS05YTBkNWE3YTFlZWMiLCJhcHBfZGlzcGxheW5hbWUiOiJzaGFyZXBvaW50LWFwcC1yZWdpc3RyYXRpb24iLCJuYW1laWQiOiI2YzE2MDc1My05YjYzLTQ3MDktYTE0MC0xN2EyN2QzMDg3YTZAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3ODEyMTgxOTcifQ.CkAKDGVudHJhX2NsYWltcxIwQ05uWXJORUdFQUFhRm1zMFNEQkpaalprYlZWeGNXSkdjeko0ZWtsRlFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCMC4sJytg6Q_EAUaDTQwLjEyNi4yNi4xNjEqLG9VeG1udTNmdVdWS013ZWU1V1BTcEpiSVpTaHQyYXkva0xhcExuWHZCRXM9MJ0BOAFCEKIcrWqs8ADQWkmntufqiIpKEGhhc2hlZHByb29mdG9rZW56ATG6AWVzaGFyZXBvaW50dGVuYW50c2V0dGluZ3MucmVhZHdyaXRlLmFsbCBhbGxzaXRlcy53cml0ZSBhbGxzaXRlcy5tYW5hZ2UgYWxsZmlsZXMud3JpdGUgYWxscHJvZmlsZXMucmVhZMgBAQ.Xl4uQjoqVdiTZDgea5ZzmVz51BIJXrMQtJcPLf_eey8&ApiVersion=2.0",
+    "@microsoft.graph.downloadUrl": "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source/_layouts/15/download.aspx?UniqueId=94bc1801-87a2-4b52-a177-25324bb17ae9&Translate=false&ApiVersion=2.0",
     "eTag": "\"{94BC1801-87A2-4B52-A177-25324BB17AE9},1\"",
     "id": "0153RHRSABDC6JJIUHKJF2C5ZFGJF3C6XJ",
     "name": "list-item-example.pdf",

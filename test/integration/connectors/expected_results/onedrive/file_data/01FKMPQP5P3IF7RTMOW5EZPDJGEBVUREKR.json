@@ -45,7 +45,7 @@
     "filesize_bytes": null
   },
   "additional_metadata": {
-    "@microsoft.graph.downloadUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/_layouts/15/download.aspx?UniqueId=f80bdaaf-8ecd-49b7-978d-26206b489151&Translate=false&tempauth=v1.eyJzaXRlaWQiOiJjODE1ZWNjMy0zZThiLTQ3MWEtYmIwNC03MTg0ODY1ZDNmNGQiLCJhcHBfZGlzcGxheW5hbWUiOiJ1bnN0cnVjdHVyZWQtdGVzdC1pbmdlc3QiLCJuYW1laWQiOiI5MWRlYWU1Ni1jMzhkLTRhNTUtYmFkOC1lNGQyMWJkZGYwZDhAM2Q2MGE3ZTUtMWUzMi00MTRlLTgzOWItMWM2ZTY3ODI2MTNkIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL3Vuc3RydWN0dXJlZGlvLW15LnNoYXJlcG9pbnQuY29tQDNkNjBhN2U1LTFlMzItNDE0ZS04MzliLTFjNmU2NzgyNjEzZCIsImV4cCI6IjE3ODEyMTgxMDkifQ.CkAKDGVudHJhX2NsYWltcxIwQ0lIWXJORUdFQUFhRmxCaFkyMURkV3BqVG10TGRUWkZRM3BVZUhNdFFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCKip89Smg6Q_EAUaDTQwLjEyNi4yNi4xNjAqLHhjU3VyNHBDa040c1E5NXZsbm8yTmozVWU1SWMzRE1mck1SUnRNdDNJNFU9MK8BOAFCEKIcrVUvYADQkdf3qopJAdNKEGhhc2hlZHByb29mdG9rZW56ATG6ATthbGxzaXRlcy5yZWFkIGFsbGZpbGVzLndyaXRlIGFsbGZpbGVzLnJlYWQgYWxscHJvZmlsZXMucmVhZMgBAQ.YGMlAs6B94_K3dMpGzMHglYGhdkGoI1SlLQV-pLhdw8&ApiVersion=2.0",
+    "@microsoft.graph.downloadUrl": "https://unstructuredio-my.sharepoint.com/personal/devops_unstructuredio_onmicrosoft_com/_layouts/15/download.aspx?UniqueId=f80bdaaf-8ecd-49b7-978d-26206b489151&Translate=false&ApiVersion=2.0",
     "eTag": "\"{F80BDAAF-8ECD-49B7-978D-26206B489151},1\"",
     "id": "01FKMPQP5P3IF7RTMOW5EZPDJGEBVUREKR",
     "name": "fake-email.txt",
