@@ -1,3 +1,9 @@
+## [1.6.13]
+
+### Fixes
+
+- **fix(weaviate): set `vectorIndexType: "hnsw"` in the auto-created collection schema.** The default Weaviate collection config (`unstructured_ingest/processes/connectors/assets/weaviate_collection_config.json`) declared `vectorizer: "none"` but left `vectorIndexType` unset. Newer Weaviate server versions no longer infer a vector index when none is specified, so collections created via `WeaviateUploader.create_destination` came up without an index — vectors uploaded by the pipeline could not be queried with `near_vector` / `hybrid`, returning empty results. The schema now declares `hnsw` explicitly so auto-created collections are immediately searchable. Existing user-managed collections (`flatten_metadata=true`) are unaffected.
+
 ## [1.6.12]
 
 ### Enhancements
