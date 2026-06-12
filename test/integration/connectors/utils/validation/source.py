@@ -34,6 +34,14 @@ class FixtureScrubber(BaseModel):
     ``path`` uses the same dotted notation as ``exclude_fields`` and honors
     the same ``NONSTANDARD_METADATA_FIELDS`` escape hatch for keys whose
     names contain dots (e.g. ``@microsoft.graph.downloadUrl``).
+
+    Pair with ``exclude_fields_extend``: scrubbers run at fixture-write time
+    only, not at validation-read time. If a scrubber rewrites a value that
+    also changes run-to-run (the usual reason to scrub), the on-disk fixture
+    will diff against the live un-scrubbed value on the next test run unless
+    the same path is also listed in ``exclude_fields_extend``. The bundled
+    ``additional_metadata.@microsoft.graph.downloadUrl`` default is already
+    excluded in the OneDrive/SharePoint tests.
     """
 
     path: str
