@@ -181,7 +181,7 @@ class SlackIndexer(Indexer):
                 ):
                     messages = conversation_history.get("messages", [])
                     if messages:
-                        yield self._messages_to_file_data(messages, channel)
+                        yield self._messages_to_file_data(messages, channel, client)
                         yield from self._message_files_to_file_data(messages, channel)
             except UnstructuredIngestError:
                 raise
@@ -195,6 +195,7 @@ class SlackIndexer(Indexer):
         self,
         messages: list[dict],
         channel: str,
+        client: "WebClient",
     ) -> FileData:
         ts_oldest = min((message["ts"] for message in messages), key=lambda m: float(m))
         ts_newest = max((message["ts"] for message in messages), key=lambda m: float(m))
@@ -211,6 +212,7 @@ class SlackIndexer(Indexer):
             connector_type=CONNECTOR_TYPE,
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
+                url=self._get_message_permalink(client, channel, ts_oldest),
                 date_created=ts_oldest,
                 date_modified=ts_newest,
                 date_processed=str(time.time()),
@@ -222,6 +224,26 @@ class SlackIndexer(Indexer):
             ),
             display_name=source_identifiers.fullpath,
         )
+
+    @staticmethod
+    def _get_message_permalink(
+        client: "WebClient",
+        channel: str,
+        message_ts: str,
+    ) -> Optional[str]:
+        # NOTE: chat.getPermalink uses the bot token (no extra scope). Fail soft to None so a
+        # transient API error never crashes indexing.
+        try:
+            response = client.chat_getPermalink(channel=channel, message_ts=message_ts)
+            return response.get("permalink")
+        except Exception as error:
+            logger.warning(
+                "Failed to fetch Slack permalink for channel %s message %s: %s",
+                channel,
+                message_ts,
+                error,
+            )
+            return None
 
     def _message_files_to_file_data(
         self,
@@ -246,6 +268,7 @@ class SlackIndexer(Indexer):
                     connector_type=CONNECTOR_TYPE,
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
+                        url=slack_file.get("permalink"),
                         date_created=(
                             str(slack_file.get("created")) if slack_file.get("created") else None
                         ),

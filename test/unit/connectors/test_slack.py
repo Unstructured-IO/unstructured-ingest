@@ -25,6 +25,13 @@ def _slack_api_error(code: str) -> SlackApiError:
 
 
 def _make_indexer(client, channel: str) -> SlackIndexer:
+    # Provide a string permalink by default so metadata.url validates for tests that build a
+    # conversation package. Tests asserting permalink behavior override this explicitly.
+    if not isinstance(client.chat_getPermalink.return_value, dict):
+        client.chat_getPermalink.return_value = {
+            "ok": True,
+            "permalink": "https://slack.test/archives/C123/p1",
+        }
     connection_config = Mock()
     connection_config.get_client.return_value = client
     return SlackIndexer(
@@ -41,6 +48,8 @@ def test_slack_access_config_accepts_refresh_token():
 
 
 def test_slack_indexer_emits_file_data_for_message_files():
+    conversation_permalink = "https://acme.slack.com/archives/C123/p1710000000000100"
+    file_permalink = "https://acme.slack.com/files/U123/F123/report.pdf"
     client = Mock()
     client.conversations_history.return_value = [
         {
@@ -53,12 +62,14 @@ def test_slack_indexer_emits_file_data_for_message_files():
                             "id": "F123",
                             "name": "report.pdf",
                             "url_private_download": "https://files.slack.com/report.pdf",
+                            "permalink": file_permalink,
                         }
                     ],
                 }
             ]
         }
     ]
+    client.chat_getPermalink.return_value = {"ok": True, "permalink": conversation_permalink}
     connection_config = Mock()
     connection_config.get_client.return_value = client
     indexer = SlackIndexer(
@@ -69,15 +80,62 @@ def test_slack_indexer_emits_file_data_for_message_files():
     file_data = list(indexer.run())
 
     assert len(file_data) == 2
-    assert file_data[0].source_identifiers.filename.endswith(".xml")
+    conversation = file_data[0]
+    assert conversation.source_identifiers.filename.endswith(".xml")
+    assert conversation.metadata.url == conversation_permalink
+    client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000000.000100")
     slack_file = file_data[1]
     assert slack_file.source_identifiers.filename == "F123-report.pdf"
+    assert slack_file.metadata.url == file_permalink
     assert slack_file.metadata.record_locator == {
         "type": "file",
         "channel": "C123",
         "message_ts": "1710000000.000100",
         "file_id": "F123",
     }
+
+
+def test_slack_conversation_url_uses_oldest_message_permalink():
+    oldest_permalink = "https://acme.slack.com/archives/C123/p1710000000000100"
+    client = Mock()
+    client.conversations_history.return_value = [
+        {
+            "messages": [
+                {"ts": "1710000200.000300", "text": "newest"},
+                {"ts": "1710000000.000100", "text": "oldest"},
+            ]
+        }
+    ]
+    client.chat_getPermalink.return_value = {"ok": True, "permalink": oldest_permalink}
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C123"]),
+        connection_config=connection_config,
+    )
+
+    file_data = list(indexer.run())
+
+    assert file_data[0].metadata.url == oldest_permalink
+    client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000000.000100")
+
+
+def test_slack_conversation_url_fails_soft_to_none():
+    client = Mock()
+    client.conversations_history.return_value = [
+        {"messages": [{"ts": "1710000000.000100", "text": "hello"}]}
+    ]
+    client.chat_getPermalink.side_effect = Exception("ratelimited")
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C123"]),
+        connection_config=connection_config,
+    )
+
+    file_data = list(indexer.run())
+
+    assert file_data[0].metadata.url is None
 
 
 @pytest.mark.asyncio
