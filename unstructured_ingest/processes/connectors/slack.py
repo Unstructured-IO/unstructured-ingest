@@ -19,7 +19,11 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    UnstructuredIngestError,
+    ValueError,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -44,6 +48,27 @@ PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS = 60
 SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 
 CONNECTOR_TYPE = "slack"
+
+# Slack API error codes that mean the bot cannot read the channel because it is not a
+# member of it. These are turned into a clear, per-channel, user-facing error.
+CHANNEL_MEMBERSHIP_ERROR_CODES = frozenset({"not_in_channel", "channel_not_found"})
+
+
+def _slack_api_error_code(error: BaseException) -> Optional[str]:
+    """Best-effort extraction of a Slack API error code (e.g. ``not_in_channel``).
+
+    Returns ``None`` for any exception that is not a recognizable Slack API error so the
+    caller can fall back to generic error handling.
+    """
+    response = getattr(error, "response", None)
+    if response is None:
+        return None
+    getter = getattr(response, "get", None)
+    if callable(getter):
+        code = getter("error")
+        if isinstance(code, str):
+            return code
+    return None
 
 
 def _safe_slack_filename(filename: str) -> str:
@@ -131,7 +156,9 @@ class SlackIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
         for channel in self.index_config.channels:
-            messages = []
+            # Auto-join public channels (and detect private ones) before reading so the
+            # bot is a member, mirroring precheck().
+            is_private = self._prepare_channel_access(client, channel)
             oldest = (
                 str(self.index_config.start_date.timestamp())
                 if self.index_config.start_date is not None
@@ -142,17 +169,27 @@ class SlackIndexer(Indexer):
                 if self.index_config.end_date is not None
                 else None
             )
-            for conversation_history in client.conversations_history(
-                channel=channel,
-                oldest=oldest,
-                latest=latest,
-                limit=PAGINATION_LIMIT,
-            ):
-                messages = conversation_history.get("messages", [])
-                if messages:
-                    yield self._messages_to_file_data(messages, channel)
-                    for file_data in self._message_files_to_file_data(messages, channel):
-                        yield file_data
+            # NOTE: run() is a generator, so SourceConnectionError.wrap (used by precheck())
+            # only guards generator creation and cannot translate errors raised during
+            # iteration. Translate inline so run()'s errors surface like precheck()'s.
+            try:
+                for conversation_history in client.conversations_history(
+                    channel=channel,
+                    oldest=oldest,
+                    latest=latest,
+                    limit=PAGINATION_LIMIT,
+                ):
+                    messages = conversation_history.get("messages", [])
+                    if messages:
+                        yield self._messages_to_file_data(messages, channel)
+                        yield from self._message_files_to_file_data(messages, channel)
+            except UnstructuredIngestError:
+                raise
+            except Exception as error:
+                self._raise_for_channel_membership(error, channel, is_private=is_private)
+                raise SourceConnectionError(
+                    SourceConnectionError.error_string.format(str(error))
+                ) from error
 
     def _messages_to_file_data(
         self,
@@ -228,8 +265,66 @@ class SlackIndexer(Indexer):
     def precheck(self) -> None:
         client = self.connection_config.get_client()
         for channel in self.index_config.channels:
+            # Auto-join public channels (and detect private ones) before reading so the
+            # precheck does not fail for public channels the bot has not joined yet.
+            is_private = self._prepare_channel_access(client, channel)
             # NOTE: Querying conversations history guarantees that the bot is in the channel
-            client.conversations_history(channel=channel, limit=1)
+            try:
+                client.conversations_history(channel=channel, limit=1)
+            except Exception as error:
+                self._raise_for_channel_membership(error, channel, is_private=is_private)
+                raise
+
+    def _prepare_channel_access(self, client: "WebClient", channel: str) -> bool:
+        """Ensure the bot can read ``channel`` before indexing it.
+
+        Public channels are auto-joined because the bot may not be a member yet. Private
+        channels cannot be auto-joined; their membership errors are surfaced later (when the
+        channel is read) by :meth:`_raise_for_channel_membership`.
+
+        Returns whether the channel is private so the caller can phrase membership errors.
+        """
+        from slack_sdk.errors import SlackApiError
+
+        is_private = False
+        try:
+            info = client.conversations_info(channel=channel)
+            channel_info = info.get("channel") or {}
+            is_private = bool(channel_info.get("is_private", False))
+        except SlackApiError as error:
+            # We could not inspect the channel (e.g. a private channel the bot is not in).
+            # Defer to the read below, which raises a clear per-channel membership error.
+            logger.warning(f"Unable to fetch Slack channel info for {channel}: {error}")
+            return is_private
+
+        if not is_private:
+            try:
+                client.conversations_join(channel=channel)
+            except SlackApiError as error:
+                # Best-effort: a failed join still lets the read surface the real error
+                # (e.g. missing channels:join scope or an archived channel).
+                logger.warning(f"Unable to auto-join public Slack channel {channel}: {error}")
+        return is_private
+
+    def _raise_for_channel_membership(
+        self, error: BaseException, channel: str, *, is_private: bool
+    ) -> None:
+        """Translate a Slack membership error into a clear, per-channel user-facing error.
+
+        No-op for errors that are not membership related so the caller can fall back to
+        generic error handling.
+        """
+        code = _slack_api_error_code(error)
+        if code not in CHANNEL_MEMBERSHIP_ERROR_CODES:
+            return
+        if is_private or code == "channel_not_found":
+            raise SourceConnectionError(
+                f"Bot must be invited to private channel {channel} before it can be read."
+            ) from error
+        raise SourceConnectionError(
+            f"Bot is not a member of public channel {channel} and could not join it "
+            "automatically; ensure the Slack app has the channels:join scope."
+        ) from error
 
 
 class SlackDownloaderConfig(DownloaderConfig):

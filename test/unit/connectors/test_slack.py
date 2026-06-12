@@ -1,12 +1,14 @@
 from unittest.mock import Mock
 
 import pytest
+from slack_sdk.errors import SlackApiError
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.slack import (
     PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
@@ -16,6 +18,19 @@ from unstructured_ingest.processes.connectors.slack import (
     SlackIndexerConfig,
     _NoRedirectHandler,
 )
+
+
+def _slack_api_error(code: str) -> SlackApiError:
+    return SlackApiError(message=code, response={"ok": False, "error": code})
+
+
+def _make_indexer(client, channel: str) -> SlackIndexer:
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    return SlackIndexer(
+        index_config=SlackIndexerConfig(channels=[channel]),
+        connection_config=connection_config,
+    )
 
 
 def test_slack_access_config_accepts_refresh_token():
@@ -164,3 +179,90 @@ async def test_slack_downloader_rejects_non_slack_private_download_url(tmp_path,
         await downloader._download_file(file_data, tmp_path / "F123-report.pdf")
 
     build_opener.assert_not_called()
+
+
+def test_slack_indexer_auto_joins_public_channel_before_read():
+    client = Mock()
+    client.conversations_info.return_value = {"channel": {"is_private": False}}
+    client.conversations_join.return_value = {"ok": True}
+    client.conversations_history.return_value = [
+        {"messages": [{"ts": "1710000000.000100", "text": "hello"}]}
+    ]
+    indexer = _make_indexer(client, "C-PUBLIC")
+
+    file_data = list(indexer.run())
+
+    # Public, non-member channels are auto-joined before being read.
+    client.conversations_join.assert_called_once_with(channel="C-PUBLIC")
+    assert len(file_data) == 1
+    assert file_data[0].source_identifiers.filename.endswith(".xml")
+
+
+def test_slack_indexer_private_channel_not_in_channel_raises_user_error():
+    client = Mock()
+    client.conversations_info.return_value = {"channel": {"is_private": True}}
+    client.conversations_history.side_effect = _slack_api_error("not_in_channel")
+    indexer = _make_indexer(client, "C-PRIVATE")
+
+    with pytest.raises(SourceConnectionError, match="C-PRIVATE") as exc_info:
+        list(indexer.run())
+
+    # The error must name the channel and tell the user to invite the bot.
+    assert "invited" in str(exc_info.value).lower()
+    # Private channels cannot be auto-joined.
+    client.conversations_join.assert_not_called()
+
+
+def test_slack_indexer_private_channel_not_found_raises_user_error():
+    client = Mock()
+    # conversations.info itself fails for a private channel the bot is not in.
+    client.conversations_info.side_effect = _slack_api_error("channel_not_found")
+    client.conversations_history.side_effect = _slack_api_error("channel_not_found")
+    indexer = _make_indexer(client, "C-MISSING")
+
+    with pytest.raises(SourceConnectionError, match="C-MISSING"):
+        list(indexer.run())
+
+    client.conversations_join.assert_not_called()
+
+
+def test_slack_precheck_auto_joins_public_channel():
+    client = Mock()
+    client.conversations_info.return_value = {"channel": {"is_private": False}}
+    client.conversations_join.return_value = {"ok": True}
+    client.conversations_history.return_value = {"messages": []}
+    indexer = _make_indexer(client, "C-PUBLIC")
+
+    indexer.precheck()
+
+    client.conversations_join.assert_called_once_with(channel="C-PUBLIC")
+    client.conversations_history.assert_called_once_with(channel="C-PUBLIC", limit=1)
+
+
+def test_slack_precheck_private_not_in_channel_raises_user_error():
+    client = Mock()
+    client.conversations_info.return_value = {"channel": {"is_private": True}}
+    client.conversations_history.side_effect = _slack_api_error("not_in_channel")
+    indexer = _make_indexer(client, "C-PRIVATE")
+
+    with pytest.raises(SourceConnectionError, match="C-PRIVATE") as exc_info:
+        indexer.precheck()
+
+    assert "invited" in str(exc_info.value).lower()
+    client.conversations_join.assert_not_called()
+
+
+def test_slack_indexer_join_failure_is_best_effort():
+    client = Mock()
+    client.conversations_info.return_value = {"channel": {"is_private": False}}
+    # Missing channels:join scope should not crash; the read still succeeds for a member bot.
+    client.conversations_join.side_effect = _slack_api_error("missing_scope")
+    client.conversations_history.return_value = [
+        {"messages": [{"ts": "1710000000.000100", "text": "hello"}]}
+    ]
+    indexer = _make_indexer(client, "C-PUBLIC")
+
+    file_data = list(indexer.run())
+
+    client.conversations_join.assert_called_once_with(channel="C-PUBLIC")
+    assert len(file_data) == 1
