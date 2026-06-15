@@ -1,12 +1,17 @@
+## [1.6.14]
+
+### Fixes
+
+- **fix(sharepoint): return all principals in document `permissions_data` instead of a single collapsed identity.** `office365-rest-python-client` shares one mutable-default `Identity` singleton across every `Permission` deserialization, so SDK typed reads collapsed every document's permissions to whichever user/group was deserialized last. The connector now bypasses the SDK's typed accessors and parses raw Graph `/$batch` JSON directly, so per-document users and groups round-trip distinctly. Reported by Intel.
+
+### Enhancements
+
+- **feat(onedrive): expose document ACLs in `permissions_data`.** OneDrive previously always returned `permissions_data: null`. The indexer now performs the same chunked Graph `/$batch` permission fetch as SharePoint and writes the canonical `read` / `update` / `delete` buckets (matching the Google Drive / Confluence schema) into `metadata.permissions_data`. Empty fetches and per-item failures degrade to the previous behavior. `tenacity` is added to the `onedrive` and `sharepoint` extras.
+
 ## [1.6.13]
 
 ### Fixes
 
-- **fix(sharepoint): return all principals in document `permissions_data` instead of a single collapsed identity.** SharePoint `permissions_data` previously surfaced only one Azure AD ID per document (and miscategorized the same ID into both `users` and `groups`) regardless of how many principals had access. Root cause is a process-global mutable-default-arg singleton in `office365-rest-python-client`'s `IdentitySet` / `SharePointIdentitySet`: every `Permission` deserialization shares the same `Identity` instance, so all in-process typed reads collapse to whichever user/group was deserialized last. The connector now bypasses the SDK's typed accessors for permissions — it POSTs the existing chunked Graph `/$batch` request via `requests`, parses the raw JSON dicts directly, and feeds them through the role-mapping / identity-extraction logic. Per-document users and groups now round-trip distinctly. Reported by Intel.
-
-### Enhancements
-
-- **feat(onedrive): expose document ACLs in `permissions_data`.** OneDrive previously always returned `permissions_data: null` because the indexer never populated it. The OneDrive base now performs the same chunked Graph `/$batch` permission fetch as SharePoint (with `tenacity`-backed retry on transient `429` / `503` / network errors) and writes the canonical `read` / `update` / `delete` buckets (matching the Google Drive / Confluence schema) into `metadata.permissions_data`. Empty fetches and per-item failures degrade to the previous `null`-equivalent behavior so existing pipelines see no regression. The shared permission machinery now lives on `OnedriveIndexer`; `SharepointIndexer` inherits it. `tenacity` is added to the `onedrive` and `sharepoint` extras.
 - **fix(weaviate): set `vectorIndexType: "hnsw"` in the auto-created collection schema.** The default Weaviate collection config (`unstructured_ingest/processes/connectors/assets/weaviate_collection_config.json`) declared `vectorizer: "none"` but left `vectorIndexType` unset. Newer Weaviate server versions no longer infer a vector index when none is specified, so collections created via `WeaviateUploader.create_destination` came up without an index — vectors uploaded by the pipeline could not be queried with `near_vector` / `hybrid`, returning empty results. The schema now declares `hnsw` explicitly so auto-created collections are immediately searchable. Existing user-managed collections (`flatten_metadata=true`) are unaffected.
 
 ## [1.6.12]
