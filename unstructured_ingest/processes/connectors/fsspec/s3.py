@@ -214,7 +214,22 @@ class S3Indexer(FsspecIndexer):
 
 
 class S3DownloaderConfig(FsspecDownloaderConfig):
-    pass
+    max_concurrency: int = Field(
+        default=1,
+        ge=1,
+        description=(
+            "Number of concurrent ranged GETs s3fs uses per file download. "
+            "Left at 1, s3fs takes the sequential read path, which retries and "
+            "resumes on transient read failures. Values >1 enable s3fs's "
+            "concurrent multipart path, which does NOT verify or retry short "
+            "part reads — a stream truncated mid-transfer is silently written "
+            "as a zero-filled gap (see verify_download_size). Raise only if you "
+            "accept that trade-off for throughput on large objects."
+        ),
+    )
+    # S3 indexing records a reliable object size, so failing closed on a size
+    # mismatch is safe and desirable here.
+    verify_download_size: bool = True
 
 
 @dataclass
@@ -223,6 +238,11 @@ class S3Downloader(FsspecDownloader):
     connection_config: S3ConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     download_config: Optional[S3DownloaderConfig] = field(default_factory=S3DownloaderConfig)
+
+    def get_file_kwargs(self) -> dict[str, Any]:
+        # Pin s3fs concurrency for the download. max_concurrency=1 keeps it on
+        # the retry-capable sequential path; see S3DownloaderConfig.
+        return {"max_concurrency": self.download_config.max_concurrency}
 
 
 class S3UploaderConfig(FsspecUploaderConfig):

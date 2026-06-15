@@ -1,3 +1,9 @@
+## [1.6.15]
+
+### Fixes
+
+- **fix(s3): detect and prevent silently truncated downloads.** For objects larger than s3fs's `default_block_size` (50 MB), s3fs uses a concurrent multipart download path that issues no per-part length check and no retry; a ranged GET whose streamed body is cut short by the network is surfaced as end-of-stream rather than an error, leaving a zero-filled gap in an otherwise full-size file that is reported as a successful download. The corruption only surfaced much later as an "empty"/invalid document in partitioning. The S3 downloader now (1) defaults `max_concurrency=1`, keeping downloads on s3fs's sequential path which retries and resumes on transient read failures, and (2) verifies the downloaded byte count against the size recorded during indexing, failing closed with a `SourceConnectionNetworkError` on a mismatch. `S3DownloaderConfig.max_concurrency` re-enables the concurrent path for callers who accept the trade-off. Size verification is available to all fsspec connectors via `FsspecDownloaderConfig.verify_download_size` (default off; on for S3). The `s3` extra now floors `s3fs>=2024.9.0`, the first release whose download path accepts the `max_concurrency` control.
+
 ## [1.6.14]
 
 ### Fixes

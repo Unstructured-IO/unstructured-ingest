@@ -320,3 +320,89 @@ class TestRelPathCalculationLogic:
         fixed = file_path.replace(path_without_protocol, "", 1).lstrip("/")
         assert fixed == "/utic-platform-test-destination_report.csv".lstrip("/")
         assert fixed == "utic-platform-test-destination_report.csv"  # CORRECT!
+
+
+class TestVerifyDownloadSize:
+    """FsspecDownloader.verify_download_size guards against truncated downloads."""
+
+    def _downloader(self, verify: bool):
+        from unstructured_ingest.processes.connectors.fsspec.fsspec import (
+            FsspecDownloader,
+            FsspecDownloaderConfig,
+        )
+
+        # Construct without running __post_init__ connection wiring — we only
+        # exercise the size-verification helper.
+        dl = FsspecDownloader.__new__(FsspecDownloader)
+        dl.download_config = FsspecDownloaderConfig(verify_download_size=verify)
+        return dl
+
+    def _file_data(self, expected_size):
+        fd = mock.MagicMock()
+        fd.identifier = "rec-1"
+        fd.metadata.filesize_bytes = expected_size
+        return fd
+
+    def test_raises_on_truncated_file(self, tmp_path):
+        from unstructured_ingest.error import SourceConnectionNetworkError
+
+        p = tmp_path / "doc.pdf"
+        p.write_bytes(b"%PDF-1.7 short")  # 13 bytes
+        dl = self._downloader(verify=True)
+        with pytest.raises(SourceConnectionNetworkError, match="truncated"):
+            dl.verify_download_size(file_data=self._file_data(40_000_000), download_path=p)
+
+    def test_passes_when_size_matches(self, tmp_path):
+        p = tmp_path / "doc.pdf"
+        data = b"%PDF-1.7" + b"x" * 100
+        p.write_bytes(data)
+        dl = self._downloader(verify=True)
+        dl.verify_download_size(file_data=self._file_data(len(data)), download_path=p)
+
+    def test_noop_when_disabled(self, tmp_path):
+        p = tmp_path / "doc.pdf"
+        p.write_bytes(b"short")
+        dl = self._downloader(verify=False)
+        # Mismatch present, but verification disabled → no raise.
+        dl.verify_download_size(file_data=self._file_data(999), download_path=p)
+
+    def test_noop_when_expected_size_unknown(self, tmp_path):
+        p = tmp_path / "doc.pdf"
+        p.write_bytes(b"short")
+        dl = self._downloader(verify=True)
+        # No indexed size to compare against → cannot verify, do not raise.
+        dl.verify_download_size(file_data=self._file_data(None), download_path=p)
+
+
+class TestS3DownloaderConcurrency:
+    """S3 forces the retry-capable sequential s3fs path and fails closed on size."""
+
+    def test_default_forces_sequential_path(self):
+        from unstructured_ingest.processes.connectors.fsspec.s3 import (
+            S3Downloader,
+            S3DownloaderConfig,
+        )
+
+        dl = S3Downloader.__new__(S3Downloader)
+        dl.download_config = S3DownloaderConfig()
+        assert dl.download_config.max_concurrency == 1
+        assert dl.download_config.verify_download_size is True
+        assert dl.get_file_kwargs() == {"max_concurrency": 1}
+
+    def test_concurrency_is_configurable(self):
+        from unstructured_ingest.processes.connectors.fsspec.s3 import (
+            S3Downloader,
+            S3DownloaderConfig,
+        )
+
+        dl = S3Downloader.__new__(S3Downloader)
+        dl.download_config = S3DownloaderConfig(max_concurrency=8)
+        assert dl.get_file_kwargs() == {"max_concurrency": 8}
+
+    def test_concurrency_must_be_positive(self):
+        import pydantic
+
+        from unstructured_ingest.processes.connectors.fsspec.s3 import S3DownloaderConfig
+
+        with pytest.raises(pydantic.ValidationError):
+            S3DownloaderConfig(max_concurrency=0)

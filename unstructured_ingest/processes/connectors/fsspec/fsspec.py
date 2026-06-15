@@ -17,7 +17,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import TypeError, ValueError
+from unstructured_ingest.error import SourceConnectionNetworkError, TypeError, ValueError
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -261,7 +261,16 @@ class FsspecIndexer(Indexer):
 
 
 class FsspecDownloaderConfig(DownloaderConfig):
-    pass
+    verify_download_size: bool = Field(
+        default=False,
+        description=(
+            "After download, verify the local file size matches the size recorded "
+            "during indexing and fail if they differ. Guards against silently "
+            "truncated downloads (e.g. a streamed body cut short by the network). "
+            "Off by default for backends where a benign size delta is expected; "
+            "connectors with a reliable indexed size override the default to True."
+        ),
+    )
 
 
 FsspecDownloaderConfigT = TypeVar("FsspecDownloaderConfigT", bound=FsspecDownloaderConfig)
@@ -321,6 +330,38 @@ class FsspecDownloader(Downloader):
     def wrap_error(self, e: Exception) -> Exception:
         return self.connection_config.wrap_error(e=e)
 
+    def get_file_kwargs(self) -> dict[str, Any]:
+        """Extra kwargs forwarded to ``filesystem.get_file``.
+
+        Empty for the generic backend. Subclasses override to tune the
+        per-backend transfer (e.g. S3 forces single-stream downloads to use
+        the retry-capable sequential path instead of the concurrent one).
+        """
+        return {}
+
+    def verify_download_size(self, file_data: FileData, download_path: Path) -> None:
+        """Fail if the downloaded file size doesn't match the indexed size.
+
+        fsspec/s3fs can finish a download having written fewer bytes than the
+        object holds — a streamed body cut short by the network is surfaced as
+        end-of-stream, not an error — and the multipart concurrent path neither
+        verifies nor retries short parts. The result is a truncated file
+        reported as a successful download, which only fails much later in
+        partitioning as a corrupt document. Catch it here, at the source.
+        """
+        if not self.download_config.verify_download_size:
+            return
+        expected = file_data.metadata.filesize_bytes
+        if not expected or not download_path.is_file():
+            return
+        actual = download_path.stat().st_size
+        if actual != expected:
+            raise SourceConnectionNetworkError(
+                f"Downloaded file is truncated: got {actual} bytes, expected {expected} "
+                f"for {file_data.identifier} ({download_path.name}). The download was "
+                f"reported complete but the byte count does not match the indexed size."
+            )
+
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         download_path = self.get_download_path(file_data=file_data)
         mkdir_concurrent_safe(download_path.parent)
@@ -331,7 +372,9 @@ class FsspecDownloader(Downloader):
 
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
-                client.get_file(rpath=rpath, lpath=download_path.as_posix())
+                client.get_file(
+                    rpath=rpath, lpath=download_path.as_posix(), **self.get_file_kwargs()
+                )
             self.handle_directory_download(lpath=download_path)
 
         except Exception as e:
@@ -341,6 +384,8 @@ class FsspecDownloader(Downloader):
                 context={"file_path": rpath, "file_id": file_data.identifier},
             )
             raise self.wrap_error(e=e)
+
+        self.verify_download_size(file_data=file_data, download_path=download_path)
 
         self.log_download_complete(
             file_path=rpath,
@@ -359,7 +404,9 @@ class FsspecDownloader(Downloader):
 
         try:
             with self.connection_config.get_client(protocol=self.protocol) as client:
-                await client.get_file(rpath=rpath, lpath=download_path.as_posix())
+                await client.get_file(
+                    rpath=rpath, lpath=download_path.as_posix(), **self.get_file_kwargs()
+                )
             self.handle_directory_download(lpath=download_path)
         except Exception as e:
             self.log_error(
@@ -368,6 +415,8 @@ class FsspecDownloader(Downloader):
                 context={"file_path": rpath, "file_id": file_data.identifier},
             )
             raise self.wrap_error(e=e)
+
+        self.verify_download_size(file_data=file_data, download_path=download_path)
 
         self.log_download_complete(
             file_path=rpath,
