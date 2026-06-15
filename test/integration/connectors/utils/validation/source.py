@@ -17,7 +17,11 @@ NONSTANDARD_METADATA_FIELDS = {
     "additional_metadata.@microsoft.graph.downloadUrl": [
         "additional_metadata",
         "@microsoft.graph.downloadUrl",
-    ]
+    ],
+    "additional_metadata.@microsoft.graph.downloadUrlNoAuth": [
+        "additional_metadata",
+        "@microsoft.graph.downloadUrlNoAuth",
+    ],
 }
 
 FILEDATA_CHECKS_TYPE = Callable[[FileData], None] | tuple[Callable[[FileData], None], ...]
@@ -54,11 +58,20 @@ class FixtureScrubber(BaseModel):
 # token (`tempauth=v1.<jwt>`) into the per-item download URL. The token
 # is bound to that one URL and expires quickly, but it's still a live
 # credential in source control — strip it before committing fixtures.
+# `@microsoft.graph.downloadUrlNoAuth` is dropped entirely: the name says
+# "no Authorization header needed," which in Graph URL variants almost
+# always means the credential is embedded in the URL itself (signed
+# query parameter or signed path). Without a known sample to scrub
+# selectively, drop the whole field.
 DEFAULT_FIXTURE_SCRUBBERS: list[FixtureScrubber] = [
     FixtureScrubber(
         path="additional_metadata.@microsoft.graph.downloadUrl",
         mode="strip_url_param",
         param="tempauth",
+    ),
+    FixtureScrubber(
+        path="additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+        mode="drop",
     ),
 ]
 

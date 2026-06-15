@@ -107,6 +107,7 @@ async def test_onedrive_source(temp_dir):
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
                 "additional_metadata.@microsoft.graph.downloadUrl",
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
             ],
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
