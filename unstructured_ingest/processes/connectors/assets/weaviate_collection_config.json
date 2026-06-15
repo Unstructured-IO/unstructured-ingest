@@ -41,5 +41,6 @@
             ]
         }
     ],
-    "vectorizer": "none"
+    "vectorizer": "none",
+    "vectorIndexType": "hnsw"
 }
