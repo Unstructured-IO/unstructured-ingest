@@ -7400,7 +7400,7 @@ requires-dist = [
     { name = "requests", marker = "extra == 'onedrive'" },
     { name = "requests", marker = "extra == 'sharepoint'" },
     { name = "requests", marker = "extra == 'vectara'" },
-    { name = "s3fs", marker = "extra == 's3'" },
+    { name = "s3fs", marker = "extra == 's3'", specifier = ">=2024.9.0" },
     { name = "sentence-transformers", marker = "extra == 'huggingface'" },
     { name = "simple-salesforce", marker = "extra == 'salesforce'" },
     { name = "singlestoredb", marker = "extra == 'singlestore'" },
