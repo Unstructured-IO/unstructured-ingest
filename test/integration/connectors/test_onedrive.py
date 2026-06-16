@@ -103,6 +103,10 @@ async def test_onedrive_source(temp_dir):
             expected_num_files=1,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",

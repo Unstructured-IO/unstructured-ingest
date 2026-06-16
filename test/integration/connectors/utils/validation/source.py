@@ -14,6 +14,9 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import Downloader, Indexer
 
 NONSTANDARD_METADATA_FIELDS = {
+    # These keys contain dots, so the default split(".") path resolution in
+    # omit_ignored_fields can't reach them — map each to its explicit,
+    # unsplit path instead.
     "additional_metadata.@microsoft.graph.downloadUrl": [
         "additional_metadata",
         "@microsoft.graph.downloadUrl",

@@ -7,6 +7,7 @@
 ### Enhancements
 
 - **feat(onedrive): expose document ACLs in `permissions_data`.** OneDrive previously always returned `permissions_data: null`. The indexer now performs the same chunked Graph `/$batch` permission fetch as SharePoint and writes the canonical `read` / `update` / `delete` buckets (matching the Google Drive / Confluence schema) into `metadata.permissions_data`. Empty fetches and per-item failures degrade to the previous behavior. `tenacity` is added to the `onedrive` and `sharepoint` extras.
+- **fix(connectors): stop asserting environment-specific URLs in Notion/OneDrive/SharePoint source integration tests.** The expected-results diff compared `additional_metadata.url` (Notion page id, MS Graph drive id) and `@microsoft.graph.downloadUrlNoAuth` (a tokenized no-auth download link), both of which vary by test tenant/workspace and per request. With no connector code change, these drifted and reddened `blob_storage_connectors_int_test` and `uncategorized_connectors_int_test` on main and every PR. Both fields are now excluded from the comparison, consistent with the existing exclusions of `@microsoft.graph.downloadUrl`, `LastModified`, and `date_*`.
 
 ## [1.6.13]
 
