@@ -256,6 +256,9 @@ class TestGoogleDriveAuthorizedUserCredentials:
 
     def test_get_client_authorized_user_builds_refreshable_credential(self, monkeypatch):
         """get_client builds a refreshable OAuth credential for an authorized_user key."""
+        # get_client imports googleapiclient (the google-drive extra), which the bare unit-test
+        # environment does not install; the other cases here only need google-auth.
+        pytest.importorskip("googleapiclient")
         from google.oauth2.credentials import Credentials as OAuthCredentials
 
         connection_config = GoogleDriveConnectionConfig(
