@@ -3,6 +3,9 @@ import os
 import pytest
 
 from test.integration.connectors.utils.constants import SOURCE_TAG, UNCATEGORIZED_TAG
+from test.integration.connectors.utils.validation.equality import (
+    unordered_table_html_equality_check,
+)
 from test.integration.connectors.utils.validation.source import (
     SourceValidationConfigs,
     get_all_file_data,
@@ -56,9 +59,15 @@ def test_notion_source_database(temp_dir):
             test_id="notion_database",
             expected_num_files=1,
             validate_downloaded_files=True,
-            exclude_fields_extend=["metadata.date_created", "metadata.date_modified"],
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                # url embeds the env-specific Notion page id; varies by workspace
+                "additional_metadata.url",
+            ],
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
+            file_equality_check=unordered_table_html_equality_check,
         ),
     )
 
@@ -97,7 +106,12 @@ def test_notion_source_page(temp_dir):
             test_id="notion_page",
             expected_num_files=1,
             validate_downloaded_files=True,
-            exclude_fields_extend=["metadata.date_created", "metadata.date_modified"],
+            exclude_fields_extend=[
+                "metadata.date_created",
+                "metadata.date_modified",
+                # url embeds the env-specific Notion page id; varies by workspace
+                "additional_metadata.url",
+            ],
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),

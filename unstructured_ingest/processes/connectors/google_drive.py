@@ -19,9 +19,9 @@ from unstructured_ingest.interfaces import (
     ConnectionConfig,
     Downloader,
     DownloaderConfig,
-    DownloadResponse,
     Indexer,
     IndexerConfig,
+    download_responses,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
@@ -34,6 +34,20 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "google_drive"
 GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
 GOOGLE_DRIVE_NATIVE_MIME_PREFIX = "application/vnd.google-apps."
+
+# Native Google MIME types that have no downloadable or exportable content.
+# Shortcuts are aliases to other files, forms/maps/sites are web-only apps.
+# These are silently skipped during indexing and downloading.
+GOOGLE_DRIVE_SKIP_MIME_TYPES = frozenset(
+    {
+        "application/vnd.google-apps.shortcut",
+        "application/vnd.google-apps.form",
+        "application/vnd.google-apps.map",
+        "application/vnd.google-apps.site",
+        "application/vnd.google-apps.fusiontable",
+        "application/vnd.google-apps.jam",
+    }
+)
 
 
 # Maps Google-native Drive MIME types → export MIME types
@@ -83,6 +97,15 @@ def _matches_extension_or_native_export(record: dict, extensions: Optional[list[
         return True
 
     return record.get("mimeType") in _native_mime_types_for_extensions(extensions)
+
+
+def _should_skip_file(record: dict) -> bool:
+    """Return True if a file record should be excluded from indexing."""
+    mime = record.get("mimeType", "")
+    if mime in GOOGLE_DRIVE_SKIP_MIME_TYPES:
+        return True
+    size = int(record.get("size", -1))
+    return mime == "inode/x-empty" or (size == 0 and not mime)
 
 
 def _build_extension_query_filter(extensions: list[str]) -> str:
@@ -274,7 +297,9 @@ class GoogleDriveIndexer(Indexer):
         while stack:
             current_folder = stack.pop()
             # Always list all items under the current folder.
-            query = f"'{current_folder}' in parents"
+            # `trashed = false` excludes items the user has moved to Drive's trash;
+            # without it, files.list returns trashed items in shared-drive corpora.
+            query = f"'{current_folder}' in parents and trashed = false"
             page_token = None
             while True:
                 response = files_client.list(
@@ -288,8 +313,9 @@ class GoogleDriveIndexer(Indexer):
                 ).execute()
                 for item in response.get("files", []):
                     if item.get("mimeType") == GOOGLE_DRIVE_FOLDER_MIME_TYPE:
-                        # Always traverse sub-folders regardless of extension filter.
                         stack.append(item["id"])
+                    elif _should_skip_file(item):
+                        continue
                     else:
                         if not valid_exts or _matches_extension_or_native_export(item, extensions):
                             count += 1
@@ -347,7 +373,7 @@ class GoogleDriveIndexer(Indexer):
                         spaces="drive",
                         fields="files(id)",
                         pageSize=1,
-                        q=f"'{self.connection_config.drive_id}' in parents",
+                        q=f"'{self.connection_config.drive_id}' in parents and trashed = false",
                     ).execute()
                     if not response.get("files"):
                         logger.warning(
@@ -430,7 +456,9 @@ class GoogleDriveIndexer(Indexer):
         previous_path: Optional[str] = None,
     ) -> list[dict]:
         fields_input = "nextPageToken, files({})".format(",".join(self.fields))
-        q = f"'{object_id}' in parents"
+        # `trashed = false` excludes items the user has moved to Drive's trash;
+        # without it, files.list returns trashed items in shared-drive corpora.
+        q = f"'{object_id}' in parents and trashed = false"
         # Filter by extension but still include any directories
         if extensions:
             q = f"{q} and ({_build_extension_query_filter(extensions)})"
@@ -450,7 +478,11 @@ class GoogleDriveIndexer(Indexer):
                 q=q,
             ).execute()
             if files := response.get("files", []):
-                fs = [f for f in files if not self.is_dir(record=f)]
+                fs = [
+                    f
+                    for f in files
+                    if not self.is_dir(record=f) and not _should_skip_file(f)
+                ]
                 for r in fs:
                     r["parent_path"] = previous_path
                 dirs = [f for f in files if self.is_dir(record=f)]
@@ -870,7 +902,7 @@ class GoogleDriveDownloader(Downloader):
             scopes=["https://www.googleapis.com/auth/drive.readonly"],
         )
 
-    def _download_file(self, file_data: FileData) -> Path:
+    def _download_file(self, file_data: FileData) -> Optional[Path]:
         """Downloads a file from Google Drive using either direct download or export based
         on the source file's MIME type.
 
@@ -890,6 +922,13 @@ class GoogleDriveDownloader(Downloader):
         mime_type = file_data.additional_metadata.get("mimeType", "")
         file_size = int(file_data.additional_metadata.get("size", 0))
         file_id = file_data.identifier
+
+        if mime_type == "inode/x-empty" or (file_size == 0 and not mime_type):
+            logger.info(
+                f"Skipping empty file {file_id} ({mime_type or 'unknown MIME'}, "
+                f"size=0): {file_data.source_identifiers.fullpath}"
+            )
+            return None
 
         download_path = self.get_download_path(file_data)
         if not download_path:
@@ -918,6 +957,12 @@ class GoogleDriveDownloader(Downloader):
                     "download_method": "google_workspace_export",
                 }
             )
+        elif mime_type in GOOGLE_DRIVE_SKIP_MIME_TYPES:
+            logger.info(
+                f"Skipping non-downloadable Google Drive file {file_id} "
+                f"({mime_type}): {file_data.source_identifiers.fullpath}"
+            )
+            return None
         elif mime_type.startswith(GOOGLE_DRIVE_NATIVE_MIME_PREFIX):
             raise SourceConnectionError(
                 f"Unsupported Google Drive native MIME type for file {file_id}: {mime_type}. "
@@ -935,7 +980,7 @@ class GoogleDriveDownloader(Downloader):
 
         return download_path
 
-    def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
+    def run(self, file_data: FileData, **kwargs: Any) -> download_responses:
         mime_type = file_data.additional_metadata.get("mimeType", "")
 
         logger.debug(
@@ -943,6 +988,8 @@ class GoogleDriveDownloader(Downloader):
         )
 
         download_path = self._download_file(file_data)
+        if download_path is None:
+            return []
 
         file_data.local_download_path = str(download_path.resolve())
 

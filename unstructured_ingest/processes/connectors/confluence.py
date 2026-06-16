@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from pydantic import Field, Secret
 
@@ -41,6 +42,8 @@ if TYPE_CHECKING:
     from bs4.element import Tag
 
 CONNECTOR_TYPE = "confluence"
+CONFLUENCE_SPACE_PAGE_SIZE = 250
+CONFLUENCE_PAGE_PAGE_SIZE = 250
 
 
 class ConfluenceAccessConfig(AccessConfig):
@@ -56,10 +59,25 @@ class ConfluenceAccessConfig(AccessConfig):
         description="Confluence Personal Access Token",
         default=None,
     )
+    oauth_token: Optional[str] = Field(
+        description="Atlassian OAuth 2.0 access token",
+        default=None,
+    )
+    refresh_token: Optional[str] = Field(
+        description=(
+            "Atlassian OAuth 2.0 refresh token. Used by the platform to refresh expired "
+            "access tokens before each job run."
+        ),
+        default=None,
+    )
 
 
 class ConfluenceConnectionConfig(ConnectionConfig):
     url: str = Field(description="URL of the Confluence instance")
+    cloud_id: Optional[str] = Field(
+        description="Atlassian Cloud ID for OAuth 2.0 API gateway requests",
+        default=None,
+    )
     username: Optional[str] = Field(
         description="Username or email for authentication",
         default=None,
@@ -78,17 +96,21 @@ class ConfluenceConnectionConfig(ConnectionConfig):
             )
         basic_auth = bool(self.username and (access_configs.password or access_configs.api_token))
         pat_auth = access_configs.token
-        if self.cloud and not basic_auth:
+        oauth_auth = bool(access_configs.oauth_token)
+        if self.cloud and not (basic_auth or oauth_auth):
             raise ValueError(
-                "cloud authentication requires username and API token (--password), "
+                "cloud authentication requires username and API token (--password) or oauth_token, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
-        if basic_auth and pat_auth:
+        auth_methods = [basic_auth, bool(pat_auth), oauth_auth]
+        if sum(bool(method) for method in auth_methods) > 1:
             raise ValueError(
-                "both password and token provided, only one allowed, "
+                "basic auth, pat token, and oauth token are mutually exclusive, "
                 "see: https://atlassian-python-api.readthedocs.io/"
             )
-        if not (basic_auth or pat_auth):
+        if oauth_auth and not self.cloud_id:
+            raise ValueError("cloud_id is required when using oauth_token")
+        if not any(auth_methods):
             raise ValueError(
                 "no form of auth provided, see: https://atlassian-python-api.readthedocs.io/"
             )
@@ -101,6 +123,14 @@ class ConfluenceConnectionConfig(ConnectionConfig):
             return access_configs.password
         return access_configs.api_token
 
+    def api_url(self) -> str:
+        if self.access_config.get_secret_value().oauth_token:
+            return f"https://api.atlassian.com/ex/confluence/{self.cloud_id}/wiki"
+        return self.url
+
+    def page_url(self, page_id: str) -> str:
+        return f"{self.url.rstrip('/')}/pages/{page_id}"
+
     @requires_dependencies(["atlassian"], extras="confluence")
     @contextmanager
     def get_client(self) -> Generator["Confluence", None, None]:
@@ -108,12 +138,16 @@ class ConfluenceConnectionConfig(ConnectionConfig):
 
         access_configs = self.access_config.get_secret_value()
         with Confluence(
-            url=self.url,
-            username=self.username,
-            password=self.password_or_api_token(),
+            url=self.api_url(),
+            username=None if access_configs.oauth_token else self.username,
+            password=None if access_configs.oauth_token else self.password_or_api_token(),
             token=access_configs.token,
-            cloud=self.cloud,
+            cloud=self.cloud or bool(access_configs.oauth_token),
         ) as client:
+            if access_configs.oauth_token:
+                client._session.headers.update(
+                    {"Authorization": f"Bearer {access_configs.oauth_token}"}
+                )
             yield client
 
 
@@ -131,6 +165,81 @@ class ConfluenceIndexer(Indexer):
     index_config: ConfluenceIndexerConfig
     connector_type: str = CONNECTOR_TYPE
 
+    @staticmethod
+    def _get_next_page_path(response: dict) -> Optional[str]:
+        next_link = response.get("_links", {}).get("next")
+        if not next_link:
+            return None
+
+        parsed_next_link = urlparse(next_link)
+        next_path = parsed_next_link.path or next_link
+        if "/wiki/" in next_path:
+            next_path = next_path.split("/wiki/", maxsplit=1)[1]
+        else:
+            next_path = next_path.lstrip("/")
+        if parsed_next_link.query:
+            next_path = f"{next_path}?{parsed_next_link.query}"
+        return next_path
+
+    def _paginate_v2_results(
+        self,
+        client: "Confluence",
+        *,
+        path: str,
+        params: dict,
+        limit: int,
+    ) -> List[dict]:
+        results: List[dict] = []
+        next_path: Optional[str] = path
+        next_params: Optional[dict] = params
+        while next_path and len(results) < limit:
+            response = client.get(next_path, params=next_params)
+            remaining = limit - len(results)
+            results.extend(response.get("results", [])[:remaining])
+            next_path = self._get_next_page_path(response)
+            next_params = None
+        return results
+
+    def _list_spaces(
+        self,
+        client: "Confluence",
+        *,
+        keys: Optional[List[str]] = None,
+        limit: Optional[int] = None,
+        space_type: Optional[str] = None,
+    ) -> List[dict]:
+        target_limit = limit or self.index_config.max_num_of_spaces
+        params: dict = {
+            "limit": min(target_limit, CONFLUENCE_SPACE_PAGE_SIZE),
+        }
+        if keys:
+            params["keys"] = keys
+        if space_type:
+            params["type"] = space_type
+            params["status"] = "current"
+        return self._paginate_v2_results(
+            client,
+            path="api/v2/spaces",
+            params=params,
+            limit=target_limit,
+        )
+
+    @staticmethod
+    def _space_matches_key(space: dict, space_key: str) -> bool:
+        return space.get("key") == space_key or space.get("alias") == space_key
+
+    def _get_space_by_key(self, client: "Confluence", space_key: str) -> dict:
+        for space in self._list_spaces(client, keys=[space_key], limit=1):
+            if self._space_matches_key(space, space_key):
+                return space
+        if space_key.startswith("~"):
+            # Personal space aliases are not reliably returned by the v2 keys
+            # filter, so fall back to scanning current personal spaces.
+            for space in self._list_spaces(client, space_type="personal"):
+                if self._space_matches_key(space, space_key):
+                    return space
+        raise UserError(f"Failed to find '{space_key}' space")
+
     def precheck(self) -> bool:
         try:
             self.connection_config.get_client()
@@ -141,7 +250,7 @@ class ConfluenceIndexer(Indexer):
         with self.connection_config.get_client() as client:
             # opportunistically check the first space in list of all spaces
             try:
-                client.get_all_spaces(limit=1)
+                self._list_spaces(client, limit=1)
             except Exception as e:
                 logger.exception(f"Failed to connect to find any Confluence space: {e}")
                 raise UserError(f"Failed to connect to find any Confluence space: {e}")
@@ -154,7 +263,7 @@ class ConfluenceIndexer(Indexer):
             if self.index_config.spaces:
                 for space_key in self.index_config.spaces:
                     try:
-                        client.get_space(space_key)
+                        self._get_space_by_key(client, space_key)
                     except Exception as e:
                         logger.exception(f"Failed to connect to Confluence: {e}")
                         errors.append(f"Failed to connect to '{space_key}' space, cause: '{e}'")
@@ -176,29 +285,30 @@ class ConfluenceIndexer(Indexer):
             with self.connection_config.get_client() as client:
                 space_ids_and_keys = []
                 for space_key in spaces:
-                    space = client.get_space(space_key)
+                    space = self._get_space_by_key(client, space_key)
                     space_ids_and_keys.append((space_key, space["id"]))
                 return space_ids_and_keys
         else:
             with self.connection_config.get_client() as client:
-                all_spaces = client.get_all_spaces(limit=self.index_config.max_num_of_spaces)
-            space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces["results"]]
+                all_spaces = self._list_spaces(client)
+            space_ids_and_keys = [(space["key"], space["id"]) for space in all_spaces]
             return space_ids_and_keys
 
-    def _get_docs_ids_within_one_space(self, space_key: str) -> List[dict]:
+    def _get_docs_ids_within_one_space(self, space_id: int) -> List[dict]:
         with self.connection_config.get_client() as client:
-            pages = client.get_all_pages_from_space(
-                space=space_key,
-                start=0,
-                expand=None,
-                content_type="page",  # blogpost and comment types not currently supported
-                status=None,
+            pages = self._paginate_v2_results(
+                client,
+                path="api/v2/pages",
+                params={
+                    "space-id": space_id,
+                    "limit": min(
+                        self.index_config.max_num_of_docs_from_each_space,
+                        CONFLUENCE_PAGE_PAGE_SIZE,
+                    ),
+                },
+                limit=self.index_config.max_num_of_docs_from_each_space,
             )
-        # Limit the number of documents to max_num_of_docs_from_each_space
-        # Note: this is needed because the limit field in client.get_all_pages_from_space does
-        # not seem to work as expected
-        limited_pages = pages[: self.index_config.max_num_of_docs_from_each_space]
-        doc_ids = [{"space_id": space_key, "doc_id": page["id"]} for page in limited_pages]
+        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
@@ -206,27 +316,43 @@ class ConfluenceIndexer(Indexer):
 
         space_ids_and_keys = self._get_space_ids_and_keys()
         for space_key, space_id in space_ids_and_keys:
-            doc_ids = self._get_docs_ids_within_one_space(space_key)
+            doc_ids = self._get_docs_ids_within_one_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
                 # Build metadata
                 metadata = FileDataSourceMetadata(
                     date_processed=str(time()),
-                    url=f"{self.connection_config.url}/pages/{doc_id}",
+                    url=self.connection_config.page_url(doc_id),
                     record_locator={
                         "space_id": space_key,
                         "document_id": doc_id,
+                        **(
+                            {"cloud_id": self.connection_config.cloud_id}
+                            if self.connection_config.cloud_id
+                            else {}
+                        ),
                     },
                 )
                 additional_metadata = {
                     "space_key": space_key,
                     "space_id": space_id,  # diff from record_locator space_id (which is space_key)
                     "document_id": doc_id,
+                    **(
+                        {
+                            "cloud_id": self.connection_config.cloud_id,
+                            "site_url": self.connection_config.url,
+                        }
+                        if self.connection_config.cloud_id
+                        else {}
+                    ),
                 }
 
                 # Construct relative path and filename
                 filename = f"{doc_id}.html"
-                relative_path = str(Path(space_key) / filename)
+                path_parts = [space_key, filename]
+                if self.connection_config.cloud_id:
+                    path_parts.insert(0, self.connection_config.cloud_id)
+                relative_path = str(Path(*path_parts))
 
                 source_identifiers = SourceIdentifiers(
                     filename=filename,
@@ -450,9 +576,12 @@ class ConfluenceDownloader(Downloader):
         doc_id = file_data.identifier
         try:
             with self.connection_config.get_client() as client:
-                page = client.get_page_by_id(
-                    page_id=doc_id,
-                    expand="history.lastUpdated,version,body.view",
+                page = client.get(
+                    f"api/v2/pages/{doc_id}",
+                    params={
+                        "body-format": "view",
+                        "include-version": "true",
+                    },
                 )
         except Exception as e:
             logger.exception(f"Failed to retrieve page with ID {doc_id}: {e}")
@@ -488,8 +617,8 @@ class ConfluenceDownloader(Downloader):
                 file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
-        file_data.metadata.date_created = page["history"]["createdDate"]
-        file_data.metadata.date_modified = page["version"]["when"]
+        file_data.metadata.date_created = page["createdAt"]
+        file_data.metadata.date_modified = page["version"]["createdAt"]
         file_data.metadata.version = str(page["version"]["number"])
         file_data.display_name = title
 

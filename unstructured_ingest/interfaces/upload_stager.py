@@ -25,6 +25,12 @@ class UploadStager(BaseProcess, ABC):
     def conform_dict(self, element_dict: dict, file_data: FileData) -> dict:
         return element_dict
 
+    def should_include(self, element_dict: dict) -> bool:
+        """Return False to exclude an element from the staged output.
+        Default behavior includes every element. Subclasses may override
+        to filter out elements that the destination cannot accept."""
+        return True
+
     def get_output_path(self, output_filename: str, output_dir: Path) -> Path:
         output_path = Path(output_filename)
         output_filename = f"{Path(output_filename).stem}{output_path.suffix}"
@@ -38,6 +44,11 @@ class UploadStager(BaseProcess, ABC):
             with output_file.open("w") as out_f:
                 writer = ndjson.writer(out_f)
                 for element in reader:
+                    # Filter hook: default returns True so existing behavior is preserved;
+                    # subclasses override should_include() to drop elements the destination
+                    # cannot accept.
+                    if not self.should_include(element_dict=element):
+                        continue
                     conformed_element = self.conform_dict(element_dict=element, file_data=file_data)
                     writer.write(row=conformed_element)
                     writer.f.flush()
@@ -45,9 +56,13 @@ class UploadStager(BaseProcess, ABC):
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
         elements_contents = get_json_data(path=input_file)
 
+        # Filter hook: default returns True so existing behavior is preserved;
+        # subclasses override should_include() to drop elements the destination
+        # cannot accept.
         conformed_elements = [
             self.conform_dict(element_dict=element, file_data=file_data)
             for element in elements_contents
+            if self.should_include(element_dict=element)
         ]
         write_data(path=output_file, data=conformed_elements)
 

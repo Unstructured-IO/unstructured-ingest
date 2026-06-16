@@ -156,6 +156,12 @@ class MilvusUploadStager(UploadStager):
         working_data[RECORD_ID_LABEL] = file_data.identifier
         return working_data
 
+    def should_include(self, element_dict: dict) -> bool:
+        # Elements with empty text are skipped by the embedder and arrive without
+        # an "embeddings" key. Milvus rejects inserts that omit a required vector
+        # field (not nullable, no default), so drop them here.
+        return "embeddings" in element_dict
+
 
 class MilvusUploaderConfig(UploaderConfig):
     db_name: Optional[str] = Field(default=None, description="Milvus database name")

@@ -1,8 +1,107 @@
-## [1.6.3]
+## [1.6.16]
 
 ### Fixes
 
 - **fix(weaviate): declare `metadata.data_source.version` explicitly as `text` to prevent auto-schema uuid inference.** When the destination collection did not yet exist, Weaviate's auto-schema typed `metadata.data_source.version` based on the value shape of the first inserted record; UUID-formatted source ETags caused the property to be locked as `uuid`, after which later records carrying non-UUID-shaped identifiers (e.g. multipart `<hex>-<part_count>` ETags, or opaque version strings from source connectors that do not return UUID-formatted ETags) were rejected with `WeaviateInsertManyAllFailedError: requires a string of UUID format`. The collection config now declares the field as `text` at creation time so auto-schema does not fire for it. The existing `str()` cast in `WeaviateUploadStager.conform_dict` is harmless and stays. Other `metadata.*` fields remain auto-schemed; this is the minimum change to unblock the observed failure mode without expanding the static schema.
+
+## [1.6.15]
+
+### Fixes
+
+- **fix(sharepoint): return all principals in document `permissions_data` instead of a single collapsed identity.** `office365-rest-python-client` shares one mutable-default `Identity` singleton across every `Permission` deserialization, so SDK typed reads collapsed every document's permissions to whichever user/group was deserialized last. The connector now bypasses the SDK's typed accessors and parses raw Graph `/$batch` JSON directly, so per-document users and groups round-trip distinctly. Reported by Intel.
+
+### Enhancements
+
+- **feat(onedrive): expose document ACLs in `permissions_data`.** OneDrive previously always returned `permissions_data: null`. The indexer now performs the same chunked Graph `/$batch` permission fetch as SharePoint and writes the canonical `read` / `update` / `delete` buckets (matching the Google Drive / Confluence schema) into `metadata.permissions_data`. Empty fetches and per-item failures degrade to the previous behavior. `tenacity` is added to the `onedrive` and `sharepoint` extras.
+
+## [1.6.14]
+
+### Fixes
+
+- **fix(connectors): stop asserting environment-specific URLs in Notion/OneDrive/SharePoint source integration tests.** The expected-results diff compared `additional_metadata.url` (Notion page id, MS Graph drive id) and `@microsoft.graph.downloadUrlNoAuth` (a tokenized no-auth download link), both of which vary by test tenant/workspace and per request. With no connector code change, these drifted and reddened `blob_storage_connectors_int_test` and `uncategorized_connectors_int_test` on main and every PR. Both fields are now excluded from the comparison, consistent with the existing exclusions of `@microsoft.graph.downloadUrl`, `LastModified`, and `date_*`.
+
+## [1.6.13]
+
+### Fixes
+
+- **fix(weaviate): set `vectorIndexType: "hnsw"` in the auto-created collection schema.** The default Weaviate collection config (`unstructured_ingest/processes/connectors/assets/weaviate_collection_config.json`) declared `vectorizer: "none"` but left `vectorIndexType` unset. Newer Weaviate server versions no longer infer a vector index when none is specified, so collections created via `WeaviateUploader.create_destination` came up without an index — vectors uploaded by the pipeline could not be queried with `near_vector` / `hybrid`, returning empty results. The schema now declares `hnsw` explicitly so auto-created collections are immediately searchable. Existing user-managed collections (`flatten_metadata=true`) are unaffected.
+
+## [1.6.12]
+
+### Enhancements
+
+- **feat(atlassian): support OAuth-backed Jira and Confluence cloud sources.** Jira and Confluence source configs accept Atlassian OAuth access tokens for API gateway requests with cloud IDs, while refresh tokens are carried for platform-side rotation before job dispatch. Confluence v2 indexing now paginates space and page discovery up to the configured limits so large tenants are not truncated.
+
+## [1.6.11]
+
+### Fixes
+
+- **fix(google-drive): exclude trashed items from indexer queries.** The Google Drive connector's `files.list` calls filtered by parent id only, so items the user had moved to Drive's trash were pulled and ingested like live content — "delete in Drive UI" did not remove the file from the corpus on the next ingest. Each list-query call site (`count_files_recursively`, the non-recursive precheck empty-folder probe, and `get_paginated_results`) now appends `and trashed = false`, matching the Drive v3 query semantics that exclude trash explicitly.
+
+## [1.6.10]
+
+### Fixes
+
+- **fix(databricks-delta-tables): stage each source file at its full relative path.** The `databricks_volume_delta_tables` uploader keyed the staging volume path on the source filename alone, so distinct source files sharing a basename across different folders overwrote each other on the volume — leading to dropped or duplicated rows and intermittent load failures under concurrency. It now uses the full relative path (falling back to the filename), matching the Databricks Volumes and object-store destinations. (PLU-392)
+
+## [1.6.9]
+
+### Enhancements
+
+- **feat(weaviate): add `flatten_metadata` option to the Weaviate uploader.** Opt-in, default off. When set, the stager flattens element `metadata` into top-level properties (lists pass through unmodified) and skips all default-mode coercions (date reformatting, JSON-stringification of `record_locator` / `coordinates.points` / `links` / `permissions_data` / `regex_metadata`, string casting of `version` / `page_number`). The uploader requires an explicit pre-created collection — `create_destination` no-ops, and `precheck` validates collection existence and the presence of `record_id_key` so re-run delete-by-record-id continues to work. Per-element, properties not declared on the user's schema are dropped and missing schema properties are filled with `None`. Default behavior (`flatten_metadata=False`) is unchanged.
+
+## [1.6.8]
+
+### BREAKING
+
+- **`UserError.status_code` changed from `401` to `422`.** `401` is HTTP "Unauthorized" (unauthenticated) — that's what `UserAuthError` covers. `UserError` is for invalid user input / config, which is HTTP `422` (Unprocessable Entity). Subclasses that override `status_code` (`UserAuthError=401`, `RateLimitError=429`) are unaffected. `QuotaError` inherits without override and now reports `422` — callers matching on `status_code == 401` for quota errors must update.
+
+### Enhancements
+
+- **feat(stager): add `should_include` filter hook to `UploadStager` base class.** New predicate defaults to `True`, preserving behavior across every existing connector. Subclasses override `should_include(element_dict)` to drop elements their destination cannot accept, replacing the prior pattern of duplicating `stream_update` and `process_whole` just to insert a one-line filter.
+
+### Fixes
+
+- **fix(teradata): classify driver errors and surface user-fault TD messages.** Adds `_raise_classified_teradata_error` that inspects `[Error NNNN]` codes in `teradatasql` exceptions and re-raises recognised user-fault codes (`3807` object-missing-or-no-privilege, `3523` / `5612` / `5315` no privilege, `3706` / `3707` SQL syntax, `3753` / `3754` implicit type conversion) as `UserError` with the original Teradata message preserved via `"Teradata reported: …"`. Wraps `cursor.execute` in `TeradataUploader.get_table_columns`, `delete_by_record_id`, `upload_dataframe`, `create_destination`, and the `TeradataIndexer.precheck` table probe. Non-`teradatasql` exceptions (e.g. `MemoryError`, `OSError`) re-raise unchanged; unrecognised TD codes fall through to the existing `DestinationConnectionError` / `SourceConnectionError` wrapping so retry behaviour is preserved. (PLU-377)
+  - **Source-side behavior change:** The classification applies to both directions. `TeradataIndexer.precheck` previously always raised `SourceConnectionError` when its table probe failed; it now raises `UserError` for codes in the recognised map (3807, 3523, 5612, 5315, etc.) and `SourceConnectionError` only for unrecognised codes / network failures. Source-side callers that catch `SourceConnectionError` will no longer catch those cases.
+- **fix(milvus): drop elements without embeddings before insert.** Empty-text elements (e.g., page-boundary `UncategorizedText` produced by the partitioner) are skipped by the embedder and arrive without an `embeddings` key. Milvus rejected these inserts with `Insert missed an field 'embeddings' to collection without set nullable==true or set default_value`, failing the entire workflow. `MilvusUploadStager` now overrides `should_include` to filter these elements out before they reach the uploader.
+
+## [1.6.7]
+
+### Enhancements
+
+- **feat(box): OAuth 2.0 access token support on the Box source.** `BoxAccessConfig` now accepts `access_token` (with optional `refresh_token`) alongside the existing `box_app_config` field, and a validator enforces exactly one auth method. When `access_token` is set, `BoxConnectionConfig.get_access_config()` returns a `boxsdk.OAuth2` client. `refresh_token` is stored as a carrier for external refresh flows (e.g. orchestrator-side rotation) and is not consumed in-process.
+
+## [1.6.6]
+
+### Enhancements
+
+- **feat(embed): add `CustomOpenAICompatibleEmbeddingConfig` subclass.** New optional config for OpenAI-compatible gateways (vLLM, NIM, Ollama, LiteLLM, etc.) that authenticate via custom HTTP headers. Adds optional `api_key: SecretStr | None` and `default_headers: dict[str, SecretStr] | None` on the subclass. When `api_key` is unset, no `Authorization` header is emitted to the gateway. Existing `OpenAIEmbeddingConfig` / `AzureOpenAIEmbeddingConfig` surfaces are unchanged.
+
+### Fixes
+
+- **test(notion): make `test_notion_source_database` row-order insensitive.** Test-only change; no published behavior.
+
+## [1.6.5]
+
+### Fixes
+
+- **fix(google-drive): skip non-downloadable native files during indexing and download.** Google Drive shortcuts, forms, maps, sites, fusiontables, and jams are now silently filtered out during indexing rather than failing at download time. Empty placeholder files (`inode/x-empty` or zero-byte with no MIME type) are also skipped. The downloader returns `None` for these files instead of raising `SourceConnectionError`, and `count_files_recursively` excludes them from file counts.
+
+## [1.6.4]
+
+### Enhancements
+
+- **feat(slack): support file attachments and OAuth refresh tokens.** Slack indexing now emits file attachment records, downloading uses Slack private file URLs with bearer authentication, and `SlackAccessConfig` accepts `refresh_token` so platform plugin schemas can expose OAuth token rotation settings.
+
+### Fixes
+
+- **fix(slack): guard private file downloads.** Validate Slack private download URLs before sending bearer credentials, refuse redirects that could forward bearer credentials, stream private file downloads to disk, and use a bounded timeout for private file reads.
+## [1.6.3]
+
+### Enhancements
+
+- **feat(databricks): add `flatten_metadata` option to the Volumes Delta Tables uploader.** Opt-in, default off. When set, the stager flattens element metadata into top-level columns matching Milvus's unprefixed naming, and the uploader skips auto-create against the user-managed table, dropping unknown incoming columns with a log line.
 
 ## [1.6.2]
 

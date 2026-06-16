@@ -22,6 +22,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
+from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 if TYPE_CHECKING:
@@ -57,7 +58,14 @@ class WeaviateConnectionConfig(ConnectionConfig, ABC):
 
 
 class WeaviateUploadStagerConfig(UploadStagerConfig):
-    pass
+    flatten_metadata: bool = Field(
+        default=False,
+        description=(
+            "Flatten metadata into top-level properties. Destination collection "
+            "must already exist (no auto-create); unknown incoming fields are "
+            "dropped and missing schema fields are filled with null."
+        ),
+    )
 
 
 @dataclass
@@ -81,6 +89,23 @@ class WeaviateUploadStager(UploadStager):
         """
         data = element_dict.copy()
         working_data = data.copy()
+
+        if self.upload_stager_config.flatten_metadata:
+            # Pure flatten: no opinionated transforms. User owns the schema and
+            # declares types matching raw values (e.g. OBJECT_ARRAY for list[dict]
+            # fields like links, permissions_data, regex_metadata_<pattern>).
+            metadata = working_data.pop("metadata", {})
+            working_data.update(
+                flatten_dict(
+                    metadata,
+                    separator="_",
+                    flatten_lists=False,
+                    remove_none=True,
+                )
+            )
+            working_data[RECORD_ID_LABEL] = file_data.identifier
+            return working_data
+
         # Dict as string formatting
         if (
             record_locator := working_data.get("metadata", {})
@@ -172,6 +197,14 @@ class WeaviateUploaderConfig(UploaderConfig):
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
     )
+    flatten_metadata: bool = Field(
+        default=False,
+        description=(
+            "Flatten metadata into top-level properties. Destination collection "
+            "must already exist (no auto-create); unknown incoming fields are "
+            "dropped and missing schema fields are filled with null."
+        ),
+    )
 
     def model_post_init(self, __context: Any) -> None:
         batch_types = {
@@ -212,23 +245,56 @@ class WeaviateUploaderConfig(UploaderConfig):
 class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
+    _schema_property_names: Optional[set[str]] = field(init=False, repr=False, default=None)
 
     def _collection_exists(self, collection_name: Optional[str] = None):
         collection_name = collection_name or self.upload_config.collection
         with self.connection_config.get_client() as weaviate_client:
             return weaviate_client.collections.exists(name=collection_name)
 
-    def precheck(self) -> None:
-        try:
-            with self.connection_config.get_client():
-                # Connection test successful - client is available but not needed
-                pass
+    def get_schema_property_names(self, client: "WeaviateClient") -> set[str]:
+        if self._schema_property_names is None:
+            collection = client.collections.get(self.upload_config.collection)
+            config = collection.config.get()
+            self._schema_property_names = {p.name for p in config.properties}
+        return self._schema_property_names
 
-            # only if collection name populated should we check that it exists
-            if self.upload_config.collection and not self._collection_exists():
-                raise DestinationConnectionError(
-                    f"collection '{self.upload_config.collection}' does not exist"
-                )
+    @staticmethod
+    def conform_to_schema(properties: dict, schema_props: set[str]) -> dict:
+        """Drop unknown keys; fill missing schema keys with None for explicit-null queries."""
+        return {k: properties.get(k) for k in schema_props}
+
+    def precheck(self) -> None:
+        if self.upload_config.flatten_metadata and not self.upload_config.collection:
+            raise DestinationConnectionError(
+                "flatten_metadata=true requires an explicit collection name."
+            )
+
+        try:
+            with self.connection_config.get_client() as weaviate_client:
+                if not self.upload_config.collection:
+                    return
+
+                if not weaviate_client.collections.exists(name=self.upload_config.collection):
+                    msg = f"collection '{self.upload_config.collection}' does not exist"
+                    if self.upload_config.flatten_metadata:
+                        msg += " (must be pre-created when flatten_metadata=true)"
+                    raise DestinationConnectionError(msg)
+
+                if self.upload_config.flatten_metadata:
+                    # Schema shape (OBJECT_ARRAY for nested fields, etc.) is the
+                    # user's call; we only enforce that record_id is declared so
+                    # re-run delete-by-record_id can find prior writes.
+                    collection = weaviate_client.collections.get(self.upload_config.collection)
+                    schema_props = {p.name for p in collection.config.get().properties}
+                    if self.upload_config.record_id_key not in schema_props:
+                        raise DestinationConnectionError(
+                            f"Collection {self.upload_config.collection!r} is missing "
+                            f"required property {self.upload_config.record_id_key!r}; "
+                            "delete-by-record_id will not work."
+                        )
+        except DestinationConnectionError:
+            raise
         except Exception as e:
             logger.error(f"Failed to validate connection {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
@@ -266,6 +332,9 @@ class WeaviateUploader(VectorDBUploader, ABC):
         vector_length: Optional[int] = None,
         **kwargs: Any,
     ) -> bool:
+        if self.upload_config.flatten_metadata:
+            # User manages the collection under flatten mode; precheck validates existence.
+            return False
         collection_name = self.upload_config.collection or destination_name
         collection_name = self.format_destination_name(collection_name)
         self.upload_config.collection = collection_name
@@ -326,12 +395,19 @@ class WeaviateUploader(VectorDBUploader, ABC):
 
         with self.connection_config.get_client() as weaviate_client:
             self.delete_by_record_id(client=weaviate_client, file_data=file_data)
+            schema_props: Optional[set[str]] = None
+            if self.upload_config.flatten_metadata:
+                schema_props = self.get_schema_property_names(weaviate_client)
             with self.upload_config.get_batch_client(client=weaviate_client) as batch_client:
                 for e in data:
                     vector = e.pop("embeddings", None)
+                    if schema_props is not None:
+                        properties = self.conform_to_schema(e, schema_props)
+                    else:
+                        properties = e
                     batch_client.add_object(
                         collection=self.upload_config.collection,
-                        properties=e,
+                        properties=properties,
                         vector=vector,
                     )
             self.check_for_errors(client=weaviate_client)
