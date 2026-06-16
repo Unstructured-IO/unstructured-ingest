@@ -7141,6 +7141,7 @@ onedrive = [
     { name = "msal" },
     { name = "office365-rest-python-client" },
     { name = "requests" },
+    { name = "tenacity" },
 ]
 openai = [
     { name = "openai" },
@@ -7207,6 +7208,7 @@ sharepoint = [
     { name = "msal" },
     { name = "office365-rest-python-client" },
     { name = "requests" },
+    { name = "tenacity" },
 ]
 singlestore = [
     { name = "pandas" },
@@ -7409,6 +7411,8 @@ requires-dist = [
     { name = "tenacity", marker = "extra == 'delta-table'" },
     { name = "tenacity", marker = "extra == 'google-drive'" },
     { name = "tenacity", marker = "extra == 'ibm-watsonx-s3'" },
+    { name = "tenacity", marker = "extra == 'onedrive'" },
+    { name = "tenacity", marker = "extra == 'sharepoint'" },
     { name = "teradatasql", marker = "extra == 'teradata'" },
     { name = "tiktoken", marker = "extra == 'octoai'" },
     { name = "tiktoken", marker = "extra == 'openai'" },

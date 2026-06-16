@@ -3,10 +3,11 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from deepdiff import DeepDiff
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from test.integration.connectors.utils.validation.utils import ValidationConfig
 from unstructured_ingest.data_types.file_data import FileData
@@ -29,6 +30,55 @@ NONSTANDARD_METADATA_FIELDS = {
 FILEDATA_CHECKS_TYPE = Callable[[FileData], None] | tuple[Callable[[FileData], None], ...]
 
 
+class FixtureScrubber(BaseModel):
+    """Sanitize a field in fixture output before persisting to disk.
+
+    Applied at write time only (during ``OVERWRITE_FIXTURES=true`` runs);
+    runtime connector behavior is unaffected. Use this for values that are
+    sensitive (short-lived tokens, API keys) or noisy (rotating IDs) and that
+    would otherwise be re-committed on every fixture regeneration.
+
+    ``path`` uses the same dotted notation as ``exclude_fields`` and honors
+    the same ``NONSTANDARD_METADATA_FIELDS`` escape hatch for keys whose
+    names contain dots (e.g. ``@microsoft.graph.downloadUrl``).
+
+    Pair with ``exclude_fields_extend``: scrubbers run at fixture-write time
+    only, not at validation-read time. If a scrubber rewrites a value that
+    also changes run-to-run (the usual reason to scrub), the on-disk fixture
+    will diff against the live un-scrubbed value on the next test run unless
+    the same path is also listed in ``exclude_fields_extend``. The bundled
+    ``additional_metadata.@microsoft.graph.downloadUrl`` default is already
+    excluded in the OneDrive/SharePoint tests.
+    """
+
+    path: str
+    mode: Literal["drop", "redact", "strip_url_param"] = "drop"
+    param: Optional[str] = None
+    placeholder: str = "<redacted>"
+
+
+# SharePoint / OneDrive Graph $batch responses bake a short-lived bearer
+# token (`tempauth=v1.<jwt>`) into the per-item download URL. The token
+# is bound to that one URL and expires quickly, but it's still a live
+# credential in source control — strip it before committing fixtures.
+# `@microsoft.graph.downloadUrlNoAuth` is dropped entirely: the name says
+# "no Authorization header needed," which in Graph URL variants almost
+# always means the credential is embedded in the URL itself (signed
+# query parameter or signed path). Without a known sample to scrub
+# selectively, drop the whole field.
+DEFAULT_FIXTURE_SCRUBBERS: list[FixtureScrubber] = [
+    FixtureScrubber(
+        path="additional_metadata.@microsoft.graph.downloadUrl",
+        mode="strip_url_param",
+        param="tempauth",
+    ),
+    FixtureScrubber(
+        path="additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+        mode="drop",
+    ),
+]
+
+
 class SourceValidationConfigs(ValidationConfig):
     expected_number_indexed_file_data: Optional[int] = None
     expected_num_files: Optional[int] = None
@@ -38,6 +88,10 @@ class SourceValidationConfigs(ValidationConfig):
         default_factory=lambda: ["local_download_path", "metadata.date_processed"]
     )
     exclude_fields_extend: list[str] = Field(default_factory=list)
+    fixture_scrubbers: list[FixtureScrubber] = Field(
+        default_factory=lambda: list(DEFAULT_FIXTURE_SCRUBBERS)
+    )
+    fixture_scrubbers_extend: list[FixtureScrubber] = Field(default_factory=list)
     validate_downloaded_files: bool = False
     validate_file_data: bool = True
 
@@ -45,6 +99,9 @@ class SourceValidationConfigs(ValidationConfig):
         exclude_fields = self.exclude_fields
         exclude_fields.extend(self.exclude_fields_extend)
         return list(set(exclude_fields))
+
+    def get_fixture_scrubbers(self) -> list[FixtureScrubber]:
+        return [*self.fixture_scrubbers, *self.fixture_scrubbers_extend]
 
     def run_file_data_validation(
         self, predownload_file_data: FileData, postdownload_file_data: FileData
@@ -92,6 +149,57 @@ class SourceValidationConfigs(ValidationConfig):
             else:
                 current_val.pop(drop_field, None)
         return copied_data
+
+
+def _resolve_field_parent(data: dict, path: str) -> tuple[Optional[dict], str]:
+    """Walk ``data`` following the dotted ``path`` (honoring
+    ``NONSTANDARD_METADATA_FIELDS``) and return the parent dict that holds
+    the final key, along with that final key. Returns ``(None, "")`` if any
+    intermediate segment is missing or not a dict, so callers can no-op
+    cleanly on absent paths.
+    """
+    segments = (
+        NONSTANDARD_METADATA_FIELDS[path]
+        if path in NONSTANDARD_METADATA_FIELDS
+        else path.split(".")
+    )
+    current = data
+    for segment in segments[:-1]:
+        nxt = current.get(segment)
+        if not isinstance(nxt, dict):
+            return None, ""
+        current = nxt
+    return current, segments[-1]
+
+
+def apply_fixture_scrubbers(data: dict, scrubbers: list[FixtureScrubber]) -> None:
+    """Apply each scrubber to ``data`` in place. Missing paths and type
+    mismatches are silently skipped so per-test scrubber lists can be shared
+    across connectors that don't emit every field.
+    """
+    for scrubber in scrubbers:
+        parent, key = _resolve_field_parent(data, scrubber.path)
+        if parent is None or key not in parent:
+            continue
+        if scrubber.mode == "drop":
+            parent.pop(key, None)
+        elif scrubber.mode == "redact":
+            parent[key] = scrubber.placeholder
+        elif scrubber.mode == "strip_url_param":
+            value = parent[key]
+            if not isinstance(value, str) or not scrubber.param:
+                continue
+            parts = urlsplit(value)
+            new_query = urlencode(
+                [
+                    (k, v)
+                    for k, v in parse_qsl(parts.query, keep_blank_values=True)
+                    if k != scrubber.param
+                ]
+            )
+            parent[key] = urlunsplit(
+                (parts.scheme, parts.netloc, parts.path, new_query, parts.fragment)
+            )
 
 
 # FsspecDownloader writes each file into a fresh tempfile.mkdtemp("unstructured_") subdir
@@ -214,6 +322,7 @@ def update_fixtures(
     all_file_data: list[FileData],
     save_downloads: bool = False,
     save_filedata: bool = True,
+    fixture_scrubbers: Optional[list[FixtureScrubber]] = None,
 ):
     # Rewrite the current file data
     if not output_dir.exists():
@@ -228,8 +337,12 @@ def update_fixtures(
         file_data_output_path.mkdir(parents=True, exist_ok=True)
         for file_data in all_file_data:
             file_data_path = file_data_output_path / f"{file_data.identifier}.json"
+            payload = json.loads(file_data.model_dump_json())
+            if fixture_scrubbers:
+                apply_fixture_scrubbers(payload, fixture_scrubbers)
             with file_data_path.open(mode="w") as f:
-                f.write(file_data.model_dump_json(indent=2))
+                json.dump(payload, f, indent=2)
+                f.write("\n")
 
     # Record file structure of download directory
     download_files = get_files(dir_path=download_dir)
@@ -372,6 +485,7 @@ async def source_connector_validation(
             ),
             save_downloads=configs.validate_downloaded_files,
             save_filedata=configs.validate_file_data,
+            fixture_scrubbers=configs.get_fixture_scrubbers(),
         )
 
 
