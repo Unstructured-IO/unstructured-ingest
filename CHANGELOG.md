@@ -1,3 +1,9 @@
+## [1.6.16]
+
+### Fixes
+
+- **fix(google_drive): refresh OAuth access tokens via authorized_user credentials.** The Google Drive connector authenticated with a raw OAuth access token that google-auth cannot refresh, so once the token expired (~1 hour) the indexer raised `RefreshError` and listed zero files. When `service_account_key` holds an `authorized_user` credential (carrying `refresh_token`, `client_id`, `client_secret`, and `token_uri`), the connector now builds it via `Credentials.from_authorized_user_info`, so google-auth mints a fresh access token automatically on expiry. The service-account and raw `oauth_token` paths are unchanged.
+
 ## [1.6.15]
 
 ### Fixes

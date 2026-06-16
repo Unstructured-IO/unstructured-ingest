@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import SourceConnectionError, UserAuthError, ValueError
 from unstructured_ingest.processes.connectors.google_drive import (
     GOOGLE_DRIVE_SKIP_MIME_TYPES,
     GOOGLE_EXPORT_MIME_MAP,
@@ -143,6 +143,238 @@ class TestGoogleDriveAccessConfig:
         )
         with pytest.raises(ValueError, match="both provided and have different values"):
             config.get_service_account_key()
+
+
+class TestGoogleDriveAuthorizedUserCredentials:
+    """The connector must build a self-refreshing google-auth credential when the key is an
+    ``authorized_user`` credential (the platform translates widget OAuth into this shape and
+    packs it into ``service_account_key``). Such a credential carries refresh_token, client_id,
+    client_secret, and token_uri, so google-auth mints a fresh access token on expiry instead of
+    raising RefreshError. The raw ``oauth_token`` and service-account paths must be untouched."""
+
+    AUTHORIZED_USER_KEY = {
+        "type": "authorized_user",
+        "client_id": "client-id.apps.googleusercontent.com",
+        "client_secret": "client-secret",
+        "refresh_token": "refresh-token-value",
+        "token_uri": "https://oauth2.googleapis.com/token",
+    }
+
+    def _downloader(self, access_config, tmp_path):
+        connection_config = GoogleDriveConnectionConfig(
+            drive_id="drive-id",
+            access_config=access_config,
+        )
+        return GoogleDriveDownloader(
+            connection_config=connection_config,
+            download_config=GoogleDriveDownloaderConfig(download_dir=tmp_path),
+        )
+
+    def test_get_credentials_authorized_user_is_refreshable(self, tmp_path):
+        """_get_credentials returns an OAuth credential carrying refresh material."""
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+
+        downloader = self._downloader(
+            GoogleDriveAccessConfig(service_account_key=self.AUTHORIZED_USER_KEY), tmp_path
+        )
+
+        creds = downloader._get_credentials()
+
+        assert isinstance(creds, OAuthCredentials)
+        assert creds.refresh_token == "refresh-token-value"
+        assert creds.client_id == "client-id.apps.googleusercontent.com"
+        assert creds.client_secret == "client-secret"
+        assert creds.token_uri == "https://oauth2.googleapis.com/token"
+
+    def test_get_credentials_authorized_user_from_json_string(self, tmp_path):
+        """The authorized_user key also arrives as a JSON string from the platform."""
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+
+        downloader = self._downloader(
+            GoogleDriveAccessConfig(service_account_key=json.dumps(self.AUTHORIZED_USER_KEY)),
+            tmp_path,
+        )
+
+        creds = downloader._get_credentials()
+
+        assert isinstance(creds, OAuthCredentials)
+        assert creds.refresh_token == "refresh-token-value"
+
+    def test_get_credentials_malformed_authorized_user_raises_user_auth_error(self, tmp_path):
+        """A malformed authorized_user key (missing OAuth fields) surfaces as UserAuthError,
+        matching how the service-account path reports invalid credentials, rather than leaking
+        a raw builtin ValueError."""
+        malformed = {"type": "authorized_user", "client_id": "only-client-id"}
+        downloader = self._downloader(
+            GoogleDriveAccessConfig(service_account_key=malformed), tmp_path
+        )
+
+        with pytest.raises(UserAuthError, match="authorized_user"):
+            downloader._get_credentials()
+
+    def test_get_credentials_oauth_token_is_not_refreshable(self, tmp_path):
+        """The raw oauth_token path is unchanged: a bare access token with no refresh material."""
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+
+        downloader = self._downloader(
+            GoogleDriveAccessConfig(oauth_token="ya29.raw-access-token"), tmp_path
+        )
+
+        creds = downloader._get_credentials()
+
+        assert isinstance(creds, OAuthCredentials)
+        assert creds.token == "ya29.raw-access-token"
+        assert creds.refresh_token is None
+
+    def test_get_credentials_service_account_dispatches_to_service_account_info(
+        self, tmp_path, monkeypatch
+    ):
+        """A non-authorized_user key still routes to from_service_account_info (no regression)."""
+        from google.oauth2 import service_account
+
+        sa_key = {"type": "service_account", "project_id": "test", "private_key": "xxx"}
+        downloader = self._downloader(GoogleDriveAccessConfig(service_account_key=sa_key), tmp_path)
+
+        captured = {}
+
+        def fake_from_service_account_info(info, scopes=None):
+            captured["info"] = info
+            captured["scopes"] = scopes
+            return "SERVICE_ACCOUNT_CREDS"
+
+        monkeypatch.setattr(
+            service_account.Credentials,
+            "from_service_account_info",
+            staticmethod(fake_from_service_account_info),
+        )
+
+        creds = downloader._get_credentials()
+
+        assert creds == "SERVICE_ACCOUNT_CREDS"
+        assert captured["info"] == sa_key
+        assert captured["scopes"] == ["https://www.googleapis.com/auth/drive.readonly"]
+
+    def test_get_client_authorized_user_builds_refreshable_credential(self, monkeypatch):
+        """get_client builds a refreshable OAuth credential for an authorized_user key."""
+        from google.oauth2.credentials import Credentials as OAuthCredentials
+
+        connection_config = GoogleDriveConnectionConfig(
+            drive_id="drive-id",
+            access_config=GoogleDriveAccessConfig(service_account_key=self.AUTHORIZED_USER_KEY),
+        )
+
+        captured = {}
+
+        def fake_build(name, version, credentials=None):
+            captured["name"] = name
+            captured["credentials"] = credentials
+            return MagicMock()
+
+        monkeypatch.setattr("googleapiclient.discovery.build", fake_build)
+
+        with connection_config.get_client() as client:
+            assert client is not None
+
+        creds = captured["credentials"]
+        assert captured["name"] == "drive"
+        assert isinstance(creds, OAuthCredentials)
+        assert creds.refresh_token == "refresh-token-value"
+
+    def test_streaming_download_refreshes_authorized_user_credential(self, tmp_path, monkeypatch):
+        """The streaming downloader mints a fresh access token via refresh() for authorized_user,
+        rather than reusing a stale raw token."""
+        downloader = self._downloader(
+            GoogleDriveAccessConfig(service_account_key=self.AUTHORIZED_USER_KEY), tmp_path
+        )
+
+        fake_creds = MagicMock()
+        fake_creds.token = "fresh-access-token"
+        monkeypatch.setattr(downloader, "_get_credentials", lambda: fake_creds)
+
+        captured = {}
+
+        class _FakeStream:
+            status_code = 200
+
+            def iter_bytes(self):
+                return [b"file-bytes"]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        class _FakeHttpxClient:
+            def __init__(self, **kwargs):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def stream(self, method, url, headers=None):
+                captured["headers"] = headers
+                return _FakeStream()
+
+        monkeypatch.setattr("httpx.Client", _FakeHttpxClient)
+
+        out_path = tmp_path / "downloaded.bin"
+        result = downloader._raw_download_google_drive_file("https://drive/file", out_path)
+
+        fake_creds.refresh.assert_called_once()
+        assert captured["headers"]["Authorization"] == "Bearer fresh-access-token"
+        assert result == out_path
+        assert out_path.read_bytes() == b"file-bytes"
+
+    def test_streaming_download_uses_raw_oauth_token_without_refresh(self, tmp_path, monkeypatch):
+        """The raw oauth_token downloader path is unchanged: it uses the token directly and never
+        constructs/refreshes a credential."""
+        downloader = self._downloader(
+            GoogleDriveAccessConfig(oauth_token="ya29.raw-access-token"), tmp_path
+        )
+
+        def _fail_get_credentials():
+            raise AssertionError("raw oauth_token path must not build/refresh a credential")
+
+        monkeypatch.setattr(downloader, "_get_credentials", _fail_get_credentials)
+
+        captured = {}
+
+        class _FakeStream:
+            status_code = 200
+
+            def iter_bytes(self):
+                return [b"file-bytes"]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        class _FakeHttpxClient:
+            def __init__(self, **kwargs):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def stream(self, method, url, headers=None):
+                captured["headers"] = headers
+                return _FakeStream()
+
+        monkeypatch.setattr("httpx.Client", _FakeHttpxClient)
+
+        out_path = tmp_path / "downloaded.bin"
+        downloader._raw_download_google_drive_file("https://drive/file", out_path)
+
+        assert captured["headers"]["Authorization"] == "Bearer ya29.raw-access-token"
 
 
 class TestGoogleDriveNativeExports:

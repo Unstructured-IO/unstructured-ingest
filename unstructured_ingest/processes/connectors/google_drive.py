@@ -35,6 +35,8 @@ CONNECTOR_TYPE = "google_drive"
 GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
 GOOGLE_DRIVE_NATIVE_MIME_PREFIX = "application/vnd.google-apps."
 
+DRIVE_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
+
 # Native Google MIME types that have no downloadable or exportable content.
 # Shortcuts are aliases to other files, forms/maps/sites are web-only apps.
 # These are silently skipped during indexing and downloading.
@@ -121,6 +123,30 @@ def _build_extension_query_filter(extensions: list[str]) -> str:
     return " or ".join(clauses)
 
 
+def _authorized_user_credentials(key_data: dict):
+    """Build a self-refreshing OAuth credential from an ``authorized_user`` key dict.
+
+    The platform translates widget OAuth into an ``authorized_user`` credential carrying
+    refresh_token, client_id, client_secret, and token_uri, and packs it into
+    ``service_account_key``; google-auth then refreshes the access token automatically on
+    expiry. A malformed dict (missing required OAuth fields) surfaces as a UserAuthError,
+    matching how the service-account path reports invalid credentials.
+    """
+    # builtins.ValueError, not the module-level unstructured_ingest.error.ValueError that
+    # shadows it here: from_authorized_user_info raises the builtin on missing fields.
+    import builtins
+
+    from google.oauth2.credentials import Credentials as OAuthCredentials
+
+    try:
+        return OAuthCredentials.from_authorized_user_info(key_data, scopes=[DRIVE_READONLY_SCOPE])
+    except builtins.ValueError as exc:
+        raise UserAuthError(
+            "Invalid authorized_user credentials: missing required OAuth fields "
+            "(refresh_token, client_id, client_secret)."
+        ) from exc
+
+
 class GoogleDriveAccessConfig(AccessConfig):
     service_account_key: Optional[Annotated[dict, BeforeValidator(conform_string_to_dict)]] = Field(
         default=None, description="Credentials values to use for authentication"
@@ -200,7 +226,10 @@ class GoogleDriveConnectionConfig(ConnectionConfig):
                 creds = OAuthCredentials(token=access_config.oauth_token)
             else:
                 key_data = access_config.get_service_account_key()
-                creds = service_account.Credentials.from_service_account_info(key_data)
+                if isinstance(key_data, dict) and key_data.get("type") == "authorized_user":
+                    creds = _authorized_user_credentials(key_data)
+                else:
+                    creds = service_account.Credentials.from_service_account_info(key_data)
 
             service = build("drive", "v3", credentials=creds)
             with service.files() as client:
@@ -897,9 +926,14 @@ class GoogleDriveDownloader(Downloader):
             return OAuthCredentials(token=access_config.oauth_token)
 
         key_data = access_config.get_service_account_key()
+        if isinstance(key_data, dict) and key_data.get("type") == "authorized_user":
+            # The streaming downloader relies on this credential being refreshable: its
+            # creds.refresh(Request()) call mints a fresh access token for an authorized_user
+            # credential exactly as it does for a service account.
+            return _authorized_user_credentials(key_data)
         return service_account.Credentials.from_service_account_info(
             key_data,
-            scopes=["https://www.googleapis.com/auth/drive.readonly"],
+            scopes=[DRIVE_READONLY_SCOPE],
         )
 
     def _download_file(self, file_data: FileData) -> Optional[Path]:
