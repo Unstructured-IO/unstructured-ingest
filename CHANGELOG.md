@@ -1,3 +1,9 @@
+## [1.6.14]
+
+### Fixes
+
+- **fix(connectors): stop asserting environment-specific URLs in Notion/OneDrive/SharePoint source integration tests.** The expected-results diff compared `additional_metadata.url` (Notion page id, MS Graph drive id) and `@microsoft.graph.downloadUrlNoAuth` (a tokenized no-auth download link), both of which vary by test tenant/workspace and per request. With no connector code change, these drifted and reddened `blob_storage_connectors_int_test` and `uncategorized_connectors_int_test` on main and every PR. Both fields are now excluded from the comparison, consistent with the existing exclusions of `@microsoft.graph.downloadUrl`, `LastModified`, and `date_*`.
+
 ## [1.6.13]
 
 ### Fixes

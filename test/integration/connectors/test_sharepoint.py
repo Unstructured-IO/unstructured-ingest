@@ -68,6 +68,10 @@ async def test_sharepoint_source(temp_dir):
             expected_num_files=4,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
@@ -117,6 +121,10 @@ async def test_sharepoint_source_with_path(temp_dir):
             expected_num_files=2,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
@@ -166,6 +174,10 @@ async def test_sharepoint_root_with_path(temp_dir):
             expected_num_files=2,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
@@ -215,6 +227,10 @@ async def test_sharepoint_shared_documents(temp_dir):
             expected_num_files=4,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
@@ -266,6 +282,10 @@ async def test_sharepoint_library(temp_dir):
             expected_num_files=3,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
@@ -317,6 +337,10 @@ async def test_sharepoint_library_with_path(temp_dir):
             expected_num_files=1,
             validate_downloaded_files=True,
             exclude_fields_extend=[
+                # no-auth signed download URL; volatile per request, like downloadUrl
+                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+                # url embeds the env-specific drive id; varies by tenant
+                "additional_metadata.url",
                 "metadata.date_created",
                 "metadata.date_modified",
                 "additional_metadata.LastModified",
