@@ -5,7 +5,9 @@ from pathlib import Path
 import pytest
 import requests
 import weaviate
+from weaviate.classes.config import DataType
 from weaviate.client import WeaviateClient
+from weaviate.collections.classes.config import PropertyConfig
 
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.docker import container_context
@@ -48,6 +50,28 @@ def collection(weaviate_instance, collections_schema_config: dict) -> str:
     with weaviate.connect_to_local() as weaviate_client:
         weaviate_client.collections.create_from_dict(config=collections_schema_config)
     return COLLECTION_NAME
+
+
+def find_property(properties: list[PropertyConfig], name: str) -> PropertyConfig:
+    matches = [prop for prop in properties if prop.name == name]
+    assert matches, f"property '{name}' not found among {[p.name for p in properties]}"
+    return matches[0]
+
+
+def assert_data_source_version_is_text(client: WeaviateClient, collection_name: str) -> None:
+    """The created collection must declare metadata.data_source.version as `text`.
+
+    Without an explicit declaration Weaviate auto-schema infers the type from the
+    first inserted value, which locks the property to `uuid` when an ETag happens to
+    be UUID-shaped and then rejects non-UUID version strings.
+    """
+    config = client.collections.get(collection_name).config.get()
+    metadata = find_property(config.properties, "metadata")
+    data_source = find_property(metadata.nested_properties or [], "data_source")
+    version = find_property(data_source.nested_properties or [], "version")
+    assert version.data_type == DataType.TEXT, (
+        f"expected metadata.data_source.version to be {DataType.TEXT}, got {version.data_type}"
+    )
 
 
 def get_count(client: WeaviateClient) -> int:
@@ -147,6 +171,7 @@ def test_weaviate_local_create_destination(weaviate_instance):
     assert created
     with uploader.connection_config.get_client() as weaviate_client:
         assert weaviate_client.collections.exists(name=formatted_collection_name)
+        assert_data_source_version_is_text(weaviate_client, formatted_collection_name)
 
     created = uploader.create_destination(destination_name=collection_name)
     assert not created
