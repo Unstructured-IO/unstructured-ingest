@@ -25,6 +25,13 @@ def test_slack_access_config_accepts_refresh_token():
     assert config.refresh_token == "xoxe-slack-refresh-token"
 
 
+def _make_indexer(channels=None):
+    return SlackIndexer(
+        index_config=SlackIndexerConfig(channels=channels or ["C123"]),
+        connection_config=Mock(),
+    )
+
+
 def test_slack_indexer_emits_file_data_for_message_files():
     client = Mock()
     client.conversations_history.return_value = [
@@ -44,6 +51,7 @@ def test_slack_indexer_emits_file_data_for_message_files():
             ]
         }
     ]
+    client.chat_getPermalink.return_value.get.return_value = None
     connection_config = Mock()
     connection_config.get_client.return_value = client
     indexer = SlackIndexer(
@@ -63,6 +71,105 @@ def test_slack_indexer_emits_file_data_for_message_files():
         "message_ts": "1710000000.000100",
         "file_id": "F123",
     }
+
+
+def test_messages_to_file_data_includes_permalink():
+    client = Mock()
+    client.chat_getPermalink.return_value.get.return_value = (
+        "https://my-workspace.slack.com/archives/C123/p1710000000000100"
+    )
+    indexer = _make_indexer()
+
+    file_data = indexer._messages_to_file_data(
+        messages=[{"ts": "1710000000.000100", "text": "hello"}],
+        channel="C123",
+        client=client,
+    )
+
+    assert file_data.metadata.url == (
+        "https://my-workspace.slack.com/archives/C123/p1710000000000100"
+    )
+    client.chat_getPermalink.assert_called_once_with(
+        channel="C123", message_ts="1710000000.000100"
+    )
+
+
+def test_messages_to_file_data_uses_oldest_ts_for_permalink():
+    client = Mock()
+    client.chat_getPermalink.return_value.get.return_value = "https://example.slack.com/p"
+    indexer = _make_indexer()
+
+    indexer._messages_to_file_data(
+        messages=[
+            {"ts": "1710000002.000000", "text": "newer"},
+            {"ts": "1710000001.000000", "text": "older"},
+        ],
+        channel="C123",
+        client=client,
+    )
+
+    client.chat_getPermalink.assert_called_once_with(
+        channel="C123", message_ts="1710000001.000000"
+    )
+
+
+def test_messages_to_file_data_omits_url_without_client():
+    file_data = _make_indexer()._messages_to_file_data(
+        messages=[{"ts": "1710000000.000100", "text": "hello"}],
+        channel="C123",
+    )
+
+    assert file_data.metadata.url is None
+
+
+def test_messages_to_file_data_omits_url_when_permalink_fetch_fails():
+    client = Mock()
+    client.chat_getPermalink.side_effect = Exception("API error")
+    indexer = _make_indexer()
+
+    file_data = indexer._messages_to_file_data(
+        messages=[{"ts": "1710000000.000100", "text": "hello"}],
+        channel="C123",
+        client=client,
+    )
+
+    assert file_data.metadata.url is None
+
+
+def test_message_files_to_file_data_includes_permalink():
+    messages = [
+        {
+            "ts": "1710000000.000100",
+            "files": [
+                {
+                    "id": "F123",
+                    "name": "report.pdf",
+                    "permalink": "https://my-workspace.slack.com/files/U123/F123/report.pdf",
+                }
+            ],
+        }
+    ]
+
+    file_data_list = list(_make_indexer()._message_files_to_file_data(messages, "C123"))
+
+    assert len(file_data_list) == 1
+    assert file_data_list[0].metadata.url == (
+        "https://my-workspace.slack.com/files/U123/F123/report.pdf"
+    )
+
+
+def test_message_files_to_file_data_omits_url_when_no_permalink():
+    messages = [
+        {
+            "ts": "1710000000.000100",
+            "files": [{"id": "F123", "name": "report.pdf"}],
+        }
+    ]
+
+    file_data_list = list(_make_indexer()._message_files_to_file_data(messages, "C123"))
+
+    assert len(file_data_list) == 1
+    assert file_data_list[0].metadata.url is None
 
 
 @pytest.mark.asyncio

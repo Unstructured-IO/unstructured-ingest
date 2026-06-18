@@ -150,7 +150,7 @@ class SlackIndexer(Indexer):
             ):
                 messages = conversation_history.get("messages", [])
                 if messages:
-                    yield self._messages_to_file_data(messages, channel)
+                    yield self._messages_to_file_data(messages, channel, client)
                     for file_data in self._message_files_to_file_data(messages, channel):
                         yield file_data
 
@@ -158,6 +158,7 @@ class SlackIndexer(Indexer):
         self,
         messages: list[dict],
         channel: str,
+        client: Optional["WebClient"] = None,
     ) -> FileData:
         ts_oldest = min((message["ts"] for message in messages), key=lambda m: float(m))
         ts_newest = max((message["ts"] for message in messages), key=lambda m: float(m))
@@ -165,6 +166,17 @@ class SlackIndexer(Indexer):
         identifier_base = f"{channel}-{ts_oldest}-{ts_newest}"
         identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
         filename = identifier[:16]
+
+        permalink = None
+        if client is not None:
+            try:
+                response = client.chat_getPermalink(channel=channel, message_ts=ts_oldest)
+                raw = response.get("permalink")
+                permalink = raw if isinstance(raw, str) else None
+            except Exception:
+                logger.debug(
+                    f"Could not retrieve permalink for channel={channel} ts={ts_oldest}."
+                )
 
         source_identifiers = SourceIdentifiers(
             filename=f"{filename}.xml", fullpath=f"{filename}.xml"
@@ -174,6 +186,7 @@ class SlackIndexer(Indexer):
             connector_type=CONNECTOR_TYPE,
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
+                url=permalink,
                 date_created=ts_oldest,
                 date_modified=ts_newest,
                 date_processed=str(time.time()),
@@ -209,6 +222,7 @@ class SlackIndexer(Indexer):
                     connector_type=CONNECTOR_TYPE,
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
+                        url=slack_file.get("permalink") or None,
                         date_created=(
                             str(slack_file.get("created")) if slack_file.get("created") else None
                         ),
