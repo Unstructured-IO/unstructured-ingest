@@ -272,7 +272,13 @@ class ValkeyUploader(VectorDBUploader):
         try:
             pipeline = Batch(is_atomic=False)
             for element in batch:
-                key = f"{self.upload_config.key_prefix}{element['element_id']}"
+                element_id = element.get("element_id")
+                if not element_id:
+                    raise WriteError(
+                        "Element is missing 'element_id' — cannot construct a unique key. "
+                        "Ensure data is processed through the Unstructured pipeline."
+                    )
+                key = f"{self.upload_config.key_prefix}{element_id}"
 
                 fields: dict[str, str | bytes] = {
                     "text": element.get("text", ""),
@@ -284,6 +290,11 @@ class ValkeyUploader(VectorDBUploader):
                 # Add vector embedding if present
                 embeddings = element.get("embeddings")
                 if embeddings:
+                    if not isinstance(embeddings, (list, tuple)):
+                        raise WriteError(
+                            f"Element '{element_id}' has invalid 'embeddings' type: "
+                            f"expected list of floats, got {type(embeddings).__name__}"
+                        )
                     fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
 
                 pipeline.hset(key, fields)
@@ -309,7 +320,13 @@ class ValkeyUploader(VectorDBUploader):
         """Write elements one at a time (used when index is active)."""
         try:
             for element in batch:
-                key = f"{self.upload_config.key_prefix}{element['element_id']}"
+                element_id = element.get("element_id")
+                if not element_id:
+                    raise WriteError(
+                        "Element is missing 'element_id' — cannot construct a unique key. "
+                        "Ensure data is processed through the Unstructured pipeline."
+                    )
+                key = f"{self.upload_config.key_prefix}{element_id}"
 
                 fields: dict[str, str | bytes] = {
                     "text": element.get("text", ""),
@@ -320,6 +337,11 @@ class ValkeyUploader(VectorDBUploader):
 
                 embeddings = element.get("embeddings")
                 if embeddings:
+                    if not isinstance(embeddings, (list, tuple)):
+                        raise WriteError(
+                            f"Element '{element_id}' has invalid 'embeddings' type: "
+                            f"expected list of floats, got {type(embeddings).__name__}"
+                        )
                     fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
 
                 await client.hset(key, fields)

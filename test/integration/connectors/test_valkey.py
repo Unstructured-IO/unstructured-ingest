@@ -479,3 +479,210 @@ def test_valkey_destination_incremental_upload(upload_file: Path, tmp_path: Path
             pass
 
     _run_async(cleanup())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_properly_formed_data(tmp_path: Path):
+    """Test that properly formed pipeline output uploads successfully."""
+    key_prefix = "test:proper:"
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix=key_prefix,
+                index_name="test_proper_index",
+            ),
+        )
+
+        elements = [
+            {
+                "element_id": "abc123def456",
+                "type": "NarrativeText",
+                "text": "This is a properly formed document chunk.",
+                "metadata": {"page_number": 1, "filename": "test.pdf"},
+                "embeddings": [0.1] * 384,
+            }
+        ]
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock",
+        )
+
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+        client = await get_test_client()
+        try:
+            result = await client.hgetall(f"{key_prefix}abc123def456")
+            assert result is not None and len(result) > 0
+        finally:
+            await client.close()
+
+    _run_async(run())
+
+    async def cleanup():
+        await cleanup_keys([f"{key_prefix}abc123def456"])
+        try:
+            client = await get_test_client()
+            from glide import ft
+
+            await ft.dropindex(client, "test_proper_index")
+            await client.close()
+        except Exception:
+            pass
+
+    _run_async(cleanup())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_missing_element_id():
+    """Test that missing element_id raises WriteError, not silent corruption."""
+    from unstructured_ingest.error import WriteError
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix="test:bad:",
+                index_name="test_bad_index",
+            ),
+        )
+
+        elements = [
+            {
+                "type": "NarrativeText",
+                "text": "This element has no ID.",
+                "metadata": {"page_number": 1},
+            }
+        ]
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock",
+        )
+
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+    with pytest.raises(WriteError, match="missing 'element_id'"):
+        _run_async(run())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_empty_element_id():
+    """Test that empty element_id raises WriteError."""
+    from unstructured_ingest.error import WriteError
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix="test:empty:",
+                index_name="test_empty_index",
+            ),
+        )
+
+        elements = [{"element_id": "", "type": "NarrativeText", "text": "Empty ID."}]
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock",
+        )
+
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+    with pytest.raises(WriteError, match="missing 'element_id'"):
+        _run_async(run())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_invalid_embeddings_type():
+    """Test that non-list embeddings raises WriteError."""
+    from unstructured_ingest.error import WriteError
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix="test:badtype:",
+                index_name="test_badtype_index",
+            ),
+        )
+
+        elements = [
+            {
+                "element_id": "bad_emb_1",
+                "type": "NarrativeText",
+                "text": "Bad embedding type.",
+                "embeddings": "not_a_vector",
+            }
+        ]
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock",
+        )
+
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+    with pytest.raises(WriteError, match="invalid 'embeddings' type"):
+        _run_async(run())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_empty_data():
+    """Test that empty data list does not crash."""
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix="test:empty_data:",
+                index_name="test_empty_data_index",
+            ),
+        )
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock",
+        )
+
+        await uploader.run_data_async(data=[], file_data=file_data)
+
+    # Should complete without error
+    _run_async(run())
