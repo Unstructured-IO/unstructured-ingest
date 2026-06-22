@@ -1,3 +1,9 @@
+## [1.6.17]
+
+### Enhancements
+
+- **feat(slack): auto-join public channels and include url in metadata.** Have slack connector attempt to join public channels automatically and verbosly report in an error when channel cannot be accessed for any reason. Include a permalink to the file or channel message in `FileData`
+
 ## [1.6.16]
 
 ### Fixes
