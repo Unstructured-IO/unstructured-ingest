@@ -163,6 +163,38 @@ def test_process_whole_falls_back_to_buffered_on_nan(tmp_path: Path) -> None:
     assert result[0]["conformed_by"] == "rec-42"
 
 
+def test_process_whole_falls_back_to_buffered_on_overflow_error(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """ijson backends disagree on huge integers: the yajl C backend raises
+    ``ijson.JSONError`` (an integer-overflow parse error), but the pure-python backend
+    raises ``OverflowError`` on ``>int64`` values that ``json.load`` accepts. So
+    ``process_whole`` must catch ``OverflowError`` too and fall back to the buffered
+    ``json.load`` path. The installed backend can't be relied on to raise
+    ``OverflowError`` on real input, so force it on the streaming path and assert the
+    file still stages via the fallback."""
+    input_file = tmp_path / "in.json"
+    input_file.write_text('[{"element_id": "a"}]')
+
+    def _raise_overflow(self, **kwargs) -> None:
+        raise OverflowError("simulated >int64 overflow from an ijson backend")
+
+    monkeypatch.setattr(UploadStager, "_process_whole_streaming", _raise_overflow)
+
+    output_file = _stager().run(
+        elements_filepath=input_file,
+        file_data=_file_data(),
+        output_dir=tmp_path / "out",
+        output_filename="in.json",
+    )
+
+    # The element survived via the buffered fallback.
+    result = json.loads(output_file.read_text())
+    assert len(result) == 1
+    assert result[0]["element_id"] == "a"
+    assert result[0]["conformed_by"] == "rec-42"
+
+
 def test_process_whole_truncated_json_still_raises(tmp_path: Path) -> None:
     """The broad ``except ijson.JSONError`` in process_whole exists only to fall back
     on NaN/Infinity/>int64 inputs that json.load tolerates. A genuinely truncated or

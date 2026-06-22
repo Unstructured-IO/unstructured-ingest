@@ -121,6 +121,32 @@ def test_write_data_streaming_atomic_rollback_on_error(tmp_path: Path) -> None:
     assert leftovers == []
 
 
+def test_write_data_streaming_preserves_existing_file_mode(tmp_path: Path) -> None:
+    """``mkstemp`` creates the temp file at 0600, and ``os.replace`` would carry that
+    over — narrowing an existing destination's permissions and breaking shared-read
+    workflows. ``write_data_streaming`` must preserve the existing file's mode."""
+    path = tmp_path / "elements.json"
+    _write_json(path, SAMPLE_ELEMENTS, indent=2)
+    path.chmod(0o640)
+
+    write_data_streaming(path=path, data=iter(SAMPLE_ELEMENTS), indent=2)
+
+    assert (path.stat().st_mode & 0o777) == 0o640
+    assert json.loads(path.read_text()) == SAMPLE_ELEMENTS
+
+
+def test_write_data_streaming_new_file_defaults_to_world_readable(tmp_path: Path) -> None:
+    """A brand-new staged file must not inherit ``mkstemp``'s restrictive 0600; it
+    defaults to 0644 so downstream readers can access it (matching the umask-default
+    behavior of the previous plain ``open(path, "w")``)."""
+    path = tmp_path / "new.json"
+    assert not path.exists()
+
+    write_data_streaming(path=path, data=iter(SAMPLE_ELEMENTS), indent=2)
+
+    assert (path.stat().st_mode & 0o777) == 0o644
+
+
 def test_json_stream_yields_same_elements_as_json_load(tmp_path: Path) -> None:
     path = tmp_path / "elements.json"
     _write_json(path, SAMPLE_ELEMENTS, indent=2)
