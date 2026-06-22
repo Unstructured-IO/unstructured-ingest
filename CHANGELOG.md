@@ -1,3 +1,9 @@
+## [1.6.20]
+
+### Fixes
+
+- **test(stager): de-flake the stager bounded-memory tests.** `test_process_whole_peak_memory_is_flat_as_input_grows` and `test_blob_store_stager_peak_memory_is_flat_as_input_grows` asserted a near-flat `tracemalloc` peak ratio between two input sizes. `tracemalloc`'s peak includes not-yet-collected per-element garbage, so the ratio varies with GC timing across environments and the blob-store test failed on CI even though the streamed peak (~3.8 MB) was a small fraction of the ~47 MB input. The tests now assert the meaningful streaming-vs-whole-file bound — peak stays below the input file size (a whole-file load materializes the parsed list at several times the JSON text) — which is robust to GC timing while still catching a regression to whole-file loading.
+
 ## [1.6.19]
 
 ### Fixes
