@@ -266,36 +266,54 @@ class ValkeyUploader(VectorDBUploader):
             return WriteError(message)
         return WriteError(message)
 
+    def _build_fields(
+        self, element: dict, element_id: str, file_data: FileData
+    ) -> dict[str, str | bytes]:
+        """Build hash fields from an element dict."""
+        fields: dict[str, str | bytes] = {
+            "text": element.get("text", ""),
+            "element_type": element.get("type", ""),
+            "source_document": file_data.source_identifiers.filename or "",
+            "page_number": str(element.get("metadata", {}).get("page_number", 0)),
+        }
+
+        embeddings = element.get("embeddings")
+        if embeddings:
+            if not isinstance(embeddings, (list, tuple)):
+                raise WriteError(
+                    f"Element '{element_id}' has invalid 'embeddings' type: "
+                    f"expected list of floats, got {type(embeddings).__name__}"
+                )
+            fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
+
+        return fields
+
+    def _validate_element_id(self, element: dict) -> str:
+        """Validate and return element_id, raising WriteError if missing."""
+        element_id = element.get("element_id")
+        if not element_id:
+            raise WriteError(
+                "Element is missing 'element_id' — cannot construct a unique key. "
+                "Ensure data is processed through the Unstructured pipeline."
+            )
+        return element_id
+
     async def _write_batch(self, client, batch: list[dict], file_data: FileData) -> None:
+        """Write a batch of elements via non-atomic pipeline.
+
+        Uses Batch(is_atomic=False) for performance. If a command fails mid-batch,
+        earlier commands are already committed and NOT rolled back. This is acceptable
+        because keys are keyed by element_id (idempotent overwrites), and the
+        unstructured-ingest orchestration layer retries the full upload on failure.
+        """
         from glide import Batch
 
         try:
             pipeline = Batch(is_atomic=False)
             for element in batch:
-                element_id = element.get("element_id")
-                if not element_id:
-                    raise WriteError(
-                        "Element is missing 'element_id' — cannot construct a unique key. "
-                        "Ensure data is processed through the Unstructured pipeline."
-                    )
+                element_id = self._validate_element_id(element)
                 key = f"{self.upload_config.key_prefix}{element_id}"
-
-                fields: dict[str, str | bytes] = {
-                    "text": element.get("text", ""),
-                    "element_type": element.get("type", ""),
-                    "source_document": file_data.source_identifiers.filename or "",
-                    "page_number": str(element.get("metadata", {}).get("page_number", 0)),
-                }
-
-                # Add vector embedding if present
-                embeddings = element.get("embeddings")
-                if embeddings:
-                    if not isinstance(embeddings, (list, tuple)):
-                        raise WriteError(
-                            f"Element '{element_id}' has invalid 'embeddings' type: "
-                            f"expected list of floats, got {type(embeddings).__name__}"
-                        )
-                    fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
+                fields = self._build_fields(element, element_id, file_data)
 
                 pipeline.hset(key, fields)
 
@@ -317,29 +335,9 @@ class ValkeyUploader(VectorDBUploader):
         """Write elements one at a time (used when index is active)."""
         try:
             for element in batch:
-                element_id = element.get("element_id")
-                if not element_id:
-                    raise WriteError(
-                        "Element is missing 'element_id' — cannot construct a unique key. "
-                        "Ensure data is processed through the Unstructured pipeline."
-                    )
+                element_id = self._validate_element_id(element)
                 key = f"{self.upload_config.key_prefix}{element_id}"
-
-                fields: dict[str, str | bytes] = {
-                    "text": element.get("text", ""),
-                    "element_type": element.get("type", ""),
-                    "source_document": file_data.source_identifiers.filename or "",
-                    "page_number": str(element.get("metadata", {}).get("page_number", 0)),
-                }
-
-                embeddings = element.get("embeddings")
-                if embeddings:
-                    if not isinstance(embeddings, (list, tuple)):
-                        raise WriteError(
-                            f"Element '{element_id}' has invalid 'embeddings' type: "
-                            f"expected list of floats, got {type(embeddings).__name__}"
-                        )
-                    fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
+                fields = self._build_fields(element, element_id, file_data)
 
                 await client.hset(key, fields)
 
