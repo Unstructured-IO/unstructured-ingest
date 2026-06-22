@@ -40,7 +40,10 @@ class ValkeyConnectionConfig(ConnectionConfig):
         default=None, description="Hostname or IP address of a Valkey instance."
     )
     port: Optional[int] = Field(default=6379, description="Port of the Valkey instance.")
-    ssl: Optional[bool] = Field(default=False, description="Whether to use TLS for the connection.")
+    ssl: Optional[bool] = Field(default=True, description="Whether to use TLS for the connection.")
+    request_timeout: int = Field(
+        default=30000, description="Request timeout in milliseconds."
+    )
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @model_validator(mode="after")
@@ -82,7 +85,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
             addresses=[NodeAddress(host=host, port=port)],
             use_tls=use_tls,
             client_name="unstructured-ingest-client",
-            request_timeout=30000,
+            request_timeout=self.request_timeout,
         )
 
         if password:
@@ -307,11 +310,8 @@ class ValkeyUploader(VectorDBUploader):
         """Check if the FT search index already exists."""
         from glide import ft
 
-        try:
-            await ft.info(client, self.upload_config.index_name)
-            return True
-        except Exception:
-            return False
+        indexes = await ft.list(client)
+        return self.upload_config.index_name.encode() in indexes
 
     async def _write_individual(self, client, batch: list[dict], file_data: FileData) -> None:
         """Write elements one at a time (used when index is active)."""
