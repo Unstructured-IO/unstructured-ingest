@@ -7,16 +7,16 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.error import SourceConnectionError
+from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.slack import (
     PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
     SlackAccessConfig,
     SlackDownloader,
     SlackIndexer,
     SlackIndexerConfig,
-    _NoRedirectHandler,
     _channel_join_error_msg,
+    _NoRedirectHandler,
 )
 
 
@@ -91,9 +91,7 @@ def test_messages_to_file_data_includes_permalink():
     assert file_data.metadata.url == (
         "https://my-workspace.slack.com/archives/C123/p1710000000000100"
     )
-    client.chat_getPermalink.assert_called_once_with(
-        channel="C123", message_ts="1710000000.000100"
-    )
+    client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000000.000100")
 
 
 def test_messages_to_file_data_uses_oldest_ts_for_permalink():
@@ -110,9 +108,7 @@ def test_messages_to_file_data_uses_oldest_ts_for_permalink():
         client=client,
     )
 
-    client.chat_getPermalink.assert_called_once_with(
-        channel="C123", message_ts="1710000001.000000"
-    )
+    client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000001.000000")
 
 
 def test_messages_to_file_data_omits_url_without_client():
@@ -351,7 +347,6 @@ def test_validate_and_join_channels_missing_scope_succeeds_if_already_member():
 
 
 def test_validate_and_join_channels_missing_scope_fails_if_not_member():
-    from slack_sdk.errors import SlackApiError
 
     def history_side_effect(**_):
         raise _make_slack_api_error("not_in_channel")
@@ -362,9 +357,7 @@ def test_validate_and_join_channels_missing_scope_fails_if_not_member():
     indexer = _make_indexer(channels=["C1"])
 
     with pytest.raises(SourceConnectionError, match="channels:join"):
-        indexer._validate_and_join_channels(
-            client, granted_scopes={"channels:history"}
-        )
+        indexer._validate_and_join_channels(client, granted_scopes={"channels:history"})
 
 
 def test_validate_and_join_channels_archived_always_fails():
