@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from test.integration.utils import requires_env
+from test.integration.utils import requires_env, retry_async
 from unstructured_ingest.error import UserError
 from unstructured_ingest.processes.partitioner import Partitioner, PartitionerConfig
 
@@ -33,7 +33,9 @@ image_partition_files = [
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
-@pytest.mark.timeout(200)
+# Worst case = 3 attempts * 150s per-attempt timeout + backoff. Retries only fire on a transient
+# failure, so the common path is a single attempt and finishes well under this ceiling.
+@pytest.mark.timeout(480)
 async def test_partitioner_api_hi_res(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
@@ -45,7 +47,15 @@ async def test_partitioner_api_hi_res(partition_file: Path):
         api_timeout_ms=140000,
     )
     partitioner = Partitioner(config=partitioner_config)
-    results = await partitioner.run_async(filename=partition_file)
+    # The hosted hi_res API occasionally hangs or drops a connection on a single file; retry the
+    # transient failure instead of failing the whole PR gate. per_attempt_timeout_s sits just above
+    # api_timeout_ms (140s) so the SDK's own timeout normally fires first and wait_for is a backstop
+    # against a hang that ignores it.
+    results = await retry_async(
+        lambda: partitioner.run_async(filename=partition_file),
+        attempts=3,
+        per_attempt_timeout_s=150,
+    )
     assert results
 
 
@@ -56,7 +66,9 @@ async def test_partitioner_api_hi_res(partition_file: Path):
 )
 @requires_env("UNSTRUCTURED_API_KEY", "UNSTRUCTURED_API_URL")
 @pytest.mark.asyncio
-@pytest.mark.timeout(10)
+# Fast strategy normally returns in a couple of seconds; the ceiling covers up to 3 retried
+# attempts (30s per-attempt timeout + backoff) when the hosted API is transiently slow.
+@pytest.mark.timeout(120)
 async def test_partitioner_api_fast(partition_file: Path):
     api_key = os.getenv("UNSTRUCTURED_API_KEY")
     api_url = os.getenv("UNSTRUCTURED_API_URL")
@@ -67,7 +79,11 @@ async def test_partitioner_api_fast(partition_file: Path):
         partition_endpoint=api_url,
     )
     partitioner = Partitioner(config=partitioner_config)
-    results = await partitioner.run_async(filename=partition_file)
+    results = await retry_async(
+        lambda: partitioner.run_async(filename=partition_file),
+        attempts=3,
+        per_attempt_timeout_s=30,
+    )
     assert results
 
 

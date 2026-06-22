@@ -7355,6 +7355,7 @@ test = [
     { name = "pytest-tagging" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
+    { name = "slack-sdk" },
     { name = "universal-pathlib" },
     { name = "vertexai" },
 ]
@@ -7531,6 +7532,7 @@ test = [
     { name = "pytest-tagging" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
+    { name = "slack-sdk" },
     { name = "universal-pathlib" },
     { name = "vertexai" },
 ]

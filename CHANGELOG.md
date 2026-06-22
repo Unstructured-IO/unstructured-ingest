@@ -1,8 +1,20 @@
-## [1.6.17]
+## [1.6.19]
 
 ### Fixes
 
 - **fix(stager): stream the `.json` element file instead of loading it whole, to stop OOM on large documents.** `UploadStager.process_whole` (the path taken when the partition output has a `.json` suffix) previously called `json.load` on the entire element file, built a full conformed `list`, and wrote it whole — holding 3+ full copies of a several-hundred-MB file resident. A very large document (tens of thousands of pages) OOM-killed the stager plugin (SIGKILL, zero app logs — the classic OOMKill signature) at this step. `process_whole` now iterates the JSON array element-by-element via `ijson` (new `data_prep.json_stream`), conforms each element, and stream-writes the output (new `data_prep.write_data_streaming`), keeping only one element resident at a time — matching the bounded-memory profile of the existing `.ndjson` `stream_update` path. Output is byte-for-byte identical to the previous `write_data` result. The streamed write is atomic (temp file + `os.replace`) so it stays correct when the stager is called with the output path equal to the input path — a plain in-place `open(path, "w")` would truncate the file before the lazy reader finished, and a mid-stream failure leaves any existing artifact untouched. `ijson` is stricter than stdlib `json`, so the rare `NaN`/`Infinity`/`>int64` inputs that `json.load` accepts fall back to a buffered read. Adds `ijson` as a base dependency. The base uploader (`Uploader.run`) has the same whole-file-load problem but its fix requires a shared-interface change and is tracked separately.
+
+## [1.6.18]
+
+### Fixes
+
+- **test(ci): stabilize and de-gate flaky live-service integration tests.** Two live-service checks reddened unrelated PRs repo-wide. (1) The SharePoint source tests byte-diffed `metadata.permissions_data` — a live snapshot of the site's ACLs (user/group object ids) that drifts whenever tenant sharing changes — against checked-in fixtures, producing a consistent "Diffs found" failure with no connector regression. `permissions_data` is now excluded from the comparison, consistent with the existing exclusions of `date_*`, `LastModified`, and the Graph download/url fields; permissions extraction remains covered by unit tests. (2) The hosted-API partitioner test intermittently hung/timed out or dropped its connection; the live call is now wrapped in a bounded retry (`retry_async`) that retries only on transient failures (5xx, timeout, transport read/connect errors) with a per-attempt timeout, while non-transient errors still fail immediately. Finally, live-service e2e jobs (which require external credentials and are inherently flaky) now run nightly, on demand, and post-merge instead of blocking every PR; the creds-free `check_untagged_tests` guard still runs on PRs.
+
+## [1.6.17]
+
+### Enhancements
+
+- **feat(slack): auto-join public channels and include url in metadata.** Have slack connector attempt to join public channels automatically and verbosly report in an error when channel cannot be accessed for any reason. Include a permalink to the file or channel message in `FileData`
 
 ## [1.6.16]
 
