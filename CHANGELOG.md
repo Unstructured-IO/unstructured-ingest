@@ -1,3 +1,9 @@
+## [1.6.18]
+
+### Fixes
+
+- **test(ci): stabilize and de-gate flaky live-service integration tests.** Two live-service checks reddened unrelated PRs repo-wide. (1) The SharePoint source tests byte-diffed `metadata.permissions_data` — a live snapshot of the site's ACLs (user/group object ids) that drifts whenever tenant sharing changes — against checked-in fixtures, producing a consistent "Diffs found" failure with no connector regression. `permissions_data` is now excluded from the comparison, consistent with the existing exclusions of `date_*`, `LastModified`, and the Graph download/url fields; permissions extraction remains covered by unit tests. (2) The hosted-API partitioner test intermittently hung/timed out or dropped its connection; the live call is now wrapped in a bounded retry (`retry_async`) that retries only on transient failures (5xx, timeout, transport read/connect errors) with a per-attempt timeout, while non-transient errors still fail immediately. Finally, live-service e2e jobs (which require external credentials and are inherently flaky) now run nightly, on demand, and post-merge instead of blocking every PR; the creds-free `check_untagged_tests` guard still runs on PRs.
+
 ## [1.6.17]
 
 ### Enhancements
