@@ -1,6 +1,7 @@
 import asyncio
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import numpy as np
 from pydantic import Field, Secret, model_validator
@@ -54,7 +55,8 @@ class ValkeyConnectionConfig(ConnectionConfig):
         return self
 
     @requires_dependencies(["glide"], extras="valkey")
-    async def create_async_client(self):
+    @asynccontextmanager
+    async def create_async_client(self) -> AsyncGenerator:
         from glide import GlideClient, GlideClientConfiguration, NodeAddress
 
         access_config = self.access_config.get_secret_value()
@@ -92,7 +94,11 @@ class ValkeyConnectionConfig(ConnectionConfig):
             else:
                 config.credentials = ServerCredentials(password=password)
 
-        return await GlideClient.create(config)
+        client = await GlideClient.create(config)
+        try:
+            yield client
+        finally:
+            await client.close()
 
 
 class ValkeyUploaderConfig(UploaderConfig):
@@ -123,11 +129,8 @@ class ValkeyUploader(VectorDBUploader):
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
     async def _async_precheck(self) -> None:
-        client = await self.connection_config.create_async_client()
-        try:
+        async with self.connection_config.create_async_client() as client:
             await client.ping()
-        finally:
-            await client.close()
 
     @requires_dependencies(["glide"], extras="valkey")
     def create_destination(
@@ -139,11 +142,8 @@ class ValkeyUploader(VectorDBUploader):
         return asyncio.run(self._sync_create_destination(vector_length))
 
     async def _sync_create_destination(self, vector_length: int) -> bool:
-        client = await self.connection_config.create_async_client()
-        try:
+        async with self.connection_config.create_async_client() as client:
             return await self._async_create_destination(vector_length, client)
-        finally:
-            await client.close()
 
     async def _async_create_destination(self, vector_length: int, client) -> bool:
         from glide import (
@@ -215,8 +215,7 @@ class ValkeyUploader(VectorDBUploader):
             f"{self.connection_config.host or 'URI'}:{self.connection_config.port or ''}"
         )
 
-        client = await self.connection_config.create_async_client()
-        try:
+        async with self.connection_config.create_async_client() as client:
             index_exists = await self._index_exists(client) if vector_length else False
 
             batches = list(batch_generator(data, batch_size=self.upload_config.batch_size))
@@ -232,8 +231,6 @@ class ValkeyUploader(VectorDBUploader):
                     await self._write_batch(client, batch, file_data)
                 if vector_length:
                     await self._async_create_destination(vector_length, client)
-        finally:
-            await client.close()
 
     @staticmethod
     def _map_glide_error(error: Exception) -> Exception:

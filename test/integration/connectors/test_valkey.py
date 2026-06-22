@@ -686,3 +686,37 @@ def test_valkey_destination_empty_data():
 
     # Should complete without error
     _run_async(run())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_client_closes_on_exception():
+    """Test that client connection is closed even when an exception occurs mid-operation."""
+
+    async def run():
+        config = ValkeyConnectionConfig(
+            host=VALKEY_TEST_HOST,
+            port=VALKEY_TEST_PORT,
+            ssl=False,
+            access_config=ValkeyAccessConfig(),
+        )
+
+        async with config.create_async_client() as client:
+            await client.ping()
+            raise RuntimeError("simulated failure")
+
+    with pytest.raises(RuntimeError, match="simulated failure"):
+        _run_async(run())
+
+    # Verify we can still connect cleanly after the forced error
+    async def verify():
+        config = ValkeyConnectionConfig(
+            host=VALKEY_TEST_HOST,
+            port=VALKEY_TEST_PORT,
+            ssl=False,
+            access_config=ValkeyAccessConfig(),
+        )
+        async with config.create_async_client() as client:
+            result = await client.ping()
+            assert result == b"PONG" or result == "PONG"
+
+    _run_async(verify())
