@@ -62,7 +62,7 @@ class UploadStager(BaseProcess, ABC):
 
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
         # Stream the JSON array element-by-element rather than loading the whole
-        # file into memory. A 48k+ page partition output is several hundred MB;
+        # file into memory. A very large partition output can be several hundred MB;
         # json.load + a full conformed list + write_data held 3+ copies resident
         # and OOM-killed the stager. json_stream/write_data_streaming keep only a
         # single element resident at a time, matching the bounded-memory profile
@@ -71,11 +71,12 @@ class UploadStager(BaseProcess, ABC):
             self._process_whole_streaming(
                 input_file=input_file, output_file=output_file, file_data=file_data
             )
-        except ijson.JSONError:
+        except (ijson.JSONError, OverflowError):
             # ijson rejects a few inputs that Python's stdlib json module accepts
             # and that legitimately appear in element files: the non-standard
-            # constants NaN / Infinity / -Infinity, and integers larger than int64
-            # (the yajl C backend overflows). The legacy path used json.load, which
+            # constants NaN / Infinity / -Infinity (ijson.JSONError), and integers
+            # larger than int64 (the yajl C backend overflows, surfacing as
+            # OverflowError). The legacy path used json.load, which
             # tolerates all of these, so fall back to the buffered whole-file path
             # to preserve behavior. This file loses the memory bound, exactly as the
             # legacy path did; a genuinely malformed file re-raises from json.load.

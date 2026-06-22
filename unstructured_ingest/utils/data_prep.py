@@ -259,6 +259,12 @@ def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int]
     if path.suffix not in (".json", ".ndjson"):
         raise IOError(f"Unsupported file type: {path}")
 
+    # mkstemp creates the temp file as 0600; os.replace would then carry that over and
+    # narrow an existing destination's permissions, breaking shared-read workflows.
+    # Preserve the existing file's mode, or fall back to a world-readable default for
+    # new files (the previous plain open(path, "w") left perms at the process umask
+    # default; 0644 matches the common case without the umask race in this async path).
+    existing_mode = path.stat().st_mode & 0o777 if path.exists() else None
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     tmp_path = Path(tmp_name)
     try:
@@ -267,6 +273,7 @@ def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int]
                 _write_json_array_stream(f=f, data=data, indent=indent)
             else:
                 _write_ndjson_stream(f=f, data=data)
+        os.chmod(tmp_path, existing_mode if existing_mode is not None else 0o644)
         os.replace(tmp_path, path)
     except BaseException:
         tmp_path.unlink(missing_ok=True)

@@ -171,7 +171,7 @@ def test_process_whole_truncated_json_still_raises(tmp_path: Path) -> None:
     truncated = tmp_path / "in.json"
     truncated.write_text('[{"element_id": "a"}, {"element_id":')  # cut off mid-array
 
-    with pytest.raises(Exception):
+    with pytest.raises(json.JSONDecodeError):
         _stager().run(
             elements_filepath=truncated,
             file_data=_file_data(),
