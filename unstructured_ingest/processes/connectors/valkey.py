@@ -1,7 +1,6 @@
-import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional
 
 import numpy as np
 from pydantic import Field, Secret, model_validator
@@ -41,9 +40,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
     )
     port: Optional[int] = Field(default=6379, description="Port of the Valkey instance.")
     ssl: Optional[bool] = Field(default=True, description="Whether to use TLS for the connection.")
-    request_timeout: int = Field(
-        default=30000, description="Request timeout in milliseconds."
-    )
+    request_timeout: int = Field(default=30000, description="Request timeout in milliseconds.")
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @model_validator(mode="after")
@@ -103,10 +100,60 @@ class ValkeyConnectionConfig(ConnectionConfig):
         finally:
             await client.close()
 
+    @requires_dependencies(["glide_sync"], extras="valkey")
+    @contextmanager
+    def create_sync_client(self) -> Generator:
+        from glide_sync import GlideClient as SyncGlideClient
+        from glide_sync import GlideClientConfiguration, NodeAddress
+
+        access_config = self.access_config.get_secret_value()
+
+        if access_config.uri:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(access_config.uri)
+            if not parsed.hostname:
+                raise ValueError("URI is missing a hostname")
+            host = parsed.hostname
+            port = parsed.port
+            password = parsed.password
+            use_tls = parsed.scheme in ("valkeys", "rediss")
+        else:
+            host = self.host
+            port = self.port
+            password = access_config.password
+            use_tls = self.ssl
+
+        config = GlideClientConfiguration(
+            addresses=[NodeAddress(host, port)],
+            use_tls=use_tls,
+            client_name="unstructured-ingest-client",
+            request_timeout=self.request_timeout,
+        )
+
+        if password:
+            from glide_sync import ServerCredentials
+
+            username = self.username
+            if username:
+                config.credentials = ServerCredentials(password=password, username=username)
+            else:
+                config.credentials = ServerCredentials(password=password)
+
+        client = SyncGlideClient.create(config)
+        try:
+            yield client
+        finally:
+            client.close()
+
 
 class ValkeyUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch.")
-    key_prefix: str = Field(default="doc:unstructured:", description="Prefix for Valkey keys.")
+    key_prefix: str = Field(
+        default="doc:unstructured:",
+        description="Prefix for Valkey keys. For cluster mode, use a hash tag "
+        "(e.g., '{unstructured}:doc:') to ensure all keys map to the same slot.",
+    )
     index_name: str = Field(
         default="unstructured_index", description="Name of the Valkey Search index."
     )
@@ -126,14 +173,11 @@ class ValkeyUploader(VectorDBUploader):
 
     def precheck(self) -> None:
         try:
-            asyncio.run(self._async_precheck())
+            with self.connection_config.create_sync_client() as client:
+                client.ping()
         except Exception as e:
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
-
-    async def _async_precheck(self) -> None:
-        async with self.connection_config.create_async_client() as client:
-            await client.ping()
 
     @requires_dependencies(["glide"], extras="valkey")
     def create_destination(
@@ -142,11 +186,64 @@ class ValkeyUploader(VectorDBUploader):
         destination_name: str = "unstructuredautocreated",
         **kwargs: Any,
     ) -> bool:
-        return asyncio.run(self._sync_create_destination(vector_length))
+        from glide_sync import (
+            DistanceMetricType,
+            FtCreateOptions,
+            NumericField,
+            RequestError,
+            TagField,
+            TextField,
+            VectorAlgorithm,
+            VectorField,
+            VectorFieldAttributesHnsw,
+            VectorType,
+            ft,
+        )
 
-    async def _sync_create_destination(self, vector_length: int) -> bool:
-        async with self.connection_config.create_async_client() as client:
-            return await self._async_create_destination(vector_length, client)
+        with self.connection_config.create_sync_client() as client:
+            try:
+                schema = [
+                    TextField("text"),
+                    TagField("element_type"),
+                    TagField("source_document"),
+                    NumericField("page_number"),
+                    VectorField(
+                        "embedding",
+                        VectorAlgorithm.HNSW,
+                        VectorFieldAttributesHnsw(
+                            dimensions=vector_length,
+                            distance_metric=DistanceMetricType.COSINE,
+                            type=VectorType.FLOAT32,
+                        ),
+                    ),
+                ]
+
+                ft.create(
+                    client,
+                    self.upload_config.index_name,
+                    schema,
+                    FtCreateOptions(prefixes=[self.upload_config.key_prefix]),
+                )
+                logger.info(
+                    f"Created Valkey Search index '{self.upload_config.index_name}' "
+                    f"with {vector_length}-dim HNSW vector field."
+                )
+                return True
+            except RequestError as e:
+                if "Index already exists" in str(e):
+                    logger.debug(
+                        f"Index '{self.upload_config.index_name}' already exists, "
+                        f"skipping creation."
+                    )
+                    return False
+                elif "unknown command" in str(e).lower():
+                    raise DestinationConnectionError(
+                        "Valkey Search module not loaded. "
+                        "Enable it with: valkey-server --loadmodule /path/to/valkeysearch.so "
+                        "OR use the valkey/valkey-bundle Docker image."
+                    ) from e
+                else:
+                    raise
 
     async def _async_create_destination(self, vector_length: int, client) -> bool:
         from glide import (
@@ -229,7 +326,8 @@ class ValkeyUploader(VectorDBUploader):
                 for batch in batches:
                     await self._write_individual(client, batch, file_data)
             else:
-                # No index — batch writes are fast, create index after
+                # No index (or concurrent creation handled by _async_create_destination's
+                # "already exists" guard) — batch writes are fast, create index after
                 for batch in batches:
                     await self._write_batch(client, batch, file_data)
                 if vector_length:
