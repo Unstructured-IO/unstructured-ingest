@@ -7,6 +7,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -79,6 +80,54 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         )
 
 
+@dataclass
+class _ChannelIssue:
+    channel: str
+    error_code: str
+
+
+def _channel_join_error_msg(error_code: str, channels: list, granted_scopes: set) -> str:
+    channel_list = ", ".join(channels)
+    are = "are" if len(channels) > 1 else "is"
+    if error_code == "channel_not_found":
+        if "channels:join" in granted_scopes:
+            return (
+                f"{channel_list}: not found or not accessible. "
+                "Private channels cannot be auto-joined — invite the bot directly."
+            )
+        return (
+            f"{channel_list}: not found or not accessible. "
+            "Possible causes: wrong channel ID, private channel (must invite bot manually), "
+            "or missing 'channels:join' scope to auto-join public channels."
+        )
+    if error_code == "is_archived":
+        return (
+            f"{channel_list} {are} archived. "
+            "Slack disables all app access on archival — archived channels cannot be indexed. "
+            "Unarchive the channel to index it."
+        )
+    if error_code == "method_not_supported_for_channel_type":
+        return (
+            f"{channel_list}: private channel — the bot must be invited directly before indexing. "
+            "Open the channel in Slack and use /invite @<bot-name>."
+        )
+    if error_code == "missing_scope":
+        scope_note = f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
+        return (
+            f"Bot token is missing the 'channels:join' scope{scope_note}. "
+            f"Cannot auto-join {channel_list}. "
+            "Add the scope and reinstall the app, or invite the bot to each channel manually."
+        )
+    if error_code == "method_not_applicable":
+        return f"{channel_list} {are} not joinable (e.g. DMs or IMs)."
+    if error_code == "no_permission":
+        return (
+            f"Bot does not have permission to join {channel_list}. "
+            "Workspace restrictions may block app channel access."
+        )
+    return f"Failed to join {channel_list}: {error_code}."
+
+
 class SlackAccessConfig(AccessConfig):
     token: str = Field(
         description="Bot token used to access Slack API, must have channels:history scope for the"
@@ -130,6 +179,8 @@ class SlackIndexer(Indexer):
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
+        granted_scopes = self._get_granted_scopes(client)
+        self._validate_and_join_channels(client, granted_scopes)
         for channel in self.index_config.channels:
             messages = []
             oldest = (
@@ -150,7 +201,7 @@ class SlackIndexer(Indexer):
             ):
                 messages = conversation_history.get("messages", [])
                 if messages:
-                    yield self._messages_to_file_data(messages, channel)
+                    yield self._messages_to_file_data(messages, channel, client)
                     for file_data in self._message_files_to_file_data(messages, channel):
                         yield file_data
 
@@ -158,6 +209,7 @@ class SlackIndexer(Indexer):
         self,
         messages: list[dict],
         channel: str,
+        client: Optional["WebClient"] = None,
     ) -> FileData:
         ts_oldest = min((message["ts"] for message in messages), key=lambda m: float(m))
         ts_newest = max((message["ts"] for message in messages), key=lambda m: float(m))
@@ -165,6 +217,15 @@ class SlackIndexer(Indexer):
         identifier_base = f"{channel}-{ts_oldest}-{ts_newest}"
         identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
         filename = identifier[:16]
+
+        permalink = None
+        if client is not None:
+            try:
+                response = client.chat_getPermalink(channel=channel, message_ts=ts_oldest)
+                raw = response.get("permalink")
+                permalink = raw if isinstance(raw, str) else None
+            except Exception:
+                logger.debug(f"Could not retrieve permalink for channel={channel} ts={ts_oldest}.")
 
         source_identifiers = SourceIdentifiers(
             filename=f"{filename}.xml", fullpath=f"{filename}.xml"
@@ -174,6 +235,7 @@ class SlackIndexer(Indexer):
             connector_type=CONNECTOR_TYPE,
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
+                url=permalink,
                 date_created=ts_oldest,
                 date_modified=ts_newest,
                 date_processed=str(time.time()),
@@ -209,6 +271,7 @@ class SlackIndexer(Indexer):
                     connector_type=CONNECTOR_TYPE,
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
+                        url=slack_file.get("permalink") or None,
                         date_created=(
                             str(slack_file.get("created")) if slack_file.get("created") else None
                         ),
@@ -224,12 +287,56 @@ class SlackIndexer(Indexer):
                     display_name=source_identifiers.fullpath,
                 )
 
+    def _get_granted_scopes(self, client: "WebClient") -> set:
+        try:
+            response = client.auth_test()
+            # x-oauth-scopes is an HTTP response header present on every Slack API response.
+            # The SDK stores raw HTTP headers in response.headers as a plain dict whose keys
+            # preserve server casing, so use case-insensitive lookup.
+            scopes_header = next(
+                (v for k, v in response.headers.items() if k.lower() == "x-oauth-scopes"),
+                "",
+            )
+            return {s.strip() for s in scopes_header.split(",") if s.strip()}
+        except Exception:
+            return set()
+
+    def _validate_and_join_channels(self, client: "WebClient", granted_scopes: set) -> None:
+        from slack_sdk.errors import SlackApiError
+
+        issues: list[_ChannelIssue] = []
+        for channel in self.index_config.channels:
+            try:
+                client.conversations_join(channel=channel)
+            except SlackApiError as e:
+                error_code = e.response.get("error", "unknown")
+                if error_code in ("missing_scope", "method_not_supported_for_channel_type"):
+                    # Can't auto-join (missing scope or private channel); check if already a member.
+                    try:
+                        client.conversations_history(channel=channel, limit=1)
+                        continue
+                    except SlackApiError:
+                        pass
+                issues.append(_ChannelIssue(channel=channel, error_code=error_code))
+
+        if issues:
+            groups: dict[str, list] = defaultdict(list)
+            for issue in issues:
+                groups[issue.error_code].append(issue.channel)
+            lines = [
+                _channel_join_error_msg(error_code, channels, granted_scopes)
+                for error_code, channels in groups.items()
+            ]
+            raise SourceConnectionError(
+                f"Cannot access {len(issues)} channel(s):\n"
+                + "\n".join(f"  - {line}" for line in lines)
+            )
+
     @SourceConnectionError.wrap
     def precheck(self) -> None:
         client = self.connection_config.get_client()
-        for channel in self.index_config.channels:
-            # NOTE: Querying conversations history guarantees that the bot is in the channel
-            client.conversations_history(channel=channel, limit=1)
+        granted_scopes = self._get_granted_scopes(client)
+        self._validate_and_join_channels(client, granted_scopes)
 
 
 class SlackDownloaderConfig(DownloaderConfig):
@@ -342,10 +449,13 @@ class SlackDownloader(Downloader):
     @staticmethod
     def _download_private_file(request: urllib.request.Request, download_path: Path) -> None:
         opener = urllib.request.build_opener(_NoRedirectHandler)
-        with opener.open(
-            request,
-            timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
-        ) as response, download_path.open("wb") as output_file:
+        with (
+            opener.open(
+                request,
+                timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
+            ) as response,
+            download_path.open("wb") as output_file,
+        ):
             shutil.copyfileobj(response, output_file)
 
     def _conversation_to_xml(self, conversation: list[list[dict]]) -> ET.ElementTree:

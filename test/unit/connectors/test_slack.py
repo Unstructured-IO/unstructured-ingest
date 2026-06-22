@@ -7,6 +7,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
+from unstructured_ingest.error import SourceConnectionError
 from unstructured_ingest.error import ValueError as IngestValueError
 from unstructured_ingest.processes.connectors.slack import (
     PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
@@ -14,6 +15,7 @@ from unstructured_ingest.processes.connectors.slack import (
     SlackDownloader,
     SlackIndexer,
     SlackIndexerConfig,
+    _channel_join_error_msg,
     _NoRedirectHandler,
 )
 
@@ -23,6 +25,13 @@ def test_slack_access_config_accepts_refresh_token():
 
     assert config.token == "xoxb-slack-token"
     assert config.refresh_token == "xoxe-slack-refresh-token"
+
+
+def _make_indexer(channels=None):
+    return SlackIndexer(
+        index_config=SlackIndexerConfig(channels=channels or ["C123"]),
+        connection_config=Mock(),
+    )
 
 
 def test_slack_indexer_emits_file_data_for_message_files():
@@ -44,6 +53,7 @@ def test_slack_indexer_emits_file_data_for_message_files():
             ]
         }
     ]
+    client.chat_getPermalink.return_value.get.return_value = None
     connection_config = Mock()
     connection_config.get_client.return_value = client
     indexer = SlackIndexer(
@@ -63,6 +73,101 @@ def test_slack_indexer_emits_file_data_for_message_files():
         "message_ts": "1710000000.000100",
         "file_id": "F123",
     }
+
+
+def test_messages_to_file_data_includes_permalink():
+    client = Mock()
+    client.chat_getPermalink.return_value.get.return_value = (
+        "https://my-workspace.slack.com/archives/C123/p1710000000000100"
+    )
+    indexer = _make_indexer()
+
+    file_data = indexer._messages_to_file_data(
+        messages=[{"ts": "1710000000.000100", "text": "hello"}],
+        channel="C123",
+        client=client,
+    )
+
+    assert file_data.metadata.url == (
+        "https://my-workspace.slack.com/archives/C123/p1710000000000100"
+    )
+    client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000000.000100")
+
+
+def test_messages_to_file_data_uses_oldest_ts_for_permalink():
+    client = Mock()
+    client.chat_getPermalink.return_value.get.return_value = "https://example.slack.com/p"
+    indexer = _make_indexer()
+
+    indexer._messages_to_file_data(
+        messages=[
+            {"ts": "1710000002.000000", "text": "newer"},
+            {"ts": "1710000001.000000", "text": "older"},
+        ],
+        channel="C123",
+        client=client,
+    )
+
+    client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000001.000000")
+
+
+def test_messages_to_file_data_omits_url_without_client():
+    file_data = _make_indexer()._messages_to_file_data(
+        messages=[{"ts": "1710000000.000100", "text": "hello"}],
+        channel="C123",
+    )
+
+    assert file_data.metadata.url is None
+
+
+def test_messages_to_file_data_omits_url_when_permalink_fetch_fails():
+    client = Mock()
+    client.chat_getPermalink.side_effect = Exception("API error")
+    indexer = _make_indexer()
+
+    file_data = indexer._messages_to_file_data(
+        messages=[{"ts": "1710000000.000100", "text": "hello"}],
+        channel="C123",
+        client=client,
+    )
+
+    assert file_data.metadata.url is None
+
+
+def test_message_files_to_file_data_includes_permalink():
+    messages = [
+        {
+            "ts": "1710000000.000100",
+            "files": [
+                {
+                    "id": "F123",
+                    "name": "report.pdf",
+                    "permalink": "https://my-workspace.slack.com/files/U123/F123/report.pdf",
+                }
+            ],
+        }
+    ]
+
+    file_data_list = list(_make_indexer()._message_files_to_file_data(messages, "C123"))
+
+    assert len(file_data_list) == 1
+    assert file_data_list[0].metadata.url == (
+        "https://my-workspace.slack.com/files/U123/F123/report.pdf"
+    )
+
+
+def test_message_files_to_file_data_omits_url_when_no_permalink():
+    messages = [
+        {
+            "ts": "1710000000.000100",
+            "files": [{"id": "F123", "name": "report.pdf"}],
+        }
+    ]
+
+    file_data_list = list(_make_indexer()._message_files_to_file_data(messages, "C123"))
+
+    assert len(file_data_list) == 1
+    assert file_data_list[0].metadata.url is None
 
 
 @pytest.mark.asyncio
@@ -164,3 +269,178 @@ async def test_slack_downloader_rejects_non_slack_private_download_url(tmp_path,
         await downloader._download_file(file_data, tmp_path / "F123-report.pdf")
 
     build_opener.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Auto-join / channel validation tests
+# ---------------------------------------------------------------------------
+
+
+def _make_slack_api_error(error_code: str):
+    from slack_sdk.errors import SlackApiError
+
+    response = Mock()
+    response.get.return_value = error_code
+    return SlackApiError(message=error_code, response=response)
+
+
+def test_validate_and_join_channels_succeeds_when_all_joins_succeed():
+    client = Mock()
+    indexer = _make_indexer(channels=["C1", "C2"])
+
+    indexer._validate_and_join_channels(client, granted_scopes=set())
+
+    assert client.conversations_join.call_count == 2
+
+
+def test_validate_and_join_channels_raises_for_failed_channel():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error("channel_not_found")
+    indexer = _make_indexer(channels=["C1"])
+
+    with pytest.raises(SourceConnectionError, match="C1"):
+        indexer._validate_and_join_channels(client, granted_scopes=set())
+
+
+def test_validate_and_join_channels_groups_same_error_across_channels():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error("is_archived")
+    indexer = _make_indexer(channels=["C1", "C2"])
+
+    with pytest.raises(SourceConnectionError) as exc_info:
+        indexer._validate_and_join_channels(client, granted_scopes=set())
+
+    msg = str(exc_info.value)
+    assert "C1, C2" in msg
+    # Both channels grouped onto one bullet, not one line per channel
+    assert msg.count("  - ") == 1
+
+
+def test_validate_and_join_channels_reports_all_failures_together():
+    def join_side_effect(channel, **_):
+        if channel == "C1":
+            raise _make_slack_api_error("channel_not_found")
+        if channel == "C2":
+            raise _make_slack_api_error("is_archived")
+
+    client = Mock()
+    client.conversations_join.side_effect = join_side_effect
+    indexer = _make_indexer(channels=["C1", "C2"])
+
+    with pytest.raises(SourceConnectionError) as exc_info:
+        indexer._validate_and_join_channels(client, granted_scopes=set())
+
+    msg = str(exc_info.value)
+    assert "C1" in msg
+    assert "C2" in msg
+    assert "2 channel" in msg
+
+
+def test_validate_and_join_channels_missing_scope_succeeds_if_already_member():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error("missing_scope")
+    indexer = _make_indexer(channels=["C1"])
+
+    indexer._validate_and_join_channels(client, granted_scopes=set())
+
+    client.conversations_history.assert_called_once_with(channel="C1", limit=1)
+
+
+def test_validate_and_join_channels_missing_scope_fails_if_not_member():
+
+    def history_side_effect(**_):
+        raise _make_slack_api_error("not_in_channel")
+
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error("missing_scope")
+    client.conversations_history.side_effect = history_side_effect
+    indexer = _make_indexer(channels=["C1"])
+
+    with pytest.raises(SourceConnectionError, match="channels:join"):
+        indexer._validate_and_join_channels(client, granted_scopes={"channels:history"})
+
+
+def test_validate_and_join_channels_archived_always_fails():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error("is_archived")
+    indexer = _make_indexer(channels=["C1"])
+
+    with pytest.raises(SourceConnectionError, match="archived"):
+        indexer._validate_and_join_channels(client, granted_scopes=set())
+
+    client.conversations_history.assert_not_called()
+
+
+def test_validate_and_join_channels_private_succeeds_if_already_invited():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error(
+        "method_not_supported_for_channel_type"
+    )
+    indexer = _make_indexer(channels=["C1"])
+
+    indexer._validate_and_join_channels(client, granted_scopes=set())
+
+    client.conversations_history.assert_called_once_with(channel="C1", limit=1)
+
+
+def test_validate_and_join_channels_private_fails_if_not_invited():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error(
+        "method_not_supported_for_channel_type"
+    )
+    client.conversations_history.side_effect = _make_slack_api_error("not_in_channel")
+    indexer = _make_indexer(channels=["C1"])
+
+    with pytest.raises(SourceConnectionError, match="private"):
+        indexer._validate_and_join_channels(client, granted_scopes=set())
+
+
+def test_channel_join_error_msg_private_channel_hint_when_join_scope_present():
+    msg = _channel_join_error_msg("channel_not_found", ["C1"], granted_scopes={"channels:join"})
+    assert "private" in msg.lower()
+    assert "invite" in msg.lower()
+
+
+def test_channel_join_error_msg_groups_multiple_archived_channels():
+    msg = _channel_join_error_msg("is_archived", ["C1", "C2"], granted_scopes=set())
+    assert "C1, C2" in msg
+    assert "are archived" in msg
+
+
+def test_channel_join_error_msg_private_channel_not_invited():
+    msg = _channel_join_error_msg(
+        "method_not_supported_for_channel_type", ["C1"], granted_scopes=set()
+    )
+    assert "private" in msg.lower()
+    assert "invite" in msg.lower()
+
+
+def test_run_joins_channels_before_yielding():
+    client = Mock()
+    client.conversations_history.return_value = []
+    client.conversations_join.side_effect = _make_slack_api_error("channel_not_found")
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C1"]),
+        connection_config=connection_config,
+    )
+
+    with pytest.raises(SourceConnectionError):
+        list(indexer.run())
+
+    client.conversations_join.assert_called_once_with(channel="C1")
+
+
+def test_precheck_uses_channel_validation():
+    client = Mock()
+    client.conversations_join.side_effect = _make_slack_api_error("is_archived")
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C1"]),
+        connection_config=connection_config,
+    )
+
+    with pytest.raises(SourceConnectionError, match="archived"):
+        indexer.precheck()
