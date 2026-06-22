@@ -19,8 +19,8 @@ from pathlib import Path
 import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.interfaces import upload_stager as upload_stager_module
 from unstructured_ingest.interfaces.upload_stager import UploadStager, UploadStagerConfig
-from unstructured_ingest.utils import data_prep
 
 
 class _StagerConfig(UploadStagerConfig):
@@ -98,9 +98,11 @@ def test_process_whole_does_not_load_whole_file(tmp_path: Path, monkeypatch) -> 
     def _boom(*args, **kwargs):  # pragma: no cover - only hit on regression
         raise AssertionError("process_whole must not load the whole file via get_json_data")
 
-    # get_json_data is imported into the upload_stager module namespace only if used;
-    # patch it at the source module to catch any reintroduction.
-    monkeypatch.setattr(data_prep, "get_json_data", _boom)
+    # ``upload_stager`` imports ``get_json_data`` into its own namespace, so patch
+    # that binding (not the source module) to catch any reintroduction of a
+    # whole-file load on the streaming path. The buffered fallback legitimately
+    # calls get_json_data, but valid JSON never reaches it.
+    monkeypatch.setattr(upload_stager_module, "get_json_data", _boom)
 
     output_file = _stager().run(
         elements_filepath=input_file,
@@ -109,6 +111,56 @@ def test_process_whole_does_not_load_whole_file(tmp_path: Path, monkeypatch) -> 
         output_filename="in.json",
     )
     assert len(json.loads(output_file.read_text())) == 2
+
+
+def test_process_whole_in_place_overwrite(tmp_path: Path) -> None:
+    """Regression: the stager is routinely called with the output path equal to the
+    input path (e.g. several connectors stage ``docs.json`` in place). Because
+    ``process_whole`` reads the input lazily via a generator, a plain
+    ``open(output, "w")`` truncated the still-being-read input mid-parse and ijson
+    raised ``IncompleteJSONError: premature EOF``. The atomic temp-file write keeps
+    the input intact until the stream is fully consumed."""
+    in_place = tmp_path / "docs.json"
+    with in_place.open("w") as f:
+        json.dump(ELEMENTS, f, indent=2, ensure_ascii=False)
+
+    output_file = _stager().run(
+        elements_filepath=in_place,
+        file_data=_file_data(),
+        output_dir=tmp_path,
+        output_filename="docs.json",
+    )
+
+    # Output path is the same file as the input, and it was rewritten correctly.
+    assert output_file == in_place
+    result = json.loads(output_file.read_text())
+    assert [e["element_id"] for e in result] == ["a", "c"]
+    assert all(e["conformed_by"] == "rec-42" for e in result)
+
+
+def test_process_whole_falls_back_to_buffered_on_nan(tmp_path: Path) -> None:
+    """ijson is stricter than stdlib ``json``: it rejects the non-standard constant
+    ``NaN`` that ``json.load`` accepts and that legitimately appears in element
+    files. ``process_whole`` must catch ``ijson.JSONError`` and fall back to the
+    buffered ``json.load`` path so these files still stage successfully."""
+    input_file = tmp_path / "in.json"
+    # json.dump emits a bare NaN token by default; ijson's yajl backend rejects it.
+    input_file.write_text('[{"element_id": "a", "score": NaN}]')
+
+    output_file = _stager().run(
+        elements_filepath=input_file,
+        file_data=_file_data(),
+        output_dir=tmp_path / "out",
+        output_filename="in.json",
+    )
+
+    # The element survived via the buffered fallback (NaN preserved, as json.load did).
+    text = output_file.read_text()
+    assert "NaN" in text
+    result = json.loads(text)
+    assert len(result) == 1
+    assert result[0]["element_id"] == "a"
+    assert result[0]["conformed_by"] == "rec-42"
 
 
 def test_process_whole_output_matches_ndjson_stream_path(tmp_path: Path) -> None:

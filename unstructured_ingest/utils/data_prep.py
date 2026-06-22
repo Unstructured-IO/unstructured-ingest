@@ -1,9 +1,13 @@
 import itertools
 import json
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
 from uuid import NAMESPACE_DNS, uuid5
+
+import ijson
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
@@ -188,9 +192,14 @@ def json_stream(path: Path) -> Generator[dict, None, None]:
     ``use_float=True`` makes ijson yield native ``float``/``int`` values instead of
     ``decimal.Decimal``, matching what ``json.load`` would have produced so the
     elements round-trip identically through ``json.dumps``.
-    """
-    import ijson
 
+    NOTE: ijson is stricter than the stdlib ``json`` module. It raises
+    ``ijson.JSONError`` on inputs ``json.load`` accepts: the non-standard constants
+    ``NaN`` / ``Infinity`` / ``-Infinity`` and integers larger than int64 (the yajl
+    C backend overflows). Callers that need full ``json.load`` compatibility should
+    catch ``ijson.JSONError`` and fall back to a buffered read (see
+    ``UploadStager.process_whole``).
+    """
     with path.open("rb") as f:
         yield from ijson.items(f, "item", use_float=True)
 
@@ -235,14 +244,33 @@ def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int]
     holding a single element in memory at a time, so it pairs with
     :func:`json_stream` to copy/transform arbitrarily large element files without
     loading them whole.
+
+    The write is ATOMIC: output is written to a temp file in the same directory and
+    only ``os.replace``-d into ``path`` once the iterable has been fully consumed
+    without error. This is required because the stager is routinely called with the
+    output path equal to the input path; a plain ``open(path, "w")`` would truncate
+    the input file before the lazy ``json_stream`` generator had finished reading it,
+    corrupting the stream mid-parse. Writing to a temp file first leaves the input
+    intact until the generator is exhausted. It also means that if the producing
+    generator raises mid-stream (a parse error or a per-element transform failure),
+    the temp file is discarded and any existing file at ``path`` is left untouched,
+    rather than replacing a known-good artifact with a corrupt partial file.
     """
-    with path.open("w") as f:
-        if path.suffix == ".json":
-            _write_json_array_stream(f=f, data=data, indent=indent)
-        elif path.suffix == ".ndjson":
-            _write_ndjson_stream(f=f, data=data)
-        else:
-            raise IOError(f"Unsupported file type: {path}")
+    if path.suffix not in (".json", ".ndjson"):
+        raise IOError(f"Unsupported file type: {path}")
+
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w") as f:
+            if path.suffix == ".json":
+                _write_json_array_stream(f=f, data=data, indent=indent)
+            else:
+                _write_ndjson_stream(f=f, data=data)
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def get_json_data(path: Path) -> list[dict]:

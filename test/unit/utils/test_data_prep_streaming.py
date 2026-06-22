@@ -86,6 +86,41 @@ def test_write_data_streaming_rejects_unknown_suffix(tmp_path: Path) -> None:
         write_data_streaming(path=tmp_path / "out.csv", data=iter(SAMPLE_ELEMENTS))
 
 
+def test_write_data_streaming_in_place_overwrite(tmp_path: Path) -> None:
+    """Streaming ``json_stream(src) -> write_data_streaming(src)`` with the SAME
+    path must not corrupt the read. A non-atomic ``open(path, "w")`` truncates the
+    file before the lazy generator finishes reading it, so ijson raises
+    ``IncompleteJSONError: premature EOF``. The atomic temp-file write makes the
+    round-trip safe."""
+    path = tmp_path / "elements.json"
+    _write_json(path, SAMPLE_ELEMENTS, indent=2)
+
+    write_data_streaming(path=path, data=(e for e in json_stream(path=path)))
+
+    assert json.loads(path.read_text()) == SAMPLE_ELEMENTS
+
+
+def test_write_data_streaming_atomic_rollback_on_error(tmp_path: Path) -> None:
+    """If the producing generator raises mid-stream, the existing file at ``path``
+    must be left untouched and no ``.tmp`` artifact may be left behind."""
+    path = tmp_path / "elements.json"
+    _write_json(path, SAMPLE_ELEMENTS, indent=2)
+    original = path.read_text()
+
+    def _exploding():
+        yield SAMPLE_ELEMENTS[0]
+        raise ValueError("boom mid-stream")
+
+    with pytest.raises(ValueError, match="boom mid-stream"):
+        write_data_streaming(path=path, data=_exploding())
+
+    # Original file is intact (atomic replace never happened) ...
+    assert path.read_text() == original
+    # ... and the temp file was cleaned up.
+    leftovers = [p for p in tmp_path.iterdir() if p.name != path.name]
+    assert leftovers == []
+
+
 def test_json_stream_yields_same_elements_as_json_load(tmp_path: Path) -> None:
     path = tmp_path / "elements.json"
     _write_json(path, SAMPLE_ELEMENTS, indent=2)
