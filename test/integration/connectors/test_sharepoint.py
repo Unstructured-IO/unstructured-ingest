@@ -19,6 +19,28 @@ from unstructured_ingest.processes.connectors.sharepoint import (
     SharepointIndexerConfig,
 )
 
+# Fields excluded from the file-data byte-diff for every SharePoint source test. These are
+# volatile or environment-specific and would otherwise diff against the checked-in fixtures on
+# every run:
+#   - the Graph download URLs embed a short-lived signed token and a tenant-specific drive id
+#   - date_created / date_modified / LastModified change whenever the live file is touched
+#   - permissions_data is a live snapshot of the SharePoint site's ACLs (user/group object ids).
+#     A tenant admin changing sharing on the test site mutates these ids out from under the
+#     fixture, so the ACL snapshot is not suitable for a golden byte-comparison. Permissions
+#     extraction behavior is covered separately; here we only assert the file content/structure.
+SHAREPOINT_SOURCE_EXCLUDE_FIELDS = [
+    # no-auth signed download URL; volatile per request, like downloadUrl
+    "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
+    # url embeds the env-specific drive id; varies by tenant
+    "additional_metadata.url",
+    "metadata.date_created",
+    "metadata.date_modified",
+    "additional_metadata.LastModified",
+    "additional_metadata.@microsoft.graph.downloadUrl",
+    # live tenant ACL snapshot (object ids); drifts when site sharing changes
+    "metadata.permissions_data",
+]
+
 
 def sharepoint_config():
     class SharepointTestConfig:
@@ -67,16 +89,7 @@ async def test_sharepoint_source(temp_dir):
             test_id="sharepoint1",
             expected_num_files=4,
             validate_downloaded_files=True,
-            exclude_fields_extend=[
-                # no-auth signed download URL; volatile per request, like downloadUrl
-                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
-                # url embeds the env-specific drive id; varies by tenant
-                "additional_metadata.url",
-                "metadata.date_created",
-                "metadata.date_modified",
-                "additional_metadata.LastModified",
-                "additional_metadata.@microsoft.graph.downloadUrl",
-            ],
+            exclude_fields_extend=SHAREPOINT_SOURCE_EXCLUDE_FIELDS,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
@@ -120,16 +133,7 @@ async def test_sharepoint_source_with_path(temp_dir):
             test_id="sharepoint2",
             expected_num_files=2,
             validate_downloaded_files=True,
-            exclude_fields_extend=[
-                # no-auth signed download URL; volatile per request, like downloadUrl
-                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
-                # url embeds the env-specific drive id; varies by tenant
-                "additional_metadata.url",
-                "metadata.date_created",
-                "metadata.date_modified",
-                "additional_metadata.LastModified",
-                "additional_metadata.@microsoft.graph.downloadUrl",
-            ],
+            exclude_fields_extend=SHAREPOINT_SOURCE_EXCLUDE_FIELDS,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
@@ -173,16 +177,7 @@ async def test_sharepoint_root_with_path(temp_dir):
             test_id="sharepoint3",
             expected_num_files=2,
             validate_downloaded_files=True,
-            exclude_fields_extend=[
-                # no-auth signed download URL; volatile per request, like downloadUrl
-                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
-                # url embeds the env-specific drive id; varies by tenant
-                "additional_metadata.url",
-                "metadata.date_created",
-                "metadata.date_modified",
-                "additional_metadata.LastModified",
-                "additional_metadata.@microsoft.graph.downloadUrl",
-            ],
+            exclude_fields_extend=SHAREPOINT_SOURCE_EXCLUDE_FIELDS,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
@@ -226,16 +221,7 @@ async def test_sharepoint_shared_documents(temp_dir):
             test_id="sharepoint4",
             expected_num_files=4,
             validate_downloaded_files=True,
-            exclude_fields_extend=[
-                # no-auth signed download URL; volatile per request, like downloadUrl
-                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
-                # url embeds the env-specific drive id; varies by tenant
-                "additional_metadata.url",
-                "metadata.date_created",
-                "metadata.date_modified",
-                "additional_metadata.LastModified",
-                "additional_metadata.@microsoft.graph.downloadUrl",
-            ],
+            exclude_fields_extend=SHAREPOINT_SOURCE_EXCLUDE_FIELDS,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
@@ -281,16 +267,7 @@ async def test_sharepoint_library(temp_dir):
             test_id="sharepoint5",
             expected_num_files=3,
             validate_downloaded_files=True,
-            exclude_fields_extend=[
-                # no-auth signed download URL; volatile per request, like downloadUrl
-                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
-                # url embeds the env-specific drive id; varies by tenant
-                "additional_metadata.url",
-                "metadata.date_created",
-                "metadata.date_modified",
-                "additional_metadata.LastModified",
-                "additional_metadata.@microsoft.graph.downloadUrl",
-            ],
+            exclude_fields_extend=SHAREPOINT_SOURCE_EXCLUDE_FIELDS,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
@@ -336,16 +313,7 @@ async def test_sharepoint_library_with_path(temp_dir):
             test_id="sharepoint6",
             expected_num_files=1,
             validate_downloaded_files=True,
-            exclude_fields_extend=[
-                # no-auth signed download URL; volatile per request, like downloadUrl
-                "additional_metadata.@microsoft.graph.downloadUrlNoAuth",
-                # url embeds the env-specific drive id; varies by tenant
-                "additional_metadata.url",
-                "metadata.date_created",
-                "metadata.date_modified",
-                "additional_metadata.LastModified",
-                "additional_metadata.@microsoft.graph.downloadUrl",
-            ],
+            exclude_fields_extend=SHAREPOINT_SOURCE_EXCLUDE_FIELDS,
             predownload_file_data_check=source_filedata_display_name_set_check,
             postdownload_file_data_check=source_filedata_display_name_set_check,
         ),
