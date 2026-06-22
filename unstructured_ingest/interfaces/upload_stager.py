@@ -104,6 +104,14 @@ class UploadStager(BaseProcess, ABC):
     def _process_whole_buffered(
         self, input_file: Path, output_file: Path, file_data: FileData
     ) -> None:
+        # This path is only reached when ijson rejected the input (NaN/Infinity/
+        # >int64), so it already gives up the memory bound, exactly like the legacy
+        # whole-file path did. get_json_data reads the entire input into memory
+        # *before* write_data opens the output, so it stays correct even when
+        # output_file == input_file (the in-place stage case): the read completes
+        # before the write truncates. write_data itself is not atomic, matching
+        # every other write_data caller in the codebase; a genuinely corrupt input
+        # re-raises here from json.load rather than being silently swallowed.
         elements_contents = get_json_data(path=input_file)
         conformed_elements = [
             self.conform_dict(element_dict=element, file_data=file_data)

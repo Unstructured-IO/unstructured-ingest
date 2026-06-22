@@ -163,6 +163,23 @@ def test_process_whole_falls_back_to_buffered_on_nan(tmp_path: Path) -> None:
     assert result[0]["conformed_by"] == "rec-42"
 
 
+def test_process_whole_truncated_json_still_raises(tmp_path: Path) -> None:
+    """The broad ``except ijson.JSONError`` in process_whole exists only to fall back
+    on NaN/Infinity/>int64 inputs that json.load tolerates. A genuinely truncated or
+    corrupt file must NOT be silently swallowed: ijson raises (caught), the buffered
+    fallback re-reads with json.load, and json.load raises too, so an error surfaces."""
+    truncated = tmp_path / "in.json"
+    truncated.write_text('[{"element_id": "a"}, {"element_id":')  # cut off mid-array
+
+    with pytest.raises(Exception):
+        _stager().run(
+            elements_filepath=truncated,
+            file_data=_file_data(),
+            output_dir=tmp_path / "out",
+            output_filename="in.json",
+        )
+
+
 def test_process_whole_output_matches_ndjson_stream_path(tmp_path: Path) -> None:
     """A ``.json`` input and the equivalent ``.ndjson`` input should yield the
     same conformed elements (the two code paths must stay in lockstep)."""
