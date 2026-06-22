@@ -1,9 +1,13 @@
 import itertools
 import json
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
+from typing import IO, TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
 from uuid import NAMESPACE_DNS, uuid5
+
+import ijson
 
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
@@ -175,6 +179,105 @@ def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
             ndjson.dump(data, f, ensure_ascii=False)
         else:
             raise IOError("Unsupported file type: {path}")
+
+
+def json_stream(path: Path) -> Generator[dict, None, None]:
+    """Yield the elements of a top-level JSON array one at a time.
+
+    This is the bounded-memory equivalent of ``json.load(path)`` for a file whose
+    root is a JSON array of objects (the element file format produced by the
+    partition step). Only one element is resident at a time, so an arbitrarily
+    large file is processed in roughly flat memory.
+
+    ``use_float=True`` makes ijson yield native ``float``/``int`` values instead of
+    ``decimal.Decimal``, matching what ``json.load`` would have produced so the
+    elements round-trip identically through ``json.dumps``.
+
+    NOTE: ijson is stricter than the stdlib ``json`` module. It raises
+    ``ijson.JSONError`` on inputs ``json.load`` accepts: the non-standard constants
+    ``NaN`` / ``Infinity`` / ``-Infinity`` and integers larger than int64 (the yajl
+    C backend overflows). Callers that need full ``json.load`` compatibility should
+    catch ``ijson.JSONError`` and fall back to a buffered read (see
+    ``UploadStager.process_whole``).
+    """
+    with path.open("rb") as f:
+        yield from ijson.items(f, "item", use_float=True)
+
+
+def _write_json_array_stream(f: "IO[str]", data: Iterable[dict], indent: Optional[int]) -> None:
+    """Stream-write ``data`` as a JSON array, byte-for-byte identical to
+    ``json.dump(list(data), f, indent=indent, ensure_ascii=False)`` but without
+    materializing the list."""
+    if indent is None:
+        f.write("[")
+        for i, element in enumerate(data):
+            if i:
+                f.write(", ")
+            f.write(json.dumps(element, ensure_ascii=False))
+        f.write("]")
+        return
+
+    pad = " " * indent
+    wrote_any = False
+    for i, element in enumerate(data):
+        f.write("[\n" if i == 0 else ",\n")
+        wrote_any = True
+        chunk = json.dumps(element, indent=indent, ensure_ascii=False)
+        f.write("\n".join(f"{pad}{line}" for line in chunk.split("\n")))
+    f.write("\n]" if wrote_any else "[]")
+
+
+def _write_ndjson_stream(f: "IO[str]", data: Iterable[dict]) -> None:
+    """Stream-write ``data`` as newline-delimited JSON, byte-for-byte identical to
+    ``ndjson.dump(list(data), f, ensure_ascii=False)`` but without materializing
+    the list."""
+    for i, element in enumerate(data):
+        if i:
+            f.write("\n")
+        f.write(json.dumps(element, ensure_ascii=False))
+
+
+def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int] = 2) -> None:
+    """Bounded-memory drop-in for :func:`write_data` that accepts an iterable/generator.
+
+    Produces output identical to ``write_data`` for the same elements while only
+    holding a single element in memory at a time, so it pairs with
+    :func:`json_stream` to copy/transform arbitrarily large element files without
+    loading them whole.
+
+    The write is ATOMIC: output is written to a temp file in the same directory and
+    only ``os.replace``-d into ``path`` once the iterable has been fully consumed
+    without error. This is required because the stager is routinely called with the
+    output path equal to the input path; a plain ``open(path, "w")`` would truncate
+    the input file before the lazy ``json_stream`` generator had finished reading it,
+    corrupting the stream mid-parse. Writing to a temp file first leaves the input
+    intact until the generator is exhausted. It also means that if the producing
+    generator raises mid-stream (a parse error or a per-element transform failure),
+    the temp file is discarded and any existing file at ``path`` is left untouched,
+    rather than replacing a known-good artifact with a corrupt partial file.
+    """
+    if path.suffix not in (".json", ".ndjson"):
+        raise IOError(f"Unsupported file type: {path}")
+
+    # mkstemp creates the temp file as 0600; os.replace would then carry that over and
+    # narrow an existing destination's permissions, breaking shared-read workflows.
+    # Preserve the existing file's mode, or fall back to a world-readable default for
+    # new files (the previous plain open(path, "w") left perms at the process umask
+    # default; 0644 matches the common case without the umask race in this async path).
+    existing_mode = path.stat().st_mode & 0o777 if path.exists() else None
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w") as f:
+            if path.suffix == ".json":
+                _write_json_array_stream(f=f, data=data, indent=indent)
+            else:
+                _write_ndjson_stream(f=f, data=data)
+        os.chmod(tmp_path, existing_mode if existing_mode is not None else 0o644)
+        os.replace(tmp_path, path)
+    except BaseException:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def get_json_data(path: Path) -> list[dict]:
