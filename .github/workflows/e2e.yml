@@ -1,5 +1,14 @@
 name: End-to-End Tests
 
+# These jobs exercise live external services (the hosted partition API, SharePoint/OneDrive,
+# S3, Databricks, vector DBs, etc.) and depend on credentials + remote availability, so they
+# are inherently flaky and slow. They are intentionally NOT run on pull_request / merge_group:
+# a transient remote hiccup or live-content drift must not block an unrelated PR. Instead they
+# run nightly (schedule), on demand (workflow_dispatch), and post-merge on push to main as a
+# canary. The only job that runs on PRs is check_untagged_tests, which is a static, creds-free
+# guard. NOTE: because these checks no longer report on PRs, any of them still listed in the
+# branch-protection "required status checks" set must be removed there (a repo-admin action) or
+# PRs will wait forever on a status that never arrives.
 on:
   push:
     branches: [ main ]
@@ -7,6 +16,10 @@ on:
     branches: [ main, release/* ]
   merge_group:
     branches: [ main ]
+  schedule:
+    # Nightly at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -25,6 +38,8 @@ jobs:
           make check-untagged-tests
 
   api_based_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     strategy:
       matrix:
         test: ["partitioners", "chunkers"]
@@ -46,6 +61,8 @@ jobs:
           make parse-skipped-tests
 
   embedders_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     steps:
       - uses: 'actions/checkout@v4'
@@ -71,6 +88,8 @@ jobs:
           make parse-skipped-tests
 
   blob_storage_connectors_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
@@ -115,6 +134,8 @@ jobs:
         make parse-skipped-tests
 
   sql_connectors_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
@@ -152,6 +173,8 @@ jobs:
         make parse-skipped-tests
 
   nosql_connectors_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
@@ -192,6 +215,8 @@ jobs:
         make parse-skipped-tests
 
   vector_db_connectors_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
@@ -230,6 +255,8 @@ jobs:
         make parse-skipped-tests
 
   uncategorized_connectors_int_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     needs: [ check_untagged_tests ]
     steps:
@@ -273,6 +300,8 @@ jobs:
         make parse-skipped-tests
 
   src_e2e_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: opensource-linux-8core
     steps:
     # actions/checkout MUST come before auth
@@ -338,6 +367,8 @@ jobs:
         ./test_e2e/test-src.sh
 
   src_api_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
     # actions/checkout MUST come before auth
@@ -359,6 +390,8 @@ jobs:
         ./test_e2e/src/against-api.sh
 
   dest_e2e_test:
+    # Live-service job — runs nightly / on-demand / post-merge, never on PRs. See top-of-file note.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     environment: ci
     runs-on: opensource-linux-8core
     steps:
