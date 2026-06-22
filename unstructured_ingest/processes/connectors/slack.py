@@ -7,6 +7,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -111,9 +112,7 @@ def _channel_join_error_msg(error_code: str, channels: list, granted_scopes: set
             "Open the channel in Slack and use /invite @<bot-name>."
         )
     if error_code == "missing_scope":
-        scope_note = (
-            f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
-        )
+        scope_note = f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
         return (
             f"Bot token is missing the 'channels:join' scope{scope_note}. "
             f"Cannot auto-join {channel_list}. "
@@ -226,9 +225,7 @@ class SlackIndexer(Indexer):
                 raw = response.get("permalink")
                 permalink = raw if isinstance(raw, str) else None
             except Exception:
-                logger.debug(
-                    f"Could not retrieve permalink for channel={channel} ts={ts_oldest}."
-                )
+                logger.debug(f"Could not retrieve permalink for channel={channel} ts={ts_oldest}.")
 
         source_identifiers = SourceIdentifiers(
             filename=f"{filename}.xml", fullpath=f"{filename}.xml"
@@ -305,8 +302,6 @@ class SlackIndexer(Indexer):
             return set()
 
     def _validate_and_join_channels(self, client: "WebClient", granted_scopes: set) -> None:
-        from collections import defaultdict
-
         from slack_sdk.errors import SlackApiError
 
         issues: list[_ChannelIssue] = []
@@ -454,10 +449,13 @@ class SlackDownloader(Downloader):
     @staticmethod
     def _download_private_file(request: urllib.request.Request, download_path: Path) -> None:
         opener = urllib.request.build_opener(_NoRedirectHandler)
-        with opener.open(
-            request,
-            timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
-        ) as response, download_path.open("wb") as output_file:
+        with (
+            opener.open(
+                request,
+                timeout=PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS,
+            ) as response,
+            download_path.open("wb") as output_file,
+        ):
             shutil.copyfileobj(response, output_file)
 
     def _conversation_to_xml(self, conversation: list[list[dict]]) -> ET.ElementTree:
