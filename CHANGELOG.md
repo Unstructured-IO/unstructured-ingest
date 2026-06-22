@@ -1,3 +1,9 @@
+## [1.6.17]
+
+### Fixes
+
+- **fix(stager): stream the `.json` element file instead of loading it whole, to stop OOM on large documents.** `UploadStager.process_whole` (the path taken when the partition output has a `.json` suffix) previously called `json.load` on the entire element file, built a full conformed `list`, and wrote it whole — holding 3+ full copies of a several-hundred-MB file resident. A 48k-page VLM document OOM-killed the stager plugin (SIGKILL, zero app logs) at this step. `process_whole` now iterates the JSON array element-by-element via `ijson` (new `data_prep.json_stream`), conforms each element, and stream-writes the output (new `data_prep.write_data_streaming`), keeping only one element resident at a time — matching the bounded-memory profile of the existing `.ndjson` `stream_update` path. Output is byte-for-byte identical to the previous `write_data` result. Adds `ijson` as a base dependency. The base uploader (`Uploader.run`) has the same whole-file-load problem but its fix requires a shared-interface change and is tracked separately.
+
 ## [1.6.16]
 
 ### Fixes

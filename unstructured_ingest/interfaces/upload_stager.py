@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.interfaces import BaseProcess
 from unstructured_ingest.utils import ndjson
-from unstructured_ingest.utils.data_prep import get_json_data, write_data
+from unstructured_ingest.utils.data_prep import json_stream, write_data_streaming
 
 
 class UploadStagerConfig(BaseModel):
@@ -54,17 +54,22 @@ class UploadStager(BaseProcess, ABC):
                     writer.f.flush()
 
     def process_whole(self, input_file: Path, output_file: Path, file_data: FileData) -> None:
-        elements_contents = get_json_data(path=input_file)
-
+        # Stream the JSON array element-by-element rather than loading the whole
+        # file into memory. A 48k+ page partition output is several hundred MB;
+        # json.load + a full conformed list + write_data held 3+ copies resident
+        # and OOM-killed the stager. json_stream/write_data_streaming keep only a
+        # single element resident at a time, matching the bounded-memory profile
+        # of the .ndjson stream_update path.
+        #
         # Filter hook: default returns True so existing behavior is preserved;
         # subclasses override should_include() to drop elements the destination
         # cannot accept.
-        conformed_elements = [
+        conformed_elements = (
             self.conform_dict(element_dict=element, file_data=file_data)
-            for element in elements_contents
+            for element in json_stream(path=input_file)
             if self.should_include(element_dict=element)
-        ]
-        write_data(path=output_file, data=conformed_elements)
+        )
+        write_data_streaming(path=output_file, data=conformed_elements)
 
     def run(
         self,

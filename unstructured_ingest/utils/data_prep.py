@@ -2,7 +2,7 @@ import itertools
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
+from typing import IO, TYPE_CHECKING, Any, Generator, Iterable, Optional, Sequence, TypeVar, cast
 from uuid import NAMESPACE_DNS, uuid5
 
 from unstructured_ingest.data_types.file_data import FileData
@@ -175,6 +175,74 @@ def write_data(path: Path, data: list[dict], indent: Optional[int] = 2) -> None:
             ndjson.dump(data, f, ensure_ascii=False)
         else:
             raise IOError("Unsupported file type: {path}")
+
+
+def json_stream(path: Path) -> Generator[dict, None, None]:
+    """Yield the elements of a top-level JSON array one at a time.
+
+    This is the bounded-memory equivalent of ``json.load(path)`` for a file whose
+    root is a JSON array of objects (the element file format produced by the
+    partition step). Only one element is resident at a time, so an arbitrarily
+    large file is processed in roughly flat memory.
+
+    ``use_float=True`` makes ijson yield native ``float``/``int`` values instead of
+    ``decimal.Decimal``, matching what ``json.load`` would have produced so the
+    elements round-trip identically through ``json.dumps``.
+    """
+    import ijson
+
+    with path.open("rb") as f:
+        yield from ijson.items(f, "item", use_float=True)
+
+
+def _write_json_array_stream(f: "IO[str]", data: Iterable[dict], indent: Optional[int]) -> None:
+    """Stream-write ``data`` as a JSON array, byte-for-byte identical to
+    ``json.dump(list(data), f, indent=indent, ensure_ascii=False)`` but without
+    materializing the list."""
+    if indent is None:
+        f.write("[")
+        for i, element in enumerate(data):
+            if i:
+                f.write(", ")
+            f.write(json.dumps(element, ensure_ascii=False))
+        f.write("]")
+        return
+
+    pad = " " * indent
+    wrote_any = False
+    for i, element in enumerate(data):
+        f.write("[\n" if i == 0 else ",\n")
+        wrote_any = True
+        chunk = json.dumps(element, indent=indent, ensure_ascii=False)
+        f.write("\n".join(f"{pad}{line}" for line in chunk.split("\n")))
+    f.write("\n]" if wrote_any else "[]")
+
+
+def _write_ndjson_stream(f: "IO[str]", data: Iterable[dict]) -> None:
+    """Stream-write ``data`` as newline-delimited JSON, byte-for-byte identical to
+    ``ndjson.dump(list(data), f, ensure_ascii=False)`` but without materializing
+    the list."""
+    for i, element in enumerate(data):
+        if i:
+            f.write("\n")
+        f.write(json.dumps(element, ensure_ascii=False))
+
+
+def write_data_streaming(path: Path, data: Iterable[dict], indent: Optional[int] = 2) -> None:
+    """Bounded-memory drop-in for :func:`write_data` that accepts an iterable/generator.
+
+    Produces output identical to ``write_data`` for the same elements while only
+    holding a single element in memory at a time, so it pairs with
+    :func:`json_stream` to copy/transform arbitrarily large element files without
+    loading them whole.
+    """
+    with path.open("w") as f:
+        if path.suffix == ".json":
+            _write_json_array_stream(f=f, data=data, indent=indent)
+        elif path.suffix == ".ndjson":
+            _write_ndjson_stream(f=f, data=data)
+        else:
+            raise IOError(f"Unsupported file type: {path}")
 
 
 def get_json_data(path: Path) -> list[dict]:
