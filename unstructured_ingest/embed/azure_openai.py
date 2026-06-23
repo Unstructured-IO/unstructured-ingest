@@ -8,6 +8,7 @@ from unstructured_ingest.embed.openai import (
     OpenAIEmbeddingConfig,
     OpenAIEmbeddingEncoder,
 )
+from unstructured_ingest.error import UserError
 from unstructured_ingest.utils.dep_check import requires_dependencies
 from unstructured_ingest.utils.tls import ssl_context_with_optional_ca_override
 
@@ -21,6 +22,28 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
     embedder_model_name: str = Field(
         default="text-embedding-ada-002", alias="model_name", description="Azure OpenAI model name"
     )
+
+    @requires_dependencies(["openai"], extras="openai")
+    def run_precheck(self) -> None:
+        """
+        Check if embedding model can be reached.
+
+        In Azure OpenAI fetched models list is a list of all available models
+        throughout the whole Azure AI Foundry, and not the deployed models
+        in our Azure AI Foundry instance.
+        Validating model against the list might not yield correct results, so
+        we need to validate that the given model deployment can be reached.
+        """
+        from openai import APIStatusError
+
+        try:
+            client = self.get_client()
+            client.embeddings.create(input="precheck", model=self.embedder_model_name)
+        except APIStatusError as e:
+            if e.status_code == 404 and e.code == "DeploymentNotFound":
+                raise UserError(f"model '{self.embedder_model_name}' not found: {e.message}")
+        except Exception as e:
+            raise self.wrap_error(e=e)
 
     @requires_dependencies(["openai"], extras="openai")
     def get_client(self) -> "AzureOpenAI":
