@@ -326,13 +326,23 @@ async def test_sharepoint_library_with_path(temp_dir):
 async def test_sharepoint_permissions_not_collapsed():
     """Regression test for PLU-370.
 
-    The office365-rest-python-client SDK shared a mutable-default Identity singleton across
-    every Permission deserialization, causing all files to report the same collapsed identity
-    in permissions_data. The fix parses raw Graph /$batch JSON directly.
+    Bug: office365-rest-python-client shared one mutable Identity object as a class-level
+    default across every Permission deserialization. Each file's permissions overwrote the
+    same singleton in place, so by the time all files were indexed every file reported the
+    same user/group — whichever identity happened to be deserialized last.
 
-    Asserts:
-    - At least one file has non-null permissions_data (permissions are fetched at all).
-    - Not all files share identical permissions_data (no singleton identity collapse).
+    Fix (1.6.15): bypass the SDK's typed accessors entirely and parse raw Graph /$batch
+    JSON directly, so each file gets its own identity objects.
+
+    We assert structural correctness rather than exact values because permissions_data is a
+    live ACL snapshot: a tenant admin changing sharing on the test site would break a golden
+    fixture without any code change. See SHAREPOINT_SOURCE_EXCLUDE_FIELDS for the same
+    reasoning applied to the other source tests.
+
+    What "distinct identities" proves: if the singleton bug were still present, every file
+    would return the same collapsed identity (the last one deserialized). Seeing at least two
+    different permissions_data values across files means each file is getting its own snapshot
+    from the raw JSON — the bug is gone.
     """
     import json
 
@@ -353,8 +363,11 @@ async def test_sharepoint_permissions_not_collapsed():
     assert len(file_datas) > 1, "Need multiple files to test for identity collapse"
 
     perms = [fd.metadata.permissions_data for fd in file_datas]
+    # Permissions must be populated — a null across the board means the fetch didn't run.
     assert any(p for p in perms), "permissions_data is null for all files — permissions not fetched"
 
+    # PLU-370: the singleton bug made every file return the same identity. If this fails,
+    # all files collapsed to one identity again — check onedrive.py for SDK typed accessor use.
     unique_perms = {json.dumps(p, sort_keys=True) for p in perms}
     assert len(unique_perms) > 1, (
         "All files returned identical permissions_data — "
