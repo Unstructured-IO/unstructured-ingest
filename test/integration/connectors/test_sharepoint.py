@@ -326,23 +326,13 @@ async def test_sharepoint_library_with_path(temp_dir):
 async def test_sharepoint_permissions_not_collapsed():
     """Regression test for PLU-370.
 
-    Bug: office365-rest-python-client shared one mutable Identity object as a class-level
-    default across every Permission deserialization. Each file's permissions overwrote the
-    same singleton in place, so by the time all files were indexed every file reported the
-    same user/group — whichever identity happened to be deserialized last.
+    Bug: office365-rest-python-client shared a mutable Identity singleton across all
+    Permission deserializations, so every file collapsed to the same last-deserialized
+    user/group. Fix (1.6.15) parses raw Graph /$batch JSON directly.
 
-    Fix (1.6.15): bypass the SDK's typed accessors entirely and parse raw Graph /$batch
-    JSON directly, so each file gets its own identity objects.
-
-    We assert structural correctness rather than exact values because permissions_data is a
-    live ACL snapshot: a tenant admin changing sharing on the test site would break a golden
-    fixture without any code change. See SHAREPOINT_SOURCE_EXCLUDE_FIELDS for the same
-    reasoning applied to the other source tests.
-
-    What "distinct identities" proves: if the singleton bug were still present, every file
-    would return the same collapsed identity (the last one deserialized). Seeing at least two
-    different permissions_data values across files means each file is getting its own snapshot
-    from the raw JSON — the bug is gone.
+    We check structural correctness (non-null + distinct) rather than exact values because
+    permissions_data is a live ACL snapshot that drifts with tenant admin changes — same
+    reasoning as SHAREPOINT_SOURCE_EXCLUDE_FIELDS in the other source tests.
     """
     import json
 
