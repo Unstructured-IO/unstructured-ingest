@@ -28,11 +28,12 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
         """
         Check if embedding model can be reached.
 
-        In Azure OpenAI fetched models list is a list of all available models
-        throughout the whole Azure AI Foundry, and not the deployed models
-        in our Azure AI Foundry instance.
-        Validating model against the list might not yield correct results, so
-        we need to validate that the given model deployment can be reached.
+        In Azure OpenAI the fetched models list (``client.models.list()``) is the
+        base-model catalog available to the resource, NOT the deployments created in
+        the Azure AI Foundry instance — and a deployment name is the only valid value
+        for the ``model`` parameter. Validating a deployment name against that catalog
+        rejects every custom-named deployment, so instead we validate that the given
+        deployment can actually be reached by issuing a minimal embeddings request.
         """
         from openai import APIStatusError
 
@@ -41,7 +42,7 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
             client.embeddings.create(input="precheck", model=self.embedder_model_name)
         except APIStatusError as e:
             if e.status_code == 404 and e.code == "DeploymentNotFound":
-                raise UserError(f"model '{self.embedder_model_name}' not found: {e.message}")
+                raise UserError(f"model '{self.embedder_model_name}' not found: {e.message}") from e
             raise self.wrap_error(e=e)
         except Exception as e:
             raise self.wrap_error(e=e)
