@@ -1,0 +1,19 @@
+unstructured_ingest/__version__.py
+  s_4456585bb2e38e::t_dbe6126098431d 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "13b5e01707683b85f9a4e7fa7454887305ee2793",
+  "prompts": {},
+  "sessions": {
+    "s_4456585bb2e38e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "797f007a-e1da-4bf5-b099-c26d68fb05a4",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
