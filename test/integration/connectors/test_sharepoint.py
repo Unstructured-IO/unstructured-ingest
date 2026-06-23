@@ -320,6 +320,48 @@ async def test_sharepoint_library_with_path(temp_dir):
     )
 
 
+@pytest.mark.asyncio
+@pytest.mark.tags(CONNECTOR_TYPE, SOURCE_TAG, BLOB_STORAGE_TAG)
+@requires_env("SHAREPOINT_CLIENT_ID", "SHAREPOINT_CRED", "MS_TENANT_ID", "MS_USER_PNAME")
+async def test_sharepoint_permissions_not_collapsed():
+    """Regression test for PLU-370.
+
+    The office365-rest-python-client SDK shared a mutable-default Identity singleton across
+    every Permission deserialization, causing all files to report the same collapsed identity
+    in permissions_data. The fix parses raw Graph /$batch JSON directly.
+
+    Asserts:
+    - At least one file has non-null permissions_data (permissions are fetched at all).
+    - Not all files share identical permissions_data (no singleton identity collapse).
+    """
+    import json
+
+    site = "https://unstructuredio.sharepoint.com/sites/utic-platform-test-source"
+    config = sharepoint_config()
+
+    indexer = SharepointIndexer(
+        connection_config=SharepointConnectionConfig(
+            client_id=config.client_id,
+            site=site,
+            tenant=config.tenant,
+            access_config=SharepointAccessConfig(client_cred=config.client_cred),
+        ),
+        index_config=SharepointIndexerConfig(recursive=True),
+    )
+
+    file_datas = [fd async for fd in indexer.run_async()]
+    assert len(file_datas) > 1, "Need multiple files to test for identity collapse"
+
+    perms = [fd.metadata.permissions_data for fd in file_datas]
+    assert any(p for p in perms), "permissions_data is null for all files — permissions not fetched"
+
+    unique_perms = {json.dumps(p, sort_keys=True) for p in perms}
+    assert len(unique_perms) > 1, (
+        "All files returned identical permissions_data — "
+        "SDK singleton identity collapse (PLU-370) may still be present"
+    )
+
+
 @pytest.fixture
 def base_sharepoint_config():
     """Base SharePoint config for testing."""
