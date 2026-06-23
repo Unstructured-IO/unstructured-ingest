@@ -42,6 +42,7 @@ class AzureOpenAIEmbeddingConfig(OpenAIEmbeddingConfig):
         except APIStatusError as e:
             if e.status_code == 404 and e.code == "DeploymentNotFound":
                 raise UserError(f"model '{self.embedder_model_name}' not found: {e.message}")
+            raise self.wrap_error(e=e)
         except Exception as e:
             raise self.wrap_error(e=e)
 
