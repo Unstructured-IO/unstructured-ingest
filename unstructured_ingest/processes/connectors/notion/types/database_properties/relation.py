@@ -9,6 +9,7 @@ from unstructured_ingest.processes.connectors.notion.interfaces import (
     DBCellBase,
     DBPropertyBase,
     FromJSONMixin,
+    init_from_dict,
 )
 
 
@@ -19,24 +20,25 @@ class DualProperty(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
 class RelationProp(FromJSONMixin):
     database_id: str
     type: str
-    dual_property: DualProperty
+    # Only populated for two-way ("dual_property") relations. One-way relations
+    # report type == "single_property" with an empty sub-object, so this stays
+    # None for them.
+    dual_property: Optional[DualProperty] = None
 
     @classmethod
     def from_dict(cls, data: dict):
         t = data.get("type")
-        if t == "dual_property":
-            dual_property = DualProperty.from_dict(data.pop(t))
-        else:
-            raise ValueError(f"{t} type not recognized")
-
-        return cls(dual_property=dual_property, **data)
+        dual_property = None
+        if t == "dual_property" and data.get("dual_property"):
+            dual_property = DualProperty.from_dict(data.pop("dual_property"))
+        return init_from_dict(cls, data, dual_property=dual_property)
 
 
 @dataclass
@@ -49,7 +51,8 @@ class Relation(DBPropertyBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(relation=RelationProp.from_dict(data.pop("relation")), **data)
+        relation = RelationProp.from_dict(data.pop("relation"))
+        return init_from_dict(cls, data, relation=relation)
 
 
 @dataclass
@@ -62,7 +65,7 @@ class RelationCell(DBCellBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return Div([], unquote(self.id))
