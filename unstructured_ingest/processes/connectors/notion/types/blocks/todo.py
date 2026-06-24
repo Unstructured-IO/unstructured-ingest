@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 from htmlBuilder.attributes import Checked, Style, Type
 from htmlBuilder.tags import Div, HtmlTag, Input
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, init_from_dict
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
 
@@ -24,7 +24,7 @@ class ToDo(BlockBase):
     def from_dict(cls, data: dict):
         rich_text = data.pop("rich_text", [])
         icon = data.pop("icon", None)
-        todo = cls(**data)
+        todo = init_from_dict(cls, data)
         todo.rich_text = [RichText.from_dict(rt) for rt in rich_text]
         todo.icon = icon
         return todo

@@ -9,6 +9,7 @@ from htmlBuilder.tags import Text as HtmlText
 from unstructured_ingest.processes.connectors.notion.interfaces import (
     FromJSONMixin,
     GetHTMLMixin,
+    init_from_dict,
 )
 from unstructured_ingest.processes.connectors.notion.types.date import Date
 from unstructured_ingest.processes.connectors.notion.types.user import People
@@ -25,7 +26,7 @@ class Annotations(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
@@ -34,7 +35,7 @@ class Equation(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return Code([], self.expression) if self.expression else None
@@ -46,7 +47,7 @@ class MentionDatabase(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return Div([], self.id) if self.id else None
@@ -58,7 +59,7 @@ class MentionLinkPreview(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return A([Href(self.url)], self.url) if self.url else None
@@ -70,7 +71,7 @@ class MentionPage(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return Div([], self.id) if self.id else None
@@ -83,7 +84,7 @@ class MentionTemplate(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
@@ -137,7 +138,7 @@ class Text(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
@@ -175,9 +176,11 @@ class RichText(FromJSONMixin, GetHTMLMixin):
     @classmethod
     def from_dict(cls, data: dict):
         t = data["type"]
-        rich_text = cls(
-            annotations=Annotations.from_dict(data.pop("annotations")),
-            **data,
+        annotations = data.pop("annotations", None)
+        rich_text = init_from_dict(
+            cls,
+            data,
+            annotations=Annotations.from_dict(annotations) if annotations else None,
         )
         if t == "text":
             rich_text.text = Text.from_dict(data["text"])

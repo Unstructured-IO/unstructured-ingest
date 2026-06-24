@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 from htmlBuilder.attributes import Style
 from htmlBuilder.tags import Div, HtmlTag
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, init_from_dict
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
 
@@ -24,7 +24,7 @@ class Heading(BlockBase):
     def from_dict(cls, data: dict):
         rich_text = data.pop("rich_text", [])
         icon = data.pop("icon", None)
-        heading = cls(**data)
+        heading = init_from_dict(cls, data)
         heading.rich_text = [RichText.from_dict(rt) for rt in rich_text]
         heading.icon = icon
         return heading

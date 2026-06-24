@@ -9,6 +9,7 @@ from unstructured_ingest.processes.connectors.notion.interfaces import (
     BlockBase,
     FromJSONMixin,
     GetHTMLMixin,
+    init_from_dict,
 )
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
@@ -20,7 +21,7 @@ class EmojiIcon(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return P([], self.emoji)
@@ -32,7 +33,7 @@ class ExternalIconContent(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
@@ -42,7 +43,8 @@ class ExternalIcon(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(external=ExternalIconContent.from_dict(data=data.pop("external")), **data)
+        external = ExternalIconContent.from_dict(data=data.pop("external"))
+        return init_from_dict(cls, data, external=external)
 
     def get_html(self) -> Optional[HtmlTag]:
         if self.external:
@@ -73,7 +75,8 @@ class FileIcon(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(file=FileIconContent.from_dict(data=data.pop("file")), **data)
+        file = FileIconContent.from_dict(data=data.pop("file"))
+        return init_from_dict(cls, data, file=file)
 
     def get_html(self) -> Optional[HtmlTag]:
         # Render the file URL, similar to how ExternalIcon is handled

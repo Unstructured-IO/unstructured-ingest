@@ -4,7 +4,7 @@ from typing import Optional
 
 from htmlBuilder.tags import Div, HtmlTag
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, init_from_dict
 
 
 @dataclass
@@ -19,7 +19,7 @@ class LinkToPage(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         if page_id := self.page_id:

@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 from htmlBuilder.tags import Div, HtmlTag
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, init_from_dict
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
 
@@ -22,7 +22,7 @@ class Template(BlockBase):
     def from_dict(cls, data: dict):
         rich_text = data.pop("rich_text", [])
         icon = data.pop("icon", None)
-        template = cls(**data)
+        template = init_from_dict(cls, data)
         template.rich_text = [RichText.from_dict(rt) for rt in rich_text]
         template.icon = icon
         return template

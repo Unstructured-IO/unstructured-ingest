@@ -4,7 +4,11 @@ from typing import List, Optional
 
 from htmlBuilder.tags import HtmlTag, Td, Th, Tr
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, FromJSONMixin
+from unstructured_ingest.processes.connectors.notion.interfaces import (
+    BlockBase,
+    FromJSONMixin,
+    init_from_dict,
+)
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
 
@@ -20,7 +24,7 @@ class Table(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
     def get_html(self) -> Optional[HtmlTag]:
         return None
