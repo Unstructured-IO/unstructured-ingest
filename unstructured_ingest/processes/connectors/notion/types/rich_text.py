@@ -176,7 +176,7 @@ class RichText(FromJSONMixin, GetHTMLMixin):
     @classmethod
     def from_dict(cls, data: dict):
         t = data["type"]
-        annotations = data.get("annotations", None)
+        annotations = data.get("annotations")
         rich_text = init_from_dict(
             cls,
             data,
