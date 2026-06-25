@@ -8,6 +8,7 @@ from unstructured_ingest.processes.connectors.notion.interfaces import (
     DBCellBase,
     DBPropertyBase,
     FromJSONMixin,
+    init_from_dict,
 )
 
 
@@ -21,17 +22,18 @@ class UniqueID(DBPropertyBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
 class UniqueIDCellData(FromJSONMixin):
-    prefix: str
+    # Notion returns ``prefix: null`` when the column has no prefix configured.
+    prefix: Optional[str]
     number: int
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
@@ -43,9 +45,13 @@ class UniqueIDCell(DBCellBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(unique_id=UniqueIDCellData.from_dict(data.pop("unique_id")), **data)
+        return init_from_dict(
+            cls, data, unique_id=UniqueIDCellData.from_dict(data["unique_id"])
+        )
 
     def get_html(self) -> Optional[HtmlTag]:
         if unique_id := self.unique_id:
-            return Div([], f"{unique_id.prefix}-{unique_id.number}")
+            prefix = unique_id.prefix
+            text = f"{prefix}-{unique_id.number}" if prefix else str(unique_id.number)
+            return Div([], text)
         return None

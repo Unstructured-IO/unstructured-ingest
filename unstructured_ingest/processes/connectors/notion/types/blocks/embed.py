@@ -5,7 +5,7 @@ from typing import List, Optional
 from htmlBuilder.attributes import Href
 from htmlBuilder.tags import A, Br, Div, HtmlTag
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, init_from_dict
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
 
@@ -20,7 +20,8 @@ class Embed(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(caption=[RichText.from_dict(d) for d in data.pop("caption", [])], **data)
+        caption = [RichText.from_dict(d) for d in data.get("caption", [])]
+        return init_from_dict(cls, data, caption=caption)
 
     def get_html(self) -> Optional[HtmlTag]:
         texts = []

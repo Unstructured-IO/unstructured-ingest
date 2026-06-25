@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 from htmlBuilder.tags import Br, Div, HtmlTag
 
-from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase
+from unstructured_ingest.processes.connectors.notion.interfaces import BlockBase, init_from_dict
 from unstructured_ingest.processes.connectors.notion.types.rich_text import RichText
 
 
@@ -21,12 +21,12 @@ class Paragraph(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        rich_text = data.pop("rich_text", [])
-        icon = data.pop("icon", None)
-        paragraph = cls(**data)
-        paragraph.rich_text = [RichText.from_dict(rt) for rt in rich_text]
-        paragraph.icon = icon
-        return paragraph
+        return init_from_dict(
+            cls,
+            data,
+            rich_text=[RichText.from_dict(rt) for rt in data.get("rich_text", [])],
+            icon=data.get("icon"),
+        )
 
     def get_html(self) -> Optional[HtmlTag]:
         if not self.rich_text:

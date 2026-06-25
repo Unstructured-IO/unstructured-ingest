@@ -8,6 +8,7 @@ from htmlBuilder.tags import A, HtmlTag
 from unstructured_ingest.processes.connectors.notion.interfaces import (
     FromJSONMixin,
     GetHTMLMixin,
+    init_from_dict,
 )
 
 
@@ -17,17 +18,17 @@ class External(FromJSONMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
 class File(FromJSONMixin):
     url: str
-    expiry_time: str
+    expiry_time: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: dict):
-        return cls(**data)
+        return init_from_dict(cls, data)
 
 
 @dataclass
