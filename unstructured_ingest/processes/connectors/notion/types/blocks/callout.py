@@ -43,7 +43,7 @@ class ExternalIcon(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        external = ExternalIconContent.from_dict(data=data.pop("external"))
+        external = ExternalIconContent.from_dict(data=data["external"])
         return init_from_dict(cls, data, external=external)
 
     def get_html(self) -> Optional[HtmlTag]:
@@ -75,7 +75,7 @@ class FileIcon(FromJSONMixin, GetHTMLMixin):
 
     @classmethod
     def from_dict(cls, data: dict):
-        file = FileIconContent.from_dict(data=data.pop("file"))
+        file = FileIconContent.from_dict(data=data["file"])
         return init_from_dict(cls, data, file=file)
 
     def get_html(self) -> Optional[HtmlTag]:

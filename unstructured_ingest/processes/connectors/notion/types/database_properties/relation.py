@@ -37,7 +37,7 @@ class RelationProp(FromJSONMixin):
         t = data.get("type")
         dual_property = None
         if t == "dual_property" and data.get("dual_property"):
-            dual_property = DualProperty.from_dict(data.pop("dual_property"))
+            dual_property = DualProperty.from_dict(data["dual_property"])
         return init_from_dict(cls, data, dual_property=dual_property)
 
 
@@ -51,7 +51,7 @@ class Relation(DBPropertyBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        relation = RelationProp.from_dict(data.pop("relation"))
+        relation = RelationProp.from_dict(data["relation"])
         return init_from_dict(cls, data, relation=relation)
 
 

@@ -22,12 +22,12 @@ class Quote(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        rich_text = data.pop("rich_text", [])
-        icon = data.pop("icon", None)
-        quote = init_from_dict(cls, data)
-        quote.rich_text = [RichText.from_dict(rt) for rt in rich_text]
-        quote.icon = icon
-        return quote
+        return init_from_dict(
+            cls,
+            data,
+            rich_text=[RichText.from_dict(rt) for rt in data.get("rich_text", [])],
+            icon=data.get("icon"),
+        )
 
     def get_html(self) -> Optional[HtmlTag]:
         if not self.rich_text:

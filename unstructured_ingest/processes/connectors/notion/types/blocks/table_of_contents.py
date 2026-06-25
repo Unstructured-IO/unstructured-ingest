@@ -18,10 +18,7 @@ class TableOfContents(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        icon = data.pop("icon", None)
-        toc = init_from_dict(cls, data)
-        toc.icon = icon
-        return toc
+        return init_from_dict(cls, data, icon=data.get("icon"))
 
     def get_html(self) -> Optional[HtmlTag]:
         return None

@@ -20,7 +20,7 @@ class Embed(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        caption = [RichText.from_dict(d) for d in data.pop("caption", [])]
+        caption = [RichText.from_dict(d) for d in data.get("caption", [])]
         return init_from_dict(cls, data, caption=caption)
 
     def get_html(self) -> Optional[HtmlTag]:

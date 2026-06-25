@@ -22,12 +22,12 @@ class ToDo(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        rich_text = data.pop("rich_text", [])
-        icon = data.pop("icon", None)
-        todo = init_from_dict(cls, data)
-        todo.rich_text = [RichText.from_dict(rt) for rt in rich_text]
-        todo.icon = icon
-        return todo
+        return init_from_dict(
+            cls,
+            data,
+            rich_text=[RichText.from_dict(rt) for rt in data.get("rich_text", [])],
+            icon=data.get("icon"),
+        )
 
     def get_html(self) -> Optional[HtmlTag]:
         if not self.rich_text:

@@ -27,12 +27,12 @@ class NumberedListItem(BlockBase):
 
     @classmethod
     def from_dict(cls, data: dict):
-        rich_text = data.pop("rich_text", [])
-        icon = data.pop("icon", None)
-        numbered_list = init_from_dict(cls, data)
-        numbered_list.rich_text = [RichText.from_dict(rt) for rt in rich_text]
-        numbered_list.icon = icon
-        return numbered_list
+        return init_from_dict(
+            cls,
+            data,
+            rich_text=[RichText.from_dict(rt) for rt in data.get("rich_text", [])],
+            icon=data.get("icon"),
+        )
 
     def get_html(self) -> Optional[HtmlTag]:
         return Li([], [rt.get_html() for rt in self.rich_text])
