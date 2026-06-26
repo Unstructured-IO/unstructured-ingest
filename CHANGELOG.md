@@ -2,7 +2,7 @@
 
 ### Fixes
 
-- **fix(embed): validate Azure OpenAI deployments by reaching them, not via `models.list()`.** The Azure precheck inherited from OpenAI validated the model against `client.models.list()`, which on Azure returns the base-model catalog (`text-embedding-3-small`, …), never deployment names — so any deployment whose name differs from the base model (the normal Azure pattern) failed the precheck. `AzureOpenAIEmbeddingConfig.run_precheck` now validates via a minimal live `embeddings.create(input="precheck", model=<deployment>)` instead. `DeploymentNotFound` surfaces as a `UserError`; all other API errors route through `wrap_error`, closing a path where non-404 errors were silently swallowed.
+- **fix(embed): fix Azure OpenAI embedding precheck failing on valid deployments.** The precheck rejected Azure deployments whose name differed from the base model (the normal Azure setup), because it checked against the base-model catalog rather than the deployment. It now validates the deployment with a real test embedding call, so correctly configured deployments pass and a missing deployment reports a clear error.
 
 ## [1.6.20]
 
