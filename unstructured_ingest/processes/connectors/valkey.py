@@ -78,7 +78,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
             password = access_config.password
             use_tls = self.ssl
 
-        config = GlideClientConfiguration(
+        config_kwargs = dict(
             addresses=[NodeAddress(host=host, port=port)],
             use_tls=use_tls,
             client_name="unstructured-ingest-client",
@@ -89,11 +89,14 @@ class ValkeyConnectionConfig(ConnectionConfig):
             from glide import ServerCredentials
 
             username = self.username
-            if username:
-                config.credentials = ServerCredentials(password=password, username=username)
-            else:
-                config.credentials = ServerCredentials(password=password)
+            creds = (
+                ServerCredentials(password=password, username=username)
+                if username
+                else ServerCredentials(password=password)
+            )
+            config_kwargs["credentials"] = creds
 
+        config = GlideClientConfiguration(**config_kwargs)
         client = await GlideClient.create(config)
         try:
             yield client
@@ -124,7 +127,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
             password = access_config.password
             use_tls = self.ssl
 
-        config = GlideClientConfiguration(
+        config_kwargs = dict(
             addresses=[NodeAddress(host, port)],
             use_tls=use_tls,
             client_name="unstructured-ingest-client",
@@ -135,11 +138,14 @@ class ValkeyConnectionConfig(ConnectionConfig):
             from glide_sync import ServerCredentials
 
             username = self.username
-            if username:
-                config.credentials = ServerCredentials(password=password, username=username)
-            else:
-                config.credentials = ServerCredentials(password=password)
+            creds = (
+                ServerCredentials(password=password, username=username)
+                if username
+                else ServerCredentials(password=password)
+            )
+            config_kwargs["credentials"] = creds
 
+        config = GlideClientConfiguration(**config_kwargs)
         client = SyncGlideClient.create(config)
         try:
             yield client
@@ -324,12 +330,12 @@ class ValkeyUploader(VectorDBUploader):
                 # Index active — use individual hset to avoid batch timeout
                 # caused by synchronous HNSW indexing blocking the pipeline response
                 for batch in batches:
-                    await self._write_individual(client, batch, file_data)
+                    await self._write_individual(client, batch, file_data, vector_length)
             else:
                 # No index (or concurrent creation handled by _async_create_destination's
                 # "already exists" guard) — batch writes are fast, create index after
                 for batch in batches:
-                    await self._write_batch(client, batch, file_data)
+                    await self._write_batch(client, batch, file_data, vector_length)
                 if vector_length:
                     await self._async_create_destination(vector_length, client)
 
@@ -365,7 +371,8 @@ class ValkeyUploader(VectorDBUploader):
         return WriteError(message)
 
     def _build_fields(
-        self, element: dict, element_id: str, file_data: FileData
+        self, element: dict, element_id: str, file_data: FileData,
+        expected_dim: int | None = None,
     ) -> dict[str, str | bytes]:
         """Build hash fields from an element dict."""
         fields: dict[str, str | bytes] = {
@@ -382,6 +389,11 @@ class ValkeyUploader(VectorDBUploader):
                     f"Element '{element_id}' has invalid 'embeddings' type: "
                     f"expected list of floats, got {type(embeddings).__name__}"
                 )
+            if expected_dim is not None and len(embeddings) != expected_dim:
+                raise WriteError(
+                    f"Element '{element_id}' has embedding dimension {len(embeddings)}, "
+                    f"expected {expected_dim} (index schema dimension)"
+                )
             fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
 
         return fields
@@ -396,7 +408,9 @@ class ValkeyUploader(VectorDBUploader):
             )
         return element_id
 
-    async def _write_batch(self, client, batch: list[dict], file_data: FileData) -> None:
+    async def _write_batch(
+        self, client, batch: list[dict], file_data: FileData, vector_length: int | None = None
+    ) -> None:
         """Write a batch of elements via non-atomic pipeline.
 
         Uses Batch(is_atomic=False) for performance. If a command fails mid-batch,
@@ -411,7 +425,7 @@ class ValkeyUploader(VectorDBUploader):
             for element in batch:
                 element_id = self._validate_element_id(element)
                 key = f"{self.upload_config.key_prefix}{element_id}"
-                fields = self._build_fields(element, element_id, file_data)
+                fields = self._build_fields(element, element_id, file_data, expected_dim=vector_length)
 
                 pipeline.hset(key, fields)
 
@@ -429,13 +443,15 @@ class ValkeyUploader(VectorDBUploader):
         indexes = await ft.list(client)
         return self.upload_config.index_name.encode() in indexes
 
-    async def _write_individual(self, client, batch: list[dict], file_data: FileData) -> None:
+    async def _write_individual(
+        self, client, batch: list[dict], file_data: FileData, vector_length: int | None = None
+    ) -> None:
         """Write elements one at a time (used when index is active)."""
         try:
             for element in batch:
                 element_id = self._validate_element_id(element)
                 key = f"{self.upload_config.key_prefix}{element_id}"
-                fields = self._build_fields(element, element_id, file_data)
+                fields = self._build_fields(element, element_id, file_data, expected_dim=vector_length)
 
                 await client.hset(key, fields)
 
