@@ -1522,3 +1522,131 @@ def test_teradata_uploader_create_destination_no_privilege_raises_user_error(
         match=r"3523.*does not have the required privilege.*brand_new_table",
     ):
         uploader.create_destination(destination_name="brand_new_table")
+
+
+# --- Run-path auto-create (lazy create_destination in upload_dataframe) -------
+# init() is the only auto-create trigger and only the local Pipeline calls it, so
+# upload_dataframe must ensure the table exists itself — idempotently — or
+# orchestrators that skip init() fail with Teradata 3807 ("object does not exist").
+
+_OPINIONATED_COLUMNS = [
+    ("id",), ("record_id",), ("element_id",), ("text",), ("type",), ("metadata",),
+]
+
+
+def _opinionated_df() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "id": ["1"],
+            "record_id": ["r1"],
+            "element_id": ["e1"],
+            "text": ["hello"],
+            "type": ["NarrativeText"],
+            "metadata": ["{}"],
+        }
+    )
+
+
+def _upload_file_data() -> FileData:
+    return FileData(
+        identifier="r1",
+        connector_type="teradata",
+        source_identifiers=SourceIdentifiers(filename="test.txt", fullpath="test.txt"),
+    )
+
+
+def test_teradata_uploader_upload_dataframe_auto_creates_named_table_when_missing(
+    mock_cursor: MagicMock,
+    mock_get_cursor: MagicMock,
+    teradata_connection_config: TeradataConnectionConfig,
+):
+    """Reproduces the production failure (Pylon #2098): a destination connector with
+    a table name given (e.g. 'uns_382') but the table not pre-created. The platform
+    drives the upload run without calling init(), so upload_dataframe must auto-create
+    the opinionated table instead of failing with Teradata 3807 'object does not exist'.
+    """
+    uploader = TeradataUploader(
+        connection_config=teradata_connection_config,
+        upload_config=TeradataUploaderConfig(table_name="uns_382", record_id_key="record_id"),
+    )
+    # create_destination: SELECT DATABASE -> current_db, DBC.TablesV -> None (missing) -> CREATE
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+    mock_cursor.description = _OPINIONATED_COLUMNS
+    mock_cursor.rowcount = 0
+
+    uploader.upload_dataframe(df=_opinionated_df(), file_data=_upload_file_data())
+
+    assert uploader.upload_config.table_name == "uns_382"
+    create_calls = [
+        c[0][0] for c in mock_cursor.execute.call_args_list if "CREATE MULTISET TABLE" in c[0][0]
+    ]
+    assert len(create_calls) == 1
+    assert '"uns_382"' in create_calls[0]
+    insert_calls = [c[0][0] for c in mock_cursor.executemany.call_args_list]
+    assert any('INSERT INTO "uns_382"' in c for c in insert_calls)
+
+
+def test_teradata_uploader_upload_dataframe_auto_creates_default_table_when_name_is_none(
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """When no table name is configured, upload_dataframe auto-creates the default
+    opinionated table rather than issuing SQL against a null table name."""
+    assert teradata_uploader_auto_create.upload_config.table_name is None
+    mock_cursor.fetchone.side_effect = [("test_db",), None]
+    mock_cursor.description = _OPINIONATED_COLUMNS
+    mock_cursor.rowcount = 0
+
+    teradata_uploader_auto_create.upload_dataframe(
+        df=_opinionated_df(), file_data=_upload_file_data()
+    )
+
+    assert teradata_uploader_auto_create.upload_config.table_name == DEFAULT_TABLE_NAME
+    assert any(
+        "CREATE MULTISET TABLE" in c[0][0] for c in mock_cursor.execute.call_args_list
+    )
+    assert any("INSERT INTO" in c[0][0] for c in mock_cursor.executemany.call_args_list)
+
+
+def test_teradata_uploader_upload_dataframe_skips_create_when_table_exists(
+    mock_cursor: MagicMock,
+    teradata_uploader: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """upload_dataframe's auto-create is idempotent: when the destination table
+    already exists, no CREATE is issued, so a user's pre-existing table is never
+    clobbered. (create_destination's DBC.TablesV existence check guards this.)"""
+    # create_destination: SELECT DATABASE -> current_db, DBC.TablesV -> (1,) exists -> no CREATE
+    mock_cursor.fetchone.side_effect = [("test_db",), (1,)]
+    mock_cursor.description = _OPINIONATED_COLUMNS
+    mock_cursor.rowcount = 0
+
+    teradata_uploader.upload_dataframe(df=_opinionated_df(), file_data=_upload_file_data())
+
+    assert not any("CREATE" in c[0][0] for c in mock_cursor.execute.call_args_list)
+    insert_calls = [c[0][0] for c in mock_cursor.executemany.call_args_list]
+    assert any('INSERT INTO "test_table"' in c for c in insert_calls)
+
+
+def test_teradata_uploader_init_marks_destination_ensured_so_upload_skips_reprobe(
+    mocker: MockerFixture,
+    mock_cursor: MagicMock,
+    teradata_uploader_auto_create: TeradataUploader,
+    mock_get_cursor: MagicMock,
+):
+    """When init() already ran create_destination (the local Pipeline path),
+    upload_dataframe must not re-probe: create_destination is invoked exactly once."""
+    mock_cursor.fetchone.side_effect = [("test_db",), None, ("test_db",), (1,)]
+    mock_cursor.description = _OPINIONATED_COLUMNS
+    mock_cursor.rowcount = 0
+    spy = mocker.spy(teradata_uploader_auto_create, "create_destination")
+
+    teradata_uploader_auto_create.init()
+    assert teradata_uploader_auto_create._destination_ensured is True
+
+    teradata_uploader_auto_create.upload_dataframe(
+        df=_opinionated_df(), file_data=_upload_file_data()
+    )
+
+    assert spy.call_count == 1

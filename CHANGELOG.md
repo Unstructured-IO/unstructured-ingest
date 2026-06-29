@@ -1,3 +1,9 @@
+## [1.6.23]
+
+### Fixes
+
+- **fix(teradata): auto-create the destination table during upload, not only during pipeline init.** Table auto-creation ran only via `TeradataUploader.init()`, whose sole caller is the local `Pipeline`. Orchestrators that drive only the upload phase (e.g. the Unstructured Platform) never created the table, so a not-pre-created destination failed with Teradata error 3807 (`Object '<table>' does not exist`). `upload_dataframe` now ensures the table exists itself — once per run, via the idempotent `create_destination()` whose `DBC.TablesV` check skips `CREATE` for existing tables, so a user's table is never recreated.
+
 ## [1.6.22]
 
 ### Enhancements
