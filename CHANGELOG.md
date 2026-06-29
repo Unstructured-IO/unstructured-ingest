@@ -1,9 +1,14 @@
-## [1.6.21]
+## [1.6.22]
 
 ### Enhancements
 
 - **feat(slack): user token specific behavior** - differentiate between user and bot token in slack indexer, bot still attempts to join channels (required for ingestion) while user reads channel without joining. Add token specific error messages.
 
+## [1.6.21]
+
+### Fixes
+
+- **fix(embed): fix Azure OpenAI embedding precheck failing on valid deployments.** The precheck rejected Azure deployments whose name differed from the base model (the normal Azure setup), because it checked against the base-model catalog rather than the deployment. It now validates the deployment with a real test embedding call, so correctly configured deployments pass and a missing deployment reports a clear error.
 
 ## [1.6.20]
 
