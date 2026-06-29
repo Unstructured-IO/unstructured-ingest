@@ -156,7 +156,7 @@ def _channel_history_error_msg(error_code: str, channels: list, granted_scopes: 
         scope_note = f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
         return (
             f"User token is missing a required scope {scope_note}. "
-            f"Re-authorize the token with channels:history for public channels and groups:history"
+            f"Re-authorize the token with channels:history for public channels and groups:history "
             f"for private channels to read {channel_list}."
         )
     if error_code in ("not_authed", "invalid_auth", "token_revoked"):
