@@ -220,7 +220,8 @@ class SlackIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
         granted_scopes = self._get_granted_scopes(client)
-        self._validate_and_join_channels(client, granted_scopes)
+        token = self.connection_config.access_config.get_secret_value().token
+        self._validate_channels(client, _token_kind(token), granted_scopes)
         for channel in self.index_config.channels:
             messages = []
             oldest = (
@@ -408,7 +409,8 @@ class SlackIndexer(Indexer):
     def precheck(self) -> None:
         client = self.connection_config.get_client()
         granted_scopes = self._get_granted_scopes(client)
-        self._validate_and_join_channels(client, granted_scopes)
+        token = self.connection_config.access_config.get_secret_value().token
+        self._validate_channels(client, _token_kind(token), granted_scopes)
 
 
 class SlackDownloaderConfig(DownloaderConfig):

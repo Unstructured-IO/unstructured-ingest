@@ -500,6 +500,7 @@ def test_run_joins_channels_before_yielding():
     client.conversations_join.side_effect = _make_slack_api_error("channel_not_found")
     connection_config = Mock()
     connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxb-bot"
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -511,11 +512,28 @@ def test_run_joins_channels_before_yielding():
     client.conversations_join.assert_called_once_with(channel="C1")
 
 
+def test_run_does_not_join_channels_with_user_token():
+    client = Mock()
+    client.conversations_history.return_value = []
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxp-user"
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C1"]),
+        connection_config=connection_config,
+    )
+
+    list(indexer.run())
+
+    client.conversations_join.assert_not_called()
+
+
 def test_precheck_uses_channel_validation():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error("is_archived")
     connection_config = Mock()
     connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxb-bot"
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -523,6 +541,22 @@ def test_precheck_uses_channel_validation():
 
     with pytest.raises(SourceConnectionError, match="archived"):
         indexer.precheck()
+
+
+def test_precheck_user_token_does_not_join():
+    client = Mock()
+    client.conversations_history.return_value = [{"messages": []}]
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxp-user"
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C1"]),
+        connection_config=connection_config,
+    )
+
+    indexer.precheck()
+
+    client.conversations_join.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
