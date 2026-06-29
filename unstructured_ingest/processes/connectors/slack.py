@@ -138,7 +138,7 @@ def _channel_history_error_msg(error_code: str, channels: list, granted_scopes: 
     are = "are" if len(channels) > 1 else "is"
     if error_code == "not_in_channel":
         return (
-            f"{channel_list}: user is not a member of this private channel. "
+            f"{channel_list}: user is not a member of this private channel(s). "
             "Ask a channel admin to invite the user."
         )
     if error_code == "channel_not_found":
@@ -155,8 +155,9 @@ def _channel_history_error_msg(error_code: str, channels: list, granted_scopes: 
     if error_code == "missing_scope":
         scope_note = f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
         return (
-            f"User token is missing the 'channels:history' scope{scope_note}. "
-            f"Re-authorize the token with channels:history to read {channel_list}."
+            f"User token is missing a required scope {scope_note}. "
+            f"Re-authorize the token with channels:history for public channels and groups:history"
+            f"for private channels to read {channel_list}."
         )
     if error_code in ("not_authed", "invalid_auth", "token_revoked"):
         return (
