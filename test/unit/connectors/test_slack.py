@@ -17,7 +17,24 @@ from unstructured_ingest.processes.connectors.slack import (
     SlackIndexerConfig,
     _channel_join_error_msg,
     _NoRedirectHandler,
+    _token_kind,
 )
+
+
+def test_token_kind_user_prefix():
+    assert _token_kind("xoxp-12345") == "user"
+
+
+def test_token_kind_bot_prefix():
+    assert _token_kind("xoxb-12345") == "bot"
+
+
+def test_token_kind_unknown_prefix_is_bot():
+    assert _token_kind("xoxa-12345") == "bot"
+
+
+def test_token_kind_non_string_is_bot():
+    assert _token_kind(Mock()) == "bot"
 
 
 def test_slack_access_config_accepts_refresh_token():
