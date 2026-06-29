@@ -133,6 +133,39 @@ def _channel_join_error_msg(error_code: str, channels: list, granted_scopes: set
     return f"Failed to join {channel_list}: {error_code}."
 
 
+def _channel_history_error_msg(error_code: str, channels: list, granted_scopes: set) -> str:
+    channel_list = ", ".join(channels)
+    are = "are" if len(channels) > 1 else "is"
+    if error_code == "not_in_channel":
+        return (
+            f"{channel_list}: user is not a member of this private channel. "
+            "Ask a channel admin to invite the user."
+        )
+    if error_code == "channel_not_found":
+        return (
+            f"{channel_list}: channel not found or not accessible with this user token. "
+            "Verify the channel ID is correct."
+        )
+    if error_code == "is_archived":
+        return (
+            f"{channel_list} {are} archived. "
+            "Archived channels are readable by former members — "
+            "if the user was not a member before archival, access will be denied."
+        )
+    if error_code == "missing_scope":
+        scope_note = f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
+        return (
+            f"User token is missing the 'channels:history' scope{scope_note}. "
+            f"Re-authorize the token with channels:history to read {channel_list}."
+        )
+    if error_code in ("not_authed", "invalid_auth", "token_revoked"):
+        return (
+            f"Authentication failed for {channel_list}: {error_code}. "
+            "Check that the user token is valid and has not expired or been revoked."
+        )
+    return f"Cannot read history for {channel_list}: {error_code}."
+
+
 class SlackAccessConfig(AccessConfig):
     token: str = Field(
         description="Bot token (xoxb-…) or user token (xoxp-…) for the Slack API. "
