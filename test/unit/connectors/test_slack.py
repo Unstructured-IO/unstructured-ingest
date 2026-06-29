@@ -15,9 +15,23 @@ from unstructured_ingest.processes.connectors.slack import (
     SlackDownloader,
     SlackIndexer,
     SlackIndexerConfig,
+    _channel_history_error_msg,
     _channel_join_error_msg,
     _NoRedirectHandler,
+    _token_kind,
 )
+
+
+def test_token_kind_user_prefix():
+    assert _token_kind("xoxp-12345") == "user"
+
+
+def test_token_kind_bot_prefix():
+    assert _token_kind("xoxb-12345") == "bot"
+
+
+def test_token_kind_unknown_prefix_is_bot():
+    assert _token_kind("xoxa-12345") == "bot"
 
 
 def test_slack_access_config_accepts_refresh_token():
@@ -284,31 +298,31 @@ def _make_slack_api_error(error_code: str):
     return SlackApiError(message=error_code, response=response)
 
 
-def test_validate_and_join_channels_succeeds_when_all_joins_succeed():
+def test_validate_channels_bot_succeeds_when_all_joins_succeed():
     client = Mock()
     indexer = _make_indexer(channels=["C1", "C2"])
 
-    indexer._validate_and_join_channels(client, granted_scopes=set())
+    indexer._validate_channels_bot(client, granted_scopes=set())
 
     assert client.conversations_join.call_count == 2
 
 
-def test_validate_and_join_channels_raises_for_failed_channel():
+def test_validate_channels_bot_raises_for_failed_channel():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error("channel_not_found")
     indexer = _make_indexer(channels=["C1"])
 
     with pytest.raises(SourceConnectionError, match="C1"):
-        indexer._validate_and_join_channels(client, granted_scopes=set())
+        indexer._validate_channels_bot(client, granted_scopes=set())
 
 
-def test_validate_and_join_channels_groups_same_error_across_channels():
+def test_validate_channels_bot_groups_same_error_across_channels():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error("is_archived")
     indexer = _make_indexer(channels=["C1", "C2"])
 
     with pytest.raises(SourceConnectionError) as exc_info:
-        indexer._validate_and_join_channels(client, granted_scopes=set())
+        indexer._validate_channels_bot(client, granted_scopes=set())
 
     msg = str(exc_info.value)
     assert "C1, C2" in msg
@@ -316,7 +330,7 @@ def test_validate_and_join_channels_groups_same_error_across_channels():
     assert msg.count("  - ") == 1
 
 
-def test_validate_and_join_channels_reports_all_failures_together():
+def test_validate_channels_bot_reports_all_failures_together():
     def join_side_effect(channel, **_):
         if channel == "C1":
             raise _make_slack_api_error("channel_not_found")
@@ -328,7 +342,7 @@ def test_validate_and_join_channels_reports_all_failures_together():
     indexer = _make_indexer(channels=["C1", "C2"])
 
     with pytest.raises(SourceConnectionError) as exc_info:
-        indexer._validate_and_join_channels(client, granted_scopes=set())
+        indexer._validate_channels_bot(client, granted_scopes=set())
 
     msg = str(exc_info.value)
     assert "C1" in msg
@@ -336,17 +350,17 @@ def test_validate_and_join_channels_reports_all_failures_together():
     assert "2 channel" in msg
 
 
-def test_validate_and_join_channels_missing_scope_succeeds_if_already_member():
+def test_validate_channels_bot_missing_scope_succeeds_if_already_member():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error("missing_scope")
     indexer = _make_indexer(channels=["C1"])
 
-    indexer._validate_and_join_channels(client, granted_scopes=set())
+    indexer._validate_channels_bot(client, granted_scopes=set())
 
     client.conversations_history.assert_called_once_with(channel="C1", limit=1)
 
 
-def test_validate_and_join_channels_missing_scope_fails_if_not_member():
+def test_validate_channels_bot_missing_scope_fails_if_not_member():
 
     def history_side_effect(**_):
         raise _make_slack_api_error("not_in_channel")
@@ -357,33 +371,33 @@ def test_validate_and_join_channels_missing_scope_fails_if_not_member():
     indexer = _make_indexer(channels=["C1"])
 
     with pytest.raises(SourceConnectionError, match="channels:join"):
-        indexer._validate_and_join_channels(client, granted_scopes={"channels:history"})
+        indexer._validate_channels_bot(client, granted_scopes={"channels:history"})
 
 
-def test_validate_and_join_channels_archived_always_fails():
+def test_validate_channels_bot_archived_always_fails():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error("is_archived")
     indexer = _make_indexer(channels=["C1"])
 
     with pytest.raises(SourceConnectionError, match="archived"):
-        indexer._validate_and_join_channels(client, granted_scopes=set())
+        indexer._validate_channels_bot(client, granted_scopes=set())
 
     client.conversations_history.assert_not_called()
 
 
-def test_validate_and_join_channels_private_succeeds_if_already_invited():
+def test_validate_channels_bot_private_succeeds_if_already_invited():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error(
         "method_not_supported_for_channel_type"
     )
     indexer = _make_indexer(channels=["C1"])
 
-    indexer._validate_and_join_channels(client, granted_scopes=set())
+    indexer._validate_channels_bot(client, granted_scopes=set())
 
     client.conversations_history.assert_called_once_with(channel="C1", limit=1)
 
 
-def test_validate_and_join_channels_private_fails_if_not_invited():
+def test_validate_channels_bot_private_fails_if_not_invited():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error(
         "method_not_supported_for_channel_type"
@@ -392,7 +406,68 @@ def test_validate_and_join_channels_private_fails_if_not_invited():
     indexer = _make_indexer(channels=["C1"])
 
     with pytest.raises(SourceConnectionError, match="private"):
-        indexer._validate_and_join_channels(client, granted_scopes=set())
+        indexer._validate_channels_bot(client, granted_scopes=set())
+
+
+def test_validate_channels_user_does_not_call_join():
+    client = Mock()
+    indexer = _make_indexer(channels=["C1", "C2"])
+
+    indexer._validate_channels_user(client, granted_scopes=set())
+
+    client.conversations_join.assert_not_called()
+    assert client.conversations_history.call_count == 2
+
+
+def test_validate_channels_user_raises_when_history_fails():
+    client = Mock()
+    client.conversations_history.side_effect = _make_slack_api_error("not_in_channel")
+    indexer = _make_indexer(channels=["C1"])
+
+    with pytest.raises(SourceConnectionError, match="user token"):
+        indexer._validate_channels_user(client, granted_scopes=set())
+
+
+def test_validate_channels_user_succeeds_when_history_accessible():
+    client = Mock()
+    client.conversations_history.return_value = [{"messages": []}]
+    indexer = _make_indexer(channels=["C1"])
+
+    indexer._validate_channels_user(client, granted_scopes=set())
+
+    client.conversations_history.assert_called_once_with(channel="C1", limit=1)
+
+
+def test_validate_channels_user_groups_errors():
+    client = Mock()
+    client.conversations_history.side_effect = _make_slack_api_error("is_archived")
+    indexer = _make_indexer(channels=["C1", "C2"])
+
+    with pytest.raises(SourceConnectionError) as exc_info:
+        indexer._validate_channels_user(client, granted_scopes=set())
+
+    msg = str(exc_info.value)
+    assert "C1, C2" in msg
+    assert msg.count("  - ") == 1
+
+
+def test_validate_channels_dispatches_bot_for_bot_token():
+    client = Mock()
+    indexer = _make_indexer(channels=["C1"])
+
+    indexer._validate_channels(client, token_kind="bot", granted_scopes=set())
+
+    client.conversations_join.assert_called_once_with(channel="C1")
+
+
+def test_validate_channels_dispatches_user_for_user_token():
+    client = Mock()
+    indexer = _make_indexer(channels=["C1"])
+
+    indexer._validate_channels(client, token_kind="user", granted_scopes=set())
+
+    client.conversations_join.assert_not_called()
+    client.conversations_history.assert_called_once_with(channel="C1", limit=1)
 
 
 def test_channel_join_error_msg_private_channel_hint_when_join_scope_present():
@@ -421,6 +496,7 @@ def test_run_joins_channels_before_yielding():
     client.conversations_join.side_effect = _make_slack_api_error("channel_not_found")
     connection_config = Mock()
     connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxb-bot"
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -432,11 +508,28 @@ def test_run_joins_channels_before_yielding():
     client.conversations_join.assert_called_once_with(channel="C1")
 
 
+def test_run_does_not_join_channels_with_user_token():
+    client = Mock()
+    client.conversations_history.return_value = []
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxp-user"
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C1"]),
+        connection_config=connection_config,
+    )
+
+    list(indexer.run())
+
+    client.conversations_join.assert_not_called()
+
+
 def test_precheck_uses_channel_validation():
     client = Mock()
     client.conversations_join.side_effect = _make_slack_api_error("is_archived")
     connection_config = Mock()
     connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxb-bot"
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -444,3 +537,71 @@ def test_precheck_uses_channel_validation():
 
     with pytest.raises(SourceConnectionError, match="archived"):
         indexer.precheck()
+
+
+def test_precheck_user_token_does_not_join():
+    client = Mock()
+    client.conversations_history.return_value = [{"messages": []}]
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = "xoxp-user"
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=["C1"]),
+        connection_config=connection_config,
+    )
+
+    indexer.precheck()
+
+    client.conversations_join.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# _channel_history_error_msg (user-token path)
+# ---------------------------------------------------------------------------
+
+
+def test_channel_history_error_msg_not_in_channel():
+    msg = _channel_history_error_msg("not_in_channel", ["C1"], granted_scopes=set())
+    assert "private" in msg.lower()
+    assert "invite" in msg.lower()
+
+
+def test_channel_history_error_msg_channel_not_found():
+    msg = _channel_history_error_msg("channel_not_found", ["C1"], granted_scopes=set())
+    assert "not found" in msg.lower() or "accessible" in msg.lower()
+
+
+def test_channel_history_error_msg_archived():
+    msg = _channel_history_error_msg("is_archived", ["C1"], granted_scopes=set())
+    assert "archived" in msg.lower()
+
+
+def test_channel_history_error_msg_archived_multiple_channels():
+    msg = _channel_history_error_msg("is_archived", ["C1", "C2"], granted_scopes=set())
+    assert "C1, C2" in msg
+    assert "are" in msg
+
+
+def test_channel_history_error_msg_missing_scope():
+    msg = _channel_history_error_msg("missing_scope", ["C1"], granted_scopes=set())
+    assert "channels:history" in msg
+
+
+def test_channel_history_error_msg_missing_scope_includes_granted():
+    msg = _channel_history_error_msg("missing_scope", ["C1"], granted_scopes={"channels:read"})
+    assert "channels:read" in msg
+
+
+def test_channel_history_error_msg_invalid_auth():
+    msg = _channel_history_error_msg("invalid_auth", ["C1"], granted_scopes=set())
+    assert "token" in msg.lower() or "auth" in msg.lower()
+
+
+def test_channel_history_error_msg_token_revoked():
+    msg = _channel_history_error_msg("token_revoked", ["C1"], granted_scopes=set())
+    assert "revoked" in msg.lower() or "token" in msg.lower()
+
+
+def test_channel_history_error_msg_unknown_error():
+    msg = _channel_history_error_msg("some_weird_error", ["C1"], granted_scopes=set())
+    assert "some_weird_error" in msg
