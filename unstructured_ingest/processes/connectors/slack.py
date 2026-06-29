@@ -11,7 +11,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Literal, Optional
 
 from pydantic import Field, Secret
 
@@ -47,7 +47,7 @@ SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 CONNECTOR_TYPE = "slack"
 
 
-def _token_kind(token: object) -> str:
+def _token_kind(token: object) -> Literal["user", "bot"]:
     """Returns 'user' for xoxp- tokens, 'bot' for all others."""
     return "user" if isinstance(token, str) and token.startswith("xoxp-") else "bot"
 
@@ -341,7 +341,7 @@ class SlackIndexer(Indexer):
         except Exception:
             return set()
 
-    def _validate_and_join_channels(self, client: "WebClient", granted_scopes: set) -> None:
+    def _validate_channels_bot(self, client: "WebClient", granted_scopes: set) -> None:
         from slack_sdk.errors import SlackApiError
 
         issues: list[_ChannelIssue] = []
@@ -371,6 +371,38 @@ class SlackIndexer(Indexer):
                 f"Cannot access {len(issues)} channel(s):\n"
                 + "\n".join(f"  - {line}" for line in lines)
             )
+
+    def _validate_channels_user(self, client: "WebClient", granted_scopes: set) -> None:
+        from slack_sdk.errors import SlackApiError
+
+        issues: list[_ChannelIssue] = []
+        for channel in self.index_config.channels:
+            try:
+                client.conversations_history(channel=channel, limit=1)
+            except SlackApiError as e:
+                error_code = e.response.get("error", "unknown")
+                issues.append(_ChannelIssue(channel=channel, error_code=error_code))
+
+        if issues:
+            groups: dict[str, list] = defaultdict(list)
+            for issue in issues:
+                groups[issue.error_code].append(issue.channel)
+            lines = [
+                _channel_history_error_msg(error_code, channels, granted_scopes)
+                for error_code, channels in groups.items()
+            ]
+            raise SourceConnectionError(
+                f"Cannot access {len(issues)} channel(s) with user token:\n"
+                + "\n".join(f"  - {line}" for line in lines)
+            )
+
+    def _validate_channels(
+        self, client: "WebClient", token_kind: Literal["user", "bot"], granted_scopes: set
+    ) -> None:
+        if token_kind == "user":
+            self._validate_channels_user(client, granted_scopes)
+        else:
+            self._validate_channels_bot(client, granted_scopes)
 
     @SourceConnectionError.wrap
     def precheck(self) -> None:
