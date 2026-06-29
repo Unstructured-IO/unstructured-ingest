@@ -1,3 +1,10 @@
+## [1.6.21]
+
+### Enhancements
+
+- **feat(slack): user token specific behavior** - differentiate between user and bot token in slack indexer, bot still attempts to join channels (required for ingestion) while user reads channel without joining. Add token specific error messages.
+
+
 ## [1.6.20]
 
 ### Fixes
