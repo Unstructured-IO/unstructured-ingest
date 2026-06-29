@@ -34,10 +34,6 @@ def test_token_kind_unknown_prefix_is_bot():
     assert _token_kind("xoxa-12345") == "bot"
 
 
-def test_token_kind_non_string_is_bot():
-    assert _token_kind(Mock()) == "bot"
-
-
 def test_slack_access_config_accepts_refresh_token():
     config = SlackAccessConfig(token="xoxb-slack-token", refresh_token="xoxe-slack-refresh-token")
 
@@ -592,9 +588,7 @@ def test_channel_history_error_msg_missing_scope():
 
 
 def test_channel_history_error_msg_missing_scope_includes_granted():
-    msg = _channel_history_error_msg(
-        "missing_scope", ["C1"], granted_scopes={"channels:read"}
-    )
+    msg = _channel_history_error_msg("missing_scope", ["C1"], granted_scopes={"channels:read"})
     assert "channels:read" in msg
 
 

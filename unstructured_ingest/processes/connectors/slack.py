@@ -47,9 +47,9 @@ SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 CONNECTOR_TYPE = "slack"
 
 
-def _token_kind(token: object) -> Literal["user", "bot"]:
+def _token_kind(token: str) -> Literal["user", "bot"]:
     """Returns 'user' for xoxp- tokens, 'bot' for all others."""
-    return "user" if isinstance(token, str) and token.startswith("xoxp-") else "bot"
+    return "user" if token.startswith("xoxp-") else "bot"
 
 
 def _safe_slack_filename(filename: str) -> str:
@@ -170,7 +170,7 @@ class SlackAccessConfig(AccessConfig):
     token: str = Field(
         description="Bot token (xoxb-…) or user token (xoxp-…) for the Slack API. "
         "Both require channels:history scope. "
-        "With a bot token the connector auto-joins public channels; "
+        "With a bot token the connector attempts to auto-join public channels; "
         "with a user token it does not — user tokens can view public channels without joining."
     )
     refresh_token: Optional[str] = Field(default=None, description="Slack OAuth refresh token.")
