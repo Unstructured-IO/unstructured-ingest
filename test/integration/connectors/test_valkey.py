@@ -52,6 +52,23 @@ async def cleanup_keys(keys: list[str]) -> None:
         await client.close()
 
 
+def _cleanup(keys: list[str], index_name: str | None = None):
+    """Shared test cleanup: delete keys and optionally drop index."""
+    async def _do_cleanup():
+        await cleanup_keys(keys)
+        if index_name:
+            try:
+                client = await get_test_client()
+                from glide import ft
+
+                await ft.dropindex(client, index_name)
+                await client.close()
+            except Exception:
+                pass
+
+    _run_async(_do_cleanup())
+
+
 async def validate_upload(element: dict, key_prefix: str) -> None:
     """Validate that an element was correctly stored in Valkey."""
     client = await get_test_client()
@@ -122,24 +139,7 @@ def test_valkey_destination_upload(upload_file: Path, tmp_path: Path):
 
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-
-    # Cleanup
-    async def cleanup():
-        await cleanup_keys(keys)
-        try:
-            client = await get_test_client()
-            from glide import ft
-
-            await ft.dropindex(client, index_name)
-            await client.close()
-        except Exception:
-            pass
-
-    _run_async(cleanup())
-
-
-@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
-def test_valkey_destination_with_ttl(upload_file: Path, tmp_path: Path):
+    _cleanup(keys, index_name)(upload_file: Path, tmp_path: Path):
     """Test that TTL is applied to uploaded keys."""
     key_prefix = "test:ttl:"
     index_name = "test_ttl_index"
@@ -160,20 +160,7 @@ def test_valkey_destination_with_ttl(upload_file: Path, tmp_path: Path):
 
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-
-    # Cleanup
-    async def cleanup():
-        await cleanup_keys(keys)
-        try:
-            client = await get_test_client()
-            from glide import ft
-
-            await ft.dropindex(client, index_name)
-            await client.close()
-        except Exception:
-            pass
-
-    _run_async(cleanup())
+    _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -231,20 +218,7 @@ def test_valkey_destination_with_uri(upload_file: Path, tmp_path: Path):
 
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-
-    # Cleanup
-    async def cleanup():
-        await cleanup_keys(keys)
-        try:
-            client = await get_test_client()
-            from glide import ft
-
-            await ft.dropindex(client, index_name)
-            await client.close()
-        except Exception:
-            pass
-
-    _run_async(cleanup())
+    _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -305,11 +279,8 @@ def test_valkey_destination_without_embeddings(upload_file: Path, tmp_path: Path
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
 
-    # Cleanup
-    async def cleanup():
-        await cleanup_keys(keys)
-
-    _run_async(cleanup())
+    # Cleanup (no index created for no-embedding path)
+    _run_async(cleanup_keys(keys))
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -380,20 +351,7 @@ def test_valkey_destination_idempotent(upload_file: Path, tmp_path: Path):
 
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-
-    # Cleanup
-    async def cleanup():
-        await cleanup_keys(keys)
-        try:
-            client = await get_test_client()
-            from glide import ft
-
-            await ft.dropindex(client, index_name)
-            await client.close()
-        except Exception:
-            pass
-
-    _run_async(cleanup())
+    _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -465,20 +423,7 @@ def test_valkey_destination_incremental_upload(upload_file: Path, tmp_path: Path
 
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-
-    # Cleanup
-    async def cleanup():
-        await cleanup_keys(keys)
-        try:
-            client = await get_test_client()
-            from glide import ft
-
-            await ft.dropindex(client, index_name)
-            await client.close()
-        except Exception:
-            pass
-
-    _run_async(cleanup())
+    _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -527,19 +472,7 @@ def test_valkey_destination_properly_formed_data(tmp_path: Path):
             await client.close()
 
     _run_async(run())
-
-    async def cleanup():
-        await cleanup_keys([f"{key_prefix}abc123def456"])
-        try:
-            client = await get_test_client()
-            from glide import ft
-
-            await ft.dropindex(client, "test_proper_index")
-            await client.close()
-        except Exception:
-            pass
-
-    _run_async(cleanup())
+    _cleanup([f"{key_prefix}abc123def456"], "test_proper_index")
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -720,3 +653,97 @@ def test_valkey_client_closes_on_exception():
             assert result == b"PONG" or result == "PONG"
 
     _run_async(verify())
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_ttl_individual_path(upload_file: Path, tmp_path: Path):
+    """Test TTL on individual write path (when index already exists)."""
+    key_prefix = "test:ttl_ind:"
+    index_name = "test_ttl_ind_index"
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix=key_prefix,
+                index_name=index_name,
+                ttl_seconds=3600,
+            ),
+        )
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(
+                fullpath=upload_file.name, filename=upload_file.name
+            ),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock",
+        )
+
+        with upload_file.open() as f:
+            elements = json.load(f)
+
+        # First upload creates index via batch path
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+        # Second upload hits individual path (index now exists)
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+        # Verify TTL on keys written via individual path
+        client = await get_test_client()
+        try:
+            key = f"{key_prefix}{elements[0]['element_id']}"
+            ttl = await client.ttl(key)
+            assert ttl > 0, f"Expected TTL > 0 on individual path, got {ttl}"
+        finally:
+            await client.close()
+
+        return elements
+
+    elements = _run_async(run())
+    _cleanup([f"{key_prefix}{e['element_id']}" for e in elements], index_name)
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+@pytest.mark.parametrize(
+    "exc_class,expected_type_name",
+    [
+        ("TimeoutError", "TimeoutError"),
+        ("ConnectionError", "DestinationConnectionError"),
+        ("ClosingError", "DestinationConnectionError"),
+        ("RequestError", "WriteError"),
+    ],
+)
+def test_map_glide_error(exc_class, expected_type_name):
+    """Test that _map_glide_error correctly maps each GLIDE exception type."""
+    import glide
+
+    from unstructured_ingest.error import DestinationConnectionError, WriteError
+    from unstructured_ingest.error import TimeoutError as IngestTimeoutError
+
+    exc = getattr(glide, exc_class)("test error")
+    result = ValkeyUploader._map_glide_error(exc)
+
+    type_map = {
+        "TimeoutError": IngestTimeoutError,
+        "DestinationConnectionError": DestinationConnectionError,
+        "WriteError": WriteError,
+    }
+    assert isinstance(result, type_map[expected_type_name])
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_map_glide_error_auth():
+    """Test that RequestError with auth keywords maps to UserAuthError."""
+    import glide
+
+    from unstructured_ingest.error import UserAuthError
+
+    exc = glide.RequestError("NOAUTH Authentication required")
+    result = ValkeyUploader._map_glide_error(exc)
+    assert isinstance(result, UserAuthError)

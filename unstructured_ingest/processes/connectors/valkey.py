@@ -69,7 +69,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
             if not parsed.hostname:
                 raise ValueError("URI is missing a hostname")
             host = parsed.hostname
-            port = parsed.port
+            port = parsed.port or 6379
             password = parsed.password
             use_tls = parsed.scheme in ("valkeys", "rediss")
         else:
@@ -118,7 +118,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
             if not parsed.hostname:
                 raise ValueError("URI is missing a hostname")
             host = parsed.hostname
-            port = parsed.port
+            port = parsed.port or 6379
             password = parsed.password
             use_tls = parsed.scheme in ("valkeys", "rediss")
         else:
@@ -249,7 +249,7 @@ class ValkeyUploader(VectorDBUploader):
                         "OR use the valkey/valkey-bundle Docker image."
                     ) from e
                 else:
-                    raise
+                    raise WriteError(f"Valkey error: {e}") from e
 
     async def _async_create_destination(self, vector_length: int, client) -> bool:
         from glide import (
@@ -307,7 +307,7 @@ class ValkeyUploader(VectorDBUploader):
                     "OR use the valkey/valkey-bundle Docker image."
                 ) from e
             else:
-                raise
+                raise self._map_glide_error(e) from e
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         # Detect vector dimension

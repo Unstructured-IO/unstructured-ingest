@@ -59,8 +59,6 @@ from .pinecone import CONNECTOR_TYPE as PINECONE_CONNECTOR_TYPE
 from .pinecone import pinecone_destination_entry
 from .redisdb import CONNECTOR_TYPE as REDIS_CONNECTOR_TYPE
 from .redisdb import redis_destination_entry
-from .valkey import CONNECTOR_TYPE as VALKEY_CONNECTOR_TYPE
-from .valkey import valkey_destination_entry
 from .salesforce import CONNECTOR_TYPE as SALESFORCE_CONNECTOR_TYPE
 from .salesforce import salesforce_source_entry
 from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
@@ -69,6 +67,8 @@ from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
 from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
 from .vectara import vectara_destination_entry
+from .valkey import CONNECTOR_TYPE as VALKEY_CONNECTOR_TYPE
+from .valkey import valkey_destination_entry
 from .zendesk.zendesk import CONNECTOR_TYPE as ZENDESK_CONNECTOR_TYPE
 from .zendesk.zendesk import zendesk_source_entry
 
