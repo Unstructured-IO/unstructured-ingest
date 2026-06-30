@@ -133,7 +133,6 @@ def test_downloader_downloads_attachments_to_expected_paths_with_distinct_displa
 ):
     from unittest import mock
 
-    from unstructured_ingest.data_types.file_data import FileDataSourceMetadata, SourceIdentifiers
     from unstructured_ingest.processes.connectors.jira import JiraDownloaderConfig
 
     connection_config = JiraConnectionConfig(
@@ -202,10 +201,12 @@ def test_downloader_downloads_attachments_to_expected_paths_with_distinct_displa
         attachment_id
     ]
 
-    with mock.patch.object(downloader, "get_issue", return_value=issue):
-        with mock.patch.object(type(connection_config), "get_client", mock.MagicMock()):
-            type(connection_config).get_client.return_value.__enter__.return_value = mock_client
-            responses = downloader.run(parent_file_data)
+    with (
+        mock.patch.object(downloader, "get_issue", return_value=issue),
+        mock.patch.object(type(connection_config), "get_client", mock.MagicMock()),
+    ):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        responses = downloader.run(parent_file_data)
 
     assert len(responses) == 3
     issue_response, first_attachment, second_attachment = responses
