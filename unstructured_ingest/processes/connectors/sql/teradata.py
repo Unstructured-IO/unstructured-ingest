@@ -469,6 +469,7 @@ class TeradataUploader(SQLUploader):
     connection_config: TeradataConnectionConfig
     connector_type: str = CONNECTOR_TYPE
     values_delimiter: str = "?"
+    _destination_ensured: bool = field(init=False, default=False)
 
     def format_destination_name(self, destination_name: str) -> str:
         return _sanitize_table_name(destination_name)
@@ -476,7 +477,9 @@ class TeradataUploader(SQLUploader):
     def init(self, **kwargs: Any) -> None:
         # Auto-creation builds the 6-column JSON blob table, so the stager must have
         # metadata_as_json=True to match. The UI/caller is responsible for setting both.
+        # Mark ensured so upload_dataframe doesn't redundantly re-probe on the Pipeline path.
         self.create_destination(**kwargs)
+        self._destination_ensured = True
 
     def create_destination(self, destination_name: str = DEFAULT_TABLE_NAME, **kwargs: Any) -> bool:
         """Create an opinionated table (id, record_id, element_id, text, type, embeddings, metadata)
@@ -589,6 +592,13 @@ class TeradataUploader(SQLUploader):
 
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:
         import numpy as np
+
+        # init() is the only auto-create trigger, and only the local Pipeline calls it.
+        # Ensure the table exists here too, so orchestrators that skip init() don't fail
+        # with Teradata 3807. create_destination() is idempotent; probe once per run.
+        if not self._destination_ensured:
+            self.create_destination()
+            self._destination_ensured = True
 
         if self.can_delete():
             self.delete_by_record_id(file_data=file_data)
