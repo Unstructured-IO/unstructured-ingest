@@ -80,6 +80,7 @@ def test_indexer_oauth_file_data_uses_cloud_identity_and_updated_version():
         id="10001",
         key="ENG-7",
         fields={
+            "created": "2026-05-21T10:00:00.000+0000",
             "updated": "2026-05-22T10:00:00.000+0000",
             "attachment": [],
         },
@@ -91,7 +92,50 @@ def test_indexer_oauth_file_data_uses_cloud_identity_and_updated_version():
     assert file_data.source_identifiers.fullpath == "cloud-123/ENG/ENG-7.txt"
     assert file_data.metadata.url == "https://example.atlassian.net/browse/ENG-7"
     assert file_data.metadata.version == "2026-05-22T10:00:00.000+0000"
+    assert file_data.metadata.date_created == "2026-05-21T10:00:00.000+0000"
+    assert file_data.metadata.date_modified == "2026-05-22T10:00:00.000+0000"
     assert file_data.metadata.record_locator["cloud_id"] == "cloud-123"
+
+
+def test_indexer_file_data_populates_creation_and_modification_dates():
+    indexer = JiraIndexer(
+        connection_config=JiraConnectionConfig(
+            access_config=JiraAccessConfig(token="pat"),
+            url="https://jira.example.com",
+        ),
+        index_config=JiraIndexerConfig(issues=["ENG-7"]),
+    )
+    issue = JiraIssueMetadata(
+        id="10001",
+        key="ENG-7",
+        fields={
+            "created": "2026-05-21T10:00:00.000+0000",
+            "updated": "2026-05-22T10:00:00.000+0000",
+        },
+    )
+
+    file_data = indexer._create_file_data_from_issue(issue)
+
+    assert file_data.metadata.date_created == "2026-05-21T10:00:00.000+0000"
+    assert file_data.metadata.date_modified == "2026-05-22T10:00:00.000+0000"
+    assert file_data.metadata.version == "2026-05-22T10:00:00.000+0000"
+
+
+def test_indexer_file_data_handles_missing_fields():
+    indexer = JiraIndexer(
+        connection_config=JiraConnectionConfig(
+            access_config=JiraAccessConfig(token="pat"),
+            url="https://jira.example.com",
+        ),
+        index_config=JiraIndexerConfig(issues=["ENG-7"]),
+    )
+    issue = JiraIssueMetadata(id="10001", key="ENG-7", fields=None)
+
+    file_data = indexer._create_file_data_from_issue(issue)
+
+    assert file_data.metadata.date_created is None
+    assert file_data.metadata.date_modified is None
+    assert file_data.metadata.version is None
 
 
 def test_downloader_sets_issue_key_summary_display_and_version():

@@ -234,7 +234,7 @@ class JiraIndexer(Indexer):
                     yield JiraIssueMetadata.model_validate(issue)
 
     def _get_issues_within_projects(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id", "status", "attachment", "updated"]  # Add attachment field
+        fields = ["key", "id", "status", "attachment", "created", "updated"]  # Add attachment field
         jql = "project in ({})".format(", ".join(self.index_config.projects))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
@@ -245,6 +245,7 @@ class JiraIndexer(Indexer):
     ) -> Generator[JiraIssueMetadata, None, None]:
         with self.connection_config.get_client() as client:
             fields = ["key", "id", "attachment"]  # Add attachment field
+            fields.append("created")
             fields.append("updated")
             if self.index_config.status_filters:
                 jql = "status in ({}) ORDER BY id".format(
@@ -274,7 +275,7 @@ class JiraIndexer(Indexer):
         return jql
 
     def _get_issues_by_keys(self) -> Generator[JiraIssueMetadata, None, None]:
-        fields = ["key", "id", "attachment", "updated"]  # Add attachment field
+        fields = ["key", "id", "attachment", "created", "updated"]  # Add attachment field
         jql = "key in ({})".format(", ".join(self.index_config.issues))
         jql = self._update_jql(jql)
         logger.debug(f"running jql: {jql}")
@@ -306,10 +307,13 @@ class JiraIndexer(Indexer):
                 for att in attachments
             ]
 
+        fields = issue.fields or {}
         metadata = FileDataSourceMetadata(
             date_processed=str(time()),
+            date_created=fields.get("created"),
+            date_modified=fields.get("updated"),
             url=self.connection_config.issue_url(issue.key),
-            version=issue.fields.get("updated") if issue.fields else None,
+            version=fields.get("updated"),
             record_locator=record_locator,
         )
 
