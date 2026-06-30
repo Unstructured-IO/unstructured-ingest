@@ -54,29 +54,30 @@ class ValkeyConnectionConfig(ConnectionConfig):
                 raise ValueError("Since URI is not specified, ssl cannot be None")
         return self
 
-    @requires_dependencies(["glide"], extras="valkey")
-    @asynccontextmanager
-    async def create_async_client(self) -> AsyncGenerator:
-        from glide import GlideClient, GlideClientConfiguration, NodeAddress
-
+    def _resolve_connection_params(self) -> tuple[str, int, str | None, bool]:
+        """Parse URI or direct fields into (host, port, password, use_tls)."""
         access_config = self.access_config.get_secret_value()
 
         if access_config.uri:
-            # Parse URI into host/port for GLIDE (GLIDE doesn't accept URIs directly)
             from urllib.parse import urlparse
 
             parsed = urlparse(access_config.uri)
             if not parsed.hostname:
                 raise ValueError("URI is missing a hostname")
-            host = parsed.hostname
-            port = parsed.port or 6379
-            password = parsed.password
-            use_tls = parsed.scheme in ("valkeys", "rediss")
-        else:
-            host = self.host
-            port = self.port
-            password = access_config.password
-            use_tls = self.ssl
+            return (
+                parsed.hostname,
+                parsed.port or 6379,
+                parsed.password,
+                parsed.scheme in ("valkeys", "rediss"),
+            )
+        return (self.host, self.port, access_config.password, self.ssl)
+
+    @requires_dependencies(["glide"], extras="valkey")
+    @asynccontextmanager
+    async def create_async_client(self) -> AsyncGenerator:
+        from glide import GlideClient, GlideClientConfiguration, NodeAddress
+
+        host, port, password, use_tls = self._resolve_connection_params()
 
         config_kwargs = dict(
             addresses=[NodeAddress(host=host, port=port)],
@@ -109,23 +110,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
         from glide_sync import GlideClient as SyncGlideClient
         from glide_sync import GlideClientConfiguration, NodeAddress
 
-        access_config = self.access_config.get_secret_value()
-
-        if access_config.uri:
-            from urllib.parse import urlparse
-
-            parsed = urlparse(access_config.uri)
-            if not parsed.hostname:
-                raise ValueError("URI is missing a hostname")
-            host = parsed.hostname
-            port = parsed.port or 6379
-            password = parsed.password
-            use_tls = parsed.scheme in ("valkeys", "rediss")
-        else:
-            host = self.host
-            port = self.port
-            password = access_config.password
-            use_tls = self.ssl
+        host, port, password, use_tls = self._resolve_connection_params()
 
         config_kwargs = dict(
             addresses=[NodeAddress(host, port)],
@@ -166,6 +151,10 @@ class ValkeyUploaderConfig(UploaderConfig):
     ttl_seconds: Optional[int] = Field(
         default=None, description="Optional TTL in seconds for uploaded keys."
     )
+    distance_metric: str = Field(
+        default="COSINE",
+        description="Distance metric for vector search. Options: COSINE, L2, IP.",
+    )
 
 
 @dataclass
@@ -185,45 +174,53 @@ class ValkeyUploader(VectorDBUploader):
             logger.error(f"failed to validate connection: {e}", exc_info=True)
             raise DestinationConnectionError(f"failed to validate connection: {e}")
 
-    @requires_dependencies(["glide"], extras="valkey")
+    def _get_distance_metric(self, module):
+        """Resolve distance metric enum from config string."""
+        metric_map = {
+            "COSINE": module.DistanceMetricType.COSINE,
+            "L2": module.DistanceMetricType.L2,
+            "IP": module.DistanceMetricType.IP,
+        }
+        metric_str = self.upload_config.distance_metric.upper()
+        if metric_str not in metric_map:
+            raise WriteError(
+                f"Invalid distance_metric '{self.upload_config.distance_metric}'. "
+                f"Must be one of: COSINE, L2, IP"
+            )
+        return metric_map[metric_str]
+
+    def _build_schema(self, vector_length: int, module):
+        """Build FT.CREATE schema using the given module's field types."""
+        return [
+            module.TextField("text"),
+            module.TagField("element_type"),
+            module.TagField("source_document"),
+            module.TagField("record_id"),
+            module.NumericField("page_number"),
+            module.VectorField(
+                "embedding",
+                module.VectorAlgorithm.HNSW,
+                module.VectorFieldAttributesHnsw(
+                    dimensions=vector_length,
+                    distance_metric=self._get_distance_metric(module),
+                    type=module.VectorType.FLOAT32,
+                ),
+            ),
+        ]
+
+    @requires_dependencies(["glide_sync"], extras="valkey")
     def create_destination(
         self,
         vector_length: int,
         destination_name: str = "unstructuredautocreated",
         **kwargs: Any,
     ) -> bool:
-        from glide_sync import (
-            DistanceMetricType,
-            FtCreateOptions,
-            NumericField,
-            RequestError,
-            TagField,
-            TextField,
-            VectorAlgorithm,
-            VectorField,
-            VectorFieldAttributesHnsw,
-            VectorType,
-            ft,
-        )
+        import glide_sync as module
+        from glide_sync import FtCreateOptions, RequestError, ft
 
         with self.connection_config.create_sync_client() as client:
             try:
-                schema = [
-                    TextField("text"),
-                    TagField("element_type"),
-                    TagField("source_document"),
-                    NumericField("page_number"),
-                    VectorField(
-                        "embedding",
-                        VectorAlgorithm.HNSW,
-                        VectorFieldAttributesHnsw(
-                            dimensions=vector_length,
-                            distance_metric=DistanceMetricType.COSINE,
-                            type=VectorType.FLOAT32,
-                        ),
-                    ),
-                ]
-
+                schema = self._build_schema(vector_length, module)
                 ft.create(
                     client,
                     self.upload_config.index_name,
@@ -252,37 +249,11 @@ class ValkeyUploader(VectorDBUploader):
                     raise WriteError(f"Valkey error: {e}") from e
 
     async def _async_create_destination(self, vector_length: int, client) -> bool:
-        from glide import (
-            DistanceMetricType,
-            FtCreateOptions,
-            NumericField,
-            RequestError,
-            TagField,
-            TextField,
-            VectorAlgorithm,
-            VectorField,
-            VectorFieldAttributesHnsw,
-            VectorType,
-            ft,
-        )
+        import glide as module
+        from glide import FtCreateOptions, RequestError, ft
 
         try:
-            schema = [
-                TextField("text"),
-                TagField("element_type"),
-                TagField("source_document"),
-                NumericField("page_number"),
-                VectorField(
-                    "embedding",
-                    VectorAlgorithm.HNSW,
-                    VectorFieldAttributesHnsw(
-                        dimensions=vector_length,
-                        distance_metric=DistanceMetricType.COSINE,
-                        type=VectorType.FLOAT32,
-                    ),
-                ),
-            ]
-
+            schema = self._build_schema(vector_length, module)
             await ft.create(
                 client,
                 self.upload_config.index_name,
@@ -309,6 +280,36 @@ class ValkeyUploader(VectorDBUploader):
             else:
                 raise self._map_glide_error(e) from e
 
+    async def _delete_by_record_id(self, client, file_data: FileData) -> None:
+        """Delete all existing keys for this file before re-ingestion.
+
+        Uses FT.SEARCH to find keys tagged with file_data.identifier,
+        then deletes them. This prevents orphaned chunks when a document
+        is re-processed with different chunking (different element_ids).
+        """
+        from glide import ft
+
+        try:
+            # Escape special TAG characters in the identifier
+            safe_id = file_data.identifier.replace("-", "\\-").replace(":", "\\:")
+            query = f"@record_id:{{{safe_id}}}"
+            results = await ft.search(client, self.upload_config.index_name, query)
+
+            # ft.search returns [total_count, key1, fields1, key2, fields2, ...]
+            if results and len(results) > 1:
+                # Extract keys (every other element starting at index 1)
+                keys = [results[i] for i in range(1, len(results), 2)]
+                if keys:
+                    for key in keys:
+                        key_str = key.decode() if isinstance(key, bytes) else key
+                        await client.delete([key_str])
+                    logger.debug(
+                        f"Deleted {len(keys)} existing keys for record '{file_data.identifier}'"
+                    )
+        except Exception as e:
+            # If search fails (e.g., index doesn't exist yet), skip deletion
+            logger.debug(f"Could not delete by record_id (non-fatal): {e}")
+
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         # Detect vector dimension
         elements_with_embeddings = [e for e in data if e.get("embeddings")]
@@ -323,6 +324,10 @@ class ValkeyUploader(VectorDBUploader):
 
         async with self.connection_config.create_async_client() as client:
             index_exists = await self._index_exists(client) if vector_length else False
+
+            # Delete prior records for this file to prevent orphaned chunks
+            if index_exists:
+                await self._delete_by_record_id(client, file_data)
 
             batches = list(batch_generator(data, batch_size=self.upload_config.batch_size))
 
@@ -349,6 +354,10 @@ class ValkeyUploader(VectorDBUploader):
         here so the framework can distinguish transient failures (timeouts, disconnects)
         from permanent ones (auth errors, bad commands).
         """
+        # Don't re-wrap errors already in our framework hierarchy
+        if isinstance(error, (WriteError, DestinationConnectionError)):
+            return error
+
         from glide import ClosingError
         from glide import ConnectionError as GlideConnectionError
         from glide import RequestError as GlideRequestError
@@ -365,7 +374,7 @@ class ValkeyUploader(VectorDBUploader):
             return DestinationConnectionError(message)
         if isinstance(error, GlideRequestError):
             error_msg = str(error).lower()
-            if "noauth" in error_msg or "wrongpass" in error_msg or "auth" in error_msg:
+            if error_msg.startswith(("noauth", "wrongpass")):
                 return UserAuthError(message)
             return WriteError(message)
         return WriteError(message)
@@ -380,6 +389,7 @@ class ValkeyUploader(VectorDBUploader):
             "element_type": element.get("type", ""),
             "source_document": file_data.source_identifiers.filename or "",
             "page_number": str(element.get("metadata", {}).get("page_number", 0)),
+            "record_id": file_data.identifier,
         }
 
         embeddings = element.get("embeddings")
@@ -389,12 +399,18 @@ class ValkeyUploader(VectorDBUploader):
                     f"Element '{element_id}' has invalid 'embeddings' type: "
                     f"expected list of floats, got {type(embeddings).__name__}"
                 )
-            if expected_dim is not None and len(embeddings) != expected_dim:
+            vec = np.array(embeddings, dtype=np.float32)
+            if vec.ndim != 1:
                 raise WriteError(
-                    f"Element '{element_id}' has embedding dimension {len(embeddings)}, "
+                    f"Element '{element_id}' has non-flat embeddings (shape={vec.shape}), "
+                    f"expected a 1-D list of floats"
+                )
+            if expected_dim is not None and vec.shape[0] != expected_dim:
+                raise WriteError(
+                    f"Element '{element_id}' has embedding dimension {vec.shape[0]}, "
                     f"expected {expected_dim} (index schema dimension)"
                 )
-            fields["embedding"] = np.array(embeddings, dtype=np.float32).tobytes()
+            fields["embedding"] = vec.tobytes()
 
         return fields
 

@@ -139,7 +139,11 @@ def test_valkey_destination_upload(upload_file: Path, tmp_path: Path):
 
     elements = _run_async(run())
     keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-    _cleanup(keys, index_name)(upload_file: Path, tmp_path: Path):
+    _cleanup(keys, index_name)
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_with_ttl(upload_file: Path, tmp_path: Path):
     """Test that TTL is applied to uploaded keys."""
     key_prefix = "test:ttl:"
     index_name = "test_ttl_index"
