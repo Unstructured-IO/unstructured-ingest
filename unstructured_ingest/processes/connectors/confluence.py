@@ -308,7 +308,22 @@ class ConfluenceIndexer(Indexer):
                 },
                 limit=self.index_config.max_num_of_docs_from_each_space,
             )
-        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
+        # The v2 /pages list returns each page's creation date and version metadata
+        # (createdAt + version{createdAt, number}) by default. We carry them here so the
+        # indexer can populate FileData.metadata at index time, which is what the platform
+        # uses to detect new/modified records (FS-2105 creation date, FS-2107 change detection).
+        doc_ids = []
+        for page in pages:
+            version = page.get("version") or {}
+            doc_ids.append(
+                {
+                    "space_id": space_id,
+                    "doc_id": page["id"],
+                    "date_created": page.get("createdAt"),
+                    "date_modified": version.get("createdAt"),
+                    "version_number": version.get("number"),
+                }
+            )
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
@@ -319,8 +334,14 @@ class ConfluenceIndexer(Indexer):
             doc_ids = self._get_docs_ids_within_one_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
-                # Build metadata
+                version_number = doc.get("version_number")
+                # Build metadata. date_created/date_modified/version come from the v2 /pages
+                # list so the indexer reports them at index time; the platform relies on the
+                # indexer's metadata to detect new/modified records (FS-2105 + FS-2107).
                 metadata = FileDataSourceMetadata(
+                    date_created=doc.get("date_created"),
+                    date_modified=doc.get("date_modified"),
+                    version=str(version_number) if version_number is not None else None,
                     date_processed=str(time()),
                     url=self.connection_config.page_url(doc_id),
                     record_locator={

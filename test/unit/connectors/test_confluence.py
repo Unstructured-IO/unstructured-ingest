@@ -145,7 +145,15 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
     mock_client = mock.MagicMock()
     mock_client.get.side_effect = [
         {"results": [{"id": 987, "key": "ENG"}]},
-        {"results": [{"id": "456"}]},
+        {
+            "results": [
+                {
+                    "id": "456",
+                    "createdAt": "2026-05-28T10:00:00Z",
+                    "version": {"createdAt": "2026-05-28T11:00:00Z", "number": 7},
+                }
+            ]
+        },
     ]
 
     with mock.patch.object(type(config), "get_client", mock.MagicMock()):
@@ -156,6 +164,9 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
     assert file_data.identifier == "456"
     assert file_data.source_identifiers.fullpath == "cloud-123/ENG/456.html"
     assert file_data.metadata.url == "https://example.atlassian.net/wiki/pages/456"
+    assert file_data.metadata.date_created == "2026-05-28T10:00:00Z"
+    assert file_data.metadata.date_modified == "2026-05-28T11:00:00Z"
+    assert file_data.metadata.version == "7"
     assert file_data.metadata.record_locator["cloud_id"] == "cloud-123"
     assert file_data.additional_metadata["site_url"] == "https://example.atlassian.net/wiki"
     mock_client.get.assert_has_calls(
@@ -235,7 +246,22 @@ def test_get_docs_ids_within_one_space_uses_v2_pages(connection_config):
 
         doc_ids = indexer._get_docs_ids_within_one_space(987)
 
-    assert doc_ids == [{"space_id": 987, "doc_id": "1"}, {"space_id": 987, "doc_id": "2"}]
+    assert doc_ids == [
+        {
+            "space_id": 987,
+            "doc_id": "1",
+            "date_created": None,
+            "date_modified": None,
+            "version_number": None,
+        },
+        {
+            "space_id": 987,
+            "doc_id": "2",
+            "date_created": None,
+            "date_modified": None,
+            "version_number": None,
+        },
+    ]
     mock_client.get.assert_called_once_with(
         "api/v2/pages",
         params={"space-id": 987, "limit": 2},
@@ -262,7 +288,13 @@ def test_get_docs_ids_within_one_space_paginates_until_configured_limit(connecti
         doc_ids = indexer._get_docs_ids_within_one_space(987)
 
     assert len(doc_ids) == 251
-    assert doc_ids[-1] == {"space_id": 987, "doc_id": "250"}
+    assert doc_ids[-1] == {
+        "space_id": 987,
+        "doc_id": "250",
+        "date_created": None,
+        "date_modified": None,
+        "version_number": None,
+    }
     mock_client.get.assert_has_calls(
         [
             mock.call("api/v2/pages", params={"space-id": 987, "limit": 250}),

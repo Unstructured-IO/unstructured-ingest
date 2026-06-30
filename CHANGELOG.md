@@ -1,3 +1,9 @@
+## [1.6.24]
+
+### Fixes
+
+- **fix(FS-2105): populate Confluence creation/modification dates and version at index time.** The Confluence indexer now sets `date_created`, `date_modified`, and `version` from the v2 pages list response so Foundation can store page timestamps and detect page edits on subsequent runs (fixes FS-2107).
+
 ## [1.6.23]
 
 ### Fixes
