@@ -727,6 +727,45 @@ def test_slack_new_day_creates_new_identifier():
     }
 
 
+def test_message_day_from_ts():
+    assert SlackIndexer._message_day({"ts": _ts(DAY_1, hours=3)}) == _day_str(DAY_1)
+
+
+def test_message_day_prefers_thread_ts():
+    root = _ts(DAY_1, hours=2)
+    reply = _ts(DAY_2, hours=3)
+    assert SlackIndexer._message_day({"ts": reply, "thread_ts": root}) == _day_str(DAY_1)
+
+
+def test_message_day_returns_none_without_ts():
+    assert SlackIndexer._message_day({}) is None
+
+
+def test_group_messages_by_day_sorts_days_chronologically():
+    groups = _make_indexer()._group_messages_by_day(
+        [
+            {"ts": _ts(DAY_2, hours=1)},
+            {"ts": _ts(DAY_1, hours=1)},
+        ]
+    )
+
+    assert list(groups.keys()) == [_day_str(DAY_1), _day_str(DAY_2)]
+    assert len(groups[_day_str(DAY_1)]) == 1
+    assert len(groups[_day_str(DAY_2)]) == 1
+
+
+def test_package_version_picks_newest_activity():
+    root = _ts(DAY_1, hours=1)
+    reply = _ts(DAY_1, hours=5)
+    edited = _ts(DAY_1, hours=8)
+    assert (
+        SlackIndexer._package_version(
+            [{"ts": root, "latest_reply": reply, "edited": {"ts": edited}}]
+        )
+        == edited
+    )
+
+
 # ---------------------------------------------------------------------------
 # _channel_history_error_msg (user-token path)
 # ---------------------------------------------------------------------------
