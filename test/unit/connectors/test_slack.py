@@ -522,12 +522,6 @@ def test_validate_channels_dispatches_user_for_user_token():
     client.conversations_history.assert_called_once_with(channel="C1", limit=1)
 
 
-def test_channel_history_error_msg_not_in_channel():
-    msg = _channel_history_error_msg("not_in_channel", ["C1"], granted_scopes=set())
-    assert "private channel" in msg.lower()
-    assert "invite" in msg.lower()
-
-
 def test_channel_join_error_msg_private_channel_hint_when_join_scope_present():
     msg = _channel_join_error_msg("channel_not_found", ["C1"], granted_scopes={"channels:join"})
     assert "private" in msg.lower()
@@ -754,3 +748,55 @@ def test_slack_file_data_sets_version_to_message_ts():
     expected_identifier = hashlib.sha256(f"{CHANNEL}-{message_ts}-F123".encode("utf-8")).hexdigest()
     assert slack_file.identifier == expected_identifier
     assert slack_file.metadata.version == message_ts
+
+
+# ---------------------------------------------------------------------------
+# _channel_history_error_msg (user-token path)
+# ---------------------------------------------------------------------------
+
+
+def test_channel_history_error_msg_not_in_channel():
+    msg = _channel_history_error_msg("not_in_channel", ["C1"], granted_scopes=set())
+    assert "private" in msg.lower()
+    assert "invite" in msg.lower()
+
+
+def test_channel_history_error_msg_channel_not_found():
+    msg = _channel_history_error_msg("channel_not_found", ["C1"], granted_scopes=set())
+    assert "not found" in msg.lower() or "accessible" in msg.lower()
+
+
+def test_channel_history_error_msg_archived():
+    msg = _channel_history_error_msg("is_archived", ["C1"], granted_scopes=set())
+    assert "archived" in msg.lower()
+
+
+def test_channel_history_error_msg_archived_multiple_channels():
+    msg = _channel_history_error_msg("is_archived", ["C1", "C2"], granted_scopes=set())
+    assert "C1, C2" in msg
+    assert "are" in msg
+
+
+def test_channel_history_error_msg_missing_scope():
+    msg = _channel_history_error_msg("missing_scope", ["C1"], granted_scopes=set())
+    assert "channels:history" in msg
+
+
+def test_channel_history_error_msg_missing_scope_includes_granted():
+    msg = _channel_history_error_msg("missing_scope", ["C1"], granted_scopes={"channels:read"})
+    assert "channels:read" in msg
+
+
+def test_channel_history_error_msg_invalid_auth():
+    msg = _channel_history_error_msg("invalid_auth", ["C1"], granted_scopes=set())
+    assert "token" in msg.lower() or "auth" in msg.lower()
+
+
+def test_channel_history_error_msg_token_revoked():
+    msg = _channel_history_error_msg("token_revoked", ["C1"], granted_scopes=set())
+    assert "revoked" in msg.lower() or "token" in msg.lower()
+
+
+def test_channel_history_error_msg_unknown_error():
+    msg = _channel_history_error_msg("some_weird_error", ["C1"], granted_scopes=set())
+    assert "some_weird_error" in msg

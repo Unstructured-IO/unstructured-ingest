@@ -1,3 +1,21 @@
+## [1.6.24]
+
+### Fixes
+
+- **fix(slack): group channel messages into stable per-UTC-day packages for incremental sync.** The Slack indexer now emits one conversation package per channel per UTC day with a stable identifier derived from channel and day. `metadata.version` tracks the newest activity in the package (new messages, thread replies via `latest_reply`, edits via `edited.ts`) so re-runs update in place instead of duplicating documents.
+
+## [1.6.23]
+
+### Fixes
+
+- **fix(teradata): auto-create the destination table during upload, not only during pipeline init.** Table auto-creation ran only via `TeradataUploader.init()`, whose sole caller is the local `Pipeline`. Orchestrators that drive only the upload phase (e.g. the Unstructured Platform) never created the table, so a not-pre-created destination failed with Teradata error 3807 (`Object '<table>' does not exist`). `upload_dataframe` now ensures the table exists itself — once per run, via the idempotent `create_destination()` whose `DBC.TablesV` check skips `CREATE` for existing tables, so a user's table is never recreated.
+
+## [1.6.22]
+
+### Enhancements
+
+- **feat(slack): user token specific behavior** - differentiate between user and bot token in slack indexer, bot still attempts to join channels (required for ingestion) while user reads channel without joining. Add token specific error messages.
+
 ## [1.6.21]
 
 ### Fixes
