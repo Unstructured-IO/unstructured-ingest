@@ -517,7 +517,7 @@ class SlackDownloader(Downloader):
         messages = []
         async for conversation_history in await client.conversations_history(
             channel=file_data.metadata.record_locator["channel"],
-            # NOTE: oldest/latest bound the package's UTC-day window. The indexer stores the
+            # NOTE: oldest/latest bound the indexed message range. The indexer stores the
             # oldest and newest top-level message timestamps; inclusive=True keeps both ends so
             # the downloader fetches the exact same set of thread roots the indexer grouped.
             oldest=file_data.metadata.record_locator["oldest"],
