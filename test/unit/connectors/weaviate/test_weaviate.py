@@ -330,6 +330,50 @@ def test_create_destination_noop_in_flatten_mode(
     mock_client.collections.create_from_dict.assert_not_called()
 
 
+def test_create_destination_default_mode_creates_when_absent(
+    uploader: WeaviateUploader, connection_config: WeaviateConnectionConfigTest
+):
+    """Default mode (auto_schema disabled, non-flatten) seeds the collection from
+    the default asset config when it does not exist yet (pre-declaring
+    metadata.data_source.version as text) and formats the name."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="my-coll", auto_schema=False)
+    mock_client = MagicMock()
+    mock_client.collections.exists.return_value = False
+    connection_config.set_mock_client(mock_client)
+
+    created = uploader.create_destination()
+    assert created is True
+    assert uploader.upload_config.collection == "My_coll"
+    mock_client.collections.create_from_dict.assert_called_once()
+
+
+def test_create_destination_default_mode_skips_when_present(
+    uploader: WeaviateUploader, connection_config: WeaviateConnectionConfigTest
+):
+    """Default mode does not recreate an existing collection."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=False)
+    mock_client = MagicMock()
+    mock_client.collections.exists.return_value = True
+    connection_config.set_mock_client(mock_client)
+
+    created = uploader.create_destination()
+    assert created is False
+    mock_client.collections.create_from_dict.assert_not_called()
+
+
+def test_create_destination_resolves_fallback_name(
+    uploader: WeaviateUploader, connection_config: WeaviateConnectionConfigTest
+):
+    """With no collection set, create_destination falls back to the default name."""
+    uploader.upload_config = WeaviateUploaderConfig(collection=None, auto_schema=False)
+    mock_client = MagicMock()
+    mock_client.collections.exists.return_value = True
+    connection_config.set_mock_client(mock_client)
+
+    uploader.create_destination()
+    assert uploader.upload_config.collection == "Unstructuredautocreated"
+
+
 def test_get_schema_property_names_caches_across_calls(
     uploader: WeaviateUploader,
 ):
@@ -396,9 +440,7 @@ def test_conform_dict_default_json_dumps_complex_metadata(
     "ds_key",
     ["date_created", "date_modified", "date_processed"],
 )
-def test_conform_dict_default_reformats_unix_timestamp_dates(
-    file_data: FileData, ds_key: str
-):
+def test_conform_dict_default_reformats_unix_timestamp_dates(file_data: FileData, ds_key: str):
     """Default mode parses unix-timestamp-strings ("1778727504.0") and
     reformats them to Weaviate's RFC3339-Z form (YYYY-MM-DDTHH:MM:SS.fffZ)."""
     stager = WeaviateUploadStager(upload_stager_config=WeaviateUploadStagerConfig())
@@ -508,9 +550,7 @@ def test_conform_dict_flatten_recursive_flatten_of_dynamic_keys(file_data: FileD
     )
     out = stager.conform_dict(_sample_element(), file_data=file_data)
     assert "regex_metadata" not in out
-    assert out["regex_metadata_phone"] == [
-        {"text": "555-1234", "start": 0, "end": 8}
-    ]
+    assert out["regex_metadata_phone"] == [{"text": "555-1234", "start": 0, "end": 8}]
 
 
 def test_conform_dict_flatten_does_not_mutate_input(file_data: FileData):
@@ -533,9 +573,7 @@ def test_conform_dict_flatten_passthrough_lists_unmodified(file_data: FileData):
     )
     out = stager.conform_dict(_sample_element(), file_data=file_data)
     assert out["languages"] == ["eng"]
-    assert out["links"] == [
-        {"text": "click", "url": "https://example.com", "start_index": 0}
-    ]
+    assert out["links"] == [{"text": "click", "url": "https://example.com", "start_index": 0}]
     assert out["data_source_permissions_data"] == [{"role": "viewer"}]
     assert out["coordinates_points"] == [[0, 0], [612, 0], [612, 792], [0, 792]]
 
@@ -547,17 +585,13 @@ def test_conform_dict_flatten_passthrough_lists_unmodified(file_data: FileData):
 
 def test_conform_to_schema_empty_schema_returns_empty_dict():
     """If the schema has no properties, every incoming key is dropped."""
-    out = WeaviateUploader.conform_to_schema(
-        {"a": 1, "b": 2}, schema_props=set()
-    )
+    out = WeaviateUploader.conform_to_schema({"a": 1, "b": 2}, schema_props=set())
     assert out == {}
 
 
 def test_conform_to_schema_empty_properties_fills_all_with_none():
     """If incoming properties is empty, every schema field is filled with None."""
-    out = WeaviateUploader.conform_to_schema(
-        {}, schema_props={"a", "b", "c"}
-    )
+    out = WeaviateUploader.conform_to_schema({}, schema_props={"a", "b", "c"})
     assert out == {"a": None, "b": None, "c": None}
 
 
@@ -587,9 +621,7 @@ def test_conform_to_schema_preserves_explicit_none():
 def test_precheck_default_mode_collection_missing_raises(
     uploader: WeaviateUploader, connection_config: WeaviateConnectionConfigTest
 ):
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection="MyColl", flatten_metadata=False
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", flatten_metadata=False)
     mock_client = MagicMock()
     mock_client.collections.exists.return_value = False
     connection_config.set_mock_client(mock_client)
@@ -603,9 +635,7 @@ def test_precheck_default_mode_collection_exists_passes(
 ):
     """Default mode is permissive: existence is enough — no schema-shape or
     record_id checks are run because the connector may auto-create later."""
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection="MyColl", flatten_metadata=False
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", flatten_metadata=False)
     mock_client = MagicMock()
     mock_client.collections.exists.return_value = True
     connection_config.set_mock_client(mock_client)
@@ -622,9 +652,7 @@ def test_precheck_default_mode_collection_none_skips_validation(
     """In default mode, if no collection name is set precheck silently passes —
     the missing name is resolved later in create_destination (fallback to
     'Unstructuredautocreated')."""
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection=None, flatten_metadata=False
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection=None, flatten_metadata=False)
     mock_client = MagicMock()
     connection_config.set_mock_client(mock_client)
 
@@ -639,9 +667,7 @@ def test_precheck_flatten_mode_collection_none_raises(
     """Flatten mode requires an explicit collection name because there is no
     auto-create fallback — fail early with a clear message, before even
     opening a client connection."""
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection=None, flatten_metadata=True
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection=None, flatten_metadata=True)
     mock_client = MagicMock()
     connection_config.set_mock_client(mock_client)
 
@@ -761,9 +787,7 @@ def _batch_client_from(mock_client: MagicMock) -> MagicMock:
     return mock_client.batch.dynamic.return_value.__enter__.return_value
 
 
-def test_run_data_raises_when_no_collection_set(
-    uploader: WeaviateUploader, file_data: FileData
-):
+def test_run_data_raises_when_no_collection_set(uploader: WeaviateUploader, file_data: FileData):
     uploader.upload_config = WeaviateUploaderConfig(collection=None)
     with pytest.raises(ValueError, match="No collection specified"):
         uploader.run_data(data=[{"text": "x"}], file_data=file_data)
@@ -777,9 +801,7 @@ def test_run_data_default_mode_passes_unmodified_properties(
 ):
     """In default mode, properties go to add_object exactly as the stager
     produced them; only embeddings are popped into the vector arg."""
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection="MyColl", flatten_metadata=False
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", flatten_metadata=False)
     mock_client = _make_run_data_client()
     connection_config.set_mock_client(mock_client)
     monkeypatch.setattr(uploader, "delete_by_record_id", MagicMock())
@@ -811,16 +833,12 @@ def test_run_data_default_mode_does_not_fetch_schema(
 ):
     """Default mode never reads the destination schema — no introspection
     is performed because conform_to_schema isn't applied."""
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection="MyColl", flatten_metadata=False
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", flatten_metadata=False)
     mock_client = _make_run_data_client()
     connection_config.set_mock_client(mock_client)
     monkeypatch.setattr(uploader, "delete_by_record_id", MagicMock())
 
-    uploader.run_data(
-        data=[{"text": "x", "embeddings": [0.1]}], file_data=file_data
-    )
+    uploader.run_data(data=[{"text": "x", "embeddings": [0.1]}], file_data=file_data)
 
     mock_client.collections.get.return_value.config.get.assert_not_called()
 
@@ -833,9 +851,7 @@ def test_run_data_flatten_mode_applies_schema_conform(
 ):
     """Flatten mode runs each element through conform_to_schema:
     unknown keys are dropped, missing schema keys are filled with None."""
-    uploader.upload_config = WeaviateUploaderConfig(
-        collection="MyColl", flatten_metadata=True
-    )
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", flatten_metadata=True)
     mock_client = _make_run_data_client()
     config_mock = MagicMock()
     config_mock.properties = [
@@ -932,16 +948,12 @@ def test_run_data_propagates_check_for_errors_failure(
     after the batch context manager closes."""
     uploader.upload_config = WeaviateUploaderConfig(collection="MyColl")
     mock_client = _make_run_data_client()
-    mock_client.batch.failed_objects = [
-        MagicMock(original_uuid="uuid-1", message="rejected")
-    ]
+    mock_client.batch.failed_objects = [MagicMock(original_uuid="uuid-1", message="rejected")]
     connection_config.set_mock_client(mock_client)
     monkeypatch.setattr(uploader, "delete_by_record_id", MagicMock())
 
     with pytest.raises(WriteError, match="Failed to upload to weaviate"):
-        uploader.run_data(
-            data=[{"text": "x"}], file_data=file_data
-        )
+        uploader.run_data(data=[{"text": "x"}], file_data=file_data)
 
 
 # ---------------------------------------------------------------------------
@@ -977,3 +989,117 @@ def test_uploader_config_dynamic_default_alone_is_valid():
     assert cfg.dynamic_batch is True
     assert cfg.batch_size is None
     assert cfg.requests_per_minute is None
+
+
+# ---------------------------------------------------------------------------
+# Uploader — auto_schema behavior
+# ---------------------------------------------------------------------------
+
+
+def test_run_data_auto_schema_passes_unknown_keys_without_dropping(
+    uploader: WeaviateUploader,
+    connection_config: WeaviateConnectionConfigTest,
+    file_data: FileData,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """auto_schema mode uploads every property as-is even when they are not in
+    any existing schema — nothing is dropped and the schema is never fetched."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=True)
+    mock_client = _make_run_data_client()
+    mock_client.collections.exists.return_value = True
+    connection_config.set_mock_client(mock_client)
+    monkeypatch.setattr(uploader, "delete_by_record_id", MagicMock())
+
+    uploader.run_data(
+        data=[{"text": "x", "brand_new_field": "keep me", "embeddings": [0.1]}],
+        file_data=file_data,
+    )
+
+    batch_client = _batch_client_from(mock_client)
+    batch_client.add_object.assert_called_once_with(
+        collection="MyColl",
+        properties={"text": "x", "brand_new_field": "keep me"},
+        vector=[0.1],
+    )
+    # Schema is never read in auto_schema mode.
+    mock_client.collections.get.return_value.config.get.assert_not_called()
+
+
+def test_run_data_auto_schema_skips_delete_when_collection_absent(
+    uploader: WeaviateUploader,
+    connection_config: WeaviateConnectionConfigTest,
+    file_data: FileData,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """On the first run in auto_schema mode the collection may not exist yet
+    (Weaviate creates it on insert), so delete_by_record_id is skipped rather
+    than erroring on a missing collection — but the object is still uploaded."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=True)
+    mock_client = _make_run_data_client()
+    mock_client.collections.exists.return_value = False
+    connection_config.set_mock_client(mock_client)
+    delete_spy = MagicMock()
+    monkeypatch.setattr(uploader, "delete_by_record_id", delete_spy)
+
+    uploader.run_data(data=[{"text": "x"}], file_data=file_data)
+
+    delete_spy.assert_not_called()
+    _batch_client_from(mock_client).add_object.assert_called_once()
+
+
+def test_run_data_auto_schema_deletes_when_collection_present(
+    uploader: WeaviateUploader,
+    connection_config: WeaviateConnectionConfigTest,
+    file_data: FileData,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """When the collection already exists, auto_schema mode still purges prior
+    records for this record_id before writing the new batch."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=True)
+    mock_client = _make_run_data_client()
+    mock_client.collections.exists.return_value = True
+    connection_config.set_mock_client(mock_client)
+    delete_spy = MagicMock()
+    monkeypatch.setattr(uploader, "delete_by_record_id", delete_spy)
+
+    uploader.run_data(data=[{"text": "x"}], file_data=file_data)
+
+    delete_spy.assert_called_once()
+
+
+def test_uploader_config_auto_schema_defaults_false():
+    """auto_schema defaults to False so the connector keeps its pre-existing
+    behavior (conform-to-schema in flatten mode, no conform in non-flatten);
+    dynamic auto-schema is opt-in."""
+    assert WeaviateUploaderConfig(collection="MyColl").auto_schema is False
+
+
+def test_run_data_default_mode_does_not_conform(
+    uploader: WeaviateUploader,
+    connection_config: WeaviateConnectionConfigTest,
+    file_data: FileData,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Non-flatten + auto_schema disabled (the default) uploads properties as-is —
+    conform_to_schema is only applied in flatten mode, matching the connector's
+    pre-auto_schema behavior (type/element_id are never dropped)."""
+    uploader.upload_config = WeaviateUploaderConfig(
+        collection="MyColl", auto_schema=False, flatten_metadata=False
+    )
+    mock_client = _make_run_data_client()
+    connection_config.set_mock_client(mock_client)
+    monkeypatch.setattr(uploader, "delete_by_record_id", MagicMock())
+
+    uploader.run_data(
+        data=[{"type": "Title", "element_id": "e1", "text": "x", "embeddings": [0.1]}],
+        file_data=file_data,
+    )
+
+    batch_client = _batch_client_from(mock_client)
+    batch_client.add_object.assert_called_once_with(
+        collection="MyColl",
+        properties={"type": "Title", "element_id": "e1", "text": "x"},
+        vector=[0.1],
+    )
+    # No schema is fetched in non-flatten mode, regardless of auto_schema.
+    mock_client.collections.get.return_value.config.get.assert_not_called()
