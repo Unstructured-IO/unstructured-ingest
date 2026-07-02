@@ -796,6 +796,22 @@ def test_check_for_errors_with_failures_raises_write_error(
     assert "uuid-2" in caplog.text
 
 
+def test_check_for_errors_surfaces_reason_and_auto_schema_hint(uploader: WeaviateUploader):
+    """The raised error includes the Weaviate failure reason, and when auto_schema is on
+    it points at AUTOSCHEMA_ENABLED as the likely cause (the cluster refusing to
+    auto-create the collection)."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=True)
+    mock_client = MagicMock()
+    mock_client.batch.failed_objects = [
+        MagicMock(original_uuid="uuid-1", message='class "MyColl" not found in schema'),
+    ]
+
+    with pytest.raises(WriteError) as excinfo:
+        uploader.check_for_errors(client=mock_client)
+    assert "not found in schema" in str(excinfo.value)
+    assert "AUTOSCHEMA_ENABLED" in str(excinfo.value)
+
+
 # ---------------------------------------------------------------------------
 # Uploader — run_data integration
 # ---------------------------------------------------------------------------

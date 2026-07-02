@@ -400,12 +400,22 @@ class WeaviateUploader(VectorDBUploader, ABC):
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects
-        if failed_uploads:
-            for failure in failed_uploads:
-                logger.error(
-                    f"Failed to upload object with id {failure.original_uuid}: {failure.message}"
-                )
-            raise WriteError("Failed to upload to weaviate")
+        if not failed_uploads:
+            return
+        for failure in failed_uploads:
+            logger.error(
+                f"Failed to upload object with id {failure.original_uuid}: {failure.message}"
+            )
+        reasons = "; ".join(sorted({str(failure.message) for failure in failed_uploads}))
+        message = f"Failed to upload to weaviate: {reasons}"
+        if self.upload_config.auto_schema:
+            # The most common cause with auto_schema is the cluster refusing to
+            # auto-create the collection/columns because AUTOSCHEMA_ENABLED is off.
+            message += (
+                " (auto_schema=true requires AUTOSCHEMA_ENABLED=true in Weaviate; if it is "
+                "disabled, pre-create the collection and set auto_schema=false)"
+            )
+        raise WriteError(message)
 
     @requires_dependencies(["weaviate"], extras="weaviate")
     def delete_by_record_id(self, client: "WeaviateClient", file_data: FileData) -> None:
