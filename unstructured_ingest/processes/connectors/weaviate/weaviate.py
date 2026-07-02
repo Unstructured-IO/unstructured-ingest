@@ -62,7 +62,8 @@ class WeaviateUploadStagerConfig(UploadStagerConfig):
         default=False,
         description=(
             "Flatten nested metadata into top-level properties "
-            "(e.g. metadata.data_source.version -> data_source_version)."
+            "(e.g. metadata.data_source.version -> data_source_version). "
+            "Requires pre-existing collection if auto_schema is disabled."
         ),
     )
 
