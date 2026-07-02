@@ -1,3 +1,9 @@
+## [1.6.24]
+
+### Fixes
+
+- **fix(slack): group channel messages into stable per-UTC-day packages for incremental sync.** The Slack indexer now emits one conversation package per channel per UTC day with a stable identifier derived from channel and day. `metadata.version` tracks the newest activity in the package (new messages, thread replies via `latest_reply`, edits via `edited.ts`) so re-runs update in place instead of duplicating documents.
+
 ## [1.6.23]
 
 ### Fixes
