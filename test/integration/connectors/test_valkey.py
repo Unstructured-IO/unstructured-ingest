@@ -839,3 +839,114 @@ def test_valkey_destination_reingestion_deletes_stale(tmp_path: Path):
 
     elements = _run_async(run())
     _cleanup([f"{key_prefix}{e['element_id']}" for e in elements], index_name)
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_uri_scheme_validation():
+    """Test that invalid URI schemes are rejected when connecting."""
+    config = ValkeyConnectionConfig(
+        access_config=ValkeyAccessConfig(uri="vakeys://myhost:6379"),
+    )
+    uploader = ValkeyUploader(
+        connection_config=config,
+        upload_config=ValkeyUploaderConfig(),
+    )
+    with pytest.raises(Exception, match="not recognized"):
+        uploader.precheck()
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_uri_valid_schemes():
+    """Test that all valid URI schemes are accepted during param resolution."""
+    for scheme in ["valkey", "valkeys", "redis", "rediss"]:
+        config = ValkeyConnectionConfig(
+            access_config=ValkeyAccessConfig(uri=f"{scheme}://myhost:6379"),
+        )
+        # Should not raise during param resolution
+        host, port, password, use_tls = config._resolve_connection_params()
+        assert host == "myhost"
+        assert port == 6379
+        if scheme in ("valkeys", "rediss"):
+            assert use_tls is True
+        else:
+            assert use_tls is False
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_distance_metric_validation():
+    """Test that invalid distance_metric values are rejected by pydantic."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        ValkeyUploaderConfig(distance_metric="EUCLIDEAN")
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_distance_metric_valid():
+    """Test that valid distance_metric values are accepted."""
+    for metric in ["COSINE", "L2", "IP"]:
+        config = ValkeyUploaderConfig(distance_metric=metric)
+        assert config.distance_metric == metric
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_atomic_hset_expire(upload_file: Path, tmp_path: Path):
+    """Test that TTL is applied atomically via individual write path (index active).
+
+    Verifies that the atomic Batch(is_atomic=True) for HSET+EXPIRE works correctly
+    on the individual write path (when index already exists).
+    """
+    key_prefix = "test:atomic_ttl:"
+    index_name = "test_atomic_ttl_index"
+
+    # Clean any leftover state
+    _cleanup(
+        [f"{key_prefix}abc_atomic"],
+        index_name,
+    )
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix=key_prefix,
+                index_name=index_name,
+                ttl_seconds=7200,
+            ),
+        )
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="atomic-test-record",
+        )
+
+        elements = [
+            {"element_id": "abc_atomic", "type": "Text", "text": "atomic test", "embeddings": [0.5] * 384},
+        ]
+
+        # First upload: creates index via batch path
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+        # Second upload: hits individual path (index exists), uses atomic HSET+EXPIRE
+        await uploader.run_data_async(data=elements, file_data=file_data)
+
+        # Verify TTL was applied atomically
+        client = await get_test_client()
+        try:
+            key = f"{key_prefix}abc_atomic"
+            ttl = await client.ttl(key)
+            assert ttl > 0, f"Expected TTL > 0 (atomic HSET+EXPIRE), got {ttl}"
+            # TTL should be close to 7200 (just written)
+            assert ttl > 7000, f"TTL {ttl} is too low — expected ~7200"
+        finally:
+            await client.close()
+
+    _run_async(run())
+    _cleanup([f"{key_prefix}abc_atomic"], index_name)

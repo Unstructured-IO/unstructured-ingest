@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Literal, Optional
 
 import numpy as np
 from pydantic import Field, Secret, model_validator
@@ -64,6 +64,12 @@ class ValkeyConnectionConfig(ConnectionConfig):
             parsed = urlparse(access_config.uri)
             if not parsed.hostname:
                 raise ValueError("URI is missing a hostname")
+            valid_schemes = ("valkey", "valkeys", "redis", "rediss")
+            if parsed.scheme not in valid_schemes:
+                raise ValueError(
+                    f"URI scheme '{parsed.scheme}' is not recognized. "
+                    f"Expected one of: {', '.join(valid_schemes)}"
+                )
             return (
                 parsed.hostname,
                 parsed.port or 6379,
@@ -151,7 +157,7 @@ class ValkeyUploaderConfig(UploaderConfig):
     ttl_seconds: Optional[int] = Field(
         default=None, description="Optional TTL in seconds for uploaded keys."
     )
-    distance_metric: str = Field(
+    distance_metric: Literal["COSINE", "L2", "IP"] = Field(
         default="COSINE",
         description="Distance metric for vector search. Options: COSINE, L2, IP.",
     )
@@ -320,8 +326,11 @@ class ValkeyUploader(VectorDBUploader):
             # Warn if there are more matches than we deleted (>10k chunks per file)
             if total > limit:
                 logger.warning(
-                    f"Record '{file_data.identifier}' has {total} existing keys but only "
-                    f"{limit} were deleted. Re-run upload to clean remaining orphans."
+                    "Record %r has %d existing keys; deleted only the first %d. "
+                    "Remaining keys require another cleanup pass.",
+                    file_data.identifier,
+                    total,
+                    limit,
                 )
         except RequestError as e:
             if "no such index" in str(e).lower():
@@ -481,17 +490,27 @@ class ValkeyUploader(VectorDBUploader):
     async def _write_individual(
         self, client, batch: list[dict], file_data: FileData, vector_length: int | None = None
     ) -> None:
-        """Write elements one at a time (used when index is active)."""
+        """Write elements one at a time (used when index is active).
+
+        When TTL is configured, each element is written as an atomic 2-command
+        Batch (HSET + EXPIRE) to prevent keys without TTL on partial failure.
+        """
+        from glide import Batch
+
         try:
             for element in batch:
                 element_id = self._validate_element_id(element)
                 key = f"{self.upload_config.key_prefix}{element_id}"
                 fields = self._build_fields(element, element_id, file_data, expected_dim=vector_length)
 
-                await client.hset(key, fields)
-
                 if self.upload_config.ttl_seconds:
-                    await client.expire(key, self.upload_config.ttl_seconds)
+                    # Atomic HSET + EXPIRE to prevent TTL-less keys on crash
+                    mini_batch = Batch(is_atomic=True)
+                    mini_batch.hset(key, fields)
+                    mini_batch.expire(key, self.upload_config.ttl_seconds)
+                    await client.exec(mini_batch, raise_on_error=True)
+                else:
+                    await client.hset(key, fields)
         except Exception as e:
             raise self._map_glide_error(e) from e
 
