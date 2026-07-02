@@ -66,6 +66,17 @@ class WeaviateUploadStagerConfig(UploadStagerConfig):
             "Requires pre-existing collection if auto_schema is disabled."
         ),
     )
+    auto_schema: bool = Field(
+        default=False,
+        description=(
+            "Rely on Weaviate's auto-schema to build the collection and its "
+            "properties from the uploaded objects. When true, the collection "
+            "and its properties are created automatically. "
+            "When false, the collection must already exist and each "
+            "object is conformed to it (unknown properties are dropped, missing "
+            "ones set to null). Requires AUTOSCHEMA_ENABLED=true in Weaviate."
+        ),
+    )
 
 
 @dataclass
@@ -91,9 +102,13 @@ class WeaviateUploadStager(UploadStager):
         working_data = data.copy()
 
         if self.upload_stager_config.flatten_metadata:
-            # Pure flatten: no opinionated transforms. User owns the schema and
-            # declares types matching raw values (e.g. OBJECT_ARRAY for list[dict]
-            # fields like links, permissions_data, regex_metadata_<pattern>).
+            if self.upload_stager_config.auto_schema:
+                # auto_schema: Weaviate infers each column's type from the values.
+                # Apply normalization as the non-flatten path.
+                self._conform_metadata_values(working_data)
+            # else: pure flatten — the user owns the schema and declares types
+            # matching the raw values (e.g. OBJECT_ARRAY for list[dict] fields
+            # like links, permissions_data, regex_metadata_<pattern>).
             metadata = working_data.pop("metadata", {})
             working_data.update(
                 flatten_dict(
@@ -106,6 +121,14 @@ class WeaviateUploadStager(UploadStager):
             working_data[RECORD_ID_LABEL] = file_data.identifier
             return working_data
 
+        self._conform_metadata_values(working_data)
+        working_data[RECORD_ID_LABEL] = file_data.identifier
+        return working_data
+
+    def _conform_metadata_values(self, working_data: dict) -> None:
+        """Normalize nested metadata values into Weaviate-typeable forms in place:
+        stringify dicts / 2-D arrays / list[dict] fields that have no native scalar
+        type, format dates as RFC3339, and cast version/page_number to strings."""
         # Dict as string formatting
         if (
             record_locator := working_data.get("metadata", {})
@@ -181,9 +204,6 @@ class WeaviateUploadStager(UploadStager):
 
         if regex_metadata := working_data.get("metadata", {}).get("regex_metadata"):
             working_data["metadata"]["regex_metadata"] = str(json.dumps(regex_metadata))
-
-        working_data[RECORD_ID_LABEL] = file_data.identifier
-        return working_data
 
 
 class WeaviateUploaderConfig(UploaderConfig):

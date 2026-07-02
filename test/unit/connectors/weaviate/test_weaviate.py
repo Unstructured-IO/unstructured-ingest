@@ -221,6 +221,39 @@ def test_conform_dict_flatten_drops_none_metadata_values(file_data: FileData):
     assert "sent_from" not in out
 
 
+def test_conform_dict_flatten_auto_schema_normalizes_then_flattens(file_data: FileData):
+    """With auto_schema, flatten mode applies the same value normalization as the
+    non-flatten path (stringify 2-D arrays / dicts / list[dict], format dates, cast
+    version/page_number) BEFORE flattening, so every value is Weaviate-typeable —
+    unlike pure flatten which leaves e.g. coordinates.points as a 2-D array that
+    Weaviate cannot type."""
+    stager = WeaviateUploadStager(
+        upload_stager_config=WeaviateUploadStagerConfig(flatten_metadata=True, auto_schema=True)
+    )
+    out = stager.conform_dict(_sample_element(), file_data=file_data)
+
+    assert "metadata" not in out  # still flattened to top level
+
+    # 2-D array / dict / list[dict] fields become strings, not raw structures
+    assert out["coordinates_points"] == "[[0, 0], [612, 0], [612, 792], [0, 792]]"
+    assert isinstance(out["data_source_permissions_data"], str)
+    assert isinstance(out["links"], str)
+    assert isinstance(out["regex_metadata"], str)
+
+    # record_locator collapses to a single string column, not proliferated sub-keys
+    assert isinstance(out["data_source_record_locator"], str)
+    assert "data_source_record_locator_protocol" not in out
+
+    # scalars cast to strings; dates formatted RFC3339
+    assert out["data_source_version"] == "12345"
+    assert out["page_number"] == "1"
+    assert out["last_modified"].endswith("Z") and "T" in out["last_modified"]
+
+    # plain 1-D arrays remain arrays (Weaviate text[])
+    assert out["languages"] == ["eng"]
+    assert out["record_id"] == "rec-123"
+
+
 def test_conform_to_schema_drops_unknown_and_fills_missing():
     schema_props = {"record_id", "text", "filename", "languages", "page_number"}
     row = {
