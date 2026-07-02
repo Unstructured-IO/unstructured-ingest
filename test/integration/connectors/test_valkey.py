@@ -392,11 +392,25 @@ def test_valkey_destination_incremental_upload(upload_file: Path, tmp_path: Path
 
         # First upload: first half of elements
         first_half = elements[: len(elements) // 2]
-        await uploader.run_data_async(data=first_half, file_data=file_data)
+        file_data_1 = FileData(
+            source_identifiers=SourceIdentifiers(
+                fullpath=upload_file.name, filename=upload_file.name
+            ),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock-file-data-part1",
+        )
+        await uploader.run_data_async(data=first_half, file_data=file_data_1)
 
-        # Second upload: second half (different data, same index)
+        # Second upload: second half (different source document, same index)
         second_half = elements[len(elements) // 2 :]
-        await uploader.run_data_async(data=second_half, file_data=file_data)
+        file_data_2 = FileData(
+            source_identifiers=SourceIdentifiers(
+                fullpath=upload_file.name, filename=upload_file.name
+            ),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock-file-data-part2",
+        )
+        await uploader.run_data_async(data=second_half, file_data=file_data_2)
 
         # Verify all elements are stored
         client = await get_test_client()
@@ -751,3 +765,77 @@ def test_map_glide_error_auth():
     exc = glide.RequestError("NOAUTH Authentication required")
     result = ValkeyUploader._map_glide_error(exc)
     assert isinstance(result, UserAuthError)
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_reingestion_deletes_stale(tmp_path: Path):
+    """Test that re-ingesting a document with different chunks deletes stale keys."""
+    key_prefix = "test:reingest:"
+    index_name = "test_reingest_index"
+
+    # Clean any leftover state from previous test runs
+    _cleanup(
+        [f"{key_prefix}{eid}" for eid in ["chunk_a", "chunk_b", "chunk_c", "chunk_x", "chunk_y"]],
+        index_name,
+    )
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix=key_prefix,
+                index_name=index_name,
+            ),
+        )
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="doc.pdf", filename="doc.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="test-record-123",
+        )
+
+        # First upload: 3 elements
+        elements_v1 = [
+            {"element_id": "chunk_a", "type": "Text", "text": "hello", "embeddings": [0.1] * 384},
+            {"element_id": "chunk_b", "type": "Text", "text": "world", "embeddings": [0.2] * 384},
+            {"element_id": "chunk_c", "type": "Text", "text": "foo", "embeddings": [0.3] * 384},
+        ]
+        await uploader.run_data_async(data=elements_v1, file_data=file_data)
+
+        # Allow index backfill to complete before second upload triggers delete-by-record-id
+        import time
+        time.sleep(1)
+
+        # Second upload: 2 DIFFERENT elements (simulates re-chunking)
+        elements_v2 = [
+            {"element_id": "chunk_x", "type": "Text", "text": "new", "embeddings": [0.4] * 384},
+            {"element_id": "chunk_y", "type": "Text", "text": "data", "embeddings": [0.5] * 384},
+        ]
+        await uploader.run_data_async(data=elements_v2, file_data=file_data)
+
+        # Verify: old chunks (a, b, c) should be GONE, new chunks (x, y) should exist
+        client = await get_test_client()
+        try:
+            for old_id in ["chunk_a", "chunk_b", "chunk_c"]:
+                result = await client.hgetall(f"{key_prefix}{old_id}")
+                assert result is None or len(result) == 0, (
+                    f"Stale key {old_id} still exists after re-ingestion"
+                )
+            for new_id in ["chunk_x", "chunk_y"]:
+                result = await client.hgetall(f"{key_prefix}{new_id}")
+                assert result is not None and len(result) > 0, (
+                    f"New key {new_id} missing after re-ingestion"
+                )
+        finally:
+            await client.close()
+
+        return elements_v2
+
+    elements = _run_async(run())
+    _cleanup([f"{key_prefix}{e['element_id']}" for e in elements], index_name)

@@ -287,28 +287,47 @@ class ValkeyUploader(VectorDBUploader):
         then deletes them. This prevents orphaned chunks when a document
         is re-processed with different chunking (different element_ids).
         """
-        from glide import ft
+        from glide import FtSearchLimit, FtSearchOptions, RequestError, ft
 
         try:
-            # Escape special TAG characters in the identifier
-            safe_id = file_data.identifier.replace("-", "\\-").replace(":", "\\:")
-            query = f"@record_id:{{{safe_id}}}"
-            results = await ft.search(client, self.upload_config.index_name, query)
+            # Escape all RediSearch TAG special characters
+            safe_id = file_data.identifier
+            for ch in r'\-:{}|, "' + r"'@!()[]~*^$><=":
+                safe_id = safe_id.replace(ch, f"\\{ch}")
 
-            # ft.search returns [total_count, key1, fields1, key2, fields2, ...]
-            if results and len(results) > 1:
-                # Extract keys (every other element starting at index 1)
-                keys = [results[i] for i in range(1, len(results), 2)]
-                if keys:
-                    for key in keys:
-                        key_str = key.decode() if isinstance(key, bytes) else key
-                        await client.delete([key_str])
-                    logger.debug(
-                        f"Deleted {len(keys)} existing keys for record '{file_data.identifier}'"
-                    )
-        except Exception as e:
-            # If search fails (e.g., index doesn't exist yet), skip deletion
-            logger.debug(f"Could not delete by record_id (non-fatal): {e}")
+            query = f"@record_id:{{{safe_id}}}"
+            limit = 10000
+            options = FtSearchOptions(limit=FtSearchLimit(offset=0, count=limit))
+            results = await ft.search(client, self.upload_config.index_name, query, options)
+
+            # GLIDE FtSearchResponse: [total_count, {key: {field: value}, ...}]
+            if not results or results[0] == 0:
+                return
+
+            total = results[0]
+            docs = results[1] if len(results) > 1 else {}
+            if isinstance(docs, dict) and docs:
+                keys_to_delete = [
+                    key.decode() if isinstance(key, bytes) else key
+                    for key in docs.keys()
+                ]
+                await client.delete(keys_to_delete)
+                logger.debug(
+                    f"Deleted {len(keys_to_delete)} existing keys for "
+                    f"record '{file_data.identifier}'"
+                )
+
+            # Warn if there are more matches than we deleted (>10k chunks per file)
+            if total > limit:
+                logger.warning(
+                    f"Record '{file_data.identifier}' has {total} existing keys but only "
+                    f"{limit} were deleted. Re-run upload to clean remaining orphans."
+                )
+        except RequestError as e:
+            if "no such index" in str(e).lower():
+                # Index doesn't exist yet, nothing to delete
+                return
+            raise self._map_glide_error(e) from e
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         # Detect vector dimension
