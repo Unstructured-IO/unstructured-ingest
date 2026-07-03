@@ -762,9 +762,10 @@ def test_map_glide_error_auth():
 
     from unstructured_ingest.error import UserAuthError
 
-    exc = glide.RequestError("NOAUTH Authentication required")
-    result = ValkeyUploader._map_glide_error(exc)
-    assert isinstance(result, UserAuthError)
+    for msg in ["NOAUTH Authentication required", "WRONGPASS invalid password", "NOPERM no permission"]:
+        exc = glide.RequestError(msg)
+        result = ValkeyUploader._map_glide_error(exc)
+        assert isinstance(result, UserAuthError), f"Failed for message: {msg}"
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -844,6 +845,8 @@ def test_valkey_destination_reingestion_deletes_stale(tmp_path: Path):
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
 def test_valkey_uri_scheme_validation():
     """Test that invalid URI schemes are rejected when connecting."""
+    from unstructured_ingest.error import DestinationConnectionError
+
     config = ValkeyConnectionConfig(
         access_config=ValkeyAccessConfig(uri="vakeys://myhost:6379"),
     )
@@ -851,7 +854,7 @@ def test_valkey_uri_scheme_validation():
         connection_config=config,
         upload_config=ValkeyUploaderConfig(),
     )
-    with pytest.raises(Exception, match="not recognized"):
+    with pytest.raises(DestinationConnectionError):
         uploader.precheck()
 
 
@@ -950,3 +953,75 @@ def test_valkey_atomic_hset_expire(upload_file: Path, tmp_path: Path):
 
     _run_async(run())
     _cleanup([f"{key_prefix}abc_atomic"], index_name)
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_reingestion_with_path_identifier(tmp_path: Path):
+    """Regression: identifiers with dots/slashes must be escaped in FT.SEARCH tag queries."""
+    key_prefix = "test:pathid:"
+    index_name = "test_pathid_index"
+
+    # Clean any leftover state
+    _cleanup(
+        [f"{key_prefix}{eid}" for eid in ["chunk_old", "chunk_new"]],
+        index_name,
+    )
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix=key_prefix,
+                index_name=index_name,
+            ),
+        )
+
+        # Realistic file path identifier with dots and slashes
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(
+                fullpath="s3://bucket/reports/quarterly.pdf",
+                filename="quarterly.pdf",
+            ),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="s3://bucket/reports/quarterly.pdf",
+        )
+
+        # First upload
+        elements_v1 = [
+            {"element_id": "chunk_old", "type": "Text", "text": "old data", "embeddings": [0.1] * 384},
+        ]
+        await uploader.run_data_async(data=elements_v1, file_data=file_data)
+
+        import time
+        time.sleep(1)  # Allow index backfill
+
+        # Second upload with different chunks (re-ingestion)
+        elements_v2 = [
+            {"element_id": "chunk_new", "type": "Text", "text": "new data", "embeddings": [0.2] * 384},
+        ]
+        await uploader.run_data_async(data=elements_v2, file_data=file_data)
+
+        # Old chunk should be deleted, new chunk should exist
+        client = await get_test_client()
+        try:
+            old_result = await client.hgetall(f"{key_prefix}chunk_old")
+            assert old_result is None or len(old_result) == 0, (
+                "Stale key 'chunk_old' still exists — tag escaping for dots/slashes is broken"
+            )
+            new_result = await client.hgetall(f"{key_prefix}chunk_new")
+            assert new_result is not None and len(new_result) > 0, (
+                "New key 'chunk_new' missing after re-ingestion"
+            )
+        finally:
+            await client.close()
+
+        return elements_v2
+
+    elements = _run_async(run())
+    _cleanup([f"{key_prefix}{e['element_id']}" for e in elements], index_name)

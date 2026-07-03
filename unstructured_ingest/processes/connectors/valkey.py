@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
+import json
+import re
 from typing import Any, AsyncGenerator, Generator, Literal, Optional
 
 import numpy as np
@@ -19,6 +21,10 @@ from unstructured_ingest.utils.data_prep import batch_generator
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
 CONNECTOR_TYPE = "valkey"
+
+# RediSearch TAG query special characters that must be escaped.
+# Includes all tokenizer separators and query-parser metacharacters.
+_TAG_ESCAPE_RE = re.compile(r'([,.<>{}\[\]\\\"\'\`:;!@#$%^&*()\-+=~/| /])')
 
 
 class ValkeyAccessConfig(AccessConfig):
@@ -177,8 +183,11 @@ class ValkeyUploader(VectorDBUploader):
             with self.connection_config.create_sync_client() as client:
                 client.ping()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error("failed to validate connection", exc_info=True)
+            raise DestinationConnectionError(
+                f"failed to validate connection to "
+                f"{self.connection_config.host or 'configured URI'}"
+            )
 
     def _get_distance_metric(self, module):
         """Resolve distance metric enum from config string."""
@@ -297,9 +306,7 @@ class ValkeyUploader(VectorDBUploader):
 
         try:
             # Escape all RediSearch TAG special characters
-            safe_id = file_data.identifier
-            for ch in r'\-:{}|, "' + r"'@!()[]~*^$><=":
-                safe_id = safe_id.replace(ch, f"\\{ch}")
+            safe_id = _TAG_ESCAPE_RE.sub(r'\\\1', file_data.identifier)
 
             query = f"@record_id:{{{safe_id}}}"
             limit = 10000
@@ -339,6 +346,9 @@ class ValkeyUploader(VectorDBUploader):
             raise self._map_glide_error(e) from e
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
+        if not data:
+            return
+
         # Detect vector dimension
         elements_with_embeddings = [e for e in data if e.get("embeddings")]
         vector_length = (
@@ -402,7 +412,7 @@ class ValkeyUploader(VectorDBUploader):
             return DestinationConnectionError(message)
         if isinstance(error, GlideRequestError):
             error_msg = str(error).lower()
-            if error_msg.startswith(("noauth", "wrongpass")):
+            if error_msg.startswith(("noauth", "wrongpass", "noperm")):
                 return UserAuthError(message)
             return WriteError(message)
         return WriteError(message)
@@ -418,6 +428,8 @@ class ValkeyUploader(VectorDBUploader):
             "source_document": file_data.source_identifiers.filename or "",
             "page_number": str(element.get("metadata", {}).get("page_number", 0)),
             "record_id": file_data.identifier,
+            # Store full metadata as JSON for retrieval (not indexed for search)
+            "metadata_json": json.dumps(element.get("metadata", {})),
         }
 
         embeddings = element.get("embeddings")
@@ -492,8 +504,10 @@ class ValkeyUploader(VectorDBUploader):
     ) -> None:
         """Write elements one at a time (used when index is active).
 
-        When TTL is configured, each element is written as an atomic 2-command
-        Batch (HSET + EXPIRE) to prevent keys without TTL on partial failure.
+        Individual writes avoid the HNSW synchronous indexing timeout that affects
+        batch pipelines when an index is active (see valkey-glide #5510, #5704, #6179).
+        When TTL is configured, each element uses an atomic 2-command Batch
+        (HSET + EXPIRE) to prevent keys without TTL on partial failure.
         """
         from glide import Batch
 
