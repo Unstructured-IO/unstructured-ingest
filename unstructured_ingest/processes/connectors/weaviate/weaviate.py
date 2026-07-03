@@ -281,6 +281,22 @@ class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
     _schema_property_names: Optional[set[str]] = field(init=False, repr=False, default=None)
+    _collection_exists: Optional[bool] = field(init=False, repr=False, default=None)
+
+    def _collection_present(self, client: "WeaviateClient") -> bool:
+        """Whether the destination collection exists, memoized across a run.
+
+        The collection name is fixed for an uploader and, once the collection exists,
+        it will not disappear mid-run, so a positive result is cached to avoid
+        repeating the existence round-trip on every upload. A negative result is not
+        cached: in auto_schema mode Weaviate creates the collection on the first
+        insert, so it can flip from absent to present within the same run.
+        """
+        if not self._collection_exists:
+            self._collection_exists = client.collections.exists(
+                name=self.upload_config.collection
+            )
+        return self._collection_exists
 
     def get_schema_property_names(self, client: "WeaviateClient") -> set[str]:
         if self._schema_property_names is None:
@@ -314,7 +330,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
                 if not self.upload_config.collection:
                     return
 
-                if not weaviate_client.collections.exists(name=self.upload_config.collection):
+                if not self._collection_present(weaviate_client):
                     raise DestinationConnectionError(
                         f"Collection '{self.upload_config.collection}' does not exist "
                         "(must be pre-created when auto_schema is disabled)"
@@ -384,7 +400,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
             return False
 
         with self.connection_config.get_client() as weaviate_client:
-            if weaviate_client.collections.exists(name=collection_name):
+            if self._collection_present(weaviate_client):
                 logger.debug(
                     f"Collection with name '{collection_name}' already exists, skipping creation"
                 )
@@ -396,6 +412,8 @@ class WeaviateUploader(VectorDBUploader, ABC):
             collection_config["class"] = collection_name
             logger.info(f"Creating weaviate collection '{collection_name}' with default configs")
             weaviate_client.collections.create_from_dict(config=collection_config)
+            # Keep the memoized existence flag correct now that we've created it.
+            self._collection_exists = True
             return True
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
@@ -449,8 +467,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
             raise ValueError("No collection specified")
 
         with self.connection_config.get_client() as weaviate_client:
-            # Only purge prior records when the collection is already present.
-            if weaviate_client.collections.exists(self.upload_config.collection):
+            if self._collection_present(weaviate_client):
                 self.delete_by_record_id(client=weaviate_client, file_data=file_data)
             schema_props: Optional[set[str]] = None
             if self.upload_config.flatten_metadata and not self.upload_config.auto_schema:

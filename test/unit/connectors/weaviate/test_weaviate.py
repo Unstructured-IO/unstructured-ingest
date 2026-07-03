@@ -420,6 +420,30 @@ def test_get_schema_property_names_caches_across_calls(
     assert mock_client.collections.get.call_count == 1
 
 
+def test_collection_present_caches_positive_result(uploader: WeaviateUploader):
+    """Once the collection is known to exist, the result is cached and the
+    existence round-trip is not repeated on subsequent uploads."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=True)
+    mock_client = MagicMock()
+    mock_client.collections.exists.return_value = True
+
+    assert uploader._collection_present(mock_client) is True
+    assert uploader._collection_present(mock_client) is True
+    mock_client.collections.exists.assert_called_once()
+
+
+def test_collection_present_rechecks_until_it_exists(uploader: WeaviateUploader):
+    """A negative result is not cached — in auto_schema mode Weaviate creates the
+    collection on first insert, so it can flip from absent to present mid-run."""
+    uploader.upload_config = WeaviateUploaderConfig(collection="MyColl", auto_schema=True)
+    mock_client = MagicMock()
+    mock_client.collections.exists.side_effect = [False, True]
+
+    assert uploader._collection_present(mock_client) is False
+    assert uploader._collection_present(mock_client) is True
+    assert mock_client.collections.exists.call_count == 2
+
+
 # ---------------------------------------------------------------------------
 # Stager — nested (default) mode: deeper coverage of every transform branch
 # ---------------------------------------------------------------------------
