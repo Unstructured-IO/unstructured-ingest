@@ -1,3 +1,5 @@
+import hashlib
+from datetime import datetime, timezone
 from unittest.mock import Mock
 
 import pytest
@@ -21,6 +23,12 @@ from unstructured_ingest.processes.connectors.slack import (
     _token_kind,
 )
 
+CHANNEL = "C123"
+DAY_1 = datetime(2024, 3, 9, tzinfo=timezone.utc)
+DAY_2 = datetime(2024, 3, 10, tzinfo=timezone.utc)
+BOT_TOKEN = "xoxb-bot"
+USER_TOKEN = "xoxp-user"
+
 
 def test_token_kind_user_prefix():
     assert _token_kind("xoxp-12345") == "user"
@@ -32,6 +40,51 @@ def test_token_kind_bot_prefix():
 
 def test_token_kind_unknown_prefix_is_bot():
     assert _token_kind("xoxa-12345") == "bot"
+
+
+def _ts(day: datetime, *, hours: int = 0, minutes: int = 0, micro: int = 0) -> str:
+    """Build a Slack timestamp string on a specific UTC day."""
+    seconds = int(day.timestamp()) + hours * 3600 + minutes * 60
+    return f"{seconds}.{micro:06d}"
+
+
+def _day_str(day: datetime) -> str:
+    return day.strftime("%Y-%m-%d")
+
+
+def _expected_conversation_identifier(channel: str, day: datetime) -> str:
+    return hashlib.sha256(f"{channel}-{_day_str(day)}".encode("utf-8")).hexdigest()
+
+
+def _run_indexer(
+    messages: list[dict],
+    channels: list[str] | None = None,
+    *,
+    pages: list[list[dict]] | None = None,
+) -> list[FileData]:
+    client = Mock()
+    if pages is not None:
+        client.conversations_history.return_value = [{"messages": page} for page in pages]
+    else:
+        client.conversations_history.return_value = [{"messages": messages}]
+    client.conversations_join.return_value = {"ok": True}
+    client.auth_test.return_value = Mock(headers={})
+    client.chat_getPermalink.return_value = {
+        "ok": True,
+        "permalink": "https://slack.test/archives/C123/p1",
+    }
+    connection_config = Mock()
+    connection_config.get_client.return_value = client
+    connection_config.access_config.get_secret_value.return_value.token = BOT_TOKEN
+    indexer = SlackIndexer(
+        index_config=SlackIndexerConfig(channels=channels or [CHANNEL]),
+        connection_config=connection_config,
+    )
+    return list(indexer.run())
+
+
+def _conversations(file_data: list[FileData]) -> list[FileData]:
+    return [fd for fd in file_data if fd.source_identifiers.filename.endswith(".xml")]
 
 
 def test_slack_access_config_accepts_refresh_token():
@@ -49,42 +102,34 @@ def _make_indexer(channels=None):
 
 
 def test_slack_indexer_emits_file_data_for_message_files():
-    client = Mock()
-    client.conversations_history.return_value = [
-        {
-            "messages": [
-                {
-                    "ts": "1710000000.000100",
-                    "text": "Here is the report",
-                    "files": [
-                        {
-                            "id": "F123",
-                            "name": "report.pdf",
-                            "url_private_download": "https://files.slack.com/report.pdf",
-                        }
-                    ],
-                }
-            ]
-        }
-    ]
-    client.chat_getPermalink.return_value.get.return_value = None
-    connection_config = Mock()
-    connection_config.get_client.return_value = client
-    indexer = SlackIndexer(
-        index_config=SlackIndexerConfig(channels=["C123"]),
-        connection_config=connection_config,
+    message_ts = "1710000000.000100"
+    file_data = _run_indexer(
+        [
+            {
+                "ts": message_ts,
+                "text": "Here is the report",
+                "files": [
+                    {
+                        "id": "F123",
+                        "name": "report.pdf",
+                        "url_private_download": "https://files.slack.com/report.pdf",
+                    }
+                ],
+            }
+        ]
     )
-
-    file_data = list(indexer.run())
 
     assert len(file_data) == 2
     assert file_data[0].source_identifiers.filename.endswith(".xml")
     slack_file = file_data[1]
+    expected_identifier = hashlib.sha256(f"{CHANNEL}-{message_ts}-F123".encode("utf-8")).hexdigest()
+    assert slack_file.identifier == expected_identifier
     assert slack_file.source_identifiers.filename == "F123-report.pdf"
+    assert slack_file.metadata.version == message_ts
     assert slack_file.metadata.record_locator == {
         "type": "file",
-        "channel": "C123",
-        "message_ts": "1710000000.000100",
+        "channel": CHANNEL,
+        "message_ts": message_ts,
         "file_id": "F123",
     }
 
@@ -100,6 +145,7 @@ def test_messages_to_file_data_includes_permalink():
         messages=[{"ts": "1710000000.000100", "text": "hello"}],
         channel="C123",
         client=client,
+        day="2024-03-09",
     )
 
     assert file_data.metadata.url == (
@@ -120,6 +166,7 @@ def test_messages_to_file_data_uses_oldest_ts_for_permalink():
         ],
         channel="C123",
         client=client,
+        day="2024-03-09",
     )
 
     client.chat_getPermalink.assert_called_once_with(channel="C123", message_ts="1710000001.000000")
@@ -129,6 +176,7 @@ def test_messages_to_file_data_omits_url_without_client():
     file_data = _make_indexer()._messages_to_file_data(
         messages=[{"ts": "1710000000.000100", "text": "hello"}],
         channel="C123",
+        day="2024-03-09",
     )
 
     assert file_data.metadata.url is None
@@ -143,6 +191,7 @@ def test_messages_to_file_data_omits_url_when_permalink_fetch_fails():
         messages=[{"ts": "1710000000.000100", "text": "hello"}],
         channel="C123",
         client=client,
+        day="2024-03-09",
     )
 
     assert file_data.metadata.url is None
@@ -496,7 +545,7 @@ def test_run_joins_channels_before_yielding():
     client.conversations_join.side_effect = _make_slack_api_error("channel_not_found")
     connection_config = Mock()
     connection_config.get_client.return_value = client
-    connection_config.access_config.get_secret_value.return_value.token = "xoxb-bot"
+    connection_config.access_config.get_secret_value.return_value.token = BOT_TOKEN
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -513,7 +562,7 @@ def test_run_does_not_join_channels_with_user_token():
     client.conversations_history.return_value = []
     connection_config = Mock()
     connection_config.get_client.return_value = client
-    connection_config.access_config.get_secret_value.return_value.token = "xoxp-user"
+    connection_config.access_config.get_secret_value.return_value.token = USER_TOKEN
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -529,7 +578,7 @@ def test_precheck_uses_channel_validation():
     client.conversations_join.side_effect = _make_slack_api_error("is_archived")
     connection_config = Mock()
     connection_config.get_client.return_value = client
-    connection_config.access_config.get_secret_value.return_value.token = "xoxb-bot"
+    connection_config.access_config.get_secret_value.return_value.token = BOT_TOKEN
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -544,7 +593,7 @@ def test_precheck_user_token_does_not_join():
     client.conversations_history.return_value = [{"messages": []}]
     connection_config = Mock()
     connection_config.get_client.return_value = client
-    connection_config.access_config.get_secret_value.return_value.token = "xoxp-user"
+    connection_config.access_config.get_secret_value.return_value.token = USER_TOKEN
     indexer = SlackIndexer(
         index_config=SlackIndexerConfig(channels=["C1"]),
         connection_config=connection_config,
@@ -553,6 +602,168 @@ def test_precheck_user_token_does_not_join():
     indexer.precheck()
 
     client.conversations_join.assert_not_called()
+
+
+def test_slack_same_day_new_top_level_message_keeps_identifier_and_bumps_version():
+    """Same-day messages collapse into one package; new messages keep id and bump version."""
+    first_run = _conversations(_run_indexer([{"ts": _ts(DAY_1, hours=1)}]))
+    assert len(first_run) == 1
+    original = first_run[0]
+
+    second_run = _conversations(
+        _run_indexer(
+            [
+                {"ts": _ts(DAY_1, hours=1)},
+                {"ts": _ts(DAY_1, hours=9)},
+            ]
+        )
+    )
+    assert len(second_run) == 1
+    updated = second_run[0]
+
+    # Same identifier => updates in place (no duplicate document).
+    assert updated.identifier == original.identifier
+    assert updated.identifier == _expected_conversation_identifier(CHANNEL, DAY_1)
+    assert updated.metadata.record_locator == {
+        "channel": CHANNEL,
+        "day": _day_str(DAY_1),
+        "oldest": _ts(DAY_1, hours=1),
+        "latest": _ts(DAY_1, hours=9),
+    }
+    # Version/date_modified track the newest activity; date_created is the oldest message.
+    assert original.metadata.version == _ts(DAY_1, hours=1)
+    assert updated.metadata.version == _ts(DAY_1, hours=9)
+    assert updated.metadata.date_modified == _ts(DAY_1, hours=9)
+    assert updated.metadata.date_created == _ts(DAY_1, hours=1)
+
+
+def test_slack_indexer_merges_paginated_history_into_one_package_per_day():
+    """Messages across conversations.history pages collapse into a single day package."""
+    conversations = _conversations(
+        _run_indexer(
+            [],
+            pages=[
+                [{"ts": _ts(DAY_1, hours=1)}],
+                [{"ts": _ts(DAY_1, hours=5)}],
+            ],
+        )
+    )
+
+    assert len(conversations) == 1
+    conversation = conversations[0]
+    assert conversation.identifier == _expected_conversation_identifier(CHANNEL, DAY_1)
+    assert conversation.metadata.record_locator == {
+        "channel": CHANNEL,
+        "day": _day_str(DAY_1),
+        "oldest": _ts(DAY_1, hours=1),
+        "latest": _ts(DAY_1, hours=5),
+    }
+    assert conversation.metadata.version == _ts(DAY_1, hours=5)
+
+
+def test_slack_reply_to_old_day_thread_keeps_identifier_and_bumps_version():
+    """A reply to an old day's thread keeps that day's identifier and bumps version via
+    latest_reply, even when the reply itself lands on a later day."""
+    root_ts = _ts(DAY_1, hours=2)
+    before = _conversations(_run_indexer([{"ts": root_ts, "thread_ts": root_ts}]))
+    assert len(before) == 1
+    original = before[0]
+    assert original.metadata.version == root_ts
+
+    # A reply arrives on DAY_2 but the thread root is still on DAY_1.
+    reply_ts = _ts(DAY_2, hours=3)
+    after = _conversations(
+        _run_indexer(
+            [
+                {
+                    "ts": root_ts,
+                    "thread_ts": root_ts,
+                    "latest_reply": reply_ts,
+                    "reply_count": 1,
+                }
+            ]
+        )
+    )
+    assert len(after) == 1
+    updated = after[0]
+
+    # Still pinned to DAY_1's identifier (the root's day), not DAY_2.
+    assert updated.identifier == original.identifier
+    assert updated.identifier == _expected_conversation_identifier(CHANNEL, DAY_1)
+    assert updated.metadata.record_locator["day"] == _day_str(DAY_1)
+    # Version detected the reply cheaply via latest_reply on the parent.
+    assert updated.metadata.version == reply_ts
+    assert updated.metadata.date_modified == reply_ts
+
+
+def test_slack_edited_message_bumps_version_via_edited_ts():
+    """An edited message bumps the package version via edited.ts."""
+    root_ts = _ts(DAY_1, hours=2)
+    edited_ts = _ts(DAY_1, hours=6)
+    conversations = _conversations(
+        _run_indexer([{"ts": root_ts, "edited": {"user": "U1", "ts": edited_ts}}])
+    )
+
+    assert len(conversations) == 1
+    assert conversations[0].metadata.version == edited_ts
+
+
+def test_slack_new_day_creates_new_identifier():
+    """Messages on a new UTC day create a separate package with a new identifier."""
+    conversations = _conversations(
+        _run_indexer(
+            [
+                {"ts": _ts(DAY_1, hours=1)},
+                {"ts": _ts(DAY_2, hours=1)},
+            ]
+        )
+    )
+
+    assert len(conversations) == 2
+    identifiers = {conversation.identifier for conversation in conversations}
+    assert identifiers == {
+        _expected_conversation_identifier(CHANNEL, DAY_1),
+        _expected_conversation_identifier(CHANNEL, DAY_2),
+    }
+
+
+def test_message_day_from_ts():
+    assert SlackIndexer._message_day({"ts": _ts(DAY_1, hours=3)}) == _day_str(DAY_1)
+
+
+def test_message_day_prefers_thread_ts():
+    root = _ts(DAY_1, hours=2)
+    reply = _ts(DAY_2, hours=3)
+    assert SlackIndexer._message_day({"ts": reply, "thread_ts": root}) == _day_str(DAY_1)
+
+
+def test_message_day_returns_none_without_ts():
+    assert SlackIndexer._message_day({}) is None
+
+
+def test_group_messages_by_day_sorts_days_chronologically():
+    groups = _make_indexer()._group_messages_by_day(
+        [
+            {"ts": _ts(DAY_2, hours=1)},
+            {"ts": _ts(DAY_1, hours=1)},
+        ]
+    )
+
+    assert list(groups.keys()) == [_day_str(DAY_1), _day_str(DAY_2)]
+    assert len(groups[_day_str(DAY_1)]) == 1
+    assert len(groups[_day_str(DAY_2)]) == 1
+
+
+def test_package_version_picks_newest_activity():
+    root = _ts(DAY_1, hours=1)
+    reply = _ts(DAY_1, hours=5)
+    edited = _ts(DAY_1, hours=8)
+    assert (
+        SlackIndexer._package_version(
+            [{"ts": root, "latest_reply": reply, "edited": {"ts": edited}}]
+        )
+        == edited
+    )
 
 
 # ---------------------------------------------------------------------------

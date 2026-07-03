@@ -9,7 +9,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator, Literal, Optional
 
@@ -223,40 +223,88 @@ class SlackIndexer(Indexer):
         granted_scopes = self._get_granted_scopes(client)
         token = self.connection_config.access_config.get_secret_value().token
         self._validate_channels(client, _token_kind(token), granted_scopes)
+        oldest = (
+            str(self.index_config.start_date.timestamp())
+            if self.index_config.start_date is not None
+            else None
+        )
+        latest = (
+            str(self.index_config.end_date.timestamp())
+            if self.index_config.end_date is not None
+            else None
+        )
         for channel in self.index_config.channels:
-            messages = []
-            oldest = (
-                str(self.index_config.start_date.timestamp())
-                if self.index_config.start_date is not None
-                else None
-            )
-            latest = (
-                str(self.index_config.end_date.timestamp())
-                if self.index_config.end_date is not None
-                else None
-            )
+            # NOTE: Iterate ALL conversations.history pages so a channel is grouped into stable
+            # per-UTC-day packages regardless of the SDK's internal pagination.
+            messages: list[dict] = []
             for conversation_history in client.conversations_history(
                 channel=channel,
                 oldest=oldest,
                 latest=latest,
                 limit=PAGINATION_LIMIT,
             ):
-                messages = conversation_history.get("messages", [])
-                if messages:
-                    yield self._messages_to_file_data(messages, channel, client)
-                    for file_data in self._message_files_to_file_data(messages, channel):
-                        yield file_data
+                messages.extend(conversation_history.get("messages", []))
+
+            if not messages:
+                continue
+
+            for day, day_messages in self._group_messages_by_day(messages).items():
+                yield self._messages_to_file_data(day_messages, channel, client, day)
+
+            for file_data in self._message_files_to_file_data(messages, channel):
+                yield file_data
+
+    @staticmethod
+    def _message_day(message: dict) -> Optional[str]:
+        # NOTE: Top-level messages are grouped by their own ts-day; thread replies belong to
+        # their ROOT (thread_ts) day. conversations.history only returns parents/standalone
+        # messages, but using thread_ts when present keeps replies pinned to the root's day.
+        day_ts = message.get("thread_ts") or message.get("ts")
+        if not day_ts:
+            return None
+        return datetime.fromtimestamp(float(day_ts), tz=timezone.utc).strftime("%Y-%m-%d")
+
+    def _group_messages_by_day(self, messages: list[dict]) -> dict[str, list[dict]]:
+        packages: dict[str, list[dict]] = defaultdict(list)
+        for message in messages:
+            day = self._message_day(message)
+            if day is None:
+                continue
+            packages[day].append(message)
+        return {day: packages[day] for day in sorted(packages)}
+
+    @staticmethod
+    def _package_version(messages: list[dict]) -> Optional[str]:
+        # NOTE: The newest activity in the package. Includes parent latest_reply and edited.ts
+        # (both returned by conversations.history on the parent) so an old day whose thread gets
+        # a new reply or whose message is edited bumps its version and updates in place.
+        candidates: list[str] = []
+        for message in messages:
+            for value in (
+                message.get("ts"),
+                message.get("latest_reply"),
+                (message.get("edited") or {}).get("ts"),
+            ):
+                if value:
+                    candidates.append(value)
+        if not candidates:
+            return None
+        return max(candidates, key=float)
 
     def _messages_to_file_data(
         self,
         messages: list[dict],
         channel: str,
         client: Optional["WebClient"] = None,
+        day: str = "",
     ) -> FileData:
-        ts_oldest = min((message["ts"] for message in messages), key=lambda m: float(m))
-        ts_newest = max((message["ts"] for message in messages), key=lambda m: float(m))
+        timestamps = [message["ts"] for message in messages if message.get("ts")]
+        ts_oldest = min(timestamps, key=float)
+        ts_latest = max(timestamps, key=float)
+        version = self._package_version(messages)
 
-        identifier_base = f"{channel}-{ts_oldest}-{ts_newest}"
+        # NOTE: Stable across reruns so a modified day UPDATES in place instead of duplicating.
+        identifier_base = f"{channel}-{day}"
         identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
         filename = identifier[:16]
 
@@ -278,13 +326,15 @@ class SlackIndexer(Indexer):
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
                 url=permalink,
+                version=version,
                 date_created=ts_oldest,
-                date_modified=ts_newest,
+                date_modified=version,
                 date_processed=str(time.time()),
                 record_locator={
                     "channel": channel,
+                    "day": day,
                     "oldest": ts_oldest,
-                    "latest": ts_newest,
+                    "latest": ts_latest,
                 },
             ),
             display_name=source_identifiers.fullpath,
@@ -314,6 +364,7 @@ class SlackIndexer(Indexer):
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
                         url=slack_file.get("permalink") or None,
+                        version=message_ts,
                         date_created=(
                             str(slack_file.get("created")) if slack_file.get("created") else None
                         ),
@@ -466,11 +517,12 @@ class SlackDownloader(Downloader):
         messages = []
         async for conversation_history in await client.conversations_history(
             channel=file_data.metadata.record_locator["channel"],
+            # NOTE: oldest/latest bound the indexed message range. The indexer stores the
+            # oldest and newest top-level message timestamps; inclusive=True keeps both ends so
+            # the downloader fetches the exact same set of thread roots the indexer grouped.
             oldest=file_data.metadata.record_locator["oldest"],
             latest=file_data.metadata.record_locator["latest"],
             limit=PAGINATION_LIMIT,
-            # NOTE: In order to get the exact same range of messages as indexer, it provides
-            # timestamps of oldest and newest messages, inclusive=True is necessary to include them
             inclusive=True,
         ):
             messages += conversation_history.get("messages", [])
