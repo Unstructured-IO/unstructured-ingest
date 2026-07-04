@@ -131,7 +131,7 @@ class GcsConnectionConfig(FsspecConnectionConfig):
                 raise UserError(message)
             if http_error_code >= 500:
                 raise ProviderError(message)
-        logger.error(f"({type(e)} from gcs): {e}", exc_info=True)
+        logger.error(f"({type(e).__name__} from gcs)")
         return e
 
 

@@ -131,7 +131,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
         from dropbox.exceptions import AuthError, HttpError, RateLimitError
 
         if not isinstance(e, HttpError):
-            logger.error(f"Unhandled Dropbox exception: {repr(e)}", exc_info=True)
+            logger.error(f"Unhandled Dropbox exception: {type(e).__name__}")
             return e
 
         if isinstance(e, AuthError):
@@ -151,7 +151,7 @@ class DropboxConnectionConfig(FsspecConnectionConfig):
             else:
                 return ProviderError(e.body)
 
-        logger.error(f"Unhandled Dropbox HttpError: {repr(e)}", exc_info=True)
+        logger.error(f"Unhandled Dropbox HttpError: {type(e).__name__}")
         return e
 
 

@@ -78,7 +78,7 @@ class GithubConnectionConfig(ConnectionConfig):
             return UserError(message)
         if status_code > 500:
             return ProviderError(message)
-        logger.debug(f"unhandled github error: {e}")
+        logger.debug(f"unhandled github error: {type(e).__name__}")
         return e
 
     def wrap_http_error(self, e: "HTTPError") -> Exception:
@@ -89,8 +89,8 @@ class GithubConnectionConfig(ConnectionConfig):
             return UserError(e.response.text)
         if status_code > 500:
             return ProviderError(e.response.text)
-        logger.debug(f"unhandled http error: {e}")
-        return UnstructuredIngestError(str(e))
+        logger.debug(f"unhandled http error: {type(e).__name__}")
+        return UnstructuredIngestError(type(e).__name__)
 
     @requires_dependencies(["requests"], extras="github")
     def wrap_error(self, e: Exception) -> Exception:
@@ -101,8 +101,8 @@ class GithubConnectionConfig(ConnectionConfig):
             return self.wrap_github_exception(e=e)
         if isinstance(e, HTTPError):
             return self.wrap_http_error(e=e)
-        logger.debug(f"unhandled error: {e}")
-        return UnstructuredIngestError(str(e))
+        logger.debug(f"unhandled error: {type(e).__name__}")
+        return UnstructuredIngestError(type(e).__name__)
 
 
 class GithubIndexerConfig(IndexerConfig):

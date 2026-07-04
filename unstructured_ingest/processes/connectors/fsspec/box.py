@@ -271,7 +271,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
         if isinstance(e, BoxOAuthException):
             return UserAuthError(e.message)
         if not isinstance(e, BoxAPIException):
-            logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
+            logger.error(f"unhandled exception from box ({type(e).__name__})")
             return e
         message = e.message or e
         if error_code_status := e.status:
@@ -280,7 +280,7 @@ class BoxConnectionConfig(FsspecConnectionConfig):
             if error_code_status >= 500:
                 return ProviderError(message)
 
-        logger.error(f"unhandled exception from box ({type(e)}): {e}", exc_info=True)
+        logger.error(f"unhandled exception from box ({type(e).__name__})")
         return e
 
     @requires_dependencies(["boxsdk"], extras="box")
