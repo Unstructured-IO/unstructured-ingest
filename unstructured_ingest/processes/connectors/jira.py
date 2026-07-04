@@ -214,8 +214,8 @@ class JiraIndexer(Indexer):
                 response = client.get_permissions("BROWSE_PROJECTS")
                 permitted = response["permissions"]["BROWSE_PROJECTS"]["havePermission"]
         except Exception as e:
-            logger.error(f"Failed to connect to Jira: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to connect to Jira: {e}")
+            logger.error(f"Failed to connect to Jira: {type(e).__name__}")
+            raise SourceConnectionError(f"Failed to connect to Jira: {type(e).__name__}")
         if not permitted:
             raise ValueError(
                 """The provided user is not permitted to browse projects

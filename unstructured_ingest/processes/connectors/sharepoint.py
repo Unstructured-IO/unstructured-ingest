@@ -177,8 +177,8 @@ class SharepointIndexer(OnedriveIndexer):
                 e, f"SharePoint site {self.connection_config.site}"
             )
         except Exception as e:
-            logger.error(f"Unexpected error during SharePoint precheck: {e}", exc_info=True)
-            raise UserError(f"Failed to validate SharePoint connection: {str(e)}")
+            logger.error(f"Unexpected error during SharePoint precheck: {type(e).__name__}")
+            raise UserError(f"Failed to validate SharePoint connection: {type(e).__name__}")
 
     @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:

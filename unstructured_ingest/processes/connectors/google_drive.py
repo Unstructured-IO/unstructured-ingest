@@ -394,10 +394,9 @@ class GoogleDriveIndexer(Indexer):
 
         except Exception as e:
             logger.error(
-                "Failed to validate Google Drive connection during precheck",
-                exc_info=True,
+                f"Failed to validate Google Drive connection during precheck: {type(e).__name__}"
             )
-            raise SourceConnectionError(f"Precheck failed: {e}")
+            raise SourceConnectionError(f"Precheck failed: {type(e).__name__}")
 
     @staticmethod
     def is_dir(record: dict) -> bool:

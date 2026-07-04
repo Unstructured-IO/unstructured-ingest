@@ -216,8 +216,10 @@ class PineconeUploader(VectorDBUploader):
         except NotFoundException:
             return False
         except Exception as e:
-            logger.error(f"failed to check if pinecone index exists : {e}")
-            raise DestinationConnectionError(f"failed to check if pinecone index exists : {e}")
+            logger.error(f"failed to check if pinecone index exists : {type(e).__name__}")
+            raise DestinationConnectionError(
+                f"failed to check if pinecone index exists : {type(e).__name__}"
+            )
 
     def precheck(self):
         try:
@@ -229,8 +231,8 @@ class PineconeUploader(VectorDBUploader):
             ):
                 raise NotFoundError(f"index {self.connection_config.index_name} does not exist")
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def format_destination_name(self, destination_name: str) -> str:
         # Pinecone naming requirements:

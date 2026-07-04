@@ -208,7 +208,7 @@ class MilvusUploader(Uploader):
 
         except MilvusException as milvus_exception:
             raise DestinationConnectionError(
-                f"failed to precheck Milvus: {str(milvus_exception.message)}"
+                f"failed to precheck Milvus: {type(milvus_exception).__name__}"
             ) from milvus_exception
 
     @contextmanager

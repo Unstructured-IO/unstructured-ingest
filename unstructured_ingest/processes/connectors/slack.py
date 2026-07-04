@@ -457,12 +457,16 @@ class SlackIndexer(Indexer):
         else:
             self._validate_channels_bot(client, granted_scopes)
 
-    @SourceConnectionError.wrap
     def precheck(self) -> None:
-        client = self.connection_config.get_client()
-        granted_scopes = self._get_granted_scopes(client)
-        token = self.connection_config.access_config.get_secret_value().token
-        self._validate_channels(client, _token_kind(token), granted_scopes)
+        try:
+            client = self.connection_config.get_client()
+            granted_scopes = self._get_granted_scopes(client)
+            token = self.connection_config.access_config.get_secret_value().token
+            self._validate_channels(client, _token_kind(token), granted_scopes)
+        except SourceConnectionError:
+            raise
+        except Exception as e:
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}") from e
 
 
 class SlackDownloaderConfig(DownloaderConfig):

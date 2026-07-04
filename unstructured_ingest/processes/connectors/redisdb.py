@@ -154,8 +154,8 @@ class RedisUploader(Uploader):
             with self.connection_config.create_client() as client:
                 client.ping()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     async def run_data_async(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         first_element = data[0]

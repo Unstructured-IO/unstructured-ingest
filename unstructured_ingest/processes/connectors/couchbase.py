@@ -161,8 +161,8 @@ class CouchbaseUploader(Uploader):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
@@ -195,8 +195,8 @@ class CouchbaseIndexer(Indexer):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @requires_dependencies(["couchbase"], extras="couchbase")
     def _get_doc_ids(self) -> List[str]:

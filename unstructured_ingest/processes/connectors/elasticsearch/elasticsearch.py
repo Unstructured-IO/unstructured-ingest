@@ -171,8 +171,8 @@ class ElasticsearchIndexer(Indexer):
                         )
                     )
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_scan(self):
@@ -395,8 +395,8 @@ class ElasticsearchUploader(Uploader):
                         )
                     )
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_parallel_bulk(self):

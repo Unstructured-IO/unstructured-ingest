@@ -172,8 +172,8 @@ class AstraDBIndexer(Indexer):
         try:
             self.get_collection().options()
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def _get_doc_ids(self) -> set[str]:
         """Fetches all document ids in an index"""
@@ -440,8 +440,8 @@ class AstraDBUploader(Uploader):
                     keyspace=self.upload_config.keyspace,
                 )
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def _collection_exists(self, collection_name: str):
         collection = get_astra_collection(
@@ -456,10 +456,14 @@ class AstraDBUploader(Uploader):
         except RuntimeError as e:
             if "not found" in str(e):
                 return False
-            raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
+            raise DestinationConnectionError(
+                f"failed to check if astra collection exists : {type(e).__name__}"
+            )
         except Exception as e:
-            logger.error(f"failed to check if astra collection exists : {e}")
-            raise DestinationConnectionError(f"failed to check if astra collection exists : {e}")
+            logger.error(f"failed to check if astra collection exists : {type(e).__name__}")
+            raise DestinationConnectionError(
+                f"failed to check if astra collection exists : {type(e).__name__}"
+            )
 
     def format_destination_name(self, destination_name: str) -> str:
         # AstraDB collection naming requirements:

@@ -147,8 +147,8 @@ class SalesforceIndexer(Indexer):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def get_file_extension(self, record_type) -> str:
         if record_type == "EmailMessage":

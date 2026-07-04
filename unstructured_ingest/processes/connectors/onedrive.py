@@ -251,8 +251,8 @@ class OnedriveIndexer(Indexer):
                     "{} ({})".format(error, token_resp.get("error_description"))
                 )
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def list_objects_sync(self, folder: DriveItem, recursive: bool) -> list["DriveItem"]:
         drive_items = folder.children.get().execute_query()
@@ -688,8 +688,8 @@ class OnedriveUploader(Uploader):
                 folder = root.create_folder(root_folder).execute_query()
                 logger.info(f"successfully created folder: {folder.name}")
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @requires_dependencies(["office365"], extras="onedrive")
     def run(self, path: Path, file_data: FileData, **kwargs: Any) -> None:

@@ -107,8 +107,8 @@ class KdbaiUploader(Uploader):
         try:
             self.get_database()
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @contextmanager
     def get_database(self) -> Generator["Database", None, None]:

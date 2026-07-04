@@ -180,8 +180,8 @@ class KafkaIndexer(Indexer, ABC):
                     )
                 logger.info(f"successfully checked available topics: {current_topics}")
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
 
 class KafkaDownloaderConfig(DownloaderConfig):
@@ -244,8 +244,8 @@ class KafkaUploader(Uploader, ABC):
                     )
 
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     def produce_batch(self, elements: list[dict]) -> None:
         producer = self.connection_config.get_producer()

@@ -136,8 +136,8 @@ class ChromaUploader(Uploader):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"failed to validate connection: {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @DestinationConnectionError.wrap
     def upsert_batch(self, collection, batch):

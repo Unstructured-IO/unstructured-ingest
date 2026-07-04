@@ -155,8 +155,8 @@ class GitLabIndexer(Indexer):
                     client.projects.get(self.connection_config.repo_path)
 
         except Exception as e:
-            logger.error(f"Failed to validate connection: {e}", exc_info=True)
-            raise SourceConnectionError(f"Failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(f"Failed to validate connection: {type(e).__name__}")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Iterates over the GitLab repository tree and yields file metadata as `FileData` objects.

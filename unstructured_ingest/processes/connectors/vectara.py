@@ -121,8 +121,8 @@ class VectaraUploader(Uploader):
         try:
             self._check_connection_and_corpora()
         except Exception as e:
-            logger.error(f"Failed to validate connection {e}", exc_info=True)
-            raise DestinationConnectionError(f"failed to validate connection: {e}")
+            logger.error(f"Failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
 
     @property
     async def jwt_token_async(self) -> str:

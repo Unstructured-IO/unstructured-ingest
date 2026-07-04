@@ -298,8 +298,8 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                     # Also respects AWS FGAC by checking only the specific index
                     await client.indices.get_alias(index=self.index_config.index_name)
             except Exception as e:
-                logger.error(f"failed to validate connection: {e}", exc_info=True)
-                raise SourceConnectionError(f"failed to validate connection: {e}")
+                logger.error(f"failed to validate connection: {type(e).__name__}")
+                raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
 
         _run_coroutine(_async_precheck)
 
@@ -486,8 +486,10 @@ class OpenSearchUploader(ElasticsearchUploader):
                     # Also respects AWS FGAC by checking only the specific index
                     await client.indices.get_alias(index=self.upload_config.index_name)
             except Exception as e:
-                logger.error(f"failed to validate connection: {e}", exc_info=True)
-                raise DestinationConnectionError(f"failed to validate connection: {e}")
+                logger.error(f"failed to validate connection: {type(e).__name__}")
+                raise DestinationConnectionError(
+                    f"failed to validate connection: {type(e).__name__}"
+                )
 
         _run_coroutine(_async_precheck)
 
