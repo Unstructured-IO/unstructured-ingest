@@ -97,7 +97,13 @@ class GcsAccessConfig(FsspecAccessConfig):
             return
 
         # Case: path to token
-        if Path(self.service_account_key).is_file():
+        try:
+            is_token_file = Path(self.service_account_key).is_file()
+        except OSError:
+            # A value too long/invalid to be a filename is likely raw key material;
+            # never echo it back in the error (OSError includes the full "filename").
+            raise ValueError("Invalid auth token value") from None
+        if is_token_file:
             self.token = self.service_account_key
             return
 
