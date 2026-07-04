@@ -115,7 +115,7 @@ class SharepointIndexer(OnedriveIndexer):
             elif status_code == 404:
                 raise UserError(f"Not found: {context}")
 
-        raise UserError(f"Failed to access {context}: {str(e)}")
+        raise UserError(f"Failed to access {context}: {type(e).__name__}")
 
     def _is_root_path(self, path: str) -> bool:
         """Check if the path represents root access (empty string or legacy default)."""
@@ -141,11 +141,15 @@ class SharepointIndexer(OnedriveIndexer):
                 )
             logger.info(f"SharePoint folder path '{path}' validated successfully")
         except ClientRequestException as e:
-            logger.error(f"Failed to access SharePoint path '{path}': {e}")
+            logger.error(f"Failed to access SharePoint path '{path}': {type(e).__name__}")
             self._handle_client_request_exception(e, f"SharePoint path '{path}'")
         except Exception as e:
-            logger.error(f"Unexpected error accessing SharePoint path '{path}': {e}")
-            raise UserError(f"Failed to validate SharePoint path '{path}': {str(e)}")
+            logger.error(
+                f"Unexpected error accessing SharePoint path '{path}': {type(e).__name__}"
+            )
+            raise UserError(
+                f"Failed to validate SharePoint path '{path}': {type(e).__name__}"
+            )
 
     @requires_dependencies(["office365"], extras="sharepoint")
     def precheck(self) -> None:

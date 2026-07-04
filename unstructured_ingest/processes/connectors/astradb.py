@@ -574,15 +574,19 @@ class AstraDBUploader(Uploader):
                             f"({batch_progress_percentage:.1f}%)")
 
                 except CollectionInsertManyException as e:
-                    logger.error(f"Failed to upload batch {batch_progress_str}: {e}")
-                    raise WriteError(f"AstraDB collection error: {e}") from e
+                    logger.error(f"Failed to upload batch {batch_progress_str}: {type(e).__name__}")
+                    raise WriteError(f"AstraDB collection error: {type(e).__name__}") from e
 
                 except DataAPITimeoutException as e:
-                    logger.error(f"Timeout uploading batch {batch_progress_str}: {e}")
-                    raise TimeoutError(f"AstraDB timeout: {e}") from e
+                    logger.error(
+                        f"Timeout uploading batch {batch_progress_str}: {type(e).__name__}"
+                    )
+                    raise TimeoutError(f"AstraDB timeout: {type(e).__name__}") from e
 
                 except DataAPIHttpException as e:
-                    logger.error(f"HTTP error uploading batch {batch_progress_str}: {e}")
+                    logger.error(
+                        f"HTTP error uploading batch {batch_progress_str}: {type(e).__name__}"
+                    )
                     if (
                         hasattr(e, "response")
                         and e.response is not None
@@ -590,11 +594,11 @@ class AstraDBUploader(Uploader):
                         and e.response.status_code is not None
                         and 400 <= e.response.status_code < 500
                     ):
-                        raise WriteError(f"AstraDB HTTP error: {e}") from e
+                        raise WriteError(f"AstraDB HTTP error: {type(e).__name__}") from e
                     raise
 
                 except Exception as e:
-                    logger.error(f"Failed to upload batch {batch_progress_str}: {e}")
+                    logger.error(f"Failed to upload batch {batch_progress_str}: {type(e).__name__}")
                     raise
 
         await asyncio.gather(
