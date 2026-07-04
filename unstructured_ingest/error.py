@@ -13,6 +13,9 @@ class UnstructuredIngestError(Exception, ABC):
         Provides a wrapper for a function that catches any exception and
         re-raises it as the customer error. If the exception itself is already an instance
         of the custom error, re-raises original error.
+
+        Only the exception type name is interpolated into the wrapped message;
+        original exception text can carry credentials (IR-14).
         """
 
         @wraps(f)
@@ -21,7 +24,7 @@ class UnstructuredIngestError(Exception, ABC):
                 return f(*args, **kwargs)
             except BaseException as error:
                 if not isinstance(error, cls) and not issubclass(type(error), cls):
-                    raise cls(cls.error_string.format(str(error))) from error
+                    raise cls(cls.error_string.format(type(error).__name__)) from error
                 raise
 
         return wrapper

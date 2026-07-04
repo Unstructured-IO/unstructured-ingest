@@ -27,8 +27,11 @@ def test_custom_error_decorator(error_class, exception_type, error_message):
     with pytest.raises(error_class) as context:
         simulate_error()
 
-    expected_error_string = error_class.error_string.format(error_message)
+    # Only the exception type name is interpolated (IR-14): original exception
+    # text can carry credentials and must not leak into the wrapped message.
+    expected_error_string = error_class.error_string.format(exception_type.__name__)
     assert str(context.value) == expected_error_string
+    assert error_message not in str(context.value)
 
 
 # Status code contract — pinned so the deliberate 401 → 422 change in PLU-377

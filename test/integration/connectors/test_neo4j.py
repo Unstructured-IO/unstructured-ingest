@@ -125,24 +125,23 @@ class TestPrecheck:
         configured_uploader.connection_config.access_config.get_secret_value().password = (
             "invalid-password"
         )
-        with pytest.raises(
-            DestinationConnectionError,
-            match="{code: Neo.ClientError.Security.Unauthorized}",
-        ):
+        # Wrapped errors carry only the exception type name (IR-14);
+        # invalid credentials surface as the driver's AuthError.
+        with pytest.raises(DestinationConnectionError, match="AuthError"):
             configured_uploader.precheck()
 
     def test_fails_on_invalid_username(self, configured_uploader: Neo4jUploader):
         configured_uploader.connection_config.username = "invalid-username"
-        with pytest.raises(
-            DestinationConnectionError, match="{code: Neo.ClientError.Security.Unauthorized}"
-        ):
+        with pytest.raises(DestinationConnectionError, match="AuthError"):
             configured_uploader.precheck()
 
     @pytest.mark.parametrize(
         ("uri", "expected_error_msg"),
         [
-            ("neo4j://localhst:7687", "Cannot resolve address"),
-            ("neo4j://localhost:7777", "Unable to retrieve routing information"),
+            # Wrapped errors carry only the exception type name (IR-14);
+            # both unreachable-host cases raise the driver's ServiceUnavailable.
+            ("neo4j://localhst:7687", "ServiceUnavailable"),
+            ("neo4j://localhost:7777", "ServiceUnavailable"),
         ],
     )
     def test_fails_on_invalid_uri(
@@ -154,9 +153,9 @@ class TestPrecheck:
 
     def test_fails_on_invalid_database(self, configured_uploader: Neo4jUploader):
         configured_uploader.connection_config.database = "invalid-database"
-        with pytest.raises(
-            DestinationConnectionError, match="{code: Neo.ClientError.Database.DatabaseNotFound}"
-        ):
+        # DatabaseNotFound is raised as the driver's ClientError; only the
+        # type name appears in the wrapped message (IR-14).
+        with pytest.raises(DestinationConnectionError, match="ClientError"):
             configured_uploader.precheck()
 
 
