@@ -1,8 +1,20 @@
-## [1.6.24]
+## [1.6.26]
 
 ### Fixes
 
 - **fix(FS-2105): populate Confluence creation/modification dates and version at index time.** The Confluence indexer now sets `date_created`, `date_modified`, and `version` from the v2 pages list response so Foundation can store page timestamps and detect page edits on subsequent runs (fixes FS-2107).
+
+## [1.6.25]
+
+### Enhancements
+
+- **feat(weaviate): add `auto_schema` option to the destination connector.** New uploader option that defaults to `false`. When `false`, the connector behaves exactly as before: the collection must already exist (or, in non-flatten mode, is seeded from the default config), and in `flatten_metadata` mode each object is conformed to the existing schema (unknown properties dropped, missing ones set to null). When `true`, the connector skips the schema fetch/conform step and lets Weaviate create the collection and its columns from the uploaded objects on first insert, so a collection does not need to exist up front (requires `AUTOSCHEMA_ENABLED=true` in Weaviate). Combined with `flatten_metadata=true`, this allows dynamic, up-front-unknown metadata to land as top-level columns without a predefined schema.
+
+## [1.6.24]
+
+### Fixes
+
+- **fix(slack): group channel messages into stable per-UTC-day packages for incremental sync.** The Slack indexer now emits one conversation package per channel per UTC day with a stable identifier derived from channel and day. `metadata.version` tracks the newest activity in the package (new messages, thread replies via `latest_reply`, edits via `edited.ts`) so re-runs update in place instead of duplicating documents.
 
 ## [1.6.23]
 
