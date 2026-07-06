@@ -495,11 +495,20 @@ class ValkeyUploader(VectorDBUploader):
             raise self._map_glide_error(e) from e
 
     async def _index_exists(self, client) -> bool:
-        """Check if the FT search index already exists."""
-        from glide import ft
+        """Check if the FT search index already exists.
 
-        indexes = await ft.list(client)
-        return self.upload_config.index_name.encode() in indexes
+        Returns False if the ValkeySearch module is not loaded (plain Valkey),
+        allowing text-only uploads to proceed without the search module.
+        """
+        from glide import RequestError, ft
+
+        try:
+            indexes = await ft.list(client)
+            return self.upload_config.index_name.encode() in indexes
+        except RequestError as e:
+            if "unknown command" in str(e).lower():
+                return False
+            raise self._map_glide_error(e) from e
 
     async def _write_individual(
         self, client, batch: list[dict], file_data: FileData, vector_length: int | None = None
