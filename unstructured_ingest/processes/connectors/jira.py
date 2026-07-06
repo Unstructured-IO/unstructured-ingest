@@ -5,6 +5,7 @@ from pathlib import Path
 from time import time
 from typing import TYPE_CHECKING, Any, Callable, Generator, List, Optional, Union
 
+from dateutil import parser
 from pydantic import BaseModel, Field, Secret
 
 from unstructured_ingest.data_types.file_data import (
@@ -33,6 +34,14 @@ if TYPE_CHECKING:
     from atlassian import Jira
 
 CONNECTOR_TYPE = "jira"
+
+
+def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
+    """Convert an ISO8601 datetime string to a Unix epoch string for FileData metadata."""
+    if iso_date is None:
+        return None
+    return str(parser.parse(iso_date).timestamp())
+
 
 DEFAULT_C_SEP = " " * 5
 DEFAULT_R_SEP = "\n"
@@ -310,8 +319,8 @@ class JiraIndexer(Indexer):
         fields = issue.fields or {}
         metadata = FileDataSourceMetadata(
             date_processed=str(time()),
-            date_created=fields.get("created"),
-            date_modified=fields.get("updated"),
+            date_created=_iso8601_to_epoch_str(fields.get("created")),
+            date_modified=_iso8601_to_epoch_str(fields.get("updated")),
             url=self.connection_config.issue_url(issue.key),
             version=fields.get("updated"),
             record_locator=record_locator,
@@ -451,8 +460,8 @@ class JiraDownloader(Downloader):
         )
 
     def update_file_data(self, file_data: FileData, issue: dict) -> None:
-        file_data.metadata.date_created = issue["fields"]["created"]
-        file_data.metadata.date_modified = issue["fields"]["updated"]
+        file_data.metadata.date_created = _iso8601_to_epoch_str(issue["fields"]["created"])
+        file_data.metadata.date_modified = _iso8601_to_epoch_str(issue["fields"]["updated"])
         file_data.metadata.version = issue["fields"]["updated"]
         file_data.display_name = f"{issue['key']}: {issue['fields']['summary']}"
 
@@ -486,7 +495,7 @@ class JiraDownloader(Downloader):
         new_filedata.identifier = "{}a".format(attachment_dict["id"])
         filename = f"{attachment_dict['filename']}.{attachment_dict['id']}"
         new_filedata.metadata.filesize_bytes = attachment_dict.get("size")
-        new_filedata.metadata.date_created = attachment_dict.get("created")
+        new_filedata.metadata.date_created = _iso8601_to_epoch_str(attachment_dict.get("created"))
         new_filedata.metadata.url = attachment_dict.get("self")
         new_filedata.metadata.record_locator = attachment_record_locator
         full_path = (

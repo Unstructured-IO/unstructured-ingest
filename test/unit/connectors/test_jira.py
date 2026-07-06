@@ -1,4 +1,5 @@
 import pytest
+from dateutil import parser
 
 from unstructured_ingest.error import ValueError
 from unstructured_ingest.processes.connectors.jira import (
@@ -92,8 +93,12 @@ def test_indexer_oauth_file_data_uses_cloud_identity_and_updated_version():
     assert file_data.source_identifiers.fullpath == "cloud-123/ENG/ENG-7.txt"
     assert file_data.metadata.url == "https://example.atlassian.net/browse/ENG-7"
     assert file_data.metadata.version == "2026-05-22T10:00:00.000+0000"
-    assert file_data.metadata.date_created == "2026-05-21T10:00:00.000+0000"
-    assert file_data.metadata.date_modified == "2026-05-22T10:00:00.000+0000"
+    assert file_data.metadata.date_created == str(
+        parser.parse("2026-05-21T10:00:00.000+0000").timestamp()
+    )
+    assert file_data.metadata.date_modified == str(
+        parser.parse("2026-05-22T10:00:00.000+0000").timestamp()
+    )
     assert file_data.metadata.record_locator["cloud_id"] == "cloud-123"
 
 
@@ -116,8 +121,12 @@ def test_indexer_file_data_populates_creation_and_modification_dates():
 
     file_data = indexer._create_file_data_from_issue(issue)
 
-    assert file_data.metadata.date_created == "2026-05-21T10:00:00.000+0000"
-    assert file_data.metadata.date_modified == "2026-05-22T10:00:00.000+0000"
+    assert file_data.metadata.date_created == str(
+        parser.parse("2026-05-21T10:00:00.000+0000").timestamp()
+    )
+    assert file_data.metadata.date_modified == str(
+        parser.parse("2026-05-22T10:00:00.000+0000").timestamp()
+    )
     assert file_data.metadata.version == "2026-05-22T10:00:00.000+0000"
 
 
