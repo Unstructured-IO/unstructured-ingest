@@ -1035,3 +1035,51 @@ def test_valkey_destination_reingestion_with_path_identifier(tmp_path: Path):
 
     elements = _run_async(run())
     _cleanup([f"{key_prefix}{e['element_id']}" for e in elements], index_name)
+
+
+@pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
+def test_valkey_destination_vector_upload_fails_without_search_module():
+    """Test that uploading elements with embeddings raises DestinationConnectionError
+    when the ValkeySearch module is not available (simulated via patching _check_index)."""
+    from unittest.mock import AsyncMock, patch
+
+    from unstructured_ingest.error import DestinationConnectionError
+
+    async def run():
+        uploader = ValkeyUploader(
+            connection_config=ValkeyConnectionConfig(
+                host=VALKEY_TEST_HOST,
+                port=VALKEY_TEST_PORT,
+                ssl=False,
+                access_config=ValkeyAccessConfig(),
+            ),
+            upload_config=ValkeyUploaderConfig(
+                batch_size=10,
+                key_prefix="test:no_module:",
+                index_name="test_no_module_index",
+            ),
+        )
+
+        file_data = FileData(
+            source_identifiers=SourceIdentifiers(fullpath="test.pdf", filename="test.pdf"),
+            connector_type=VALKEY_CONNECTOR_TYPE,
+            identifier="mock-no-module",
+        )
+
+        elements = [
+            {
+                "element_id": "vec_no_mod_1",
+                "type": "NarrativeText",
+                "text": "This has embeddings but no search module.",
+                "embeddings": [0.1] * 384,
+            }
+        ]
+
+        # Patch _check_index to simulate ValkeySearch module not loaded
+        with patch.object(
+            ValkeyUploader, "_check_index", new_callable=AsyncMock, return_value=(False, False)
+        ):
+            await uploader.run_data_async(data=elements, file_data=file_data)
+
+    with pytest.raises(DestinationConnectionError, match="Search module not loaded"):
+        _run_async(run())
