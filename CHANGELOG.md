@@ -1,3 +1,9 @@
+## [1.6.26]
+
+### Fixes
+
+- **fix(security): redact credential-bearing exception details from connector error logging (IR-14).** Connector precheck, upload, and path-validation error paths — and the central `UnstructuredIngestError.wrap` decorator — interpolated caught exception text into logged and raised messages, which could echo credentials (tokens, passwords, DSNs, service-account JSON). These messages now carry only the exception type name, and `exc_info` frame dumps were removed from credential-bearing paths. The GCS connector also no longer echoes raw service-account JSON via `OSError: File name too long` when key material is passed where a filename is expected. Exception classes and control flow are unchanged; only log and error-message payloads were sanitized.
+
 ## [1.6.25]
 
 ### Enhancements
