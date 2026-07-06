@@ -4,7 +4,11 @@ import pytest
 from pydantic import Secret
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    SourceConnectionNetworkError,
+    ValueError,
+)
 from unstructured_ingest.processes.connectors.onedrive import OnedriveIndexer
 from unstructured_ingest.processes.connectors.sharepoint import (
     SharepointAccessConfig,
@@ -173,8 +177,13 @@ def test_fetch_file_fails_after_max_retries(
         "429 Client Error"
     )
 
-    with pytest.raises(Exception, match="429"):
+    # The retried upstream exception is re-raised through the
+    # @SourceConnectionNetworkError.wrap decorator. Post-IR-14 the wrapped
+    # message carries only the exception type name, so assert on the raised
+    # type and confirm the raw upstream text ("429 ...") no longer leaks.
+    with pytest.raises(SourceConnectionNetworkError) as excinfo:
         sharepoint_downloader._fetch_file(file_data)
+    assert "429" not in str(excinfo.value)
 
     expected_calls = sharepoint_downloader.download_config.max_retries
     assert (
@@ -191,8 +200,14 @@ def test_fetch_file_handles_site_not_found_immediately(
         Exception("Site not found")
     )
 
-    with pytest.raises(SourceConnectionError, match="Site not found"):
+    # site-not-found is surfaced via @SourceConnectionNetworkError.wrap (a
+    # SourceConnectionError subclass). Post-IR-14 the wrapped message is the
+    # exception type name only; assert the raised type and confirm the
+    # upstream detail ("Site not found") no longer leaks into the message.
+    with pytest.raises(SourceConnectionError) as excinfo:
         sharepoint_downloader._fetch_file(file_data)
+    assert isinstance(excinfo.value, SourceConnectionNetworkError)
+    assert "Site not found" not in str(excinfo.value)
 
     assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 1
 
