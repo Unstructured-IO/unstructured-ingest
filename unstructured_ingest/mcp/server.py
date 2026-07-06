@@ -50,6 +50,31 @@ def _source_identity(source: str) -> str:
     return name or "transform-output"
 
 
+def _expand_sources(sources: list[str]) -> tuple[list[str], list[dict]]:
+    """Expand any local directory into the .json files under it; pass others through.
+
+    Transform MCP output is commonly a directory of per-document Element JSON, so
+    pointing this tool at that directory ingests every ``*.json`` under it
+    (recursively). URLs and individual file paths pass through unchanged. Returns
+    the work list plus per-source errors for directories that held no JSON.
+    """
+    work: list[str] = []
+    errors: list[dict] = []
+    for source in sources:
+        parsed = urlparse(source)
+        if parsed.scheme in ("", "file"):
+            path = Path(parsed.path if parsed.scheme == "file" else source)
+            if path.is_dir():
+                found = sorted(str(p) for p in path.rglob("*.json"))
+                if found:
+                    work.extend(found)
+                else:
+                    errors.append({"source": source, "error": "no .json files found in directory"})
+                continue
+        work.append(source)
+    return work, errors
+
+
 @mcp.tool
 def load_transform_output(
     sources: list[str],
@@ -64,7 +89,9 @@ def load_transform_output(
 
     Args:
         sources: One or more ``download_url``s from ``get_transform_results``
-            (call it with ``output_format="json"``) or local file paths.
+            (call it with ``output_format="json"``), local file paths, or a
+            local directory — a directory is expanded to every ``*.json`` under
+            it, so you can point this at a whole Transform output folder.
         collection: Target collection. Created on first load and pinned to the
             embedding space used; later loads with a different model are refused.
         embed_policy: ``"auto"`` (default) embeds locally only when elements
@@ -91,9 +118,10 @@ def load_transform_output(
     model = embed_model or cfg.embed_model
     encoder = None  # built lazily and reused across sources that embed locally
     pinned_space: EmbeddingSpace | None = None
-    files: list[dict] = []
 
-    for source in sources:
+    work_items, files = _expand_sources(sources)
+
+    for source in work_items:
         try:
             elements = fetch_elements(source, max_bytes=cfg.max_fetch_bytes)
         except Exception as exc:
