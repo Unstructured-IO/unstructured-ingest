@@ -466,7 +466,11 @@ class SlackIndexer(Indexer):
         except SourceConnectionError:
             raise
         except Exception as e:
-            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}") from e
+            # 'from None' suppresses the provider exception chain so its text
+            # cannot resurface via traceback logging (IR-14).
+            raise SourceConnectionError(
+                f"failed to validate connection: {type(e).__name__}"
+            ) from None
 
 
 class SlackDownloaderConfig(DownloaderConfig):

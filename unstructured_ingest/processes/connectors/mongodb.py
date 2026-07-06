@@ -152,9 +152,14 @@ class MongoDBIndexer(Indexer):
                             collection_name, ", ".join(collection_names)
                         )
                     )
+        except SourceConnectionError:
+            # Preserve our own static missing-database / missing-collection guidance.
+            raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {type(e).__name__}")
-            raise SourceConnectionError(f"Failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(
+                f"Failed to validate connection: {type(e).__name__}"
+            ) from None
 
     def run(self, **kwargs: Any) -> Generator[BatchFileData, None, None]:
         """Generates FileData objects for each document in the MongoDB collection."""
@@ -329,9 +334,14 @@ class MongoDBUploader(Uploader):
                             collection_name, ", ".join(collection_names)
                         )
                     )
+        except DestinationConnectionError:
+            # Preserve our own static missing-database / missing-collection guidance.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {type(e).__name__}")
-            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {type(e).__name__}"
+            ) from None
 
     def can_delete(self, collection: "Collection") -> bool:
         indexed_keys = []

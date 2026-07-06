@@ -143,13 +143,17 @@ class SharepointIndexer(OnedriveIndexer):
         except ClientRequestException as e:
             logger.error(f"Failed to access SharePoint path '{path}': {type(e).__name__}")
             self._handle_client_request_exception(e, f"SharePoint path '{path}'")
+        except UserError:
+            # Preserve our own static "path not found / check access" guidance;
+            # only unexpected exceptions are redacted to the type name.
+            raise
         except Exception as e:
             logger.error(
                 f"Unexpected error accessing SharePoint path '{path}': {type(e).__name__}"
             )
             raise UserError(
                 f"Failed to validate SharePoint path '{path}': {type(e).__name__}"
-            )
+            ) from None
 
     @requires_dependencies(["office365"], extras="sharepoint")
     def precheck(self) -> None:
@@ -180,9 +184,15 @@ class SharepointIndexer(OnedriveIndexer):
             self._handle_client_request_exception(
                 e, f"SharePoint site {self.connection_config.site}"
             )
+        except UserError:
+            # Preserve internally-raised UserError/UserAuthError guidance (missing
+            # folder, forbidden access) before redacting unexpected exceptions.
+            raise
         except Exception as e:
             logger.error(f"Unexpected error during SharePoint precheck: {type(e).__name__}")
-            raise UserError(f"Failed to validate SharePoint connection: {type(e).__name__}")
+            raise UserError(
+                f"Failed to validate SharePoint connection: {type(e).__name__}"
+            ) from None
 
     @requires_dependencies(["office365"], extras="sharepoint")
     async def run_async(self, **kwargs: Any) -> AsyncIterator[FileData]:

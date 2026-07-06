@@ -170,9 +170,14 @@ class ElasticsearchIndexer(Indexer):
                             self.index_config.index_name, ", ".join(indices.keys())
                         )
                     )
+        except SourceConnectionError:
+            # Preserve our own static "index not found" guidance.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {type(e).__name__}")
-            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {type(e).__name__}"
+            ) from None
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_scan(self):
@@ -394,9 +399,14 @@ class ElasticsearchUploader(Uploader):
                             self.upload_config.index_name, ", ".join(indices.keys())
                         )
                     )
+        except DestinationConnectionError:
+            # Preserve our own static "index not found" guidance.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {type(e).__name__}")
-            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {type(e).__name__}"
+            ) from None
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
     def load_parallel_bulk(self):
