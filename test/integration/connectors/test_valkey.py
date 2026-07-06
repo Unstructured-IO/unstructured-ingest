@@ -137,9 +137,11 @@ def test_valkey_destination_upload(upload_file: Path, tmp_path: Path):
         await validate_upload(elements[0], key_prefix)
         return elements
 
-    elements = _run_async(run())
-    keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-    _cleanup(keys, index_name)
+    try:
+        elements = _run_async(run())
+    finally:
+        keys = [f"{key_prefix}{e['element_id']}" for e in json.loads(upload_file.read_text())]
+        _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -162,9 +164,11 @@ def test_valkey_destination_with_ttl(upload_file: Path, tmp_path: Path):
 
         return elements
 
-    elements = _run_async(run())
-    keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-    _cleanup(keys, index_name)
+    try:
+        elements = _run_async(run())
+    finally:
+        keys = [f"{key_prefix}{e['element_id']}" for e in json.loads(upload_file.read_text())]
+        _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -220,9 +224,11 @@ def test_valkey_destination_with_uri(upload_file: Path, tmp_path: Path):
         await validate_upload(elements[0], key_prefix)
         return elements
 
-    elements = _run_async(run())
-    keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-    _cleanup(keys, index_name)
+    try:
+        elements = _run_async(run())
+    finally:
+        keys = [f"{key_prefix}{e['element_id']}" for e in json.loads(upload_file.read_text())]
+        _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -280,11 +286,12 @@ def test_valkey_destination_without_embeddings(upload_file: Path, tmp_path: Path
 
         return elements
 
-    elements = _run_async(run())
-    keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-
-    # Cleanup (no index created for no-embedding path)
-    _run_async(cleanup_keys(keys))
+    try:
+        elements = _run_async(run())
+    finally:
+        keys = [f"{key_prefix}{e['element_id']}" for e in json.loads(upload_file.read_text())]
+        # Cleanup (no index created for no-embedding path)
+        _run_async(cleanup_keys(keys))
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -353,9 +360,11 @@ def test_valkey_destination_idempotent(upload_file: Path, tmp_path: Path):
 
         return elements
 
-    elements = _run_async(run())
-    keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-    _cleanup(keys, index_name)
+    try:
+        elements = _run_async(run())
+    finally:
+        keys = [f"{key_prefix}{e['element_id']}" for e in json.loads(upload_file.read_text())]
+        _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -439,9 +448,11 @@ def test_valkey_destination_incremental_upload(upload_file: Path, tmp_path: Path
 
         return elements
 
-    elements = _run_async(run())
-    keys = [f"{key_prefix}{e['element_id']}" for e in elements]
-    _cleanup(keys, index_name)
+    try:
+        elements = _run_async(run())
+    finally:
+        keys = [f"{key_prefix}{e['element_id']}" for e in json.loads(upload_file.read_text())]
+        _cleanup(keys, index_name)
 
 
 @pytest.mark.tags(VALKEY_CONNECTOR_TYPE, DESTINATION_TAG, NOSQL_TAG)
@@ -810,8 +821,8 @@ def test_valkey_destination_reingestion_deletes_stale(tmp_path: Path):
         await uploader.run_data_async(data=elements_v1, file_data=file_data)
 
         # Allow index backfill to complete before second upload triggers delete-by-record-id
-        import time
-        time.sleep(1)
+        import asyncio
+        await asyncio.sleep(1)
 
         # Second upload: 2 DIFFERENT elements (simulates re-chunking)
         elements_v2 = [
@@ -866,7 +877,7 @@ def test_valkey_uri_valid_schemes():
             access_config=ValkeyAccessConfig(uri=f"{scheme}://myhost:6379"),
         )
         # Should not raise during param resolution
-        host, port, password, use_tls = config._resolve_connection_params()
+        host, port, password, username, use_tls = config._resolve_connection_params()
         assert host == "myhost"
         assert port == 6379
         if scheme in ("valkeys", "rediss"):
@@ -998,8 +1009,7 @@ def test_valkey_destination_reingestion_with_path_identifier(tmp_path: Path):
         ]
         await uploader.run_data_async(data=elements_v1, file_data=file_data)
 
-        import time
-        time.sleep(1)  # Allow index backfill
+        await asyncio.sleep(1)  # Allow index backfill
 
         # Second upload with different chunks (re-ingestion)
         elements_v2 = [

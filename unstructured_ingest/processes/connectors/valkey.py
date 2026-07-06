@@ -60,8 +60,8 @@ class ValkeyConnectionConfig(ConnectionConfig):
                 raise ValueError("Since URI is not specified, ssl cannot be None")
         return self
 
-    def _resolve_connection_params(self) -> tuple[str, int, str | None, bool]:
-        """Parse URI or direct fields into (host, port, password, use_tls)."""
+    def _resolve_connection_params(self) -> tuple[str, int, str | None, str | None, bool]:
+        """Parse URI or direct fields into (host, port, password, username, use_tls)."""
         access_config = self.access_config.get_secret_value()
 
         if access_config.uri:
@@ -76,20 +76,23 @@ class ValkeyConnectionConfig(ConnectionConfig):
                     f"URI scheme '{parsed.scheme}' is not recognized. "
                     f"Expected one of: {', '.join(valid_schemes)}"
                 )
+            # Use URI username as fallback if self.username is not set
+            username = self.username or parsed.username
             return (
                 parsed.hostname,
                 parsed.port or 6379,
                 parsed.password,
+                username,
                 parsed.scheme in ("valkeys", "rediss"),
             )
-        return (self.host, self.port, access_config.password, self.ssl)
+        return (self.host, self.port, access_config.password, self.username, self.ssl)
 
     @requires_dependencies(["glide"], extras="valkey")
     @asynccontextmanager
     async def create_async_client(self) -> AsyncGenerator:
         from glide import GlideClient, GlideClientConfiguration, NodeAddress
 
-        host, port, password, use_tls = self._resolve_connection_params()
+        host, port, password, username, use_tls = self._resolve_connection_params()
 
         config_kwargs = dict(
             addresses=[NodeAddress(host=host, port=port)],
@@ -101,7 +104,6 @@ class ValkeyConnectionConfig(ConnectionConfig):
         if password:
             from glide import ServerCredentials
 
-            username = self.username
             creds = (
                 ServerCredentials(password=password, username=username)
                 if username
@@ -122,7 +124,7 @@ class ValkeyConnectionConfig(ConnectionConfig):
         from glide_sync import GlideClient as SyncGlideClient
         from glide_sync import GlideClientConfiguration, NodeAddress
 
-        host, port, password, use_tls = self._resolve_connection_params()
+        host, port, password, username, use_tls = self._resolve_connection_params()
 
         config_kwargs = dict(
             addresses=[NodeAddress(host, port)],
@@ -134,7 +136,6 @@ class ValkeyConnectionConfig(ConnectionConfig):
         if password:
             from glide_sync import ServerCredentials
 
-            username = self.username
             creds = (
                 ServerCredentials(password=password, username=username)
                 if username
@@ -299,8 +300,8 @@ class ValkeyUploader(VectorDBUploader):
         """Delete all existing keys for this file before re-ingestion.
 
         Uses FT.SEARCH to find keys tagged with file_data.identifier,
-        then deletes them. This prevents orphaned chunks when a document
-        is re-processed with different chunking (different element_ids).
+        then deletes them in a loop until all matches are removed. This prevents
+        orphaned chunks when a document is re-processed with different chunking.
         """
         from glide import FtSearchLimit, FtSearchOptions, RequestError, ft
 
@@ -309,35 +310,36 @@ class ValkeyUploader(VectorDBUploader):
             safe_id = _TAG_ESCAPE_RE.sub(r'\\\1', file_data.identifier)
 
             query = f"@record_id:{{{safe_id}}}"
-            limit = 10000
-            options = FtSearchOptions(limit=FtSearchLimit(offset=0, count=limit))
-            results = await ft.search(client, self.upload_config.index_name, query, options)
+            page_size = 10000
+            total_deleted = 0
 
-            # GLIDE FtSearchResponse: [total_count, {key: {field: value}, ...}]
-            if not results or results[0] == 0:
-                return
+            while True:
+                options = FtSearchOptions(limit=FtSearchLimit(offset=0, count=page_size))
+                results = await ft.search(client, self.upload_config.index_name, query, options)
 
-            total = results[0]
-            docs = results[1] if len(results) > 1 else {}
-            if isinstance(docs, dict) and docs:
+                # GLIDE FtSearchResponse: [total_count, {key: {field: value}, ...}]
+                if not results or results[0] == 0:
+                    break
+
+                docs = results[1] if len(results) > 1 else {}
+                if not isinstance(docs, dict) or not docs:
+                    break
+
                 keys_to_delete = [
                     key.decode() if isinstance(key, bytes) else key
                     for key in docs.keys()
                 ]
                 await client.delete(keys_to_delete)
-                logger.debug(
-                    f"Deleted {len(keys_to_delete)} existing keys for "
-                    f"record '{file_data.identifier}'"
-                )
+                total_deleted += len(keys_to_delete)
 
-            # Warn if there are more matches than we deleted (>10k chunks per file)
-            if total > limit:
-                logger.warning(
-                    "Record %r has %d existing keys; deleted only the first %d. "
-                    "Remaining keys require another cleanup pass.",
-                    file_data.identifier,
-                    total,
-                    limit,
+                # If we got fewer results than page_size, we're done
+                if len(keys_to_delete) < page_size:
+                    break
+
+            if total_deleted > 0:
+                logger.debug(
+                    f"Deleted {total_deleted} existing keys for "
+                    f"record '{file_data.identifier}'"
                 )
         except RequestError as e:
             if "no such index" in str(e).lower():
@@ -361,7 +363,7 @@ class ValkeyUploader(VectorDBUploader):
         )
 
         async with self.connection_config.create_async_client() as client:
-            index_exists = await self._index_exists(client) if vector_length else False
+            index_exists = await self._index_exists(client)
 
             # Delete prior records for this file to prevent orphaned chunks
             if index_exists:

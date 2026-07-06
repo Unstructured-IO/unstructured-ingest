@@ -65,10 +65,10 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
-from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
-from .vectara import vectara_destination_entry
 from .valkey import CONNECTOR_TYPE as VALKEY_CONNECTOR_TYPE
 from .valkey import valkey_destination_entry
+from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
+from .vectara import vectara_destination_entry
 from .zendesk.zendesk import CONNECTOR_TYPE as ZENDESK_CONNECTOR_TYPE
 from .zendesk.zendesk import zendesk_source_entry
 
