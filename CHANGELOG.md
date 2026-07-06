@@ -1,8 +1,20 @@
+## [1.6.27]
+
+### Fixes
+
+- **fix(FS-2106): populate Jira creation and modification dates at index time.** `JiraIndexer._create_file_data_from_issue` only set `version` (from the issue's `updated` timestamp) and never populated `date_created`/`date_modified`, and the indexer field lists omitted `created`. Because the platform detects new and modified records from the indexer's `FileData.metadata`, Jira records carried no creation/modification dates. The indexer now requests the `created` field in `_get_issues_within_projects`, `_get_issues_within_single_board`, and `_get_issues_by_keys`, and sets `metadata.date_created` (from `created`) and `metadata.date_modified` (from `updated`) as Unix epoch strings alongside the existing `version`.
+
+## [1.6.25]
+
+### Enhancements
+
+- **feat(weaviate): add `auto_schema` option to the destination connector.** New uploader option that defaults to `false`. When `false`, the connector behaves exactly as before: the collection must already exist (or, in non-flatten mode, is seeded from the default config), and in `flatten_metadata` mode each object is conformed to the existing schema (unknown properties dropped, missing ones set to null). When `true`, the connector skips the schema fetch/conform step and lets Weaviate create the collection and its columns from the uploaded objects on first insert, so a collection does not need to exist up front (requires `AUTOSCHEMA_ENABLED=true` in Weaviate). Combined with `flatten_metadata=true`, this allows dynamic, up-front-unknown metadata to land as top-level columns without a predefined schema.
+
 ## [1.6.24]
 
 ### Fixes
 
-- **fix(FS-2106): populate Jira creation and modification dates at index time.** `JiraIndexer._create_file_data_from_issue` only set `version` (from the issue's `updated` timestamp) and never populated `date_created`/`date_modified`, and the indexer field lists omitted `created`. Because the platform detects new and modified records from the indexer's `FileData.metadata`, Jira records carried no creation/modification dates. The indexer now requests the `created` field in `_get_issues_within_projects`, `_get_issues_within_single_board`, and `_get_issues_by_keys`, and sets `metadata.date_created` (from `created`) and `metadata.date_modified` (from `updated`) alongside the existing `version`.
+- **fix(slack): group channel messages into stable per-UTC-day packages for incremental sync.** The Slack indexer now emits one conversation package per channel per UTC day with a stable identifier derived from channel and day. `metadata.version` tracks the newest activity in the package (new messages, thread replies via `latest_reply`, edits via `edited.ts`) so re-runs update in place instead of duplicating documents.
 
 ## [1.6.23]
 
