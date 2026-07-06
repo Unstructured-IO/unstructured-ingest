@@ -4,8 +4,9 @@ Runs as a local subprocess of the MCP host (Claude Desktop / Claude Code)
 alongside the remote Transform MCP. The agent parses/chunks/(optionally)embeds
 via Transform, then calls ``load_transform_output`` here with a download_url;
 this server fetches the Element JSON out of band, embeds it locally iff Transform
-did not, and upserts it into a local Chroma collection. ``search`` then embeds a
-query into that collection's own space and returns the nearest chunks.
+did not, and upserts it into a local vector store — Chroma by default, Qdrant or
+pgvector via ``URAG_STORE_BACKEND``. ``search`` then embeds a query into that
+collection's own space and returns the nearest chunks.
 
 The embedding step is the only knob: Transform embeds (passthrough) OR this
 server embeds (local), selected per load. Either way a collection records exactly
@@ -24,20 +25,20 @@ from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.mcp.config import Config
 from unstructured_ingest.mcp.embedding import build_encoder
 from unstructured_ingest.mcp.fetch import fetch_elements
-from unstructured_ingest.mcp.store import ChromaStore, EmbeddingSpace, SpaceMismatch
+from unstructured_ingest.mcp.stores import (
+    EmbeddingSpace,
+    SpaceMismatch,
+    VectorStore,
+    build_store,
+)
 
 mcp = FastMCP("rag-ingest-mcp")
 
 _VALID_POLICIES = ("auto", "passthrough", "local")
 
 
-def _store(cfg: Config) -> ChromaStore:
-    if cfg.store_backend != "chroma":
-        raise ValueError(
-            f"store backend {cfg.store_backend!r} is not wired in this server yet; "
-            "use 'chroma' (LanceDB/Qdrant-local need a pre-provisioned table)."
-        )
-    return ChromaStore(cfg.chroma_path)
+def _store(cfg: Config) -> VectorStore:
+    return build_store(cfg)
 
 
 def _source_identity(source: str) -> str:
@@ -107,7 +108,9 @@ def load_transform_output(
         raised, so one bad URL doesn't sink a batch.
     """
     if embed_policy not in _VALID_POLICIES:
-        return {"error": f"embed_policy must be one of {list(_VALID_POLICIES)}; got {embed_policy!r}"}
+        return {
+            "error": f"embed_policy must be one of {list(_VALID_POLICIES)}; got {embed_policy!r}"
+        }
 
     cfg = Config.from_env()
     try:

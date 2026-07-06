@@ -6,9 +6,10 @@ MCP](https://docs.unstructured.io) output into a queryable **local** RAG corpus.
 Transform MCP does the heavy lifting on the platform — parse → chunk → *(optionally)*
 embed — and hands back Element JSON. This server, running as a subprocess of your
 MCP host, fetches that JSON **out of band**, embeds it locally if it wasn't
-already, upserts it into a local vector store, and serves similarity search. It
-reuses `unstructured-ingest`'s own embedders and Chroma connector, so the write
-path is identical to the ingest pipeline's.
+already, upserts it into a local vector store — **Chroma** (default), **Qdrant**,
+or **pgvector** — and serves similarity search. It reuses `unstructured-ingest`'s
+own embedders and connector stagers, so the write path is identical to the
+ingest pipeline's.
 
 ```
 ┌─ MCP Host (Claude Code / Desktop) ────────────────────────────────┐
@@ -23,7 +24,7 @@ path is identical to the ingest pipeline's.
 │        search(query) → nearest chunks                             │
 └───────────────────────────────────────────────────────────────────┘
                      │
-                     ▼   local Chroma directory (your corpus)
+                     ▼   local vector store (your corpus): chroma | qdrant | pgvector
 ```
 
 ## The one design idea: embedding is the only knob
@@ -52,8 +53,15 @@ keeps retrieval correct — mixing models silently returns nonsense.
 From the `unstructured-ingest` repo root (this module lives inside the package):
 
 ```bash
-pip install -e ".[chroma,openai]"
+pip install -e ".[chroma,openai]"                         # default backend
 pip install -r unstructured_ingest/mcp/requirements.txt   # fastmcp
+```
+
+For the other backends, add what they need:
+
+```bash
+pip install -e ".[qdrant]"          # qdrant backend (embedded local mode or server)
+pip install "psycopg[binary]"       # pgvector backend (psycopg 3)
 ```
 
 ## Configure
@@ -63,7 +71,12 @@ Copy `.env.example` and set at least `OPENAI_API_KEY`. Key settings:
 | Env var | Default | Meaning |
 |---|---|---|
 | `OPENAI_API_KEY` | — | required; embeds queries (and corpus in local mode) |
-| `URAG_CHROMA_PATH` | `~/.unstructured-rag/chroma` | where the corpus persists |
+| `URAG_STORE_BACKEND` | `chroma` | `chroma`, `qdrant`, or `pgvector` |
+| `URAG_CHROMA_PATH` | `~/.unstructured-rag/chroma` | chroma: where the corpus persists |
+| `URAG_QDRANT_PATH` | `~/.unstructured-rag/qdrant` | qdrant: embedded local-mode directory |
+| `URAG_QDRANT_URL` | — | qdrant: server url (overrides local mode) |
+| `URAG_QDRANT_API_KEY` | — | qdrant: server api key, if any |
+| `URAG_PG_DSN` | — | pgvector: `postgresql://user:pass@host:5432/db` |
 | `URAG_EMBED_MODEL` | `text-embedding-3-small` | must match Transform's model in passthrough |
 | `URAG_EMBED_PROVIDER` | `openai` | embed provider |
 
@@ -95,12 +108,27 @@ In Claude Desktop use `claude_desktop_config.json`; in Claude Code use `.mcp.jso
   pinned space and return the nearest chunks.
 - **`list_collections()`** — collections and the model each is pinned to.
 
-## Notes & limits
+## Backends
 
-- **Chroma is the default** because it auto-creates collections and takes rows as
-  dicts. LanceDB / Qdrant-local connectors exist in `unstructured-ingest` but
-  need a **pre-provisioned, typed table** (the LanceDB uploader drops columns not
-  already in the schema), so they aren't wired as the zero-config default here.
+Three backends, all holding the same contract (space pinned per collection on
+first load, mismatched loads refused, deterministic-id upsert, cosine scores,
+rows conformed by the corresponding `unstructured-ingest` stager). The
+conformance suite in `test/unit/mcp/test_stores.py` runs identically against
+every backend and is the definition of "supported".
+
+| Backend | Runs as | Rows go through | Space pin lives in |
+|---|---|---|---|
+| `chroma` (default) | embedded, a local directory | `ChromaUploadStager` | collection metadata |
+| `qdrant` | embedded local mode, or a server via `URAG_QDRANT_URL` | `QdrantUploadStager` | a reserved meta collection |
+| `pgvector` | your Postgres (`URAG_PG_DSN`) | `SQLUploadStager` → `{id, record_id, text, metadata JSONB, embedding vector(dim)}` | `rag_ingest_spaces` table |
+
+The first load auto-provisions the collection/table from the pinned space — no
+schema setup is asked of you. For pgvector that includes a cosine **HNSW index**
+when the dimension allows it (pgvector caps indexable vectors at 2,000 dims;
+wider spaces work but search sequentially — the default
+`text-embedding-3-small`/1536 stays comfortably inside the cap).
+
+## Notes & limits
 - **Passthrough still needs a local provider key.** Transform embedded the
   corpus, but *this* server embeds each query, so `OPENAI_API_KEY` (matching
   Transform's model) must be set even when you never embed a corpus locally.

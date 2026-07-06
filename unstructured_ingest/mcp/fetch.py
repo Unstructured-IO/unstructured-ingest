@@ -53,9 +53,7 @@ def _stream_json(url: str, *, max_bytes: int) -> Any:
     # SpooledTemporaryFile keeps a small body in memory and spills a large one to
     # disk; either way the parse reads from a single seekable handle.
     with tempfile.SpooledTemporaryFile(max_size=_SPOOL_THRESHOLD_BYTES, mode="w+b") as spool:
-        with httpx.stream(
-            "GET", url, timeout=_FETCH_TIMEOUT_S, follow_redirects=True
-        ) as resp:
+        with httpx.stream("GET", url, timeout=_FETCH_TIMEOUT_S, follow_redirects=True) as resp:
             resp.raise_for_status()
             for chunk in resp.iter_bytes():
                 total += len(chunk)

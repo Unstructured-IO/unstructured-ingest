@@ -1,4 +1,4 @@
-"""Chroma-backed vector store for the ingest RAG MCP server.
+"""Chroma-backed vector store — the zero-config default backend.
 
 Writes go through ``unstructured-ingest``'s Chroma stager (Element JSON -> Chroma
 row) and its columnar transform, so what lands on disk matches what the ingest
@@ -6,20 +6,17 @@ pipeline's own Chroma connector would produce. Reads use the Chroma client
 directly, because ingest connectors are write-only destinations — retrieval is
 this server's own concern.
 
-A collection's embedding space (provider, model, dimension) is pinned in its
-metadata on first write and verified on every subsequent write. Vectors from
-different models are not comparable, so mixing two models into one collection
-silently ruins retrieval; refusing the second model is the guard that prevents
-it. Chroma is the default because it auto-creates collections and accepts rows
-as plain dicts; LanceDB/Qdrant-local need a pre-provisioned, typed table.
+The embedding space is pinned in the collection's own metadata. Chroma is the
+default backend because it is embedded (a directory, no service) and both the
+collection and its metadata are created in one call.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from unstructured_ingest.data_types.file_data import FileData
+from unstructured_ingest.mcp.stores.base import EmbeddingSpace, VectorStore
 from unstructured_ingest.processes.connectors.chroma import (
     ChromaUploader,
     ChromaUploadStager,
@@ -30,37 +27,7 @@ from unstructured_ingest.processes.connectors.chroma import (
 _DISTANCE = "cosine"
 
 
-class SpaceMismatch(Exception):
-    """Raised when a load would mix a second embedding space into a collection."""
-
-
-@dataclass
-class EmbeddingSpace:
-    """The (provider, model, dimension) a collection's vectors were produced by."""
-
-    provider: str
-    model: str
-    dimension: int
-
-    def as_metadata(self) -> dict[str, Any]:
-        return {
-            "embed_provider": self.provider,
-            "embed_model": self.model,
-            "embed_dim": self.dimension,
-        }
-
-    @classmethod
-    def from_metadata(cls, meta: dict[str, Any] | None) -> "EmbeddingSpace | None":
-        if not meta or "embed_model" not in meta:
-            return None
-        return cls(
-            provider=meta.get("embed_provider", ""),
-            model=meta["embed_model"],
-            dimension=int(meta["embed_dim"]),
-        )
-
-
-class ChromaStore:
+class ChromaStore(VectorStore):
     def __init__(self, path: str) -> None:
         self._path = path
         self._client = None
@@ -85,11 +52,6 @@ class ChromaStore:
             return None
 
     def ensure_space(self, collection: str, space: EmbeddingSpace) -> None:
-        """Create ``collection`` pinned to ``space``, or verify an existing one.
-
-        Raises :class:`SpaceMismatch` if the collection already holds vectors
-        from a different model/dimension.
-        """
         coll = self._get_collection_or_none(collection)
         if coll is None:
             self._get_client().create_collection(
@@ -98,27 +60,13 @@ class ChromaStore:
             )
             return
         existing = EmbeddingSpace.from_metadata(coll.metadata)
-        if existing is not None and (existing.model, existing.dimension) != (
-            space.model,
-            space.dimension,
-        ):
-            raise SpaceMismatch(
-                f"collection {collection!r} was built with {existing.model} "
-                f"({existing.dimension}-dim); refusing to load {space.model} "
-                f"({space.dimension}-dim) into it. Use a different collection name."
-            )
+        if existing is not None and existing.conflicts_with(space):
+            raise existing.mismatch_error(collection, space)
 
     def write(self, collection: str, elements: list[dict], file_data: FileData) -> int:
-        """Upsert ``elements`` into ``collection``; return the rows written.
-
-        Rows without a vector (an element that arrived un-embedded) are dropped —
-        they can be neither stored nor searched. ``ensure_space`` must have run
-        first so the collection exists with the intended distance metric.
-        """
         stager = ChromaUploadStager()
         rows = [
-            stager.conform_dict(element_dict=element, file_data=file_data)
-            for element in elements
+            stager.conform_dict(element_dict=element, file_data=file_data) for element in elements
         ]
         rows = [row for row in rows if row.get("embedding")]
         if not rows:
@@ -139,14 +87,10 @@ class ChromaStore:
         coll = self._get_client().get_collection(collection)
         space = EmbeddingSpace.from_metadata(coll.metadata)
         if space is None:
-            raise ValueError(
-                f"collection {collection!r} has no recorded embedding space"
-            )
+            raise ValueError(f"collection {collection!r} has no recorded embedding space")
         return space
 
-    def search(
-        self, collection: str, query_vector: list[float], k: int
-    ) -> list[dict[str, Any]]:
+    def search(self, collection: str, query_vector: list[float], k: int) -> list[dict[str, Any]]:
         coll = self._get_client().get_collection(collection)
         res = coll.query(
             query_embeddings=[query_vector],
@@ -154,9 +98,7 @@ class ChromaStore:
             include=["documents", "metadatas", "distances"],
         )
         matches: list[dict[str, Any]] = []
-        for doc, meta, dist in zip(
-            res["documents"][0], res["metadatas"][0], res["distances"][0]
-        ):
+        for doc, meta, dist in zip(res["documents"][0], res["metadatas"][0], res["distances"][0]):
             # Collection is cosine, so similarity = 1 - distance.
             matches.append({"score": 1.0 - dist, "text": doc, "metadata": meta})
         return matches

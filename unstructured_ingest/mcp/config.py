@@ -28,6 +28,10 @@ _DEFAULT_MAX_FETCH_BYTES = 512 * 1024 * 1024
 class Config:
     store_backend: str
     chroma_path: str
+    qdrant_path: str
+    qdrant_url: str | None
+    qdrant_api_key: str | None
+    pg_dsn: str | None
     embed_provider: str
     embed_model: str
     openai_api_key: str | None
@@ -42,6 +46,13 @@ class Config:
             chroma_path=os.path.expanduser(
                 os.environ.get("URAG_CHROMA_PATH", "~/.unstructured-rag/chroma")
             ),
+            # Qdrant runs embedded on a local path unless a server url is given.
+            qdrant_path=os.path.expanduser(
+                os.environ.get("URAG_QDRANT_PATH", "~/.unstructured-rag/qdrant")
+            ),
+            qdrant_url=os.environ.get("URAG_QDRANT_URL"),
+            qdrant_api_key=os.environ.get("URAG_QDRANT_API_KEY"),
+            pg_dsn=os.environ.get("URAG_PG_DSN"),
             embed_provider=os.environ.get("URAG_EMBED_PROVIDER", DEFAULT_EMBED_PROVIDER),
             embed_model=os.environ.get("URAG_EMBED_MODEL", DEFAULT_EMBED_MODEL),
             openai_api_key=os.environ.get("OPENAI_API_KEY"),

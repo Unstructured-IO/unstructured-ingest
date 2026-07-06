@@ -46,7 +46,5 @@ def build_encoder(
         )
     config_cls, encoder_cls = _PROVIDERS[provider]
     # ``model_name`` is the public alias of the encoder config's model field.
-    config = config_cls(
-        api_key=api_key, model_name=model, base_url=base_url, batch_size=batch_size
-    )
+    config = config_cls(api_key=api_key, model_name=model, base_url=base_url, batch_size=batch_size)
     return encoder_cls(config=config)
