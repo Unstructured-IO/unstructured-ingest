@@ -26,7 +26,7 @@ from unstructured_ingest.mcp.embedding import build_encoder
 from unstructured_ingest.mcp.fetch import fetch_elements
 from unstructured_ingest.mcp.store import ChromaStore, EmbeddingSpace, SpaceMismatch
 
-mcp = FastMCP("unstructured-ingest-rag")
+mcp = FastMCP("rag-ingest-mcp")
 
 _VALID_POLICIES = ("auto", "passthrough", "local")
 

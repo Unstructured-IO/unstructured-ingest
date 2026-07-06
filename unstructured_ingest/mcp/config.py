@@ -1,11 +1,11 @@
-"""Environment-driven configuration for the ingest RAG MCP server.
+"""Environment-driven configuration for the rag-ingest-mcp server.
 
 Every setting has a default that makes the common case — a local Chroma store
-embedding with OpenAI ``text-embedding-3-large`` — work with only an
-``OPENAI_API_KEY`` set. The embed defaults intentionally mirror the Transform
-MCP's own default embedder: in passthrough mode the corpus vectors were produced
-by Transform, so the query side must default to the same provider/model to stay
-comparable.
+embedding with OpenAI ``text-embedding-3-small`` — work with only an
+``OPENAI_API_KEY`` set. In passthrough mode the corpus vectors were produced by
+Transform, so the space recorded (and used for every query) must name the model
+Transform actually embedded with — pass ``embed_model`` on load when it differs
+from this default.
 """
 
 from __future__ import annotations
@@ -13,10 +13,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-# The Transform MCP's default embedder. Kept in sync so that a passthrough load
-# (Transform embedded) and a query embedded by this server land in one space.
+# text-embedding-3-small (1536 dims): cheap, strong default for a local corpus,
+# and its dimension fits every candidate backend's ANN-index limits (pgvector
+# caps HNSW-indexable vectors at 2000 dims, which 3-large's 3072 exceeds).
 DEFAULT_EMBED_PROVIDER = "openai"
-DEFAULT_EMBED_MODEL = "text-embedding-3-large"
+DEFAULT_EMBED_MODEL = "text-embedding-3-small"
 
 # A JSON render of a text corpus (image base64 stripped) is large but bounded;
 # this cap is a backstop against a runaway download, not a tuning knob.

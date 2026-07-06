@@ -1,4 +1,4 @@
-# unstructured-ingest RAG MCP server
+# rag-ingest-mcp
 
 A small **local STDIO MCP server** that turns [Unstructured Transform
 MCP](https://docs.unstructured.io) output into a queryable **local** RAG corpus.
@@ -64,7 +64,7 @@ Copy `.env.example` and set at least `OPENAI_API_KEY`. Key settings:
 |---|---|---|
 | `OPENAI_API_KEY` | — | required; embeds queries (and corpus in local mode) |
 | `URAG_CHROMA_PATH` | `~/.unstructured-rag/chroma` | where the corpus persists |
-| `URAG_EMBED_MODEL` | `text-embedding-3-large` | must match Transform's model in passthrough |
+| `URAG_EMBED_MODEL` | `text-embedding-3-small` | must match Transform's model in passthrough |
 | `URAG_EMBED_PROVIDER` | `openai` | embed provider |
 
 ## Wire it into your MCP host
@@ -104,6 +104,11 @@ In Claude Desktop use `claude_desktop_config.json`; in Claude Code use `.mcp.jso
 - **Passthrough still needs a local provider key.** Transform embedded the
   corpus, but *this* server embeds each query, so `OPENAI_API_KEY` (matching
   Transform's model) must be set even when you never embed a corpus locally.
+- **Passthrough records the model you tell it.** The space is pinned from
+  `embed_model` (or the server default, `text-embedding-3-small`). If Transform
+  embedded with a different model — its own default is `text-embedding-3-large` —
+  pass `embed_model` on the load, or queries will be embedded in the wrong space
+  and rejected on dimension mismatch.
 - **Re-loading a source upserts** rather than duplicating: element ids are
   derived deterministically from the source identity, so re-running a load
   overwrites the same rows.
