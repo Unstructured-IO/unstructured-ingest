@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+from dateutil import parser
 
 from unstructured_ingest.data_types.file_data import (
     FileData,
@@ -164,8 +165,12 @@ def test_indexer_oauth_file_data_uses_cloud_identity():
     assert file_data.identifier == "456"
     assert file_data.source_identifiers.fullpath == "cloud-123/ENG/456.html"
     assert file_data.metadata.url == "https://example.atlassian.net/wiki/pages/456"
-    assert file_data.metadata.date_created == "2026-05-28T10:00:00Z"
-    assert file_data.metadata.date_modified == "2026-05-28T11:00:00Z"
+    assert file_data.metadata.date_created == str(
+        parser.parse("2026-05-28T10:00:00Z").timestamp()
+    )
+    assert file_data.metadata.date_modified == str(
+        parser.parse("2026-05-28T11:00:00Z").timestamp()
+    )
     assert file_data.metadata.version == "7"
     assert file_data.metadata.record_locator["cloud_id"] == "cloud-123"
     assert file_data.additional_metadata["site_url"] == "https://example.atlassian.net/wiki"
@@ -339,8 +344,12 @@ def test_downloader_uses_v2_page_api(tmp_path, connection_config):
         params={"body-format": "view", "include-version": "true"},
     )
     assert response["path"] == tmp_path / "SPACE/123.html"
-    assert response["file_data"].metadata.date_created == "2026-05-28T10:00:00Z"
-    assert response["file_data"].metadata.date_modified == "2026-05-28T11:00:00Z"
+    assert response["file_data"].metadata.date_created == str(
+        parser.parse("2026-05-28T10:00:00Z").timestamp()
+    )
+    assert response["file_data"].metadata.date_modified == str(
+        parser.parse("2026-05-28T11:00:00Z").timestamp()
+    )
     assert response["file_data"].metadata.version == "7"
     assert response["file_data"].display_name == "Test Page"
     assert (tmp_path / "SPACE/123.html").read_text(encoding="utf8")

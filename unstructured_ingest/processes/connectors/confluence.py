@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import (
@@ -44,6 +45,13 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "confluence"
 CONFLUENCE_SPACE_PAGE_SIZE = 250
 CONFLUENCE_PAGE_PAGE_SIZE = 250
+
+
+def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
+    """Convert an ISO8601 datetime string to a Unix epoch string for FileData metadata."""
+    if iso_date is None:
+        return None
+    return str(parser.parse(iso_date).timestamp())
 
 
 class ConfluenceAccessConfig(AccessConfig):
@@ -319,8 +327,8 @@ class ConfluenceIndexer(Indexer):
                 {
                     "space_id": space_id,
                     "doc_id": page["id"],
-                    "date_created": page.get("createdAt"),
-                    "date_modified": version.get("createdAt"),
+                    "date_created": _iso8601_to_epoch_str(page.get("createdAt")),
+                    "date_modified": _iso8601_to_epoch_str(version.get("createdAt")),
                     "version_number": version.get("number"),
                 }
             )
@@ -638,8 +646,8 @@ class ConfluenceDownloader(Downloader):
                 file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
-        file_data.metadata.date_created = page["createdAt"]
-        file_data.metadata.date_modified = page["version"]["createdAt"]
+        file_data.metadata.date_created = _iso8601_to_epoch_str(page["createdAt"])
+        file_data.metadata.date_modified = _iso8601_to_epoch_str(page["version"]["createdAt"])
         file_data.metadata.version = str(page["version"]["number"])
         file_data.display_name = title
 
