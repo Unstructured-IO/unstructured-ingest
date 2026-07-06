@@ -363,7 +363,15 @@ class ValkeyUploader(VectorDBUploader):
         )
 
         async with self.connection_config.create_async_client() as client:
-            index_exists = await self._index_exists(client)
+            index_exists, search_module_available = await self._check_index(client)
+
+            # Fail early if embeddings require the search module but it's not loaded
+            if vector_length and not search_module_available:
+                raise DestinationConnectionError(
+                    "Valkey Search module not loaded but embeddings are present. "
+                    "Enable it with: valkey-server --loadmodule /path/to/valkeysearch.so "
+                    "OR use the valkey/valkey-bundle Docker image."
+                )
 
             # Delete prior records for this file to prevent orphaned chunks
             if index_exists:
@@ -377,8 +385,7 @@ class ValkeyUploader(VectorDBUploader):
                 for batch in batches:
                     await self._write_individual(client, batch, file_data, vector_length)
             else:
-                # No index (or concurrent creation handled by _async_create_destination's
-                # "already exists" guard) — batch writes are fast, create index after
+                # No index — batch writes are fast, create index after
                 for batch in batches:
                     await self._write_batch(client, batch, file_data, vector_length)
                 if vector_length:
@@ -494,20 +501,25 @@ class ValkeyUploader(VectorDBUploader):
         except Exception as e:
             raise self._map_glide_error(e) from e
 
-    async def _index_exists(self, client) -> bool:
-        """Check if the FT search index already exists.
+    async def _check_index(self, client) -> tuple[bool, bool]:
+        """Check if the FT search index exists and whether the search module is available.
 
-        Returns False if the ValkeySearch module is not loaded (plain Valkey),
-        allowing text-only uploads to proceed without the search module.
+        Returns (index_exists, search_module_available):
+        - (True, True): Index exists, module is loaded
+        - (False, True): Module loaded but this specific index doesn't exist yet
+        - (False, False): ValkeySearch module not loaded (plain Valkey)
+
+        When the module is not available, text-only uploads can proceed;
+        vector uploads should fail early (caller's responsibility).
         """
         from glide import RequestError, ft
 
         try:
             indexes = await ft.list(client)
-            return self.upload_config.index_name.encode() in indexes
+            return (self.upload_config.index_name.encode() in indexes, True)
         except RequestError as e:
             if "unknown command" in str(e).lower():
-                return False
+                return (False, False)
             raise self._map_glide_error(e) from e
 
     async def _write_individual(
