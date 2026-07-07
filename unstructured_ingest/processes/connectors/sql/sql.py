@@ -18,7 +18,11 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import DestinationConnectionError, SourceConnectionError
+from unstructured_ingest.error import (
+    DestinationConnectionError,
+    SourceConnectionError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -120,8 +124,8 @@ class SQLIndexer(Indexer, ABC):
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
         except Exception as e:
-            logger.error(f"failed to validate connection: {type(e).__name__}")
-            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
 
     def run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
         ids = self._get_doc_ids()
@@ -340,8 +344,10 @@ class SQLUploader(Uploader):
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
         except Exception as e:
-            logger.error(f"failed to validate connection: {type(e).__name__}")
-            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            )
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:

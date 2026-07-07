@@ -12,6 +12,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     KeyError,
     WriteError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -208,7 +209,7 @@ class MilvusUploader(Uploader):
 
         except MilvusException as milvus_exception:
             raise DestinationConnectionError(
-                f"failed to precheck Milvus: {type(milvus_exception).__name__}"
+                f"failed to precheck Milvus: {safe_error_summary(milvus_exception)}"
             ) from milvus_exception
 
     @contextmanager

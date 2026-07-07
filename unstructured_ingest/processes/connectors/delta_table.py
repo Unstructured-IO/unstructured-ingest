@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, ValueError
+from unstructured_ingest.error import DestinationConnectionError, ValueError, safe_error_summary
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -146,9 +146,9 @@ class DeltaTableUploader(Uploader):
                     )
 
             except Exception as e:
-                logger.error(f"failed to validate connection: {type(e).__name__}")
+                logger.error(f"failed to validate connection: {safe_error_summary(e)}")
                 raise DestinationConnectionError(
-                    f"failed to validate connection: {type(e).__name__}"
+                    f"failed to validate connection: {safe_error_summary(e)}"
                 )
 
     @requires_dependencies(["tenacity"], extras="delta-table")

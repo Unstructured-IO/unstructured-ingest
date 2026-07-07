@@ -24,6 +24,7 @@ from unstructured_ingest.error import (
     SourceConnectionNetworkError,
     TimeoutError,
     WriteError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -172,8 +173,8 @@ class AstraDBIndexer(Indexer):
         try:
             self.get_collection().options()
         except Exception as e:
-            logger.error(f"Failed to validate connection: {type(e).__name__}")
-            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
 
     def _get_doc_ids(self) -> set[str]:
         """Fetches all document ids in an index"""
@@ -440,8 +441,10 @@ class AstraDBUploader(Uploader):
                     keyspace=self.upload_config.keyspace,
                 )
         except Exception as e:
-            logger.error(f"Failed to validate connection: {type(e).__name__}")
-            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            )
 
     def _collection_exists(self, collection_name: str):
         collection = get_astra_collection(
@@ -457,12 +460,12 @@ class AstraDBUploader(Uploader):
             if "not found" in str(e):
                 return False
             raise DestinationConnectionError(
-                f"failed to check if astra collection exists : {type(e).__name__}"
+                f"failed to check if astra collection exists : {safe_error_summary(e)}"
             )
         except Exception as e:
-            logger.error(f"failed to check if astra collection exists : {type(e).__name__}")
+            logger.error(f"failed to check if astra collection exists : {safe_error_summary(e)}")
             raise DestinationConnectionError(
-                f"failed to check if astra collection exists : {type(e).__name__}"
+                f"failed to check if astra collection exists : {safe_error_summary(e)}"
             )
 
     def format_destination_name(self, destination_name: str) -> str:
@@ -574,18 +577,20 @@ class AstraDBUploader(Uploader):
                             f"({batch_progress_percentage:.1f}%)")
 
                 except CollectionInsertManyException as e:
-                    logger.error(f"Failed to upload batch {batch_progress_str}: {type(e).__name__}")
-                    raise WriteError(f"AstraDB collection error: {type(e).__name__}") from e
+                    logger.error(
+                        f"Failed to upload batch {batch_progress_str}: {safe_error_summary(e)}"
+                    )
+                    raise WriteError(f"AstraDB collection error: {safe_error_summary(e)}") from e
 
                 except DataAPITimeoutException as e:
                     logger.error(
-                        f"Timeout uploading batch {batch_progress_str}: {type(e).__name__}"
+                        f"Timeout uploading batch {batch_progress_str}: {safe_error_summary(e)}"
                     )
-                    raise TimeoutError(f"AstraDB timeout: {type(e).__name__}") from e
+                    raise TimeoutError(f"AstraDB timeout: {safe_error_summary(e)}") from e
 
                 except DataAPIHttpException as e:
                     logger.error(
-                        f"HTTP error uploading batch {batch_progress_str}: {type(e).__name__}"
+                        f"HTTP error uploading batch {batch_progress_str}: {safe_error_summary(e)}"
                     )
                     if (
                         hasattr(e, "response")
@@ -594,11 +599,13 @@ class AstraDBUploader(Uploader):
                         and e.response.status_code is not None
                         and 400 <= e.response.status_code < 500
                     ):
-                        raise WriteError(f"AstraDB HTTP error: {type(e).__name__}") from e
+                        raise WriteError(f"AstraDB HTTP error: {safe_error_summary(e)}") from e
                     raise
 
                 except Exception as e:
-                    logger.error(f"Failed to upload batch {batch_progress_str}: {type(e).__name__}")
+                    logger.error(
+                        f"Failed to upload batch {batch_progress_str}: {safe_error_summary(e)}"
+                    )
                     raise
 
         await asyncio.gather(

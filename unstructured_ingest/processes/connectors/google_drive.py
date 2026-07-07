@@ -13,7 +13,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, UserAuthError, ValueError
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    UserAuthError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -394,9 +399,10 @@ class GoogleDriveIndexer(Indexer):
 
         except Exception as e:
             logger.error(
-                f"Failed to validate Google Drive connection during precheck: {type(e).__name__}"
+                "Failed to validate Google Drive connection during precheck: "
+                f"{safe_error_summary(e)}"
             )
-            raise SourceConnectionError(f"Precheck failed: {type(e).__name__}")
+            raise SourceConnectionError(f"Precheck failed: {safe_error_summary(e)}")
 
     @staticmethod
     def is_dir(record: dict) -> bool:

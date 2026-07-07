@@ -20,6 +20,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
     UnstructuredIngestError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -174,9 +175,9 @@ class ElasticsearchIndexer(Indexer):
             # Preserve our own static "index not found" guidance.
             raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(
-                f"failed to validate connection: {type(e).__name__}"
+                f"failed to validate connection: {safe_error_summary(e)}"
             ) from None
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
@@ -403,9 +404,9 @@ class ElasticsearchUploader(Uploader):
             # Preserve our own static "index not found" guidance.
             raise
         except Exception as e:
-            logger.error(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
-                f"failed to validate connection: {type(e).__name__}"
+                f"failed to validate connection: {safe_error_summary(e)}"
             ) from None
 
     @requires_dependencies(["elasticsearch"], extras="elasticsearch")
@@ -454,13 +455,13 @@ class ElasticsearchUploader(Uploader):
                         self._sanitize_bulk_index_error(error) for error in e.errors
                     ]
                     logger.error(
-                        f"Batch upload failed ({type(e).__name__}) "
+                        f"Batch upload failed ({safe_error_summary(e)}) "
                         f"with following errors: {sanitized_errors}"
                     )
-                    raise DestinationConnectionError(type(e).__name__)
+                    raise DestinationConnectionError(safe_error_summary(e))
                 except Exception as e:
-                    logger.error(f"Batch upload failed - {type(e).__name__}")
-                    raise UnstructuredIngestError(type(e).__name__)
+                    logger.error(f"Batch upload failed - {safe_error_summary(e)}")
+                    raise UnstructuredIngestError(safe_error_summary(e))
 
     def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
         """Remove data uploaded to index from the log, leave only error information.

@@ -14,6 +14,7 @@ from unstructured_ingest.error import (
     ProviderError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -88,7 +89,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
         import httpx
 
         if not isinstance(e, httpx.HTTPStatusError):
-            logger.error(f"Unhandled exception from IBM watsonx.data connector: {type(e).__name__}")
+            logger.error(
+                f"Unhandled exception from IBM watsonx.data connector: {safe_error_summary(e)}"
+            )
             return e
         url = e.request.url
         response_code = e.response.status_code
@@ -112,7 +115,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
                 f"Request to {url} failedin IBM watsonx.data connector, status code {response_code}"
             )
             return ProviderError(e)
-        logger.error(f"Unhandled exception from IBM watsonx.data connector: {type(e).__name__}")
+        logger.error(
+            f"Unhandled exception from IBM watsonx.data connector: {safe_error_summary(e)}"
+        )
         return e
 
     @requires_dependencies(["httpx"], extras="ibm-watsonx-s3")
@@ -185,9 +190,9 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             catalog_config = self.get_catalog_config()
             catalog = _get_catalog(catalog_config)
         except Exception as e:
-            logger.error(f"Failed to connect to catalog '{self.catalog}': {type(e).__name__}")
+            logger.error(f"Failed to connect to catalog '{self.catalog}': {safe_error_summary(e)}")
             raise ProviderError(
-                f"Failed to connect to catalog '{self.catalog}': {type(e).__name__}"
+                f"Failed to connect to catalog '{self.catalog}': {safe_error_summary(e)}"
             )
 
         yield catalog

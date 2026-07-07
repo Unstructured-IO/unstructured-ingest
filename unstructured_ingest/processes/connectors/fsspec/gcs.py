@@ -10,7 +10,7 @@ from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileDataSourceMetadata
-from unstructured_ingest.error import ProviderError, UserError, ValueError
+from unstructured_ingest.error import ProviderError, UserError, ValueError, safe_error_summary
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
@@ -137,7 +137,7 @@ class GcsConnectionConfig(FsspecConnectionConfig):
                 raise UserError(message)
             if http_error_code >= 500:
                 raise ProviderError(message)
-        logger.error(f"({type(e).__name__} from gcs)")
+        logger.error(f"({safe_error_summary(e)} from gcs)")
         return e
 
 

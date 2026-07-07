@@ -178,9 +178,10 @@ def test_fetch_file_fails_after_max_retries(
     )
 
     # The retried upstream exception is re-raised through the
-    # @SourceConnectionNetworkError.wrap decorator. Post-IR-14 the wrapped
-    # message carries only the exception type name, so assert on the raised
-    # type and confirm the raw upstream text ("429 ...") no longer leaks.
+    # @SourceConnectionNetworkError.wrap decorator. The wrapped message
+    # carries only a sanitized summary (type name plus allowlisted fields),
+    # so assert on the raised type and confirm the raw upstream text
+    # ("429 ...") no longer leaks.
     with pytest.raises(SourceConnectionNetworkError) as excinfo:
         sharepoint_downloader._fetch_file(file_data)
     assert "429" not in str(excinfo.value)
@@ -201,9 +202,9 @@ def test_fetch_file_handles_site_not_found_immediately(
     )
 
     # site-not-found is surfaced via @SourceConnectionNetworkError.wrap (a
-    # SourceConnectionError subclass). Post-IR-14 the wrapped message is the
-    # exception type name only; assert the raised type and confirm the
-    # upstream detail ("Site not found") no longer leaks into the message.
+    # SourceConnectionError subclass). The wrapped message carries only a
+    # sanitized summary; assert the raised type and confirm the upstream
+    # detail ("Site not found") no longer leaks into the message.
     with pytest.raises(SourceConnectionError) as excinfo:
         sharepoint_downloader._fetch_file(file_data)
     assert isinstance(excinfo.value, SourceConnectionNetworkError)

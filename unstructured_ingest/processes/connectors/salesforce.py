@@ -30,6 +30,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -147,8 +148,8 @@ class SalesforceIndexer(Indexer):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"failed to validate connection: {type(e).__name__}")
-            raise SourceConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
 
     def get_file_extension(self, record_type) -> str:
         if record_type == "EmailMessage":

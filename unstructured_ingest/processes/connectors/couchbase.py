@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -161,8 +162,10 @@ class CouchbaseUploader(Uploader):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"Failed to validate connection: {type(e).__name__}")
-            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            )
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
@@ -195,8 +198,10 @@ class CouchbaseIndexer(Indexer):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"Failed to validate connection: {type(e).__name__}")
-            raise DestinationConnectionError(f"failed to validate connection: {type(e).__name__}")
+            logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise DestinationConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            )
 
     @requires_dependencies(["couchbase"], extras="couchbase")
     def _get_doc_ids(self) -> List[str]:

@@ -20,7 +20,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import SourceConnectionError, ValueError, safe_error_summary
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -467,9 +467,9 @@ class SlackIndexer(Indexer):
             raise
         except Exception as e:
             # 'from None' suppresses the provider exception chain so its text
-            # cannot resurface via traceback logging (IR-14).
+            # cannot resurface via traceback logging.
             raise SourceConnectionError(
-                f"failed to validate connection: {type(e).__name__}"
+                f"failed to validate connection: {safe_error_summary(e)}"
             ) from None
 
 

@@ -125,7 +125,8 @@ class TestPrecheck:
         configured_uploader.connection_config.access_config.get_secret_value().password = (
             "invalid-password"
         )
-        # Wrapped errors carry only the exception type name (IR-14);
+        # Wrapped errors carry only a sanitized summary (exception type
+        # name plus allowlisted fields, never the driver message text);
         # invalid credentials surface as the driver's AuthError.
         with pytest.raises(DestinationConnectionError, match="AuthError"):
             configured_uploader.precheck()
@@ -138,8 +139,9 @@ class TestPrecheck:
     @pytest.mark.parametrize(
         ("uri", "expected_error_msg"),
         [
-            # Wrapped errors carry only the exception type name (IR-14);
-            # both unreachable-host cases raise the driver's ServiceUnavailable.
+            # Wrapped errors carry only a sanitized summary (type name plus
+            # allowlisted fields); both unreachable-host cases raise the
+            # driver's ServiceUnavailable.
             ("neo4j://localhst:7687", "ServiceUnavailable"),
             ("neo4j://localhost:7777", "ServiceUnavailable"),
         ],
@@ -154,7 +156,7 @@ class TestPrecheck:
     def test_fails_on_invalid_database(self, configured_uploader: Neo4jUploader):
         configured_uploader.connection_config.database = "invalid-database"
         # DatabaseNotFound is raised as the driver's ClientError; only the
-        # type name appears in the wrapped message (IR-14).
+        # sanitized summary appears in the wrapped message.
         with pytest.raises(DestinationConnectionError, match="ClientError"):
             configured_uploader.precheck()
 

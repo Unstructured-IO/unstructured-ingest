@@ -17,6 +17,7 @@ from unstructured_ingest.error import (
     UserAuthError,
     UserError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
@@ -115,7 +116,7 @@ class SharepointIndexer(OnedriveIndexer):
             elif status_code == 404:
                 raise UserError(f"Not found: {context}")
 
-        raise UserError(f"Failed to access {context}: {type(e).__name__}")
+        raise UserError(f"Failed to access {context}: {safe_error_summary(e)}")
 
     def _is_root_path(self, path: str) -> bool:
         """Check if the path represents root access (empty string or legacy default)."""
@@ -141,7 +142,7 @@ class SharepointIndexer(OnedriveIndexer):
                 )
             logger.info(f"SharePoint folder path '{path}' validated successfully")
         except ClientRequestException as e:
-            logger.error(f"Failed to access SharePoint path '{path}': {type(e).__name__}")
+            logger.error(f"Failed to access SharePoint path '{path}': {safe_error_summary(e)}")
             self._handle_client_request_exception(e, f"SharePoint path '{path}'")
         except UserError:
             # Preserve our own static "path not found / check access" guidance;
@@ -149,10 +150,10 @@ class SharepointIndexer(OnedriveIndexer):
             raise
         except Exception as e:
             logger.error(
-                f"Unexpected error accessing SharePoint path '{path}': {type(e).__name__}"
+                f"Unexpected error accessing SharePoint path '{path}': {safe_error_summary(e)}"
             )
             raise UserError(
-                f"Failed to validate SharePoint path '{path}': {type(e).__name__}"
+                f"Failed to validate SharePoint path '{path}': {safe_error_summary(e)}"
             ) from None
 
     @requires_dependencies(["office365"], extras="sharepoint")
@@ -189,9 +190,9 @@ class SharepointIndexer(OnedriveIndexer):
             # folder, forbidden access) before redacting unexpected exceptions.
             raise
         except Exception as e:
-            logger.error(f"Unexpected error during SharePoint precheck: {type(e).__name__}")
+            logger.error(f"Unexpected error during SharePoint precheck: {safe_error_summary(e)}")
             raise UserError(
-                f"Failed to validate SharePoint connection: {type(e).__name__}"
+                f"Failed to validate SharePoint connection: {safe_error_summary(e)}"
             ) from None
 
     @requires_dependencies(["office365"], extras="sharepoint")

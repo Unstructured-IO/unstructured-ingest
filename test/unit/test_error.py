@@ -8,6 +8,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     UserAuthError,
     UserError,
+    safe_error_summary,
 )
 
 
@@ -27,8 +28,9 @@ def test_custom_error_decorator(error_class, exception_type, error_message):
     with pytest.raises(error_class) as context:
         simulate_error()
 
-    # Only the exception type name is interpolated (IR-14): original exception
-    # text can carry credentials and must not leak into the wrapped message.
+    # Only the sanitized summary (type name plus allowlisted diagnostic
+    # fields) is interpolated: original exception text can carry credentials
+    # and must not leak into the wrapped message.
     expected_error_string = error_class.error_string.format(exception_type.__name__)
     assert str(context.value) == expected_error_string
     assert error_message not in str(context.value)
@@ -54,3 +56,57 @@ def test_custom_error_decorator(error_class, exception_type, error_message):
 )
 def test_error_status_codes(error_class, expected_status_code):
     assert error_class("x").status_code == expected_status_code
+
+
+# safe_error_summary contract: surface allowlisted machine-readable fields
+# (integer statuses, enum-like codes, request IDs) for troubleshooting while
+# never including free text, which can carry credentials or request payloads.
+class FakeProviderError(Exception):
+    def __init__(self, message: str, **attrs):
+        super().__init__(message)
+        for key, value in attrs.items():
+            setattr(self, key, value)
+
+
+def test_safe_error_summary_surfaces_allowlisted_fields():
+    error = FakeProviderError(
+        "401 for url https://api.example.com?token=sk-secret",
+        status_code=401,
+        code="invalid_auth",
+        request_id="req-8f14e45f",
+    )
+    summary = safe_error_summary(error)
+    assert summary == (
+        "FakeProviderError(status_code=401, code=invalid_auth, request_id=req-8f14e45f)"
+    )
+    assert "sk-secret" not in summary
+
+
+def test_safe_error_summary_rejects_free_text_fields():
+    # A code-like attribute holding free text (spaces/punctuation) must be
+    # dropped, not surfaced.
+    error = FakeProviderError("boom", code="password=hunter2 in DSN", errno="not an int")
+    assert safe_error_summary(error) == "FakeProviderError"
+
+
+def test_safe_error_summary_plain_exception_is_type_name_only():
+    assert safe_error_summary(ValueError("secret text")) == "ValueError"
+
+
+def test_safe_error_summary_falls_back_to_response_fields():
+    # slack_sdk-style: status and machine error code live on the response.
+    response = {"error": "channel_not_found"}
+    error = FakeProviderError("server said: {'token': 'xoxb-secret'}", response=response)
+    assert safe_error_summary(error) == "FakeProviderError(error=channel_not_found)"
+
+
+def test_wrap_message_carries_safe_fields_but_not_exception_text():
+    @DestinationConnectionError.wrap
+    def simulate_error():
+        raise FakeProviderError("Authorization: Bearer xoxb-secret", status_code=403)
+
+    with pytest.raises(DestinationConnectionError) as context:
+        simulate_error()
+
+    assert "FakeProviderError(status_code=403)" in str(context.value)
+    assert "xoxb-secret" not in str(context.value)

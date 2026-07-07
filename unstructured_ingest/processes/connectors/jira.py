@@ -12,7 +12,7 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError
+from unstructured_ingest.error import SourceConnectionError, ValueError, safe_error_summary
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -214,8 +214,8 @@ class JiraIndexer(Indexer):
                 response = client.get_permissions("BROWSE_PROJECTS")
                 permitted = response["permissions"]["BROWSE_PROJECTS"]["havePermission"]
         except Exception as e:
-            logger.error(f"Failed to connect to Jira: {type(e).__name__}")
-            raise SourceConnectionError(f"Failed to connect to Jira: {type(e).__name__}")
+            logger.error(f"Failed to connect to Jira: {safe_error_summary(e)}")
+            raise SourceConnectionError(f"Failed to connect to Jira: {safe_error_summary(e)}")
         if not permitted:
             raise ValueError(
                 """The provided user is not permitted to browse projects

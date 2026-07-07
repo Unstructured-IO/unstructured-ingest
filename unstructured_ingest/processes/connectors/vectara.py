@@ -9,7 +9,7 @@ from typing import Any, Dict, Mapping, Optional
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import FileData
-from unstructured_ingest.error import DestinationConnectionError, ValueError
+from unstructured_ingest.error import DestinationConnectionError, ValueError, safe_error_summary
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -123,9 +123,9 @@ class VectaraUploader(Uploader):
         except Exception as e:
             # _check_connection_and_corpora is @DestinationConnectionError.wrap-
             # decorated, so e is the wrapped error and its own type is
-            # uninformative; report the underlying cause's type when present
-            # (still only the type name, never the exception text).
-            reported = type(e.__cause__).__name__ if e.__cause__ is not None else type(e).__name__
+            # uninformative; summarize the underlying cause when present
+            # (type name plus allowlisted fields, never the exception text).
+            reported = safe_error_summary(e.__cause__ if e.__cause__ is not None else e)
             logger.error(f"Failed to validate connection: {reported}")
             raise DestinationConnectionError(f"failed to validate connection: {reported}") from None
 

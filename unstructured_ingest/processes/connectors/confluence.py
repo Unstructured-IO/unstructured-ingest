@@ -17,6 +17,7 @@ from unstructured_ingest.error import (
     UserAuthError,
     UserError,
     ValueError,
+    safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -244,17 +245,19 @@ class ConfluenceIndexer(Indexer):
         try:
             self.connection_config.get_client()
         except Exception as e:
-            logger.error(f"Failed to connect to Confluence: {type(e).__name__}")
-            raise UserAuthError(f"Failed to connect to Confluence: {type(e).__name__}")
+            logger.error(f"Failed to connect to Confluence: {safe_error_summary(e)}")
+            raise UserAuthError(f"Failed to connect to Confluence: {safe_error_summary(e)}")
 
         with self.connection_config.get_client() as client:
             # opportunistically check the first space in list of all spaces
             try:
                 self._list_spaces(client, limit=1)
             except Exception as e:
-                logger.error(f"Failed to connect to find any Confluence space: {type(e).__name__}")
+                logger.error(
+                    f"Failed to connect to find any Confluence space: {safe_error_summary(e)}"
+                )
                 raise UserError(
-                    f"Failed to connect to find any Confluence space: {type(e).__name__}"
+                    f"Failed to connect to find any Confluence space: {safe_error_summary(e)}"
                 )
 
             logger.info("Connection to Confluence successful.")
@@ -267,9 +270,10 @@ class ConfluenceIndexer(Indexer):
                     try:
                         self._get_space_by_key(client, space_key)
                     except Exception as e:
-                        logger.error(f"Failed to connect to Confluence: {type(e).__name__}")
+                        logger.error(f"Failed to connect to Confluence: {safe_error_summary(e)}")
                         errors.append(
-                            f"Failed to connect to '{space_key}' space, cause: '{type(e).__name__}'"
+                            f"Failed to connect to '{space_key}' space, "
+                            f"cause: '{safe_error_summary(e)}'"
                         )
 
             if errors:
