@@ -1,0 +1,18 @@
+{
+  "//": "Claude Code: save as .mcp.json in your project root. Claude Desktop: merge into claude_desktop_config.json.",
+  "mcpServers": {
+    "rag-ingest-mcp": {
+      "command": "python",
+      "args": ["-m", "unstructured_ingest.mcp"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "URAG_CHROMA_PATH": "~/.unstructured-rag/chroma"
+      }
+    },
+    "unstructured-transform": {
+      "//": "Hosted Transform MCP (or your SND's). OAuth is handled by the MCP host on first use.",
+      "type": "http",
+      "url": "https://<your-transform-mcp-host>/transform-mcp/mcp"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+# Qdrant server for rag-ingest-mcp's server mode (URAG_QDRANT_URL=http://localhost:6333).
+# Storage persists in the named volume across container restarts.
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-ingest-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+volumes:
+  qdrant-data:

@@ -1,0 +1,19 @@
+{
+  "//": "Claude Code: save as .mcp.json in your project root. Claude Desktop: merge into claude_desktop_config.json. For embedded mode, drop URAG_QDRANT_URL and set URAG_QDRANT_PATH instead.",
+  "mcpServers": {
+    "rag-ingest-mcp": {
+      "command": "python",
+      "args": ["-m", "unstructured_ingest.mcp"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "URAG_STORE_BACKEND": "qdrant",
+        "URAG_QDRANT_URL": "http://localhost:6333"
+      }
+    },
+    "unstructured-transform": {
+      "//": "Hosted Transform MCP (or your SND's). OAuth is handled by the MCP host on first use.",
+      "type": "http",
+      "url": "https://<your-transform-mcp-host>/transform-mcp/mcp"
+    }
+  }
+}

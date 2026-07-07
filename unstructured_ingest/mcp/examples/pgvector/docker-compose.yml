@@ -1,0 +1,16 @@
+# Postgres with the pgvector extension for rag-ingest-mcp
+# (URAG_PG_DSN=postgresql://postgres:postgres@localhost:5432/postgres).
+# Data persists in the named volume across container restarts.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: rag-ingest-postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+volumes:
+  pg-data:

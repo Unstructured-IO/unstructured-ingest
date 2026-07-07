@@ -86,6 +86,12 @@ See `example_mcp_config.json`. Register **two** servers: this one (local, STDIO,
 `python -m unstructured_ingest.mcp`) and the remote Transform MCP (HTTP/OAuth).
 In Claude Desktop use `claude_desktop_config.json`; in Claude Code use `.mcp.json`.
 
+**New here? Start with [`examples/`](examples/README.md)** — a getting-started
+guide per backend (Chroma, Qdrant, pgvector) covering setup, docker-compose
+where a service is needed, the full agentic loop with Transform MCP, how to
+inspect each database from the CLI, and when (not) to pair the DB vendor's own
+MCP server.
+
 ## The flow the agent follows
 
 1. **Transform MCP** — `request_file_upload_url` → `curl -X PUT` the bytes →
