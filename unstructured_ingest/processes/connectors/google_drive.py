@@ -397,12 +397,16 @@ class GoogleDriveIndexer(Indexer):
                 # If the target is a file, precheck passes.
                 logger.info("Drive ID corresponds to a file. Precheck passed.")
 
+        except SourceConnectionError:
+            # Preserve our own static guidance (API-not-enabled, unreachable);
+            # only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(
                 "Failed to validate Google Drive connection during precheck: "
                 f"{safe_error_summary(e)}"
             )
-            raise SourceConnectionError(f"Precheck failed: {safe_error_summary(e)}")
+            raise SourceConnectionError(f"Precheck failed: {safe_error_summary(e)}") from None
 
     @staticmethod
     def is_dir(record: dict) -> bool:

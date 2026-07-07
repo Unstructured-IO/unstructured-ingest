@@ -6,6 +6,7 @@ from unstructured_ingest.error import (
     QuotaError,
     RateLimitError,
     SourceConnectionError,
+    SourceConnectionNetworkError,
     UserAuthError,
     UserError,
     safe_error_summary,
@@ -98,6 +99,20 @@ def test_safe_error_summary_falls_back_to_response_fields():
     response = {"error": "channel_not_found"}
     error = FakeProviderError("server said: {'token': 'xoxb-secret'}", response=response)
     assert safe_error_summary(error) == "FakeProviderError(error=channel_not_found)"
+
+
+def test_wrap_preserves_own_error_family_guidance():
+    # Our own errors carry sanitized, connector-authored guidance (e.g.
+    # SharePoint's "Site not found: <site>"); wrapping into a sibling type
+    # must keep that message rather than flatten it to a type-name summary.
+    @SourceConnectionNetworkError.wrap
+    def simulate_error():
+        raise SourceConnectionError("Site not found: https://example.com/sites/team")
+
+    with pytest.raises(SourceConnectionNetworkError) as context:
+        simulate_error()
+
+    assert "Site not found: https://example.com/sites/team" in str(context.value)
 
 
 def test_wrap_message_carries_safe_fields_but_not_exception_text():

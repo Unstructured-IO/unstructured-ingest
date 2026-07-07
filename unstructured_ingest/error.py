@@ -101,6 +101,11 @@ class UnstructuredIngestError(Exception, ABC):
                 return f(*args, **kwargs)
             except BaseException as error:
                 if not isinstance(error, cls) and not issubclass(type(error), cls):
+                    if isinstance(error, UnstructuredIngestError):
+                        # Messages on our own error family are sanitized where
+                        # they are raised; keep their guidance instead of
+                        # flattening a sibling type to its summary.
+                        raise cls(cls.error_string.format(error)) from error
                     raise cls(cls.error_string.format(safe_error_summary(error))) from error
                 raise
 
