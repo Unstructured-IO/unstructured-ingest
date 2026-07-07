@@ -218,3 +218,73 @@ def test_downloader_downloads_attachments_to_expected_paths_with_distinct_displa
     assert first_attachment["path"].read_bytes() == b"%PDF-first"
     assert second_attachment["path"].read_bytes() == b"second attachment body"
     assert issue_response["path"].read_text() != "second attachment body"
+
+
+def test_downloader_rejects_attachment_path_traversal(tmp_path):
+    from unittest import mock
+
+    from unstructured_ingest.processes.connectors.jira import JiraDownloaderConfig
+
+    connection_config = JiraConnectionConfig(
+        access_config=JiraAccessConfig(token="pat"),
+        url="https://jira.example.com",
+    )
+    parent_file_data = JiraIndexer(
+        connection_config=connection_config,
+        index_config=JiraIndexerConfig(issues=["FACT-1"]),
+    )._create_file_data_from_issue(
+        JiraIssueMetadata(
+            id="10001",
+            key="FACT-1",
+            fields={"updated": "2026-05-22T10:00:00.000+0000"},
+        )
+    )
+    parent_file_data.metadata.record_locator = {"id": "10001", "key": "FACT-1"}
+    parent_file_data.display_name = "FACT-1: Example task"
+
+    issue = {
+        "id": "10001",
+        "key": "FACT-1",
+        "fields": {
+            "created": "2026-05-21T10:00:00.000+0000",
+            "updated": "2026-05-22T10:00:00.000+0000",
+            "summary": "Example task",
+            "description": "Issue body text",
+            "attachment": [
+                {
+                    "id": "10011",
+                    "filename": "../../../../outside.pdf",
+                    "mimeType": "application/pdf",
+                    "self": "https://jira.example.com/rest/api/2/attachment/10011",
+                },
+            ],
+            "issuetype": {"name": "Task"},
+            "status": {"name": "Open"},
+            "priority": "Medium",
+            "assignee": {"accountId": "abc", "displayName": "Assignee"},
+            "reporter": {"emailAddress": "user@example.com", "displayName": "Reporter"},
+            "labels": [],
+            "components": [],
+            "comment": {"comments": []},
+            "project": {"key": "FACT", "name": "Facts"},
+        },
+    }
+    downloader = JiraDownloader(
+        connection_config=connection_config,
+        download_config=JiraDownloaderConfig(
+            download_dir=tmp_path,
+            download_attachments=True,
+        ),
+    )
+    mock_client = mock.MagicMock()
+    mock_client.get_attachment_content.return_value = b"malicious content"
+
+    with (
+        mock.patch.object(downloader, "get_issue", return_value=issue),
+        mock.patch.object(type(connection_config), "get_client", mock.MagicMock()),
+        pytest.raises(ValueError, match="Security error: attachment download path"),
+    ):
+        type(connection_config).get_client.return_value.__enter__.return_value = mock_client
+        downloader.run(parent_file_data)
+
+    assert not (tmp_path.parent / "outside.pdf.10011").exists()

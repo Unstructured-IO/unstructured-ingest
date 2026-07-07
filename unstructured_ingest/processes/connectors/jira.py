@@ -512,6 +512,13 @@ class JiraDownloader(Downloader):
                 attachment_download_path = self.get_download_path(attachment_filedata)
                 if attachment_download_path is None:
                     raise ValueError("Attachment file data is missing source identifiers data.")
+                attachment_download_path = attachment_download_path.resolve()
+                download_dir_resolved = self.download_dir.resolve()
+                if not attachment_download_path.is_relative_to(download_dir_resolved):
+                    raise ValueError(
+                        f"Security error: attachment download path {attachment_download_path} "
+                        f"is outside the allowed directory {download_dir_resolved}"
+                    )
                 attachment_download_path.parent.mkdir(parents=True, exist_ok=True)
                 resp = client.get_attachment_content(attachment_id=attachment_id)
                 with open(attachment_download_path, "wb") as f:
