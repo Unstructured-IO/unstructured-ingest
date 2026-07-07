@@ -1,8 +1,14 @@
-## [1.6.27]
+## [1.6.28]
 
 ### Fixes
 
 - **fix(FS-2108): download Jira attachment content to the correct path with attachment-specific display names.** Attachment downloads now write bytes to the attachment's own `source_identifiers` path instead of a separate `attachments/` directory, and each attachment gets its filename as `display_name` instead of inheriting the parent issue title. Attachment download paths are validated to stay within `download_dir` so crafted filenames cannot escape via path traversal.
+
+## [1.6.27]
+
+### Fixes
+
+- **fix(FS-2106): populate Jira creation and modification dates at index time.** `JiraIndexer._create_file_data_from_issue` only set `version` (from the issue's `updated` timestamp) and never populated `date_created`/`date_modified`, and the indexer field lists omitted `created`. Because the platform detects new and modified records from the indexer's `FileData.metadata`, Jira records carried no creation/modification dates. The indexer now requests the `created` field in `_get_issues_within_projects`, `_get_issues_within_single_board`, and `_get_issues_by_keys`, and sets `metadata.date_created` (from `created`) and `metadata.date_modified` (from `updated`) as Unix epoch strings alongside the existing `version`.
 
 ## [1.6.26]
 
