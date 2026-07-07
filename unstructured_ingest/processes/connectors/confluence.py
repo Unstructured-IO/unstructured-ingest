@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 from urllib.parse import urlparse
 
+from dateutil import parser
 from pydantic import Field, Secret
 
 from unstructured_ingest.data_types.file_data import (
@@ -44,6 +45,13 @@ if TYPE_CHECKING:
 CONNECTOR_TYPE = "confluence"
 CONFLUENCE_SPACE_PAGE_SIZE = 250
 CONFLUENCE_PAGE_PAGE_SIZE = 250
+
+
+def _iso8601_to_epoch_str(iso_date: Optional[str]) -> Optional[str]:
+    """Convert an ISO8601 datetime string to a Unix epoch string for FileData metadata."""
+    if iso_date is None:
+        return None
+    return str(parser.parse(iso_date).timestamp())
 
 
 class ConfluenceAccessConfig(AccessConfig):
@@ -308,7 +316,22 @@ class ConfluenceIndexer(Indexer):
                 },
                 limit=self.index_config.max_num_of_docs_from_each_space,
             )
-        doc_ids = [{"space_id": space_id, "doc_id": page["id"]} for page in pages]
+        # The v2 /pages list returns each page's creation date and version metadata
+        # (createdAt + version{createdAt, number}) by default. We carry them here so the
+        # indexer can populate FileData.metadata at index time, which is what the platform
+        # uses to detect new/modified records (FS-2105 creation date, FS-2107 change detection).
+        doc_ids = []
+        for page in pages:
+            version = page.get("version") or {}
+            doc_ids.append(
+                {
+                    "space_id": space_id,
+                    "doc_id": page["id"],
+                    "date_created": _iso8601_to_epoch_str(page.get("createdAt")),
+                    "date_modified": _iso8601_to_epoch_str(version.get("createdAt")),
+                    "version_number": version.get("number"),
+                }
+            )
         return doc_ids
 
     def run(self) -> Generator[FileData, None, None]:
@@ -319,8 +342,14 @@ class ConfluenceIndexer(Indexer):
             doc_ids = self._get_docs_ids_within_one_space(space_id)
             for doc in doc_ids:
                 doc_id = doc["doc_id"]
-                # Build metadata
+                version_number = doc.get("version_number")
+                # Build metadata. date_created/date_modified/version come from the v2 /pages
+                # list so the indexer reports them at index time; the platform relies on the
+                # indexer's metadata to detect new/modified records (FS-2105 + FS-2107).
                 metadata = FileDataSourceMetadata(
+                    date_created=doc.get("date_created"),
+                    date_modified=doc.get("date_modified"),
+                    version=str(version_number) if version_number is not None else None,
                     date_processed=str(time()),
                     url=self.connection_config.page_url(doc_id),
                     record_locator={
@@ -617,8 +646,8 @@ class ConfluenceDownloader(Downloader):
                 file_data.metadata.permissions_data = combined_doc_permissions
 
         # Update file_data with metadata
-        file_data.metadata.date_created = page["createdAt"]
-        file_data.metadata.date_modified = page["version"]["createdAt"]
+        file_data.metadata.date_created = _iso8601_to_epoch_str(page["createdAt"])
+        file_data.metadata.date_modified = _iso8601_to_epoch_str(page["version"]["createdAt"])
         file_data.metadata.version = str(page["version"]["number"])
         file_data.display_name = title
 
