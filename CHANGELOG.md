@@ -1,8 +1,14 @@
-## [1.6.28]
+## [1.6.27]
 
 ### Fixes
 
-- **fix(FS-2108): download Jira attachment content to the correct path with attachment-specific display names.** Attachment downloads now write bytes to the attachment's own `source_identifiers` path instead of a separate `attachments/` directory, and each attachment gets its filename as `display_name` instead of inheriting the parent issue title.
+- **fix(FS-2108): download Jira attachment content to the correct path with attachment-specific display names.** Attachment downloads now write bytes to the attachment's own `source_identifiers` path instead of a separate `attachments/` directory, and each attachment gets its filename as `display_name` instead of inheriting the parent issue title. Attachment download paths are validated to stay within `download_dir` so crafted filenames cannot escape via path traversal.
+
+## [1.6.26]
+
+### Fixes
+
+- **fix(FS-2105): populate Confluence creation/modification dates and version at index time.** The Confluence indexer now sets `date_created`, `date_modified`, and `version` from the v2 pages list response so Foundation can store page timestamps and detect page edits on subsequent runs (fixes FS-2107).
 
 ## [1.6.25]
 
