@@ -12,9 +12,12 @@ import json
 
 import anyio
 import pytest
-from fastmcp import Client
 
-from unstructured_ingest.mcp.server import mcp
+pytest.importorskip("fastmcp", reason="rag-ingest-mcp requires fastmcp")
+
+from fastmcp import Client  # noqa: E402
+
+from unstructured_ingest.mcp.server import mcp  # noqa: E402
 
 VECTORS = {
     "cats": [1.0, 0.0, 0.0, 0.0],
@@ -25,6 +28,7 @@ VECTORS = {
 
 @pytest.fixture(params=["chroma", "qdrant"])
 def backend_env(request, monkeypatch, tmp_path) -> str:
+    pytest.importorskip("chromadb" if request.param == "chroma" else "qdrant_client")
     monkeypatch.setenv("URAG_STORE_BACKEND", request.param)
     monkeypatch.setenv("URAG_CHROMA_PATH", str(tmp_path / "chroma"))
     monkeypatch.setenv("URAG_QDRANT_PATH", str(tmp_path / "qdrant"))

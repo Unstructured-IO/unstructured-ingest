@@ -16,8 +16,6 @@ import pytest
 
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
 from unstructured_ingest.mcp.stores import EmbeddingSpace, SpaceMismatch, VectorStore
-from unstructured_ingest.mcp.stores.chroma import ChromaStore
-from unstructured_ingest.mcp.stores.qdrant import QdrantStore
 
 # Orthogonal 4-dim vectors: cosine ranking is exact, no embedding model needed.
 TEXTS_TO_VECTORS = {
@@ -52,14 +50,21 @@ def make_file_data(identifier: str = "doc-1") -> FileData:
 @pytest.fixture(params=["chroma", "qdrant", "pgvector"])
 def store(request, tmp_path) -> VectorStore:
     if request.param == "chroma":
+        pytest.importorskip("chromadb", reason="chroma backend requires the chroma extra")
+        from unstructured_ingest.mcp.stores.chroma import ChromaStore
+
         yield ChromaStore(str(tmp_path / "chroma"))
         return
     if request.param == "qdrant":
+        pytest.importorskip("qdrant_client", reason="qdrant backend requires the qdrant extra")
+        from unstructured_ingest.mcp.stores.qdrant import QdrantStore
+
         yield QdrantStore(path=str(tmp_path / "qdrant"))
         return
     dsn = os.environ.get("URAG_TEST_PG_DSN")
     if not dsn:
         pytest.skip("URAG_TEST_PG_DSN not set; skipping pgvector conformance")
+    pytest.importorskip("psycopg", reason="pgvector backend requires psycopg")
     from unstructured_ingest.mcp.stores.pgvector import PgvectorStore
 
     pg_store = PgvectorStore(dsn)
