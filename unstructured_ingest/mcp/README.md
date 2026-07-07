@@ -82,15 +82,23 @@ Copy `.env.example` and set at least `OPENAI_API_KEY`. Key settings:
 
 ## Wire it into your MCP host
 
-See `example_mcp_config.json`. Register **two** servers: this one (local, STDIO,
-`python -m unstructured_ingest.mcp`) and the remote Transform MCP (HTTP/OAuth).
-In Claude Desktop use `claude_desktop_config.json`; in Claude Code use `.mcp.json`.
+Register **two** servers: this one (local, STDIO, `python -m
+unstructured_ingest.mcp`) and the remote Transform MCP (HTTP/OAuth). In Claude
+Desktop use `claude_desktop_config.json`; in Claude Code use `.mcp.json`.
 
-**New here? Start with [`examples/`](examples/README.md)** — a getting-started
-guide per backend (Chroma, Qdrant, pgvector) covering setup, docker-compose
-where a service is needed, the full agentic loop with Transform MCP, how to
-inspect each database from the CLI, and when (not) to pair the DB vendor's own
-MCP server.
+Each supported backend has a getting-started guide with a ready-to-copy host
+config — start with the [examples overview](examples/README.md), or jump
+straight to your backend:
+
+| Backend | Getting-started guide | Host config |
+|---|---|---|
+| **Chroma** (default, zero-infra) | [examples/chroma/](examples/chroma/README.md) | [mcp-config.json](examples/chroma/mcp-config.json) |
+| **Qdrant** (embedded or docker server) | [examples/qdrant/](examples/qdrant/README.md) | [mcp-config.json](examples/qdrant/mcp-config.json) |
+| **pgvector** (your Postgres) | [examples/pgvector/](examples/pgvector/README.md) | [mcp-config.json](examples/pgvector/mcp-config.json) |
+
+Every guide covers setup, docker-compose where a service is needed, the full
+agentic loop with Transform MCP, CLI inspection of the database, and when (not)
+to pair the DB vendor's own MCP server.
 
 ## The flow the agent follows
 
