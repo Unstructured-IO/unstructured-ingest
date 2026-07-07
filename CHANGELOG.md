@@ -1,3 +1,9 @@
+## [1.6.28]
+
+### Fixes
+
+- **fix(FS-2108): download Jira attachment content to the correct path with attachment-specific display names.** Attachment downloads now write bytes to the attachment's own `source_identifiers` path instead of a separate `attachments/` directory, and each attachment gets its filename as `display_name` instead of inheriting the parent issue title. Attachment download paths are validated to stay within `download_dir` so crafted filenames cannot escape via path traversal.
+
 ## [1.6.27]
 
 ### Fixes

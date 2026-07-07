@@ -509,28 +509,33 @@ class JiraDownloader(Downloader):
             fullpath=full_path,
             rel_path=full_path,
         )
+        new_filedata.display_name = attachment_dict["filename"]
         return new_filedata
 
     def process_attachments(
         self, file_data: FileData, attachments: list[dict]
     ) -> list[DownloadResponse]:
         with self.connection_config.get_client() as client:
-            download_path = self.get_download_path(file_data)
-            attachment_download_dir = download_path.parent / "attachments"
-            attachment_download_dir.mkdir(parents=True, exist_ok=True)
             download_responses = []
             for attachment in attachments:
-                attachment_filename = Path(attachment["filename"])
                 attachment_id = attachment["id"]
-                attachment_download_path = attachment_download_dir / Path(
-                    attachment_id
-                ).with_suffix(attachment_filename.suffix)
-                resp = client.get_attachment_content(attachment_id=attachment_id)
-                with open(attachment_download_path, "wb") as f:
-                    f.write(resp)
                 attachment_filedata = self.generate_attachment_file_data(
                     attachment_dict=attachment, parent_filedata=file_data
                 )
+                attachment_download_path = self.get_download_path(attachment_filedata)
+                if attachment_download_path is None:
+                    raise ValueError("Attachment file data is missing source identifiers data.")
+                attachment_download_path = attachment_download_path.resolve()
+                download_dir_resolved = self.download_dir.resolve()
+                if not attachment_download_path.is_relative_to(download_dir_resolved):
+                    raise ValueError(
+                        f"Security error: attachment download path {attachment_download_path} "
+                        f"is outside the allowed directory {download_dir_resolved}"
+                    )
+                attachment_download_path.parent.mkdir(parents=True, exist_ok=True)
+                resp = client.get_attachment_content(attachment_id=attachment_id)
+                with open(attachment_download_path, "wb") as f:
+                    f.write(resp)
                 download_responses.append(
                     self.generate_download_response(
                         file_data=attachment_filedata, download_path=attachment_download_path
