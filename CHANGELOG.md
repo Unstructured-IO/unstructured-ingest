@@ -1,3 +1,9 @@
+## [1.6.27]
+
+### Fixes
+
+- **fix(FS-2106): populate Jira creation and modification dates at index time.** `JiraIndexer._create_file_data_from_issue` only set `version` (from the issue's `updated` timestamp) and never populated `date_created`/`date_modified`, and the indexer field lists omitted `created`. Because the platform detects new and modified records from the indexer's `FileData.metadata`, Jira records carried no creation/modification dates. The indexer now requests the `created` field in `_get_issues_within_projects`, `_get_issues_within_single_board`, and `_get_issues_by_keys`, and sets `metadata.date_created` (from `created`) and `metadata.date_modified` (from `updated`) as Unix epoch strings alongside the existing `version`.
+
 ## [1.6.26]
 
 ### Fixes
