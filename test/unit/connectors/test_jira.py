@@ -340,4 +340,4 @@ def test_downloader_rejects_attachment_path_traversal(tmp_path):
         type(connection_config).get_client.return_value.__enter__.return_value = mock_client
         downloader.run(parent_file_data)
 
-    assert not (tmp_path.parent / "outside.pdf.10011").exists()
+    assert not (tmp_path.parent.parent / "outside.pdf.10011").exists()
