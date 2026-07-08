@@ -612,7 +612,7 @@ slack_source_entry = SourceRegistryEntry(
     downloader_config=DownloaderConfig,
     connection_config=SlackConnectionConfig,
     location_shape=LocationShape.API_FOLDER,
-    location_identity=("connector_config.channels",),
+    location_identity=("indexer_config.channels",),
     emits_record_version=True,
     supports_recursion=False,
 )

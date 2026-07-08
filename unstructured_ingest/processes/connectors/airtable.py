@@ -238,6 +238,6 @@ airtable_source_entry = SourceRegistryEntry(
     downloader_config=AirtableDownloaderConfig,
     connection_config=AirtableConnectionConfig,
     location_shape=LocationShape.OTHER,
-    location_identity=("indexer_config.base_id", "indexer_config.table_id"),
+    location_identity=("indexer_config.list_of_paths",),
     supports_recursion=False,
 )

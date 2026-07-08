@@ -133,7 +133,11 @@ class SingleStoreUploadStager(SQLUploadStager):
 
 
 class SingleStoreUploaderConfig(SQLUploaderConfig):
-    pass
+    table_name: str = Field(
+        default="elements",
+        description="which table to upload contents to",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
 
 
 @dataclass
@@ -177,7 +181,7 @@ singlestore_source_entry = SourceRegistryEntry(
     downloader_config=SingleStoreDownloaderConfig,
     downloader=SingleStoreDownloader,
     location_shape=LocationShape.SQL_TABLE,
-    location_identity=("connector_config.database", "uploader_config.table_name"),
+    location_identity=("connector_config.database",),
     supports_recursion=False,
 )
 
@@ -187,4 +191,7 @@ singlestore_destination_entry = DestinationRegistryEntry(
     uploader_config=SingleStoreUploaderConfig,
     upload_stager=SingleStoreUploadStager,
     upload_stager_config=SingleStoreUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "uploader_config.table_name"),
+    supports_recursion=False,
 )

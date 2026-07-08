@@ -92,10 +92,9 @@ databricks_native_volumes_source_entry = SourceRegistryEntry(
     downloader_config=DatabricksNativeVolumesDownloaderConfig,
     location_shape=LocationShape.OTHER,
     location_identity=(
-        "connector_config.catalog",
-        "connector_config.schema",
-        "connector_config.volume",
-        "connector_config.volume_path",
+        "indexer_config.catalog",
+        "indexer_config.schema",
+        "indexer_config.volume",
     ),
     supports_recursion=False,
 )

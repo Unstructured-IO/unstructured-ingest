@@ -396,6 +396,6 @@ mongodb_source_entry = SourceRegistryEntry(
     downloader_config=MongoDBDownloaderConfig,
     downloader=MongoDBDownloader,
     location_shape=LocationShape.SQL_TABLE,
-    location_identity=("connector_config.database", "connector_config.collection"),
+    location_identity=("indexer_config.database", "indexer_config.collection"),
     supports_recursion=False,
 )

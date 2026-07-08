@@ -362,7 +362,8 @@ class ElasticsearchUploadStager(UploadStager):
 
 class ElasticsearchUploaderConfig(UploaderConfig):
     index_name: str = Field(
-        description="Name of the Elasticsearch index to pull data from, or upload data to."
+        description="Name of the Elasticsearch index to pull data from, or upload data to.",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     batch_size_bytes: int = Field(
         default=15_000_000,
@@ -469,7 +470,7 @@ elasticsearch_source_entry = SourceRegistryEntry(
     downloader=ElasticsearchDownloader,
     downloader_config=ElasticsearchDownloaderConfig,
     location_shape=LocationShape.SEARCH_INDEX,
-    location_identity=("connector_config.hosts", "connector_config.index_name"),
+    location_identity=("connector_config.hosts", "indexer_config.index_name"),
     emits_record_version=True,
     supports_recursion=False,
 )

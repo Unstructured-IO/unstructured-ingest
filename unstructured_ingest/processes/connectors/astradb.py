@@ -621,7 +621,7 @@ astra_db_source_entry = SourceRegistryEntry(
     downloader_config=AstraDBDownloaderConfig,
     connection_config=AstraDBConnectionConfig,
     location_shape=LocationShape.SEARCH_INDEX,
-    location_identity=("connector_config.keyspace", "connector_config.collection_name"),
+    location_identity=("indexer_config.keyspace", "indexer_config.collection_name"),
     supports_recursion=False,
 )
 

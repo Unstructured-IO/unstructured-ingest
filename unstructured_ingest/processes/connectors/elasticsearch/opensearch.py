@@ -573,7 +573,7 @@ opensearch_source_entry = SourceRegistryEntry(
     downloader=OpenSearchDownloader,
     downloader_config=OpenSearchDownloaderConfig,
     location_shape=LocationShape.SEARCH_INDEX,
-    location_identity=("connector_config.hosts", "uploader_config.index_name"),
+    location_identity=("connector_config.hosts", "indexer_config.index_name"),
     supports_recursion=False,
 )
 
@@ -584,4 +584,7 @@ opensearch_destination_entry = DestinationRegistryEntry(
     upload_stager=OpenSearchUploadStager,
     uploader_config=OpenSearchUploaderConfig,
     uploader=OpenSearchUploader,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.hosts", "uploader_config.index_name"),
+    supports_recursion=False,
 )

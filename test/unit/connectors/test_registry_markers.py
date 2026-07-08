@@ -146,3 +146,65 @@ def test_unannotated_entry_is_unmarked():
     entry = SourceRegistryEntry(indexer=object, downloader=object)
     assert entry.location_shape is None
     assert entry.emits_record_version is False
+
+
+def test_opensearch_dual_role_location_identity():
+    # opensearch is dual-role: as a source the index_name reshapes onto the
+    # indexer config, as a destination onto the uploader config. The identity of
+    # each entry must name the section its own role actually reshapes into.
+    source = source_registry["opensearch"]
+    assert source.location_identity == (
+        "connector_config.hosts",
+        "indexer_config.index_name",
+    )
+    assert (
+        source.indexer_config.model_json_schema()["properties"]["index_name"].get(
+            "x-runtime-eligible"
+        )
+        is True
+    )
+
+    dest = destination_registry["opensearch"]
+    assert dest.location_identity == (
+        "connector_config.hosts",
+        "uploader_config.index_name",
+    )
+    assert (
+        dest.uploader_config.model_json_schema()["properties"]["index_name"].get(
+            "x-runtime-eligible"
+        )
+        is True
+    )
+
+
+def _eligible(config) -> set[str]:
+    props = config.model_json_schema().get("properties", {})
+    return {name for name, prop in props.items() if prop.get("x-runtime-eligible") is True}
+
+
+def _fields(config) -> set[str]:
+    return set(config.model_json_schema().get("properties", {}).keys())
+
+
+@pytest.mark.parametrize(
+    "registry", [source_registry, destination_registry], ids=["source", "destination"]
+)
+def test_annotated_identity_leaves_match_eligible_markers(registry):
+    # Invariant: every location_identity leaf of an annotated entry must be a real
+    # field on the config class its section names, and carry x-runtime-eligible
+    # unless it is a fixed connection-level identity field (connector_config.*).
+    sections = {
+        "connector_config": "connection_config",
+        "indexer_config": "indexer_config",
+        "uploader_config": "uploader_config",
+    }
+    for name, entry in registry.items():
+        if entry.location_shape is None:
+            continue
+        for path in entry.location_identity:
+            section, _, leaf = path.partition(".")
+            config = getattr(entry, sections[section], None)
+            assert config is not None, f"{name}: {path} names an absent section"
+            assert leaf in _fields(config), f"{name}: {path} is not a real field"
+            if section != "connector_config":
+                assert leaf in _eligible(config), f"{name}: {path} is not runtime-eligible"
