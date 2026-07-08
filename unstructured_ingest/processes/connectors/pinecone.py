@@ -25,7 +25,10 @@ from unstructured_ingest.interfaces import (
     VectorDBUploader,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.utils import ndjson
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
 from unstructured_ingest.utils.data_prep import (
@@ -56,7 +59,11 @@ class PineconeAccessConfig(AccessConfig):
 
 
 class PineconeConnectionConfig(ConnectionConfig):
-    index_name: Optional[str] = Field(description="Name of the index to connect to.", default=None)
+    index_name: Optional[str] = Field(
+        description="Name of the index to connect to.",
+        default=None,
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     access_config: Secret[PineconeAccessConfig] = Field(
         default=PineconeAccessConfig(), validate_default=True
     )
@@ -422,4 +429,7 @@ pinecone_destination_entry = DestinationRegistryEntry(
     uploader_config=PineconeUploaderConfig,
     upload_stager=PineconeUploadStager,
     upload_stager_config=PineconeUploadStagerConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.index_name",),
+    supports_recursion=False,
 )

@@ -38,6 +38,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.constants import RECORD_ID_LABEL
@@ -150,7 +151,7 @@ class ElasticsearchConnectionConfig(ConnectionConfig):
 
 
 class ElasticsearchIndexerConfig(IndexerConfig):
-    index_name: str
+    index_name: str = Field(json_schema_extra={"x-runtime-eligible": True})
     batch_size: int = 100
 
 
@@ -467,6 +468,10 @@ elasticsearch_source_entry = SourceRegistryEntry(
     indexer_config=ElasticsearchIndexerConfig,
     downloader=ElasticsearchDownloader,
     downloader_config=ElasticsearchDownloaderConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.hosts", "connector_config.index_name"),
+    emits_record_version=True,
+    supports_recursion=False,
 )
 
 elasticsearch_destination_entry = DestinationRegistryEntry(

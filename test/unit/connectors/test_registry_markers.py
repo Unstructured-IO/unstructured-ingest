@@ -69,6 +69,31 @@ def test_sql_table_destination_entry_markers():
     assert up["properties"]["table_name"].get("x-runtime-eligible") is True
 
 
+def test_search_index_destination_entry_markers():
+    # pinecone represents the search-index cohort: a connection-hosted index name,
+    # equality identity, no recursion.
+    entry = destination_registry["pinecone"]
+    assert entry.location_shape == LocationShape.SEARCH_INDEX
+    assert entry.location_identity == ("connector_config.index_name",)
+    assert entry.supports_recursion is False
+
+    conn = entry.connection_config.model_json_schema()
+    assert conn["properties"]["index_name"].get("x-runtime-eligible") is True
+
+
+def test_search_index_uploader_collection_marker():
+    # weaviate-cloud keeps its collection on the uploader config; only that leaf is
+    # runtime-eligible (the cluster_url is identity-only).
+    entry = destination_registry["weaviate-cloud"]
+    assert entry.location_shape == LocationShape.SEARCH_INDEX
+    assert entry.location_identity == (
+        "connector_config.cluster_url",
+        "uploader_config.collection",
+    )
+    up = entry.uploader_config.model_json_schema()
+    assert up["properties"]["collection"].get("x-runtime-eligible") is True
+
+
 def test_unannotated_entry_is_unmarked():
     # A connector that sets no markers reports location_shape None so consumers
     # fall back to their own defaults rather than deriving an fsspec identity.

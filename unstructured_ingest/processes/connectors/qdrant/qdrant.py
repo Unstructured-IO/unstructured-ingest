@@ -96,7 +96,10 @@ class QdrantUploadStager(UploadStager, ABC):
 
 
 class QdrantUploaderConfig(UploaderConfig):
-    collection_name: str = Field(description="Name of the collection.")
+    collection_name: str = Field(
+        description="Name of the collection.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     batch_size: int = Field(default=50, description="Number of records per batch.")
     num_processes: Optional[int] = Field(
         default=1,

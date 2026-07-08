@@ -19,7 +19,10 @@ from unstructured_ingest.interfaces import (
     UploadStagerConfig,
 )
 from unstructured_ingest.logger import logger
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.utils.data_prep import flatten_dict
 from unstructured_ingest.utils.dep_check import requires_dependencies
 
@@ -36,7 +39,9 @@ class VectaraAccessConfig(AccessConfig):
 class VectaraConnectionConfig(ConnectionConfig):
     access_config: Secret[VectaraAccessConfig]
     customer_id: str
-    corpus_name: Optional[str] = None
+    corpus_name: Optional[str] = Field(
+        default=None, json_schema_extra={"x-runtime-eligible": True}
+    )
     corpus_key: Optional[str] = None
     token_url: str = "https://auth.vectara.com/oauth2/token"
 
@@ -345,4 +350,7 @@ vectara_destination_entry = DestinationRegistryEntry(
     uploader_config=VectaraUploaderConfig,
     upload_stager=VectaraUploadStager,
     upload_stager_config=VectaraUploadStagerConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.corpus_name",),
+    supports_recursion=False,
 )

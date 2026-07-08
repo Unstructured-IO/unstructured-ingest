@@ -2,7 +2,10 @@ from dataclasses import dataclass
 
 from pydantic import Field, Secret
 
-from unstructured_ingest.processes.connector_registry import DestinationRegistryEntry
+from unstructured_ingest.processes.connector_registry import (
+    DestinationRegistryEntry,
+    LocationShape,
+)
 from unstructured_ingest.processes.connectors.qdrant.qdrant import (
     QdrantAccessConfig,
     QdrantConnectionConfig,
@@ -56,4 +59,7 @@ qdrant_cloud_destination_entry = DestinationRegistryEntry(
     uploader_config=CloudQdrantUploaderConfig,
     upload_stager=CloudQdrantUploadStager,
     upload_stager_config=CloudQdrantUploadStagerConfig,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.url", "uploader_config.collection_name"),
+    supports_recursion=False,
 )
