@@ -36,10 +36,9 @@ def test_fsspec_destination_entry_markers(connector_type):
     assert schema["properties"]["remote_url"].get("x-runtime-eligible") is True
 
 
-def test_unannotated_entry_has_safe_defaults():
-    # A connector that sets no markers keeps today's fsspec blob behavior.
+def test_unannotated_entry_is_unmarked():
+    # A connector that sets no markers reports location_shape None so consumers
+    # fall back to their own defaults rather than deriving an fsspec identity.
     entry = SourceRegistryEntry(indexer=object, downloader=object)
-    assert entry.location_shape == LocationShape.FSSPEC_URL
-    assert entry.location_identity == ("indexer_config.remote_url",)
+    assert entry.location_shape is None
     assert entry.emits_record_version is False
-    assert entry.supports_recursion is True

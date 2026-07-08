@@ -37,9 +37,11 @@ class LocationShape(str, Enum):
 
 @dataclass
 class RegistryEntry(ABC):
-    # Capability markers; defaults preserve today's fsspec blob behavior for unannotated connectors.
+    # Capability markers. Default None == unannotated: consumers fall back to their
+    # own defaults rather than deriving, so annotating a connector is opt-in and an
+    # unannotated one is never mistaken for an explicit fsspec declaration.
     # kw_only so they don't disturb the required positional fields on subclasses.
-    location_shape: LocationShape = field(default=LocationShape.FSSPEC_URL, kw_only=True)
+    location_shape: Optional[LocationShape] = field(default=None, kw_only=True)
     supports_recursion: bool = field(default=True, kw_only=True)
 
 
