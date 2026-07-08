@@ -1,0 +1,54 @@
+unstructured_ingest/processes/connectors/sql/postgres.py
+  s_199d7918a95ef3::t_d7aa9c6ec6f68c 178-180
+unstructured_ingest/processes/connectors/kafka/cloud.py
+  s_199d7918a95ef3::t_7abae3d2912be5 125-127
+unstructured_ingest/processes/connectors/sql/snowflake.py
+  s_199d7918a95ef3::t_c8bf4b2ac510f2 354-360
+unstructured_ingest/processes/connectors/kafka/kafka.py
+  s_199d7918a95ef3::t_a80cbe764f2aad 223-226
+unstructured_ingest/processes/connectors/databricks/volumes_native.py
+  s_199d7918a95ef3::t_832f77825c67c9 85-91
+unstructured_ingest/processes/connectors/mongodb.py
+  s_199d7918a95ef3::t_e40f740187b993 306-315
+  s_199d7918a95ef3::t_6ec5e7e26b9b7e 398-400
+unstructured_ingest/processes/connectors/sql/singlestore.py
+  s_199d7918a95ef3::t_569f556a51fea2 136
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_aeca40068de737 72-87
+unstructured_ingest/processes/connectors/couchbase.py
+  s_199d7918a95ef3::t_bcfc21f6ff0d22 364-370
+unstructured_ingest/processes/connectors/astradb.py
+  s_199d7918a95ef3::t_e8131bd9a77268 394-399
+  s_199d7918a95ef3::t_1262eb488d7ca1 639-641
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_199d7918a95ef3::t_215f1f9249e04a 465
+  s_199d7918a95ef3::t_4b8580aa67f883 678-680
+unstructured_ingest/processes/connectors/local.py
+  s_199d7918a95ef3::t_d43da192285c90 235-237
+  s_199d7918a95ef3::t_20a86e8aa4d1d7 166-168
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_199d7918a95ef3::t_659e7e86b14c0e 324-328
+unstructured_ingest/processes/connectors/onedrive.py
+  s_199d7918a95ef3::t_a6d6fb5aaa9779 803-805
+  s_199d7918a95ef3::t_46217a2b985d36 640-641
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_199d7918a95ef3::t_6939d7bc1a10b6 484-486
+unstructured_ingest/processes/connectors/sql/vastdb.py
+  s_199d7918a95ef3::t_7a12c405714e77 267-273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4edaad58ca3f018ebd542c97717aeb288415a450",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
