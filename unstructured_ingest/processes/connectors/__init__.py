@@ -65,6 +65,8 @@ from .sharepoint import CONNECTOR_TYPE as SHAREPOINT_CONNECTOR_TYPE
 from .sharepoint import sharepoint_source_entry
 from .slack import CONNECTOR_TYPE as SLACK_CONNECTOR_TYPE
 from .slack import slack_source_entry
+from .url import CONNECTOR_TYPE as URL_CONNECTOR_TYPE
+from .url import url_source_entry
 from .vectara import CONNECTOR_TYPE as VECTARA_CONNECTOR_TYPE
 from .vectara import vectara_destination_entry
 from .zendesk.zendesk import CONNECTOR_TYPE as ZENDESK_CONNECTOR_TYPE
@@ -87,6 +89,7 @@ add_source_entry(source_type=GOOGLE_DRIVE_CONNECTOR_TYPE, entry=google_drive_sou
 
 add_source_entry(source_type=LOCAL_CONNECTOR_TYPE, entry=local_source_entry)
 add_destination_entry(destination_type=LOCAL_CONNECTOR_TYPE, entry=local_destination_entry)
+add_source_entry(source_type=URL_CONNECTOR_TYPE, entry=url_source_entry)
 
 add_source_entry(source_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_source_entry)
 add_destination_entry(destination_type=ONEDRIVE_CONNECTOR_TYPE, entry=onedrive_destination_entry)

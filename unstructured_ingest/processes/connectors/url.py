@@ -16,14 +16,12 @@ NOT YET REGISTERED. `add_source_entry("url", url_source_entry)` in
 follow-ups. Importing this module has no effect on the shipped registry.
 """
 
-import http.client
 import ipaddress
 import socket
-import ssl
 import urllib.parse
 import uuid
 from dataclasses import dataclass
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import BaseModel, Field, Secret
 
@@ -43,6 +41,10 @@ from unstructured_ingest.interfaces import (
     IndexerConfig,
 )
 from unstructured_ingest.processes.connector_registry import SourceRegistryEntry
+from unstructured_ingest.utils.dep_check import requires_dependencies
+
+if TYPE_CHECKING:
+    import httpx
 
 CONNECTOR_TYPE = "url"
 
@@ -107,33 +109,13 @@ class UrlDownloaderConfig(DownloaderConfig):
 
 
 # --- SSRF-safe fetch: no TOCTOU --------------------------------------------
-# The naive pattern (resolve -> validate -> urlopen) re-resolves DNS inside
-# urlopen, so a hostile server can return a public IP to the validating lookup
-# and a private one to the fetch. We close that by resolving ONCE, validating
-# EVERY returned address, then connecting the socket to the pinned IP (keeping
-# the original hostname for Host header + TLS SNI/cert). Redirects are followed
-# manually so each hop is revalidated instead of trusting urllib's re-resolve.
-
-
-class _PinnedHTTPConnection(http.client.HTTPConnection):
-    def __init__(self, host: str, pinned_ip: str, **kw: Any):
-        super().__init__(host, **kw)
-        self._pinned_ip = pinned_ip
-
-    def connect(self) -> None:
-        self.sock = socket.create_connection((self._pinned_ip, self.port), self.timeout)
-
-
-class _PinnedHTTPSConnection(http.client.HTTPSConnection):
-    def __init__(self, host: str, pinned_ip: str, **kw: Any):
-        super().__init__(host, **kw)
-        self._pinned_ip = pinned_ip
-
-    def connect(self) -> None:
-        sock = socket.create_connection((self._pinned_ip, self.port), self.timeout)
-        # server_hostname=self.host -> SNI + cert validated against the real
-        # hostname, while the socket is pinned to the validated IP.
-        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+# The naive pattern (resolve -> validate -> get) re-resolves DNS at fetch time,
+# so a hostile/rebinding resolver can answer public to the validating lookup and
+# private to the fetch. We close that by resolving ONCE, validating EVERY
+# returned address, then pinning the httpx transport's socket to the validated
+# IP -- httpcore still drives TLS SNI + cert verification off the real hostname,
+# so pinning cannot be bypassed. Redirects are disabled and followed manually so
+# each hop is revalidated.
 
 
 def _validate_and_pin(host: str, allow_private: bool) -> str:
@@ -159,41 +141,55 @@ def _validate_and_pin(host: str, allow_private: bool) -> str:
     return ips[0]  # deterministic pin; all addresses already validated
 
 
+def _pinned_transport(pinned_ip: str) -> "httpx.HTTPTransport":
+    """An httpx transport whose TCP connect targets `pinned_ip`, while httpcore
+    keeps TLS SNI/cert bound to the request's real hostname."""
+    import httpx
+    from httpcore._backends.sync import SyncBackend
+
+    class _PinnedBackend(SyncBackend):
+        def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+            return super().connect_tcp(
+                pinned_ip,
+                port,
+                timeout=timeout,
+                local_address=local_address,
+                socket_options=socket_options,
+            )
+
+    transport = httpx.HTTPTransport(retries=0)
+    # Private seam (asserted by test_pinned_transport_connects_to_pinned_ip); if a
+    # future httpcore renames it, that test fails loudly rather than silently
+    # un-pinning the SSRF guard.
+    transport._pool._network_backend = _PinnedBackend()
+    return transport
+
+
 def _ssrf_safe_get(url: str, allow_private: bool, timeout: int, max_redirects: int = 5) -> bytes:
+    import httpx
+
+    current = url
     for _ in range(max_redirects + 1):
-        parts = urllib.parse.urlsplit(url)
+        parts = urllib.parse.urlsplit(current)
         if parts.scheme not in ("http", "https"):
             raise IngestValueError(f"Unsupported scheme: {parts.scheme!r}")
         host = parts.hostname
         if not host:
-            raise IngestValueError(f"No host in url: {url}")
-        port = parts.port or (443 if parts.scheme == "https" else 80)
+            raise IngestValueError(f"No host in url: {current}")
         pinned = _validate_and_pin(host, allow_private)
-        path = parts.path or "/"
-        if parts.query:
-            path = f"{path}?{parts.query}"
-
-        if parts.scheme == "https":
-            conn: http.client.HTTPConnection = _PinnedHTTPSConnection(
-                host, pinned, port=port, timeout=timeout, context=ssl.create_default_context()
-            )
-        else:
-            conn = _PinnedHTTPConnection(host, pinned, port=port, timeout=timeout)
-        try:
-            conn.request("GET", path, headers={"Host": host})
-            resp = conn.getresponse()
-            if resp.status in (301, 302, 303, 307, 308):
-                location = resp.getheader("Location")
-                resp.read()
-                if not location:
-                    raise IngestValueError("Redirect without Location header")
-                url = urllib.parse.urljoin(url, location)  # revalidated next iteration
-                continue
-            if resp.status != 200:
-                raise RuntimeError(f"GET {url} -> {resp.status}")
-            return resp.read()
-        finally:
-            conn.close()
+        with httpx.Client(
+            transport=_pinned_transport(pinned), timeout=timeout, follow_redirects=False
+        ) as client:
+            resp = client.get(current)
+        if resp.is_redirect:
+            location = resp.headers.get("location")
+            if not location:
+                raise IngestValueError("Redirect without Location header")
+            current = str(httpx.URL(current).join(location))  # revalidated next iteration
+            continue
+        if resp.status_code != 200:
+            raise RuntimeError(f"GET {current} -> {resp.status_code}")
+        return resp.content
     raise IngestValueError(f"Too many redirects for url: {url}")
 
 
@@ -206,6 +202,7 @@ class UrlDownloader(Downloader):
     def is_async(self) -> bool:
         return False
 
+    @requires_dependencies(["httpx"], extras="url")
     def run(self, file_data: FileData, **kwargs: Any) -> DownloadResponse:
         url = file_data.metadata.url
         if not url:
