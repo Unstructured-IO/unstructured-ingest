@@ -1,0 +1,46 @@
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_98a5e349a8c536 1-45
+unstructured_ingest/processes/connectors/fsspec/dropbox.py
+  s_199d7918a95ef3::t_9387f5931cfa33 22
+  s_199d7918a95ef3::t_1502f827e7ec9c 231-233,242-243
+unstructured_ingest/processes/connectors/fsspec/s3.py
+  s_199d7918a95ef3::t_c392ed0d568c1f 246-248,257-258
+  s_199d7918a95ef3::t_5cabf88d660001 17
+unstructured_ingest/processes/connectors/fsspec/box.py
+  s_199d7918a95ef3::t_59097e667f8321 440-442,451-452
+  s_199d7918a95ef3::t_5ea3c86bb9a691 20
+unstructured_ingest/processes/connector_registry.py
+  s_199d7918a95ef3::t_ebc5a81d038a2a 29-37,40,55
+  s_199d7918a95ef3::t_0cbc9bb629ded1 41-43,56-57
+  s_199d7918a95ef3::t_cfdffd77fb0825 2-3
+  s_199d7918a95ef3::t_29b46d08c8d959 79-84
+  s_199d7918a95ef3::t_d89d59e63daffa 58
+unstructured_ingest/processes/connectors/fsspec/fsspec.py
+  s_199d7918a95ef3::t_52344ae2724b87 71
+  s_199d7918a95ef3::t_c829215f5aa42d 42-45
+unstructured_ingest/processes/connectors/fsspec/gcs.py
+  s_199d7918a95ef3::t_27a737450f0ee5 17
+  s_199d7918a95ef3::t_8d955a38d41267 202-204,213-214
+unstructured_ingest/processes/connectors/fsspec/azure.py
+  s_199d7918a95ef3::t_17c9f6e3e78db8 207-209,218-219
+  s_199d7918a95ef3::t_14aa3fdfcad4d3 15
+unstructured_ingest/processes/connectors/fsspec/sftp.py
+  s_199d7918a95ef3::t_61fd9ab06f7b13 270,277-278,287-288
+  s_199d7918a95ef3::t_9d37af7fd08b39 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4c89733c32dc663c77a49557ce5f5ae27533329e",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
