@@ -119,7 +119,7 @@ def test_validate_and_pin_allows_public():
 
 
 @pytest.mark.parametrize(
-    "bad", ["127.0.0.1", "10.0.0.1", "192.168.1.1", "169.254.169.254", "0.0.0.0"]
+    "bad", ["127.0.0.1", "10.0.0.1", "192.168.1.1", "169.254.169.254", "0.0.0.0", "100.64.0.1"]
 )
 def test_validate_and_pin_blocks_nonpublic(bad):
     with pytest.raises(IngestValueError, match="Refusing non-public"):

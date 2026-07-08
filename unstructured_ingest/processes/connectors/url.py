@@ -128,15 +128,10 @@ def _validate_and_pin(host: str, allow_private: bool) -> str:
     if not ips:
         raise IngestValueError(f"No addresses for host: {host}")
     for ip in ips:
-        addr = ipaddress.ip_address(ip)
-        if not allow_private and (
-            addr.is_private
-            or addr.is_loopback
-            or addr.is_link_local
-            or addr.is_reserved
-            or addr.is_multicast
-            or addr.is_unspecified
-        ):
+        # is_global is an allowlist: rejects private/loopback/link-local/reserved/
+        # multicast/unspecified AND non-globally-routable ranges a denylist misses
+        # (e.g. CGNAT 100.64.0.0/10). Skipped when allow_private is set.
+        if not allow_private and not ipaddress.ip_address(ip).is_global:
             raise IngestValueError(f"Refusing non-public address {ip} for host {host}")
     return ips[0]  # deterministic pin; all addresses already validated
 
