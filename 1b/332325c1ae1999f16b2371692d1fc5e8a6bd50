@@ -1,0 +1,21 @@
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_10dd09b66854bc 39-41,43
+unstructured_ingest/processes/connector_registry.py
+  s_199d7918a95ef3::t_e2bcfff130ed3e 40-42,44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1b332325c1ae1999f16b2371692d1fc5e8a6bd50",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
