@@ -42,6 +42,7 @@ from unstructured_ingest.interfaces import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.dep_check import requires_dependencies
@@ -130,7 +131,7 @@ class SalesforceConnectionConfig(ConnectionConfig):
 
 
 class SalesforceIndexerConfig(IndexerConfig):
-    categories: list[str]
+    categories: list[str] = Field(json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -304,4 +305,7 @@ salesforce_source_entry = SourceRegistryEntry(
     indexer=SalesforceIndexer,
     downloader_config=SalesforceDownloaderConfig,
     downloader=SalesforceDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("indexer_config.categories",),
+    supports_recursion=False,
 )

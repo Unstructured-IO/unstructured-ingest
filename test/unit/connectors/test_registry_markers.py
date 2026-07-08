@@ -94,6 +94,29 @@ def test_search_index_uploader_collection_marker():
     assert up["properties"]["collection"].get("x-runtime-eligible") is True
 
 
+def test_api_folder_source_entry_markers():
+    # sharepoint represents the api-folder cohort with a real folder tree: site
+    # (connection) + path (indexer) identity, recursive traversal, record version.
+    entry = source_registry["sharepoint"]
+    assert entry.location_shape == LocationShape.API_FOLDER
+    assert entry.location_identity == ("connector_config.site", "indexer_config.path")
+    assert entry.supports_recursion is True
+    assert entry.emits_record_version is True
+
+    conn = entry.connection_config.model_json_schema()
+    assert conn["properties"]["site"].get("x-runtime-eligible") is True
+    idx = entry.indexer_config.model_json_schema()
+    assert idx["properties"]["path"].get("x-runtime-eligible") is True
+    assert idx["properties"]["recursive"].get("x-runtime-eligible") is True
+
+
+def test_api_folder_without_folder_tree_has_no_recursion():
+    # gitlab is api-folder but a flat listing, so recursion is off.
+    entry = source_registry["gitlab"]
+    assert entry.location_shape == LocationShape.API_FOLDER
+    assert entry.supports_recursion is False
+
+
 def test_unannotated_entry_is_unmarked():
     # A connector that sets no markers reports location_shape None so consumers
     # fall back to their own defaults rather than deriving an fsspec identity.

@@ -36,6 +36,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.utils.blob_storage import (
@@ -232,8 +233,8 @@ class OnedriveConnectionConfig(ConnectionConfig):
 
 
 class OnedriveIndexerConfig(IndexerConfig):
-    path: Optional[str] = Field(default="")
-    recursive: bool = False
+    path: Optional[str] = Field(default="", json_schema_extra={"x-runtime-eligible": True})
+    recursive: bool = Field(default=False, json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -786,6 +787,10 @@ onedrive_source_entry = SourceRegistryEntry(
     indexer=OnedriveIndexer,
     downloader_config=OnedriveDownloaderConfig,
     downloader=OnedriveDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("indexer_config.path",),
+    emits_record_version=True,
+    supports_recursion=True,
 )
 
 onedrive_destination_entry = DestinationRegistryEntry(

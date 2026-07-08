@@ -20,6 +20,7 @@ from unstructured_ingest.error import (
 )
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.onedrive import (
@@ -57,7 +58,8 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
                     https://[tenant].sharepoint.com/sites/<site_name>. \
                     To process all sites within the tenant pass a site url as \
                     https://[tenant]-admin.sharepoint.com.\
-                    This requires the app to be registered at a tenant level"
+                    This requires the app to be registered at a tenant level",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     library: Optional[str] = Field(
         default=None,
@@ -90,7 +92,7 @@ class SharepointConnectionConfig(OnedriveConnectionConfig):
 
 class SharepointIndexerConfig(OnedriveIndexerConfig):
     # TODO: We can probably make path non-optional on OnedriveIndexerConfig once tested
-    path: str = Field(default="")
+    path: str = Field(default="", json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -300,4 +302,8 @@ sharepoint_source_entry = SourceRegistryEntry(
     indexer=SharepointIndexer,
     downloader_config=SharepointDownloaderConfig,
     downloader=SharepointDownloader,
+    location_shape=LocationShape.API_FOLDER,
+    location_identity=("connector_config.site", "indexer_config.path"),
+    emits_record_version=True,
+    supports_recursion=True,
 )
