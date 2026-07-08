@@ -37,6 +37,7 @@ from unstructured_ingest.interfaces import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.utils.data_prep import batch_generator, flatten_dict
@@ -64,15 +65,22 @@ class CouchbaseAccessConfig(AccessConfig):
 
 class CouchbaseConnectionConfig(ConnectionConfig):
     username: str = Field(description="The username for the Couchbase server")
-    bucket: str = Field(description="The bucket to connect to on the Couchbase server")
+    bucket: str = Field(
+        description="The bucket to connect to on the Couchbase server",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     connection_string: str = Field(
         default="couchbase://localhost", description="The connection string of the Couchbase server"
     )
     scope: str = Field(
-        default="_default", description="The scope to connect to on the Couchbase server"
+        default="_default",
+        description="The scope to connect to on the Couchbase server",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     collection: str = Field(
-        default="_default", description="The collection to connect to on the Couchbase server"
+        default="_default",
+        description="The collection to connect to on the Couchbase server",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     connect_timeout_seconds: Optional[int] = Field(
         default=None,
@@ -361,4 +369,11 @@ couchbase_source_entry = SourceRegistryEntry(
     indexer_config=CouchbaseIndexerConfig,
     downloader=CouchbaseDownloader,
     downloader_config=CouchbaseDownloaderConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.bucket",
+        "connector_config.scope",
+        "connector_config.collection",
+    ),
+    supports_recursion=False,
 )

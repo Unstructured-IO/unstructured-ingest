@@ -36,6 +36,39 @@ def test_fsspec_destination_entry_markers(connector_type):
     assert schema["properties"]["remote_url"].get("x-runtime-eligible") is True
 
 
+def test_sql_table_source_entry_markers():
+    # postgres represents the sql-table cohort: connection database + indexer table
+    # compose the equality identity, no recursion, no record version.
+    entry = source_registry["postgres"]
+    assert entry.location_shape == LocationShape.SQL_TABLE
+    assert entry.location_identity == (
+        "connector_config.database",
+        "indexer_config.table_name",
+    )
+    assert entry.supports_recursion is False
+    assert entry.emits_record_version is False
+
+    conn = entry.connection_config.model_json_schema()
+    assert conn["properties"]["database"].get("x-runtime-eligible") is True
+    idx = entry.indexer_config.model_json_schema()
+    assert idx["properties"]["table_name"].get("x-runtime-eligible") is True
+
+
+def test_sql_table_destination_entry_markers():
+    # kdbai represents the destination-only sql-table cohort.
+    entry = destination_registry["kdbai"]
+    assert entry.location_shape == LocationShape.SQL_TABLE
+    assert entry.location_identity == (
+        "uploader_config.database_name",
+        "uploader_config.table_name",
+    )
+    assert entry.supports_recursion is False
+
+    up = entry.uploader_config.model_json_schema()
+    assert up["properties"]["database_name"].get("x-runtime-eligible") is True
+    assert up["properties"]["table_name"].get("x-runtime-eligible") is True
+
+
 def test_unannotated_entry_is_unmarked():
     # A connector that sets no markers reports location_shape None so consumers
     # fall back to their own defaults rather than deriving an fsspec identity.

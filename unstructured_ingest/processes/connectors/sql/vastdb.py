@@ -12,6 +12,7 @@ from unstructured_ingest.error import DestinationConnectionError
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.sql.sql import (
@@ -50,8 +51,8 @@ class VastdbConnectionConfig(SQLConnectionConfig):
     access_config: Secret[VastdbAccessConfig] = Field(
         default=VastdbAccessConfig(), validate_default=True
     )
-    vastdb_bucket: str
-    vastdb_schema: str
+    vastdb_bucket: str = Field(json_schema_extra={"x-runtime-eligible": True})
+    vastdb_schema: str = Field(json_schema_extra={"x-runtime-eligible": True})
     connector_type: str = Field(default=CONNECTOR_TYPE, init=False)
 
     @requires_dependencies(["vastdb"], extras="vastdb")
@@ -252,6 +253,9 @@ vastdb_source_entry = SourceRegistryEntry(
     indexer=VastdbIndexer,
     downloader_config=VastdbDownloaderConfig,
     downloader=VastdbDownloader,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.vastdb_bucket", "connector_config.vastdb_schema"),
+    supports_recursion=False,
 )
 
 vastdb_destination_entry = DestinationRegistryEntry(

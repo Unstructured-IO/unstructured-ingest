@@ -10,6 +10,7 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.sql.sql import (
@@ -45,7 +46,11 @@ class SingleStoreConnectionConfig(SQLConnectionConfig):
     host: Optional[str] = Field(default=None, description="SingleStore host")
     port: Optional[int] = Field(default=None, description="SingleStore port")
     user: Optional[str] = Field(default=None, description="SingleStore user")
-    database: Optional[str] = Field(default=None, description="SingleStore database")
+    database: Optional[str] = Field(
+        default=None,
+        description="SingleStore database",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
 
     @contextmanager
     @requires_dependencies(["singlestoredb"], extras="singlestore")
@@ -171,6 +176,9 @@ singlestore_source_entry = SourceRegistryEntry(
     indexer=SingleStoreIndexer,
     downloader_config=SingleStoreDownloaderConfig,
     downloader=SingleStoreDownloader,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "uploader_config.table_name"),
+    supports_recursion=False,
 )
 
 singlestore_destination_entry = DestinationRegistryEntry(

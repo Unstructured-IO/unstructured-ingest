@@ -18,6 +18,7 @@ from unstructured_ingest.error import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.sql.sql import (
@@ -246,6 +247,7 @@ class TeradataConnectionConfig(SQLConnectionConfig):
     database: Optional[str] = Field(
         default=None,
         description="Default database/schema to use for queries",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     dbs_port: int = Field(
         default=1025,
@@ -293,7 +295,7 @@ class TeradataConnectionConfig(SQLConnectionConfig):
 
 
 class TeradataIndexerConfig(SQLIndexerConfig):
-    pass
+    table_name: str = Field(json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -661,6 +663,9 @@ teradata_source_entry = SourceRegistryEntry(
     indexer=TeradataIndexer,
     downloader_config=TeradataDownloaderConfig,
     downloader=TeradataDownloader,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "indexer_config.table_name"),
+    supports_recursion=False,
 )
 
 teradata_destination_entry = DestinationRegistryEntry(
