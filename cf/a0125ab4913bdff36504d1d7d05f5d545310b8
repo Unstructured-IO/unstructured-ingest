@@ -1,0 +1,39 @@
+unstructured_ingest/processes/connectors/elasticsearch/opensearch.py
+  s_199d7918a95ef3::t_fd9a68f4bf5210 576,587-589
+unstructured_ingest/processes/connectors/sql/singlestore.py
+  s_199d7918a95ef3::t_f5b5e8e3e16073 136-140
+  s_199d7918a95ef3::t_52656a1f16c35a 184,194-196
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_00271332af7745 149-210
+unstructured_ingest/processes/connectors/kafka/cloud.py
+  s_199d7918a95ef3::t_83b55694385d6a 117
+unstructured_ingest/processes/connectors/slack.py
+  s_199d7918a95ef3::t_55fa1093499c43 615
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_199d7918a95ef3::t_9524ca9e9ec113 365-366
+  s_199d7918a95ef3::t_8e6dfba9fc23c2 473
+unstructured_ingest/processes/connectors/mongodb.py
+  s_199d7918a95ef3::t_64c5983a4dd75b 399
+unstructured_ingest/processes/connectors/airtable.py
+  s_199d7918a95ef3::t_90276d15669f43 241
+unstructured_ingest/processes/connectors/astradb.py
+  s_199d7918a95ef3::t_cd5d22a6ee92df 624
+unstructured_ingest/processes/connectors/databricks/volumes_native.py
+  s_199d7918a95ef3::t_adf56d760e4d91 95-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "cfa0125ab4913bdff36504d1d7d05f5d545310b8",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
