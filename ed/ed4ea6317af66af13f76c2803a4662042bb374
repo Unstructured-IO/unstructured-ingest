@@ -1,0 +1,48 @@
+unstructured_ingest/processes/connectors/airtable.py
+  s_199d7918a95ef3::t_fd1116d81484c3 20
+  s_199d7918a95ef3::t_01ec96c833fb65 99
+  s_199d7918a95ef3::t_f2af21879ef782 240-242
+unstructured_ingest/processes/connectors/kafka/cloud.py
+  s_199d7918a95ef3::t_508f8e0a3f8e4e 10
+  s_199d7918a95ef3::t_568bb3c223cdfc 116-118
+unstructured_ingest/processes/connectors/delta_table.py
+  s_199d7918a95ef3::t_2ebb2680a1ddc1 314-315
+  s_199d7918a95ef3::t_1e5daeabdb3d5c 22-25
+  s_199d7918a95ef3::t_9cd09080d83a89 63
+unstructured_ingest/processes/connectors/databricks/volumes_native.py
+  s_199d7918a95ef3::t_e9ef4bba26dcc6 93-100
+  s_199d7918a95ef3::t_0ada6529354b61 8
+unstructured_ingest/processes/connectors/redisdb.py
+  s_199d7918a95ef3::t_fc99b2eefb3501 222-224
+  s_199d7918a95ef3::t_f318130a5eed7b 17-20
+  s_199d7918a95ef3::t_1956a93b1218fb 52-57
+unstructured_ingest/processes/connectors/local.py
+  s_199d7918a95ef3::t_44c6a7af969d23 54-55,61
+  s_199d7918a95ef3::t_d08c860a67bd4e 223-225
+  s_199d7918a95ef3::t_bf4b39734023a6 31
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_e789222449db76 120-142
+unstructured_ingest/processes/connectors/kafka/kafka.py
+  s_199d7918a95ef3::t_03b7a0075920f3 48
+  s_199d7918a95ef3::t_4de2e28083442a 85-88
+unstructured_ingest/processes/connectors/neo4j.py
+  s_199d7918a95ef3::t_1d66f1cf98bf05 32
+  s_199d7918a95ef3::t_b1938c984ad40d 539-541
+  s_199d7918a95ef3::t_2ec459ed2b1206 56-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "eded4ea6317af66af13f76c2803a4662042bb374",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
