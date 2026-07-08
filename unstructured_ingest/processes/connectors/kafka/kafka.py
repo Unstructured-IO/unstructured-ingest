@@ -45,7 +45,7 @@ class KafkaAccessConfig(AccessConfig, ABC):
 
 class KafkaConnectionConfig(ConnectionConfig, ABC):
     access_config: Secret[KafkaAccessConfig]
-    bootstrap_server: str
+    bootstrap_server: str = Field(json_schema_extra={"x-runtime-eligible": True})
     port: int
     group_id: str = Field(
         description="A consumer group is a way to allow a pool of consumers "
@@ -82,7 +82,10 @@ class KafkaConnectionConfig(ConnectionConfig, ABC):
 
 
 class KafkaIndexerConfig(IndexerConfig):
-    topic: str = Field(description="which topic to consume from")
+    topic: str = Field(
+        description="which topic to consume from",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     num_messages_to_consume: Optional[int] = 100
     timeout: Optional[float] = Field(default=3.0, description="polling timeout", ge=3.0)
 

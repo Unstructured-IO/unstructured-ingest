@@ -117,6 +117,29 @@ def test_api_folder_without_folder_tree_has_no_recursion():
     assert entry.supports_recursion is False
 
 
+def test_other_shape_source_entry_markers():
+    # local represents the "other" cohort: an equality path with no folder tree.
+    entry = source_registry["local"]
+    assert entry.location_shape == LocationShape.OTHER
+    assert entry.location_identity == ("indexer_config.input_path",)
+    assert entry.supports_recursion is False
+
+    idx = entry.indexer_config.model_json_schema()
+    assert idx["properties"]["input_path"].get("x-runtime-eligible") is True
+    assert idx["properties"]["recursive"].get("x-runtime-eligible") is True
+
+
+def test_fsspec_url_delta_table_destination_marker():
+    # delta_table is a destination-only fsspec-url shape (table_uri is an s3 URL).
+    entry = destination_registry["delta_table"]
+    assert entry.location_shape == LocationShape.FSSPEC_URL
+    assert entry.location_identity == ("connector_config.table_uri",)
+    assert entry.supports_recursion is True
+
+    conn = entry.connection_config.model_json_schema()
+    assert conn["properties"]["table_uri"].get("x-runtime-eligible") is True
+
+
 def test_unannotated_entry_is_unmarked():
     # A connector that sets no markers reports location_shape None so consumers
     # fall back to their own defaults rather than deriving an fsspec identity.
