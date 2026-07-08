@@ -391,8 +391,13 @@ class AstraDBUploaderConfig(UploaderConfig):
         "Note that the collection name must only include letters, "
         "numbers, and underscores.",
         default=None,
+        json_schema_extra={"x-runtime-eligible": True},
     )
-    keyspace: Optional[str] = Field(default=None, description="The Astra DB connection keyspace.")
+    keyspace: Optional[str] = Field(
+        default=None,
+        description="The Astra DB connection keyspace.",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     requested_indexing_policy: Optional[dict[str, Any]] = Field(
         default=None,
         description="The indexing policy to use for the collection.",
@@ -631,4 +636,7 @@ astra_db_destination_entry = DestinationRegistryEntry(
     upload_stager=AstraDBUploadStager,
     uploader_config=AstraDBUploaderConfig,
     uploader=AstraDBUploader,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("uploader_config.keyspace", "uploader_config.collection_name"),
+    supports_recursion=False,
 )

@@ -82,6 +82,13 @@ databricks_native_volumes_destination_entry = DestinationRegistryEntry(
     uploader_config=DatabricksNativeVolumesUploaderConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.OTHER,
+    location_identity=(
+        "uploader_config.catalog",
+        "uploader_config.schema",
+        "uploader_config.volume",
+    ),
+    supports_recursion=False,
 )
 
 databricks_native_volumes_source_entry = SourceRegistryEntry(

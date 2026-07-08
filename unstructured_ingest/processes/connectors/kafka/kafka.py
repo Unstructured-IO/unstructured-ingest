@@ -220,7 +220,10 @@ class KafkaDownloader(Downloader, ABC):
 
 class KafkaUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Batch size")
-    topic: str = Field(description="which topic to write to")
+    topic: str = Field(
+        description="which topic to write to",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     timeout: Optional[float] = Field(
         default=10.0, description="Timeout in seconds to flush batch of messages"
     )

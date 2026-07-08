@@ -264,4 +264,11 @@ vastdb_destination_entry = DestinationRegistryEntry(
     uploader_config=VastdbUploaderConfig,
     upload_stager=VastdbUploadStager,
     upload_stager_config=VastdbUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.vastdb_bucket",
+        "connector_config.vastdb_schema",
+        "uploader_config.table_name",
+    ),
+    supports_recursion=False,
 )

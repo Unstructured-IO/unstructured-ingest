@@ -69,6 +69,22 @@ def test_sql_table_destination_entry_markers():
     assert up["properties"]["table_name"].get("x-runtime-eligible") is True
 
 
+def test_sql_table_destination_write_target_markers():
+    # postgres represents the dual-role sql-table cohort as a destination: it writes
+    # to a connection database (fixed identity) and a runtime-eligible uploader table.
+    entry = destination_registry["postgres"]
+    assert entry.location_shape == LocationShape.SQL_TABLE
+    assert entry.location_identity == (
+        "connector_config.database",
+        "uploader_config.table_name",
+    )
+    assert entry.supports_recursion is False
+    assert entry.emits_record_version is False
+
+    up = entry.uploader_config.model_json_schema()
+    assert up["properties"]["table_name"].get("x-runtime-eligible") is True
+
+
 def test_search_index_destination_entry_markers():
     # pinecone represents the search-index cohort: a connection-hosted index name,
     # equality identity, no recursion.

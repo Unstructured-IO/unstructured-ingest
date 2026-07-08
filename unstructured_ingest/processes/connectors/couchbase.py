@@ -361,6 +361,13 @@ couchbase_destination_entry = DestinationRegistryEntry(
     uploader_config=CouchbaseUploaderConfig,
     upload_stager=CouchbaseUploadStager,
     upload_stager_config=CouchbaseUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.bucket",
+        "connector_config.scope",
+        "connector_config.collection",
+    ),
+    supports_recursion=False,
 )
 
 couchbase_source_entry = SourceRegistryEntry(

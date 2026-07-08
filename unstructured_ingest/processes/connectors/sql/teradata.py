@@ -462,6 +462,7 @@ class TeradataUploaderConfig(SQLUploaderConfig):
         default=None,
         description="Target table name. When None, an opinionated table is "
         "auto-created via create_destination().",
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
 
@@ -674,4 +675,7 @@ teradata_destination_entry = DestinationRegistryEntry(
     uploader_config=TeradataUploaderConfig,
     upload_stager=TeradataUploadStager,
     upload_stager_config=TeradataUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "uploader_config.table_name"),
+    supports_recursion=False,
 )

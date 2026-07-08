@@ -481,4 +481,7 @@ elasticsearch_destination_entry = DestinationRegistryEntry(
     upload_stager=ElasticsearchUploadStager,
     uploader_config=ElasticsearchUploaderConfig,
     uploader=ElasticsearchUploader,
+    location_shape=LocationShape.SEARCH_INDEX,
+    location_identity=("connector_config.hosts", "uploader_config.index_name"),
+    supports_recursion=False,
 )

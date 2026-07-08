@@ -351,4 +351,11 @@ snowflake_destination_entry = DestinationRegistryEntry(
     uploader_config=SnowflakeUploaderConfig,
     upload_stager=SnowflakeUploadStager,
     upload_stager_config=SnowflakeUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=(
+        "connector_config.database",
+        "connector_config.schema",
+        "uploader_config.table_name",
+    ),
+    supports_recursion=False,
 )

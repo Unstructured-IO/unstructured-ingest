@@ -303,8 +303,16 @@ class MongoDBDownloader(Downloader):
 
 class MongoDBUploaderConfig(UploaderConfig):
     batch_size: int = Field(default=100, description="Number of records per batch")
-    database: Optional[str] = Field(default=None, description="database name to connect to")
-    collection: Optional[str] = Field(default=None, description="collection name to connect to")
+    database: Optional[str] = Field(
+        default=None,
+        description="database name to connect to",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
+    collection: Optional[str] = Field(
+        default=None,
+        description="collection name to connect to",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     record_id_key: str = Field(
         default=RECORD_ID_LABEL,
         description="searchable key to find entries for the same record on previous runs",
@@ -387,6 +395,9 @@ mongodb_destination_entry = DestinationRegistryEntry(
     connection_config=MongoDBConnectionConfig,
     uploader=MongoDBUploader,
     uploader_config=MongoDBUploaderConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("uploader_config.database", "uploader_config.collection"),
+    supports_recursion=False,
 )
 
 mongodb_source_entry = SourceRegistryEntry(

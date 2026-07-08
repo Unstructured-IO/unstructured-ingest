@@ -122,4 +122,7 @@ kafka_cloud_destination_entry = DestinationRegistryEntry(
     connection_config=CloudKafkaConnectionConfig,
     uploader=CloudKafkaUploader,
     uploader_config=CloudKafkaUploaderConfig,
+    location_shape=LocationShape.OTHER,
+    location_identity=("connector_config.bootstrap_server", "uploader_config.topic"),
+    supports_recursion=False,
 )

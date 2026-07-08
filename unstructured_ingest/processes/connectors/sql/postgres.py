@@ -175,4 +175,7 @@ postgres_destination_entry = DestinationRegistryEntry(
     uploader_config=PostgresUploaderConfig,
     upload_stager=PostgresUploadStager,
     upload_stager_config=PostgresUploadStagerConfig,
+    location_shape=LocationShape.SQL_TABLE,
+    location_identity=("connector_config.database", "uploader_config.table_name"),
+    supports_recursion=False,
 )

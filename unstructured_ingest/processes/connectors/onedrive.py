@@ -637,7 +637,8 @@ class OnedriveDownloader(Downloader):
 
 class OnedriveUploaderConfig(UploaderConfig):
     remote_url: str = Field(
-        description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'"
+        description="URL of the destination in OneDrive, e.g., 'onedrive://Documents/Folder'",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     prefix: str = "onedrive://"
 
@@ -799,4 +800,7 @@ onedrive_destination_entry = DestinationRegistryEntry(
     uploader_config=OnedriveUploaderConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
+    supports_recursion=True,
 )

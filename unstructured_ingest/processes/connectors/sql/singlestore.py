@@ -133,11 +133,7 @@ class SingleStoreUploadStager(SQLUploadStager):
 
 
 class SingleStoreUploaderConfig(SQLUploaderConfig):
-    table_name: str = Field(
-        default="elements",
-        description="which table to upload contents to",
-        json_schema_extra={"x-runtime-eligible": True},
-    )
+    pass
 
 
 @dataclass

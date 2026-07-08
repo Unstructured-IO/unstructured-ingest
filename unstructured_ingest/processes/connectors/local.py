@@ -163,7 +163,9 @@ class LocalDownloader(Downloader):
 
 class LocalUploaderConfig(UploaderConfig):
     output_dir: str = Field(
-        default="structured-output", description="Local path to write partitioned output to"
+        default="structured-output",
+        description="Local path to write partitioned output to",
+        json_schema_extra={"x-runtime-eligible": True},
     )
 
     @property
@@ -230,4 +232,7 @@ local_destination_entry = DestinationRegistryEntry(
     uploader_config=LocalUploaderConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.OTHER,
+    location_identity=("uploader_config.output_dir",),
+    supports_recursion=False,
 )
