@@ -12,6 +12,7 @@ from unstructured_ingest.error import ProviderError, UserAuthError, UserError, V
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
@@ -203,6 +204,9 @@ azure_source_entry = SourceRegistryEntry(
     downloader=AzureDownloader,
     downloader_config=AzureDownloaderConfig,
     connection_config=AzureConnectionConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("indexer_config.remote_url",),
+    emits_record_version=True,
 )
 
 azure_destination_entry = DestinationRegistryEntry(
@@ -211,4 +215,6 @@ azure_destination_entry = DestinationRegistryEntry(
     connection_config=AzureConnectionConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
 )

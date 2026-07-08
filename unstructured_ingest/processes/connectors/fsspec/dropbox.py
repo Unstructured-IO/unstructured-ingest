@@ -19,6 +19,7 @@ from unstructured_ingest.error import (
 from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
+    LocationShape,
     SourceRegistryEntry,
 )
 from unstructured_ingest.processes.connectors.fsspec.fsspec import (
@@ -227,6 +228,9 @@ dropbox_source_entry = SourceRegistryEntry(
     downloader=DropboxDownloader,
     downloader_config=DropboxDownloaderConfig,
     connection_config=DropboxConnectionConfig,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("indexer_config.remote_url",),
+    emits_record_version=True,
 )
 
 dropbox_destination_entry = DestinationRegistryEntry(
@@ -235,4 +239,6 @@ dropbox_destination_entry = DestinationRegistryEntry(
     connection_config=DropboxConnectionConfig,
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
+    location_shape=LocationShape.FSSPEC_URL,
+    location_identity=("uploader_config.remote_url",),
 )
