@@ -7291,6 +7291,9 @@ togetherai = [
 tsv = [
     { name = "unstructured", extra = ["tsv"] },
 ]
+url = [
+    { name = "httpx" },
+]
 vastdb = [
     { name = "ibis" },
     { name = "pandas" },
@@ -7406,6 +7409,7 @@ requires-dist = [
     { name = "htmlbuilder", marker = "extra == 'notion'" },
     { name = "httpx", marker = "extra == 'ibm-watsonx-s3'" },
     { name = "httpx", marker = "extra == 'notion'" },
+    { name = "httpx", marker = "extra == 'url'" },
     { name = "httpx", marker = "extra == 'vectara'" },
     { name = "httpx", marker = "extra == 'zendesk'" },
     { name = "hubspot-api-client", marker = "extra == 'hubspot'" },
@@ -7501,7 +7505,7 @@ requires-dist = [
     { name = "weaviate-client", marker = "extra == 'weaviate'" },
     { name = "wikipedia", marker = "extra == 'wikipedia'" },
 ]
-provides-extras = ["airtable", "astradb", "azure", "azure-ai-search", "bedrock", "biomed", "box", "chroma", "clarifai", "confluence", "couchbase", "databricks-delta-tables", "databricks-volumes", "delta-table", "discord", "doc", "docx", "dropbox", "duckdb", "elasticsearch", "epub", "gcs", "github", "gitlab", "google-drive", "hubspot", "huggingface", "ibm-watsonx-s3", "image", "jira", "kafka", "kdbai", "lancedb", "md", "milvus", "mixedbreadai", "mongodb", "neo4j", "notion", "octoai", "odt", "onedrive", "openai", "opensearch", "org", "outlook", "pdf", "pinecone", "postgres", "ppt", "pptx", "qdrant", "reddit", "redis", "remote", "rst", "rtf", "s3", "salesforce", "sftp", "sharepoint", "singlestore", "slack", "snowflake", "teradata", "togetherai", "tsv", "vastdb", "vectara", "vertexai", "voyageai", "weaviate", "wikipedia", "xlsx", "zendesk"]
+provides-extras = ["airtable", "astradb", "azure", "azure-ai-search", "bedrock", "biomed", "box", "chroma", "clarifai", "confluence", "couchbase", "databricks-delta-tables", "databricks-volumes", "delta-table", "discord", "doc", "docx", "dropbox", "duckdb", "elasticsearch", "epub", "gcs", "github", "gitlab", "google-drive", "hubspot", "huggingface", "ibm-watsonx-s3", "image", "jira", "kafka", "kdbai", "lancedb", "md", "milvus", "mixedbreadai", "mongodb", "neo4j", "notion", "octoai", "odt", "onedrive", "openai", "opensearch", "org", "outlook", "pdf", "pinecone", "postgres", "ppt", "pptx", "qdrant", "reddit", "redis", "remote", "rst", "rtf", "s3", "salesforce", "sftp", "sharepoint", "singlestore", "slack", "snowflake", "teradata", "togetherai", "tsv", "url", "vastdb", "vectara", "vertexai", "voyageai", "weaviate", "wikipedia", "xlsx", "zendesk"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff" }]

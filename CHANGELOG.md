@@ -1,3 +1,9 @@
+## [1.6.29]
+
+### Enhancements
+
+- **feat(connectors): add a `url` source connector.** Fetches documents directly from HTTP(S) URLs, with an SSRF guard (private/link-local/loopback ranges rejected unless `allow_private_ips` is set, revalidated per redirect hop), download-directory-safe filename handling, and rejection of duplicate filenames. Registered as `url` in the source registry; enabled via the `url` extra (`httpx`).
+
 ## [1.6.28]
 
 ### Fixes
