@@ -171,12 +171,27 @@ def test_download_follows_redirect(tmp_path, server):
 
 
 # --- SSRF validator --------------------------------------------------------
-def test_validate_and_pin_allows_public():
-    assert _validate_and_pin("8.8.8.8", allow_private=False) == "8.8.8.8"
+@pytest.mark.parametrize("good", ["8.8.8.8", "2606:4700:4700::1111"])
+def test_validate_and_pin_allows_public(good):
+    assert _validate_and_pin(good, allow_private=False) == good
 
 
 @pytest.mark.parametrize(
-    "bad", ["127.0.0.1", "10.0.0.1", "192.168.1.1", "169.254.169.254", "0.0.0.0", "100.64.0.1"]
+    "bad",
+    [
+        # IPv4: private / loopback / link-local / unspecified / CGNAT
+        "127.0.0.1",
+        "10.0.0.1",
+        "192.168.1.1",
+        "169.254.169.254",
+        "0.0.0.0",
+        "100.64.0.1",
+        # IPv6 transition addrs that embed a private/metadata IPv4 (is_global misses these)
+        "64:ff9b::a9fe:a9fe",  # NAT64 -> 169.254.169.254
+        "2002:a9fe:a9fe::1",  # 6to4 -> 169.254.169.254
+        "::ffff:10.0.0.1",  # IPv4-mapped private
+        "::7f00:1",  # IPv4-compatible -> 127.0.0.1
+    ],
 )
 def test_validate_and_pin_blocks_nonpublic(bad):
     with pytest.raises(IngestValueError, match="Refusing non-public"):

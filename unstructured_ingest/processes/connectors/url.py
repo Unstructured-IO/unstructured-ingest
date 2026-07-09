@@ -131,6 +131,42 @@ class UrlDownloaderConfig(DownloaderConfig):
 # each hop is revalidated.
 
 
+_NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")
+
+
+def _embedded_ipv4(v6: ipaddress.IPv6Address) -> "ipaddress.IPv4Address | None":
+    """The IPv4 an IPv6 transition address embeds (mapped / 6to4 / NAT64 / compat), else None."""
+    if v6.ipv4_mapped:
+        return v6.ipv4_mapped
+    if v6.sixtofour:
+        return v6.sixtofour
+    if v6 in _NAT64_PREFIX:
+        return ipaddress.IPv4Address(int(v6) & 0xFFFFFFFF)
+    # IPv4-compatible ::/96 (deprecated), e.g. ::7f00:1 -> 127.0.0.1 (skip :: and ::1)
+    if int(v6) >> 32 == 0 and (int(v6) & 0xFFFFFFFF) not in (0, 1):
+        return ipaddress.IPv4Address(int(v6) & 0xFFFFFFFF)
+    return None
+
+
+def _is_public_ipv4(v4: ipaddress.IPv4Address) -> bool:
+    # is_global covers private/loopback/etc.; the explicit CGNAT reject makes it
+    # version-independent (100.64.0.0/10's is_global is only correct on py>=3.11.9/3.12.4).
+    return v4.is_global and v4 not in _CGNAT
+
+
+def _is_public_address(ip: str) -> bool:
+    addr = ipaddress.ip_address(ip)
+    if isinstance(addr, ipaddress.IPv4Address):
+        return _is_public_ipv4(addr)
+    # IPv6 must be globally routable AND, if it embeds an IPv4 (NAT64/6to4/mapped/compat),
+    # that IPv4 must be public too — otherwise it can reach a private/metadata host.
+    if not addr.is_global:
+        return False
+    embedded = _embedded_ipv4(addr)
+    return embedded is None or _is_public_ipv4(embedded)
+
+
 def _validate_and_pin(host: str, allow_private: bool) -> str:
     """Resolve host, reject if ANY address is non-public, return one pinned IP."""
     try:
@@ -141,10 +177,9 @@ def _validate_and_pin(host: str, allow_private: bool) -> str:
     if not ips:
         raise IngestValueError(f"No addresses for host: {host}")
     for ip in ips:
-        # is_global is an allowlist: rejects private/loopback/link-local/reserved/
-        # multicast/unspecified AND non-globally-routable ranges a denylist misses
-        # (e.g. CGNAT 100.64.0.0/10). Skipped when allow_private is set.
-        if not allow_private and not ipaddress.ip_address(ip).is_global:
+        # Allowlist: rejects private/loopback/link-local/reserved/multicast/CGNAT and
+        # IPv6 transition addrs that embed a private/metadata IPv4. Skipped in dev.
+        if not allow_private and not _is_public_address(ip):
             raise IngestValueError(f"Refusing non-public address {ip} for host {host}")
     return ips[0]  # deterministic pin; all addresses already validated
 
