@@ -1,0 +1,23 @@
+scripts/url_connector_spike.py
+  s_7b06b6ab69f36f::t_7fc0bb37aa94af 1-123
+unstructured_ingest/processes/connectors/url.py
+  s_7b06b6ab69f36f::t_83ac09a1bd4a90 3-4
+  s_7b06b6ab69f36f::t_6e958f5f3c60ef 1-2,5-15,17-234
+  s_7b06b6ab69f36f::t_c1e0201e78a399 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b6f099915a76875888148b6a9369a5b4ba73488e",
+  "prompts": {},
+  "sessions": {
+    "s_7b06b6ab69f36f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "48da2fb1-7214-4e12-902a-eaea46b2a0c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

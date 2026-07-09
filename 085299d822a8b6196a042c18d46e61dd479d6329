@@ -1,0 +1,19 @@
+test/integration/connectors/test_sharepoint.py
+  s_4456585bb2e38e::t_73c3e6e5fecb95 329-335
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "085299d822a8b6196a042c18d46e61dd479d6329",
+  "prompts": {},
+  "sessions": {
+    "s_4456585bb2e38e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "797f007a-e1da-4bf5-b099-c26d68fb05a4",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}

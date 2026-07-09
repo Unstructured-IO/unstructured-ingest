@@ -1,0 +1,21 @@
+unstructured_ingest/processes/connectors/url.py
+  s_7b06b6ab69f36f::t_6e958f5f3c60ef 1-236
+scripts/url_connector_spike.py
+  s_7b06b6ab69f36f::t_7fc0bb37aa94af 1-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f96e0ac96058e900d8e484839dc0ff8388d235a6",
+  "prompts": {},
+  "sessions": {
+    "s_7b06b6ab69f36f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "48da2fb1-7214-4e12-902a-eaea46b2a0c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
