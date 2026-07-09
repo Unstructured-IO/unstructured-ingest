@@ -128,6 +128,16 @@ def get_type_from_annotation(field_type: Any) -> click.ParamType:
         return get_type_from_annotation(field_type=field_type)
     if field_origin is list and len(field_args) == 1 and field_args[0] is str:
         return DelimitedString()
+    # a list of structured models (e.g. url connector's list[FileReference]) is passed
+    # on the CLI as an inline JSON array; Dict() json-loads the string (and rejects a
+    # non-JSON value cleanly) so pydantic can validate it into the model list
+    if (
+        field_origin is list
+        and len(field_args) == 1
+        and isinstance(field_args[0], type)
+        and issubclass(field_args[0], BaseModel)
+    ):
+        return Dict()
     if field_type is SecretStr:
         return click.STRING
     if dict in [field_type, field_origin]:

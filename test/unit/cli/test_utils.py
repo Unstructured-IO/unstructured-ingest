@@ -2,10 +2,23 @@ import json
 from typing import Optional
 
 import pytest
-from pydantic import Secret, ValidationError
+from pydantic import BaseModel, Secret, ValidationError
 
-from unstructured_ingest.cli.utils.click import extract_config
+from unstructured_ingest.cli.utils.click import Dict, extract_config
+from unstructured_ingest.cli.utils.model_conversion import get_type_from_annotation
 from unstructured_ingest.interfaces import AccessConfig, ConnectionConfig
+
+
+def test_list_of_models_field_parses_json_array_on_cli():
+    # a list of pydantic models maps to Dict() (json-loads the inline JSON array), and
+    # the parsed value must validate back into the model list
+    class Item(BaseModel):
+        a: str
+
+    param_type = get_type_from_annotation(list[Item])
+    assert isinstance(param_type, Dict)
+    parsed = param_type.convert('[{"a": "x"}, {"a": "y"}]')
+    assert [Item(**i) for i in parsed] == [Item(a="x"), Item(a="y")]
 
 
 def test_extract_config_optional_access_config():
