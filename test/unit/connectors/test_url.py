@@ -16,6 +16,7 @@ from unstructured_ingest.processes.connectors.url import (
     UrlIndexer,
     UrlIndexerConfig,
     _pinned_transport,
+    _safe_filename,
     _ssrf_safe_get,
     _validate_and_pin,
     url_source_entry,
@@ -70,6 +71,62 @@ def test_indexer_precheck_rejects_empty():
     idx = UrlIndexer(connection_config=UrlConnectionConfig(), index_config=UrlIndexerConfig())
     with pytest.raises(IngestValueError):
         idx.precheck()
+
+
+def test_indexer_sanitizes_path_traversal_filename():
+    # a filename with path components must reduce to a safe basename (no dir escape)
+    idx = UrlIndexer(
+        connection_config=UrlConnectionConfig(),
+        index_config=UrlIndexerConfig(
+            files=[FileReference(url="https://x/y", filename="../../etc/passwd")]
+        ),
+    )
+    fd = next(iter(idx.run()))
+    assert fd.source_identifiers.filename == "passwd"
+    assert fd.source_identifiers.rel_path == "passwd"
+
+
+@pytest.mark.parametrize("bad", ["..", "../", "/", ""])
+def test_safe_filename_rejects_pure_traversal(bad):
+    with pytest.raises(IngestValueError):
+        _safe_filename(bad)
+
+
+def test_indexer_precheck_rejects_duplicate_filenames():
+    # two entries collapsing to the same basename would overwrite each other
+    idx = UrlIndexer(
+        connection_config=UrlConnectionConfig(),
+        index_config=UrlIndexerConfig(
+            files=[
+                FileReference(url="https://x/a", filename="dup.txt"),
+                FileReference(url="https://x/b", filename="sub/dup.txt"),
+            ]
+        ),
+    )
+    with pytest.raises(IngestValueError, match="Duplicate"):
+        idx.precheck()
+
+
+def test_download_blocks_private_by_default(tmp_path, server):
+    # full pipeline with the production default (allow_private_ips=False) must block the
+    # loopback test server — exercises the guard through UrlDownloader, not just _validate_and_pin
+    _, base = server
+    fd = next(
+        iter(
+            UrlIndexer(
+                connection_config=UrlConnectionConfig(),
+                index_config=UrlIndexerConfig(
+                    files=[FileReference(url=f"{base}/a.txt", filename="a.txt")]
+                ),
+            ).run()
+        )
+    )
+    dl = url_source_entry.downloader(
+        connection_config=UrlConnectionConfig(),
+        download_config=UrlDownloaderConfig(download_dir=tmp_path),  # allow_private_ips=False
+    )
+    with pytest.raises(IngestValueError, match="Refusing non-public"):
+        dl.run(file_data=fd)
 
 
 # --- downloader happy path -------------------------------------------------

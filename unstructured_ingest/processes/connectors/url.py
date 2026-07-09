@@ -21,6 +21,7 @@ import socket
 import urllib.parse
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generator
 
 from pydantic import BaseModel, Field, Secret
@@ -73,6 +74,15 @@ class UrlIndexerConfig(IndexerConfig):
     )
 
 
+def _safe_filename(filename: str) -> str:
+    """Reduce a caller-supplied filename to a safe basename — the download path is
+    derived from it, so `../` etc. must not escape the download dir."""
+    name = Path(filename).name
+    if not name or name in (".", ".."):
+        raise IngestValueError(f"Invalid filename: {filename!r}")
+    return name
+
+
 @dataclass
 class UrlIndexer(Indexer):
     connection_config: UrlConnectionConfig
@@ -81,10 +91,14 @@ class UrlIndexer(Indexer):
     def precheck(self) -> None:
         if not self.index_config.files:
             raise IngestValueError("No files provided")
+        # reject path traversal + collisions up front (the download path derives from filename)
+        names = [_safe_filename(f.filename) for f in self.index_config.files]
+        if len(set(names)) != len(names):
+            raise IngestValueError("Duplicate filenames are not allowed")
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         for ref in self.index_config.files:
-            filename = ref.filename
+            filename = _safe_filename(ref.filename)
             yield FileData(
                 identifier=uuid.uuid5(uuid.NAMESPACE_URL, ref.url).hex,
                 connector_type=CONNECTOR_TYPE,
