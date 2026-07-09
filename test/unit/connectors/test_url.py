@@ -17,7 +17,7 @@ from unstructured_ingest.processes.connectors.url import (
     UrlIndexerConfig,
     _pinned_transport,
     _safe_filename,
-    _ssrf_safe_get,
+    _ssrf_safe_download,
     _validate_and_pin,
     url_source_entry,
 )
@@ -209,7 +209,9 @@ def test_redirect_target_is_revalidated(tmp_path, server, monkeypatch):
     monkeypatch.setattr(url_mod, "_validate_and_pin", fake_pin)
     try:
         with pytest.raises(IngestValueError, match="Refusing non-public"):
-            _ssrf_safe_get(f"{base}/redirect", allow_private=False, timeout=5)
+            _ssrf_safe_download(
+                f"{base}/redirect", tmp_path / "out", allow_private=False, timeout=5
+            )
         assert "evil.internal" in seen  # proves the redirect hop was revalidated
     finally:
         _Handler.redirect_to = "/a.txt"

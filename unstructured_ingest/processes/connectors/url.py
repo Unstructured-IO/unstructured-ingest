@@ -9,11 +9,10 @@ Indexer/Downloader pair:
 The SSRF guard that lived in the playground downloader as an operator env var
 (`environment != "dev"`) is expressed here as connector config
 (`UrlDownloaderConfig.allow_private_ips`), and the TOCTOU in that original guard
-is closed (see `_ssrf_safe_get`).
+is closed (see `_ssrf_safe_download`).
 
-NOT YET REGISTERED. `add_source_entry("url", url_source_entry)` in
-`processes/connectors/__init__.py` + the utic_types enum + plugin manifests are
-follow-ups. Importing this module has no effect on the shipped registry.
+Registered as `url` in the source registry (`url_source_entry` below, wired via
+`add_source_entry` in `processes/connectors/__init__.py`).
 """
 
 import ipaddress
@@ -174,7 +173,12 @@ def _pinned_transport(pinned_ip: str) -> "httpx.HTTPTransport":
     return transport
 
 
-def _ssrf_safe_get(url: str, allow_private: bool, timeout: int, max_redirects: int = 5) -> bytes:
+def _ssrf_safe_download(
+    url: str, dest: Path, allow_private: bool, timeout: int, max_redirects: int = 5
+) -> None:
+    """Stream a validated GET to `dest`. Redirects are followed manually so every hop
+    is revalidated; the body is streamed to disk rather than buffered whole, so a large
+    download does not spike worker memory."""
     import httpx
 
     current = url
@@ -186,19 +190,24 @@ def _ssrf_safe_get(url: str, allow_private: bool, timeout: int, max_redirects: i
         if not host:
             raise IngestValueError(f"No host in url: {current}")
         pinned = _validate_and_pin(host, allow_private)
-        with httpx.Client(
-            transport=_pinned_transport(pinned), timeout=timeout, follow_redirects=False
-        ) as client:
-            resp = client.get(current)
-        if resp.is_redirect:
-            location = resp.headers.get("location")
-            if not location:
-                raise IngestValueError("Redirect without Location header")
-            current = str(httpx.URL(current).join(location))  # revalidated next iteration
-            continue
-        if resp.status_code != 200:
-            raise RuntimeError(f"GET {current} -> {resp.status_code}")
-        return resp.content
+        with (
+            httpx.Client(
+                transport=_pinned_transport(pinned), timeout=timeout, follow_redirects=False
+            ) as client,
+            client.stream("GET", current) as resp,
+        ):
+            if resp.is_redirect:
+                location = resp.headers.get("location")
+                if not location:
+                    raise IngestValueError("Redirect without Location header")
+                current = str(httpx.URL(current).join(location))  # revalidated next iteration
+                continue
+            if resp.status_code != 200:
+                raise RuntimeError(f"GET {current} -> {resp.status_code}")
+            with open(dest, "wb") as f:
+                for chunk in resp.iter_bytes():
+                    f.write(chunk)
+            return
     raise IngestValueError(f"Too many redirects for url: {url}")
 
 
@@ -217,16 +226,14 @@ class UrlDownloader(Downloader):
         if not url:
             raise IngestValueError(f"No url on file_data: {file_data.identifier}")
 
-        data = _ssrf_safe_get(
+        download_path = self.get_download_path(file_data=file_data)
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+        _ssrf_safe_download(
             url,
+            download_path,
             allow_private=self.download_config.allow_private_ips,
             timeout=self.download_config.timeout_seconds,
         )
-
-        download_path = self.get_download_path(file_data=file_data)
-        download_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(download_path, "wb") as f:
-            f.write(data)
 
         return self.generate_download_response(file_data=file_data, download_path=download_path)
 
