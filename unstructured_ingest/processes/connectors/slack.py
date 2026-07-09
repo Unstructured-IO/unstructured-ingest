@@ -9,9 +9,9 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Literal, Optional
 
 from pydantic import Field, Secret
 
@@ -45,6 +45,11 @@ PRIVATE_FILE_DOWNLOAD_TIMEOUT_SECONDS = 60
 SLACK_PRIVATE_FILE_HOST = "files.slack.com"
 
 CONNECTOR_TYPE = "slack"
+
+
+def _token_kind(token: str) -> Literal["user", "bot"]:
+    """Returns 'user' for xoxp- tokens, 'bot' for all others."""
+    return "user" if token.startswith("xoxp-") else "bot"
 
 
 def _safe_slack_filename(filename: str) -> str:
@@ -128,10 +133,46 @@ def _channel_join_error_msg(error_code: str, channels: list, granted_scopes: set
     return f"Failed to join {channel_list}: {error_code}."
 
 
+def _channel_history_error_msg(error_code: str, channels: list, granted_scopes: set) -> str:
+    channel_list = ", ".join(channels)
+    are = "are" if len(channels) > 1 else "is"
+    if error_code == "not_in_channel":
+        return (
+            f"{channel_list}: user is not a member of this private channel(s). "
+            "Ask a channel admin to invite the user."
+        )
+    if error_code == "channel_not_found":
+        return (
+            f"{channel_list}: channel not found or not accessible with this user token. "
+            "Verify the channel ID is correct."
+        )
+    if error_code == "is_archived":
+        return (
+            f"{channel_list} {are} archived. "
+            "Archived channels are readable by former members — "
+            "if the user was not a member before archival, access will be denied."
+        )
+    if error_code == "missing_scope":
+        scope_note = f" (granted: {', '.join(sorted(granted_scopes))})" if granted_scopes else ""
+        return (
+            f"User token is missing a required scope {scope_note}. "
+            f"Re-authorize the token with channels:history for public channels and groups:history "
+            f"for private channels to read {channel_list}."
+        )
+    if error_code in ("not_authed", "invalid_auth", "token_revoked"):
+        return (
+            f"Authentication failed for {channel_list}: {error_code}. "
+            "Check that the user token is valid and has not expired or been revoked."
+        )
+    return f"Cannot read history for {channel_list}: {error_code}."
+
+
 class SlackAccessConfig(AccessConfig):
     token: str = Field(
-        description="Bot token used to access Slack API, must have channels:history scope for the"
-        " bot user."
+        description="Bot token (xoxb-…) or user token (xoxp-…) for the Slack API. "
+        "Both require channels:history scope. "
+        "With a bot token the connector attempts to auto-join public channels; "
+        "with a user token it does not — user tokens can view public channels without joining."
     )
     refresh_token: Optional[str] = Field(default=None, description="Slack OAuth refresh token.")
 
@@ -180,41 +221,90 @@ class SlackIndexer(Indexer):
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()
         granted_scopes = self._get_granted_scopes(client)
-        self._validate_and_join_channels(client, granted_scopes)
+        token = self.connection_config.access_config.get_secret_value().token
+        self._validate_channels(client, _token_kind(token), granted_scopes)
+        oldest = (
+            str(self.index_config.start_date.timestamp())
+            if self.index_config.start_date is not None
+            else None
+        )
+        latest = (
+            str(self.index_config.end_date.timestamp())
+            if self.index_config.end_date is not None
+            else None
+        )
         for channel in self.index_config.channels:
-            messages = []
-            oldest = (
-                str(self.index_config.start_date.timestamp())
-                if self.index_config.start_date is not None
-                else None
-            )
-            latest = (
-                str(self.index_config.end_date.timestamp())
-                if self.index_config.end_date is not None
-                else None
-            )
+            # NOTE: Iterate ALL conversations.history pages so a channel is grouped into stable
+            # per-UTC-day packages regardless of the SDK's internal pagination.
+            messages: list[dict] = []
             for conversation_history in client.conversations_history(
                 channel=channel,
                 oldest=oldest,
                 latest=latest,
                 limit=PAGINATION_LIMIT,
             ):
-                messages = conversation_history.get("messages", [])
-                if messages:
-                    yield self._messages_to_file_data(messages, channel, client)
-                    for file_data in self._message_files_to_file_data(messages, channel):
-                        yield file_data
+                messages.extend(conversation_history.get("messages", []))
+
+            if not messages:
+                continue
+
+            for day, day_messages in self._group_messages_by_day(messages).items():
+                yield self._messages_to_file_data(day_messages, channel, client, day)
+
+            for file_data in self._message_files_to_file_data(messages, channel):
+                yield file_data
+
+    @staticmethod
+    def _message_day(message: dict) -> Optional[str]:
+        # NOTE: Top-level messages are grouped by their own ts-day; thread replies belong to
+        # their ROOT (thread_ts) day. conversations.history only returns parents/standalone
+        # messages, but using thread_ts when present keeps replies pinned to the root's day.
+        day_ts = message.get("thread_ts") or message.get("ts")
+        if not day_ts:
+            return None
+        return datetime.fromtimestamp(float(day_ts), tz=timezone.utc).strftime("%Y-%m-%d")
+
+    def _group_messages_by_day(self, messages: list[dict]) -> dict[str, list[dict]]:
+        packages: dict[str, list[dict]] = defaultdict(list)
+        for message in messages:
+            day = self._message_day(message)
+            if day is None:
+                continue
+            packages[day].append(message)
+        return {day: packages[day] for day in sorted(packages)}
+
+    @staticmethod
+    def _package_version(messages: list[dict]) -> Optional[str]:
+        # NOTE: The newest activity in the package. Includes parent latest_reply and edited.ts
+        # (both returned by conversations.history on the parent) so an old day whose thread gets
+        # a new reply or whose message is edited bumps its version and updates in place.
+        candidates: list[str] = []
+        for message in messages:
+            for value in (
+                message.get("ts"),
+                message.get("latest_reply"),
+                (message.get("edited") or {}).get("ts"),
+            ):
+                if value:
+                    candidates.append(value)
+        if not candidates:
+            return None
+        return max(candidates, key=float)
 
     def _messages_to_file_data(
         self,
         messages: list[dict],
         channel: str,
         client: Optional["WebClient"] = None,
+        day: str = "",
     ) -> FileData:
-        ts_oldest = min((message["ts"] for message in messages), key=lambda m: float(m))
-        ts_newest = max((message["ts"] for message in messages), key=lambda m: float(m))
+        timestamps = [message["ts"] for message in messages if message.get("ts")]
+        ts_oldest = min(timestamps, key=float)
+        ts_latest = max(timestamps, key=float)
+        version = self._package_version(messages)
 
-        identifier_base = f"{channel}-{ts_oldest}-{ts_newest}"
+        # NOTE: Stable across reruns so a modified day UPDATES in place instead of duplicating.
+        identifier_base = f"{channel}-{day}"
         identifier = hashlib.sha256(identifier_base.encode("utf-8")).hexdigest()
         filename = identifier[:16]
 
@@ -236,13 +326,15 @@ class SlackIndexer(Indexer):
             source_identifiers=source_identifiers,
             metadata=FileDataSourceMetadata(
                 url=permalink,
+                version=version,
                 date_created=ts_oldest,
-                date_modified=ts_newest,
+                date_modified=version,
                 date_processed=str(time.time()),
                 record_locator={
                     "channel": channel,
+                    "day": day,
                     "oldest": ts_oldest,
-                    "latest": ts_newest,
+                    "latest": ts_latest,
                 },
             ),
             display_name=source_identifiers.fullpath,
@@ -272,6 +364,7 @@ class SlackIndexer(Indexer):
                     source_identifiers=source_identifiers,
                     metadata=FileDataSourceMetadata(
                         url=slack_file.get("permalink") or None,
+                        version=message_ts,
                         date_created=(
                             str(slack_file.get("created")) if slack_file.get("created") else None
                         ),
@@ -301,7 +394,7 @@ class SlackIndexer(Indexer):
         except Exception:
             return set()
 
-    def _validate_and_join_channels(self, client: "WebClient", granted_scopes: set) -> None:
+    def _validate_channels_bot(self, client: "WebClient", granted_scopes: set) -> None:
         from slack_sdk.errors import SlackApiError
 
         issues: list[_ChannelIssue] = []
@@ -332,11 +425,44 @@ class SlackIndexer(Indexer):
                 + "\n".join(f"  - {line}" for line in lines)
             )
 
+    def _validate_channels_user(self, client: "WebClient", granted_scopes: set) -> None:
+        from slack_sdk.errors import SlackApiError
+
+        issues: list[_ChannelIssue] = []
+        for channel in self.index_config.channels:
+            try:
+                client.conversations_history(channel=channel, limit=1)
+            except SlackApiError as e:
+                error_code = e.response.get("error", "unknown")
+                issues.append(_ChannelIssue(channel=channel, error_code=error_code))
+
+        if issues:
+            groups: dict[str, list] = defaultdict(list)
+            for issue in issues:
+                groups[issue.error_code].append(issue.channel)
+            lines = [
+                _channel_history_error_msg(error_code, channels, granted_scopes)
+                for error_code, channels in groups.items()
+            ]
+            raise SourceConnectionError(
+                f"Cannot access {len(issues)} channel(s) with user token:\n"
+                + "\n".join(f"  - {line}" for line in lines)
+            )
+
+    def _validate_channels(
+        self, client: "WebClient", token_kind: Literal["user", "bot"], granted_scopes: set
+    ) -> None:
+        if token_kind == "user":
+            self._validate_channels_user(client, granted_scopes)
+        else:
+            self._validate_channels_bot(client, granted_scopes)
+
     @SourceConnectionError.wrap
     def precheck(self) -> None:
         client = self.connection_config.get_client()
         granted_scopes = self._get_granted_scopes(client)
-        self._validate_and_join_channels(client, granted_scopes)
+        token = self.connection_config.access_config.get_secret_value().token
+        self._validate_channels(client, _token_kind(token), granted_scopes)
 
 
 class SlackDownloaderConfig(DownloaderConfig):
@@ -391,11 +517,12 @@ class SlackDownloader(Downloader):
         messages = []
         async for conversation_history in await client.conversations_history(
             channel=file_data.metadata.record_locator["channel"],
+            # NOTE: oldest/latest bound the indexed message range. The indexer stores the
+            # oldest and newest top-level message timestamps; inclusive=True keeps both ends so
+            # the downloader fetches the exact same set of thread roots the indexer grouped.
             oldest=file_data.metadata.record_locator["oldest"],
             latest=file_data.metadata.record_locator["latest"],
             limit=PAGINATION_LIMIT,
-            # NOTE: In order to get the exact same range of messages as indexer, it provides
-            # timestamps of oldest and newest messages, inclusive=True is necessary to include them
             inclusive=True,
         ):
             messages += conversation_history.get("messages", [])

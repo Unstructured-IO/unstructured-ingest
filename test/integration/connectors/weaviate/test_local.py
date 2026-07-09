@@ -12,12 +12,14 @@ from weaviate.collections.classes.config import PropertyConfig
 from test.integration.connectors.utils.constants import DESTINATION_TAG, VECTOR_DB_TAG
 from test.integration.connectors.utils.docker import container_context
 from unstructured_ingest.data_types.file_data import FileData, SourceIdentifiers
+from unstructured_ingest.error import WriteError
 from unstructured_ingest.processes.connectors.weaviate.local import (
     CONNECTOR_TYPE,
     LocalWeaviateConnectionConfig,
     LocalWeaviateUploader,
     LocalWeaviateUploaderConfig,
     LocalWeaviateUploadStager,
+    LocalWeaviateUploadStagerConfig,
 )
 
 COLLECTION_NAME = "elements"
@@ -40,6 +42,17 @@ def weaviate_instance():
     with container_context(
         image="semitechnologies/weaviate:1.27.3",
         ports={8080: 8080, 50051: 50051},
+    ) as ctx:
+        wait_for_container()
+        yield ctx
+
+
+@pytest.fixture
+def weaviate_instance_no_autoschema():
+    with container_context(
+        image="semitechnologies/weaviate:1.27.3",
+        ports={8080: 8080, 50051: 50051},
+        environment={"AUTOSCHEMA_ENABLED": "false"},
     ) as ctx:
         wait_for_container()
         yield ctx
@@ -157,6 +170,160 @@ def test_weaviate_local_destination(upload_file: Path, collection: str, tmp_path
         file_data=file_data,
         expected_count=expected_count,
     )
+
+
+def _aggregate_count(client: WeaviateClient, collection_name: str) -> int:
+    resp = client.collections.get(collection_name).aggregate.over_all(total_count=True)
+    return resp.total_count
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+def test_weaviate_local_auto_schema_flatten(weaviate_instance, tmp_path: Path):
+    """auto_schema + flatten_metadata: no collection is pre-created — Weaviate builds it
+    from the uploaded objects — and the stager normalizes values that have no native
+    Weaviate type before flattening. Regression guard for coordinates.points (a list of
+    [x, y] pairs) which otherwise reaches Weaviate as an unsupported array-of-arrays and
+    fails every insert."""
+    collection_name = "AutoSchemaFlatten"
+    elements = [
+        {
+            "type": "NarrativeText",
+            "element_id": "el-1",
+            "text": "hello world",
+            "metadata": {
+                "filename": "sample.pdf",
+                "page_number": 1,
+                "languages": ["eng"],
+                "coordinates": {
+                    "system": "PixelSpace",
+                    "layout_width": 612,
+                    "layout_height": 792,
+                    "points": [[72.0, 72.69], [72.0, 83.69], [135.8, 83.69], [135.8, 72.69]],
+                },
+                "links": [{"text": "click", "url": "https://example.com", "start_index": 0}],
+                "data_source": {
+                    "version": 12345,
+                    "date_modified": "2025-01-08T22:45:32",
+                    "permissions_data": [{"mode": 33204}],
+                },
+            },
+        },
+        {
+            "type": "NarrativeText",
+            "element_id": "el-2",
+            "text": "second element",
+            "metadata": {"filename": "sample.pdf", "page_number": 2, "languages": ["eng"]},
+        },
+    ]
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath="sample.pdf", filename="sample.pdf"),
+        connector_type=CONNECTOR_TYPE,
+        identifier="rec-auto-schema",
+    )
+    elements_path = tmp_path / "elements.json"
+    with elements_path.open("w") as f:
+        json.dump(elements, f)
+
+    stager = LocalWeaviateUploadStager(
+        upload_stager_config=LocalWeaviateUploadStagerConfig(
+            flatten_metadata=True, auto_schema=True
+        )
+    )
+    staged_filepath = stager.run(
+        elements_filepath=elements_path,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=elements_path.name,
+    )
+
+    uploader = LocalWeaviateUploader(
+        upload_config=LocalWeaviateUploaderConfig(
+            collection=collection_name, flatten_metadata=True, auto_schema=True
+        ),
+        connection_config=LocalWeaviateConnectionConfig(),
+    )
+    # Collection does not exist yet: precheck must pass and the upload must not raise
+    # (a raw 2-D coordinates array would fail every insert -> WriteError).
+    uploader.precheck()
+    uploader.run(path=staged_filepath, file_data=file_data)
+
+    with weaviate.connect_to_local() as client:
+        # Weaviate auto-created the collection from the uploaded objects.
+        assert client.collections.exists(name=collection_name)
+
+        expected_count = len(elements)
+        retries = 0
+        while _aggregate_count(client, collection_name) != expected_count and retries < 10:
+            retries += 1
+            time.sleep(1)
+        assert _aggregate_count(client, collection_name) == expected_count
+
+        collection = client.collections.get(collection_name)
+        props = {p.name: p for p in collection.config.get().properties}
+        # Flattened top-level columns exist; the problematic nested/2-D fields are
+        # stringified so Weaviate can type them.
+        assert props["coordinates_points"].data_type == DataType.TEXT
+        assert props["data_source_permissions_data"].data_type == DataType.TEXT
+        assert props["data_source_version"].data_type == DataType.TEXT
+
+        obj = next(
+            o
+            for o in collection.iterator()
+            if o.properties.get("element_id") == "el-1"
+        )
+        # points arrived as a JSON string, not a 2-D array
+        assert isinstance(obj.properties["coordinates_points"], str)
+        assert obj.properties["coordinates_points"].startswith("[[")
+        assert obj.properties["data_source_version"] == "12345"
+
+
+@pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)
+def test_weaviate_local_auto_schema_upload_fails_without_autoschema(
+    weaviate_instance_no_autoschema, tmp_path: Path
+):
+    """auto_schema=true against a cluster with AUTOSCHEMA_ENABLED=false: precheck passes
+    (we don't probe the cluster), but the upload fails with a clear error because
+    Weaviate refuses to auto-create the collection."""
+    collection_name = "AutoSchemaDisabled"
+    elements = [
+        {
+            "type": "NarrativeText",
+            "element_id": "el-1",
+            "text": "hello world",
+            "metadata": {"filename": "sample.pdf", "page_number": 1},
+        }
+    ]
+    file_data = FileData(
+        source_identifiers=SourceIdentifiers(fullpath="sample.pdf", filename="sample.pdf"),
+        connector_type=CONNECTOR_TYPE,
+        identifier="rec-no-autoschema",
+    )
+    elements_path = tmp_path / "elements.json"
+    with elements_path.open("w") as f:
+        json.dump(elements, f)
+
+    stager = LocalWeaviateUploadStager(
+        upload_stager_config=LocalWeaviateUploadStagerConfig(
+            flatten_metadata=True, auto_schema=True
+        )
+    )
+    staged_filepath = stager.run(
+        elements_filepath=elements_path,
+        file_data=file_data,
+        output_dir=tmp_path,
+        output_filename=elements_path.name,
+    )
+    uploader = LocalWeaviateUploader(
+        upload_config=LocalWeaviateUploaderConfig(
+            collection=collection_name, flatten_metadata=True, auto_schema=True
+        ),
+        connection_config=LocalWeaviateConnectionConfig(),
+    )
+    # precheck does not probe AUTOSCHEMA_ENABLED, so it passes.
+    uploader.precheck()
+    # The upload fails because the cluster refuses to auto-create the collection.
+    with pytest.raises(WriteError):
+        uploader.run(path=staged_filepath, file_data=file_data)
 
 
 @pytest.mark.tags(CONNECTOR_TYPE, DESTINATION_TAG, VECTOR_DB_TAG)

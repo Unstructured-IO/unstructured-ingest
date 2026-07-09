@@ -61,9 +61,20 @@ class WeaviateUploadStagerConfig(UploadStagerConfig):
     flatten_metadata: bool = Field(
         default=False,
         description=(
-            "Flatten metadata into top-level properties. Destination collection "
-            "must already exist (no auto-create); unknown incoming fields are "
-            "dropped and missing schema fields are filled with null."
+            "Flatten nested metadata into top-level properties "
+            "(e.g. metadata.data_source.version -> data_source_version). "
+            "Requires pre-existing collection if auto_schema is disabled."
+        ),
+    )
+    auto_schema: bool = Field(
+        default=False,
+        description=(
+            "Rely on Weaviate's auto-schema to build the collection and its "
+            "properties from the uploaded objects. When true, the collection "
+            "and its properties are created automatically. "
+            "When false, the collection must already exist and each "
+            "object is conformed to it (unknown properties are dropped, missing "
+            "ones set to null). Requires AUTOSCHEMA_ENABLED=true in Weaviate."
         ),
     )
 
@@ -91,9 +102,13 @@ class WeaviateUploadStager(UploadStager):
         working_data = data.copy()
 
         if self.upload_stager_config.flatten_metadata:
-            # Pure flatten: no opinionated transforms. User owns the schema and
-            # declares types matching raw values (e.g. OBJECT_ARRAY for list[dict]
-            # fields like links, permissions_data, regex_metadata_<pattern>).
+            if self.upload_stager_config.auto_schema:
+                # auto_schema: Weaviate infers each column's type from the values.
+                # Apply normalization as the non-flatten path.
+                self._conform_metadata_values(working_data)
+            # else: pure flatten — the user owns the schema and declares types
+            # matching the raw values (e.g. OBJECT_ARRAY for list[dict] fields
+            # like links, permissions_data, regex_metadata_<pattern>).
             metadata = working_data.pop("metadata", {})
             working_data.update(
                 flatten_dict(
@@ -106,6 +121,14 @@ class WeaviateUploadStager(UploadStager):
             working_data[RECORD_ID_LABEL] = file_data.identifier
             return working_data
 
+        self._conform_metadata_values(working_data)
+        working_data[RECORD_ID_LABEL] = file_data.identifier
+        return working_data
+
+    def _conform_metadata_values(self, working_data: dict) -> None:
+        """Normalize nested metadata values into Weaviate-typeable forms in place:
+        stringify dicts / 2-D arrays / list[dict] fields that have no native scalar
+        type, format dates as RFC3339, and cast version/page_number to strings."""
         # Dict as string formatting
         if (
             record_locator := working_data.get("metadata", {})
@@ -182,13 +205,14 @@ class WeaviateUploadStager(UploadStager):
         if regex_metadata := working_data.get("metadata", {}).get("regex_metadata"):
             working_data["metadata"]["regex_metadata"] = str(json.dumps(regex_metadata))
 
-        working_data[RECORD_ID_LABEL] = file_data.identifier
-        return working_data
-
 
 class WeaviateUploaderConfig(UploaderConfig):
     collection: Optional[str] = Field(
-        description="The name of the collection this object belongs to", default=None
+        description=(
+            "The name of the collection this object belongs to. "
+            "If not provided, a default collection name will be used."
+        ),
+        default=None,
     )
     batch_size: Optional[int] = Field(default=None, description="Number of records per batch")
     requests_per_minute: Optional[int] = Field(default=None, description="Rate limit for upload")
@@ -200,9 +224,20 @@ class WeaviateUploaderConfig(UploaderConfig):
     flatten_metadata: bool = Field(
         default=False,
         description=(
-            "Flatten metadata into top-level properties. Destination collection "
-            "must already exist (no auto-create); unknown incoming fields are "
-            "dropped and missing schema fields are filled with null."
+            "Flatten nested metadata into top-level properties "
+            "(e.g. metadata.data_source.version -> data_source_version). "
+            "Requires pre-existing collection if auto_schema is disabled."
+        ),
+    )
+    auto_schema: bool = Field(
+        default=False,
+        description=(
+            "Rely on Weaviate's auto-schema to build the collection and its "
+            "properties from the uploaded objects. When true, the collection "
+            "and its properties are created automatically. "
+            "When false, the collection must already exist and each "
+            "object is conformed to it (unknown properties are dropped, missing "
+            "ones set to null). Requires AUTOSCHEMA_ENABLED=true in Weaviate."
         ),
     )
 
@@ -246,11 +281,22 @@ class WeaviateUploader(VectorDBUploader, ABC):
     upload_config: WeaviateUploaderConfig
     connection_config: WeaviateConnectionConfig
     _schema_property_names: Optional[set[str]] = field(init=False, repr=False, default=None)
+    _collection_exists: Optional[bool] = field(init=False, repr=False, default=None)
 
-    def _collection_exists(self, collection_name: Optional[str] = None):
-        collection_name = collection_name or self.upload_config.collection
-        with self.connection_config.get_client() as weaviate_client:
-            return weaviate_client.collections.exists(name=collection_name)
+    def _collection_present(self, client: "WeaviateClient") -> bool:
+        """Whether the destination collection exists, memoized across a run.
+
+        The collection name is fixed for an uploader and, once the collection exists,
+        it will not disappear mid-run, so a positive result is cached to avoid
+        repeating the existence round-trip on every upload. A negative result is not
+        cached: in auto_schema mode Weaviate creates the collection on the first
+        insert, so it can flip from absent to present within the same run.
+        """
+        if not self._collection_exists:
+            self._collection_exists = client.collections.exists(
+                name=self.upload_config.collection
+            )
+        return self._collection_exists
 
     def get_schema_property_names(self, client: "WeaviateClient") -> set[str]:
         if self._schema_property_names is None:
@@ -265,21 +311,30 @@ class WeaviateUploader(VectorDBUploader, ABC):
         return {k: properties.get(k) for k in schema_props}
 
     def precheck(self) -> None:
-        if self.upload_config.flatten_metadata and not self.upload_config.collection:
-            raise DestinationConnectionError(
-                "flatten_metadata=true requires an explicit collection name."
-            )
-
         try:
             with self.connection_config.get_client() as weaviate_client:
+                if not weaviate_client.is_connected():
+                    raise DestinationConnectionError("failed to connect to Weaviate")
+
+                if self.upload_config.auto_schema:
+                    # Weaviate creates the collection and its properties on the
+                    # first insert (requires AUTOSCHEMA_ENABLED=true)
+                    return
+
+                if self.upload_config.flatten_metadata and not self.upload_config.collection:
+                    raise DestinationConnectionError(
+                        "flatten_metadata=true requires an explicit collection name "
+                        "when auto_schema is disabled."
+                    )
+
                 if not self.upload_config.collection:
                     return
 
-                if not weaviate_client.collections.exists(name=self.upload_config.collection):
-                    msg = f"collection '{self.upload_config.collection}' does not exist"
-                    if self.upload_config.flatten_metadata:
-                        msg += " (must be pre-created when flatten_metadata=true)"
-                    raise DestinationConnectionError(msg)
+                if not self._collection_present(weaviate_client):
+                    raise DestinationConnectionError(
+                        f"Collection '{self.upload_config.collection}' does not exist "
+                        "(must be pre-created when auto_schema is disabled)"
+                    )
 
                 if self.upload_config.flatten_metadata:
                     # Schema shape (OBJECT_ARRAY for nested fields, etc.) is the
@@ -332,35 +387,53 @@ class WeaviateUploader(VectorDBUploader, ABC):
         vector_length: Optional[int] = None,
         **kwargs: Any,
     ) -> bool:
-        if self.upload_config.flatten_metadata:
-            # User manages the collection under flatten mode; precheck validates existence.
-            return False
         collection_name = self.upload_config.collection or destination_name
         collection_name = self.format_destination_name(collection_name)
         self.upload_config.collection = collection_name
 
-        if not self._collection_exists():
+        if self.upload_config.auto_schema:
+            # Weaviate creates the collection and its properties on the
+            # first insert (requires AUTOSCHEMA_ENABLED=true)
+            return False
+        if self.upload_config.flatten_metadata:
+            # User manages the collection under flatten mode; precheck validates existence.
+            return False
+
+        with self.connection_config.get_client() as weaviate_client:
+            if self._collection_present(weaviate_client):
+                logger.debug(
+                    f"Collection with name '{collection_name}' already exists, skipping creation"
+                )
+                return False
             connectors_dir = Path(__file__).parents[1]
             collection_config_file = connectors_dir / "assets" / "weaviate_collection_config.json"
             with collection_config_file.open() as f:
                 collection_config = json.load(f)
             collection_config["class"] = collection_name
-
             logger.info(f"Creating weaviate collection '{collection_name}' with default configs")
-            with self.connection_config.get_client() as weaviate_client:
-                weaviate_client.collections.create_from_dict(config=collection_config)
-                return True
-        logger.debug(f"Collection with name '{collection_name}' already exists, skipping creation")
-        return False
+            weaviate_client.collections.create_from_dict(config=collection_config)
+            # Keep the memoized existence flag correct now that we've created it.
+            self._collection_exists = True
+            return True
 
     def check_for_errors(self, client: "WeaviateClient") -> None:
         failed_uploads = client.batch.failed_objects
-        if failed_uploads:
-            for failure in failed_uploads:
-                logger.error(
-                    f"Failed to upload object with id {failure.original_uuid}: {failure.message}"
-                )
-            raise WriteError("Failed to upload to weaviate")
+        if not failed_uploads:
+            return
+        for failure in failed_uploads:
+            logger.error(
+                f"Failed to upload object with id {failure.original_uuid}: {failure.message}"
+            )
+        reasons = "; ".join(sorted({str(failure.message) for failure in failed_uploads}))
+        message = f"Failed to upload to weaviate: {reasons}"
+        if self.upload_config.auto_schema:
+            # The most common cause with auto_schema is the cluster refusing to
+            # auto-create the collection/columns because AUTOSCHEMA_ENABLED is off.
+            message += (
+                " (auto_schema=true requires AUTOSCHEMA_ENABLED=true in Weaviate; if it is "
+                "disabled, pre-create the collection and set auto_schema=false)"
+            )
+        raise WriteError(message)
 
     @requires_dependencies(["weaviate"], extras="weaviate")
     def delete_by_record_id(self, client: "WeaviateClient", file_data: FileData) -> None:
@@ -394,9 +467,10 @@ class WeaviateUploader(VectorDBUploader, ABC):
             raise ValueError("No collection specified")
 
         with self.connection_config.get_client() as weaviate_client:
-            self.delete_by_record_id(client=weaviate_client, file_data=file_data)
+            if self._collection_present(weaviate_client):
+                self.delete_by_record_id(client=weaviate_client, file_data=file_data)
             schema_props: Optional[set[str]] = None
-            if self.upload_config.flatten_metadata:
+            if self.upload_config.flatten_metadata and not self.upload_config.auto_schema:
                 schema_props = self.get_schema_property_names(weaviate_client)
             with self.upload_config.get_batch_client(client=weaviate_client) as batch_client:
                 for e in data:
