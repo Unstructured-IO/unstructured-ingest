@@ -1,0 +1,23 @@
+unstructured_ingest/cli/utils/model_conversion.py
+  s_233093dc6687b4::t_6dac04aec7c694 31
+  s_233093dc6687b4::t_584006c2a57a82 132-140
+test/unit/cli/test_utils.py
+  s_233093dc6687b4::t_fe8c844d790dfd 5,7-8,12-17
+  s_233093dc6687b4::t_f6c8dc3a6a8b44 18-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3e9d0d355017286c6baaefa016ebdf92fe82f9cc",
+  "prompts": {},
+  "sessions": {
+    "s_233093dc6687b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9858509e-c242-4567-92f4-fa8516232a87",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
