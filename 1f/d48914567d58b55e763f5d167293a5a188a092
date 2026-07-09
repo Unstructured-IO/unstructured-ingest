@@ -1,0 +1,23 @@
+unstructured_ingest/processes/connectors/url.py
+  s_7b06b6ab69f36f::t_78261ecad610d8 134-169,180-182
+CHANGELOG.md
+  s_7b06b6ab69f36f::t_d2923863400273 5
+test/unit/connectors/test_url.py
+  s_7b06b6ab69f36f::t_70c916a3e6601e 174-176,180-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1fd48914567d58b55e763f5d167293a5a188a092",
+  "prompts": {},
+  "sessions": {
+    "s_7b06b6ab69f36f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "48da2fb1-7214-4e12-902a-eaea46b2a0c9",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
