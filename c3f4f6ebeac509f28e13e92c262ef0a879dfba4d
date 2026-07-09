@@ -1,0 +1,64 @@
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_b5c12337310889 97-119
+unstructured_ingest/processes/connectors/onedrive.py
+  s_199d7918a95ef3::t_2be164d95572d2 39
+  s_199d7918a95ef3::t_cf2c441184327a 790-793
+  s_199d7918a95ef3::t_fa77dfaaff0fde 236-237
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_199d7918a95ef3::t_b2cac21958c0a3 61-62
+  s_199d7918a95ef3::t_445663610360ed 305-308
+  s_199d7918a95ef3::t_c285c7323daea3 23
+  s_199d7918a95ef3::t_910cb9313bf83c 95
+unstructured_ingest/processes/connectors/confluence.py
+  s_199d7918a95ef3::t_0d15e028260469 34
+  s_199d7918a95ef3::t_140d06e3ef451e 171-175
+  s_199d7918a95ef3::t_0032c82c79d1a0 693-695
+  s_199d7918a95ef3::t_31d6f5a43b46ff 85-88
+unstructured_ingest/processes/connectors/google_drive.py
+  s_199d7918a95ef3::t_c8242e37f4d4ee 27-30
+  s_199d7918a95ef3::t_11448a947d7f45 227
+  s_199d7918a95ef3::t_d5498df86258a7 1011-1014
+  s_199d7918a95ef3::t_6edc8d0f32757f 183-186
+unstructured_ingest/processes/connectors/gitlab.py
+  s_199d7918a95ef3::t_c8c4eb23e90246 27-30
+  s_199d7918a95ef3::t_1eb3602434683f 276-278
+  s_199d7918a95ef3::t_89a6b09561bcf0 52-55
+unstructured_ingest/processes/connectors/salesforce.py
+  s_199d7918a95ef3::t_1f2520fc4ca9f9 308-310
+  s_199d7918a95ef3::t_ef8086a315484f 45
+  s_199d7918a95ef3::t_cc864a950c76f4 134
+unstructured_ingest/processes/connectors/jira.py
+  s_199d7918a95ef3::t_298fd5482ce7fa 29
+  s_199d7918a95ef3::t_1ccdb44a6d1884 138-141
+  s_199d7918a95ef3::t_df1ba5af03a7c6 596-603
+  s_199d7918a95ef3::t_8a79a51e01de27 205-219
+unstructured_ingest/processes/connectors/outlook.py
+  s_199d7918a95ef3::t_5bebcd3a63d524 144-145,151-155
+  s_199d7918a95ef3::t_a32c857ca47167 310-312
+  s_199d7918a95ef3::t_1fc3b84a2c759c 26-29
+unstructured_ingest/processes/connectors/zendesk/zendesk.py
+  s_199d7918a95ef3::t_81114293c99281 55-58
+  s_199d7918a95ef3::t_5928ec9bc3b290 74
+  s_199d7918a95ef3::t_9d8d3a61e0673a 248-250
+  s_199d7918a95ef3::t_22fc5dbfd40c59 27-30
+unstructured_ingest/processes/connectors/slack.py
+  s_199d7918a95ef3::t_6b13e52ea83b5d 204-205
+  s_199d7918a95ef3::t_67456b4a673d69 34-37
+  s_199d7918a95ef3::t_a7fb0ef62f57e7 614-617
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c3f4f6ebeac509f28e13e92c262ef0a879dfba4d",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

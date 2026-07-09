@@ -1,0 +1,56 @@
+unstructured_ingest/processes/connectors/pinecone.py
+  s_199d7918a95ef3::t_0067c0b5053e0c 28-31
+  s_199d7918a95ef3::t_ea5aa6ea95a9a4 432-434
+  s_199d7918a95ef3::t_eb69e14b3f4038 62-66
+unstructured_ingest/processes/connectors/chroma.py
+  s_199d7918a95ef3::t_913d51d9d48921 128-131
+  s_199d7918a95ef3::t_696e3df9dd8b9b 20-23
+  s_199d7918a95ef3::t_1b808a65d052b0 199-201
+unstructured_ingest/processes/connectors/weaviate/cloud.py
+  s_199d7918a95ef3::t_c4c1f51279a394 8-11
+  s_199d7918a95ef3::t_85ee622849b6cf 169-171
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_199d7918a95ef3::t_7326f7dd768913 471-474
+  s_199d7918a95ef3::t_a9da7ab8c5452e 41
+  s_199d7918a95ef3::t_071aee9c369490 154
+unstructured_ingest/processes/connectors/elasticsearch/opensearch.py
+  s_199d7918a95ef3::t_7cd9703e3ee055 575-577
+  s_199d7918a95ef3::t_4b7c5f1d1c66dd 29
+unstructured_ingest/processes/connectors/weaviate/weaviate.py
+  s_199d7918a95ef3::t_3e0ff86def86dc 216
+unstructured_ingest/processes/connectors/milvus.py
+  s_199d7918a95ef3::t_3eeabfa0ef34c8 321-323
+  s_199d7918a95ef3::t_a0a3f1076aada0 27
+  s_199d7918a95ef3::t_92ef2abc221557 169-172
+unstructured_ingest/processes/connectors/qdrant/cloud.py
+  s_199d7918a95ef3::t_3d2d84d18232ad 5-8
+  s_199d7918a95ef3::t_fcb5cd011d138a 62-64
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_1d3945507c67bf 72-96
+unstructured_ingest/processes/connectors/astradb.py
+  s_199d7918a95ef3::t_67c4d4f49e5739 154-160
+  s_199d7918a95ef3::t_b6ac463b8e3585 623-625
+  s_199d7918a95ef3::t_1bc82e09b266fa 45
+unstructured_ingest/processes/connectors/vectara.py
+  s_199d7918a95ef3::t_a28ed077f655e4 353-355
+  s_199d7918a95ef3::t_060bd8d2856a73 22-25
+  s_199d7918a95ef3::t_9c0ff82507780a 42-44
+unstructured_ingest/processes/connectors/qdrant/qdrant.py
+  s_199d7918a95ef3::t_68e331e042a0d8 99-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "28a795ed39d71a281afc1518c184266beca171e0",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}

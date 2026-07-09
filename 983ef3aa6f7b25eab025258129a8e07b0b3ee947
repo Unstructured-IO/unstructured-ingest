@@ -1,0 +1,68 @@
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_199d7918a95ef3::t_8cc9c5b692acce 26
+  s_199d7918a95ef3::t_169dea3556d5b6 376-378
+  s_199d7918a95ef3::t_275620504c5837 208-211
+unstructured_ingest/processes/connectors/duckdb/motherduck.py
+  s_199d7918a95ef3::t_b07e2180e7a90a 42,47
+  s_199d7918a95ef3::t_2efd5bb0cc1fec 19-22
+  s_199d7918a95ef3::t_2fef008d1be5e2 135-137
+unstructured_ingest/processes/connectors/sql/snowflake.py
+  s_199d7918a95ef3::t_5835eeffa84524 122
+  s_199d7918a95ef3::t_200edd68dad1e5 339-345
+  s_199d7918a95ef3::t_2a74718a0b62a8 13
+  s_199d7918a95ef3::t_9ea3be81863708 73-79
+unstructured_ingest/processes/connectors/databricks/volumes.py
+  s_199d7918a95ef3::t_ce9469c5e9f5c2 41-48,56
+unstructured_ingest/processes/connectors/sql/singlestore.py
+  s_199d7918a95ef3::t_0543b41ea0b829 49-53
+  s_199d7918a95ef3::t_1e6c0df66a2436 13
+  s_199d7918a95ef3::t_bbdffdb9c9a53b 179-181
+unstructured_ingest/processes/connectors/databricks/volumes_table.py
+  s_199d7918a95ef3::t_4d386b7c14fc17 43-52
+  s_199d7918a95ef3::t_6573d1beb3d8fe 261-269
+  s_199d7918a95ef3::t_6ede339a764558 21
+unstructured_ingest/processes/connectors/couchbase.py
+  s_199d7918a95ef3::t_843427f68a8629 68-71,76-78,81-83
+  s_199d7918a95ef3::t_52a94754d944a8 40
+  s_199d7918a95ef3::t_e10bb9058de593 372-378
+unstructured_ingest/processes/connectors/sql/postgres.py
+  s_199d7918a95ef3::t_5005d958994861 12
+  s_199d7918a95ef3::t_e8933841b0554f 87
+  s_199d7918a95ef3::t_589f0bc3feea0c 167-169
+  s_199d7918a95ef3::t_5f661e07cadc6f 48
+unstructured_ingest/processes/connectors/kdbai.py
+  s_199d7918a95ef3::t_46e02b26171bb9 21
+  s_199d7918a95ef3::t_cd3466b2a71272 95-101
+  s_199d7918a95ef3::t_1781475052442b 162-164
+test/unit/connectors/test_registry_markers.py
+  s_199d7918a95ef3::t_33d50c2fd217c7 39-71
+unstructured_ingest/processes/connectors/sql/vastdb.py
+  s_199d7918a95ef3::t_9abd9e6d033627 54-55
+  s_199d7918a95ef3::t_8b47dcdb489f7d 256-258
+  s_199d7918a95ef3::t_1032104b64818e 15
+unstructured_ingest/processes/connectors/mongodb.py
+  s_199d7918a95ef3::t_8f94e459962991 38
+  s_199d7918a95ef3::t_ca5c5e7666fae5 120-129
+  s_199d7918a95ef3::t_6abe198ff5a28d 398-400
+unstructured_ingest/processes/connectors/sql/teradata.py
+  s_199d7918a95ef3::t_7cdaecc2d82510 21
+  s_199d7918a95ef3::t_e7cb9adf23db5c 298
+  s_199d7918a95ef3::t_f22a46d79d588b 250
+  s_199d7918a95ef3::t_e122b071986c1e 666-668
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "983ef3aa6f7b25eab025258129a8e07b0b3ee947",
+  "prompts": {},
+  "sessions": {
+    "s_199d7918a95ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7743020-6f25-4b0f-b75f-48792b363ae0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
