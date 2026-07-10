@@ -1,3 +1,9 @@
+## [1.6.29]
+
+### Enhancements
+
+- **feat: add `rag-ingest-mcp`, a local RAG MCP server (`unstructured_ingest/mcp/`).** A FastMCP STDIO server that lands Transform MCP Element JSON into a local vector store and serves matched-space similarity search, with three tools (`load_transform_output`, `search`, `list_collections`) and three backends behind one `VectorStore` contract selected by `URAG_STORE_BACKEND`: Chroma (default, embedded), Qdrant (embedded local mode or a server), and pgvector (writes the Unstructured-compliant schema — `id, type, record_id, element_id, text, embeddings` — fitting rows to a pre-created table or auto-provisioning an equivalent one with a cosine HNSW index, and casting the vector to the column's own `vector`/`halfvec` type). A collection is pinned to one embedding space (provider, model, dimension) on first load; loads with a different model are refused and every query is embedded into the pinned space, so corpus and query vectors are always comparable. Writes are conformed by the corresponding ingest connector stagers with deterministic element ids, so re-loading a source upserts instead of duplicating. Includes per-backend getting-started guides under `unstructured_ingest/mcp/examples/`.
+
 ## [1.6.28]
 
 ### Fixes

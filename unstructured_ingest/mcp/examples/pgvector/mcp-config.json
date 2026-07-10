@@ -1,0 +1,19 @@
+{
+  "//": "Claude Code: save as .mcp.json in your project root. Claude Desktop: merge into claude_desktop_config.json. Optionally add a Postgres MCP (e.g. postgres-mcp) on the same DSN for SQL-side analytics over the corpus.",
+  "mcpServers": {
+    "rag-ingest-mcp": {
+      "command": "python",
+      "args": ["-m", "unstructured_ingest.mcp"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "URAG_STORE_BACKEND": "pgvector",
+        "URAG_PG_DSN": "postgresql://postgres:postgres@localhost:5432/postgres"
+      }
+    },
+    "unstructured-transform": {
+      "//": "Hosted Transform MCP (or your SND's). OAuth is handled by the MCP host on first use.",
+      "type": "http",
+      "url": "https://<your-transform-mcp-host>/transform-mcp/mcp"
+    }
+  }
+}

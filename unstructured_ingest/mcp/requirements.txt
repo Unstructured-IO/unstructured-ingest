@@ -1,0 +1,8 @@
+# The only dependency this server adds on top of unstructured-ingest itself.
+# The embedders, the Chroma connector, httpx, and pydantic all come from
+# unstructured-ingest and its extras — install the package with:
+#
+#   pip install -e ".[chroma,openai]"     # from the unstructured-ingest repo root
+#   pip install -r unstructured_ingest/mcp/requirements.txt
+#
+fastmcp>=2.0
