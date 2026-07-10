@@ -596,6 +596,7 @@ jira_source_entry = SourceRegistryEntry(
     location_shape=LocationShape.API_FOLDER,
     location_identity=(
         "connector_config.url",
+        "connector_config.cloud_id",
         "indexer_config.projects",
         "indexer_config.boards",
         "indexer_config.issues",

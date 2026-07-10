@@ -439,7 +439,6 @@ box_source_entry = SourceRegistryEntry(
     connection_config=BoxConnectionConfig,
     location_shape=LocationShape.FSSPEC_URL,
     location_identity=("indexer_config.remote_url",),
-    emits_record_version=True,
 )
 
 box_destination_entry = DestinationRegistryEntry(

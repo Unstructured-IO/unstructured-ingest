@@ -691,7 +691,11 @@ confluence_source_entry = SourceRegistryEntry(
     downloader_config=ConfluenceDownloaderConfig,
     downloader=ConfluenceDownloader,
     location_shape=LocationShape.API_FOLDER,
-    location_identity=("connector_config.url", "indexer_config.spaces"),
+    location_identity=(
+        "connector_config.url",
+        "connector_config.cloud_id",
+        "indexer_config.spaces",
+    ),
     emits_record_version=True,
     supports_recursion=False,
 )

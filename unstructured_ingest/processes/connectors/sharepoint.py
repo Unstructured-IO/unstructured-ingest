@@ -303,7 +303,11 @@ sharepoint_source_entry = SourceRegistryEntry(
     downloader_config=SharepointDownloaderConfig,
     downloader=SharepointDownloader,
     location_shape=LocationShape.API_FOLDER,
-    location_identity=("connector_config.site", "indexer_config.path"),
+    location_identity=(
+        "connector_config.site",
+        "connector_config.library",
+        "indexer_config.path",
+    ),
     emits_record_version=True,
     supports_recursion=True,
 )

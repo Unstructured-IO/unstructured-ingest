@@ -224,7 +224,7 @@ local_source_entry = SourceRegistryEntry(
     connection_config=LocalConnectionConfig,
     location_shape=LocationShape.OTHER,
     location_identity=("indexer_config.input_path",),
-    supports_recursion=False,
+    supports_recursion=True,
 )
 
 local_destination_entry = DestinationRegistryEntry(

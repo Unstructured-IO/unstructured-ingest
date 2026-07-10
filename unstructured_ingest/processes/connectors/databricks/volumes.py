@@ -47,7 +47,9 @@ class DatabricksPathMixin(BaseModel):
         json_schema_extra={"x-runtime-eligible": True},
     )
     volume_path: Optional[str] = Field(
-        default=None, description="Optional path within the volume to write to"
+        default=None,
+        description="Optional path within the volume to write to",
+        json_schema_extra={"x-runtime-eligible": True},
     )
     databricks_schema: str = Field(
         default="default",

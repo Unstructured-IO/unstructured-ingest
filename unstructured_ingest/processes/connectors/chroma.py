@@ -197,6 +197,13 @@ chroma_destination_entry = DestinationRegistryEntry(
     upload_stager=ChromaUploadStager,
     upload_stager_config=ChromaUploadStagerConfig,
     location_shape=LocationShape.SEARCH_INDEX,
-    location_identity=("uploader_config.collection_name",),
+    location_identity=(
+        "connector_config.host",
+        "connector_config.port",
+        "connector_config.path",
+        "connector_config.tenant",
+        "connector_config.database",
+        "uploader_config.collection_name",
+    ),
     supports_recursion=False,
 )

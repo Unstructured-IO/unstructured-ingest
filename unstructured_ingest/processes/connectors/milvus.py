@@ -165,7 +165,11 @@ class MilvusUploadStager(UploadStager):
 
 
 class MilvusUploaderConfig(UploaderConfig):
-    db_name: Optional[str] = Field(default=None, description="Milvus database name")
+    db_name: Optional[str] = Field(
+        default=None,
+        description="Milvus database name",
+        json_schema_extra={"x-runtime-eligible": True},
+    )
     collection_name: str = Field(
         description="Milvus collections to write to",
         json_schema_extra={"x-runtime-eligible": True},
@@ -319,6 +323,10 @@ milvus_destination_entry = DestinationRegistryEntry(
     upload_stager=MilvusUploadStager,
     upload_stager_config=MilvusUploadStagerConfig,
     location_shape=LocationShape.SEARCH_INDEX,
-    location_identity=("connector_config.db_name", "uploader_config.collection_name"),
+    location_identity=(
+        "connector_config.db_name",
+        "uploader_config.db_name",
+        "uploader_config.collection_name",
+    ),
     supports_recursion=False,
 )

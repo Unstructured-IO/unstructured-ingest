@@ -9,9 +9,9 @@ from unstructured_ingest.processes.connector_registry import (
     source_registry,
 )
 
-# fsspec sources that emit a per-record version (sftp does not).
-VERSION_EMITTING_FSSPEC = ("s3", "azure", "gcs", "box", "dropbox")
-FSSPEC_COHORT = VERSION_EMITTING_FSSPEC + ("sftp",)
+# fsspec sources that emit a per-record version (box and sftp do not).
+VERSION_EMITTING_FSSPEC = ("s3", "azure", "gcs", "dropbox")
+FSSPEC_COHORT = VERSION_EMITTING_FSSPEC + ("box", "sftp")
 
 
 @pytest.mark.parametrize("connector_type", FSSPEC_COHORT)
@@ -115,7 +115,11 @@ def test_api_folder_source_entry_markers():
     # (connection) + path (indexer) identity, recursive traversal, record version.
     entry = source_registry["sharepoint"]
     assert entry.location_shape == LocationShape.API_FOLDER
-    assert entry.location_identity == ("connector_config.site", "indexer_config.path")
+    assert entry.location_identity == (
+        "connector_config.site",
+        "connector_config.library",
+        "indexer_config.path",
+    )
     assert entry.supports_recursion is True
     assert entry.emits_record_version is True
 
@@ -138,7 +142,7 @@ def test_other_shape_source_entry_markers():
     entry = source_registry["local"]
     assert entry.location_shape == LocationShape.OTHER
     assert entry.location_identity == ("indexer_config.input_path",)
-    assert entry.supports_recursion is False
+    assert entry.supports_recursion is True
 
     idx = entry.indexer_config.model_json_schema()
     assert idx["properties"]["input_path"].get("x-runtime-eligible") is True

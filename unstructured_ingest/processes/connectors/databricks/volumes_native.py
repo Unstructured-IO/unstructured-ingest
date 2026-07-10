@@ -87,6 +87,7 @@ databricks_native_volumes_destination_entry = DestinationRegistryEntry(
         "uploader_config.catalog",
         "uploader_config.schema",
         "uploader_config.volume",
+        "uploader_config.volume_path",
     ),
     supports_recursion=False,
 )
@@ -102,6 +103,7 @@ databricks_native_volumes_source_entry = SourceRegistryEntry(
         "indexer_config.catalog",
         "indexer_config.schema",
         "indexer_config.volume",
+        "indexer_config.volume_path",
     ),
     supports_recursion=False,
 )
