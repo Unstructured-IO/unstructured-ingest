@@ -307,5 +307,6 @@ salesforce_source_entry = SourceRegistryEntry(
     downloader=SalesforceDownloader,
     location_shape=LocationShape.API_FOLDER,
     location_identity=("indexer_config.categories",),
+    emits_record_version=True,
     supports_recursion=False,
 )

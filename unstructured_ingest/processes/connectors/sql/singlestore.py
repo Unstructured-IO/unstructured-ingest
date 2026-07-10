@@ -82,7 +82,7 @@ class SingleStoreConnectionConfig(SQLConnectionConfig):
 
 
 class SingleStoreIndexerConfig(SQLIndexerConfig):
-    pass
+    table_name: str = Field(json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -177,7 +177,7 @@ singlestore_source_entry = SourceRegistryEntry(
     downloader_config=SingleStoreDownloaderConfig,
     downloader=SingleStoreDownloader,
     location_shape=LocationShape.SQL_TABLE,
-    location_identity=("connector_config.database",),
+    location_identity=("connector_config.database", "indexer_config.table_name"),
     supports_recursion=False,
 )
 

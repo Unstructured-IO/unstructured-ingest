@@ -133,6 +133,10 @@ motherduck_destination_entry = DestinationRegistryEntry(
     upload_stager=MotherDuckUploadStager,
     upload_stager_config=MotherDuckUploadStagerConfig,
     location_shape=LocationShape.SQL_TABLE,
-    location_identity=("connector_config.database", "connector_config.db_schema"),
+    location_identity=(
+        "connector_config.database",
+        "connector_config.db_schema",
+        "connector_config.table",
+    ),
     supports_recursion=False,
 )

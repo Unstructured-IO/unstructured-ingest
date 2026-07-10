@@ -789,7 +789,7 @@ onedrive_source_entry = SourceRegistryEntry(
     downloader_config=OnedriveDownloaderConfig,
     downloader=OnedriveDownloader,
     location_shape=LocationShape.API_FOLDER,
-    location_identity=("indexer_config.path",),
+    location_identity=("connector_config.user_pname", "indexer_config.path"),
     emits_record_version=True,
     supports_recursion=True,
 )
@@ -801,6 +801,6 @@ onedrive_destination_entry = DestinationRegistryEntry(
     upload_stager_config=BlobStoreUploadStagerConfig,
     upload_stager=BlobStoreUploadStager,
     location_shape=LocationShape.FSSPEC_URL,
-    location_identity=("uploader_config.remote_url",),
+    location_identity=("connector_config.user_pname", "uploader_config.remote_url"),
     supports_recursion=True,
 )

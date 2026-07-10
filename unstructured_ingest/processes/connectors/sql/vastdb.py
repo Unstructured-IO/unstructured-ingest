@@ -83,7 +83,7 @@ class VastdbConnectionConfig(SQLConnectionConfig):
 
 
 class VastdbIndexerConfig(SQLIndexerConfig):
-    pass
+    table_name: str = Field(json_schema_extra={"x-runtime-eligible": True})
 
 
 @dataclass
@@ -254,7 +254,11 @@ vastdb_source_entry = SourceRegistryEntry(
     downloader_config=VastdbDownloaderConfig,
     downloader=VastdbDownloader,
     location_shape=LocationShape.SQL_TABLE,
-    location_identity=("connector_config.vastdb_bucket", "connector_config.vastdb_schema"),
+    location_identity=(
+        "connector_config.vastdb_bucket",
+        "connector_config.vastdb_schema",
+        "indexer_config.table_name",
+    ),
     supports_recursion=False,
 )
 

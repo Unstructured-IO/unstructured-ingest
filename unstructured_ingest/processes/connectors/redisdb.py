@@ -220,6 +220,10 @@ redis_destination_entry = DestinationRegistryEntry(
     uploader=RedisUploader,
     uploader_config=RedisUploaderConfig,
     location_shape=LocationShape.OTHER,
-    location_identity=("connector_config.host", "connector_config.database"),
+    location_identity=(
+        "connector_config.host",
+        "connector_config.port",
+        "connector_config.database",
+    ),
     supports_recursion=False,
 )

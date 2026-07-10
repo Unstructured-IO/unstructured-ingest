@@ -351,6 +351,6 @@ vectara_destination_entry = DestinationRegistryEntry(
     upload_stager=VectaraUploadStager,
     upload_stager_config=VectaraUploadStagerConfig,
     location_shape=LocationShape.SEARCH_INDEX,
-    location_identity=("connector_config.corpus_name",),
+    location_identity=("connector_config.corpus_name", "connector_config.corpus_key"),
     supports_recursion=False,
 )

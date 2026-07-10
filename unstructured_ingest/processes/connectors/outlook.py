@@ -309,5 +309,6 @@ outlook_source_entry = SourceRegistryEntry(
     connection_config=OutlookConnectionConfig,
     location_shape=LocationShape.API_FOLDER,
     location_identity=("indexer_config.user_email", "indexer_config.outlook_folders"),
-    supports_recursion=False,
+    emits_record_version=True,
+    supports_recursion=True,
 )

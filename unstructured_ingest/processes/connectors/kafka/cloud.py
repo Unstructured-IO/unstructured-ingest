@@ -114,7 +114,11 @@ kafka_cloud_source_entry = SourceRegistryEntry(
     downloader=CloudKafkaDownloader,
     downloader_config=CloudKafkaDownloaderConfig,
     location_shape=LocationShape.OTHER,
-    location_identity=("connector_config.bootstrap_server", "indexer_config.topic"),
+    location_identity=(
+        "connector_config.bootstrap_server",
+        "connector_config.port",
+        "indexer_config.topic",
+    ),
     supports_recursion=False,
 )
 
@@ -123,6 +127,10 @@ kafka_cloud_destination_entry = DestinationRegistryEntry(
     uploader=CloudKafkaUploader,
     uploader_config=CloudKafkaUploaderConfig,
     location_shape=LocationShape.OTHER,
-    location_identity=("connector_config.bootstrap_server", "uploader_config.topic"),
+    location_identity=(
+        "connector_config.bootstrap_server",
+        "connector_config.port",
+        "uploader_config.topic",
+    ),
     supports_recursion=False,
 )

@@ -574,6 +574,7 @@ opensearch_source_entry = SourceRegistryEntry(
     downloader_config=OpenSearchDownloaderConfig,
     location_shape=LocationShape.SEARCH_INDEX,
     location_identity=("connector_config.hosts", "indexer_config.index_name"),
+    emits_record_version=True,
     supports_recursion=False,
 )
 
