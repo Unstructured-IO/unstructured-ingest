@@ -1,0 +1,19 @@
+test/unit/connectors/test_registry_markers.py
+  s_72f1e3dbbb0160::t_7fc0d8ffaff755 231-265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "f443740a09d9853a15a8654e0448616b2ff48585",
+  "prompts": {},
+  "sessions": {
+    "s_72f1e3dbbb0160": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71732b2c-202c-45d9-9c07-2b623ded0975",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Trevor Bossert <alanboss@gmail.com>"
+    }
+  }
+}
