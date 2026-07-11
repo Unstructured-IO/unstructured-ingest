@@ -228,3 +228,38 @@ def test_annotated_identity_leaves_match_eligible_markers(registry):
             assert leaf in _fields(config), f"{name}: {path} is not a real field"
             if section != "connector_config":
                 assert leaf in _eligible(config), f"{name}: {path} is not runtime-eligible"
+
+
+@pytest.mark.parametrize(
+    "registry, default_identity",
+    [
+        (source_registry, ("indexer_config.remote_url",)),
+        (destination_registry, ("uploader_config.remote_url",)),
+    ],
+    ids=["source", "destination"],
+)
+def test_unannotated_entries_are_ignored(registry, default_identity):
+    # Opposite of test_annotated_identity_leaves_match_eligible_markers: parameterization
+    # is gated solely on location_shape. An unannotated entry keeps the fsspec-looking
+    # default location_identity and may even expose x-runtime-eligible fields through a
+    # config class it shares with an annotated sibling (databricks_volumes_*, sqlite,
+    # qdrant/weaviate variants), yet stays location_shape=None so consumers ignore it
+    # rather than mistaking it for an fsspec target. Locks in "unannotated = ignored".
+    unannotated = {name: e for name, e in registry.items() if e.location_shape is None}
+    assert unannotated, "expected some unannotated entries to guard the ignore path"
+
+    shares_eligible_config = False
+    for name, entry in unannotated.items():
+        # The default identity is fsspec-shaped, so anything keyed on location_identity
+        # rather than location_shape would wrongly treat these as fsspec targets.
+        assert entry.location_identity == default_identity, f"{name}: unexpected identity"
+        assert entry.supports_recursion is True, f"{name}: recursion should stay default"
+        assert entry.emits_record_version is False, f"{name}: version should stay default"
+        for section in ("connection_config", "indexer_config", "uploader_config"):
+            config = getattr(entry, section, None)
+            if config is not None and _eligible(config):
+                shares_eligible_config = True
+
+    # Eligibility alone must not parameterize: at least one ignored entry exposes eligible
+    # fields via a shared config class and stays ignored purely because its shape is None.
+    assert shares_eligible_config
