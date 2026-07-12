@@ -159,7 +159,7 @@ class TestSftpUploaderMakeDirsAsync:
 
 
 # ---------------------------------------------------------------------------
-# Host-key verification (SAP grounding compatibility)
+# Host-key verification
 # ---------------------------------------------------------------------------
 
 import paramiko  # noqa: E402

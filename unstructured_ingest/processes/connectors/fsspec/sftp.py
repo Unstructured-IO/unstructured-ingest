@@ -48,7 +48,7 @@ def _strip_leading_slash(path: str) -> str:
     return path[1:] if path.startswith("/") else path
 
 
-# Host key types SAP's grounding secret allows, and that we verify against.
+# Host key types supported for server host-key verification.
 SUPPORTED_HOST_KEY_TYPES: tuple[str, ...] = ("ssh-ed25519", "ssh-rsa")
 
 
@@ -177,8 +177,8 @@ class SftpConnectionConfig(FsspecConnectionConfig):
             "Server host public key used to verify the server's identity. Accepts a "
             "base64 blob (e.g. 'AAAAC3Nza...'), an OpenSSH '.pub' line, or an "
             "ssh-keyscan/known_hosts line; the key type (ssh-ed25519 / ssh-rsa) is "
-            "auto-detected from the key. Maps to SAP grounding's 'public_key'. When "
-            "omitted, the server identity is NOT verified and a warning is logged."
+            "auto-detected from the key. When omitted, the server identity is NOT "
+            "verified and a warning is logged."
         ),
     )
 
@@ -232,8 +232,8 @@ class SftpConnectionConfig(FsspecConnectionConfig):
                 client.client.close()
             return
 
-        # Pinned host-key path (e.g. SAP grounding): build the paramiko client
-        # ourselves so we can pin the expected host key and use RejectPolicy.
+        # Pinned host-key path: build the paramiko client ourselves so we can
+        # pin the expected host key and use RejectPolicy.
         # fsspec's SFTPFileSystem._connect hardcodes AutoAddPolicy and offers no
         # hook, so we override _connect to verify the server before trusting it.
         import paramiko
