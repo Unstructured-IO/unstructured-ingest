@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import contextlib
 import hashlib
 import os
@@ -10,9 +12,10 @@ from time import time
 from typing import TYPE_CHECKING, Any, Generator, Optional
 from urllib.parse import urlparse
 
-from pydantic import Field, Secret
+from pydantic import Field, Secret, model_validator
 
 from unstructured_ingest.data_types.file_data import FileData, FileDataSourceMetadata
+from unstructured_ingest.logger import logger
 from unstructured_ingest.processes.connector_registry import (
     DestinationRegistryEntry,
     SourceRegistryEntry,
@@ -43,6 +46,87 @@ def _strip_leading_slash(path: str) -> str:
     """Strip one leading slash, preserving double-slash absolute path indicators.
     Example: sftp://host//home → /home (absolute), sftp://host/data → data (relative)."""
     return path[1:] if path.startswith("/") else path
+
+
+# Host key types SAP's grounding secret allows, and that we verify against.
+SUPPORTED_HOST_KEY_TYPES: tuple[str, ...] = ("ssh-ed25519", "ssh-rsa")
+
+
+def _extract_ssh_key_type(raw: bytes) -> str:
+    """Read the algorithm name from a decoded SSH public key blob.
+
+    SSH public keys are wire-encoded as a sequence of length-prefixed fields; the
+    first field is the algorithm name (e.g. b"ssh-ed25519"). This is
+    authoritative: the key type is derived from the key material itself, so no
+    separate type input is required.
+    """
+    if len(raw) < 4:
+        raise ValueError("host key blob is too short to contain a key type")
+    length = int.from_bytes(raw[:4], "big")
+    if length <= 0 or len(raw) < 4 + length:
+        raise ValueError("host key blob is malformed or truncated")
+    try:
+        return raw[4 : 4 + length].decode("ascii")
+    except UnicodeDecodeError as e:
+        raise ValueError(f"host key blob has a non-ASCII key type: {e}") from e
+
+
+def parse_host_public_key(value: str) -> tuple[str, str]:
+    """Return ``(key_type, base64_blob)`` for a server host public key string.
+
+    Accepts any of the common representations, so the caller never has to declare
+    the key type:
+
+      - a bare base64 blob:              ``"AAAAC3Nza..."``
+      - an OpenSSH ``.pub`` line:        ``"ssh-ed25519 AAAAC3Nza... comment"``
+      - an ssh-keyscan/known_hosts line: ``"host ssh-ed25519 AAAAC3Nza..."``
+
+    The key type is auto-detected from the decoded blob (not from any surrounding
+    label), which is authoritative and avoids a label/key mismatch. Raises
+    ``ValueError`` for anything that does not contain a supported, decodable SSH
+    public key.
+    """
+    tokens = value.split()
+    if not tokens:
+        raise ValueError("host_public_key is empty")
+
+    unsupported: list[str] = []
+    for token in tokens:
+        try:
+            raw = base64.b64decode(token, validate=True)
+        except (binascii.Error, ValueError):
+            # Not a base64 field (e.g. the "ssh-ed25519" label or a hostname).
+            continue
+        try:
+            key_type = _extract_ssh_key_type(raw)
+        except ValueError:
+            continue
+        if key_type in SUPPORTED_HOST_KEY_TYPES:
+            return key_type, token
+        unsupported.append(key_type)
+
+    if unsupported:
+        raise ValueError(
+            f"Unsupported SFTP host key type(s) {unsupported}; "
+            f"supported types are {list(SUPPORTED_HOST_KEY_TYPES)}"
+        )
+    raise ValueError(
+        "host_public_key does not contain a recognizable base64-encoded SSH public key "
+        "(expected a bare blob, an OpenSSH '.pub' line, or an ssh-keyscan/known_hosts line)"
+    )
+
+
+def _build_host_key(key_type: str, key_b64: str):
+    """Reconstruct a paramiko key object from a base64 host key blob."""
+    import paramiko
+
+    data = base64.b64decode(key_b64)
+    if key_type == "ssh-ed25519":
+        return paramiko.Ed25519Key(data=data)
+    if key_type == "ssh-rsa":
+        return paramiko.RSAKey(data=data)
+    # Defensive: parse_host_public_key already gates the supported set.
+    raise ValueError(f"Unsupported SFTP host key type: {key_type!r}")
 
 
 # Patch hashlib.md5 for FIPS-enabled OpenSSL (common in Kubernetes).
@@ -87,6 +171,25 @@ class SftpConnectionConfig(FsspecConnectionConfig):
         default=False, description="Whether to search for private key files in ~/.ssh/"
     )
     allow_agent: bool = Field(default=False, description="Whether to connect to the SSH agent.")
+    host_public_key: Optional[str] = Field(
+        default=None,
+        description=(
+            "Server host public key used to verify the server's identity. Accepts a "
+            "base64 blob (e.g. 'AAAAC3Nza...'), an OpenSSH '.pub' line, or an "
+            "ssh-keyscan/known_hosts line; the key type (ssh-ed25519 / ssh-rsa) is "
+            "auto-detected from the key. Maps to SAP grounding's 'public_key'. When "
+            "omitted, the server identity is NOT verified and a warning is logged."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_host_public_key(self) -> "SftpConnectionConfig":
+        # Fail fast at config time if a host key is supplied but unparsable /
+        # unsupported. A well-formed but wrong key is caught later at connect
+        # (precheck) as a host-key mismatch.
+        if self.host_public_key is not None:
+            parse_host_public_key(self.host_public_key)
+        return self
 
     def get_access_config(self) -> dict[str, Any]:
         access_config = {
@@ -108,12 +211,56 @@ class SftpConnectionConfig(FsspecConnectionConfig):
         # instance whose SSH connection was closed by a previous context manager exit.
         from fsspec import get_filesystem_class
 
-        client: SFTPFileSystem = get_filesystem_class(protocol)(
-            skip_instance_cache=True,
-            **self.get_access_config(),
-        )
-        yield client
-        client.client.close()
+        fs_cls = get_filesystem_class(protocol)
+        access_config = self.get_access_config()
+
+        if self.host_public_key is None:
+            # No pinned host key: connect but do NOT verify the server identity.
+            # fsspec's SFTPFileSystem._connect uses paramiko.AutoAddPolicy(), so any
+            # host key the server presents is accepted. Warn so this is a deliberate,
+            # visible choice rather than a silent security gap.
+            logger.warning(
+                "Connecting to SFTP host %r without a pinned host key; the server "
+                "identity is NOT verified (vulnerable to MITM). Provide `host_public_key` "
+                "to enable host-key verification.",
+                self.host,
+            )
+            client: SFTPFileSystem = fs_cls(skip_instance_cache=True, **access_config)
+            try:
+                yield client
+            finally:
+                client.client.close()
+            return
+
+        # Pinned host-key path (e.g. SAP grounding): build the paramiko client
+        # ourselves so we can pin the expected host key and use RejectPolicy.
+        # fsspec's SFTPFileSystem._connect hardcodes AutoAddPolicy and offers no
+        # hook, so we override _connect to verify the server before trusting it.
+        import paramiko
+
+        key_type, key_b64 = parse_host_public_key(self.host_public_key)
+        host_key = _build_host_key(key_type, key_b64)
+
+        class _VerifiedSFTPFileSystem(fs_cls):
+            def _connect(self):
+                ssh_client = paramiko.SSHClient()
+                port = self.ssh_kwargs.get("port", 22)
+                # GOTCHA: paramiko looks up known host keys under "[host]:port" for
+                # non-default ports (the OpenSSH known_hosts convention); register
+                # under the same name or verification silently never matches.
+                entry_name = self.host if port == 22 else f"[{self.host}]:{port}"
+                ssh_client.get_host_keys().add(entry_name, key_type, host_key)
+                # Reject (never auto-add) an unknown or mismatched server key.
+                ssh_client.set_missing_host_key_policy(paramiko.RejectPolicy())
+                ssh_client.connect(self.host, **self.ssh_kwargs)
+                self.client = ssh_client
+                self.ftp = ssh_client.open_sftp()
+
+        client = _VerifiedSFTPFileSystem(skip_instance_cache=True, **access_config)
+        try:
+            yield client
+        finally:
+            client.client.close()
 
 
 @dataclass
