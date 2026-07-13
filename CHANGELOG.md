@@ -1,3 +1,9 @@
+## [1.6.29]
+
+### Enhancements
+
+- **feat: Slack indexer emits records newest-first within each channel.** `SlackIndexer.run` sorts each channel's records (conversation-day packages and file attachments) by `metadata.version` descending before yielding, so the most recent content is indexed first.
+
 ## [1.6.28]
 
 ### Fixes
