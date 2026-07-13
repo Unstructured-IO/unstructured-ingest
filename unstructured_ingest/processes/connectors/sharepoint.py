@@ -105,6 +105,10 @@ _MS_CORRELATION_HEADERS = (
     "WWW-Authenticate",
 )
 
+# Cap the amount of upstream response body carried on the raised error message. Enough to
+# diagnose (SharePoint/Graph error bodies are small JSON) without dumping an unbounded payload.
+_MAX_BODY_CHARS = 500
+
 
 def _handle_client_request_exception(e: ClientRequestException, context: str) -> NoReturn:
     """Map a SharePoint ``ClientRequestException`` to a typed error from its real HTTP
@@ -114,9 +118,17 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
     (auth vs not-found vs throttle vs other) instead of one opaque label. Preserving the
     real signal *before* labeling is the fix for the downloader that previously re-raised
     every upstream failure as ``SourceConnectionError("Site not found")``.
+
+    The chosen typed class keeps useful semantics (auth vs throttle vs not-found, and which
+    errors retry), but the real HTTP status code and response body are *also* passed through
+    on the raised error itself — the ``status_code`` is stamped on the instance (shadowing the
+    class default, e.g. so a 403 surfaces as 403 rather than ``UserAuthError``'s default 401)
+    and a truncated body is appended to the message — so callers/users see the true condition,
+    not just the logs.
     """
     response = getattr(e, "response", None)
     status_code = getattr(response, "status_code", None)
+    body = getattr(response, "text", None) if response is not None else None
 
     # Preserve the real HTTP signal BEFORE applying any label.
     if response is not None:
@@ -126,32 +138,42 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
             "SharePoint upstream error for %s: status_code=%s body=%r correlation=%s",
             context,
             status_code,
-            getattr(response, "text", None),
+            body,
             correlation,
         )
     else:
         logger.error("SharePoint upstream error for %s: %s", context, e)
 
+    def _raise(error_cls: type[UnstructuredIngestError], summary: str) -> NoReturn:
+        prefix = f"[HTTP {status_code}] " if status_code is not None else ""
+        if body:
+            snippet = body if len(body) <= _MAX_BODY_CHARS else f"{body[:_MAX_BODY_CHARS]}…"
+            message = f"{prefix}{summary}: {snippet}"
+        else:
+            message = f"{prefix}{summary}"
+        err = error_cls(message)
+        # Shadow the class-level default with the real upstream status so it flows through to
+        # whatever surfaces the error (e.g. 403 stays a UserAuthError but reports HTTP 403).
+        err.status_code = status_code
+        raise err from e
+
     if status_code == 401:
-        raise UserAuthError(
-            f"Unauthorized access to {context}. Check client credentials and permissions"
-        )
+        _raise(UserAuthError, f"Unauthorized access to {context}. Check client credentials")
     if status_code == 403:
-        raise UserAuthError(
-            f"Access forbidden to {context}. Check app permissions (Sites.Read.All required)"
+        _raise(
+            UserAuthError,
+            f"Access forbidden to {context}. Check app permissions (Sites.Read.All required)",
         )
     if status_code == 404:
-        raise NotFoundError(f"Not found: {context}")
+        _raise(NotFoundError, f"Not found: {context}")
     if status_code == 429:
-        raise RateLimitError(f"Rate limited by SharePoint for {context}")
+        _raise(RateLimitError, f"Rate limited by SharePoint for {context}")
     if status_code is not None and status_code >= 500:
         # Upstream/provider outage (5xx) is transient — keep it a connection-class error
         # (as the downloader did before) rather than a non-retriable user fault.
-        raise SourceConnectionNetworkError(
-            f"Upstream SharePoint error {status_code} for {context}: {e}"
-        )
+        _raise(SourceConnectionNetworkError, f"Upstream SharePoint error for {context}")
 
-    raise UserError(f"Failed to access {context}: {e}")
+    _raise(UserError, f"Failed to access {context}")
 
 
 @dataclass
@@ -293,14 +315,13 @@ class SharepointDownloader(OnedriveDownloader):
     @staticmethod
     def retry_on_status_code(exc):
         # Retry genuine throttles (429) and transient upstream outages (5xx, esp. 503),
-        # matching OneDrive's throttle-retry set. Inspect the typed error first — the
-        # previous string-only match never fired once the status was masked upstream.
-        # Both RateLimitError and SourceConnectionNetworkError are raised only by the
-        # shared mapper inside the retry-wrapped `_get_item_by_path`, so within this
-        # scope a RateLimitError uniquely means a 429 and a SourceConnectionNetworkError
-        # uniquely means a 5xx; retrying on them is therefore precise. (The outer
-        # catch-all's SourceConnectionNetworkError is outside the retry scope and never
-        # reaches this classifier.)
+        # matching OneDrive's throttle-retry set. Prefer the real HTTP status the shared
+        # mapper now stamps on the typed error (every exception raised inside the
+        # retry-wrapped `_get_item_by_path` carries it), then fall back to type/string
+        # checks for exceptions that didn't come through the mapper.
+        status_code = getattr(exc, "status_code", None)
+        if isinstance(status_code, int) and (status_code == 429 or status_code >= 500):
+            return True
         if isinstance(exc, (RateLimitError, SourceConnectionNetworkError)):
             return True
         error_msg = str(exc).lower()

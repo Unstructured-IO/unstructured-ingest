@@ -2,7 +2,7 @@
 
 ### Fixes
 
-- **fix(sharepoint): surface the real upstream HTTP status in the downloader instead of masking every error as "Site not found".** `SharepointDownloader._fetch_file` caught every `ClientRequestException` and re-raised it as `SourceConnectionError("Site not found")`, discarding the underlying HTTP status and body — so `401`/`403`/`404`/`429`/`5xx` all surfaced identically as a `400`, and the retry classifier (matching the rewritten message) never retried genuine `429` throttles. The status→typed-error mapping is now shared between the indexer and downloader (`401`/`403` → `UserAuthError`, `404` → `NotFoundError`, `429` → `RateLimitError`), preserves the status/body and Microsoft correlation headers for diagnosis before labeling, and `429`s and `503`s are now retried (matching the OneDrive downloader) and surfaced with their real status.
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried.
 
 ## [1.6.28]
 

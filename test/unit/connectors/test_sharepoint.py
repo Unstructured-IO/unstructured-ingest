@@ -10,6 +10,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
     UserAuthError,
+    UserError,
     ValueError,
 )
 from unstructured_ingest.processes.connectors.onedrive import OnedriveIndexer
@@ -231,26 +232,71 @@ def test_fetch_file_surfaces_auth_error_on_401(mock_client, sharepoint_downloade
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
         _client_request_exception(401)
     )
-    with pytest.raises(UserAuthError):
+    with pytest.raises(UserAuthError) as exc_info:
         sharepoint_downloader._fetch_file(file_data)
+    assert exc_info.value.status_code == 401
     # 401 is not retriable — one attempt only, no retry storm under auth misconfig.
     assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 1
 
 
 def test_fetch_file_surfaces_auth_error_on_403(mock_client, sharepoint_downloader, file_data):
+    # 403 keeps the UserAuthError type (auth-class handling) but must pass through the real
+    # HTTP 403 rather than collapsing to UserAuthError's class default of 401.
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
         _client_request_exception(403)
     )
-    with pytest.raises(UserAuthError):
+    with pytest.raises(UserAuthError) as exc_info:
         sharepoint_downloader._fetch_file(file_data)
+    assert exc_info.value.status_code == 403
+    assert "[HTTP 403]" in str(exc_info.value)
 
 
 def test_fetch_file_surfaces_not_found_on_404(mock_client, sharepoint_downloader, file_data):
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
         _client_request_exception(404)
     )
-    with pytest.raises(NotFoundError):
+    with pytest.raises(NotFoundError) as exc_info:
         sharepoint_downloader._fetch_file(file_data)
+    assert exc_info.value.status_code == 404
+
+
+def test_fetch_file_surfaces_real_status_on_other_4xx(
+    mock_client, sharepoint_downloader, file_data
+):
+    # An unmapped 4xx (e.g. 409 Conflict) falls to UserError, but must still report its real
+    # status instead of UserError's class default (422) — "pass the status through at least".
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
+        _client_request_exception(409)
+    )
+    with pytest.raises(UserError) as exc_info:
+        sharepoint_downloader._fetch_file(file_data)
+    assert exc_info.value.status_code == 409
+    assert "[HTTP 409]" in str(exc_info.value)
+
+
+def test_fetch_file_includes_response_body_in_error(mock_client, sharepoint_downloader, file_data):
+    # The upstream response body is passed through on the raised error, not just logged.
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
+        _client_request_exception(403, text="AccessDenied: app lacks Sites.Read.All")
+    )
+    with pytest.raises(UserAuthError) as exc_info:
+        sharepoint_downloader._fetch_file(file_data)
+    assert "AccessDenied: app lacks Sites.Read.All" in str(exc_info.value)
+
+
+def test_fetch_file_truncates_long_response_body(mock_client, sharepoint_downloader, file_data):
+    # A pathologically long body is truncated so the error message stays bounded.
+    from unstructured_ingest.processes.connectors.sharepoint import _MAX_BODY_CHARS
+
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
+        _client_request_exception(404, text="x" * (_MAX_BODY_CHARS + 100))
+    )
+    with pytest.raises(NotFoundError) as exc_info:
+        sharepoint_downloader._fetch_file(file_data)
+    message = str(exc_info.value)
+    assert "x" * _MAX_BODY_CHARS in message
+    assert "x" * (_MAX_BODY_CHARS + 1) not in message
+    assert "…" in message
 
 
 def test_fetch_file_retries_then_raises_rate_limit_on_429(
@@ -261,8 +307,9 @@ def test_fetch_file_retries_then_raises_rate_limit_on_429(
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
         _client_request_exception(429)
     )
-    with pytest.raises(RateLimitError):
+    with pytest.raises(RateLimitError) as exc_info:
         sharepoint_downloader._fetch_file(file_data)
+    assert exc_info.value.status_code == 429
     assert (
         mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count
         == sharepoint_downloader.download_config.max_retries
@@ -323,8 +370,10 @@ def test_fetch_file_maps_5xx_to_connection_error_not_user_error(
     mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
         _client_request_exception(503)
     )
-    with pytest.raises(SourceConnectionNetworkError):
+    with pytest.raises(SourceConnectionNetworkError) as exc_info:
         sharepoint_downloader._fetch_file(file_data)
+    # Real 5xx passes through instead of collapsing to the class default (400).
+    assert exc_info.value.status_code == 503
 
 
 def test_fetch_file_retries_5xx_then_raises_connection_error(
@@ -341,6 +390,23 @@ def test_fetch_file_retries_5xx_then_raises_connection_error(
         mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count
         == sharepoint_downloader.download_config.max_retries
     )
+
+
+def test_fetch_file_retriable_then_nonretriable_stops_on_nonretriable(
+    mock_client, sharepoint_downloader, file_data
+):
+    # Mixed sequence: a retriable 503 followed by a non-retriable 403 must stop on the 403
+    # (no further retries) and surface it with its real status — pins that the classifier
+    # keys off each error's actual status, not a blanket "keep retrying".
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = [
+        _client_request_exception(503),
+        _client_request_exception(403),
+    ]
+    with pytest.raises(UserAuthError) as exc_info:
+        sharepoint_downloader._fetch_file(file_data)
+    assert exc_info.value.status_code == 403
+    # Exactly two attempts: 503 retried once, 403 halted retrying.
+    assert mock_client.sites.get_by_url.return_value.get.return_value.execute_query.call_count == 2
 
 
 def test_fetch_file_wraps_unknown_exception_as_connection_error(
