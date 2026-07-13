@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, AsyncIterator, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, NoReturn, Optional
 
 from pydantic import Field
 
@@ -12,8 +13,10 @@ from unstructured_ingest.data_types.file_data import (
 )
 from unstructured_ingest.error import (
     NotFoundError,
+    RateLimitError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    UnstructuredIngestError,
     UserAuthError,
     UserError,
     ValueError,
@@ -95,29 +98,144 @@ class SharepointIndexerConfig(OnedriveIndexerConfig):
     path: str = Field(default="", json_schema_extra={"x-runtime-eligible": True})
 
 
+# Microsoft/SharePoint correlation headers worth preserving for support/diagnosis.
+_MS_CORRELATION_HEADERS = (
+    "request-id",
+    "client-request-id",
+    "x-ms-ags-diagnostic",
+    "SPRequestGuid",
+    "Retry-After",
+    "WWW-Authenticate",
+)
+
+# Cap the amount of upstream response body carried on the raised error message. Enough to
+# diagnose (SharePoint/Graph error bodies are small JSON) without dumping an unbounded payload.
+_MAX_BODY_CHARS = 500
+
+
+def _truncate_body(body: Optional[str]) -> Optional[str]:
+    """Cap an upstream response body to ``_MAX_BODY_CHARS`` for both logs and error
+    messages, so a large payload isn't written unbounded (and repeatedly on retries)."""
+    if not body:
+        return body
+    return body if len(body) <= _MAX_BODY_CHARS else f"{body[:_MAX_BODY_CHARS]}…"
+
+
+# Upper bound on how long we'll honor a throttle's Retry-After, so a pathological or
+# hostile header can't stall a download far beyond a real throttle window.
+_MAX_RETRY_AFTER_WAIT = 300.0
+
+
+def _parse_retry_after(headers: Any) -> Optional[float]:
+    """Parse a ``Retry-After`` header (delta-seconds or HTTP-date) into seconds.
+
+    Returns ``None`` if the header is absent or unparseable. SharePoint/Graph send the
+    delta-seconds form on throttles; the HTTP-date form is handled for completeness.
+    """
+    value = headers.get("Retry-After") if headers else None
+    if not value:
+        return None
+    # NB: this module shadows the builtin ``ValueError`` with a custom error class (imported
+    # from unstructured_ingest.error), so catch the builtin explicitly here.
+    try:
+        return max(0.0, float(value))  # delta-seconds form
+    except (builtins.TypeError, builtins.ValueError):
+        pass
+    try:
+        from datetime import datetime, timezone
+        from email.utils import parsedate_to_datetime
+
+        dt = parsedate_to_datetime(value)
+        if dt is not None:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return max(0.0, (dt - datetime.now(timezone.utc)).total_seconds())
+    except (builtins.TypeError, builtins.ValueError):
+        pass
+    return None
+
+
+def _honor_retry_after(base_seconds: float, exc: BaseException) -> float:
+    """Backoff for a retry: the server's ``Retry-After`` (stamped on the typed error)
+    when it exceeds the exponential backoff, capped at ``_MAX_RETRY_AFTER_WAIT``."""
+    retry_after = getattr(exc, "retry_after", None)
+    if isinstance(retry_after, (int, float)) and retry_after > base_seconds:
+        return min(float(retry_after), _MAX_RETRY_AFTER_WAIT)
+    return base_seconds
+
+
+def _handle_client_request_exception(e: ClientRequestException, context: str) -> NoReturn:
+    """Map a SharePoint ``ClientRequestException`` to a typed error from its real HTTP
+    status, preserving the status/body/Microsoft correlation headers for diagnosis first.
+
+    Shared by the indexer and downloader so both surface the true condition
+    (auth vs not-found vs throttle vs other) instead of one opaque label. Preserving the
+    real signal *before* labeling is the fix for the downloader that previously re-raised
+    every upstream failure as ``SourceConnectionError("Site not found")``.
+
+    The chosen typed class keeps useful semantics (auth vs throttle vs not-found, and which
+    errors retry), but the real HTTP status code and response body are *also* passed through
+    on the raised error itself — the ``status_code`` is stamped on the instance (shadowing the
+    class default, e.g. so a 403 surfaces as 403 rather than ``UserAuthError``'s default 401)
+    and a truncated body is appended to the message — so callers/users see the true condition,
+    not just the logs.
+    """
+    response = getattr(e, "response", None)
+    status_code = getattr(response, "status_code", None)
+    body = getattr(response, "text", None) if response is not None else None
+    headers = (getattr(response, "headers", None) or {}) if response is not None else {}
+    retry_after = _parse_retry_after(headers)
+
+    # Preserve the real HTTP signal BEFORE applying any label.
+    if response is not None:
+        correlation = {k: headers.get(k) for k in _MS_CORRELATION_HEADERS if headers.get(k)}
+        logger.error(
+            "SharePoint upstream error for %s: status_code=%s body=%r correlation=%s",
+            context,
+            status_code,
+            _truncate_body(body),
+            correlation,
+        )
+    else:
+        logger.error("SharePoint upstream error for %s: %s", context, e)
+
+    def _raise(error_cls: type[UnstructuredIngestError], summary: str) -> NoReturn:
+        prefix = f"[HTTP {status_code}] " if status_code is not None else ""
+        message = f"{prefix}{summary}: {_truncate_body(body)}" if body else f"{prefix}{summary}"
+        err = error_cls(message)
+        # Shadow the class-level default with the real upstream status so it flows through to
+        # whatever surfaces the error (e.g. 403 stays a UserAuthError but reports HTTP 403).
+        err.status_code = status_code
+        # Carry the throttle backoff so the downloader's retry can honor it (the retry sees
+        # this typed error, not the original ClientRequestException with its headers).
+        if retry_after is not None:
+            err.retry_after = retry_after
+        raise err from e
+
+    if status_code == 401:
+        _raise(UserAuthError, f"Unauthorized access to {context}. Check client credentials")
+    if status_code == 403:
+        _raise(
+            UserAuthError,
+            f"Access forbidden to {context}. Check app permissions (Sites.Read.All required)",
+        )
+    if status_code == 404:
+        _raise(NotFoundError, f"Not found: {context}")
+    if status_code == 429:
+        _raise(RateLimitError, f"Rate limited by SharePoint for {context}")
+    if status_code is not None and status_code >= 500:
+        # Upstream/provider outage (5xx) is transient — keep it a connection-class error
+        # (as the downloader did before) rather than a non-retriable user fault.
+        _raise(SourceConnectionNetworkError, f"Upstream SharePoint error for {context}")
+
+    _raise(UserError, f"Failed to access {context}")
+
+
 @dataclass
 class SharepointIndexer(OnedriveIndexer):
     connection_config: SharepointConnectionConfig
     index_config: SharepointIndexerConfig
     connector_type: str = CONNECTOR_TYPE
-
-    def _handle_client_request_exception(self, e: ClientRequestException, context: str) -> None:
-        """Convert ClientRequestException to appropriate user-facing error based on HTTP status."""
-        if hasattr(e, "response") and e.response is not None and hasattr(e.response, "status_code"):
-            status_code = e.response.status_code
-            if status_code == 401:
-                raise UserAuthError(
-                    f"Unauthorized access to {context}. Check client credentials and permissions"
-                )
-            elif status_code == 403:
-                raise UserAuthError(
-                    f"Access forbidden to {context}. "
-                    f"Check app permissions (Sites.Read.All required)"
-                )
-            elif status_code == 404:
-                raise UserError(f"Not found: {context}")
-
-        raise UserError(f"Failed to access {context}: {str(e)}")
 
     def _is_root_path(self, path: str) -> bool:
         """Check if the path represents root access (empty string or legacy default)."""
@@ -125,10 +243,16 @@ class SharepointIndexer(OnedriveIndexer):
 
     def _get_target_drive_item(self, site_drive_item: DriveItem, path: str) -> DriveItem:
         """Get the drive item to search in based on the path."""
+        from office365.runtime.client_request_exception import ClientRequestException
+
         if self._is_root_path(path):
             return site_drive_item
-        else:
+        try:
             return site_drive_item.get_by_path(path).get().execute_query()
+        except ClientRequestException as e:
+            # Path resolution hits the same upstream — classify it (404/403/429/...) rather
+            # than letting a raw ClientRequestException escape unclassified.
+            _handle_client_request_exception(e, f"SharePoint path '{path}'")
 
     def _validate_folder_path(self, site_drive_item: DriveItem, path: str) -> None:
         """Validate that a specific folder path exists and is accessible."""
@@ -144,7 +268,7 @@ class SharepointIndexer(OnedriveIndexer):
             logger.info(f"SharePoint folder path '{path}' validated successfully")
         except ClientRequestException as e:
             logger.error(f"Failed to access SharePoint path '{path}': {e}")
-            self._handle_client_request_exception(e, f"SharePoint path '{path}'")
+            _handle_client_request_exception(e, f"SharePoint path '{path}'")
         except Exception as e:
             logger.error(f"Unexpected error accessing SharePoint path '{path}': {e}")
             raise UserError(f"Failed to validate SharePoint path '{path}': {str(e)}")
@@ -175,9 +299,7 @@ class SharepointIndexer(OnedriveIndexer):
 
         except ClientRequestException as e:
             logger.error(f"SharePoint precheck failed for site: {self.connection_config.site}")
-            self._handle_client_request_exception(
-                e, f"SharePoint site {self.connection_config.site}"
-            )
+            _handle_client_request_exception(e, f"SharePoint site {self.connection_config.site}")
         except Exception as e:
             logger.error(f"Unexpected error during SharePoint precheck: {e}", exc_info=True)
             raise UserError(f"Failed to validate SharePoint connection: {str(e)}")
@@ -200,9 +322,7 @@ class SharepointIndexer(OnedriveIndexer):
             site_drive_item = self.connection_config._get_drive_item(client_site)
         except ClientRequestException as e:
             logger.error(f"Failed to access SharePoint site: {self.connection_config.site}")
-            raise SourceConnectionError(
-                f"Unable to access SharePoint site at {self.connection_config.site}: {str(e)}"
-            )
+            _handle_client_request_exception(e, f"SharePoint site {self.connection_config.site}")
 
         path = self.index_config.path
         target_drive_item = await asyncio.to_thread(
@@ -210,19 +330,23 @@ class SharepointIndexer(OnedriveIndexer):
         )
 
         async def _flush(chunk: list[DriveItem]) -> AsyncIterator[FileData]:
-            perms_by_id = await asyncio.to_thread(
-                self._fetch_permissions_raw, chunk, access_token
-            )
+            perms_by_id = await asyncio.to_thread(self._fetch_permissions_raw, chunk, access_token)
             for di in chunk:
                 yield await self.drive_item_to_file_data(
                     drive_item=di,
                     raw_permissions=perms_by_id.get(di.id, []),
                 )
 
+        try:
+            drive_items = target_drive_item.get_files(
+                recursive=self.index_config.recursive
+            ).execute_query()
+        except ClientRequestException as e:
+            logger.error(f"Failed to list SharePoint files for site: {self.connection_config.site}")
+            _handle_client_request_exception(e, f"SharePoint site {self.connection_config.site}")
+
         chunk: list[DriveItem] = []
-        for drive_item in target_drive_item.get_files(
-            recursive=self.index_config.recursive
-        ).execute_query():
+        for drive_item in drive_items:
             chunk.append(drive_item)
             if len(chunk) >= PERMISSIONS_BATCH_SIZE:
                 async for fd in _flush(chunk):
@@ -245,10 +369,19 @@ class SharepointDownloader(OnedriveDownloader):
 
     @staticmethod
     def retry_on_status_code(exc):
+        # Retry genuine throttles (429) and transient upstream outages (5xx, esp. 503),
+        # matching OneDrive's throttle-retry set. Prefer the real HTTP status the shared
+        # mapper now stamps on the typed error (every exception raised inside the
+        # retry-wrapped `_get_item_by_path` carries it), then fall back to type/string
+        # checks for exceptions that didn't come through the mapper.
+        status_code = getattr(exc, "status_code", None)
+        if isinstance(status_code, int) and (status_code == 429 or status_code >= 500):
+            return True
+        if isinstance(exc, (RateLimitError, SourceConnectionNetworkError)):
+            return True
         error_msg = str(exc).lower()
         return "429" in error_msg or "activitylimitreached" in error_msg or "throttled" in error_msg
 
-    @SourceConnectionNetworkError.wrap
     @requires_dependencies(["office365"], extras="sharepoint")
     def _fetch_file(self, file_data: FileData) -> DriveItem:
         from office365.runtime.client_request_exception import ClientRequestException
@@ -269,27 +402,56 @@ class SharepointDownloader(OnedriveDownloader):
         server_relative_path = file_data.source_identifiers.fullpath
         client = self.connection_config.get_client()
 
+        _exp_wait = wait_exponential(exp_base=2, multiplier=1, min=2, max=10)
+
+        def _wait(retry_state) -> float:
+            # Honor a throttle's Retry-After (stamped on the typed error by the mapper)
+            # when it exceeds the exponential backoff, so we don't retry before the
+            # server's requested window; fall back to exponential otherwise.
+            base = _exp_wait(retry_state)
+            exc = retry_state.outcome.exception() if retry_state.outcome else None
+            return _honor_retry_after(base, exc) if exc is not None else base
+
         @retry(
             stop=stop_after_attempt(self.download_config.max_retries),
-            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
+            wait=_wait,
             retry=retry_if_exception(self.retry_on_status_code),
             before=before_log(logger, logging.DEBUG),
             reraise=True,
         )
         def _get_item_by_path() -> DriveItem:
+            # Split so the failure is attributed to what actually failed: a 404 on the
+            # file fetch means the file is missing, not the site. Both paths preserve the
+            # real status/body/correlation headers and map to a typed error (401/403 ->
+            # auth, 404 -> not found, 429 -> rate limit, which the retry classifier above
+            # then retries) instead of masking every upstream failure as "Site not found".
             try:
                 client_site = (
                     client.sites.get_by_url(self.connection_config.site).get().execute_query()
                 )
                 site_drive_item = self.connection_config._get_drive_item(client_site)
-            except ClientRequestException:
-                logger.info(f"Site not found: {self.connection_config.site}")
-                raise SourceConnectionError(f"Site not found: {self.connection_config.site}")
-            file = site_drive_item.get_by_path(server_relative_path).get().execute_query()
-            return file
+            except ClientRequestException as e:
+                _handle_client_request_exception(
+                    e, f"SharePoint site {self.connection_config.site}"
+                )
+            try:
+                return site_drive_item.get_by_path(server_relative_path).get().execute_query()
+            except ClientRequestException as e:
+                _handle_client_request_exception(e, f"SharePoint file '{server_relative_path}'")
 
-        # Call the retry-wrapped function
-        file = _get_item_by_path()
+        # Intentionally NOT decorated with @SourceConnectionNetworkError.wrap: that coerces
+        # sibling typed errors (UserAuthError/RateLimitError/NotFoundError) back to a 400,
+        # re-masking the real status. We replicate its catch-all here so genuinely
+        # unrecognized failures still surface as a connection error, while typed errors pass
+        # through with their true status.
+        try:
+            file = _get_item_by_path()
+        except UnstructuredIngestError:
+            raise
+        except Exception as e:
+            raise SourceConnectionNetworkError(
+                f"Error in connecting to upstream data source: {e}"
+            ) from e
 
         if not file:
             raise NotFoundError(f"file not found: {server_relative_path}")

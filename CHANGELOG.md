@@ -1,8 +1,14 @@
-## [1.6.29]
+## [1.6.30]
 
 ### Enhancements
 
 - **feat: annotate connectors with location capability markers.** `RegistryEntry` now carries opt-in capability markers (`location_shape`, `location_identity`, `supports_recursion`, and `emits_record_version`) plus per-field `x-runtime-eligible` schema hints, so consumers can identify a connector's target location shape, the settings paths that identify that location, and its recursion/record-version semantics. Markers default to unannotated (`location_shape=None`) so a connector without them is never mistaken for an explicit declaration and consumers fall back to their existing defaults. Markers are applied across the fsspec, SQL, search-index, and API-folder connector families.
+
+## [1.6.29]
+
+### Fixes
+
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried, honoring the server's `Retry-After` backoff.
 
 ## [1.6.28]
 
