@@ -760,6 +760,29 @@ def test_slack_indexer_interleaves_recent_file_ahead_of_older_conversation():
     assert file_index < old_conversation_index
 
 
+def _file_data_with_version(version) -> FileData:
+    return FileData(
+        identifier="id",
+        connector_type="slack",
+        source_identifiers=SourceIdentifiers(filename="f.xml", fullpath="f.xml"),
+        metadata=FileDataSourceMetadata(version=version),
+    )
+
+
+def test_recency_key_parses_version_timestamp():
+    assert SlackIndexer._recency_key(_file_data_with_version("1710000000.000100")) == pytest.approx(
+        1710000000.000100
+    )
+
+
+def test_recency_key_falls_back_to_zero_for_missing_version():
+    assert SlackIndexer._recency_key(_file_data_with_version(None)) == 0.0
+
+
+def test_recency_key_falls_back_to_zero_for_unparseable_version():
+    assert SlackIndexer._recency_key(_file_data_with_version("not-a-timestamp")) == 0.0
+
+
 def test_slack_new_day_creates_new_identifier():
     """Messages on a new UTC day create a separate package with a new identifier."""
     conversations = _conversations(

@@ -298,10 +298,9 @@ class SlackIndexer(Indexer):
     def _recency_key(file_data: FileData) -> float:
         # NOTE: version is set for both record kinds (conversation package and file), so it
         # orders them against each other.
-        version = file_data.metadata.version if file_data.metadata else None
         try:
-            return float(version)
-        except (TypeError, ValueError):
+            return float(file_data.metadata.version)
+        except (TypeError, builtins.ValueError):
             return 0.0
 
     def _messages_to_file_data(
