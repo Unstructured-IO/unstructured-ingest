@@ -162,34 +162,18 @@ class TestSftpUploaderMakeDirsAsync:
 # Host-key verification
 # ---------------------------------------------------------------------------
 
-import paramiko  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 
-
-def _openssh_public_key(kind: str) -> str:
-    """Return a real OpenSSH public key line, e.g. 'ssh-ed25519 AAAA...'."""
-    from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
-
-    if kind == "ssh-ed25519":
-        pub = ed25519.Ed25519PrivateKey.generate().public_key()
-    elif kind == "ssh-rsa":
-        pub = rsa.generate_private_key(public_exponent=65537, key_size=2048).public_key()
-    elif kind == "ecdsa":
-        pub = ec.generate_private_key(ec.SECP256R1()).public_key()
-    else:
-        raise ValueError(kind)
-    return pub.public_bytes(
-        serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH
-    ).decode()
-
-
-# Generate real keys once for the whole module (RSA generation is comparatively slow).
-ED25519_LINE = _openssh_public_key("ssh-ed25519")
+# Static, valid OpenSSH public keys used as test vectors. Kept as literals (rather
+# than generated with `cryptography`) so the pure parsing/validator tests below
+# run in CI's unit job, which installs only the `test` group and NOT the optional
+# `sftp` extra (paramiko / cryptography). Tests that actually build paramiko keys
+# or open a client guard themselves with `pytest.importorskip("paramiko")`.
+ED25519_LINE = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOF3J5Ka7c/o1vAhfLfwqhlcW1rtB2QhHTAJJhSi6cBO"  # noqa: E501
 ED25519_BLOB = ED25519_LINE.split()[1]
-RSA_LINE = _openssh_public_key("ssh-rsa")
+RSA_LINE = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDecqnagUMXkIIgIPUo/kioDeEIc/tVk1FFwfmewo2OiAxm/3GWnMtsCHdTv4vV3mksgkzo+1aJa+c6zTd4P2Pzgns6FKprteM7br66a1ECAZWC1CQwLS6E3T6QBoSezA88JSnjwI+H/nQaYBUKpyGaKurD/I21ZtKxtDNEaqHK1vWdWblNATX0LTUY6chCYzmU1dCJSWlafvk8zxGlD1l77mTbvpqsyNVl0169PwAraeFOcMAJ89HUIE1XeJgVNZyLHKDDThKuHW5THE/kE1zC3Ie6b+sWfg+OYCRfirl3VG0D7pDdKnoWN4U1COXeSsqVkWlubFKbICjP/v55eaDr"  # noqa: E501
 RSA_BLOB = RSA_LINE.split()[1]
-ECDSA_LINE = _openssh_public_key("ecdsa")
+ECDSA_LINE = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFsfdZj9/KppI8dhzOzqgbPSPIB9Dd7zn2mQqqWWdtlDP/5J00iFLyQky4n6BM1gK5jQIYNUZApGEE+xC0s1odg="  # noqa: E501
 ECDSA_BLOB = ECDSA_LINE.split()[1]
 
 
@@ -239,6 +223,7 @@ class TestBuildHostKey:
         [(ED25519_BLOB, "ssh-ed25519"), (RSA_BLOB, "ssh-rsa")],
     )
     def test_build_matches_type(self, blob, expected_name):
+        pytest.importorskip("paramiko")
         key_type, key_b64 = parse_host_public_key(blob)
         key = _build_host_key(key_type, key_b64)
         assert key.get_name() == expected_name
@@ -246,6 +231,7 @@ class TestBuildHostKey:
         assert key.get_base64() == blob
 
     def test_unsupported_type_raises(self):
+        pytest.importorskip("paramiko")
         with pytest.raises(ValueError, match="Unsupported"):
             _build_host_key("ecdsa-sha2-nistp256", ECDSA_BLOB)
 
@@ -341,6 +327,8 @@ class TestGetClientUnpinned:
     def test_warns_and_connects(self, monkeypatch, caplog):
         import logging
 
+        pytest.importorskip("paramiko")
+        pytest.importorskip("fsspec")
         monkeypatch.setattr(
             "fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem
         )
@@ -360,6 +348,8 @@ class TestGetClientPinned:
     """Host key present -> pin it and use RejectPolicy (no AutoAddPolicy)."""
 
     def _run(self, monkeypatch, host_public_key, host, port):
+        paramiko = pytest.importorskip("paramiko")
+        pytest.importorskip("fsspec")
         monkeypatch.setattr(
             "fsspec.get_filesystem_class", lambda protocol: _FakeSFTPFileSystem
         )
@@ -376,10 +366,10 @@ class TestGetClientPinned:
         with cfg.get_client(protocol="sftp") as client:
             pass
         assert created, "expected our own paramiko.SSHClient to be built"
-        return created[0], client
+        return paramiko, created[0], client
 
     def test_rejectpolicy_and_pins_key(self, monkeypatch):
-        ssh_client, fs = self._run(monkeypatch, ED25519_LINE, "example.com", 2222)
+        paramiko, ssh_client, fs = self._run(monkeypatch, ED25519_LINE, "example.com", 2222)
         # RejectPolicy (never AutoAddPolicy) so a wrong/unknown key is refused.
         assert isinstance(ssh_client.policy, paramiko.RejectPolicy)
         # Exactly one pinned key, of the auto-detected type.
@@ -398,7 +388,7 @@ class TestGetClientPinned:
         assert ssh_client.closed is True
 
     def test_default_port_uses_plain_host_entry(self, monkeypatch):
-        ssh_client, _ = self._run(monkeypatch, RSA_LINE, "sftp.example.com", 22)
+        _, ssh_client, _ = self._run(monkeypatch, RSA_LINE, "sftp.example.com", 22)
         entry_name, key_type, _ = ssh_client._host_keys.added[0]
         assert key_type == "ssh-rsa"
         assert entry_name == "sftp.example.com"  # no brackets for port 22
