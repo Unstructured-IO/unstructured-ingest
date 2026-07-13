@@ -1,3 +1,9 @@
+## [1.6.29]
+
+### Fixes
+
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried, honoring the server's `Retry-After` backoff.
+
 ## [1.6.28]
 
 ### Fixes
