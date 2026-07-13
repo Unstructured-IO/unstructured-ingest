@@ -110,6 +110,14 @@ _MS_CORRELATION_HEADERS = (
 _MAX_BODY_CHARS = 500
 
 
+def _truncate_body(body: Optional[str]) -> Optional[str]:
+    """Cap an upstream response body to ``_MAX_BODY_CHARS`` for both logs and error
+    messages, so a large payload isn't written unbounded (and repeatedly on retries)."""
+    if not body:
+        return body
+    return body if len(body) <= _MAX_BODY_CHARS else f"{body[:_MAX_BODY_CHARS]}…"
+
+
 def _handle_client_request_exception(e: ClientRequestException, context: str) -> NoReturn:
     """Map a SharePoint ``ClientRequestException`` to a typed error from its real HTTP
     status, preserving the status/body/Microsoft correlation headers for diagnosis first.
@@ -138,7 +146,7 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
             "SharePoint upstream error for %s: status_code=%s body=%r correlation=%s",
             context,
             status_code,
-            body,
+            _truncate_body(body),
             correlation,
         )
     else:
@@ -146,11 +154,7 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
 
     def _raise(error_cls: type[UnstructuredIngestError], summary: str) -> NoReturn:
         prefix = f"[HTTP {status_code}] " if status_code is not None else ""
-        if body:
-            snippet = body if len(body) <= _MAX_BODY_CHARS else f"{body[:_MAX_BODY_CHARS]}…"
-            message = f"{prefix}{summary}: {snippet}"
-        else:
-            message = f"{prefix}{summary}"
+        message = f"{prefix}{summary}: {_truncate_body(body)}" if body else f"{prefix}{summary}"
         err = error_cls(message)
         # Shadow the class-level default with the real upstream status so it flows through to
         # whatever surfaces the error (e.g. 403 stays a UserAuthError but reports HTTP 403).
@@ -355,20 +359,24 @@ class SharepointDownloader(OnedriveDownloader):
             reraise=True,
         )
         def _get_item_by_path() -> DriveItem:
+            # Split so the failure is attributed to what actually failed: a 404 on the
+            # file fetch means the file is missing, not the site. Both paths preserve the
+            # real status/body/correlation headers and map to a typed error (401/403 ->
+            # auth, 404 -> not found, 429 -> rate limit, which the retry classifier above
+            # then retries) instead of masking every upstream failure as "Site not found".
             try:
                 client_site = (
                     client.sites.get_by_url(self.connection_config.site).get().execute_query()
                 )
                 site_drive_item = self.connection_config._get_drive_item(client_site)
-                return site_drive_item.get_by_path(server_relative_path).get().execute_query()
             except ClientRequestException as e:
-                # Preserve the real status/body/correlation headers and map to a typed error
-                # (401/403 -> auth, 404 -> not found, 429 -> rate limit — which the retry
-                # classifier above then retries) instead of masking every upstream failure
-                # as "Site not found" and discarding the status.
                 _handle_client_request_exception(
                     e, f"SharePoint site {self.connection_config.site}"
                 )
+            try:
+                return site_drive_item.get_by_path(server_relative_path).get().execute_query()
+            except ClientRequestException as e:
+                _handle_client_request_exception(e, f"SharePoint file '{server_relative_path}'")
 
         # Intentionally NOT decorated with @SourceConnectionNetworkError.wrap: that coerces
         # sibling typed errors (UserAuthError/RateLimitError/NotFoundError) back to a 400,

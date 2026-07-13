@@ -299,6 +299,43 @@ def test_fetch_file_truncates_long_response_body(mock_client, sharepoint_downloa
     assert "…" in message
 
 
+def test_fetch_file_404_on_file_attributes_to_file_not_site(
+    mock_client, mock_drive_item, mock_site, sharepoint_downloader, file_data
+):
+    # A 404 on the file fetch must be attributed to the file, not the site: the site
+    # resolved fine, the requested file is what's missing.
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.return_value = (
+        mock_site
+    )
+    mock_drive_item.get_by_path.return_value.get.return_value.execute_query.side_effect = (
+        _client_request_exception(404)
+    )
+    with pytest.raises(NotFoundError) as exc_info:
+        sharepoint_downloader._fetch_file(file_data)
+    message = str(exc_info.value)
+    assert "SharePoint file" in message
+    assert "SharePoint site" not in message
+
+
+def test_fetch_file_truncates_response_body_in_logs(
+    mock_client, sharepoint_downloader, file_data, caplog
+):
+    # The logged body is capped too (not just the raised message) so a large upstream
+    # payload isn't written unbounded — and on every retry attempt.
+    import logging
+
+    from unstructured_ingest.processes.connectors.sharepoint import _MAX_BODY_CHARS
+
+    long_body = "x" * (_MAX_BODY_CHARS + 100)
+    mock_client.sites.get_by_url.return_value.get.return_value.execute_query.side_effect = (
+        _client_request_exception(403, text=long_body)
+    )
+    with caplog.at_level(logging.ERROR), pytest.raises(UserAuthError):
+        sharepoint_downloader._fetch_file(file_data)
+    assert "…" in caplog.text
+    assert "x" * (_MAX_BODY_CHARS + 1) not in caplog.text
+
+
 def test_fetch_file_retries_then_raises_rate_limit_on_429(
     mock_client, sharepoint_downloader, file_data
 ):
