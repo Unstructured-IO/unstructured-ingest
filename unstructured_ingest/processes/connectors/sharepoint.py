@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AsyncIterator, NoReturn, Optional
@@ -118,6 +119,49 @@ def _truncate_body(body: Optional[str]) -> Optional[str]:
     return body if len(body) <= _MAX_BODY_CHARS else f"{body[:_MAX_BODY_CHARS]}…"
 
 
+# Upper bound on how long we'll honor a throttle's Retry-After, so a pathological or
+# hostile header can't stall a download far beyond a real throttle window.
+_MAX_RETRY_AFTER_WAIT = 300.0
+
+
+def _parse_retry_after(headers: Any) -> Optional[float]:
+    """Parse a ``Retry-After`` header (delta-seconds or HTTP-date) into seconds.
+
+    Returns ``None`` if the header is absent or unparseable. SharePoint/Graph send the
+    delta-seconds form on throttles; the HTTP-date form is handled for completeness.
+    """
+    value = headers.get("Retry-After") if headers else None
+    if not value:
+        return None
+    # NB: this module shadows the builtin ``ValueError`` with a custom error class (imported
+    # from unstructured_ingest.error), so catch the builtin explicitly here.
+    try:
+        return max(0.0, float(value))  # delta-seconds form
+    except (builtins.TypeError, builtins.ValueError):
+        pass
+    try:
+        from datetime import datetime, timezone
+        from email.utils import parsedate_to_datetime
+
+        dt = parsedate_to_datetime(value)
+        if dt is not None:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return max(0.0, (dt - datetime.now(timezone.utc)).total_seconds())
+    except (builtins.TypeError, builtins.ValueError):
+        pass
+    return None
+
+
+def _honor_retry_after(base_seconds: float, exc: BaseException) -> float:
+    """Backoff for a retry: the server's ``Retry-After`` (stamped on the typed error)
+    when it exceeds the exponential backoff, capped at ``_MAX_RETRY_AFTER_WAIT``."""
+    retry_after = getattr(exc, "retry_after", None)
+    if isinstance(retry_after, (int, float)) and retry_after > base_seconds:
+        return min(float(retry_after), _MAX_RETRY_AFTER_WAIT)
+    return base_seconds
+
+
 def _handle_client_request_exception(e: ClientRequestException, context: str) -> NoReturn:
     """Map a SharePoint ``ClientRequestException`` to a typed error from its real HTTP
     status, preserving the status/body/Microsoft correlation headers for diagnosis first.
@@ -137,10 +181,11 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
     response = getattr(e, "response", None)
     status_code = getattr(response, "status_code", None)
     body = getattr(response, "text", None) if response is not None else None
+    headers = (getattr(response, "headers", None) or {}) if response is not None else {}
+    retry_after = _parse_retry_after(headers)
 
     # Preserve the real HTTP signal BEFORE applying any label.
     if response is not None:
-        headers = getattr(response, "headers", None) or {}
         correlation = {k: headers.get(k) for k in _MS_CORRELATION_HEADERS if headers.get(k)}
         logger.error(
             "SharePoint upstream error for %s: status_code=%s body=%r correlation=%s",
@@ -159,6 +204,10 @@ def _handle_client_request_exception(e: ClientRequestException, context: str) ->
         # Shadow the class-level default with the real upstream status so it flows through to
         # whatever surfaces the error (e.g. 403 stays a UserAuthError but reports HTTP 403).
         err.status_code = status_code
+        # Carry the throttle backoff so the downloader's retry can honor it (the retry sees
+        # this typed error, not the original ClientRequestException with its headers).
+        if retry_after is not None:
+            err.retry_after = retry_after
         raise err from e
 
     if status_code == 401:
@@ -351,9 +400,19 @@ class SharepointDownloader(OnedriveDownloader):
         server_relative_path = file_data.source_identifiers.fullpath
         client = self.connection_config.get_client()
 
+        _exp_wait = wait_exponential(exp_base=2, multiplier=1, min=2, max=10)
+
+        def _wait(retry_state) -> float:
+            # Honor a throttle's Retry-After (stamped on the typed error by the mapper)
+            # when it exceeds the exponential backoff, so we don't retry before the
+            # server's requested window; fall back to exponential otherwise.
+            base = _exp_wait(retry_state)
+            exc = retry_state.outcome.exception() if retry_state.outcome else None
+            return _honor_retry_after(base, exc) if exc is not None else base
+
         @retry(
             stop=stop_after_attempt(self.download_config.max_retries),
-            wait=wait_exponential(exp_base=2, multiplier=1, min=2, max=10),
+            wait=_wait,
             retry=retry_if_exception(self.retry_on_status_code),
             before=before_log(logger, logging.DEBUG),
             reraise=True,

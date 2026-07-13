@@ -336,6 +336,71 @@ def test_fetch_file_truncates_response_body_in_logs(
     assert "x" * (_MAX_BODY_CHARS + 1) not in caplog.text
 
 
+# A throttle's Retry-After is stamped on the typed error so the downloader's retry can
+# honor the server's requested backoff (the retry sees the typed error, not the raw
+# ClientRequestException). Tested on the mapper directly to avoid a real wait loop.
+def test_handle_exception_stamps_retry_after_from_header():
+    from unstructured_ingest.processes.connectors.sharepoint import (
+        _handle_client_request_exception,
+    )
+
+    exc = _client_request_exception(429, headers={"Retry-After": "30"})
+    with pytest.raises(RateLimitError) as exc_info:
+        _handle_client_request_exception(exc, "SharePoint site x")
+    assert exc_info.value.retry_after == 30.0
+
+
+def test_handle_exception_no_retry_after_when_header_absent():
+    from unstructured_ingest.processes.connectors.sharepoint import (
+        _handle_client_request_exception,
+    )
+
+    exc = _client_request_exception(429)  # no Retry-After header
+    with pytest.raises(RateLimitError) as exc_info:
+        _handle_client_request_exception(exc, "SharePoint site x")
+    assert getattr(exc_info.value, "retry_after", None) is None
+
+
+@pytest.mark.parametrize(
+    ("header", "expected"),
+    [
+        ("30", 30.0),  # delta-seconds form (what Graph sends)
+        ("0", 0.0),
+        ("not-a-number", None),  # unparseable -> ignored
+        (None, None),  # absent
+    ],
+)
+def test_parse_retry_after(header, expected):
+    from unstructured_ingest.processes.connectors.sharepoint import _parse_retry_after
+
+    headers = {"Retry-After": header} if header is not None else {}
+    assert _parse_retry_after(headers) == expected
+
+
+def test_honor_retry_after_prefers_larger_server_backoff_capped():
+    from unstructured_ingest.processes.connectors.sharepoint import (
+        _MAX_RETRY_AFTER_WAIT,
+        _honor_retry_after,
+    )
+
+    class _Exc(Exception):
+        pass
+
+    exc = _Exc()
+
+    # Server backoff longer than exponential wins.
+    exc.retry_after = 30.0
+    assert _honor_retry_after(4.0, exc) == 30.0
+    # Exponential wins when it's already longer than Retry-After.
+    exc.retry_after = 1.0
+    assert _honor_retry_after(4.0, exc) == 4.0
+    # Pathologically large Retry-After is capped.
+    exc.retry_after = 99999.0
+    assert _honor_retry_after(4.0, exc) == _MAX_RETRY_AFTER_WAIT
+    # No Retry-After stamped -> fall back to exponential.
+    assert _honor_retry_after(4.0, _Exc()) == 4.0
+
+
 def test_fetch_file_retries_then_raises_rate_limit_on_429(
     mock_client, sharepoint_downloader, file_data
 ):
