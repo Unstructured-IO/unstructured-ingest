@@ -232,7 +232,8 @@ def _put_sql(mock_cursor: MagicMock) -> str:
 
 def _sql_wellformed_problems(sql: str) -> list[str]:
     """Scan for premature literal/identifier termination, mirroring Databricks parsing:
-    inside a literal a backslash escapes the next char and '' is a doubled quote; `` doubles."""
+    inside a literal a backslash escapes the next char; a bare ' always closes the literal
+    ('' is NOT a doubled-quote escape below Spark master), while backticks are doubled."""
     i, n = 0, len(sql)
     in_str = in_ident = False
     while i < n:
@@ -241,10 +242,7 @@ def _sql_wellformed_problems(sql: str) -> list[str]:
             if c == "\\":  # backslash escapes the next char; skip both
                 i += 2
                 continue
-            if c == "'":
-                if i + 1 < n and sql[i + 1] == "'":  # doubled quote stays in the literal
-                    i += 2
-                    continue
+            if c == "'":  # a bare quote closes the literal -- no '' escape in Databricks
                 in_str = False
         elif in_ident:
             if c == "`":
@@ -280,11 +278,7 @@ def _decode_sql_tokens(sql: str) -> tuple[list[str], list[str]]:
                 buf.append(sql[i + 1])
                 i += 2
                 continue
-            if c == "'":
-                if i + 1 < n and sql[i + 1] == "'":
-                    buf.append("'")
-                    i += 2
-                    continue
+            if c == "'":  # a bare quote closes the literal (no '' escape in Databricks)
                 literals.append("".join(buf))
                 buf = []
                 in_str = False
@@ -500,7 +494,7 @@ def test_run_put_escapes_single_quotes_in_filename(
     tmp_path: Path, mock_cursor: MagicMock, mock_get_cursor: MagicMock, filename: str
 ):
     """Apostrophes in the filename must not break the single-quoted PUT literals
-    (SQLSTATE 42601); the volume and local staging paths escape them by doubling."""
+    (SQLSTATE 42601); Databricks escapes quotes with a backslash (\\'), NOT by doubling."""
     uploader = _make_uploader(flatten_metadata=True)
     uploader._columns = {"element_id": "string", "text": "string"}
     path = _staged_elements(tmp_path, {"element_id": "el-1", "text": "hello"})
@@ -513,10 +507,15 @@ def test_run_put_escapes_single_quotes_in_filename(
     uploader.run(path=path, file_data=file_data)
 
     put_sql = _put_sql(mock_cursor)
-    # Doubled form present, raw name never a lone literal, quotes balanced.
-    assert filename.replace("'", "''") in put_sql
+    # Backslash-escaped form present; the raw name is never a lone literal; and the
+    # statement stays structurally valid (no literal terminated early).
+    assert filename.replace("'", "\\'") in put_sql
     assert f"'{filename}'" not in put_sql
-    assert put_sql.count("'") % 2 == 0
+    assert _sql_wellformed_problems(put_sql) == []
+    # The PUT target literal decodes back to the intended output path.
+    expected = uploader.get_output_path(file_data=file_data)
+    put_literals, _ = _decode_sql_tokens(put_sql)
+    assert put_literals[1] == expected
 
 
 def test_delete_previous_content_escapes_single_quotes_in_identifier(
@@ -540,11 +539,14 @@ def test_delete_previous_content_escapes_single_quotes_in_identifier(
     delete_sql = next(
         s for s in _executed_sql(mock_cursor) if s.strip().upper().startswith("DELETE")
     )
-    escaped_identifier = identifier.replace("'", "''")
+    escaped_identifier = identifier.replace("'", "\\'")
     assert f"record_id = '{escaped_identifier}'" in delete_sql
-    # Raw apostrophe never sits as a lone literal boundary; quotes stay balanced.
+    # Raw apostrophe never sits as a lone literal boundary; the literal stays terminated
+    # and decodes back to the exact identifier the row was stored under.
     assert f"'{identifier}'" not in delete_sql
-    assert delete_sql.count("'") % 2 == 0
+    assert _sql_wellformed_problems(delete_sql) == []
+    literals, _ = _decode_sql_tokens(delete_sql)
+    assert literals == [identifier]
 
 
 # Filenames exercising SQL metacharacters: apostrophe hits the single-quoted PUT/DELETE
@@ -553,7 +555,7 @@ _SPECIAL_CHAR_FILENAMES = [
     "owner's report.pdf",  # single quote -> PUT/DELETE literals
     "o'brien's file.pdf",  # multiple single quotes
     "weird`name.pdf",  # backtick -> INSERT identifier
-    "O'Brien`s \"weird\" file;.pdf",  # quote + backtick + dquote + semicolon together
+    'O\'Brien`s "weird" file;.pdf',  # quote + backtick + dquote + semicolon together
     'say "hi".pdf',  # double quotes
     "a;drop table x.pdf",  # semicolon (injection-shaped)
     "50%done_v_1.pdf",  # LIKE wildcards % and _
@@ -573,9 +575,7 @@ def test_run_emits_wellformed_sql_for_special_char_filenames(
     metacharacter in the filename — no literal/identifier terminated early (SQLSTATE 42601)."""
     uploader = _make_uploader(flatten_metadata=True)
     uploader._columns = {"element_id": "string", "text": "string", "record_id": "string"}
-    path = _staged_elements(
-        tmp_path, {"element_id": "el-1", "text": "hello", "record_id": "r"}
-    )
+    path = _staged_elements(tmp_path, {"element_id": "el-1", "text": "hello", "record_id": "r"})
     file_data = FileData(
         identifier=filename,
         connector_type="databricks_volume_delta_tables",
@@ -627,9 +627,9 @@ def test_put_target_and_insert_source_resolve_to_same_path(
 @pytest.mark.parametrize(
     "sql",
     [
-        "PUT '/vol/o''brien.json' INTO '/vol/o''brien.json' OVERWRITE",  # doubled quote OK
+        "PUT '/vol/o\\'brien.json' INTO '/vol/o\\'brien.json' OVERWRITE",  # backslash-escaped '
         "SELECT * FROM `weird``name`",  # doubled backtick OK
-        "WHERE x = 'a\\\\'' OR 1=1 --'",  # backslash doubled -> stays inside literal
+        "WHERE x = 'back\\\\slash'",  # doubled backslash stays inside the literal
     ],
 )
 def test_oracle_accepts_wellformed_sql(sql: str):
@@ -641,9 +641,9 @@ def test_oracle_accepts_wellformed_sql(sql: str):
     [
         "WHERE x = 'unterminated",  # never closed
         "SELECT * FROM `unterminated",  # identifier never closed
-        # Regression guard: quote-only escaping (no backslash doubling) of a crafted value
-        # lets `\\'` escape a quote and `' OR 1=1` break out — the oracle MUST reject this.
-        "WHERE x = 'a\\'' OR 1=1 --'",
+        # Regression guard: a lone trailing backslash escapes the closing quote, so the
+        # literal runs on -- this is why quote_literal MUST double source backslashes.
+        "PUT 'ends\\' INTO 'x'",
     ],
 )
 def test_oracle_rejects_broken_or_injectable_sql(sql: str):
