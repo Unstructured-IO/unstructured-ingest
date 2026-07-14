@@ -463,14 +463,31 @@ class ElasticsearchUploader(Uploader):
                     logger.error(f"Batch upload failed - {safe_error_summary(e)}")
                     raise UnstructuredIngestError(safe_error_summary(e)) from None
 
-    def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
-        """Remove data uploaded to index from the log, leave only error information.
+    # Bulk item error fields safe to surface: operation metadata and, from the
+    # nested error object, the machine-readable exception type. Free-text fields
+    # (error.reason, error.caused_by) and the uploaded document ("data") can
+    # embed document content, so they are dropped rather than logged.
+    _SAFE_BULK_ERROR_KEYS = ("_index", "_id", "status")
 
-        Error structure is `{<operation-type>: {..., "data": <uploaded-object>}}`
+    def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
+        """Reduce a bulk item error to allowlisted, content-free fields.
+
+        Bulk errors have the shape `{<operation-type>: {..., "data": <doc>}}`.
+        Only operation metadata (index, id, status) and the error *type* (a
+        machine code, e.g. "mapper_parsing_exception") are kept; free-text
+        fields and the uploaded document are dropped because they can echo
+        document content.
         """
-        for error_data in error.values():
-            error_data.pop("data", None)
-        return error
+        sanitized: dict[str, dict] = {}
+        for op_type, error_data in error.items():
+            if not isinstance(error_data, dict):
+                continue
+            safe = {k: error_data[k] for k in self._SAFE_BULK_ERROR_KEYS if k in error_data}
+            nested = error_data.get("error")
+            if isinstance(nested, dict) and "type" in nested:
+                safe["error"] = {"type": nested["type"]}
+            sanitized[op_type] = safe
+        return sanitized
 
 
 elasticsearch_source_entry = SourceRegistryEntry(
