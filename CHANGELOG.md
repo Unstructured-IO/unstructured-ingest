@@ -1,8 +1,39 @@
-## [1.6.26]
+## [1.6.31]
 
 ### Fixes
 
 - **fix(security): redact credential-bearing exception details from connector error logging.** Connector precheck, upload, and path-validation error paths — and the central `UnstructuredIngestError.wrap` decorator — interpolated caught exception text into logged and raised messages, which could echo credentials (tokens, passwords, DSNs, service-account JSON). These messages now carry a sanitized summary via the new `safe_error_summary()` helper: the exception type name plus allowlisted machine-readable fields (integer HTTP statuses, SDK error-code enums, opaque request/correlation IDs — e.g. `SlackApiError(status_code=401, error=invalid_auth)`), never free-form exception text. `exc_info` frame dumps were removed from credential-bearing paths (a rendered traceback's terminal line re-embeds `str(e)`). The GCS connector also no longer echoes raw service-account JSON via `OSError: File name too long` when key material is passed where a filename is expected. Exception classes and control flow are unchanged; only log and error-message payloads were sanitized.
+- **fix(security): preserve connector-authored guidance and harden the redaction.** Connector prechecks re-raise dependency-install hints (`requires_dependencies`) and connector-authored typed errors (missing index/database/collection, SCRAM-SHA-1 remediation, OAuth error codes, corpus-name mismatch) instead of flattening them to a bare type name. Every redacted re-raise now suppresses the provider exception chain (`from None`) so its text cannot resurface through traceback logging. The GCS service-account guard is narrowed to the too-long-filename case (`ENAMETOOLONG`) so a genuine filesystem error on a real path is no longer masked as "Invalid auth token value". Elasticsearch bulk-upload failure logs now allowlist safe fields (`_index`, `_id`, `status`, `error.type`) instead of only stripping the uploaded document, so document content in `error.reason` is no longer logged.
+
+## [1.6.30]
+
+### Fixes
+
+- **fix(ENG-1322): escape SQL metacharacters in databricks_volume_delta_tables statements.** Filenames or record identifiers containing a single quote or backslash no longer break (or inject into) the single-quoted `PUT`/`DELETE` string literals, and filenames containing a backtick no longer break the backtick-quoted volume path in the `INSERT ... FROM json.` clause (all surfaced as SQLSTATE 42601). A shared `quote_literal` helper escapes both backslashes and single quotes (Databricks processes backslash escapes in string literals by default) for the volume/staging paths and the delete record identifier, and the `INSERT` source path now goes through the existing `quote_identifier` helper.
+
+## [1.6.29]
+
+### Fixes
+
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried, honoring the server's `Retry-After` backoff.
+
+## [1.6.28]
+
+### Fixes
+
+- **fix(FS-2108): download Jira attachment content to the correct path with attachment-specific display names.** Attachment downloads now write bytes to the attachment's own `source_identifiers` path instead of a separate `attachments/` directory, and each attachment gets its filename as `display_name` instead of inheriting the parent issue title. Attachment download paths are validated to stay within `download_dir` so crafted filenames cannot escape via path traversal.
+
+## [1.6.27]
+
+### Fixes
+
+- **fix(FS-2106): populate Jira creation and modification dates at index time.** `JiraIndexer._create_file_data_from_issue` only set `version` (from the issue's `updated` timestamp) and never populated `date_created`/`date_modified`, and the indexer field lists omitted `created`. Because the platform detects new and modified records from the indexer's `FileData.metadata`, Jira records carried no creation/modification dates. The indexer now requests the `created` field in `_get_issues_within_projects`, `_get_issues_within_single_board`, and `_get_issues_by_keys`, and sets `metadata.date_created` (from `created`) and `metadata.date_modified` (from `updated`) as Unix epoch strings alongside the existing `version`.
+
+## [1.6.26]
+
+### Fixes
+
+- **fix(FS-2105): populate Confluence creation/modification dates and version at index time.** The Confluence indexer now sets `date_created`, `date_modified`, and `version` from the v2 pages list response so Foundation can store page timestamps and detect page edits on subsequent runs (fixes FS-2107).
 
 ## [1.6.25]
 
