@@ -1,3 +1,9 @@
+## [1.6.30]
+
+### Fixes
+
+- **fix(ENG-1322): escape SQL metacharacters in databricks_volume_delta_tables statements.** Filenames or record identifiers containing a single quote or backslash no longer break (or inject into) the single-quoted `PUT`/`DELETE` string literals, and filenames containing a backtick no longer break the backtick-quoted volume path in the `INSERT ... FROM json.` clause (all surfaced as SQLSTATE 42601). A shared `quote_literal` helper escapes both backslashes and single quotes (Databricks processes backslash escapes in string literals by default) for the volume/staging paths and the delete record identifier, and the `INSERT` source path now goes through the existing `quote_identifier` helper.
+
 ## [1.6.29]
 
 ### Fixes
