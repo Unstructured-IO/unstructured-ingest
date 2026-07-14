@@ -125,3 +125,33 @@ def test_wrap_message_carries_safe_fields_but_not_exception_text():
 
     assert "FakeProviderError(status_code=403)" in str(context.value)
     assert "xoxb-secret" not in str(context.value)
+
+
+def test_wrap_sibling_does_not_leak_chained_provider_text():
+    # Guard for the sibling-UnstructuredIngestError pass-through in `wrap`: it
+    # interpolates the sibling's own (sanitized) message so connector-authored
+    # guidance survives. This invariant is only safe because our own errors are
+    # sanitized where raised. Pin that a secret-bearing provider exception the
+    # sibling was chained `from` can never resurface through the wrap — i.e. the
+    # wrapped message reflects str(sibling), not str(sibling.__cause__).
+    provider_secret = "Authorization: Bearer xoxb-super-secret"
+
+    @DestinationConnectionError.wrap
+    def simulate_error():
+        try:
+            raise FakeProviderError(provider_secret, status_code=403)
+        except FakeProviderError as provider_err:
+            # Connector-authored, sanitized message; chained for debugging.
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(provider_err)}"
+            ) from provider_err
+
+    with pytest.raises(DestinationConnectionError) as context:
+        simulate_error()
+
+    message = str(context.value)
+    # The sibling's sanitized guidance is preserved...
+    assert "FakeProviderError(status_code=403)" in message
+    # ...and the chained provider secret never resurfaces through the wrap.
+    assert "xoxb-super-secret" not in message
+    assert "Bearer" not in message
