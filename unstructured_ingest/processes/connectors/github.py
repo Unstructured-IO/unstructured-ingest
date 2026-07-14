@@ -14,9 +14,11 @@ from unstructured_ingest.data_types.file_data import (
 )
 from unstructured_ingest.error import (
     ProviderError,
+    RateLimitError,
     UnstructuredIngestError,
     UserAuthError,
     UserError,
+    ValueError,
 )
 from unstructured_ingest.interfaces import (
     AccessConfig,
@@ -43,7 +45,21 @@ CONNECTOR_TYPE = "github"
 
 
 class GithubAccessConfig(AccessConfig):
-    access_token: str = Field(description="Github acess token")
+    access_token: Optional[str] = Field(
+        description="Github personal access token (PAT)",
+        default=None,
+    )
+    oauth_token: Optional[str] = Field(
+        description="GitHub OAuth 2.0 access token",
+        default=None,
+    )
+    refresh_token: Optional[str] = Field(
+        description=(
+            "GitHub OAuth 2.0 refresh token. Used by the platform to refresh expired "
+            "access tokens before each job run; the connector never uses it directly."
+        ),
+        default=None,
+    )
 
 
 class GithubConnectionConfig(ConnectionConfig):
@@ -55,6 +71,17 @@ class GithubConnectionConfig(ConnectionConfig):
         parsed_url = urlparse(value)
         return parsed_url.path
 
+    def model_post_init(self, __context):
+        access_configs = self.access_config.get_secret_value()
+        pat_auth = bool(access_configs.access_token)
+        oauth_auth = bool(access_configs.oauth_token)
+        if pat_auth and oauth_auth:
+            raise ValueError(
+                "access_token (PAT) and oauth_token are mutually exclusive, provide only one"
+            )
+        if not (pat_auth or oauth_auth):
+            raise ValueError("no form of auth provided, set access_token or oauth_token")
+
     def get_full_url(self):
         return f"https://github.com/{self.url}"
 
@@ -62,33 +89,59 @@ class GithubConnectionConfig(ConnectionConfig):
     def get_client(self) -> "GithubClient":
         from github import Github as GithubClient
 
-        return GithubClient(login_or_token=self.access_config.get_secret_value().access_token)
+        access_configs = self.access_config.get_secret_value()
+        # The platform's init-oauth-refresh container populates oauth_token with a fresh
+        # access token before the job runs (per PLU-381); refresh is not handled here.
+        token = access_configs.oauth_token or access_configs.access_token
+        return GithubClient(login_or_token=token)
 
     def get_repo(self) -> "Repository":
         client = self.get_client()
         return client.get_repo(self.url)
 
-    def wrap_github_exception(self, e: "GithubException") -> Exception:
-        data = e.data
-        status_code = e.status
-        message = data.get("message")
+    def _error_for_status(self, status_code: int, message: str) -> Optional[Exception]:
+        """Map a GitHub HTTP status to a classified error, or None if unhandled.
+
+        401 and 403 both map to UserAuthError so the platform surfaces a
+        reconnect-required state: 401 covers an invalid/expired/revoked access
+        token (including the case where the platform's refresh token was revoked
+        and init-oauth-refresh left a stale token in place), and 403 covers a
+        missing OAuth scope or insufficient permission — both are resolved by the
+        user reconnecting with adequate scopes.
+        """
+        if status_code == 429:
+            return RateLimitError(f"GitHub API rate limit exceeded: {message}")
         if status_code == 401:
             return UserAuthError(f"Unauthorized access to Github: {message}")
+        if status_code == 403:
+            return UserAuthError(
+                f"Forbidden access to Github (missing scope or insufficient permission): {message}"
+            )
         if 400 <= status_code < 500:
             return UserError(message)
-        if status_code > 500:
+        if status_code >= 500:
             return ProviderError(message)
+        return None
+
+    def wrap_github_exception(self, e: "GithubException") -> Exception:
+        from github.GithubException import RateLimitExceededException
+
+        data = e.data if isinstance(e.data, dict) else {}
+        message = data.get("message") or str(e)
+        # PyGithub raises RateLimitExceededException with a 403 status for primary
+        # rate limits, so classify by type before falling back to the status map.
+        if isinstance(e, RateLimitExceededException):
+            return RateLimitError(f"GitHub API rate limit exceeded: {message}")
+        error = self._error_for_status(e.status, message)
+        if error is not None:
+            return error
         logger.debug(f"unhandled github error: {e}")
         return e
 
     def wrap_http_error(self, e: "HTTPError") -> Exception:
-        status_code = e.response.status_code
-        if status_code == 401:
-            return UserAuthError(f"Unauthorized access to Github: {e.response.text}")
-        if 400 <= status_code < 500:
-            return UserError(e.response.text)
-        if status_code > 500:
-            return ProviderError(e.response.text)
+        error = self._error_for_status(e.response.status_code, e.response.text)
+        if error is not None:
+            return error
         logger.debug(f"unhandled http error: {e}")
         return UnstructuredIngestError(str(e))
 

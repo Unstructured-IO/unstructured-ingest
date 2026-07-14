@@ -1,3 +1,9 @@
+## [1.6.29]
+
+### Enhancements
+
+- **feat(PLU-441): add OAuth support to the GitHub source connector.** `GithubAccessConfig` now accepts `oauth_token` and `refresh_token` alongside the existing `access_token` (PAT), matching the field contract the platform's `init-oauth-refresh` container expects. The connector reads whichever access token is populated (`oauth_token` takes precedence) and builds its PyGithub client; token refresh is handled upstream by the platform, not the connector (per PLU-381). PAT (`access_token`) configurations continue to work unchanged, and PAT and OAuth auth are mutually exclusive. GitHub API errors are now classified consistently: an invalid/expired/revoked token (401) or a missing scope / insufficient permission (403) maps to `UserAuthError` so the platform surfaces a reconnect-required state, rate limits map to `RateLimitError`, and 5xx responses (including exactly 500, previously mis-bucketed) map to `ProviderError`.
+
 ## [1.6.28]
 
 ### Fixes
