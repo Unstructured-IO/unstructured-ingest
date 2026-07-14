@@ -1,0 +1,64 @@
+unstructured_ingest/processes/connectors/pinecone.py
+  s_1a18e8e51887e4::t_a134854ab393a9 15
+  s_1a18e8e51887e4::t_e1ac55750d891c 235-238
+unstructured_ingest/processes/connectors/astradb.py
+  s_1a18e8e51887e4::t_31ae80de825e63 26
+  s_1a18e8e51887e4::t_be01b3f8dd5640 176-179
+  s_1a18e8e51887e4::t_3198ba0602e482 448-451
+unstructured_ingest/processes/connectors/mongodb.py
+  s_1a18e8e51887e4::t_d5b246ba2bff0e 21
+  s_1a18e8e51887e4::t_82863e26f0e794 157-160
+  s_1a18e8e51887e4::t_600625e18cf1a1 341-344
+unstructured_ingest/processes/connectors/salesforce.py
+  s_1a18e8e51887e4::t_acc80189b44c64 32
+  s_1a18e8e51887e4::t_3af6bcc82d339a 151-154
+unstructured_ingest/processes/connectors/vectara.py
+  s_1a18e8e51887e4::t_3ae12ea34a4fd4 128,130-137
+  s_1a18e8e51887e4::t_5427c881db7826 12-17
+unstructured_ingest/processes/connectors/redisdb.py
+  s_1a18e8e51887e4::t_b7a82e2eae1d50 12
+  s_1a18e8e51887e4::t_adbf4117b73656 162-165
+unstructured_ingest/processes/connectors/confluence.py
+  s_1a18e8e51887e4::t_3ce282eb8896f4 260-263
+  s_1a18e8e51887e4::t_a8f324f2689e35 17
+  s_1a18e8e51887e4::t_0e1fc10ffd15a1 248-251
+  s_1a18e8e51887e4::t_0b76b7989142dd 281-284
+unstructured_ingest/processes/connectors/notion/connector.py
+  s_1a18e8e51887e4::t_922845e7003708 12-17
+  s_1a18e8e51887e4::t_ae61744cecdd27 94-97
+unstructured_ingest/processes/connectors/onedrive.py
+  s_1a18e8e51887e4::t_3f9affa517f87d 22
+  s_1a18e8e51887e4::t_11035cce5bfcae 255-258,696-699
+unstructured_ingest/processes/connectors/gitlab.py
+  s_1a18e8e51887e4::t_bf7c3a4faf66c0 162-165
+  s_1a18e8e51887e4::t_f59d979885ddc8 16-21
+unstructured_ingest/processes/connectors/jira.py
+  s_1a18e8e51887e4::t_fecd6524b7ed20 15-20
+  s_1a18e8e51887e4::t_cdea50f2fc7d2d 221-224
+unstructured_ingest/processes/connectors/delta_table.py
+  s_1a18e8e51887e4::t_bee1fbed418cb8 12-17
+  s_1a18e8e51887e4::t_466fbf614bd8a9 153-156
+unstructured_ingest/processes/connectors/kafka/kafka.py
+  s_1a18e8e51887e4::t_333569afd214da 183-186
+  s_1a18e8e51887e4::t_6e27f2ee72f47f 251-254
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_1a18e8e51887e4::t_6f4dbccee3db9a 24
+  s_1a18e8e51887e4::t_7f96d4deb590d9 127-130
+  s_1a18e8e51887e4::t_3cc6f9ad60a6ce 351-354
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "2c81b1778f98212570a0f5c635d3145266ec8b62",
+  "prompts": {},
+  "sessions": {
+    "s_1a18e8e51887e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc68d943-e464-47d7-905b-f8dd2acb0a4b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
