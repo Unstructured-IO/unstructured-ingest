@@ -1,0 +1,72 @@
+unstructured_ingest/processes/connectors/gitlab.py
+  s_1a18e8e51887e4::t_50f1d7fcd860ea 168-170
+unstructured_ingest/processes/connectors/redisdb.py
+  s_1a18e8e51887e4::t_556d74daaf4f0c 170
+unstructured_ingest/processes/connectors/weaviate/weaviate.py
+  s_1a18e8e51887e4::t_cb0bff39cf07cf 362
+unstructured_ingest/processes/connectors/couchbase.py
+  s_1a18e8e51887e4::t_b48f416c07c763 168,204
+unstructured_ingest/processes/connectors/sql/sql.py
+  s_1a18e8e51887e4::t_15b7cb6c44e78b 361
+  s_1a18e8e51887e4::t_e3b7c06001800f 133-135
+unstructured_ingest/processes/connectors/sharepoint.py
+  s_1a18e8e51887e4::t_3e3a997ba24491 119
+unstructured_ingest/processes/connectors/astradb.py
+  s_1a18e8e51887e4::t_f04eab164878ad 475,480
+  s_1a18e8e51887e4::t_b5ff9661606f87 613
+  s_1a18e8e51887e4::t_df11ec32a37d9d 594
+  s_1a18e8e51887e4::t_975caa283089ea 182-184
+  s_1a18e8e51887e4::t_c67bd79515b6d6 458
+  s_1a18e8e51887e4::t_3dfb2e75f6004c 600
+unstructured_ingest/processes/connectors/ibm_watsonx/ibm_watsonx_s3.py
+  s_1a18e8e51887e4::t_8e5acc19ab1d13 198
+unstructured_ingest/processes/connectors/milvus.py
+  s_1a18e8e51887e4::t_a63b65e05280ae 213
+unstructured_ingest/processes/connectors/delta_table.py
+  s_1a18e8e51887e4::t_5b8c065d2d9077 161
+unstructured_ingest/processes/connectors/kdbai.py
+  s_1a18e8e51887e4::t_4ad398f367dc6c 113
+unstructured_ingest/processes/connectors/kafka/kafka.py
+  s_1a18e8e51887e4::t_fffae4d64114a0 189-191
+  s_1a18e8e51887e4::t_526f2c7603d513 261
+unstructured_ingest/processes/connectors/notion/connector.py
+  s_1a18e8e51887e4::t_87f47c199fb1a9 100-102
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_1a18e8e51887e4::t_30bae605352a30 464
+  s_1a18e8e51887e4::t_a82dadfed2ec6b 461
+unstructured_ingest/processes/connectors/onedrive.py
+  s_1a18e8e51887e4::t_6735ad5f69b88d 261-263,704-706
+unstructured_ingest/processes/connectors/elasticsearch/opensearch.py
+  s_1a18e8e51887e4::t_a6c8f95c194dd9 305
+  s_1a18e8e51887e4::t_5cbbbecabbb68b 495
+unstructured_ingest/processes/connectors/confluence.py
+  s_1a18e8e51887e4::t_217ede8a21e9f6 254-256
+  s_1a18e8e51887e4::t_811eacbeba39d5 272
+unstructured_ingest/processes/connectors/jira.py
+  s_1a18e8e51887e4::t_b4bb8ca37a3f2b 227-229
+unstructured_ingest/processes/connectors/chroma.py
+  s_1a18e8e51887e4::t_996dbd89c00f6f 142
+unstructured_ingest/processes/connectors/salesforce.py
+  s_1a18e8e51887e4::t_a4921cfc6c7968 157-159
+unstructured_ingest/processes/connectors/azure_ai_search.py
+  s_1a18e8e51887e4::t_0344f726f7bfb1 332
+unstructured_ingest/processes/connectors/pinecone.py
+  s_1a18e8e51887e4::t_ba9c62254b4c36 224
+  s_1a18e8e51887e4::t_4c73d192ae4398 243
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "708eecbe7148a18f1440af681eca83afb4bf25db",
+  "prompts": {},
+  "sessions": {
+    "s_1a18e8e51887e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc68d943-e464-47d7-905b-f8dd2acb0a4b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
