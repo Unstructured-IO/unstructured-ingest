@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -99,10 +100,14 @@ class GcsAccessConfig(FsspecAccessConfig):
         # Case: path to token
         try:
             is_token_file = Path(self.service_account_key).is_file()
-        except OSError:
-            # A value too long/invalid to be a filename is likely raw key material;
-            # never echo it back in the error (OSError includes the full "filename").
-            raise ValueError("Invalid auth token value") from None
+        except OSError as os_err:
+            if os_err.errno == errno.ENAMETOOLONG:
+                # A value too long to be a filename is likely raw key material;
+                # never echo it back (the OSError would include the full "filename").
+                raise ValueError("Invalid auth token value") from None
+            # Any other OSError (e.g. permission denied) is a genuine filesystem
+            # failure on a real path; surface it instead of masking it.
+            raise
         if is_token_file:
             self.token = self.service_account_key
             return
