@@ -1,8 +1,19 @@
-## [1.6.29]
+## [1.6.31]
 
 ### Enhancements
 
 - **feat: Slack indexer emits records newest-first within each channel.** `SlackIndexer.run` sorts each channel's records (conversation-day packages and file attachments) by `metadata.version` descending before yielding, so the most recent content is indexed first.
+## [1.6.30]
+
+### Fixes
+
+- **fix(ENG-1322): escape SQL metacharacters in databricks_volume_delta_tables statements.** Filenames or record identifiers containing a single quote or backslash no longer break (or inject into) the single-quoted `PUT`/`DELETE` string literals, and filenames containing a backtick no longer break the backtick-quoted volume path in the `INSERT ... FROM json.` clause (all surfaced as SQLSTATE 42601). A shared `quote_literal` helper escapes both backslashes and single quotes (Databricks processes backslash escapes in string literals by default) for the volume/staging paths and the delete record identifier, and the `INSERT` source path now goes through the existing `quote_identifier` helper.
+
+## [1.6.29]
+
+### Fixes
+
+- **fix(sharepoint): surface the real upstream HTTP status instead of masking every error as "Site not found".** SharePoint upstream errors now map to typed exceptions carrying the real status code and response body (instead of a generic `400`), and genuine throttles are retried, honoring the server's `Retry-After` backoff.
 
 ## [1.6.28]
 
