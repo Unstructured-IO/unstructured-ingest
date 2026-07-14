@@ -9,7 +9,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError, safe_error_summary
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    UnstructuredIngestError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -86,6 +91,10 @@ class NotionIndexer(Indexer):
             response = client.client.send(request)
             response.raise_for_status()
 
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(f"Failed to validate connection: {safe_error_summary(e)}")

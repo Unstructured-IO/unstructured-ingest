@@ -23,6 +23,7 @@ from unstructured_ingest.error import (
     SourceConnectionError,
     SourceConnectionNetworkError,
     TimeoutError,
+    UnstructuredIngestError,
     WriteError,
     safe_error_summary,
 )
@@ -172,6 +173,10 @@ class AstraDBIndexer(Indexer):
     def precheck(self) -> None:
         try:
             self.get_collection().options()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
@@ -440,6 +445,10 @@ class AstraDBUploader(Uploader):
                     connection_config=self.connection_config,
                     keyspace=self.upload_config.keyspace,
                 )
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(

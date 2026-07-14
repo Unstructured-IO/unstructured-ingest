@@ -18,6 +18,7 @@ from unstructured_ingest.error import (
     ConnectionError,
     DestinationConnectionError,
     SourceConnectionError,
+    UnstructuredIngestError,
     ValueError,
     safe_error_summary,
 )
@@ -153,8 +154,10 @@ class MongoDBIndexer(Indexer):
                             collection_name, ", ".join(collection_names)
                         )
                     )
-        except SourceConnectionError:
-            # Preserve our own static missing-database / missing-collection guidance.
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors (missing database/collection, SCRAM-SHA-1 remediation);
+            # only unexpected exceptions are redacted below.
             raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
@@ -335,8 +338,10 @@ class MongoDBUploader(Uploader):
                             collection_name, ", ".join(collection_names)
                         )
                     )
-        except DestinationConnectionError:
-            # Preserve our own static missing-database / missing-collection guidance.
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors (missing database/collection, SCRAM-SHA-1 remediation);
+            # only unexpected exceptions are redacted below.
             raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")

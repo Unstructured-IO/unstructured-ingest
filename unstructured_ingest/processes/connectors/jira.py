@@ -12,7 +12,12 @@ from unstructured_ingest.data_types.file_data import (
     FileDataSourceMetadata,
     SourceIdentifiers,
 )
-from unstructured_ingest.error import SourceConnectionError, ValueError, safe_error_summary
+from unstructured_ingest.error import (
+    SourceConnectionError,
+    UnstructuredIngestError,
+    ValueError,
+    safe_error_summary,
+)
 from unstructured_ingest.interfaces import (
     AccessConfig,
     ConnectionConfig,
@@ -213,6 +218,10 @@ class JiraIndexer(Indexer):
             with self.connection_config.get_client() as client:
                 response = client.get_permissions("BROWSE_PROJECTS")
                 permitted = response["permissions"]["BROWSE_PROJECTS"]["havePermission"]
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"Failed to connect to Jira: {safe_error_summary(e)}")
             raise SourceConnectionError(f"Failed to connect to Jira: {safe_error_summary(e)}")

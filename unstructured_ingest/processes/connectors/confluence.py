@@ -14,6 +14,7 @@ from unstructured_ingest.data_types.file_data import (
 )
 from unstructured_ingest.error import (
     SourceConnectionError,
+    UnstructuredIngestError,
     UserAuthError,
     UserError,
     ValueError,
@@ -244,6 +245,10 @@ class ConfluenceIndexer(Indexer):
     def precheck(self) -> bool:
         try:
             self.connection_config.get_client()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"Failed to connect to Confluence: {safe_error_summary(e)}")
             raise UserAuthError(f"Failed to connect to Confluence: {safe_error_summary(e)}")
@@ -252,6 +257,10 @@ class ConfluenceIndexer(Indexer):
             # opportunistically check the first space in list of all spaces
             try:
                 self._list_spaces(client, limit=1)
+            except (ImportError, UnstructuredIngestError):
+                # Preserve dependency-install guidance and connector-authored
+                # typed errors; only unexpected exceptions are redacted below.
+                raise
             except Exception as e:
                 logger.error(
                     f"Failed to connect to find any Confluence space: {safe_error_summary(e)}"
@@ -269,6 +278,10 @@ class ConfluenceIndexer(Indexer):
                 for space_key in self.index_config.spaces:
                     try:
                         self._get_space_by_key(client, space_key)
+                    except UnstructuredIngestError as e:
+                        # Preserve connector-authored guidance from _get_space_by_key.
+                        logger.error(f"Failed to connect to Confluence: {safe_error_summary(e)}")
+                        errors.append(f"Failed to connect to '{space_key}' space, cause: '{e}'")
                     except Exception as e:
                         logger.error(f"Failed to connect to Confluence: {safe_error_summary(e)}")
                         errors.append(

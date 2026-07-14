@@ -12,6 +12,7 @@ from unstructured_ingest.error import (
     NotFoundError,
     ProviderError,
     RateLimitError,
+    UnstructuredIngestError,
     UserAuthError,
     UserError,
     WriteError,
@@ -231,6 +232,10 @@ class PineconeUploader(VectorDBUploader):
                 self.connection_config.index_name
             ):
                 raise NotFoundError(f"index {self.connection_config.index_name} does not exist")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(

@@ -21,6 +21,7 @@ from unstructured_ingest.data_types.file_data import (
 from unstructured_ingest.error import (
     DestinationConnectionError,
     SourceConnectionError,
+    UnstructuredIngestError,
     safe_error_summary,
 )
 from unstructured_ingest.interfaces import (
@@ -123,6 +124,10 @@ class SQLIndexer(Indexer, ABC):
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
@@ -343,6 +348,10 @@ class SQLUploader(Uploader):
         try:
             with self.get_cursor() as cursor:
                 cursor.execute("SELECT 1;")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(

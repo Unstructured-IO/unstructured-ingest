@@ -9,6 +9,7 @@ from unstructured_ingest.data_types.file_data import FileData
 from unstructured_ingest.error import (
     DestinationConnectionError,
     ResponseError,
+    UnstructuredIngestError,
     ValueError,
     safe_error_summary,
 )
@@ -158,6 +159,10 @@ class RedisUploader(Uploader):
         try:
             with self.connection_config.create_client() as client:
                 client.ping()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(

@@ -29,6 +29,7 @@ from unstructured_ingest.error import (
     MissingCategoryError,
     SourceConnectionError,
     SourceConnectionNetworkError,
+    UnstructuredIngestError,
     ValueError,
     safe_error_summary,
 )
@@ -147,6 +148,10 @@ class SalesforceIndexer(Indexer):
     def precheck(self) -> None:
         try:
             self.connection_config.get_client()
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")

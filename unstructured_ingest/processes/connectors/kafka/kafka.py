@@ -180,6 +180,10 @@ class KafkaIndexer(Indexer, ABC):
                         )
                     )
                 logger.info(f"successfully checked available topics: {current_topics}")
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
@@ -244,6 +248,10 @@ class KafkaUploader(Uploader, ABC):
                         )
                     )
 
+        except (ImportError, UnstructuredIngestError):
+            # Preserve dependency-install guidance and connector-authored typed
+            # errors; only unexpected exceptions are redacted below.
+            raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
