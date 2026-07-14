@@ -107,12 +107,14 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             return UserAuthError(e)
         if 400 <= response_code < 500:
             logger.error(
-                f"Request to {url} failedin IBM watsonx.data connector, status code {response_code}"
+                f"Request to {url} failed in IBM watsonx.data connector, "
+                f"status code {response_code}"
             )
             return UserError(e)
         if response_code > 500:
             logger.error(
-                f"Request to {url} failedin IBM watsonx.data connector, status code {response_code}"
+                f"Request to {url} failed in IBM watsonx.data connector, "
+                f"status code {response_code}"
             )
             return ProviderError(e)
         logger.error(

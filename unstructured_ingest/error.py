@@ -22,7 +22,7 @@ _SAFE_ERROR_ATTRS = (
     "sfqid",
 )
 
-# Enum-like machine codes are single short tokens (e.g. "invalid_auth",
+# Enum-like machine codes are short tokens with no whitespace (e.g. "invalid_auth",
 # "Neo.ClientError.Security.Unauthorized"). Free text virtually always
 # contains whitespace or punctuation outside this set and is rejected.
 _MACHINE_CODE_RE = re.compile(r"[A-Za-z0-9_.\-]{1,64}")

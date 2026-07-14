@@ -460,12 +460,12 @@ class AstraDBUploader(Uploader):
             if "not found" in str(e):
                 return False
             raise DestinationConnectionError(
-                f"failed to check if astra collection exists : {safe_error_summary(e)}"
+                f"failed to check if astra collection exists: {safe_error_summary(e)}"
             )
         except Exception as e:
-            logger.error(f"failed to check if astra collection exists : {safe_error_summary(e)}")
+            logger.error(f"failed to check if astra collection exists: {safe_error_summary(e)}")
             raise DestinationConnectionError(
-                f"failed to check if astra collection exists : {safe_error_summary(e)}"
+                f"failed to check if astra collection exists: {safe_error_summary(e)}"
             )
 
     def format_destination_name(self, destination_name: str) -> str:

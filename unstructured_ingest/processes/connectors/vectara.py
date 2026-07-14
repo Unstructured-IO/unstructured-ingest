@@ -125,7 +125,7 @@ class VectaraUploader(Uploader):
             # decorated, so e is the wrapped error and its own type is
             # uninformative; summarize the underlying cause when present
             # (type name plus allowlisted fields, never the exception text).
-            reported = safe_error_summary(e.__cause__ if e.__cause__ is not None else e)
+            reported = safe_error_summary(e.__cause__ or e)
             logger.error(f"Failed to validate connection: {reported}")
             raise DestinationConnectionError(f"failed to validate connection: {reported}") from None
 
