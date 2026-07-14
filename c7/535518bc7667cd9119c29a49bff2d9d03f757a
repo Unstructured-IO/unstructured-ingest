@@ -1,0 +1,19 @@
+unstructured_ingest/processes/connectors/elasticsearch/elasticsearch.py
+  s_1a18e8e51887e4::t_4eb031c8f60af0 466-471,473,475-479,481-490
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "c7535518bc7667cd9119c29a49bff2d9d03f757a",
+  "prompts": {},
+  "sessions": {
+    "s_1a18e8e51887e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc68d943-e464-47d7-905b-f8dd2acb0a4b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "paulkarayan <pk@unstructured.io>"
+    }
+  }
+}
