@@ -224,7 +224,9 @@ class JiraIndexer(Indexer):
             raise
         except Exception as e:
             logger.error(f"Failed to connect to Jira: {safe_error_summary(e)}")
-            raise SourceConnectionError(f"Failed to connect to Jira: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"Failed to connect to Jira: {safe_error_summary(e)}"
+            ) from None
         if not permitted:
             raise ValueError(
                 """The provided user is not permitted to browse projects

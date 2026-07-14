@@ -165,7 +165,9 @@ class GitLabIndexer(Indexer):
             raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
-            raise SourceConnectionError(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"Failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         """Iterates over the GitLab repository tree and yields file metadata as `FileData` objects.

@@ -458,10 +458,10 @@ class ElasticsearchUploader(Uploader):
                         f"Batch upload failed ({safe_error_summary(e)}) "
                         f"with following errors: {sanitized_errors}"
                     )
-                    raise DestinationConnectionError(safe_error_summary(e))
+                    raise DestinationConnectionError(safe_error_summary(e)) from None
                 except Exception as e:
                     logger.error(f"Batch upload failed - {safe_error_summary(e)}")
-                    raise UnstructuredIngestError(safe_error_summary(e))
+                    raise UnstructuredIngestError(safe_error_summary(e)) from None
 
     def _sanitize_bulk_index_error(self, error: dict[str, dict]) -> dict:
         """Remove data uploaded to index from the log, leave only error information.

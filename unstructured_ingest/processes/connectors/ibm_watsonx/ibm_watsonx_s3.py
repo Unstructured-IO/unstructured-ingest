@@ -195,7 +195,7 @@ class IbmWatsonxConnectionConfig(ConnectionConfig):
             logger.error(f"Failed to connect to catalog '{self.catalog}': {safe_error_summary(e)}")
             raise ProviderError(
                 f"Failed to connect to catalog '{self.catalog}': {safe_error_summary(e)}"
-            )
+            ) from None
 
         yield catalog
 

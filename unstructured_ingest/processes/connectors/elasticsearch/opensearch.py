@@ -302,7 +302,7 @@ class OpenSearchIndexer(ElasticsearchIndexer):
                 logger.error(f"failed to validate connection: {safe_error_summary(e)}")
                 raise SourceConnectionError(
                     f"failed to validate connection: {safe_error_summary(e)}"
-                )
+                ) from None
 
         _run_coroutine(_async_precheck)
 
@@ -492,7 +492,7 @@ class OpenSearchUploader(ElasticsearchUploader):
                 logger.error(f"failed to validate connection: {safe_error_summary(e)}")
                 raise DestinationConnectionError(
                     f"failed to validate connection: {safe_error_summary(e)}"
-                )
+                ) from None
 
         _run_coroutine(_async_precheck)
 

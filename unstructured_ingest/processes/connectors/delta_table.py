@@ -158,7 +158,7 @@ class DeltaTableUploader(Uploader):
                 logger.error(f"failed to validate connection: {safe_error_summary(e)}")
                 raise DestinationConnectionError(
                     f"failed to validate connection: {safe_error_summary(e)}"
-                )
+                ) from None
 
     @requires_dependencies(["tenacity"], extras="delta-table")
     def upload_dataframe(self, df: "DataFrame", file_data: FileData) -> None:

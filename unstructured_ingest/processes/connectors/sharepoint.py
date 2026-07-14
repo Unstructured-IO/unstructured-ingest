@@ -116,7 +116,7 @@ class SharepointIndexer(OnedriveIndexer):
             elif status_code == 404:
                 raise UserError(f"Not found: {context}")
 
-        raise UserError(f"Failed to access {context}: {safe_error_summary(e)}")
+        raise UserError(f"Failed to access {context}: {safe_error_summary(e)}") from None
 
     def _is_root_path(self, path: str) -> bool:
         """Check if the path represents root access (empty string or legacy default)."""

@@ -179,7 +179,9 @@ class AstraDBIndexer(Indexer):
             raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
-            raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def _get_doc_ids(self) -> set[str]:
         """Fetches all document ids in an index"""
@@ -453,7 +455,7 @@ class AstraDBUploader(Uploader):
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     def _collection_exists(self, collection_name: str):
         collection = get_astra_collection(
@@ -470,12 +472,12 @@ class AstraDBUploader(Uploader):
                 return False
             raise DestinationConnectionError(
                 f"failed to check if astra collection exists: {safe_error_summary(e)}"
-            )
+            ) from None
         except Exception as e:
             logger.error(f"failed to check if astra collection exists: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to check if astra collection exists: {safe_error_summary(e)}"
-            )
+            ) from None
 
     def format_destination_name(self, destination_name: str) -> str:
         # AstraDB collection naming requirements:
@@ -589,13 +591,13 @@ class AstraDBUploader(Uploader):
                     logger.error(
                         f"Failed to upload batch {batch_progress_str}: {safe_error_summary(e)}"
                     )
-                    raise WriteError(f"AstraDB collection error: {safe_error_summary(e)}") from e
+                    raise WriteError(f"AstraDB collection error: {safe_error_summary(e)}") from None
 
                 except DataAPITimeoutException as e:
                     logger.error(
                         f"Timeout uploading batch {batch_progress_str}: {safe_error_summary(e)}"
                     )
-                    raise TimeoutError(f"AstraDB timeout: {safe_error_summary(e)}") from e
+                    raise TimeoutError(f"AstraDB timeout: {safe_error_summary(e)}") from None
 
                 except DataAPIHttpException as e:
                     logger.error(
@@ -608,7 +610,7 @@ class AstraDBUploader(Uploader):
                         and e.response.status_code is not None
                         and 400 <= e.response.status_code < 500
                     ):
-                        raise WriteError(f"AstraDB HTTP error: {safe_error_summary(e)}") from e
+                        raise WriteError(f"AstraDB HTTP error: {safe_error_summary(e)}") from None
                     raise
 
                 except Exception as e:

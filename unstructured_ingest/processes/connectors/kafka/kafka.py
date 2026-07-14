@@ -186,7 +186,9 @@ class KafkaIndexer(Indexer, ABC):
             raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
-            raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
 
 class KafkaDownloaderConfig(DownloaderConfig):
@@ -256,7 +258,7 @@ class KafkaUploader(Uploader, ABC):
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     def produce_batch(self, elements: list[dict]) -> None:
         producer = self.connection_config.get_producer()

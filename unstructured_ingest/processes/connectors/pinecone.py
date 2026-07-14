@@ -221,7 +221,7 @@ class PineconeUploader(VectorDBUploader):
             logger.error(f"failed to check if pinecone index exists : {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to check if pinecone index exists : {safe_error_summary(e)}"
-            )
+            ) from None
 
     def precheck(self):
         try:
@@ -240,7 +240,7 @@ class PineconeUploader(VectorDBUploader):
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     def format_destination_name(self, destination_name: str) -> str:
         # Pinecone naming requirements:

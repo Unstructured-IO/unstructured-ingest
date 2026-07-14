@@ -139,7 +139,7 @@ class ChromaUploader(Uploader):
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     @DestinationConnectionError.wrap
     def upsert_batch(self, collection, batch):

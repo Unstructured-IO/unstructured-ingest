@@ -97,7 +97,9 @@ class NotionIndexer(Indexer):
             raise
         except Exception as e:
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
-            raise SourceConnectionError(f"Failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"Failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def run(self, **kwargs: Any) -> Generator[FileData, None, None]:
         client = self.connection_config.get_client()

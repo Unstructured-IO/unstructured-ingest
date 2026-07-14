@@ -130,7 +130,9 @@ class SQLIndexer(Indexer, ABC):
             raise
         except Exception as e:
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
-            raise SourceConnectionError(f"failed to validate connection: {safe_error_summary(e)}")
+            raise SourceConnectionError(
+                f"failed to validate connection: {safe_error_summary(e)}"
+            ) from None
 
     def run(self, **kwargs: Any) -> Generator[SqlBatchFileData, None, None]:
         ids = self._get_doc_ids()
@@ -356,7 +358,7 @@ class SQLUploader(Uploader):
             logger.error(f"failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     @contextmanager
     def get_cursor(self) -> Generator[Any, None, None]:

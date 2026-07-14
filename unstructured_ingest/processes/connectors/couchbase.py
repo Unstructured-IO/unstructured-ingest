@@ -165,7 +165,7 @@ class CouchbaseUploader(Uploader):
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     def run_data(self, data: list[dict], file_data: FileData, **kwargs: Any) -> None:
         logger.info(
@@ -201,7 +201,7 @@ class CouchbaseIndexer(Indexer):
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     @requires_dependencies(["couchbase"], extras="couchbase")
     def _get_doc_ids(self) -> List[str]:

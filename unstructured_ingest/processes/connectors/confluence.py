@@ -251,7 +251,9 @@ class ConfluenceIndexer(Indexer):
             raise
         except Exception as e:
             logger.error(f"Failed to connect to Confluence: {safe_error_summary(e)}")
-            raise UserAuthError(f"Failed to connect to Confluence: {safe_error_summary(e)}")
+            raise UserAuthError(
+                f"Failed to connect to Confluence: {safe_error_summary(e)}"
+            ) from None
 
         with self.connection_config.get_client() as client:
             # opportunistically check the first space in list of all spaces
@@ -267,7 +269,7 @@ class ConfluenceIndexer(Indexer):
                 )
                 raise UserError(
                     f"Failed to connect to find any Confluence space: {safe_error_summary(e)}"
-                )
+                ) from None
 
             logger.info("Connection to Confluence successful.")
 

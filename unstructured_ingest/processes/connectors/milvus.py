@@ -210,7 +210,7 @@ class MilvusUploader(Uploader):
         except MilvusException as milvus_exception:
             raise DestinationConnectionError(
                 f"failed to precheck Milvus: {safe_error_summary(milvus_exception)}"
-            ) from milvus_exception
+            ) from None
 
     @contextmanager
     def get_client(self) -> Generator["MilvusClient", None, None]:

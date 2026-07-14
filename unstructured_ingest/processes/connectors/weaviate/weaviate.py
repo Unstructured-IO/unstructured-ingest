@@ -359,7 +359,7 @@ class WeaviateUploader(VectorDBUploader, ABC):
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     def init(self, **kwargs: Any) -> None:
         self.create_destination(**kwargs)

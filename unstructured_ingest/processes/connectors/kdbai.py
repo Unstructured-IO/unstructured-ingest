@@ -110,7 +110,7 @@ class KdbaiUploader(Uploader):
             logger.error(f"Failed to validate connection: {safe_error_summary(e)}")
             raise DestinationConnectionError(
                 f"failed to validate connection: {safe_error_summary(e)}"
-            )
+            ) from None
 
     @contextmanager
     def get_database(self) -> Generator["Database", None, None]:
