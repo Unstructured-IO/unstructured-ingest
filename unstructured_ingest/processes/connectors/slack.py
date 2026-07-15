@@ -248,11 +248,14 @@ class SlackIndexer(Indexer):
             if not messages:
                 continue
 
-            for day, day_messages in self._group_messages_by_day(messages).items():
-                yield self._messages_to_file_data(day_messages, channel, client, day)
-
-            for file_data in self._message_files_to_file_data(messages, channel):
-                yield file_data
+            # NOTE: Emit a channel's records newest-first so recent content is processed first.
+            records = [
+                self._messages_to_file_data(day_messages, channel, client, day)
+                for day, day_messages in self._group_messages_by_day(messages).items()
+            ]
+            records.extend(self._message_files_to_file_data(messages, channel))
+            records.sort(key=self._recency_key, reverse=True)
+            yield from records
 
     @staticmethod
     def _message_day(message: dict) -> Optional[str]:
@@ -290,6 +293,15 @@ class SlackIndexer(Indexer):
         if not candidates:
             return None
         return max(candidates, key=float)
+
+    @staticmethod
+    def _recency_key(file_data: FileData) -> float:
+        # NOTE: version is set for both record kinds (conversation package and file), so it
+        # orders them against each other.
+        try:
+            return float(file_data.metadata.version)
+        except (TypeError, builtins.ValueError):
+            return 0.0
 
     def _messages_to_file_data(
         self,
